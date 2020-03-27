@@ -118,8 +118,8 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 
     if (hCurrentUserKey)
     {
-        RegCloseKey((HKEY)hConsoleKey);
-        RegCloseKey((HKEY)hCurrentUserKey);
+        RegCloseKey(static_cast<HKEY>(hConsoleKey));
+        RegCloseKey(static_cast<HKEY>(hCurrentUserKey));
     }
 }
 
@@ -176,8 +176,8 @@ void Registry::LoadGlobalsFromRegistry()
     {
         _LoadMappedProperties(RegistrySerialization::s_GlobalPropMappings, RegistrySerialization::s_GlobalPropMappingsSize, hConsoleKey);
 
-        RegCloseKey((HKEY)hConsoleKey);
-        RegCloseKey((HKEY)hCurrentUserKey);
+        RegCloseKey(static_cast<HKEY>(hConsoleKey));
+        RegCloseKey(static_cast<HKEY>(hCurrentUserKey));
     }
 }
 

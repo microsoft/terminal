@@ -331,7 +331,7 @@ using namespace Microsoft::Console::Render;
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), static_cast<int>(cchLine), nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -339,7 +339,7 @@ using namespace Microsoft::Console::Render;
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), static_cast<int>(cchLine), psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
@@ -371,7 +371,7 @@ using namespace Microsoft::Console::Render;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (static_cast<SHORT>(cchCharWidths) * coordFontSize.X);
         pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
         pPolyTextLine->pdx = rgdxPoly.release();
 
@@ -405,7 +405,7 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, static_cast<UINT>(_cPolyText)))
         {
             hr = E_FAIL;
         }

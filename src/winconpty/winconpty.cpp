@@ -339,7 +339,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
         return E_INVALIDARG;
     }
 
-    PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
+    PseudoConsole* pPty = static_cast<PseudoConsole*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole)));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
         _ClosePseudoConsole(pPty);
@@ -352,7 +352,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 
     RETURN_IF_FAILED(_CreatePseudoConsole(hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty));
 
-    *phPC = (HPCON)pPty;
+    *phPC = static_cast<HPCON>(pPty);
     cleanupPty.release();
 
     return S_OK;
@@ -362,7 +362,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 // Resizes the given conpty to the specified size, in characters.
 extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 {
-    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    const PseudoConsole* const pPty = static_cast<PseudoConsole*>(hPC);
     HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
@@ -379,7 +379,7 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 //      terminated, or if the pseudoconsole was already terminated.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    PseudoConsole* const pPty = static_cast<PseudoConsole*>(hPC);
     if (pPty != nullptr)
     {
         _ClosePseudoConsole(pPty);

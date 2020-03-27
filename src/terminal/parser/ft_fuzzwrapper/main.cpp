@@ -31,7 +31,7 @@ bool GetChar(wchar_t* pwch)
     {
         int ch = fgetc(hFile);
         *pwch = 0;
-        *pwch = (wchar_t)ch;
+        *pwch = static_cast<wchar_t>(ch);
         return ch != EOF;
     }
     else
@@ -53,7 +53,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     }
     else
     {
-        uiCodePage = (UINT)_wtoi(argv[2]);
+        uiCodePage = static_cast<UINT>(_wtoi(argv[2]));
         wprintf(L"Using codepage '%d'", uiCodePage);
 
         wprintf(L"Opening file '%s'...\r\n", argv[1]);

@@ -24,9 +24,9 @@ struct _HSL
     // constructs an HSL color from a RGB Color.
     _HSL(const COLORREF rgb)
     {
-        const double r = (double)GetRValue(rgb);
-        const double g = (double)GetGValue(rgb);
-        const double b = (double)GetBValue(rgb);
+        const double r = static_cast<double>(GetRValue(rgb));
+        const double g = static_cast<double>(GetGValue(rgb));
+        const double b = static_cast<double>(GetBValue(rgb));
 
         const auto [min, max] = std::minmax({ r, g, b });
 

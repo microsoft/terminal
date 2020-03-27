@@ -104,9 +104,9 @@ AddFaceNode(
     }
 
     cch = wcslen(ptsz);
-    pNew = (PFACENODE)HeapAlloc(GetProcessHeap(),
-                                0,
-                                sizeof(FACENODE) + ((cch + 1) * sizeof(WCHAR)));
+    pNew = static_cast<PFACENODE>(HeapAlloc(GetProcessHeap(),
+                                            0,
+                                            sizeof(FACENODE) + ((cch + 1) * sizeof(WCHAR))));
     if (pNew == nullptr)
     {
         return nullptr;
@@ -221,12 +221,12 @@ int AddFont(
     LPTSTR ptszFace = pelf->elfLogFont.lfFaceName;
 
     /* get font info */
-    SizeWant.X = (SHORT)pelf->elfLogFont.lfWidth;
-    SizeWant.Y = (SHORT)pelf->elfLogFont.lfHeight;
+    SizeWant.X = static_cast<SHORT>(pelf->elfLogFont.lfWidth);
+    SizeWant.Y = static_cast<SHORT>(pelf->elfLogFont.lfHeight);
 
     /* save original size request so that we can use it unmodified when doing DPI calculations */
-    SizeOriginal.X = (SHORT)pelf->elfLogFont.lfWidth;
-    SizeOriginal.Y = (SHORT)pelf->elfLogFont.lfHeight;
+    SizeOriginal.X = static_cast<SHORT>(pelf->elfLogFont.lfWidth);
+    SizeOriginal.Y = static_cast<SHORT>(pelf->elfLogFont.lfHeight);
 
 CreateBoldFont:
     pelf->elfLogFont.lfQuality = DEFAULT_QUALITY;
@@ -243,8 +243,8 @@ CreateBoldFont:
     GetTextMetrics(hDC, &tm);
 
     GetTextExtentPoint32(hDC, TEXT("0"), 1, &Size);
-    SizeActual.X = (SHORT)Size.cx;
-    SizeActual.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
+    SizeActual.X = static_cast<SHORT>(Size.cx);
+    SizeActual.Y = static_cast<SHORT>(tm.tmHeight + tm.tmExternalLeading);
     DBGFONTS2(("    actual size %d,%d\n", SizeActual.X, SizeActual.Y));
     tmFamily = tm.tmPitchAndFamily;
     if (TM_IS_TT_FONT(tmFamily) && (SizeWant.Y >= 0))
@@ -356,10 +356,10 @@ CreateBoldFont:
         FontInfoLength += FONT_INCREMENT;
         if (FontInfoLength < MAX_FONT_INFO_ALLOC)
         {
-            Temp = (PFONT_INFO)HeapReAlloc(GetProcessHeap(),
-                                           0,
-                                           FontInfo,
-                                           sizeof(FONT_INFO) * FontInfoLength);
+            Temp = static_cast<PFONT_INFO>(HeapReAlloc(GetProcessHeap(),
+                                                       0,
+                                                       FontInfo,
+                                                       sizeof(FONT_INFO) * FontInfoLength));
         }
 
         if (Temp == nullptr)
@@ -946,7 +946,7 @@ EnumerateFonts(
         //
         NumberOfFonts = 0;
 
-        FontInfo = (PFONT_INFO)HeapAlloc(GetProcessHeap(), 0, sizeof(FONT_INFO) * INITIAL_FONTS);
+        FontInfo = static_cast<PFONT_INFO>(HeapAlloc(GetProcessHeap(), 0, sizeof(FONT_INFO) * INITIAL_FONTS));
         if (FontInfo == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -963,8 +963,8 @@ EnumerateFonts(
         GetTextMetrics(hDC, &tm);
         GetTextFace(hDC, LF_FACESIZE, DefaultFaceName);
 
-        DefaultFontSize.X = (SHORT)(tm.tmMaxCharWidth);
-        DefaultFontSize.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
+        DefaultFontSize.X = static_cast<SHORT>(tm.tmMaxCharWidth);
+        DefaultFontSize.Y = static_cast<SHORT>(tm.tmHeight + tm.tmExternalLeading);
         DefaultFontFamily = tm.tmPitchAndFamily;
 
         if (IS_ANY_DBCS_CHARSET(tm.tmCharSet))

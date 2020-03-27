@@ -304,7 +304,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         }
         for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
-            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            mach.ProcessCharacter(static_cast<wchar_t>(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
         VERIFY_ARE_EQUAL(mach._parameters.back(), 12345u);
@@ -465,7 +465,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
-            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            mach.ProcessCharacter(static_cast<wchar_t>(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
         VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
@@ -495,7 +495,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         }
         for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
-            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            mach.ProcessCharacter(static_cast<wchar_t>(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
         VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
@@ -670,9 +670,9 @@ public:
         _eraseLine{ false },
         _insertCharacter{ false },
         _deleteCharacter{ false },
-        _eraseType{ (DispatchTypes::EraseType)-1 },
+        _eraseType{ static_cast<DispatchTypes::EraseType>(-1) },
         _setGraphics{ false },
-        _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
+        _statusReportType{ static_cast<DispatchTypes::AnsiStatusType>(-1) },
         _deviceStatusReport{ false },
         _deviceAttributes{ false },
         _isAltBuffer{ false },
@@ -684,7 +684,7 @@ public:
         _warningBell{ false },
         _carriageReturn{ false },
         _lineFeed{ false },
-        _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
+        _lineFeedType{ static_cast<DispatchTypes::LineFeedType>(-1) },
         _forwardTab{ false },
         _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
@@ -1239,7 +1239,7 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_cursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_line, uiRow);
-        VERIFY_ARE_EQUAL(pDispatch->_column, (size_t)1); // Without the second param, the column should always be the default
+        VERIFY_ARE_EQUAL(pDispatch->_column, static_cast<size_t>(1)); // Without the second param, the column should always be the default
     }
 
     TEST_METHOD(TestCursorSaveLoad)
@@ -1545,7 +1545,7 @@ class StateMachineExternalTest final
 
         for (size_t i = 0; i < dispatch._options.size(); i++)
         {
-            auto expectedOption = (DispatchTypes::GraphicsOptions)dispatch.s_uiGraphicsCleared;
+            auto expectedOption = static_cast<DispatchTypes::GraphicsOptions>(dispatch.s_uiGraphicsCleared);
 
             if (i < expectedOptions.size())
             {

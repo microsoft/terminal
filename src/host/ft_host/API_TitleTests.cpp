@@ -106,7 +106,7 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleA(chReadBuffer, (DWORD)cchTryToRead);
+    DWORD const dwRetVal = GetConsoleTitleA(chReadBuffer, static_cast<DWORD>(cchTryToRead));
     DWORD const dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
@@ -116,8 +116,8 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     {
         for (size_t i = 0; i < cchExpected; i++)
         {
-            wchar_t const wchExpectedVis = chReadExpected[i] < 0x30 ? (wchar_t)chReadExpected[i] + 0x2400 : chReadExpected[i];
-            wchar_t const wchBufferVis = chReadBuffer[i] < 0x30 ? (wchar_t)chReadBuffer[i] + 0x2400 : chReadBuffer[i];
+            wchar_t const wchExpectedVis = chReadExpected[i] < 0x30 ? static_cast<wchar_t>(chReadExpected[i]) + 0x2400 : chReadExpected[i];
+            wchar_t const wchBufferVis = chReadBuffer[i] < 0x30 ? static_cast<wchar_t>(chReadBuffer[i]) + 0x2400 : chReadBuffer[i];
 
             // We must verify every individual character, not as a string, because we might be expecting a null
             // in the middle and need to verify it then keep going and read what's past that.
@@ -142,7 +142,7 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleW(wchReadBuffer, (DWORD)cchTryToRead);
+    DWORD const dwRetVal = GetConsoleTitleW(wchReadBuffer, static_cast<DWORD>(cchTryToRead));
     DWORD const dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
@@ -212,7 +212,7 @@ void TitleTests::TestGetConsoleTitleA()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, chReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, chReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
@@ -227,7 +227,7 @@ void TitleTests::TestGetConsoleTitleA()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, chReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, chReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 4: Say we have the string length with a null space and an extra space.");
     cchTryToRead = cchTestTitle + 1 + 1;
@@ -242,7 +242,7 @@ void TitleTests::TestGetConsoleTitleA()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, chReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, chReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 5: Say we have no buffer.");
     cchTryToRead = cchTestTitle;
@@ -281,7 +281,7 @@ void TitleTests::TestGetConsoleTitleW()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, wchReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 2: Say we have have exactly the string length with no null space.");
     cchTryToRead = cchTestTitle;
@@ -296,7 +296,7 @@ void TitleTests::TestGetConsoleTitleW()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, wchReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
@@ -311,7 +311,7 @@ void TitleTests::TestGetConsoleTitleW()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, wchReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 4: Say we have the string length with a null space and an extra space.");
     cchTryToRead = cchTestTitle + 1 + 1;
@@ -326,7 +326,7 @@ void TitleTests::TestGetConsoleTitleW()
                                            cchTryToRead);
 
     // Run the call and test it out.
-    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
+    TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, static_cast<DWORD>(cchTestTitle), S_OK, wchReadExpected.get(), cchReadBuffer);
 
     Log::Comment(L"Test 5: Say we have no buffer.");
     cchTryToRead = cchTestTitle;

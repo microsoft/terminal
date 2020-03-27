@@ -84,8 +84,8 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
             pWindow->ConvertScreenToClient(&CursorPos);
 
             COORD MousePosition;
-            MousePosition.X = (SHORT)CursorPos.x;
-            MousePosition.Y = (SHORT)CursorPos.y;
+            MousePosition.X = static_cast<SHORT>(CursorPos.x);
+            MousePosition.Y = static_cast<SHORT>(CursorPos.y);
 
             COORD coordFontSize = ScreenInfo.GetScreenFontSize();
 
@@ -124,7 +124,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.WheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.WheelDelta) >= ulActualDelta)
+        if (static_cast<ULONG>(abs(ScreenInfo.WheelDelta)) >= ulActualDelta)
         {
             /*
             * By default, SHIFT + WM_MOUSEWHEEL will scroll 1/2 the
@@ -142,7 +142,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             }
             else
             {
-                delta *= (ScreenInfo.WheelDelta / (short)ulActualDelta);
+                delta *= (ScreenInfo.WheelDelta / static_cast<short>(ulActualDelta));
                 ScreenInfo.WheelDelta %= ulActualDelta;
             }
 
@@ -172,7 +172,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.HWheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
+        if (static_cast<ULONG>(abs(ScreenInfo.HWheelDelta)) >= ulActualDelta)
         {
             SHORT delta = 1;
 
@@ -181,7 +181,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
                 delta = std::max(ScreenInfo.GetViewport().RightInclusive(), 1i16);
             }
 
-            delta *= (ScreenInfo.HWheelDelta / (short)ulActualDelta);
+            delta *= (ScreenInfo.HWheelDelta / static_cast<short>(ulActualDelta));
             ScreenInfo.HWheelDelta %= ulActualDelta;
 
             NewOrigin.X += delta;

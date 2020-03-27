@@ -226,7 +226,7 @@ VOID PreviewPaint(
     hBitmap = CreateCompatibleBitmap(pPS->hdc,
                                      rectPreview.right,
                                      rectPreview.bottom);
-    hBitmapOld = (HBITMAP)SelectObject(hDC, hBitmap);
+    hBitmapOld = static_cast<HBITMAP>(SelectObject(hDC, hBitmap));
 
     /*
      * Create the brushes
@@ -248,7 +248,7 @@ VOID PreviewPaint(
     /*
      * Fill in the whole window with the client brush
      */
-    hbrOld = (HBRUSH)SelectObject(hDC, hbrClient);
+    hbrOld = static_cast<HBRUSH>(SelectObject(hDC, hbrClient));
     PatBlt(hDC, rectWin.left, rectWin.top, rectWin.right - 1, rectWin.bottom - 1, PATCOPY);
 
     /*

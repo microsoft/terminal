@@ -40,7 +40,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         {
         case IDOK:
         {
-            USHORT const StringLength = (USHORT)GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, szBuf, ARRAYSIZE(szBuf));
+            USHORT const StringLength = static_cast<USHORT>(GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, szBuf, ARRAYSIZE(szBuf)));
             if (StringLength == 0)
             {
                 lastFindString.clear();

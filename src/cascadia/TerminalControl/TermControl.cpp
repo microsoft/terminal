@@ -1629,7 +1629,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_renderEngine)
         {
             const auto scale = sender.CompositionScaleX();
-            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+            const auto dpi = static_cast<int>(scale * USER_DEFAULT_SCREEN_DPI);
 
             // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
             THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));

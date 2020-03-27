@@ -106,7 +106,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         _currentPosition = cchInitialData;
 
         OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-        OriginalCursorPosition().X -= (SHORT)_currentPosition;
+        OriginalCursorPosition().X -= static_cast<SHORT>(_currentPosition);
 
         const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
         while (OriginalCursorPosition().X < 0)
@@ -552,7 +552,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                     // clang-format off
 #pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
                     // clang-format on
-                    *_bufPtr = (WCHAR)' ';
+                    *_bufPtr = static_cast<WCHAR>(' ');
                     _bufPtr -= 1;
                     _currentPosition -= 1;
 
@@ -630,7 +630,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                             _bytesRead - (_currentPosition * sizeof(WCHAR)));
                     {
                         PWCHAR buf = (PWCHAR)((PBYTE)_backupLimit + _bytesRead);
-                        *buf = (WCHAR)' ';
+                        *buf = static_cast<WCHAR>(' ');
                     }
                     NumSpaces = 0;
 
@@ -705,7 +705,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
             // save cursor position
             CursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
+            CursorPosition.X = static_cast<SHORT>(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen
             // clang-format off
@@ -1074,7 +1074,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                 FAIL_FAST_IF(!(Tmp < (_backupLimit + _bytesRead)));
             }
 
-            numBytes = (ULONG)(Tmp - _backupLimit + 1) * sizeof(*Tmp);
+            numBytes = static_cast<ULONG>(Tmp - _backupLimit + 1) * sizeof(*Tmp);
         }
         else
         {

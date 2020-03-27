@@ -287,7 +287,7 @@ void ProcessCtrlEvents()
     //        CONSOLE_CTRL_LOGOFF_FLAG
     //        CONSOLE_CTRL_SHUTDOWN_FLAG
 
-    DWORD EventType = (DWORD)-1;
+    DWORD EventType = static_cast<DWORD>(-1);
     switch (CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG | CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))
     {
     case CONSOLE_CTRL_CLOSE_FLAG:

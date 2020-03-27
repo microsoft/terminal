@@ -42,7 +42,7 @@ static std::string GenerateOscColorTableToken();
 const fuzz::_fuzz_type_entry<BYTE> g_repeatMap[] = {
     { 4, [](BYTE) { return CFuzzChance::GetRandom<BYTE>(2, 0xF); } },
     { 1, [](BYTE) { return CFuzzChance::GetRandom<BYTE>(2, 0xFF); } },
-    { 20, [](BYTE) { return (BYTE)0; } }
+    { 20, [](BYTE) { return static_cast<BYTE>(0); } }
 };
 
 const std::function<std::string()> g_tokenGenerators[] = {
@@ -71,7 +71,7 @@ std::string GenerateTokenLowProbability()
     };
     CFuzzType<std::string> ft(FUZZ_MAP(tokenGeneratorMap), std::string(""));
 
-    return (std::string)ft;
+    return static_cast<std::string>(ft);
 }
 
 std::string GenerateToken()
@@ -84,7 +84,7 @@ std::string GenerateToken()
     };
     CFuzzType<std::string> ft(FUZZ_MAP(tokenGeneratorMap), std::string(""));
 
-    return (std::string)ft;
+    return static_cast<std::string>(ft);
 }
 
 std::string GenerateWhiteSpaceToken()
@@ -96,7 +96,7 @@ std::string GenerateWhiteSpaceToken()
     CFuzzType<DWORD> ft(FUZZ_MAP(ftMap), 0);
 
     std::string s;
-    for (DWORD i = 0; i < (DWORD)ft; i++)
+    for (DWORD i = 0; i < static_cast<DWORD>(ft); i++)
     {
         s.append(" ");
     }
@@ -141,12 +141,12 @@ std::string GenerateFuzzedToken(
     std::string csis[] = { CSI, C1CSI };
     std::string s = CFuzzChance::SelectOne(csis);
 
-    BYTE manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
+    BYTE manipulations = static_cast<BYTE>(CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1));
     for (BYTE i = 0; i < manipulations; i++)
     {
         CFuzzType<std::string> ft(map, cmap, std::string(""));
         s += GenerateTokenLowProbability();
-        s += (std::string)ft;
+        s += static_cast<std::string>(ft);
         s += GenerateTokenLowProbability();
         s += (i + 1 == manipulations) ? "" : ";";
         s += GenerateTokenLowProbability();
@@ -163,12 +163,12 @@ std::string GenerateFuzzedOscToken(
     __in DWORD ctokens)
 {
     std::string s(OSC);
-    BYTE manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
+    BYTE manipulations = static_cast<BYTE>(CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1));
     for (BYTE i = 0; i < manipulations; i++)
     {
         CFuzzType<std::string> ft(map, cmap, std::string(""));
         s += GenerateTokenLowProbability();
-        s += (std::string)ft;
+        s += static_cast<std::string>(ft);
         s += GenerateTokenLowProbability();
         s += (i + 1 == manipulations) ? "" : ";";
         s += GenerateTokenLowProbability();

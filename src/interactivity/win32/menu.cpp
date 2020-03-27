@@ -266,7 +266,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     if (fLoadedDll)
     {
-        APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress((HMODULE)hLibrary, "CPlApplet");
+        APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress(static_cast<HMODULE>(hLibrary), "CPlApplet");
         if (pfnCplApplet != nullptr)
         {
             (*pfnCplApplet)(hwnd, CPL_INIT, 0, 0);
@@ -274,7 +274,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
             (*pfnCplApplet)(hwnd, CPL_EXIT, 0, 0);
         }
 
-        LOG_IF_WIN32_BOOL_FALSE(FreeLibrary((HMODULE)hLibrary));
+        LOG_IF_WIN32_BOOL_FALSE(FreeLibrary(static_cast<HMODULE>(hLibrary)));
     }
 
     LockConsole();

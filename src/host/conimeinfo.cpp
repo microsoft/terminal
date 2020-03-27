@@ -337,7 +337,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // The end is the smaller of the remaining number of cells or the amount of line cells we can write before
     // hitting the right edge of the viewport
-    auto lineEnd = lineBegin + std::min(size, (ptrdiff_t)lineWidth);
+    auto lineEnd = lineBegin + std::min(size, static_cast<ptrdiff_t>(lineWidth));
 
     // We must attempt to compensate for ending on a leading byte. We can't split a full-width character across lines.
     // As such, if the last item is a leading byte, back the end up by one.

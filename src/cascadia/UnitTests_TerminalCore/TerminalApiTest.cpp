@@ -95,7 +95,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
             SetEvent(baton.done);
             return 0;
         },
-        (LPVOID)&baton,
+        static_cast<LPVOID>(&baton),
         0,
         nullptr);
 

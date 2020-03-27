@@ -151,7 +151,7 @@ DWORD WINAPI RenderThread::s_ThreadProc(_In_ LPVOID lpParameter)
     }
     else
     {
-        return (DWORD)E_INVALIDARG;
+        return static_cast<DWORD>(E_INVALIDARG);
     }
 }
 

@@ -321,7 +321,7 @@ namespace fuzz
                 // Performance optimization: 95% of the time the buffer returned from eval will not be reallocated
                 // and thus will still be pointing at pszReallocTemp.  In this case, it is not necessary to duplicate
                 // the string a second time, just transfer ownership to the calling function.
-                if ((LPSTR)eval == pszReallocTemp)
+                if (static_cast<LPSTR>(eval) == pszReallocTemp)
                 {
                     pszRealloc = pszReallocTemp;
                 }
@@ -468,7 +468,7 @@ namespace fuzz
         while (token)
         {
             CFuzzType<DWORD> repeat(FUZZ_MAP(repeatMap), 1);
-            for (DWORD i = 0; i < (DWORD)repeat; i++)
+            for (DWORD i = 0; i < static_cast<DWORD>(repeat); i++)
             {
                 sFuzzed += token;
                 sFuzzed += " ";

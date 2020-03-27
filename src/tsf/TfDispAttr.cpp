@@ -118,7 +118,7 @@ CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
 
                 FAIL_FAST_IF(!(tfPropVal.varValue.vt == VT_I4)); // expecting GUIDATOMs
 
-                TfGuidAtom gaVal = (TfGuidAtom)tfPropVal.varValue.lVal;
+                TfGuidAtom gaVal = static_cast<TfGuidAtom>(tfPropVal.varValue.lVal);
 
                 GUID guid;
                 pcat->GetGUID(gaVal, &guid);

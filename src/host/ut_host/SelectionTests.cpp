@@ -71,7 +71,7 @@ class SelectionTests
                 // ensure each rectangle is exactly the width requested (block selection)
                 const SMALL_RECT* const psrRect = &selectionRects[iRect];
 
-                const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
+                const short sRectangleLineNumber = static_cast<short>(iRect) + m_pSelection->_srSelectionRect.Top;
 
                 VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
                 VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
@@ -170,7 +170,7 @@ class SelectionTests
                     // ensure each rectangle is exactly the width requested (block selection)
                     const SMALL_RECT* const psrRect = &selectionRects[iRect];
 
-                    const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
+                    const short sRectangleLineNumber = static_cast<short>(iRect) + m_pSelection->_srSelectionRect.Top;
 
                     VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
                     VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
@@ -495,7 +495,7 @@ class SelectionInputTests
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
         COORD coordFinalPos;
 
-        const short cCharsToAdjust = ((short)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
+        const short cCharsToAdjust = (static_cast<short>(readData.VisibleCharCount()) - 1); // then -1 to be on the last piece of text, not past it
 
         coordFinalPos.X = (readData.OriginalCursorPosition().X + cCharsToAdjust) % sRowWidth;
         coordFinalPos.Y = readData.OriginalCursorPosition().Y + ((readData.OriginalCursorPosition().X + cCharsToAdjust) / sRowWidth);

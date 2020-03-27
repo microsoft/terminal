@@ -97,7 +97,7 @@ WORD WinToVTColor(int winColor, bool isForeground)
 
 WORD MakeAttribute(int fg, int bg)
 {
-    return (WORD)((bg << 4) | (fg));
+    return static_cast<WORD>((bg << 4) | (fg));
 }
 
 // Takes a windows 16 color table index, and returns the equivalent xterm table index

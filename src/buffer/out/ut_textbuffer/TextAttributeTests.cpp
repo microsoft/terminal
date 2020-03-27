@@ -60,7 +60,7 @@ void TextAttributeTests::TestRoundtripLegacy()
     WORD expectedLegacy = FOREGROUND_BLUE | BACKGROUND_RED;
     WORD bgOnly = expectedLegacy & BG_ATTRS;
     WORD bgShifted = bgOnly >> 4;
-    BYTE bgByte = (BYTE)(bgShifted);
+    BYTE bgByte = static_cast<BYTE>(bgShifted);
 
     VERIFY_ARE_EQUAL(FOREGROUND_RED, bgByte);
 

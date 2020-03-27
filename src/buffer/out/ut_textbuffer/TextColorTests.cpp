@@ -81,7 +81,7 @@ void TextColorTests::TestDefaultColor()
 
 void TextColorTests::TestDarkIndexColor()
 {
-    TextColor indexColor((BYTE)(7));
+    TextColor indexColor(static_cast<BYTE>(7));
 
     VERIFY_IS_FALSE(indexColor.IsDefault());
     VERIFY_IS_TRUE(indexColor.IsLegacy());
@@ -104,7 +104,7 @@ void TextColorTests::TestDarkIndexColor()
 
 void TextColorTests::TestBrightIndexColor()
 {
-    TextColor indexColor((BYTE)(15));
+    TextColor indexColor(static_cast<BYTE>(15));
 
     VERIFY_IS_FALSE(indexColor.IsDefault());
     VERIFY_IS_TRUE(indexColor.IsLegacy());

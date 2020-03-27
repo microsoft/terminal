@@ -207,38 +207,38 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
     switch (Item)
     {
     case IDD_SCRBUF_WIDTH:
-        gpStateInfo->ScreenBufferSize.X = (SHORT)Value;
+        gpStateInfo->ScreenBufferSize.X = static_cast<SHORT>(Value);
 
         // If we're in V2 mode with wrap text on OR if the window is larger than the buffer, adjust the window to match.
         if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->WindowSize.X > Value)
         {
-            gpStateInfo->WindowSize.X = (SHORT)Value;
+            gpStateInfo->WindowSize.X = static_cast<SHORT>(Value);
             UpdateItem(hDlg, IDD_WINDOW_WIDTH, Value);
         }
         break;
     case IDD_SCRBUF_HEIGHT:
-        gpStateInfo->ScreenBufferSize.Y = (SHORT)Value;
+        gpStateInfo->ScreenBufferSize.Y = static_cast<SHORT>(Value);
         if (gpStateInfo->WindowSize.Y > Value)
         {
-            gpStateInfo->WindowSize.Y = (SHORT)Value;
+            gpStateInfo->WindowSize.Y = static_cast<SHORT>(Value);
             UpdateItem(hDlg, IDD_WINDOW_HEIGHT, Value);
         }
         break;
     case IDD_WINDOW_WIDTH:
-        gpStateInfo->WindowSize.X = (SHORT)Value;
+        gpStateInfo->WindowSize.X = static_cast<SHORT>(Value);
 
         // If we're in V2 mode with wrap text on OR if the buffer is smaller than the window, adjust the buffer to match.
         if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->ScreenBufferSize.X < Value)
         {
-            gpStateInfo->ScreenBufferSize.X = (SHORT)Value;
+            gpStateInfo->ScreenBufferSize.X = static_cast<SHORT>(Value);
             UpdateItem(hDlg, IDD_SCRBUF_WIDTH, Value);
         }
         break;
     case IDD_WINDOW_HEIGHT:
-        gpStateInfo->WindowSize.Y = (SHORT)Value;
+        gpStateInfo->WindowSize.Y = static_cast<SHORT>(Value);
         if (gpStateInfo->ScreenBufferSize.Y < Value)
         {
-            gpStateInfo->ScreenBufferSize.Y = (SHORT)Value;
+            gpStateInfo->ScreenBufferSize.Y = static_cast<SHORT>(Value);
             UpdateItem(hDlg, IDD_SCRBUF_HEIGHT, Value);
         }
         break;
@@ -273,7 +273,7 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
     case IDD_COLOR_SCREEN_BKGND:
         gpStateInfo->ScreenAttributes =
             (gpStateInfo->ScreenAttributes & 0x0F) |
-            (WORD)(Value << 4);
+            static_cast<WORD>(Value << 4);
         break;
     case IDD_COLOR_POPUP_TEXT:
         gpStateInfo->PopupAttributes =
@@ -283,7 +283,7 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
     case IDD_COLOR_POPUP_BKGND:
         gpStateInfo->PopupAttributes =
             (gpStateInfo->PopupAttributes & 0x0F) |
-            (WORD)(Value << 4);
+            static_cast<WORD>(Value << 4);
         break;
     case IDD_COLOR_1:
     case IDD_COLOR_2:
@@ -402,8 +402,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
-                int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
-                int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
+                int const cchSystemRoot = static_cast<int>(cbSystemRoot / sizeof(WCHAR));
+                int const cchConsoleTitle = static_cast<int>(cbConsoleTitle / sizeof(WCHAR));
                 cbConsoleTitle += sizeof(WCHAR); // account for nullptr terminator
 
                 if (fUnexpand &&
@@ -422,7 +422,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
 
                 LPWSTR TranslatedConsoleTitle;
                 // This has to be a HeapAlloc, because it gets HeapFree'd later
-                Tmp = TranslatedConsoleTitle = (LPWSTR)HeapAlloc(GetProcessHeap(), 0, (cchSystemRoot + cchConsoleTitle) * sizeof(WCHAR));
+                Tmp = TranslatedConsoleTitle = static_cast<LPWSTR>(HeapAlloc(GetProcessHeap(), 0, (cchSystemRoot + cchConsoleTitle) * sizeof(WCHAR)));
 
                 if (TranslatedConsoleTitle == nullptr)
                 {
@@ -438,7 +438,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
                     if (fSubstitute && *pwszConsoleTitle == '\\')
                     {
 #pragma prefast(suppress : 26019, "Console title must contain system root if this path was followed.")
-                        *TranslatedConsoleTitle++ = (WCHAR)'_';
+                        *TranslatedConsoleTitle++ = static_cast<WCHAR>('_');
                     }
                     else
                     {
@@ -714,7 +714,7 @@ void RegisterClasses(HINSTANCE hModule)
 
     wc.lpszClassName = TEXT("WOAFontPreview");
     wc.lpfnWndProc = FontPreviewWndProc;
-    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     wc.style = 0;
     RegisterClass(&wc);
 }

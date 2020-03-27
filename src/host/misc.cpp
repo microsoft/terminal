@@ -172,7 +172,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 case UNICODE_TAB:
                 {
                     size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                    sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
+                    sOriginalXPosition = static_cast<SHORT>(sOriginalXPosition + TabSize);
                     if (cBytes < TabSize)
                         return TRUE;
                     cBytes -= TabSize;

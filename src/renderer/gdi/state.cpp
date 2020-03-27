@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - An instance of a Renderer.
 GdiEngine::GdiEngine() :
-    _hwndTargetWindow((HWND)INVALID_HANDLE_VALUE),
+    _hwndTargetWindow(static_cast<HWND>(INVALID_HANDLE_VALUE)),
 #if DBG
     _debugWindow((HWND)INVALID_HANDLE_VALUE),
 #endif
@@ -30,7 +30,7 @@ GdiEngine::GdiEngine() :
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
     _fPaintStarted(false),
-    _hfont((HFONT)INVALID_HANDLE_VALUE)
+    _hfont(static_cast<HFONT>(INVALID_HANDLE_VALUE))
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -341,7 +341,7 @@ GdiEngine::~GdiEngine()
         // We do this because, for instance, if we ask GDI for an 8x12 OEM_FIXED_FONT,
         // it may very well decide to choose Courier New instead of the Terminal raster.
 #pragma prefast(suppress : 38037, "raster fonts get special handling, we need to get it this way")
-        hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        hFont.reset(static_cast<HFONT>(GetStockObject(OEM_FIXED_FONT)));
     }
     else
     {
@@ -381,14 +381,14 @@ GdiEngine::~GdiEngine()
         else
         {
             CHARSETINFO csi;
-            if (!TranslateCharsetInfo((DWORD*)IntToPtr(FontDesired.GetCodePage()), &csi, TCI_SRCCODEPAGE))
+            if (!TranslateCharsetInfo(static_cast<DWORD*>(IntToPtr(FontDesired.GetCodePage())), &csi, TCI_SRCCODEPAGE))
             {
                 // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
                 // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
                 csi.ciCharset = FontDesired.IsTrueTypeFont() ? ANSI_CHARSET : OEM_CHARSET;
             }
 
-            lf.lfCharSet = (BYTE)csi.ciCharset;
+            lf.lfCharSet = static_cast<BYTE>(csi.ciCharset);
         }
 
         lf.lfQuality = DRAFT_QUALITY;
@@ -453,7 +453,7 @@ GdiEngine::~GdiEngine()
         }
         else if (coordFontRequested.X == 0)
         {
-            coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
+            coordFontRequested.X = static_cast<SHORT>(s_ShrinkByDpi(coordFont.X, iDpi));
         }
 
         Font.SetFromEngine(currentFaceName,

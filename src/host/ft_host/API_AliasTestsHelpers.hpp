@@ -97,7 +97,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         VERIFY_FAIL(L"Unknown type.");
     }
 
-    DWORD const cbExpectedTargetString = (DWORD)TLEN(ptszExpectedTargetGiven) * sizeof(TCH);
+    DWORD const cbExpectedTargetString = static_cast<DWORD>(TLEN(ptszExpectedTargetGiven)) * sizeof(TCH);
 
     switch (dwTarget)
     {

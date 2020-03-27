@@ -81,7 +81,7 @@ Notes:
             }
             else
             {
-                bAttr = (BYTE)da.bAttr;
+                bAttr = static_cast<BYTE>(da.bAttr);
             }
         }
         encodedAttrs.emplace_back(bAttr);

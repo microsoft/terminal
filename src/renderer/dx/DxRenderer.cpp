@@ -225,7 +225,7 @@ _CompileShader(
 HRESULT DxEngine::_SetupTerminalEffects()
 {
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), static_cast<LPVOID*>(&swapBuffer)));
 
     // Setup render target.
     RETURN_IF_FAILED(_d3dDevice->CreateRenderTargetView(swapBuffer.Get(), nullptr, &_renderTargetView));

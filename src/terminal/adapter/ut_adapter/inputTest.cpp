@@ -176,7 +176,7 @@ void InputTest::TerminalInputTests()
 // from the cast.
 #pragma warning(push)
 #pragma warning(disable : 4242)
-        irTest.Event.KeyEvent.uChar.UnicodeChar = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
+        irTest.Event.KeyEvent.uChar.UnicodeChar = static_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
 #pragma warning(pop)
 
         // Set up expected result

@@ -367,7 +367,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
 {
     // DBCS is very dependent on knowing the byte length in the original codepage of the input text.
     // Save off the original length of the string so we know what its A length was.
-    SHORT const cTestString = (SHORT)strlen(pszTestString);
+    SHORT const cTestString = static_cast<SHORT>(strlen(pszTestString));
 
     // If we're in Unicode mode, we will need to translate the test string to Unicode before passing into the console
     PWSTR pwszTestString = nullptr;
@@ -387,7 +387,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     SHORT cChars = 0;
     if (fIsUnicode)
     {
-        cChars = (SHORT)wcslen(pwszTestString);
+        cChars = static_cast<SHORT>(wcslen(pwszTestString));
     }
     else
     {
@@ -551,7 +551,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     else if (fUseDwordWritten)
     {
         Log::Comment(NoThrowString().Format(L"Chars Written: %d", dwWritten));
-        VERIFY_ARE_EQUAL((DWORD)cChars, dwWritten);
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(cChars), dwWritten);
     }
 }
 
@@ -1850,7 +1850,7 @@ void DbcsWriteRead::TestRunner(_In_ unsigned int const uiCodePage,
     CHAR_INFO* pciActual = new CHAR_INFO[cTestData];
     VERIFY_IS_NOT_NULL(pciActual);
     ZeroMemory(pciActual, sizeof(CHAR_INFO) * cTestData);
-    DbcsWriteRead::RetrieveOutput(hOut, ReadMode, fReadWithUnicode, pciActual, (SHORT)cTestData);
+    DbcsWriteRead::RetrieveOutput(hOut, ReadMode, fReadWithUnicode, pciActual, static_cast<SHORT>(cTestData));
 
     // Loop through and verify that our expected array matches what was actually returned by the given API.
     DbcsWriteRead::Verify(pciExpected, cExpected, pciActual);
@@ -1870,14 +1870,14 @@ void DbcsTests::TestDbcsWriteRead()
 
     int iWriteMode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"WriteMode", iWriteMode));
-    DbcsWriteRead::WriteMode WriteMode = (DbcsWriteRead::WriteMode)iWriteMode;
+    DbcsWriteRead::WriteMode WriteMode = static_cast<DbcsWriteRead::WriteMode>(iWriteMode);
 
     bool fWriteInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fWriteInUnicode", fWriteInUnicode));
 
     int iReadMode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"ReadMode", iReadMode));
-    DbcsWriteRead::ReadMode ReadMode = (DbcsWriteRead::ReadMode)iReadMode;
+    DbcsWriteRead::ReadMode ReadMode = static_cast<DbcsWriteRead::ReadMode>(iReadMode);
 
     bool fReadInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fReadInUnicode", fReadInUnicode));
@@ -2284,7 +2284,7 @@ void WriteStringToInput(HANDLE hIn, PCWSTR pwszString)
     }
 
     DWORD dwWritten;
-    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputW(hIn, irString, (DWORD)cRecords, &dwWritten));
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputW(hIn, irString, static_cast<DWORD>(cRecords), &dwWritten));
 
     VERIFY_ARE_EQUAL(cRecords, dwWritten, L"We should have written the number of records that were sent in by our buffer.");
 
@@ -2297,7 +2297,7 @@ void ReadStringWithGetCh(PCSTR pszExpectedText)
 
     for (size_t i = 0; i < cchString; i++)
     {
-        if (!VERIFY_ARE_EQUAL((BYTE)pszExpectedText[i], _getch()))
+        if (!VERIFY_ARE_EQUAL(static_cast<BYTE>(pszExpectedText[i]), _getch()))
         {
             break;
         }
@@ -2321,15 +2321,15 @@ void ReadStringWithReadConsoleInputAHelper(HANDLE hIn, PCSTR pszExpectedText, si
     while (cchRead < cchExpectedText)
     {
         // expected read is either the size of the buffer or the number of characters remaining, whichever is smaller.
-        DWORD const dwReadExpected = (DWORD)std::min(cbBuffer, cchExpectedText - cchRead);
+        DWORD const dwReadExpected = static_cast<DWORD>(std::min(cbBuffer, cchExpectedText - cchRead));
 
         DWORD dwRead;
-        if (!VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputA(hIn, irRead, (DWORD)cbBuffer, &dwRead), L"Attempt to read input into buffer."))
+        if (!VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputA(hIn, irRead, static_cast<DWORD>(cbBuffer), &dwRead), L"Attempt to read input into buffer."))
         {
             break;
         }
 
-        VERIFY_IS_GREATER_THAN_OR_EQUAL(dwRead, (DWORD)0, L"Verify we read non-negative bytes.");
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(dwRead, static_cast<DWORD>(0), L"Verify we read non-negative bytes.");
 
         for (size_t i = 0; i < dwRead; i++)
         {
@@ -2338,7 +2338,7 @@ void ReadStringWithReadConsoleInputAHelper(HANDLE hIn, PCSTR pszExpectedText, si
             if (irRead[i].EventType == KEY_EVENT &&
                 irRead[i].Event.KeyEvent.bKeyDown == TRUE)
             {
-                if (!VERIFY_ARE_EQUAL((BYTE)pszExpectedText[cchRead], (BYTE)irRead[i].Event.KeyEvent.uChar.AsciiChar))
+                if (!VERIFY_ARE_EQUAL(static_cast<BYTE>(pszExpectedText[cchRead]), static_cast<BYTE>(irRead[i].Event.KeyEvent.uChar.AsciiChar)))
                 {
                     break;
                 }
@@ -2434,14 +2434,14 @@ void DbcsTests::TestDbcsOneByOne()
         if (fIsLeadByte)
         {
             Log::Comment(L"Characters should be empty (space) because we only wrote a lead. It should be held for later.");
-            VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[0]);
-            VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[1]);
+            VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[0]));
+            VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[1]));
         }
         else
         {
             Log::Comment(L"After trailing is written, character should be valid from Chinese plane (not checking exactly, just that it was composed.");
-            VERIFY_IS_LESS_THAN((unsigned char)'\x80', (unsigned char)chReadBack[0]);
-            VERIFY_IS_LESS_THAN((unsigned char)'\x80', (unsigned char)chReadBack[1]);
+            VERIFY_IS_LESS_THAN(static_cast<unsigned char>('\x80'), static_cast<unsigned char>(chReadBack[0]));
+            VERIFY_IS_LESS_THAN(static_cast<unsigned char>('\x80'), static_cast<unsigned char>(chReadBack[1]));
             coordReadPos.X += 2; // advance X for next read back. Move 2 positions because it's a wide char.
         }
     }
@@ -2469,42 +2469,42 @@ void DbcsTests::TestDbcsTrailLead()
     DWORD cchTestLength = 0;
 
     Log::Comment(L"1. Write lead byte only.");
-    cchTestLength = (DWORD)strlen(test);
+    cchTestLength = static_cast<DWORD>(strlen(test));
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
     VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
     dwReadOrWritten = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, 2, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
     Log::Comment(L"Verify nothing is written/displayed yet. The read byte should have been consumed/stored but not yet displayed.");
-    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[0]);
-    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[1]);
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[0]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[1]));
 
     Log::Comment(L"2. Write trailing and next lead.");
-    cchTestLength = (DWORD)strlen(test2);
+    cchTestLength = static_cast<DWORD>(strlen(test2));
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test2, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
     VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
     dwReadOrWritten = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, 4, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
     Log::Comment(L"Verify previous lead and the trailing we just wrote formed a character. The final lead should have been consumed/stored and not yet displayed.");
-    VERIFY_ARE_EQUAL((unsigned char)test[0], (unsigned char)chReadBack[0]);
-    VERIFY_ARE_EQUAL((unsigned char)test2[0], (unsigned char)chReadBack[1]);
-    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[2]);
-    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[3]);
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test[0]), static_cast<unsigned char>(chReadBack[0]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test2[0]), static_cast<unsigned char>(chReadBack[1]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[2]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(' '), static_cast<unsigned char>(chReadBack[3]));
 
     Log::Comment(L"3. Write trailing and finish string.");
-    cchTestLength = (DWORD)strlen(test3);
+    cchTestLength = static_cast<DWORD>(strlen(test3));
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test3, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
     VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
     dwReadOrWritten = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, cchReadBack, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
     Log::Comment(L"Verify everything is displayed now that we've finished it off with the final trailing and rest of the string.");
-    VERIFY_ARE_EQUAL((unsigned char)test[0], (unsigned char)chReadBack[0]);
-    VERIFY_ARE_EQUAL((unsigned char)test2[0], (unsigned char)chReadBack[1]);
-    VERIFY_ARE_EQUAL((unsigned char)test2[1], (unsigned char)chReadBack[2]);
-    VERIFY_ARE_EQUAL((unsigned char)test3[0], (unsigned char)chReadBack[3]);
-    VERIFY_ARE_EQUAL((unsigned char)test3[1], (unsigned char)chReadBack[4]);
-    VERIFY_ARE_EQUAL((unsigned char)test3[2], (unsigned char)chReadBack[5]);
-    VERIFY_ARE_EQUAL((unsigned char)test3[3], (unsigned char)chReadBack[6]);
-    VERIFY_ARE_EQUAL((unsigned char)test3[4], (unsigned char)chReadBack[7]);
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test[0]), static_cast<unsigned char>(chReadBack[0]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test2[0]), static_cast<unsigned char>(chReadBack[1]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test2[1]), static_cast<unsigned char>(chReadBack[2]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test3[0]), static_cast<unsigned char>(chReadBack[3]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test3[1]), static_cast<unsigned char>(chReadBack[4]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test3[2]), static_cast<unsigned char>(chReadBack[5]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test3[3]), static_cast<unsigned char>(chReadBack[6]));
+    VERIFY_ARE_EQUAL(static_cast<unsigned char>(test3[4]), static_cast<unsigned char>(chReadBack[7]));
 }
 
 void DbcsTests::TestDbcsStdCoutScenario()
@@ -2523,7 +2523,7 @@ void DbcsTests::TestDbcsStdCoutScenario()
 
     // Prepare structures for readback.
     COORD coordReadPos = { 0 };
-    DWORD const cchReadBack = (DWORD)strlen(test);
+    DWORD const cchReadBack = static_cast<DWORD>(strlen(test));
     wistd::unique_ptr<char[]> const psReadBack = wil::make_unique_failfast<char[]>(cchReadBack + 1);
     DWORD dwRead = 0;
 

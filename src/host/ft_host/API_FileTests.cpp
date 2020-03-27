@@ -110,7 +110,7 @@ void FileTests::TestUtf8WriteFileInvalid()
     // \x80 is an invalid UTF-8 continuation
     // \x40 is the @ symbol which is valid.
     str = "\x80\x40";
-    cbStr = (DWORD)strlen(str);
+    cbStr = static_cast<DWORD>(strlen(str));
     dwWritten = 0;
     dwExpectedWritten = cbStr;
 
@@ -120,7 +120,7 @@ void FileTests::TestUtf8WriteFileInvalid()
     // \x80 is an invalid UTF-8 continuation
     // \x40 is the @ symbol which is valid.
     str = "\x80\x40\x40";
-    cbStr = (DWORD)strlen(str);
+    cbStr = static_cast<DWORD>(strlen(str));
     dwWritten = 0;
     dwExpectedWritten = cbStr;
 
@@ -130,7 +130,7 @@ void FileTests::TestUtf8WriteFileInvalid()
     // \x80 is an invalid UTF-8 continuation
     // \x40 is the @ symbol which is valid.
     str = "\x80\x80\x80\x40";
-    cbStr = (DWORD)strlen(str);
+    cbStr = static_cast<DWORD>(strlen(str));
     dwWritten = 0;
     dwExpectedWritten = cbStr;
 
@@ -147,7 +147,7 @@ void FileTests::TestWriteFileRaw()
     // \xd is carriage return
     // All should be ignored/printed in raw mode.
     PCSTR strTest = "z\x7y\x8z\x9y\xaz\xdy";
-    DWORD const cchTest = (DWORD)strlen(strTest);
+    DWORD const cchTest = static_cast<DWORD>(strlen(strTest));
     String strReadBackExpected(strTest);
 
     HANDLE const hOut = GetStdOutputHandle();
@@ -170,7 +170,7 @@ void FileTests::TestWriteFileRaw()
     csbiexAfter.cbSize = sizeof(csbiexAfter);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Retrieve screen buffer properties after writing.");
 
-    csbiexBefore.dwCursorPosition.X += (SHORT)cchTest;
+    csbiexBefore.dwCursorPosition.X += static_cast<SHORT>(cchTest);
     VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor moved expected number of squares for the write length.");
 
     DWORD const cbReadBackBuffer = cchTest + 2; // +1 so we can read back a "space" that should be after what we wrote. +1 more so this can be null terminated for String class comparison.
@@ -254,9 +254,9 @@ void FileTests::TestWriteFileProcessed()
     // 1. Test bell (\x7)
     {
         pszTest = "z\x7";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "z ";
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write z and a bell. Cursor should move once as bell should have made audible noise (can't really test) and not moved or printed anything.
         WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTest, cchTest);
@@ -272,9 +272,9 @@ void FileTests::TestWriteFileProcessed()
     // 2. Test backspace (\x8)
     {
         pszTest = "yx\x8";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "yx ";
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write two characters and a backspace. Cursor should move only one forward as the backspace should have moved the cursor back one after printing the second character.
         // The backspace character itself is typically non-destructive so it should only affect the cursor, not the buffer contents.
@@ -293,9 +293,9 @@ void FileTests::TestWriteFileProcessed()
         // The tab character will space pad out the buffer to the next multiple-of-8 boundary.
         // NOTE: This is dependent on the previous tests running first.
         pszTest = "\x9";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "     ";
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write tab character. Cursor should move out to the next multiple-of-8 and leave space characters in its wake.
         WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTest, cchTest);
@@ -312,9 +312,9 @@ void FileTests::TestWriteFileProcessed()
     {
         // The line feed character should move us down to the next line.
         pszTest = "\xaQ";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "Q ";
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write line feed character. Cursor should move down a line and then the Q from our string should be printed.
         WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTest, cchTest);
@@ -334,9 +334,9 @@ void FileTests::TestWriteFileProcessed()
     {
         // The carriage return character should move us to the front of the line.
         pszTest = "J\xd";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "QJ "; // J written, then move to beginning of line.
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write text and carriage return character. Cursor should end up at the beginning of this line. The J should have been printed in the line before we moved.
         WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTest, cchTest);
@@ -353,9 +353,9 @@ void FileTests::TestWriteFileProcessed()
     {
         // After the carriage return, try typing on top of the Q with a K
         pszTest = "K";
-        cchTest = (DWORD)strlen(pszTest);
+        cchTest = static_cast<DWORD>(strlen(pszTest));
         pszReadBackExpected = "KJ "; // NOTE: This is based on the previous test(s).
-        cchReadBack = (DWORD)strlen(pszReadBackExpected);
+        cchReadBack = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         // Write text. Cursor should end up on top of the J.
         WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTest, cchTest);
@@ -450,7 +450,7 @@ void FileTests::TestWriteFileVTProcessing()
 
     PCSTR pszTestString = "\x1b"
                           "[14m";
-    DWORD const cchTest = (DWORD)strlen(pszTestString);
+    DWORD const cchTest = static_cast<DWORD>(strlen(pszTestString));
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
     csbiexBefore.cbSize = sizeof(csbiexBefore);
@@ -465,7 +465,7 @@ void FileTests::TestWriteFileVTProcessing()
     if (fProcessedNotPrinted)
     {
         PCSTR pszReadBackExpected = "      ";
-        DWORD const cchReadBackExpected = (DWORD)strlen(pszReadBackExpected);
+        DWORD const cchReadBackExpected = static_cast<DWORD>(strlen(pszReadBackExpected));
 
         VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor didn't move because the VT sequence was processed instead of printed.");
 
@@ -476,7 +476,7 @@ void FileTests::TestWriteFileVTProcessing()
     else
     {
         COORD coordExpected = csbiexBefore.dwCursorPosition;
-        coordExpected.X += (SHORT)cchTest;
+        coordExpected.X += static_cast<SHORT>(cchTest);
         VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved as characters should have been emitted, not consumed.");
 
         wistd::unique_ptr<char[]> pszReadBack;
@@ -605,7 +605,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
     ir[0].Event.KeyEvent.dwControlKeyState = ch < 0x20 ? LEFT_CTRL_PRESSED : 0; // set left_ctrl_pressed for control keys.
     ir[0].Event.KeyEvent.uChar.AsciiChar = ch;
     ir[0].Event.KeyEvent.wVirtualKeyCode = VkKeyScanA(ir[0].Event.KeyEvent.uChar.AsciiChar);
-    ir[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyA(ir[0].Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
+    ir[0].Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyA(ir[0].Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
     ir[0].Event.KeyEvent.wRepeatCount = 1;
     ir[1] = ir[0];
     ir[1].Event.KeyEvent.bKeyDown = FALSE;

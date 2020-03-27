@@ -76,22 +76,22 @@ void FontTests::TestCurrentFontAPIsInvalid()
 
         if (bUseValidOutputHandle)
         {
-            VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
+            VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, static_cast<BOOL>(bMaximumWindow), &cfi));
         }
         else
         {
-            VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
+            VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, static_cast<BOOL>(bMaximumWindow), &cfi));
         }
     }
     else if (strOperation == L"GetEx")
     {
         CONSOLE_FONT_INFOEX cfie = { 0 };
-        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
+        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, static_cast<BOOL>(bMaximumWindow), &cfie));
     }
     else if (strOperation == L"SetEx")
     {
         CONSOLE_FONT_INFOEX cfie = { 0 };
-        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
+        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, static_cast<BOOL>(bMaximumWindow), &cfie));
     }
     else
     {

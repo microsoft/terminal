@@ -751,8 +751,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
 
         COORD NewWindowSize;
-        NewWindowSize.X = (SHORT)(CalcWindowSizeX(Window));
-        NewWindowSize.Y = (SHORT)(CalcWindowSizeY(Window));
+        NewWindowSize.X = static_cast<SHORT>(CalcWindowSizeX(Window));
+        NewWindowSize.Y = static_cast<SHORT>(CalcWindowSizeY(Window));
 
         // see MSFT:17415266
         // If we have a actual head, we care about the maximum size the window can be.

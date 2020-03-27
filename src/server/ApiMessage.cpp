@@ -160,7 +160,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
             IoOperation.Identifier = Descriptor.Identifier;
             IoOperation.Buffer.Offset = State.WriteOffset;
             IoOperation.Buffer.Data = State.OutputBuffer;
-            IoOperation.Buffer.Size = (ULONG)Complete.IoStatus.Information;
+            IoOperation.Buffer.Size = static_cast<ULONG>(Complete.IoStatus.Information);
 
             LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
         }

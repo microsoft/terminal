@@ -70,8 +70,8 @@ void Clipboard::Paste()
         return;
     }
 
-    PWCHAR pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
-    StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
+    PWCHAR pwstr = static_cast<PWCHAR>(GlobalLock(ClipboardDataHandle));
+    StringPaste(pwstr, static_cast<ULONG>(GlobalSize(ClipboardDataHandle)) / sizeof(WCHAR));
 
     // WIP auditing if user is enrolled
     static std::wstring DestinationName = _LoadString(ID_CONSOLE_WIP_DESTINATIONNAME);
@@ -251,7 +251,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     THROW_LAST_ERROR_IF_NULL(globalHandle.get());
 
-    PWSTR pwszClipboard = (PWSTR)GlobalLock(globalHandle.get());
+    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
     THROW_LAST_ERROR_IF_NULL(pwszClipboard);
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
@@ -304,7 +304,7 @@ void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszForm
         wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
         THROW_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleData.get());
+        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
         THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.

@@ -478,7 +478,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
+        winrt::Windows::Foundation::Point point(static_cast<float>(defaultInitialX), static_cast<float>(defaultInitialY));
 
         auto initialX = _settings->GlobalSettings().GetInitialX();
         auto initialY = _settings->GlobalSettings().GetInitialY();

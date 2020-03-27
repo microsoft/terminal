@@ -34,8 +34,8 @@ class Utf8ToWideCharParserTests
         unique_ptr<wchar_t[]> output{ nullptr };
 
         VERIFY_SUCCEEDED(parser.Parse(hello, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)5);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)5);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(5));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(5));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -58,8 +58,8 @@ class Utf8ToWideCharParserTests
         unique_ptr<wchar_t[]> output{ nullptr };
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)6);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(6));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(2));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -84,15 +84,15 @@ class Utf8ToWideCharParserTests
         for (int i = 0; i < 2; ++i)
         {
             VERIFY_SUCCEEDED(parser.Parse(shi + i, count, consumed, output, generated));
-            VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
-            VERIFY_ARE_EQUAL(generated, (unsigned int)0);
+            VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(1));
+            VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(0));
             VERIFY_ARE_EQUAL(output.get(), nullptr);
             count = 1;
         }
 
         VERIFY_SUCCEEDED(parser.Parse(shi + 2, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(1));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(1));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -116,8 +116,8 @@ class Utf8ToWideCharParserTests
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
         // check that we got the first wide char back
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(4));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(1));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -132,8 +132,8 @@ class Utf8ToWideCharParserTests
         generated = 0;
         output.reset(nullptr);
         VERIFY_SUCCEEDED(parser.Parse(sushi + 4, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)0);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(1));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(0));
         VERIFY_ARE_EQUAL(output.get(), nullptr);
 
         // add last byte
@@ -142,8 +142,8 @@ class Utf8ToWideCharParserTests
         generated = 0;
         output.reset(nullptr);
         VERIFY_SUCCEEDED(parser.Parse(sushi + 5, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(1));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(1));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -189,8 +189,8 @@ class Utf8ToWideCharParserTests
         auto parser = Utf8ToWideCharParser{ utf8CodePage };
 
         VERIFY_SUCCEEDED(parser.Parse(doomoArigatoo, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(4));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(1));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -205,8 +205,8 @@ class Utf8ToWideCharParserTests
         generated = 0;
         output.reset(nullptr);
         VERIFY_SUCCEEDED(parser.Parse(doomoArigatoo + 4, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)16);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)5);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(16));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(5));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -221,8 +221,8 @@ class Utf8ToWideCharParserTests
         generated = 0;
         output.reset(nullptr);
         VERIFY_SUCCEEDED(parser.Parse(doomoArigatoo + 20, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(4));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(2));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -253,8 +253,8 @@ class Utf8ToWideCharParserTests
         auto parser = Utf8ToWideCharParser{ utf8CodePage };
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
-        VERIFY_ARE_EQUAL(consumed, (unsigned int)9);
-        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
+        VERIFY_ARE_EQUAL(consumed, static_cast<unsigned int>(9));
+        VERIFY_ARE_EQUAL(generated, static_cast<unsigned int>(2));
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -333,7 +333,7 @@ class Utf8ToWideCharParserTests
         // change to a different codepage, ensure parser is reset
         parser.SetCodePage(USACodePage);
         VERIFY_ARE_EQUAL(parser._currentState, Utf8ToWideCharParser::_State::Ready);
-        VERIFY_ARE_EQUAL(parser._bytesStored, (unsigned int)0);
+        VERIFY_ARE_EQUAL(parser._bytesStored, static_cast<unsigned int>(0));
     }
 
     TEST_METHOD(_IsLeadByteTest)
@@ -390,16 +390,16 @@ class Utf8ToWideCharParserTests
     {
         Log::Comment(L"Testing that _Utf8SequenceSize correctly counts the number of MSB 1's");
         auto parser = Utf8ToWideCharParser{ utf8CodePage };
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x00), (unsigned int)0);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x80), (unsigned int)1);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xC2), (unsigned int)2);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xE3), (unsigned int)3);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF0), (unsigned int)4);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF3), (unsigned int)4);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF8), (unsigned int)5);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFC), (unsigned int)6);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFD), (unsigned int)6);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFE), (unsigned int)7);
-        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFF), (unsigned int)8);
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x00), static_cast<unsigned int>(0));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x80), static_cast<unsigned int>(1));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xC2), static_cast<unsigned int>(2));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xE3), static_cast<unsigned int>(3));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF0), static_cast<unsigned int>(4));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF3), static_cast<unsigned int>(4));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xF8), static_cast<unsigned int>(5));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFC), static_cast<unsigned int>(6));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFD), static_cast<unsigned int>(6));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFE), static_cast<unsigned int>(7));
+        VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFF), static_cast<unsigned int>(8));
     }
 };

@@ -38,7 +38,7 @@ void StoreKeyInfo(_In_ PMSG msg)
     {
         ConsoleKeyInfo[i].hWnd = msg->hwnd;
         ConsoleKeyInfo[i].wVirtualKeyCode = LOWORD(msg->wParam);
-        ConsoleKeyInfo[i].wVirtualScanCode = (BYTE)(HIWORD(msg->lParam));
+        ConsoleKeyInfo[i].wVirtualScanCode = static_cast<BYTE>((HIWORD(msg->lParam)));
     }
     else
     {
@@ -69,7 +69,7 @@ void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD
     }
     else
     {
-        *pwVirtualKeyCode = (WORD)MapVirtualKeyW(*pwVirtualScanCode, 3);
+        *pwVirtualKeyCode = static_cast<WORD>(MapVirtualKeyW(*pwVirtualScanCode, 3));
     }
 }
 

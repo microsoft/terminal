@@ -147,8 +147,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     LockConsole();
 
-    DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
-    DWORD const dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
+    DWORD const dwProcessId = static_cast<DWORD>(pReceiveMsg->Descriptor.Process);
+    DWORD const dwThreadId = static_cast<DWORD>(pReceiveMsg->Descriptor.Object);
 
     CONSOLE_API_CONNECTINFO Cac;
     NTSTATUS Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
@@ -191,7 +191,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     try
     {
-        CommandHistory::s_Allocate({ Cac.AppName, Cac.AppNameLength / sizeof(wchar_t) }, (HANDLE)ProcessData);
+        CommandHistory::s_Allocate({ Cac.AppName, Cac.AppNameLength / sizeof(wchar_t) }, static_cast<HANDLE>(ProcessData));
     }
     catch (...)
     {
@@ -234,7 +234,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
-        CommandHistory::s_Free((HANDLE)ProcessData);
+        CommandHistory::s_Free(static_cast<HANDLE>(ProcessData));
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
@@ -247,7 +247,7 @@ Error:
 
     if (ProcessData != nullptr)
     {
-        CommandHistory::s_Free((HANDLE)ProcessData);
+        CommandHistory::s_Free(static_cast<HANDLE>(ProcessData));
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 

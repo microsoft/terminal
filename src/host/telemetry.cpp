@@ -342,8 +342,8 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 
                     // Packed arrays start with a UINT16 value indicating the number of elements in the array.
                     BYTE* pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
-                    pbFileNames[0] = (BYTE)_uiNumberProcessFileNames;
-                    pbFileNames[1] = (BYTE)(_uiNumberProcessFileNames >> 8);
+                    pbFileNames[0] = static_cast<BYTE>(_uiNumberProcessFileNames);
+                    pbFileNames[1] = static_cast<BYTE>(_uiNumberProcessFileNames >> 8);
                 }
             }
         }
@@ -419,7 +419,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
                                     TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
                                     TraceLoggingBool(gci.GetWrapText(), "WrapText"),
-                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetColorTableSize(), "ColorTable"),
+                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), static_cast<UINT16>(gci.GetColorTableSize()), "ColorTable"),
                                     TraceLoggingValue(gci.CP, "CodePageInput"),
                                     TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
                                     TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),

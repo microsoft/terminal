@@ -89,7 +89,7 @@ class KeyPressTests
         expectedRecord.Event.KeyEvent.dwControlKeyState |= (GetKeyState(VK_NUMLOCK) & KEY_STATE_TOGGLED) ? NUMLOCK_ON : 0;
         expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
         expectedRecord.Event.KeyEvent.wVirtualKeyCode = VK_APPS;
-        expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
+        expectedRecord.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(scanCode);
 
         // get the input record back and test it
         INPUT_RECORD record;
@@ -384,7 +384,7 @@ void KeyPressTests::TestAltGr()
     expectedRecord.Event.KeyEvent.dwControlKeyState = RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED;
     expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
     expectedRecord.Event.KeyEvent.wVirtualKeyCode = L'Q';
-    expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
+    expectedRecord.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(scanCode);
 
     // read input records and compare
     const int maxRecordLookup = 20; // some arbitrary value to grab some records

@@ -153,7 +153,7 @@ class AttrRowTests
 
             VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
             VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), attr);
-            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), static_cast<unsigned int>(_sDefaultLength));
         }
     }
 
@@ -246,7 +246,7 @@ class AttrRowTests
 
             for (size_t i = 1; i < chain.size(); i++)
             {
-                str.AppendFormat(L"->%s", (const wchar_t*)(LogRunElement(chain[i])));
+                str.AppendFormat(L"->%s", static_cast<const wchar_t*>(LogRunElement(chain[i])));
             }
         }
 
@@ -344,7 +344,7 @@ class AttrRowTests
         VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.data(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
-        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns({ insertRow.data(), insertRow.size() }, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
+        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns({ insertRow.data(), insertRow.size() }, uiStartPos, uiEndPos, static_cast<UINT>(originalRow._cchRowWidth)));
 
         // Compare and ensure that the expected and actual match.
         VERIFY_ARE_EQUAL(cPackedRun, originalRow._list.size(), L"Ensure that number of array elements required for RLE are the same.");
@@ -643,10 +643,10 @@ class AttrRowTests
         VERIFY_ARE_EQUAL(pSingle->_list.size(), 2u);
 
         VERIFY_ARE_EQUAL(pSingle->_list[0].GetAttributes(), _DefaultAttr);
-        VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), (unsigned int)(_sDefaultLength - (_sDefaultLength - iTestIndex)));
+        VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), static_cast<unsigned int>(_sDefaultLength -(_sDefaultLength - iTestIndex)));
 
         VERIFY_ARE_EQUAL(pSingle->_list[1].GetAttributes(), TestAttr);
-        VERIFY_ARE_EQUAL(pSingle->_list[1].GetLength(), (unsigned int)(_sDefaultLength - iTestIndex));
+        VERIFY_ARE_EQUAL(pSingle->_list[1].GetLength(), static_cast<unsigned int>(_sDefaultLength - iTestIndex));
 
         Log::Comment(L"SetAttrToEnd for existing chain of multiple colors.");
         pChain->SetAttrToEnd(iTestIndex, TestAttr);
@@ -656,19 +656,19 @@ class AttrRowTests
 
         // Verify chain colors and lengths
         VERIFY_ARE_EQUAL(TextAttribute(0), pChain->_list[0].GetAttributes());
-        VERIFY_ARE_EQUAL(pChain->_list[0].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(pChain->_list[0].GetLength(), static_cast<unsigned int>(13));
 
         VERIFY_ARE_EQUAL(TextAttribute(1), pChain->_list[1].GetAttributes());
-        VERIFY_ARE_EQUAL(pChain->_list[1].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(pChain->_list[1].GetLength(), static_cast<unsigned int>(13));
 
         VERIFY_ARE_EQUAL(TextAttribute(2), pChain->_list[2].GetAttributes());
-        VERIFY_ARE_EQUAL(pChain->_list[2].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(pChain->_list[2].GetLength(), static_cast<unsigned int>(13));
 
         VERIFY_ARE_EQUAL(TextAttribute(3), pChain->_list[3].GetAttributes());
-        VERIFY_ARE_EQUAL(pChain->_list[3].GetLength(), (unsigned int)11);
+        VERIFY_ARE_EQUAL(pChain->_list[3].GetLength(), static_cast<unsigned int>(11));
 
         VERIFY_ARE_EQUAL(TestAttr, pChain->_list[4].GetAttributes());
-        VERIFY_ARE_EQUAL(pChain->_list[4].GetLength(), (unsigned int)30);
+        VERIFY_ARE_EQUAL(pChain->_list[4].GetLength(), static_cast<unsigned int>(30));
 
         Log::Comment(L"SECOND: Set index to 0 to test replacing anything with a single");
 
@@ -687,7 +687,7 @@ class AttrRowTests
             VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), TestAttr);
 
             // and its length should be the length of the whole string
-            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), static_cast<unsigned int>(_sDefaultLength));
         }
     }
 
@@ -701,7 +701,7 @@ class AttrRowTests
 
             const size_t Result = pUnderTest->_cchRowWidth;
 
-            VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);
+            VERIFY_ARE_EQUAL(static_cast<short>(Result), _sDefaultLength);
         }
     }
 

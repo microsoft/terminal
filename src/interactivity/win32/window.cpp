@@ -56,9 +56,9 @@ Window::Window() :
     _hWnd(nullptr),
     _pUiaProvider(nullptr)
 {
-    ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
-    ZeroMemory((void*)&_rcNonFullscreenWindowSize, sizeof(_rcNonFullscreenWindowSize));
-    ZeroMemory((void*)&_rcFullscreenWindowSize, sizeof(_rcFullscreenWindowSize));
+    ZeroMemory(static_cast<void*>(&_rcClientLast), sizeof(_rcClientLast));
+    ZeroMemory(static_cast<void*>(&_rcNonFullscreenWindowSize), sizeof(_rcNonFullscreenWindowSize));
+    ZeroMemory(static_cast<void*>(&_rcFullscreenWindowSize), sizeof(_rcFullscreenWindowSize));
 }
 
 Window::~Window()
@@ -167,8 +167,8 @@ void Window::_UpdateSystemMetrics() const
 
     Scrolling::s_UpdateSystemMetrics();
 
-    g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
-    g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
+    g.sVerticalScrollSize = static_cast<SHORT>(dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi));
+    g.sHorizontalScrollSize = static_cast<SHORT>(dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi));
 
     gci.GetCursorBlinker().UpdateSystemMetrics();
 
@@ -832,7 +832,7 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
     case SB_BOTTOM:
     {
-        NewOrigin.X = (WORD)(sScreenBufferSizeX - viewport.Width());
+        NewOrigin.X = static_cast<WORD>(sScreenBufferSizeX - viewport.Width());
         break;
     }
 
@@ -955,13 +955,13 @@ void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
     // If the window is smaller than the buffer in width, add space at the bottom for a horizontal scroll bar
     if (coordWindowInChars.X < coordBufferSize.X)
     {
-        rectProposed.bottom += (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, iDpi);
+        rectProposed.bottom += static_cast<SHORT>(ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, iDpi));
     }
 
     // If the window is smaller than the buffer in height, add space at the right for a vertical scroll bar
     if (coordWindowInChars.Y < coordBufferSize.Y)
     {
-        rectProposed.right += (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, iDpi);
+        rectProposed.right += static_cast<SHORT>(ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, iDpi));
     }
 
     // Apply the calculated sizes to the existing window pointer
@@ -1062,7 +1062,7 @@ void Window::ChangeWindowOpacity(const short sOpacityDelta)
     }
 
     //Opacity bool is set to true when keyboard or mouse short cut used.
-    SetWindowOpacity((BYTE)iAlpha); // cast to fit is guaranteed to be within byte bounds by the checks above.
+    SetWindowOpacity(static_cast<BYTE>(iAlpha)); // cast to fit is guaranteed to be within byte bounds by the checks above.
     ApplyWindowOpacity();
 }
 

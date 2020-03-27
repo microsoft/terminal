@@ -75,7 +75,7 @@ Settings::Settings() :
     _dwFontSize.X = 0;
     _dwFontSize.Y = 16;
 
-    ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
+    ZeroMemory(static_cast<void*>(&_FaceName), sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
     _CursorColor = Cursor::s_InvertCursorColor;
@@ -207,8 +207,8 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _wPopupFillAttribute = pStateInfo->PopupAttributes;
     _dwScreenBufferSize = pStateInfo->ScreenBufferSize;
     _dwWindowSize = pStateInfo->WindowSize;
-    _dwWindowOrigin.X = (SHORT)pStateInfo->WindowPosX;
-    _dwWindowOrigin.Y = (SHORT)pStateInfo->WindowPosY;
+    _dwWindowOrigin.X = static_cast<SHORT>(pStateInfo->WindowPosX);
+    _dwWindowOrigin.Y = static_cast<SHORT>(pStateInfo->WindowPosY);
     _dwFontSize = pStateInfo->FontSize;
     _uFontFamily = pStateInfo->FontFamily;
     _uFontWeight = pStateInfo->FontWeight;
@@ -249,8 +249,8 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.PopupAttributes = _wPopupFillAttribute;
     csi.ScreenBufferSize = _dwScreenBufferSize;
     csi.WindowSize = _dwWindowSize;
-    csi.WindowPosX = (SHORT)_dwWindowOrigin.X;
-    csi.WindowPosY = (SHORT)_dwWindowOrigin.Y;
+    csi.WindowPosX = static_cast<SHORT>(_dwWindowOrigin.X);
+    csi.WindowPosY = static_cast<SHORT>(_dwWindowOrigin.Y);
     csi.FontSize = _dwFontSize;
     csi.FontFamily = _uFontFamily;
     csi.FontWeight = _uFontWeight;

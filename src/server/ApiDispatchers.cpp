@@ -311,7 +311,7 @@
     CATCH_RETURN();
 
     // ReadConsole needs this to get the command history list associated with an attached process, but it can be an opaque value.
-    HANDLE const hConsoleClient = (HANDLE)m->GetProcessHandle();
+    HANDLE const hConsoleClient = static_cast<HANDLE>(m->GetProcessHandle());
 
     // ReadConsole needs this to store context information across "processed reads" e.g. reads on the same handle
     // across multiple calls when we are simulating a command prompt input line for the client application.
@@ -372,7 +372,7 @@
         if (a->ProcessControlZ != FALSE &&
             a->NumBytes > 0 &&
             m->State.OutputBuffer != nullptr &&
-            *(PUCHAR)m->State.OutputBuffer == 0x1a)
+            *static_cast<PUCHAR>(m->State.OutputBuffer) == 0x1a)
         {
             a->NumBytes = 0;
         }

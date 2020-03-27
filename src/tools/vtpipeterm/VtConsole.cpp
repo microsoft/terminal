@@ -141,7 +141,7 @@ void VtConsole::_spawn(const std::wstring& command)
 
     // Create our own output handling thread
     // Each console needs to make sure to drain the output from its backing host.
-    _dwOutputThreadId = (DWORD)-1;
+    _dwOutputThreadId = static_cast<DWORD>(-1);
     _hOutputThread = CreateThread(nullptr,
                                   0,
                                   StaticOutputThreadProc,
@@ -165,10 +165,10 @@ void VtConsole::_createPseudoConsole(const std::wstring& command)
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
     size_t size;
-    InitializeProcThreadAttributeList(nullptr, 1, 0, (PSIZE_T)&size);
+    InitializeProcThreadAttributeList(nullptr, 1, 0, static_cast<PSIZE_T>(&size));
     BYTE* attrList = new BYTE[size];
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size);
+    fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, static_cast<PSIZE_T>(&size));
     THROW_LAST_ERROR_IF(!fSuccess);
 
     THROW_IF_FAILED(AttachPseudoConsole(_hPC, siEx.lpAttributeList));
@@ -315,7 +315,7 @@ void VtConsole::_createConptyViaCommandline(const std::wstring& command)
     {
         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
         std::string msg = "Failed to launch Openconsole";
-        WriteFile(hOut, msg.c_str(), (DWORD)msg.length(), nullptr, nullptr);
+        WriteFile(hOut, msg.c_str(), static_cast<DWORD>(msg.length()), nullptr, nullptr);
     }
 }
 
@@ -331,7 +331,7 @@ void VtConsole::deactivate()
 
 DWORD WINAPI VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
 {
-    VtConsole* const pInstance = (VtConsole*)lpParameter;
+    VtConsole* const pInstance = static_cast<VtConsole*>(lpParameter);
     return pInstance->_OutputThread();
 }
 
@@ -368,7 +368,7 @@ bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
     if (_fUseConPty)
     {
-        return SUCCEEDED(ResizePseudoConsole(_hPC, { (SHORT)cols, (SHORT)rows }));
+        return SUCCEEDED(ResizePseudoConsole(_hPC, { static_cast<SHORT>(cols), static_cast<SHORT>(rows) }));
     }
     else
     {
@@ -392,7 +392,7 @@ void VtConsole::signalWindow(unsigned short sx, unsigned short sy)
 
 bool VtConsole::WriteInput(std::string& seq)
 {
-    bool fSuccess = !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
+    bool fSuccess = !!WriteFile(inPipe(), seq.c_str(), static_cast<DWORD>(seq.length()), nullptr, nullptr);
     if (!fSuccess)
     {
         HRESULT hr = GetLastError();

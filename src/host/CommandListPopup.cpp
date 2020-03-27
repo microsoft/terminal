@@ -107,17 +107,17 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
             break;
         case VK_END:
             // Move waaay forward, UpdateCommandListPopup() can handle it.
-            _update((SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            _update(static_cast<SHORT>(cookedReadData.History().GetNumberOfCommands()));
             break;
         case VK_HOME:
             // Move waaay back, UpdateCommandListPopup() can handle it.
-            _update(-(SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            _update(-static_cast<SHORT>(cookedReadData.History().GetNumberOfCommands()));
             break;
         case VK_PRIOR:
-            _update(-(SHORT)Height());
+            _update(-static_cast<SHORT>(Height()));
             break;
         case VK_NEXT:
-            _update((SHORT)Height());
+            _update(static_cast<SHORT>(Height()));
             break;
         case VK_DELETE:
             return _deleteSelection(cookedReadData);
@@ -125,7 +125,7 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
         case VK_RIGHT:
             Index = _currentCommand;
             CommandLine::Instance().EndCurrentPopup();
-            SetCurrentCommandLine(cookedReadData, (SHORT)Index);
+            SetCurrentCommandLine(cookedReadData, static_cast<SHORT>(Index));
             return CONSOLE_STATUS_WAIT_NO_BLOCK;
         default:
             break;
@@ -137,13 +137,13 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
 
 void CommandListPopup::_setBottomIndex()
 {
-    if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
+    if (_currentCommand < static_cast<SHORT>(_history.GetNumberOfCommands() - Height()))
     {
         _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1i16));
     }
     else
     {
-        _bottomIndex = (SHORT)(_history.GetNumberOfCommands() - 1);
+        _bottomIndex = static_cast<SHORT>(_history.GetNumberOfCommands() - 1);
     }
 }
 
@@ -223,7 +223,7 @@ void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
     DWORD LineCount = 1;
     Index = _currentCommand;
     CommandLine::Instance().EndCurrentPopup();
-    SetCurrentCommandLine(cookedReadData, (SHORT)Index);
+    SetCurrentCommandLine(cookedReadData, static_cast<SHORT>(Index));
     cookedReadData.ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
     // complete read
     if (cookedReadData.IsEchoInput())
@@ -274,7 +274,7 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cooke
                                                      Index,
                                                      CommandHistory::MatchOptions::JustLooking))
     {
-        _update((SHORT)(Index - _currentCommand), true);
+        _update(static_cast<SHORT>(Index - _currentCommand), true);
     }
 }
 

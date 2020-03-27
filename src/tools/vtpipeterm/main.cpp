@@ -210,7 +210,7 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
     }
     else
     {
-        printBuffer[0] = (char)c;
+        printBuffer[0] = static_cast<char>(c);
         *printCch = 1;
     }
 }
@@ -495,7 +495,7 @@ void CreateIOThreads()
 {
     // The VtConsoles themselves handle their output threads.
 
-    DWORD dwInputThreadId = (DWORD)-1;
+    DWORD dwInputThreadId = static_cast<DWORD>(-1);
     HANDLE hInputThread = CreateThread(nullptr,
                                        0,
                                        InputThread,
@@ -525,7 +525,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed:
-    srand((unsigned int)time(nullptr));
+    srand(static_cast<unsigned int>(time(nullptr)));
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);

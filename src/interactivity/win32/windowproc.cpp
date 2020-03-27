@@ -122,7 +122,7 @@ using namespace Microsoft::Console::Types;
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy); // If this fails, we'll use the default of 96.
 
         // Pick one and set it to the global DPI.
-        ServiceLocator::LocateGlobals().dpi = (int)dpix;
+        ServiceLocator::LocateGlobals().dpi = static_cast<int>(dpix);
 
         _UpdateSystemMetrics(); // scroll bars and cursors and such.
         s_ReinitializeFontsForDPIChange(); // font sizes.
@@ -180,7 +180,7 @@ using namespace Microsoft::Console::Types;
         // the same client rendering that we have now.
 
         // First retrieve the new DPI and the current DPI.
-        DWORD const dpiProposed = (WORD)wParam;
+        DWORD const dpiProposed = static_cast<WORD>(wParam);
         DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
@@ -432,7 +432,7 @@ using namespace Microsoft::Console::Types;
                 // been resized for the DPI change, so we're likely to shrink the window too much
                 // or worse yet, keep it from moving entirely. We'll get a WM_DPICHANGED,
                 // resize the window, and then process the restriction in a few window messages.
-                if (((int)dpiOfMaximum == g.dpi) &&
+                if ((static_cast<int>(dpiOfMaximum) == g.dpi) &&
                     ((szSuggested.cx > RECT_WIDTH(&rcMaximum)) || (szSuggested.cy > RECT_HEIGHT(&rcMaximum))))
                 {
                     lpwpos->cx = std::min(RECT_WIDTH(&rcMaximum), szSuggested.cx);
@@ -650,7 +650,7 @@ using namespace Microsoft::Console::Types;
 
         if (isMouseWheel || isMouseHWheel)
         {
-            short wheelDelta = (short)HIWORD(wParam);
+            short wheelDelta = static_cast<short>(HIWORD(wParam));
             bool hasShift = (wParam & MK_SHIFT) ? true : false;
 
             Scrolling::s_HandleMouseWheel(isMouseWheel,
@@ -742,7 +742,7 @@ using namespace Microsoft::Console::Types;
     case EVENT_CONSOLE_START_APPLICATION:
     case EVENT_CONSOLE_END_APPLICATION:
     {
-        NotifyWinEvent(Message, hWnd, (LONG)wParam, (LONG)lParam);
+        NotifyWinEvent(Message, hWnd, static_cast<LONG>(wParam), static_cast<LONG>(lParam));
         break;
     }
 

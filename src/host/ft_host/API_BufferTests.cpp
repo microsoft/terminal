@@ -239,7 +239,7 @@ void BufferTests::ChafaGifPerformance()
         VERIFY_FAIL(L"Couldn't load resource.");
         return;
     }
-    res_data = (char*)LockResource(res_handle);
+    res_data = static_cast<char*>(LockResource(res_handle));
     res_size = SizeofResource(hModule, res);
     /* you can now use the resource data */
 

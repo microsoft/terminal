@@ -101,7 +101,7 @@ class ClipboardTests
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL(static_cast<short>(wcslen(text[0].data())), selection[0].Right - selection[0].Left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         PCWCHAR tempPtr = text[0].data();

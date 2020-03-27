@@ -310,7 +310,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
         // TODO GH#3378 reconcile and unify UTF-8 converters
         std::string str = winrt::to_string(data);
-        LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
+        LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), static_cast<DWORD>(str.length()), nullptr, nullptr));
     }
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)

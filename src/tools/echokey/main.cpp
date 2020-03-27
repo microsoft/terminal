@@ -105,7 +105,7 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
     }
     else
     {
-        printBuffer[0] = (char)c;
+        printBuffer[0] = static_cast<char>(c);
         printBuffer[1] = ' ';
         printBuffer[2] = '\0';
         *printCch = 2;

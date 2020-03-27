@@ -59,7 +59,7 @@ class InputTests
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
 {
     WEX::TestExecution::SetVerifyOutput verifySettings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
-    DWORD nInputEvents = (DWORD)-1;
+    DWORD nInputEvents = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEvents));
     VERIFY_ARE_EQUAL(nInputEvents,
                      nInputs,
@@ -84,13 +84,13 @@ bool InputTests::TestCleanup()
 
 void InputTests::TestGetMouseButtonsValid()
 {
-    DWORD nMouseButtons = (DWORD)-1;
+    DWORD nMouseButtons = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
 
-    DWORD dwButtonsExpected = (DWORD)-1;
+    DWORD dwButtonsExpected = static_cast<DWORD>(-1);
     if (OneCoreDelay::IsGetSystemMetricsPresent())
     {
-        dwButtonsExpected = (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS);
+        dwButtonsExpected = static_cast<DWORD>(GetSystemMetrics(SM_CMOUSEBUTTONS));
     }
     else
     {
@@ -112,7 +112,7 @@ void GenerateAndWriteInputRecords(const HANDLE hConsoleInput,
         prgRecs[iRecord].EventType = KEY_EVENT;
         prgRecs[iRecord].Event.KeyEvent.bKeyDown = FALSE;
         prgRecs[iRecord].Event.KeyEvent.wRepeatCount = 1;
-        prgRecs[iRecord].Event.KeyEvent.wVirtualKeyCode = ('A' + (WORD)iRecord);
+        prgRecs[iRecord].Event.KeyEvent.wVirtualKeyCode = ('A' + static_cast<WORD>(iRecord));
     }
 
     Log::Comment(L"Writing events");
@@ -127,7 +127,7 @@ void InputTests::TestInputScenario()
     Log::Comment(L"Get input handle");
     HANDLE hConsoleInput = GetStdInputHandle();
 
-    DWORD nWrittenEvents = (DWORD)-1;
+    DWORD nWrittenEvents = static_cast<DWORD>(-1);
     INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, NUMBER_OF_SCENARIO_INPUTS, rgInputRecords, ARRAYSIZE(rgInputRecords), &nWrittenEvents);
 
@@ -135,7 +135,7 @@ void InputTests::TestInputScenario()
 
     Log::Comment(L"Peeking events");
     INPUT_RECORD rgPeekedRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
-    DWORD nPeekedEvents = (DWORD)-1;
+    DWORD nPeekedEvents = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(PeekConsoleInput(hConsoleInput, rgPeekedRecords, ARRAYSIZE(rgPeekedRecords), &nPeekedEvents));
     VERIFY_ARE_EQUAL(nPeekedEvents, nWrittenEvents, L"We should be able to peek at all of the records we've written");
     for (UINT iPeekedRecord = 0; iPeekedRecord < nPeekedEvents; iPeekedRecord++)
@@ -157,7 +157,7 @@ void InputTests::TestInputScenario()
                                      fIsLastIteration ? L" (last one)" : L""));
 
         INPUT_RECORD rgReadRecords[READ_BATCH] = { 0 };
-        DWORD nReadEvents = (DWORD)-1;
+        DWORD nReadEvents = static_cast<DWORD>(-1);
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, rgReadRecords, ARRAYSIZE(rgReadRecords), &nReadEvents));
 
         DWORD dwExpectedEventsRead = READ_BATCH;
@@ -176,7 +176,7 @@ void InputTests::TestInputScenario()
                              String().Format(L"verify record %d", iInputRecord));
         }
 
-        DWORD nInputEventsAfterRead = (DWORD)-1;
+        DWORD nInputEventsAfterRead = static_cast<DWORD>(-1);
         VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEventsAfterRead));
 
         DWORD dwExpectedEventsAfterRead = (NUMBER_OF_SCENARIO_INPUTS - (READ_BATCH * (iIteration + 1)));
@@ -195,7 +195,7 @@ void InputTests::TestFlushValid()
     Log::Comment(L"Get input handle");
     HANDLE hConsoleInput = GetStdInputHandle();
 
-    DWORD nWrittenEvents = (DWORD)-1;
+    DWORD nWrittenEvents = static_cast<DWORD>(-1);
     INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, NUMBER_OF_SCENARIO_INPUTS, rgInputRecords, ARRAYSIZE(rgInputRecords), &nWrittenEvents);
 
@@ -214,26 +214,26 @@ void InputTests::TestFlushInvalid()
 
 void InputTests::TestPeekConsoleInvalid()
 {
-    DWORD nPeeked = (DWORD)-1;
+    DWORD nPeeked = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(PeekConsoleInput(INVALID_HANDLE_VALUE, nullptr, 0, &nPeeked)); // NOTE: nPeeked is required
-    VERIFY_ARE_EQUAL(nPeeked, (DWORD)0);
+    VERIFY_ARE_EQUAL(nPeeked, static_cast<DWORD>(0));
 
     HANDLE hConsoleInput = GetStdInputHandle();
 
-    nPeeked = (DWORD)-1;
+    nPeeked = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(PeekConsoleInput(hConsoleInput, nullptr, 5, &nPeeked));
-    VERIFY_ARE_EQUAL(nPeeked, (DWORD)0);
+    VERIFY_ARE_EQUAL(nPeeked, static_cast<DWORD>(0));
 
-    DWORD nWritten = (DWORD)-1;
+    DWORD nWritten = static_cast<DWORD>(-1);
     INPUT_RECORD ir = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, 1, &ir, 1, &nWritten);
 
     VerifyNumberOfInputRecords(hConsoleInput, 1);
 
-    nPeeked = (DWORD)-1;
+    nPeeked = static_cast<DWORD>(-1);
     INPUT_RECORD irPeeked = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(PeekConsoleInput(hConsoleInput, &irPeeked, 0, &nPeeked));
-    VERIFY_ARE_EQUAL(nPeeked, (DWORD)0, L"Verify that an empty array doesn't cause peeks to get written");
+    VERIFY_ARE_EQUAL(nPeeked, static_cast<DWORD>(0), L"Verify that an empty array doesn't cause peeks to get written");
 
     VerifyNumberOfInputRecords(hConsoleInput, 1);
 
@@ -242,57 +242,57 @@ void InputTests::TestPeekConsoleInvalid()
 
 void InputTests::TestReadConsoleInvalid()
 {
-    DWORD nRead = (DWORD)-1;
+    DWORD nRead = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(nullptr, nullptr, 0, &nRead));
-    VERIFY_ARE_EQUAL(nRead, (DWORD)0);
+    VERIFY_ARE_EQUAL(nRead, static_cast<DWORD>(0));
 
-    nRead = (DWORD)-1;
+    nRead = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(INVALID_HANDLE_VALUE, nullptr, 0, &nRead));
-    VERIFY_ARE_EQUAL(nRead, (DWORD)0);
+    VERIFY_ARE_EQUAL(nRead, static_cast<DWORD>(0));
 
     // NOTE: ReadConsoleInput blocks until at least one input event is read, even if the operation would result in no
     // records actually being read (e.g. valid handle, NULL lpBuffer)
 
     HANDLE hConsoleInput = GetStdInputHandle();
 
-    DWORD nWritten = (DWORD)-1;
+    DWORD nWritten = static_cast<DWORD>(-1);
     INPUT_RECORD irWrite = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, 1, &irWrite, 1, &nWritten);
     VerifyNumberOfInputRecords(hConsoleInput, 1);
 
-    nRead = (DWORD)-1;
+    nRead = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, nullptr, 0, &nRead));
-    VERIFY_ARE_EQUAL(nRead, (DWORD)0);
+    VERIFY_ARE_EQUAL(nRead, static_cast<DWORD>(0));
 
     INPUT_RECORD irRead = { 0 };
-    nRead = (DWORD)-1;
+    nRead = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, &irRead, 0, &nRead));
-    VERIFY_ARE_EQUAL(nRead, (DWORD)0);
+    VERIFY_ARE_EQUAL(nRead, static_cast<DWORD>(0));
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hConsoleInput));
 }
 
 void InputTests::TestWriteConsoleInvalid()
 {
-    DWORD nWrite = (DWORD)-1;
+    DWORD nWrite = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(nullptr, nullptr, 0, &nWrite));
-    VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
+    VERIFY_ARE_EQUAL(nWrite, static_cast<DWORD>(0));
 
     // weird: WriteConsoleInput with INVALID_HANDLE_VALUE writes garbage to lpNumberOfEventsWritten, whereas
     // [Read|Peek]ConsoleInput don't. This is a legacy behavior that we don't want to change.
-    nWrite = (DWORD)-1;
+    nWrite = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(INVALID_HANDLE_VALUE, nullptr, 0, &nWrite));
 
     HANDLE hConsoleInput = GetStdInputHandle();
 
-    nWrite = (DWORD)-1;
+    nWrite = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hConsoleInput, nullptr, 0, &nWrite));
-    VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
+    VERIFY_ARE_EQUAL(nWrite, static_cast<DWORD>(0));
 
-    nWrite = (DWORD)-1;
+    nWrite = static_cast<DWORD>(-1);
     INPUT_RECORD irWrite = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hConsoleInput, &irWrite, 0, &nWrite));
-    VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
+    VERIFY_ARE_EQUAL(nWrite, static_cast<DWORD>(0));
 }
 
 void FillInputRecordHelper(_Inout_ INPUT_RECORD* const pir, _In_ wchar_t wch, _In_ bool fIsKeyDown)
@@ -603,8 +603,8 @@ void InputTests::TestVtInputGeneration()
     DWORD dwMode;
     GetConsoleMode(hIn, &dwMode);
 
-    DWORD dwWritten = (DWORD)-1;
-    DWORD dwRead = (DWORD)-1;
+    DWORD dwWritten = static_cast<DWORD>(-1);
+    DWORD dwRead = static_cast<DWORD>(-1);
     INPUT_RECORD rgInputRecords[64] = { 0 };
 
     Log::Comment(L"First make sure that an arrow keydown is not translated in not-VT mode");
@@ -621,11 +621,11 @@ void InputTests::TestVtInputGeneration()
 
     Log::Comment(L"Writing events");
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, rgInputRecords, 1, &dwWritten));
-    VERIFY_ARE_EQUAL(dwWritten, (DWORD)1);
+    VERIFY_ARE_EQUAL(dwWritten, static_cast<DWORD>(1));
 
     Log::Comment(L"Reading events");
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hIn, rgInputRecords, ARRAYSIZE(rgInputRecords), &dwRead));
-    VERIFY_ARE_EQUAL(dwRead, (DWORD)1);
+    VERIFY_ARE_EQUAL(dwRead, static_cast<DWORD>(1));
     VERIFY_ARE_EQUAL(rgInputRecords[0].EventType, KEY_EVENT);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, VK_UP);
@@ -647,11 +647,11 @@ void InputTests::TestVtInputGeneration()
 
     Log::Comment(L"Writing events");
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, rgInputRecords, 1, &dwWritten));
-    VERIFY_ARE_EQUAL(dwWritten, (DWORD)1);
+    VERIFY_ARE_EQUAL(dwWritten, static_cast<DWORD>(1));
 
     Log::Comment(L"Reading events");
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hIn, rgInputRecords, ARRAYSIZE(rgInputRecords), &dwRead));
-    VERIFY_ARE_EQUAL(dwRead, (DWORD)3);
+    VERIFY_ARE_EQUAL(dwRead, static_cast<DWORD>(3));
     VERIFY_ARE_EQUAL(rgInputRecords[0].EventType, KEY_EVENT);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, 0);

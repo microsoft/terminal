@@ -82,7 +82,7 @@ UINT GetItemHeight(const HWND hDlg)
     HFONT hFont = GetWindowFont(hDlg);
     if (hFont)
     {
-        hFont = (HFONT)SelectObject(hDC, hFont);
+        hFont = static_cast<HFONT>(SelectObject(hDC, hFont));
     }
     TEXTMETRIC tm;
     GetTextMetrics(hDC, &tm);
@@ -164,32 +164,32 @@ static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
     {
         // we have text, now retrieve it as an actual size
         BOOL fTranslated;
-        const SHORT nPointSize = (SHORT)GetDlgItemInt(hDlg, IDD_POINTSLIST, &fTranslated, TRUE);
+        const SHORT nPointSize = static_cast<SHORT>(GetDlgItemInt(hDlg, IDD_POINTSLIST, &fTranslated, TRUE));
         if (fTranslated &&
             nPointSize >= MIN_PIXEL_HEIGHT &&
             nPointSize <= MAX_PIXEL_HEIGHT &&
             IsFontSizeCustom(gpStateInfo->FaceName, nPointSize))
         {
             // we got a proper custom size. let's see if it's in our point size list
-            LONG iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)wszBuf);
+            LONG iSize = static_cast<LONG>(SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), (LPARAM)wszBuf));
             if (iSize == CB_ERR)
             {
                 // the size isn't in our list, so we haven't created them yet. do so now.
                 CreateSizeForAllTTFonts(nPointSize);
 
                 // add the size to the dialog list and select it
-                iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_ADDSTRING, 0, (LPARAM)wszBuf);
+                iSize = static_cast<LONG>(SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_ADDSTRING, 0, (LPARAM)wszBuf));
                 SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETCURSEL, iSize, 0);
 
                 // get the current font selection
-                LONG lCurrentFont = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0);
+                LONG lCurrentFont = static_cast<LONG>(SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0));
 
                 // now get the current font's face name
                 WCHAR wszFontFace[LF_FACESIZE];
                 SendDlgItemMessage(hDlg,
                                    IDD_FACENAME,
                                    LB_GETTEXT,
-                                   (WPARAM)lCurrentFont,
+                                   static_cast<WPARAM>(lCurrentFont),
                                    (LPARAM)wszFontFace);
 
                 // now cause the hFont for this face/size combination to get loaded -- we need to do this so that the
@@ -202,7 +202,7 @@ static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
                                                  coordFontSize,
                                                  0,
                                                  gpStateInfo->CodePage);
-                SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETITEMDATA, (WPARAM)iSize, (LPARAM)iFont);
+                SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETITEMDATA, static_cast<WPARAM>(iSize), static_cast<LPARAM>(iFont));
             }
         }
     }
@@ -368,8 +368,8 @@ FontDlgProc(
                 LONG l;
 
                 DBGFONTS(("LBN_SELCHANGE from FACENAME\n"));
-                l = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L);
-                bLB = (BOOL)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETITEMDATA, l, 0L);
+                l = static_cast<LONG>(SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L));
+                bLB = static_cast<BOOL>(SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETITEMDATA, l, 0L));
                 if (!bLB)
                 {
                     SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETTEXT, l, (LPARAM)atchNewFace);
@@ -673,7 +673,7 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
                   fRasterFont ? "PIXEL" : "POINT",
                   hWndShow,
                   lListIndex));
-        lcbSETITEMDATA(hWndShow, fRasterFont, (DWORD)lListIndex, i);
+        lcbSETITEMDATA(hWndShow, fRasterFont, static_cast<DWORD>(lListIndex), i);
     }
 }
 
@@ -744,7 +744,7 @@ int FontListCreate(
 
         // before doing anything else, add raster fonts to the list. Note that the item data being set here indicates
         // that it's a raster font. the actual font indices are stored as item data on the pixels list.
-        lListIndex = (LONG)SendMessage(hWndFaceCombo, LB_ADDSTRING, 0, (LPARAM)wszRasterFonts);
+        lListIndex = static_cast<LONG>(SendMessage(hWndFaceCombo, LB_ADDSTRING, 0, (LPARAM)wszRasterFonts));
         SendMessage(hWndFaceCombo, LB_SETITEMDATA, lListIndex, TRUE);
         DBGFONTS(("Added \"%ls\", set Item Data %d = TRUE\n", wszRasterFonts, lListIndex));
 
@@ -774,7 +774,7 @@ int FontListCreate(
                     fFindTTFont = TRUE;
                 }
 
-                lListIndex = (LONG)SendMessage(hWndFaceCombo, LB_ADDSTRING, 0, (LPARAM)panFace->atch);
+                lListIndex = static_cast<LONG>(SendMessage(hWndFaceCombo, LB_ADDSTRING, 0, (LPARAM)panFace->atch));
                 SendMessage(hWndFaceCombo, LB_SETITEMDATA, lListIndex, FALSE);
                 DBGFONTS(("Added \"%ls\", set Item Data %d = FALSE\n",
                           panFace->atch,
@@ -888,7 +888,7 @@ int FontListCreate(
     i = lcbGETITEMDATA(hWndShow, bLB, lListIndex);
 
     DBGFONTS(("FontListCreate returns 0x%x\n", i));
-    FAIL_FAST_IF(!(i == LB_ERR || (ULONG)i < NumberOfFonts));
+    FAIL_FAST_IF(!(i == LB_ERR || static_cast<ULONG>(i) < NumberOfFonts));
     return i;
 }
 
@@ -916,7 +916,7 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
     HWND hWndItem;
     BOOL bLB;
 
-    if ((int)lpdis->itemID < 0)
+    if (static_cast<int>(lpdis->itemID) < 0)
     {
         return;
     }
@@ -971,13 +971,13 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
         }
 
         SendMessage(hWndItem, LB_GETTEXT, lpdis->itemID, (LPARAM)wszFace);
-        bLB = (BOOL)SendMessage(hWndItem, LB_GETITEMDATA, lpdis->itemID, 0L);
+        bLB = static_cast<BOOL>(SendMessage(hWndItem, LB_GETITEMDATA, lpdis->itemID, 0L));
         dxttbmp = bLB ? 0 : bmTT.bmWidth;
 
         DBGFONTS(("DrawItemFontList must redraw \"%ls\" %s\n", wszFace, bLB ? "Raster" : "TrueType"));
 
         // draw the text
-        TabbedTextOut(hDC, lpdis->rcItem.left + dxttbmp, lpdis->rcItem.top, wszFace, (UINT)wcslen(wszFace), 0, nullptr, dxttbmp);
+        TabbedTextOut(hDC, lpdis->rcItem.left + dxttbmp, lpdis->rcItem.top, wszFace, static_cast<UINT>(wcslen(wszFace)), 0, nullptr, dxttbmp);
 
         // and the TT bitmap if needed
         if (!bLB)
@@ -985,7 +985,7 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
             hdcMem = CreateCompatibleDC(hDC);
             if (hdcMem)
             {
-                hOld = (HBITMAP)SelectObject(hdcMem, hbmTT);
+                hOld = static_cast<HBITMAP>(SelectObject(hdcMem, hbmTT));
 
                 dy = ((lpdis->rcItem.bottom - lpdis->rcItem.top) - bmTT.bmHeight) / 2;
 
@@ -1086,9 +1086,9 @@ Return Value:
         SetTextColor(ps.hdc, rgbText);
         SetBkColor(ps.hdc, rgbBk);
         GetClientRect(hWnd, &rect);
-        hfontOld = (HFONT)SelectObject(ps.hdc, FontInfo[g_currentFontIndex].hFont);
+        hfontOld = static_cast<HFONT>(SelectObject(ps.hdc, FontInfo[g_currentFontIndex].hFont));
         hbrNew = CreateSolidBrush(rgbBk);
-        hbrOld = (HBRUSH)SelectObject(ps.hdc, hbrNew);
+        hbrOld = static_cast<HBRUSH>(SelectObject(ps.hdc, hbrNew));
         PatBlt(ps.hdc, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, PATCOPY);
         InflateRect(&rect, -2, -2);
         DrawText(ps.hdc, g_szPreviewText, -1, &rect, 0);
@@ -1222,7 +1222,7 @@ TryFindExactFont:
         /*
          * If looking for a particular Family, skip non-matches
          */
-        if (Family != 0 && (BYTE)Family != FontInfo[i].Family)
+        if (Family != 0 && static_cast<BYTE>(Family) != FontInfo[i].Family)
         {
             continue;
         }
@@ -1304,7 +1304,7 @@ TryFindExactFont:
     {
         if (g_fEastAsianSystem)
         {
-            if (Family != 0 && (BYTE)Family != FontInfo[i].Family)
+            if (Family != 0 && static_cast<BYTE>(Family) != FontInfo[i].Family)
             {
                 continue;
             }
@@ -1317,7 +1317,7 @@ TryFindExactFont:
         }
         else
         {
-            if ((BYTE)Family != FontInfo[i].Family)
+            if (static_cast<BYTE>(Family) != FontInfo[i].Family)
             {
                 continue;
             }
@@ -1352,7 +1352,7 @@ TryFindExactFont:
     }
 
 FoundFont:
-    FAIL_FAST_IF(!(FontIndex < (int)NumberOfFonts));
+    FAIL_FAST_IF(!(FontIndex < static_cast<int>(NumberOfFonts)));
     DBGFONTS(("FindCreateFont returns %x : %ls (%d,%d)\n", FontIndex, FontInfo[FontIndex].FaceName, FontInfo[FontIndex].Size.X, FontInfo[FontIndex].Size.Y));
     return FontIndex;
 
@@ -1423,7 +1423,7 @@ int SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
             while (iCB > 0)
             {
                 iCB--;
-                if (lcbGETITEMDATA(hWndList, bLB, iCB) == (int)AltFontIndex)
+                if (lcbGETITEMDATA(hWndList, bLB, iCB) == static_cast<int>(AltFontIndex))
                 {
                     lcbSETCURSEL(hWndList, bLB, iCB);
                     break;
@@ -1462,7 +1462,7 @@ BOOL SelectCurrentFont(
     SendDlgItemMessage(hDlg,
                        IDD_FACENAME,
                        LB_SELECTSTRING,
-                       (WPARAM)-1,
+                       static_cast<WPARAM>(-1),
                        bLB ? (LPARAM)wszRasterFonts : (LPARAM)FontInfo[FontIndex].FaceName);
 
     SelectCurrentSize(hDlg, bLB, FontIndex);
@@ -1495,7 +1495,7 @@ BOOL PreviewInit(
     DBGFONTS(("Changing Font Number from %d to %d\n",
               g_currentFontIndex,
               nFont));
-    FAIL_FAST_IF(!((ULONG)nFont < NumberOfFonts));
+    FAIL_FAST_IF(!(static_cast<ULONG>(nFont) < NumberOfFonts));
     g_currentFontIndex = nFont;
 
     if (g_fHostedInFileProperties)
@@ -1542,10 +1542,10 @@ BOOL PreviewUpdate(
     {
         COORD NewSize;
 
-        lIndex = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L);
+        lIndex = static_cast<LONG>(SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L));
         SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETTEXT, lIndex, (LPARAM)wszFace);
         NewSize.X = 0;
-        NewSize.Y = (SHORT)GetPointSizeInRange(hDlg, MIN_PIXEL_HEIGHT, MAX_PIXEL_HEIGHT);
+        NewSize.Y = static_cast<SHORT>(GetPointSizeInRange(hDlg, MIN_PIXEL_HEIGHT, MAX_PIXEL_HEIGHT));
 
         if (NewSize.Y == 0)
         {
@@ -1587,13 +1587,13 @@ BOOL PreviewUpdate(
     /*
      * If we've selected a new font, tell the property sheet we've changed
      */
-    FAIL_FAST_IF(!((ULONG)FontIndex < NumberOfFonts));
-    if ((ULONG)FontIndex >= NumberOfFonts)
+    FAIL_FAST_IF(!(static_cast<ULONG>(FontIndex) < NumberOfFonts));
+    if (static_cast<ULONG>(FontIndex) >= NumberOfFonts)
     {
         FontIndex = 0;
     }
 
-    if (g_currentFontIndex != (ULONG)FontIndex)
+    if (g_currentFontIndex != static_cast<ULONG>(FontIndex))
     {
         g_currentFontIndex = FontIndex;
     }

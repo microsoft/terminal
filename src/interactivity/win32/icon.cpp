@@ -186,12 +186,12 @@ Icon& Icon::Instance()
         {
 #pragma warning(push)
 #pragma warning(disable : 4302) // typecast warning from MAKEINTRESOURCE
-            _hDefaultSmIcon = (HICON)LoadImageW(nullptr,
-                                                MAKEINTRESOURCE(IDI_APPLICATION),
-                                                IMAGE_ICON,
-                                                GetSystemMetrics(SM_CXSMICON),
-                                                GetSystemMetrics(SM_CYSMICON),
-                                                LR_SHARED);
+            _hDefaultSmIcon = static_cast<HICON>(LoadImageW(nullptr,
+                                                            MAKEINTRESOURCE(IDI_APPLICATION),
+                                                            IMAGE_ICON,
+                                                            GetSystemMetrics(SM_CXSMICON),
+                                                            GetSystemMetrics(SM_CYSMICON),
+                                                            LR_SHARED));
 #pragma warning(pop)
 
             if (_hDefaultSmIcon == nullptr)

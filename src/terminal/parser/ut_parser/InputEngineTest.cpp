@@ -102,7 +102,7 @@ public:
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
     {
         auto records = IInputEvent::ToInputRecords(inEvents);
-        VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
+        VERIFY_ARE_EQUAL(static_cast<size_t>(1), vExpectedInput.size());
 
         bool foundEqual = false;
         INPUT_RECORD irExpected = vExpectedInput.back();
@@ -428,7 +428,7 @@ void InputEngineTest::C0Test()
         short keyscan = VkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = static_cast<WORD>(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
 
         DWORD dwModifierState = 0;
         if (writeCtrl)
@@ -505,7 +505,7 @@ void InputEngineTest::AlphanumericTest()
 
         short keyscan = VkKeyScanW(wch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = static_cast<wchar_t>(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
 
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
@@ -824,8 +824,8 @@ void InputEngineTest::EnhancedKeysTest()
     {
         INPUT_RECORD inputRec;
 
-        const wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        const WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        const wchar_t wch = static_cast<wchar_t>(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+        const WORD scanCode = static_cast<WORD>(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
 
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
@@ -1222,7 +1222,7 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
         wchar_t expectedWch = L'Z';
         short keyscan = VkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = static_cast<WORD>(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
 
         INPUT_RECORD inputRec;
 
@@ -1244,7 +1244,7 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
         wchar_t expectedWch = L'X';
         short keyscan = VkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = static_cast<WORD>(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
 
         INPUT_RECORD inputRec;
 

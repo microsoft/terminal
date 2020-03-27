@@ -207,7 +207,7 @@ static bool s_IsOnDesktop()
     LockConsole();
     NTSTATUS Status = STATUS_SUCCESS;
 
-    CommandHistory::s_Free((HANDLE)ProcessData);
+    CommandHistory::s_Free(static_cast<HANDLE>(ProcessData));
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
     gci.ProcessHandleList.FreeProcessData(ProcessData);
@@ -316,8 +316,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
-                int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
-                int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
+                int const cchSystemRoot = static_cast<int>(cbSystemRoot / sizeof(WCHAR));
+                int const cchConsoleTitle = static_cast<int>(cbConsoleTitle / sizeof(WCHAR));
                 cbConsoleTitle += sizeof(WCHAR); // account for nullptr terminator
 
                 if (fUnexpand &&
@@ -352,7 +352,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
                     if (fSubstitute && *pwszConsoleTitle == '\\')
                     {
 #pragma prefast(suppress : 26019, "Console title must contain system root if this path was followed.")
-                        *pszTranslatedConsoleTitle++ = (WCHAR)'_';
+                        *pszTranslatedConsoleTitle++ = static_cast<WCHAR>('_');
                     }
                     else
                     {

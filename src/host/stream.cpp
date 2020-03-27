@@ -210,7 +210,7 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
         {
             NumSpacesForChar = 1;
         }
-        XPosition = (SHORT)(XPosition + NumSpacesForChar);
+        XPosition = static_cast<SHORT>(XPosition + NumSpacesForChar);
         NumSpaces += NumSpacesForChar;
     }
 
@@ -248,7 +248,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             {
                 NumSpaces = 1;
             }
-            XPosition = (SHORT)(XPosition + NumSpaces);
+            XPosition = static_cast<SHORT>(XPosition + NumSpaces);
         }
 
         return NumSpaces;

@@ -39,8 +39,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     _blinker{},
     renderData{}
 {
-    ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
-    ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
+    ZeroMemory(static_cast<void*>(&CPInfo), sizeof(CPInfo));
+    ZeroMemory(static_cast<void*>(&OutputCPInfo), sizeof(OutputCPInfo));
     InitializeCriticalSection(&_csConsoleLock);
 }
 

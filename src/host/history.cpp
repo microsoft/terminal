@@ -122,7 +122,7 @@ void CommandHistory::_Reset()
             }
 
             // find free record.  if all records are used, free the lru one.
-            if ((SHORT)_commands.size() == _maxCommands)
+            if (static_cast<SHORT>(_commands.size()) == _maxCommands)
             {
                 _commands.erase(_commands.cbegin());
                 // move LastDisplayed back one in order to stay synced with the
@@ -177,7 +177,7 @@ std::wstring_view CommandHistory::GetNth(const SHORT index) const
     try
     {
         const auto& cmd = _commands.at(index);
-        if (cmd.size() > (size_t)buffer.size())
+        if (cmd.size() > static_cast<size_t>(buffer.size()))
         {
             commandSize = buffer.size(); // room for CRLF?
         }
@@ -260,24 +260,24 @@ bool CommandHistory::AtFirstCommand() const
         return FALSE;
     }
 
-    SHORT i = (SHORT)(LastDisplayed - 1);
+    SHORT i = static_cast<SHORT>(LastDisplayed - 1);
     if (i == -1)
     {
-        i = ((SHORT)_commands.size()) - 1i16;
+        i = static_cast<SHORT>(_commands.size()) - 1i16;
     }
 
-    return (i == ((SHORT)_commands.size()) - 1i16);
+    return (i == static_cast<SHORT>(_commands.size()) - 1i16);
 }
 
 bool CommandHistory::AtLastCommand() const
 {
-    return LastDisplayed == ((SHORT)_commands.size()) - 1i16;
+    return LastDisplayed == static_cast<SHORT>(_commands.size()) - 1i16;
 }
 
 void CommandHistory::Realloc(const size_t commands)
 {
     // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the command history.
-    if (_maxCommands == (SHORT)commands || commands > SHORT_MAX)
+    if (_maxCommands == static_cast<SHORT>(commands) || commands > SHORT_MAX)
     {
         return;
     }
@@ -293,7 +293,7 @@ void CommandHistory::Realloc(const size_t commands)
 
     WI_SetFlag(Flags, CLE_RESET);
     LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
-    _maxCommands = (SHORT)commands;
+    _maxCommands = static_cast<SHORT>(commands);
 }
 
 void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const size_t commands)
@@ -422,7 +422,7 @@ void CommandHistory::_Prev(SHORT& ind) const
 void CommandHistory::_Next(SHORT& ind) const
 {
     ++ind;
-    if (ind >= (SHORT)_commands.size())
+    if (ind >= static_cast<SHORT>(_commands.size()))
     {
         ind = 0;
     }

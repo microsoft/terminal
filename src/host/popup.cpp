@@ -163,7 +163,7 @@ void Popup::_DrawPrompt(const UINT id)
 
     // write prompt to screen
     lStringLength = text.size();
-    if (lStringLength > (ULONG)Width())
+    if (lStringLength > static_cast<ULONG>(Width()))
     {
         text = text.substr(0, Width());
     }
@@ -192,8 +192,8 @@ void Popup::UpdateStoredColors(const TextAttribute& newAttr,
     const WORD wOldPopupLegacy = oldPopupAttr.GetLegacyAttributes();
     const WORD wNewPopupLegacy = newPopupAttr.GetLegacyAttributes();
 
-    const WORD wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
-    const WORD wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
+    const WORD wOldPopupAttrInv = static_cast<WORD>(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
+    const WORD wNewPopupAttrInv = static_cast<WORD>(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
 
     const TextAttribute oldPopupInv{ wOldPopupAttrInv };
     const TextAttribute newPopupInv{ wNewPopupAttrInv };

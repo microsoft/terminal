@@ -496,7 +496,7 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
 
-    const auto textExpected = (std::wstring_view)row.GetCharRow().GlyphAt(it._pos.X);
+    const auto textExpected = static_cast<std::wstring_view>(row.GetCharRow().GlyphAt(it._pos.X));
     const auto dbcsExpected = row.GetCharRow().DbcsAttrAt(it._pos.X);
     const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X).GetLegacyAttributes();
 
@@ -505,7 +505,7 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
     const auto dbcsActual = cellActual.DbcsAttr();
     const auto attrActual = cellActual.TextAttr();
 
-    VERIFY_ARE_EQUAL(String(textExpected.data(), (int)textExpected.size()), String(textActual.data(), (int)textActual.size()));
+    VERIFY_ARE_EQUAL(String(textExpected.data(), static_cast<int>(textExpected.size())), String(textActual.data(), static_cast<int>(textActual.size())));
     VERIFY_ARE_EQUAL(dbcsExpected, dbcsActual);
     VERIFY_ARE_EQUAL(attrExpected, attrActual);
 }

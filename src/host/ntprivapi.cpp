@@ -33,7 +33,7 @@
 
     // This is the actual field name, but in the public SDK, it's named Reserved3. We need to pursue publishing the real name.
     //*ProcessId = (ULONG)BasicInfo.InheritedFromUniqueProcessId;
-    *ProcessId = (ULONG)BasicInfo.Reserved3;
+    *ProcessId = static_cast<ULONG>(BasicInfo.Reserved3);
     return STATUS_SUCCESS;
 }
 

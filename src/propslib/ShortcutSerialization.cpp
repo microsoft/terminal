@@ -434,8 +434,8 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
         {
             // Now the link is loaded, generate new console settings section to replace the one in the link.
             NT_CONSOLE_PROPS props;
-            ((LPDBLIST)&props)->cbSize = sizeof(props);
-            ((LPDBLIST)&props)->dwSignature = NT_CONSOLE_PROPS_SIG;
+            reinterpret_cast<LPDBLIST>(&props)->cbSize = sizeof(props);
+            reinterpret_cast<LPDBLIST>(&props)->dwSignature = NT_CONSOLE_PROPS_SIG;
             props.wFillAttribute = pStateInfo->ScreenAttributes;
             props.wPopupFillAttribute = pStateInfo->PopupAttributes;
             props.dwScreenBufferSize = pStateInfo->ScreenBufferSize;
@@ -468,8 +468,8 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             if (SUCCEEDED(hr) && fEastAsianSystem)
             {
                 NT_FE_CONSOLE_PROPS fe_props;
-                ((LPDBLIST)&fe_props)->cbSize = sizeof(fe_props);
-                ((LPDBLIST)&fe_props)->dwSignature = NT_FE_CONSOLE_PROPS_SIG;
+                reinterpret_cast<LPDBLIST>(&fe_props)->cbSize = sizeof(fe_props);
+                reinterpret_cast<LPDBLIST>(&fe_props)->dwSignature = NT_FE_CONSOLE_PROPS_SIG;
                 fe_props.uCodePage = pStateInfo->CodePage;
 
                 hr = psldl->RemoveDataBlock(NT_FE_CONSOLE_PROPS_SIG);

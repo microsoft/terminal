@@ -143,10 +143,10 @@ INT_PTR WINAPI ScreenSizeDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPa
                 /*
                  * Update the state info structure
                  */
-                Value = (UINT)SendDlgItemMessage(hDlg, Item + 1, UDM_GETPOS, 0, 0);
+                Value = static_cast<UINT>(SendDlgItemMessage(hDlg, Item + 1, UDM_GETPOS, 0, 0));
                 if (HIWORD(Value) == 0)
                 {
-                    UpdateStateInfo(hDlg, Item, (SHORT)LOWORD(Value));
+                    UpdateStateInfo(hDlg, Item, static_cast<SHORT>(LOWORD(Value)));
                 }
                 else
                 {

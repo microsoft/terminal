@@ -107,7 +107,7 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
     FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
-    unsigned char const uchComparison = (unsigned char)ch;
+    unsigned char const uchComparison = static_cast<unsigned char>(ch);
 
     int i = 0;
     // this is ok because the array is guaranteed to have 2
@@ -128,12 +128,12 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
     CHARSETINFO csi;
 
     const auto inputServices = ServiceLocator::LocateInputServices();
-    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo(static_cast<DWORD*>(IntToPtr(uiCodePage)), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }
 
-    return (BYTE)csi.ciCharset;
+    return static_cast<BYTE>(csi.ciCharset);
 }
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)

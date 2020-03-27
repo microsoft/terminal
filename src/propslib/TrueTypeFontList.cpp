@@ -55,7 +55,7 @@ WORD ConvertStringToDec(
             Status = RegistrySerialization::s_EnumValue(hkRegistry,
                                                         dwIndex,
                                                         sizeof(awchValue),
-                                                        (LPWSTR)awchValue,
+                                                        static_cast<LPWSTR>(awchValue),
                                                         sizeof(awchData),
                                                         (PBYTE)awchData);
 
@@ -70,7 +70,7 @@ WORD ConvertStringToDec(
                 break;
             }
 
-            pTTFontList = (TTFONTLIST*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TTFONTLIST));
+            pTTFontList = static_cast<TTFONTLIST*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TTFONTLIST)));
             if (pTTFontList == nullptr)
             {
                 break;

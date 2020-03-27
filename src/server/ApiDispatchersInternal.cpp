@@ -44,14 +44,14 @@ using Microsoft::Console::Interactivity::ServiceLocator;
     * (but we still return S_OK).
     */
 
-    LPDWORD lpdwProcessList = (PDWORD)Buffer;
+    LPDWORD lpdwProcessList = static_cast<PDWORD>(Buffer);
     size_t cProcessList = a->dwProcessCount;
     if (SUCCEEDED(gci.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
     {
         m->SetReplyInformation(cProcessList * sizeof(ULONG));
     }
 
-    a->dwProcessCount = (ULONG)cProcessList;
+    a->dwProcessCount = static_cast<ULONG>(cProcessList);
 
     return S_OK;
 }

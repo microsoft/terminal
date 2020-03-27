@@ -194,7 +194,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             if (a->ProcessControlZ != FALSE &&
                 a->NumBytes > 0 &&
                 _WaitReplyMessage.State.OutputBuffer != nullptr &&
-                *(PUCHAR)_WaitReplyMessage.State.OutputBuffer == 0x1a)
+                *static_cast<PUCHAR>(_WaitReplyMessage.State.OutputBuffer) == 0x1a)
             {
                 // On changing this, we also need to notify the Reply Information because it was stowed above into the reply packet.
                 a->NumBytes = 0;

@@ -674,7 +674,7 @@ class ViewportTests
 
         do
         {
-            s = (SHORT)rand() % SHORT_MAX;
+            s = static_cast<SHORT>(rand()) % SHORT_MAX;
         } while (s == 0i16);
 
         return s;

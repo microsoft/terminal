@@ -44,7 +44,7 @@ BOOL WindowDpiApi::EnablePerMonitorDialogScaling()
 
         if (pfnFunc != nullptr)
         {
-            return (BOOL)pfnFunc();
+            return static_cast<BOOL>(pfnFunc());
         }
     }
 

@@ -980,7 +980,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
         return false;
     }
 
-    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
+    const auto identifier = static_cast<GenericKeyIdentifiers>(til::at(parameters, 0));
 
     const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
     if (mapping != s_genericMap.end())
@@ -1003,7 +1003,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey)
 {
     vkey = 0;
 
-    const auto mapping = std::find(s_csiMap.cbegin(), s_csiMap.cend(), (CsiActionCodes)wch);
+    const auto mapping = std::find(s_csiMap.cbegin(), s_csiMap.cend(), static_cast<CsiActionCodes>(wch));
     if (mapping != s_csiMap.end())
     {
         vkey = mapping->vkey;
@@ -1024,7 +1024,7 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 {
     vkey = 0;
 
-    const auto mapping = std::find(s_ss3Map.cbegin(), s_ss3Map.cend(), (Ss3ActionCodes)wch);
+    const auto mapping = std::find(s_ss3Map.cbegin(), s_ss3Map.cend(), static_cast<Ss3ActionCodes>(wch));
     if (mapping != s_ss3Map.end())
     {
         vkey = mapping->vkey;

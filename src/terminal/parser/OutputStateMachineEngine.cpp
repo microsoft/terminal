@@ -841,7 +841,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<
     {
         for (const auto& p : parameters)
         {
-            options.push_back((DispatchTypes::GraphicsOptions)p);
+            options.push_back(static_cast<DispatchTypes::GraphicsOptions>(p));
         }
         success = true;
     }
@@ -1113,7 +1113,7 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
         switch (param)
         {
         // This looks kinda silly, but I want the parser to reject (success = false) any status types we haven't put here.
-        case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
+        case static_cast<unsigned short>(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport):
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;
             break;
@@ -1139,7 +1139,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_vie
     {
         for (const auto& p : parameters)
         {
-            privateModes.push_back((DispatchTypes::PrivateModeParams)p);
+            privateModes.push_back(static_cast<DispatchTypes::PrivateModeParams>(p));
         }
         success = true;
     }
@@ -1665,7 +1665,7 @@ bool OutputStateMachineEngine::_GetCursorStyle(const std::basic_string_view<size
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        cursorStyle = (DispatchTypes::CursorStyle)til::at(parameters, 0);
+        cursorStyle = static_cast<DispatchTypes::CursorStyle>(til::at(parameters, 0));
         success = true;
     }
 

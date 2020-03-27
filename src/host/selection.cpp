@@ -23,9 +23,9 @@ Selection::Selection() :
     _fUseAlternateSelection(false),
     _allowMouseDragSelection{ true }
 {
-    ZeroMemory((void*)&_srSelectionRect, sizeof(_srSelectionRect));
-    ZeroMemory((void*)&_coordSelectionAnchor, sizeof(_coordSelectionAnchor));
-    ZeroMemory((void*)&_coordSavedCursorPosition, sizeof(_coordSavedCursorPosition));
+    ZeroMemory(static_cast<void*>(&_srSelectionRect), sizeof(_srSelectionRect));
+    ZeroMemory(static_cast<void*>(&_coordSelectionAnchor), sizeof(_coordSelectionAnchor));
+    ZeroMemory(static_cast<void*>(&_coordSavedCursorPosition), sizeof(_coordSavedCursorPosition));
 }
 
 Selection& Selection::Instance()

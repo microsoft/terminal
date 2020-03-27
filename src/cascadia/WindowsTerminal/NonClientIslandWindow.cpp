@@ -376,7 +376,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // First, check if we have an auto-hide taskbar at all:
         APPBARDATA autohide{ 0 };
         autohide.cbSize = sizeof(autohide);
-        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
+        UINT state = static_cast<UINT>(SHAppBarMessage(ABM_GETSTATE, &autohide));
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
             // This helper can be used to determine if there's a auto-hide

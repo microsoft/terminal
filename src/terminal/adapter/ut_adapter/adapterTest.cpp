@@ -829,7 +829,7 @@ public:
             const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
 
             // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
+            VERIFY_ARE_EQUAL(static_cast<bool>(!(iInput % 2)), keyEvent->IsKeyDown());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetActiveModifierKeys());
             Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->GetCharData()));
             VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
@@ -852,7 +852,7 @@ public:
     {
     }
 
-    static const WCHAR s_wchErase = (WCHAR)0x20;
+    static const WCHAR s_wchErase = static_cast<WCHAR>(0x20);
     static const WCHAR s_wchDefault = L'Z';
     static const WORD s_wAttrErase = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
     static const WORD s_wDefaultAttribute = 0;
@@ -1025,7 +1025,7 @@ public:
         CursorDirection direction;
         size_t dir;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDirection", dir));
-        direction = (CursorDirection)dir;
+        direction = static_cast<CursorDirection>(dir);
 
         switch (direction)
         {
@@ -1243,7 +1243,7 @@ public:
         AbsolutePosition direction;
         size_t dir;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDirection", dir));
-        direction = (AbsolutePosition)dir;
+        direction = static_cast<AbsolutePosition>(dir);
         _testGetSet->PrepData();
 
         switch (direction)
@@ -1403,7 +1403,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_setConsoleTextAttributeResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
-        rgOptions[0] = (DispatchTypes::GraphicsOptions)0;
+        rgOptions[0] = static_cast<DispatchTypes::GraphicsOptions>(0);
         cOptions = 1;
         VERIFY_IS_FALSE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
@@ -1421,7 +1421,7 @@ public:
         DispatchTypes::GraphicsOptions graphicsOption;
         size_t uiGraphicsOption;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
-        graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
+        graphicsOption = static_cast<DispatchTypes::GraphicsOptions>(uiGraphicsOption);
 
         DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 1;
@@ -1433,7 +1433,7 @@ public:
         {
         case DispatchTypes::GraphicsOptions::Off:
             Log::Comment(L"Testing graphics 'Off/Reset'");
-            _testGetSet->_attribute = (WORD)~_testGetSet->s_defaultFill;
+            _testGetSet->_attribute = static_cast<WORD>(~_testGetSet->s_defaultFill);
             _testGetSet->_expectedAttribute = 0;
             _testGetSet->_privateSetDefaultAttributesResult = true;
             _testGetSet->_expectedForeground = true;
@@ -1526,7 +1526,7 @@ public:
         case DispatchTypes::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
             _testGetSet->_privateSetDefaultAttributesResult = true;
-            _testGetSet->_attribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            _testGetSet->_attribute = static_cast<WORD>(~_testGetSet->s_wDefaultAttribute); // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
             _testGetSet->_expectedAttribute = _testGetSet->_attribute; // expect = starting
             _testGetSet->_expectedAttribute &= ~(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY); // turn off all bits related to the background
@@ -1584,7 +1584,7 @@ public:
         case DispatchTypes::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
             _testGetSet->_privateSetDefaultAttributesResult = true;
-            _testGetSet->_attribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            _testGetSet->_attribute = static_cast<WORD>(~_testGetSet->s_wDefaultAttribute); // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
             _testGetSet->_expectedAttribute = _testGetSet->_attribute; // expect = starting
             _testGetSet->_expectedAttribute &= ~(BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
@@ -1824,7 +1824,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch.get()->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch.get()->DeviceStatusReport(static_cast<DispatchTypes::AnsiStatusType>(-1)));
     }
 
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
@@ -2152,7 +2152,7 @@ public:
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
+        rgOptions[2] = static_cast<DispatchTypes::GraphicsOptions>(2); // Green
         _testGetSet->_expectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_iExpectedXtermTableEntry = 2;
         _testGetSet->_expectedIsForeground = true;
@@ -2162,7 +2162,7 @@ public:
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
+        rgOptions[2] = static_cast<DispatchTypes::GraphicsOptions>(9); // Bright Red
         _testGetSet->_expectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
         _testGetSet->_expectedIsForeground = false;
@@ -2172,7 +2172,7 @@ public:
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
+        rgOptions[2] = static_cast<DispatchTypes::GraphicsOptions>(42); // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 42;
         _testGetSet->_expectedIsForeground = true;
         _testGetSet->_usingRgbColor = true;
@@ -2181,7 +2181,7 @@ public:
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
+        rgOptions[2] = static_cast<DispatchTypes::GraphicsOptions>(142); // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 142;
         _testGetSet->_expectedIsForeground = false;
         _testGetSet->_usingRgbColor = true;
@@ -2193,7 +2193,7 @@ public:
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
+        rgOptions[2] = static_cast<DispatchTypes::GraphicsOptions>(9); // Bright Red
         _testGetSet->_expectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
         _testGetSet->_expectedIsForeground = true;

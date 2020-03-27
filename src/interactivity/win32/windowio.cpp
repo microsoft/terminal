@@ -425,7 +425,7 @@ void HandleKeyEvent(const HWND hWnd,
             BYTE KeyState[256];
             if (GetKeyboardState(KeyState))
             {
-                int cwch = ToUnicodeEx((UINT)wParam, HIWORD(lParam), KeyState, awch, ARRAYSIZE(awch), TM_POSTCHARBREAKS, nullptr);
+                int cwch = ToUnicodeEx(static_cast<UINT>(wParam), HIWORD(lParam), KeyState, awch, ARRAYSIZE(awch), TM_POSTCHARBREAKS, nullptr);
                 if (cwch != 0)
                 {
                     return;
@@ -458,7 +458,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
 
     if (Message == WM_SYSCHAR || Message == WM_SYSDEADCHAR)
     {
-        VirtualKeyCode = (WORD)MapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
+        VirtualKeyCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX));
     }
     else
     {
@@ -603,7 +603,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     {
         POINT coords = { x, y };
         ScreenToClient(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &coords);
-        MousePosition = { (SHORT)coords.x, (SHORT)coords.y };
+        MousePosition = { static_cast<SHORT>(coords.x), static_cast<SHORT>(coords.y) };
     }
     else
     {
@@ -889,11 +889,11 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         EventFlags = DOUBLE_CLICK;
         break;
     case WM_MOUSEWHEEL:
-        ButtonFlags = ((UINT)wParam & 0xFFFF0000);
+        ButtonFlags = (static_cast<UINT>(wParam) & 0xFFFF0000);
         EventFlags = MOUSE_WHEELED;
         break;
     case WM_MOUSEHWHEEL:
-        ButtonFlags = ((UINT)wParam & 0xFFFF0000);
+        ButtonFlags = (static_cast<UINT>(wParam) & 0xFFFF0000);
         EventFlags = MOUSE_HWHEELED;
         break;
     default:

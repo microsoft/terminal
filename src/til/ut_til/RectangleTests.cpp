@@ -427,7 +427,7 @@ class RectangleTests
 
         const bool expected = left < right && top < bottom;
         const til::rectangle actual{ left, top, right, bottom };
-        VERIFY_ARE_EQUAL(expected, (bool)actual);
+        VERIFY_ARE_EQUAL(expected, static_cast<bool>(actual));
     }
 
     TEST_METHOD(OrUnion)

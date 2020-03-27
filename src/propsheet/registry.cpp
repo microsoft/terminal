@@ -234,7 +234,7 @@ DWORD GetRegistryValues(
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        pStateInfo->ScreenAttributes = (WORD)dwValue;
+        pStateInfo->ScreenAttributes = static_cast<WORD>(dwValue);
     }
 
     //
@@ -249,7 +249,7 @@ DWORD GetRegistryValues(
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        pStateInfo->PopupAttributes = (WORD)dwValue;
+        pStateInfo->PopupAttributes = static_cast<WORD>(dwValue);
     }
 
     //
@@ -317,7 +317,7 @@ DWORD GetRegistryValues(
     {
         if (IsValidCodePage(dwValue))
         {
-            pStateInfo->CodePage = (UINT)dwValue;
+            pStateInfo->CodePage = static_cast<UINT>(dwValue);
         }
     }
 
@@ -362,8 +362,8 @@ DWORD GetRegistryValues(
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        pStateInfo->WindowPosX = (SHORT)LOWORD(dwValue);
-        pStateInfo->WindowPosY = (SHORT)HIWORD(dwValue);
+        pStateInfo->WindowPosX = static_cast<SHORT>(LOWORD(dwValue));
+        pStateInfo->WindowPosY = static_cast<SHORT>(HIWORD(dwValue));
         pStateInfo->AutoPosition = FALSE;
     }
 
@@ -550,7 +550,7 @@ DWORD GetRegistryValues(
     {
         if (dwValue <= BYTE_MAX)
         {
-            pStateInfo->bWindowTransparency = (BYTE)dwValue;
+            pStateInfo->bWindowTransparency = static_cast<BYTE>(dwValue);
         }
     }
 
@@ -781,7 +781,7 @@ VOID SetRegistryValues(
     FAIL_FAST_IF(!(OEMCP != 0));
     if (g_fEastAsianSystem)
     {
-        dwValue = (DWORD)pStateInfo->CodePage;
+        dwValue = static_cast<DWORD>(pStateInfo->CodePage);
         LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                            hTitleKey,
                                                            CONSOLE_REGISTRY_CODEPAGE,
@@ -867,7 +867,7 @@ VOID SetRegistryValues(
                                                        CONSOLE_REGISTRY_FACENAME,
                                                        REG_SZ,
                                                        (BYTE*)(pStateInfo->FaceName),
-                                                       (DWORD)(wcslen(pStateInfo->FaceName) + 1) * sizeof(TCHAR)));
+                                                       static_cast<DWORD>(wcslen(pStateInfo->FaceName)+ 1) * sizeof(TCHAR)));
 
     //
     // Save cursor size

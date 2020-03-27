@@ -38,17 +38,17 @@ void MakeAltRasterFont(
     BOOL fDbcsCharSet = IS_ANY_DBCS_CHARSET(CodePageToCharSet(CodePage));
 
     FontIndex = 0;
-    Find = (DWORD)-1;
+    Find = static_cast<DWORD>(-1);
     for (i = 0; i < NumberOfFonts; i++)
     {
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
             IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet) == fDbcsCharSet)
         {
-            FontDelta.X = (SHORT)abs(FontSize.X - FontInfo[i].Size.X);
-            FontDelta.Y = (SHORT)abs(FontSize.Y - FontInfo[i].Size.Y);
-            if (Find > (DWORD)(FontDelta.X + FontDelta.Y))
+            FontDelta.X = static_cast<SHORT>(abs(FontSize.X - FontInfo[i].Size.X));
+            FontDelta.Y = static_cast<SHORT>(abs(FontSize.Y - FontInfo[i].Size.Y));
+            if (Find > static_cast<DWORD>(FontDelta.X + FontDelta.Y))
             {
-                Find = (DWORD)(FontDelta.X + FontDelta.Y);
+                Find = static_cast<DWORD>(FontDelta.X + FontDelta.Y);
                 FontIndex = i;
             }
         }
@@ -74,12 +74,12 @@ BYTE CodePageToCharSet(
 {
     CHARSETINFO csi;
 
-    if (!TranslateCharsetInfo((DWORD*)IntToPtr(CodePage), &csi, TCI_SRCCODEPAGE))
+    if (!TranslateCharsetInfo(static_cast<DWORD*>(IntToPtr(CodePage)), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }
 
-    return (BYTE)csi.ciCharset;
+    return static_cast<BYTE>(csi.ciCharset);
 }
 
 LPTTFONTLIST
@@ -191,10 +191,10 @@ int LanguageListCreate(
     oemcp = GetOEMCP();
     if (GetCPInfoExW(oemcp, 0, &cpinfo))
     {
-        lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_ADDSTRING, 0, (LPARAM)cpinfo.CodePageName);
+        lListIndex = static_cast<LONG>(SendMessage(hWndLanguageCombo, CB_ADDSTRING, 0, (LPARAM)cpinfo.CodePageName));
         if (lListIndex != CB_ERR)
         {
-            SendMessage(hWndLanguageCombo, CB_SETITEMDATA, (DWORD)lListIndex, oemcp);
+            SendMessage(hWndLanguageCombo, CB_SETITEMDATA, static_cast<DWORD>(lListIndex), oemcp);
 
             if (CodePage == oemcp)
             {
@@ -206,10 +206,10 @@ int LanguageListCreate(
     // Add SBCS 437 OEM - United States to the list
     if (GetCPInfoExW(437, 0, &cpinfo))
     {
-        lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_ADDSTRING, 0, (LPARAM)cpinfo.CodePageName);
+        lListIndex = static_cast<LONG>(SendMessage(hWndLanguageCombo, CB_ADDSTRING, 0, (LPARAM)cpinfo.CodePageName));
         if (lListIndex != CB_ERR)
         {
-            SendMessage(hWndLanguageCombo, CB_SETITEMDATA, (DWORD)lListIndex, 437);
+            SendMessage(hWndLanguageCombo, CB_SETITEMDATA, static_cast<DWORD>(lListIndex), 437);
 
             if (CodePage == 437)
             {
@@ -222,8 +222,8 @@ int LanguageListCreate(
      * Get the LocaleIndex from the currently selected item.
      * (i will be LB_ERR if no currently selected item).
      */
-    lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0L);
-    const int iRet = (int)SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0L);
+    lListIndex = static_cast<LONG>(SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0L));
+    const int iRet = static_cast<int>(SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0L));
 
     EnableWindow(hWndLanguageCombo, g_fEastAsianSystem);
 

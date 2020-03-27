@@ -43,13 +43,13 @@ void ModeTests::TestGetConsoleModeInvalid()
         TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
     END_TEST_METHOD_PROPERTIES()
 
-    DWORD dwConsoleMode = (DWORD)-1;
+    DWORD dwConsoleMode = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(GetConsoleMode(INVALID_HANDLE_VALUE, &dwConsoleMode));
-    VERIFY_ARE_EQUAL(dwConsoleMode, (DWORD)-1);
+    VERIFY_ARE_EQUAL(dwConsoleMode, static_cast<DWORD>(-1));
 
-    dwConsoleMode = (DWORD)-1;
+    dwConsoleMode = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_FAILED(GetConsoleMode(nullptr, &dwConsoleMode));
-    VERIFY_ARE_EQUAL(dwConsoleMode, (DWORD)-1);
+    VERIFY_ARE_EQUAL(dwConsoleMode, static_cast<DWORD>(-1));
 }
 
 void ModeTests::TestSetConsoleModeInvalid()
@@ -72,7 +72,7 @@ void ModeTests::TestConsoleModeInputScenario()
     const DWORD dwInputModeToSet = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_WINDOW_INPUT;
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwInputModeToSet), L"Set valid flags for input");
 
-    DWORD dwInputMode = (DWORD)-1;
+    DWORD dwInputMode = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(hConsoleInput, &dwInputMode), L"Get recently set flags for input");
     VERIFY_ARE_EQUAL(dwInputMode, dwInputModeToSet, L"Make sure SetConsoleMode worked for input");
 }
@@ -83,15 +83,15 @@ void ModeTests::TestConsoleModeScreenBufferScenario()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(Common::_hConsole, dwOutputModeToSet),
                                 L"Set initial output flags");
 
-    DWORD dwOutputMode = (DWORD)-1;
+    DWORD dwOutputMode = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwOutputMode), L"Get new output flags");
     VERIFY_ARE_EQUAL(dwOutputMode, dwOutputModeToSet, L"Make sure output flags applied appropriately");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(Common::_hConsole, 0), L"Set zero output flags");
 
-    dwOutputMode = (DWORD)-1;
+    dwOutputMode = static_cast<DWORD>(-1);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwOutputMode), L"Get zero output flags");
-    VERIFY_ARE_EQUAL(dwOutputMode, (DWORD)0, L"Verify able to set zero output flags");
+    VERIFY_ARE_EQUAL(dwOutputMode, static_cast<DWORD>(0), L"Verify able to set zero output flags");
 }
 
 void ModeTests::TestGetConsoleDisplayMode()

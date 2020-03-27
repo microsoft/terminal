@@ -98,7 +98,7 @@ LONG CPlApplet(
         lpCPlInfo->dwHelpContext = 0;
         lpCPlInfo->szHelpFile[0] = TEXT('\0');
 
-        return (LONG)TRUE;
+        return static_cast<LONG>(TRUE);
 
     case CPL_DBLCLK:
         ConsolePropertySheet(hwnd, (PCONSOLE_STATE_INFO)lParam1);
@@ -109,5 +109,5 @@ LONG CPlApplet(
         break;
     }
 
-    return (LONG)0;
+    return static_cast<LONG>(0);
 }

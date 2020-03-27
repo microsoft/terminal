@@ -43,8 +43,8 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
             LONG lListIndex;
 
             hWndLanguageCombo = GetDlgItem(hDlg, IDD_LANGUAGELIST);
-            lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0);
-            Value = (UINT)SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0);
+            lListIndex = static_cast<LONG>(SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0));
+            Value = static_cast<UINT>(SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0));
             if (Value != -1)
             {
                 fChangeCodePage = (Value != gpStateInfo->CodePage);
@@ -202,7 +202,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 
         SetDlgItemInt(hDlg, IDD_HISTORY_NUM, gpStateInfo->NumberOfHistoryBuffers, FALSE);
         SendDlgItemMessage(hDlg, IDD_HISTORY_NUM, EM_LIMITTEXT, 3, 0);
-        SendDlgItemMessage(hDlg, IDD_HISTORY_NUM, EM_SETSEL, 0, (DWORD)-1);
+        SendDlgItemMessage(hDlg, IDD_HISTORY_NUM, EM_SETSEL, 0, static_cast<DWORD>(-1));
         SendDlgItemMessage(hDlg, IDD_HISTORY_NUMSCROLL, UDM_SETRANGE, 0, MAKELONG(999, 1));
 
         if (g_fEastAsianSystem)

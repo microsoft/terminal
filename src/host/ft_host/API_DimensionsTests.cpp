@@ -114,8 +114,8 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     // Do not reserve space for scroll bars.
 
     // Now take width and height and divide them by the size of a character to get the max character count.
-    coordExpected.X = (SHORT)((rcPixels.right - rcPixels.left) / cfi.dwFontSize.X);
-    coordExpected.Y = (SHORT)((rcPixels.bottom - rcPixels.top) / cfi.dwFontSize.Y);
+    coordExpected.X = static_cast<SHORT>((rcPixels.right - rcPixels.left) / cfi.dwFontSize.X);
+    coordExpected.Y = static_cast<SHORT>((rcPixels.bottom - rcPixels.top) / cfi.dwFontSize.Y);
 
     // Now finally ask the console what it thinks its largest size should be and compare.
     COORD const coordLargest = GetLargestConsoleWindowSize(Common::_hConsole);
@@ -454,7 +454,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     if (sbiex.dwSize.Y > ((sbiex.srWindow.Bottom - sbiex.srWindow.Top) + 1)) // the bottom index counts as valid, so bottom - top + 1 for total height.
     {
         // Get pixel size of a vertical scroll bar.
-        short const sVerticalScrollWidthPx = (SHORT)GetSystemMetrics(SM_CXVSCROLL);
+        short const sVerticalScrollWidthPx = static_cast<SHORT>(GetSystemMetrics(SM_CXVSCROLL));
 
         // Get the current font size
         CONSOLE_FONT_INFO cfi;

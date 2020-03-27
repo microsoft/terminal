@@ -255,7 +255,7 @@ static HANDLE makeJob()
 static std::wstring exeName()
 {
     std::array<wchar_t, 4096> self{};
-    DWORD len = GetModuleFileNameW(nullptr, self.data(), (DWORD)self.size());
+    DWORD len = GetModuleFileNameW(nullptr, self.data(), static_cast<DWORD>(self.size()));
     UNREFERENCED_PARAMETER(len); // to make release builds happy.
     assert(len >= 1 && len < self.size() && "GetModuleFileNameW failed");
     return self.data();
@@ -285,7 +285,7 @@ static void trace(const char* fmt, ...)
     buf[written + 1] = '\n';
     if (g_hLogging != INVALID_HANDLE_VALUE)
     {
-        WriteFile(g_hLogging, buf.data(), (DWORD)written + 2, nullptr, nullptr);
+        WriteFile(g_hLogging, buf.data(), static_cast<DWORD>(written) + 2, nullptr, nullptr);
     }
 
     OutputDebugStringA(buf.data());
@@ -295,10 +295,10 @@ static std::vector<DWORD> getConsoleProcessList()
 {
     std::vector<DWORD> ret;
     ret.resize(1);
-    const DWORD count1 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
+    const DWORD count1 = GetConsoleProcessList(&ret[0], static_cast<DWORD>(ret.size()));
     assert(count1 >= 1 && "GetConsoleProcessList failed");
     ret.resize(count1);
-    const DWORD count2 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
+    const DWORD count2 = GetConsoleProcessList(&ret[0], static_cast<DWORD>(ret.size()));
     assert(count1 == count2 && "GetConsoleProcessList failed");
     return ret;
 }
@@ -507,7 +507,7 @@ static std::deque<std::wstring> getCommandLine()
     {
         ret.push_back(argv[i]);
     }
-    LocalFree((HLOCAL)argv);
+    LocalFree(static_cast<HLOCAL>(argv));
     return ret;
 }
 
@@ -527,7 +527,7 @@ static int shiftInt(std::deque<std::wstring>& container)
 
 static HANDLE shiftHandle(std::deque<std::wstring>& container)
 {
-    return (HANDLE)(uintptr_t)shiftInt(container);
+    return (HANDLE)static_cast<uintptr_t>(shiftInt(container));
 }
 
 static int doChild(std::deque<std::wstring> argv)
@@ -723,7 +723,7 @@ static int doParent(std::deque<std::wstring> argv)
         else if (arg == L"--alloc" && hasNext)
         {
             const auto next = shift(argv);
-            allocChunk = (int)(_wtof(next.c_str()) * 1024.0 * 1024.0);
+            allocChunk = static_cast<int>(_wtof(next.c_str()) * 1024.0 * 1024.0);
         }
         else if (arg == L"-m" && hasNext)
         {

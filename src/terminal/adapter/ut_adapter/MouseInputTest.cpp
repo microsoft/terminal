@@ -126,7 +126,7 @@ public:
 
         // Change the expected button value
         wchar_t wch = GetDefaultCharFromButton(uiButton, sModifierKeystate, sScrollDelta);
-        Log::Comment(NoThrowString().Format(L"Button Char was:\'%d\' for uiButton '%d", (int)wch, uiButton));
+        Log::Comment(NoThrowString().Format(L"Button Char was:\'%d\' for uiButton '%d", static_cast<int>(wch), uiButton));
 
         s_pwszExpectedBuffer[3] = wch;
         Log::Comment(NoThrowString().Format(L"Expected Input:\'%s\'", s_pwszExpectedBuffer));
@@ -284,7 +284,7 @@ public:
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        short sModifierKeystate = static_cast<SHORT>(uiModifierKeystate);
         short sScrollDelta = 0;
 
         unsigned int uiButton;
@@ -363,7 +363,7 @@ public:
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        short sModifierKeystate = static_cast<SHORT>(uiModifierKeystate);
         short sScrollDelta = 0;
 
         unsigned int uiButton;
@@ -445,7 +445,7 @@ public:
         std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        short sModifierKeystate = static_cast<SHORT>(uiModifierKeystate);
         short sScrollDelta = 0;
 
         unsigned int uiButton;
@@ -523,12 +523,12 @@ public:
         std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        short sModifierKeystate = static_cast<SHORT>(uiModifierKeystate);
 
         unsigned int uiButton = WM_MOUSEWHEEL;
         int iScrollDelta = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"sScrollDelta", iScrollDelta));
-        short sScrollDelta = (short)(iScrollDelta);
+        short sScrollDelta = static_cast<short>(iScrollDelta);
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";

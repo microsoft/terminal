@@ -716,7 +716,7 @@ CEditSessionObject::Release()
         auto wstr = std::make_unique<WCHAR[]>(cch + 1);
 
         // Get the whole text, finalize it, and erase the whole text.
-        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)cch, (ULONG*)&cch)))
+        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), static_cast<ULONG>(cch), (ULONG*)&cch)))
         {
             // Make Result String.
             hr = conv_area->DrawResult({ wstr.get(), static_cast<size_t>(cch) });
@@ -1036,7 +1036,7 @@ CEditSessionObject::Release()
                 auto wstr = std::make_unique<WCHAR[]>(lTextLength + 1);
 
                 // Get the result text, finalize it, and erase the result text.
-                if (SUCCEEDED(FullTextRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)lTextLength, (ULONG*)&lTextLength)))
+                if (SUCCEEDED(FullTextRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), static_cast<ULONG>(lTextLength), (ULONG*)&lTextLength)))
                 {
                     // Clear the TOM
                     LOG_IF_FAILED(ClearTextInRange(ec, FullTextRange));

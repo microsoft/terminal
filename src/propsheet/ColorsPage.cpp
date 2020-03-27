@@ -26,7 +26,7 @@ static int iColor;
     switch (wMsg)
     {
     case WM_SETFOCUS:
-        if (ColorArray[iColor] != (BYTE)(ColorId - IDD_COLOR_1))
+        if (ColorArray[iColor] != static_cast<BYTE>(ColorId - IDD_COLOR_1))
         {
             hWnd = GetDlgItem(hDlg, ColorArray[iColor] + IDD_COLOR_1);
             SetFocus(hWnd);
@@ -81,12 +81,12 @@ static int iColor;
         GetClientRect(hColor, &rColor);
 
         // are we the selected color for the current object?
-        if (ColorArray[iColor] == (BYTE)(ColorId - IDD_COLOR_1))
+        if (ColorArray[iColor] == static_cast<BYTE>(ColorId - IDD_COLOR_1))
         {
             // highlight the selected color
-            FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
+            FrameRect(ps.hdc, &rColor, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
             InflateRect(&rColor, -1, -1);
-            FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
+            FrameRect(ps.hdc, &rColor, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
         }
 
         SimpleColorDoPaint(hColor, ps, ColorId);
@@ -129,7 +129,7 @@ bool InitColorsDialog(HWND hDlg)
 
     CreateAndAssociateToolTipToControl(IDD_TRANSPARENCY, hDlg, IDS_TOOLTIP_OPACITY);
 
-    SendMessage(GetDlgItem(hDlg, IDD_TRANSPARENCY), TBM_SETRANGE, FALSE, (LPARAM)MAKELONG(TRANSPARENCY_RANGE_MIN, BYTE_MAX));
+    SendMessage(GetDlgItem(hDlg, IDD_TRANSPARENCY), TBM_SETRANGE, FALSE, static_cast<LPARAM>(MAKELONG(TRANSPARENCY_RANGE_MIN, BYTE_MAX)));
     ToggleV2ColorControls(hDlg);
 
     return TRUE;
@@ -273,7 +273,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
             // Ignore opacity in v1 console
             if (g_fForceV2)
             {
-                gpStateInfo->bWindowTransparency = (BYTE)SendDlgItemMessage(hDlg, IDD_TRANSPARENCY, TBM_GETPOS, 0, 0);
+                gpStateInfo->bWindowTransparency = static_cast<BYTE>(SendDlgItemMessage(hDlg, IDD_TRANSPARENCY, TBM_GETPOS, 0, 0));
             }
 
             EndDlgPage(hDlg, !pshn->lParam);
@@ -324,12 +324,12 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
             //When moving slider with the mouse
             case TB_THUMBPOSITION:
             case TB_THUMBTRACK:
-                g_bPreviewOpacity = (BYTE)HIWORD(wParam);
+                g_bPreviewOpacity = static_cast<BYTE>(HIWORD(wParam));
                 break;
 
                 //moving via keyboard
             default:
-                g_bPreviewOpacity = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                g_bPreviewOpacity = static_cast<BYTE>(SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
             }
 
             PreviewOpacity(hDlg, g_bPreviewOpacity);
@@ -340,12 +340,12 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case CM_SETCOLOR:
-        UpdateStateInfo(hDlg, iColor + IDD_COLOR_SCREEN_TEXT, (UINT)wParam);
+        UpdateStateInfo(hDlg, iColor + IDD_COLOR_SCREEN_TEXT, static_cast<UINT>(wParam));
         UpdateApplyButton(hDlg);
 
         hWndOld = GetDlgItem(hDlg, ColorArray[iColor] + IDD_COLOR_1);
 
-        ColorArray[iColor] = (BYTE)wParam;
+        ColorArray[iColor] = static_cast<BYTE>(wParam);
 
         /* Force the preview window to repaint */
 
@@ -402,7 +402,7 @@ void PreviewOpacity(HWND hDlg, BYTE bOpacity)
         WCHAR wszOpacityValue[4];
         HWND hWndConsole = gpStateInfo->hWnd;
 
-        StringCchPrintf(wszOpacityValue, ARRAYSIZE(wszOpacityValue), L"%d", (int)((float)bOpacity / BYTE_MAX * 100));
+        StringCchPrintf(wszOpacityValue, ARRAYSIZE(wszOpacityValue), L"%d", static_cast<int>(static_cast<float>(bOpacity) / BYTE_MAX * 100));
         SetDlgItemText(hDlg, IDD_OPACITY_VALUE, wszOpacityValue);
 
         if (hWndConsole)
@@ -428,6 +428,6 @@ void SetOpacitySlider(__in HWND hDlg)
         g_bPreviewOpacity = BYTE_MAX; //always fully opaque in V1
     }
 
-    SendMessage(GetDlgItem(hDlg, IDD_TRANSPARENCY), TBM_SETPOS, TRUE, (LPARAM)(g_bPreviewOpacity));
+    SendMessage(GetDlgItem(hDlg, IDD_TRANSPARENCY), TBM_SETPOS, TRUE, static_cast<LPARAM>(g_bPreviewOpacity));
     PreviewOpacity(hDlg, g_bPreviewOpacity);
 }

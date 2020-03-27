@@ -52,8 +52,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     {
         if (coordCursor.Y > 0)
         {
-            coordCursor.X = (SHORT)(bufferSize.X + coordCursor.X);
-            coordCursor.Y = (SHORT)(coordCursor.Y - 1);
+            coordCursor.X = static_cast<SHORT>(bufferSize.X + coordCursor.X);
+            coordCursor.Y = static_cast<SHORT>(coordCursor.Y - 1);
         }
         else
         {
@@ -233,9 +233,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
         if (nullptr != psScrollY)
         {
-            *psScrollY += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
+            *psScrollY += static_cast<SHORT>(bufferSize.Y - coordCursor.Y - 1);
         }
-        coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
+        coordCursor.Y += static_cast<SHORT>(bufferSize.Y - coordCursor.Y - 1);
     }
 
     const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
@@ -413,7 +413,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 case UNICODE_TAB:
                 {
                     const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
-                    XPosition = (SHORT)(XPosition + TabSize);
+                    XPosition = static_cast<SHORT>(XPosition + TabSize);
                     if (XPosition >= coordScreenBufferSize.X)
                     {
                         goto EndWhile;
@@ -439,12 +439,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     CtrlChar:
                         if (i < (LOCAL_BUFFER_SIZE - 1))
                         {
-                            *LocalBufPtr = (WCHAR)'^';
+                            *LocalBufPtr = static_cast<WCHAR>('^');
                             LocalBufPtr++;
                             XPosition++;
                             i++;
 
-                            *LocalBufPtr = (WCHAR)(RealUnicodeChar + (WCHAR)'@');
+                            *LocalBufPtr = static_cast<WCHAR>(RealUnicodeChar + static_cast<WCHAR>('@'));
                             LocalBufPtr++;
                             XPosition++;
                             i++;
@@ -618,9 +618,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                 if (LastChar == UNICODE_TAB)
                 {
-                    CursorPosition.X -= (SHORT)(RetrieveNumberOfSpaces(sOriginalXPosition,
-                                                                       pwchBufferBackupLimit,
-                                                                       (ULONG)(pwchBuffer - pwchBufferBackupLimit - 1)));
+                    CursorPosition.X -= static_cast<SHORT>(RetrieveNumberOfSpaces(sOriginalXPosition,
+                                                                                  pwchBufferBackupLimit,
+                                                                                  static_cast<ULONG>(pwchBuffer - pwchBufferBackupLimit - 1)));
                     if (CursorPosition.X < 0)
                     {
                         CursorPosition.X = (coordScreenBufferSize.X - 1) / TAB_SIZE;
@@ -697,7 +697,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                         dwFlags & WC_ECHO))
                 {
                     CursorPosition.X = coordScreenBufferSize.X - 1;
-                    CursorPosition.Y = (SHORT)(cursor.GetPosition().Y - 1);
+                    CursorPosition.Y = static_cast<SHORT>(cursor.GetPosition().Y - 1);
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
@@ -711,7 +711,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         case UNICODE_TAB:
         {
             const size_t TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
-            CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
+            CursorPosition.X = static_cast<SHORT>(cursor.GetPosition().X + TabSize);
 
             // move cursor forward to next tab stop.  fill space with blanks.
             // we get here when the tab extends beyond the right edge of the
@@ -771,7 +771,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 CursorPosition.X = 0;
             }
 
-            CursorPosition.Y = (SHORT)(cursor.GetPosition().Y + 1);
+            CursorPosition.Y = static_cast<SHORT>(cursor.GetPosition().Y + 1);
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
@@ -815,7 +815,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 }
 
                 CursorPosition.X = 0;
-                CursorPosition.Y = (SHORT)(TargetPoint.Y + 1);
+                CursorPosition.Y = static_cast<SHORT>(TargetPoint.Y + 1);
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
