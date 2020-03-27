@@ -482,6 +482,7 @@ cwchar
 cwctype
 cwd
 cx
+cxcy
 CXFRAME
 CXFULLSCREEN
 CXHSCROLL
