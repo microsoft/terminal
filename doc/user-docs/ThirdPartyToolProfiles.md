@@ -91,4 +91,16 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
 }
 ````
 
+## Developer Command Prompt for Visual Studio
+
+Assuming that you've installed VS 2019 Professional:
+
+```json
+{
+    "name" : "Developer Command Prompt for VS 2019",
+    "commandline" : "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
 <!-- Adding a tool here? Make sure to add it in alphabetical order! -->
