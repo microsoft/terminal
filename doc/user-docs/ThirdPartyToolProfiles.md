@@ -85,7 +85,7 @@ Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
 ```json
 {
     "name" : "Git Bash",
-    "commandline" : "C:/Program Files (x86)/Git/bin/bash.exe",
+    "commandline" : "C:/Program Files (x86)/Git/bin/bash.exe -li",
     "icon" : "C:/Program Files (x86)/Git/mingw32/share/git/git-for-windows.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
