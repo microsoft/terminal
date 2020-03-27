@@ -1112,8 +1112,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
     // Now set up the verification that the buffers are full of the pattern we expect.
     // This function will verify the text backing buffers.
-    auto verifyBuffer = [&](const TextBuffer& tb)
-    {
+    auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor is waiting in the bottom right corner
         VERIFY_ARE_EQUAL(initialTermView.Height() - 1, cursor.GetPosition().Y);
@@ -1146,7 +1145,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
         // Cursor gets reset into bottom right corner as we're writing all the way into that corner.
         std::stringstream ss;
-        ss << "\x1b[" << initialTermView.Height() <<";" << initialTermView.Width() << "H";
+        ss << "\x1b[" << initialTermView.Height() << ";" << initialTermView.Width() << "H";
         expectedOutput.push_back(ss.str());
     }
 
@@ -1233,8 +1232,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     hostSm.ProcessString(completeCursorAtPromptLine);
 
     // Set up the verifications like above.
-    auto verifyBufferAfter = [&](const TextBuffer& tb)
-    {
+    auto verifyBufferAfter = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor is waiting on the freshly revealed line (1 above modeline)
         // and in the left most column.
