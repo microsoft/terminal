@@ -7,7 +7,7 @@ namespace til
 {
     // The til::math namespace contains TIL math guidance casts;
     // they are intended to be used as the first argument to
-    // floating-point universal converters elswehere in the til namespace.
+    // floating-point universal converters elsewhere in the til namespace.
     namespace math
     {
         namespace details
