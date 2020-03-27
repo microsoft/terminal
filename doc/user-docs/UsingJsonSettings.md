@@ -120,7 +120,7 @@ You can have multiple key chords bound to the same action, but they should each 
     ]
 ```
 
-In this snippet, all three of <kbd>ctrl+shift+c</kbd>, <kbd>ctrl+c</kbd> and <kbd>enter</kbd> are bound to `copy`
+In this snippet, all three of <kbd>ctrl+shift+c</kbd>, <kbd>ctrl+c</kbd> and <kbd>enter</kbd> are bound to `copy`.
 
 ## Profiles
 
