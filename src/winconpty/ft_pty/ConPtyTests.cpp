@@ -204,14 +204,14 @@ void ConPtyTests::SurvivesOnBreakInput()
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
     size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, &size));
+    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
     BYTE* attrList = new BYTE[size];
     auto freeAttrList = wil::scope_exit([&] {
         delete[] attrList;
     });
 
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
     auto deleteAttrList = wil::scope_exit([&] {
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     });
@@ -267,14 +267,14 @@ void ConPtyTests::SurvivesOnBreakOutput()
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
     size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, &size));
+    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
     BYTE* attrList = new BYTE[size];
     auto freeAttrList = wil::scope_exit([&] {
         delete[] attrList;
     });
 
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
     auto deleteAttrList = wil::scope_exit([&] {
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     });
@@ -330,14 +330,14 @@ void ConPtyTests::DiesOnBreakBoth()
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
     size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, &size));
+    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
     BYTE* attrList = new BYTE[size];
     auto freeAttrList = wil::scope_exit([&] {
         delete[] attrList;
     });
 
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
     auto deleteAttrList = wil::scope_exit([&] {
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     });
@@ -419,14 +419,14 @@ void ConPtyTests::DiesOnClose()
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
     size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, &size));
+    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
     BYTE* attrList = new BYTE[size];
     auto freeAttrList = wil::scope_exit([&] {
         delete[] attrList;
     });
 
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
     auto deleteAttrList = wil::scope_exit([&] {
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     });
