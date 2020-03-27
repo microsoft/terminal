@@ -430,7 +430,7 @@ const wchar_t* _stdcall TerminalGetSelection(void* terminal)
 void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto scanCode = MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_VSC);
+    const auto scanCode = MapVirtualKeyW(gsl::narrow<UINT>(wParam), MAPVK_VK_TO_VSC);
     struct KeyModifier
     {
         int vkey;
@@ -458,7 +458,7 @@ void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
         }
     }
 
-    publicTerminal->_terminal->SendKeyEvent(static_cast<WORD>(wParam), static_cast<WORD>(scanCode), flags);
+    publicTerminal->_terminal->SendKeyEvent(gsl::narrow<WORD>(wParam), gsl::narrow<WORD>(scanCode), flags);
 }
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)

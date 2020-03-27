@@ -352,7 +352,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 
     RETURN_IF_FAILED(_CreatePseudoConsole(hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty));
 
-    *phPC = static_cast<HPCON>(pPty);
+    *phPC = pPty;
     cleanupPty.release();
 
     return S_OK;
