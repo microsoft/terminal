@@ -1085,7 +1085,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // QQQQ
     // ****************
     // The letters represent the data in the TMUX pane.
-    // The final *** line represents the modeline which we will
+    // The final *** line represents the mode line which we will
     // attempt to hold in place and not scroll.
 
     Log::Comment(L"Fill host with text pattern by feeding it into VT parser.");
@@ -1102,7 +1102,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
         hostSm.ProcessCharacter('\n');
     }
 
-    // For the last one, write out the asterisks for the modeline.
+    // For the last one, write out the asterisks for the mode line.
     for (auto i = 0; i < initialTermView.Width(); ++i)
     {
         hostSm.ProcessCharacter('*');
@@ -1126,10 +1126,10 @@ void ConptyRoundtripTests::ScrollWithMargins()
             TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
         }
 
-        // For the last row, verify we have an entire row of asterisks for the modeline.
-        const std::wstring expectedModeline(initialTermView.Width(), L'*');
+        // For the last row, verify we have an entire row of asterisks for the mode line.
+        const std::wstring expectedModeLine(initialTermView.Width(), L'*');
         const COORD expectedPos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
-        TestUtils::VerifyExpectedString(tb, expectedModeline, expectedPos);
+        TestUtils::VerifyExpectedString(tb, expectedModeLine, expectedPos);
     };
 
     // This will verify the text emitted from the PTY.
@@ -1162,7 +1162,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     verifyBuffer(termTb);
 
     Log::Comment(L"!!! OK. Set up the scroll region and let's get scrolling!");
-    // This is a simulation of what TMUX does to scroll everything except the modeline.
+    // This is a simulation of what TMUX does to scroll everything except the mode line.
     // First build up our VT strings...
     std::wstring reducedScrollRegion;
     {
@@ -1206,7 +1206,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     Log::Comment(L"Perform all the operations on the buffer.");
 
     // OK this is what TMUX does.
-    // 1. Mark off the scroll area as everything but the modeline.
+    // 1. Mark off the scroll area as everything but the mode line.
     hostSm.ProcessString(reducedScrollRegion);
     // 2. Put the cursor in the bottom-right corner of the scroll region.
     hostSm.ProcessString(reducedCursorBottomRight);
@@ -1234,7 +1234,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // Set up the verifications like above.
     auto verifyBufferAfter = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
-        // Verify the cursor is waiting on the freshly revealed line (1 above modeline)
+        // Verify the cursor is waiting on the freshly revealed line (1 above mode line)
         // and in the left most column.
         VERIFY_ARE_EQUAL(initialTermView.Height() - 2, cursor.GetPosition().Y);
         VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
@@ -1250,16 +1250,16 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
         // For the second to last row, verify that it is blank.
         {
-            const std::wstring expectedBlankline(initialTermView.Width(), L' ');
-            const COORD blanklinePos{ 0, gsl::narrow<SHORT>(rowsToWrite - 1) };
-            TestUtils::VerifyExpectedString(tb, expectedBlankline, blanklinePos);
+            const std::wstring expectedBlankLine(initialTermView.Width(), L' ');
+            const COORD blankLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite - 1) };
+            TestUtils::VerifyExpectedString(tb, expectedBlankLine, blankLinePos);
         }
 
-        // For the last row, verify we have an entire row of asterisks for the modeline.
+        // For the last row, verify we have an entire row of asterisks for the mode line.
         {
-            const std::wstring expectedModeline(initialTermView.Width(), L'*');
-            const COORD modelinePos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
-            TestUtils::VerifyExpectedString(tb, expectedModeline, modelinePos);
+            const std::wstring expectedModeLine(initialTermView.Width(), L'*');
+            const COORD modeLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
+            TestUtils::VerifyExpectedString(tb, expectedModeLine, modeLinePos);
         }
     };
 
@@ -1290,7 +1290,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     }
     expectedOutput.push_back("\x1b[?25h"); // turn the cursor back on too.
 
-    Log::Comment(L"Verify host buffer contains pattern moved up one and modeline still in place.");
+    Log::Comment(L"Verify host buffer contains pattern moved up one and mode line still in place.");
     // Verify the host side.
     verifyBufferAfter(hostTb);
 
@@ -1298,7 +1298,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // Paint the frame
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    Log::Comment(L"Verify terminal buffer contains pattern moved up one and modeline still in place.");
+    Log::Comment(L"Verify terminal buffer contains pattern moved up one and mode line still in place.");
     // Verify the terminal side.
     verifyBufferAfter(termTb);
 }
