@@ -523,9 +523,9 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-            for (int n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
+            for (unsigned int n : _rguiTimesApiUsedAnsi)
             {
-                if (_rguiTimesApiUsedAnsi[n])
+                if (n)
                 {
                     // Ansi specific API's are used less, so check if we have anything to send back.
                     // Also breaking it up into a separate TraceLoggingWriteTagged fixes a compilation warning that

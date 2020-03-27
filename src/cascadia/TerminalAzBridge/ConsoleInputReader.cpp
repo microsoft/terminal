@@ -33,15 +33,15 @@ std::optional<std::wstring_view> ConsoleInputReader::Read()
         }
 
         _buffer.resize(readCount);
-        for (auto it = _buffer.begin(); it != _buffer.end(); ++it)
+        for (auto& it : _buffer)
         {
-            if (it->EventType == WINDOW_BUFFER_SIZE_EVENT && _windowSizeChangedCallback)
+            if (it.EventType == WINDOW_BUFFER_SIZE_EVENT && _windowSizeChangedCallback)
             {
                 _windowSizeChangedCallback();
             }
-            else if (it->EventType == KEY_EVENT)
+            else if (it.EventType == KEY_EVENT)
             {
-                const auto& keyEvent = it->Event.KeyEvent;
+                const auto& keyEvent = it.Event.KeyEvent;
                 if (keyEvent.bKeyDown || (!keyEvent.bKeyDown && keyEvent.wVirtualKeyCode == VK_MENU))
                 {
                     // Got a high surrogate at the end of the buffer

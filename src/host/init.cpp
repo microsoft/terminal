@@ -110,21 +110,21 @@ void InitEnvironmentVariables()
     };
 
     WCHAR wchValue[MAX_PATH];
-    for (UINT i = 0; i < ARRAYSIZE(EnvProgFiles); i++)
+    for (auto& EnvProgFile : EnvProgFiles)
     {
-        if (!GetEnvironmentVariable(EnvProgFiles[i].szVariable, nullptr, 0))
+        if (!GetEnvironmentVariable(EnvProgFile.szVariable, nullptr, 0))
         {
             DWORD dwMaxBufferSize = sizeof(wchValue);
             if (RegGetValue(HKEY_LOCAL_MACHINE,
                             L"Software\\Microsoft\\Windows\\CurrentVersion",
-                            EnvProgFiles[i].szRegValue,
+                            EnvProgFile.szRegValue,
                             RRF_RT_REG_SZ,
                             nullptr,
                             (LPBYTE)wchValue,
                             &dwMaxBufferSize) == ERROR_SUCCESS)
             {
                 wchValue[(dwMaxBufferSize / sizeof(wchValue[0])) - 1] = 0;
-                SetEnvironmentVariable(EnvProgFiles[i].szVariable, wchValue);
+                SetEnvironmentVariable(EnvProgFile.szVariable, wchValue);
             }
         }
     }

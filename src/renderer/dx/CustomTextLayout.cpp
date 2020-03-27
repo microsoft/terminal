@@ -721,11 +721,8 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+        for (const auto& run : _runs)
         {
-            // Get the run
-            const Run& run = _runs.at(runIndex);
-
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
             DWRITE_GLYPH_RUN glyphRun;

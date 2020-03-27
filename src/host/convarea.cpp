@@ -28,10 +28,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
-    for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
+    for (const auto& ConvAreaInfo : pIme->ConvAreaCompStr)
     {
-        const auto& ConvAreaInfo = pIme->ConvAreaCompStr[i];
-
         if (!ConvAreaInfo.IsHidden())
         {
             const auto currentViewport = ScreenInfo.GetViewport().ToInclusive();

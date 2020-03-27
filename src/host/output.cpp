@@ -445,9 +445,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     const auto remaining = Viewport::Subtract(fill, target);
 
     // Apply the fill data to each of the viewports we're given here.
-    for (size_t i = 0; i < remaining.size(); i++)
+    for (const auto& view : remaining)
     {
-        const auto& view = remaining.at(i);
         screenInfo.WriteRect(fillData, view);
     }
 }

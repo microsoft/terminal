@@ -80,9 +80,8 @@ void TextAttributeTests::TestRoundtripMetaBits()
         COMMON_LVB_UNDERSCORE
     };
 
-    for (int i = 0; i < ARRAYSIZE(metaFlags); ++i)
+    for (unsigned short flag : metaFlags)
     {
-        WORD flag = metaFlags[i];
         WORD expectedLegacy = FOREGROUND_BLUE | BACKGROUND_RED | flag;
         WORD metaOnly = expectedLegacy & META_ATTRS;
         VERIFY_ARE_EQUAL(flag, metaOnly);

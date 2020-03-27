@@ -39,10 +39,10 @@ class DbcsTests
         // fill ASCII characters first by looping and
         // incrementing. we'll cover up the middle later
         WCHAR wch = L'a';
-        for (size_t i = 0; i < ARRAYSIZE(rgci); i++)
+        for (auto& i : rgci)
         {
-            rgci[i].Char.UnicodeChar = wch;
-            rgci[i].Attributes = wAttrTest;
+            i.Char.UnicodeChar = wch;
+            i.Attributes = wAttrTest;
             wch++;
         }
 

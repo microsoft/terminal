@@ -218,9 +218,8 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
 std::string toPrintableString(std::string& inString)
 {
     std::string retval = "";
-    for (size_t i = 0; i < inString.length(); i++)
+    for (char c : inString)
     {
-        char c = inString[i];
         if (c < '\x20')
         {
             retval += "^";
@@ -478,7 +477,7 @@ DWORD WINAPI InputThread(LPVOID /*lpParameter*/)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        // Not to future self: You can't read utf-8 from the console yet.
+        // Note to future self: You can't read utf-8 from the console yet.
         bool fSuccess = !!ReadConsoleInput(hIn, rc, 256, &dwRead);
         if (fSuccess)
         {
@@ -553,8 +552,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
             else if (arg == std::wstring(L"--out") && i + 1 < argc)
             {
                 g_useOutfile = true;
-                outfile = argv[i + 1];
-                i++;
+                outfile = argv[++i];
             }
         }
     }

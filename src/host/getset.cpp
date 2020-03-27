@@ -1934,11 +1934,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     {
         std::wstring sanitized;
         sanitized.reserve(title.size());
-        for (size_t i = 0; i < title.size(); i++)
+        for (wchar_t i : title)
         {
-            if (title.at(i) >= UNICODE_SPACE)
+            if (i >= UNICODE_SPACE)
             {
-                sanitized.push_back(title.at(i));
+                sanitized.push_back(i);
             }
         }
 

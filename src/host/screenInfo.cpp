@@ -1998,6 +1998,130 @@ bool SCREEN_INFORMATION::_IsInVTMode() const
 }
 
 // Routine Description:
+// - Sets a VT tab stop in the column sColumn. If there is already a tab there, it does nothing.
+// Parameters:
+// - sColumn: the column to add a tab stop to.
+// Return value:
+// - none
+// Note: may throw exception on allocation error
+void SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
+{
+    if (std::find(_tabStops.begin(), _tabStops.end(), sColumn) == _tabStops.end())
+    {
+        _tabStops.push_back(sColumn);
+        _tabStops.sort();
+    }
+}
+
+// Routine Description:
+// - Clears all of the VT tabs that have been set. This also deletes them.
+// Parameters:
+// <none>
+// Return value:
+// <none>
+void SCREEN_INFORMATION::ClearTabStops() noexcept
+{
+    _tabStops.clear();
+}
+
+// Routine Description:
+// - Clears the VT tab in the column sColumn (if one has been set). Also deletes it from the heap.
+// Parameters:
+// - sColumn - The column to clear the tab stop for.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::ClearTabStop(const SHORT sColumn) noexcept
+{
+    _tabStops.remove(sColumn);
+}
+
+// Routine Description:
+// - Places the location that a forwards tab would take cCurrCursorPos to into pcNewCursorPos
+// Parameters:
+// - cCurrCursorPos - The initial cursor location
+// Return value:
+// - <none>
+COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexcept
+{
+    COORD cNewCursorPos = cCurrCursorPos;
+    SHORT sWidth = GetBufferSize().RightInclusive();
+    if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
+    {
+        cNewCursorPos.X = sWidth;
+    }
+    else
+    {
+        // search for next tab stop
+        for (auto _tabStop : _tabStops)
+        {
+            if (_tabStop > cCurrCursorPos.X)
+            {
+                // make sure we don't exceed the width of the buffer
+                cNewCursorPos.X = std::min(_tabStop, sWidth);
+                break;
+            }
+        }
+    }
+    return cNewCursorPos;
+}
+
+// Routine Description:
+// - Places the location that a backwards tab would take cCurrCursorPos to into pcNewCursorPos
+// Parameters:
+// - cCurrCursorPos - The initial cursor location
+// Return value:
+// - <none>
+COORD SCREEN_INFORMATION::GetReverseTab(const COORD cCurrCursorPos) const noexcept
+{
+    COORD cNewCursorPos = cCurrCursorPos;
+    // if we're at 0, or there are NO tabs, or the first tab is farther right than where we are
+    if (cCurrCursorPos.X == 0 || _tabStops.empty() || _tabStops.front() >= cCurrCursorPos.X)
+    {
+        cNewCursorPos.X = 0;
+    }
+    else
+    {
+        for (auto it = _tabStops.crbegin(); it != _tabStops.crend(); ++it)
+        {
+            if (*it < cCurrCursorPos.X)
+            {
+                cNewCursorPos.X = *it;
+                break;
+            }
+        }
+    }
+    return cNewCursorPos;
+}
+
+// Routine Description:
+// - Returns true if any VT-style tab stops have been set (with AddTabStop)
+// Parameters:
+// <none>
+// Return value:
+// - true if any VT-style tab stops have been set
+bool SCREEN_INFORMATION::AreTabsSet() const noexcept
+{
+    return !_tabStops.empty();
+}
+
+// Routine Description:
+// - adds default tab stops for vt mode
+void SCREEN_INFORMATION::SetDefaultVtTabStops()
+{
+    _tabStops.clear();
+    const int width = GetBufferSize().RightInclusive();
+    FAIL_FAST_IF(width < 0);
+    for (int pos = 0; pos <= width; pos += TAB_SIZE)
+    {
+        _tabStops.push_back(gsl::narrow<short>(pos));
+    }
+    if (_tabStops.back() != width)
+    {
+        _tabStops.push_back(gsl::narrow<short>(width));
+    }
+}
+
+// Routine Description:
 // - Returns the value of the attributes
 // Parameters:
 // <none>

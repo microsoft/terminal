@@ -326,13 +326,13 @@ void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
         { 1, 0 }
     };
 
-    for (size_t i = 0; i < ARRAYSIZE(rgTestCoords); i++)
+    for (auto rgTestCoord : rgTestCoords)
     {
-        const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
+        const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoord);
         VERIFY_IS_FALSE(!!fSucceeded,
                         NoThrowString().Format(L"Setting zero console size should always fail (x: %d y:%d)",
-                                               rgTestCoords[i].X,
-                                               rgTestCoords[i].Y));
+                                               rgTestCoord.X,
+                                               rgTestCoord.Y));
         VERIFY_ARE_EQUAL((DWORD)ERROR_INVALID_PARAMETER, GetLastError());
     }
 }

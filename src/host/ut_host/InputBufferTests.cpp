@@ -145,11 +145,11 @@ class InputBufferTests
         INPUT_RECORD mouseRecords[RECORD_INSERT_COUNT];
         std::deque<std::unique_ptr<IInputEvent>> events;
 
-        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
+        for (auto& mouseRecord : mouseRecords)
         {
-            mouseRecords[i].EventType = MOUSE_EVENT;
-            mouseRecords[i].Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
-            events.push_back(IInputEvent::Create(mouseRecords[i]));
+            mouseRecord.EventType = MOUSE_EVENT;
+            mouseRecord.Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
+            events.push_back(IInputEvent::Create(mouseRecord));
         }
         // add an extra event
         events.push_front(IInputEvent::Create(mouseRecords[0]));
@@ -208,10 +208,10 @@ class InputBufferTests
         INPUT_RECORD keyRecords[RECORD_INSERT_COUNT];
         std::deque<std::unique_ptr<IInputEvent>> events;
 
-        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
+        for (auto& keyRecord : keyRecords)
         {
-            keyRecords[i] = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
-            events.push_back(IInputEvent::Create(keyRecords[i]));
+            keyRecord = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
+            events.push_back(IInputEvent::Create(keyRecord));
         }
         inputBuffer.Flush();
         // send one key event to possibly coalesce into later
@@ -296,9 +296,9 @@ class InputBufferTests
                                                  false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
 
-        for (size_t i = 0; i < outEvents.size(); ++i)
+        for (auto& outEvent : outEvents)
         {
-            VERIFY_ARE_EQUAL(outEvents[i]->EventType(), InputEventType::KeyEvent);
+            VERIFY_ARE_EQUAL(outEvent->EventType(), InputEventType::KeyEvent);
         }
     }
 
@@ -422,9 +422,9 @@ class InputBufferTests
         inRecords[3].EventType = MOUSE_EVENT;
 
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        for (size_t i = 0; i < recordInsertCount; ++i)
+        for (const auto& inRecord : inRecords)
         {
-            inEvents.push_back(IInputEvent::Create(inRecords[i]));
+            inEvents.push_back(IInputEvent::Create(inRecord));
         }
 
         inputBuffer.Flush();

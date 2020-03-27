@@ -496,8 +496,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
             // so we can just adjust the final run's column count instead of adding another segment here.
             if (pNewRunPos->GetAttributes() == pExistingRunPos->GetAttributes())
             {
-                size_t length = pNewRunPos->GetLength();
-                length += (iExistingRunCoverage - (iEnd + 1));
+                const size_t length = pNewRunPos->GetLength() + (iExistingRunCoverage - (iEnd + 1));
                 pNewRunPos->SetLength(length);
             }
             else
@@ -534,8 +533,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         else if (pNewRunPos->GetAttributes() == pExistingRunPos->GetAttributes())
         {
             // Add the value from the existing run into the current new run position.
-            size_t length = pNewRunPos->GetLength();
-            length += pExistingRunPos->GetLength();
+            const size_t length = pNewRunPos->GetLength() + pExistingRunPos->GetLength();
             pNewRunPos->SetLength(length);
 
             // Advance the existing run position since we consumed its value and merged it in.

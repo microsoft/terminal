@@ -145,10 +145,8 @@ class AttrRowTests
         ATTR_ROW* pTestItems[]{ pSingle, pChain };
 
         // Loop cases
-        for (UINT iIndex = 0; iIndex < ARRAYSIZE(pTestItems); iIndex++)
+        for (auto pUnderTest : pTestItems)
         {
-            ATTR_ROW* pUnderTest = pTestItems[iIndex];
-
             pUnderTest->Reset(attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
@@ -373,9 +371,9 @@ class AttrRowTests
 
         Log::Comment(L"Test inserting a single item of a variable length into the run.");
         WORD rgch1Options[] = { L'X', L'R', L'G', L'B' };
-        for (size_t iCh1Option = 0; iCh1Option < ARRAYSIZE(rgch1Options); iCh1Option++)
+        for (unsigned short rgch1Option : rgch1Options)
         {
-            ch1 = rgch1Options[iCh1Option];
+            ch1 = rgch1Option;
             for (UINT iCh1Length = 1; iCh1Length <= uiTestRunLength; iCh1Length++)
             {
                 uiChar1Length = iCh1Length;
@@ -409,9 +407,9 @@ class AttrRowTests
 
         Log::Comment(L"Test inserting a multiple item run with each piece having variable length into the existing run.");
         WORD rgch1Options[] = { L'X', L'R', L'G', L'B' };
-        for (size_t iCh1Option = 0; iCh1Option < ARRAYSIZE(rgch1Options); iCh1Option++)
+        for (unsigned short rgch1Option : rgch1Options)
         {
-            ch1 = rgch1Options[iCh1Option];
+            ch1 = rgch1Option;
 
             UINT const uiMaxCh1Length = uiTestRunLength - 1; // leave at least 1 space for the second piece of the insert run.
             for (UINT iCh1Length = 1; iCh1Length <= uiMaxCh1Length; iCh1Length++)
@@ -419,9 +417,9 @@ class AttrRowTests
                 uiChar1Length = iCh1Length;
 
                 WORD rgch2Options[] = { L'Y' };
-                for (size_t iCh2Option = 0; iCh2Option < ARRAYSIZE(rgch2Options); iCh2Option++)
+                for (unsigned short rgch2Option : rgch2Options)
                 {
-                    ch2 = rgch2Options[iCh2Option];
+                    ch2 = rgch2Option;
 
                     // When choosing the length of the second item, it can't be bigger than the remaining space in the run
                     // when accounting for the length of the first piece chosen.
@@ -674,10 +672,8 @@ class AttrRowTests
 
         ATTR_ROW* pTestItems[]{ pSingle, pChain };
 
-        for (UINT iIndex = 0; iIndex < ARRAYSIZE(pTestItems); iIndex++)
+        for (auto pUnderTest : pTestItems)
         {
-            ATTR_ROW* pUnderTest = pTestItems[iIndex];
-
             pUnderTest->SetAttrToEnd(0, TestAttr);
 
             // should be down to 1 attribute set from beginning to end of string
@@ -695,10 +691,8 @@ class AttrRowTests
     {
         ATTR_ROW* pTestItems[]{ pSingle, pChain };
 
-        for (UINT iIndex = 0; iIndex < ARRAYSIZE(pTestItems); iIndex++)
+        for (auto pUnderTest : pTestItems)
         {
-            ATTR_ROW* pUnderTest = pTestItems[iIndex];
-
             const size_t Result = pUnderTest->_cchRowWidth;
 
             VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);

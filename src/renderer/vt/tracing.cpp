@@ -40,15 +40,15 @@ RenderTracing::~RenderTracing()
 std::string toPrintableString(const std::string_view& inString)
 {
     std::string retval = "";
-    for (size_t i = 0; i < inString.length(); i++)
+    for (unsigned char c : inString)
     {
-        unsigned char c = inString[i];
         if (c < '\x20')
         {
             retval += "^";
             char actual = (c + 0x40);
             retval += std::string(1, actual);
         }
+
         else if (c == '\x7f')
         {
             retval += "\\x7f";
@@ -62,6 +62,7 @@ std::string toPrintableString(const std::string_view& inString)
             retval += std::string(1, c);
         }
     }
+
     return retval;
 }
 void RenderTracing::TraceString(const std::string_view& instr) const

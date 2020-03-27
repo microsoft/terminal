@@ -24,62 +24,45 @@ CONSOLE_KEY_INFO ConsoleKeyInfo[CONSOLE_MAX_KEY_INFO];
 
 void StoreKeyInfo(_In_ PMSG msg)
 {
-    UINT i;
-
-    for (i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
+    for (auto& consoleKeyInfo : ConsoleKeyInfo)
     {
-        if (ConsoleKeyInfo[i].hWnd == CONSOLE_FREE_KEY_INFO || ConsoleKeyInfo[i].hWnd == msg->hwnd)
+        if (consoleKeyInfo.hWnd == CONSOLE_FREE_KEY_INFO || consoleKeyInfo.hWnd == msg->hwnd)
         {
-            break;
+            consoleKeyInfo.hWnd = msg->hwnd;
+            consoleKeyInfo.wVirtualKeyCode = LOWORD(msg->wParam);
+            consoleKeyInfo.wVirtualScanCode = (BYTE)(HIWORD(msg->lParam));
+            return;
         }
     }
 
-    if (i != CONSOLE_MAX_KEY_INFO)
-    {
-        ConsoleKeyInfo[i].hWnd = msg->hwnd;
-        ConsoleKeyInfo[i].wVirtualKeyCode = LOWORD(msg->wParam);
-        ConsoleKeyInfo[i].wVirtualScanCode = (BYTE)(HIWORD(msg->lParam));
-    }
-    else
-    {
-        RIPMSG0(RIP_WARNING, "ConsoleKeyInfo buffer is full");
-    }
+    RIPMSG0(RIP_WARNING, "ConsoleKeyInfo buffer is full");
 }
 
 void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD pwVirtualScanCode, _In_ BOOL FreeKeyInfo)
 {
-    UINT i;
-
-    for (i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
+    for (auto& consoleKeyInfo : ConsoleKeyInfo)
     {
-        if (ConsoleKeyInfo[i].hWnd == hWnd)
+        if (consoleKeyInfo.hWnd == hWnd)
         {
-            break;
+            *pwVirtualKeyCode = consoleKeyInfo.wVirtualKeyCode;
+            *pwVirtualScanCode = consoleKeyInfo.wVirtualScanCode;
+            if (FreeKeyInfo)
+            {
+                consoleKeyInfo.hWnd = CONSOLE_FREE_KEY_INFO;
+            }
+            return;
         }
     }
-
-    if (i != CONSOLE_MAX_KEY_INFO)
-    {
-        *pwVirtualKeyCode = ConsoleKeyInfo[i].wVirtualKeyCode;
-        *pwVirtualScanCode = ConsoleKeyInfo[i].wVirtualScanCode;
-        if (FreeKeyInfo)
-        {
-            ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
-        }
-    }
-    else
-    {
-        *pwVirtualKeyCode = (WORD)MapVirtualKeyW(*pwVirtualScanCode, 3);
-    }
+    *pwVirtualKeyCode = (WORD)MapVirtualKeyW(*pwVirtualScanCode, 3);
 }
 
 void ClearKeyInfo(const HWND hWnd)
 {
-    for (UINT i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
+    for (auto& consoleKeyInfo : ConsoleKeyInfo)
     {
-        if (ConsoleKeyInfo[i].hWnd == hWnd)
+        if (consoleKeyInfo.hWnd == hWnd)
         {
-            ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
+            consoleKeyInfo.hWnd = CONSOLE_FREE_KEY_INFO;
         }
     }
 }

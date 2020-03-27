@@ -291,9 +291,9 @@ CEditSessionObject::Release()
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, nullptr) == S_OK)
                 {
-                    for (int i = 0; i < guid_size; i++)
+                    for (auto& guid : guids)
                     {
-                        if (IsEqualGUID(tfPropertyVal.guidId, *guids[i]))
+                        if (IsEqualGUID(tfPropertyVal.guidId, *guid))
                         {
                             if ((V_VT(&tfPropertyVal.varValue) == VT_I4 && V_I4(&tfPropertyVal.varValue) != 0))
                             {

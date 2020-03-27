@@ -1102,14 +1102,14 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
     SGR_PARAMS input;
     MOUSE_EVENT_PARAMS expected;
     INPUT_RECORD inputRec;
-    for (size_t i = 0; i < testData.size(); i++)
+    for (const auto& i : testData)
     {
         // construct test input
-        input = std::get<0>(testData[i]);
+        input = std::get<0>(i);
         const std::wstring seq = GenerateSgrMouseSequence(std::get<0>(input), std::get<1>(input), std::get<2>(input), std::get<3>(input));
 
         // construct expected result
-        expected = std::get<1>(testData[i]);
+        expected = std::get<1>(i);
         inputRec.EventType = MOUSE_EVENT;
         inputRec.Event.MouseEvent.dwButtonState = std::get<0>(expected);
         inputRec.Event.MouseEvent.dwControlKeyState = std::get<1>(expected);

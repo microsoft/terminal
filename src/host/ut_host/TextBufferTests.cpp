@@ -596,10 +596,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
     Log::Comment(L"Test 2 = FirstRow of circular buffer IS THE FINAL ROW of the buffer (and therefore circles)");
     short rgRowsToTest[] = { 2, sBufferHeight - 1 };
 
-    for (UINT iTestIndex = 0; iTestIndex < ARRAYSIZE(rgRowsToTest); iTestIndex++)
+    for (short iRowToTestIndex : rgRowsToTest)
     {
-        const short iRowToTestIndex = rgRowsToTest[iTestIndex];
-
         short iNextRowIndex = iRowToTestIndex + 1;
         // if we're at or crossing the height, loop back to 0 (circular buffer)
         if (iNextRowIndex >= sBufferHeight)
