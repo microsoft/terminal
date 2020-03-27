@@ -95,7 +95,7 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore* 
             hr = (sValue >= 0 && sValue <= BYTE_MAX) ? S_OK : E_INVALIDARG;
             if (SUCCEEDED(hr))
             {
-                *pbValue = (BYTE)sValue;
+                *pbValue = static_cast<BYTE>(sValue);
             }
         }
     }
@@ -206,7 +206,7 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore* 
             hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
             if (SUCCEEDED(hr))
             {
-                pStateInfo->CursorType = (unsigned int)placeholder;
+                pStateInfo->CursorType = static_cast<unsigned int>(placeholder);
             }
         }
         if (SUCCEEDED(hr))
@@ -440,8 +440,8 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             props.wPopupFillAttribute = pStateInfo->PopupAttributes;
             props.dwScreenBufferSize = pStateInfo->ScreenBufferSize;
             props.dwWindowSize = pStateInfo->WindowSize;
-            props.dwWindowOrigin.X = (SHORT)pStateInfo->WindowPosX;
-            props.dwWindowOrigin.Y = (SHORT)pStateInfo->WindowPosY;
+            props.dwWindowOrigin.X = static_cast<SHORT>(pStateInfo->WindowPosX);
+            props.dwWindowOrigin.Y = static_cast<SHORT>(pStateInfo->WindowPosY);
             props.nFont = 0;
             props.nInputBufferSize = 0;
             props.dwFontSize = pStateInfo->FontSize;
@@ -462,7 +462,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             hr = psldl->RemoveDataBlock(NT_CONSOLE_PROPS_SIG);
             if (SUCCEEDED(hr))
             {
-                hr = psldl->AddDataBlock((LPVOID)&props);
+                hr = psldl->AddDataBlock(static_cast<LPVOID>(&props));
             }
 
             if (SUCCEEDED(hr) && fEastAsianSystem)
@@ -475,7 +475,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
                 hr = psldl->RemoveDataBlock(NT_FE_CONSOLE_PROPS_SIG);
                 if (SUCCEEDED(hr))
                 {
-                    hr = psldl->AddDataBlock((LPVOID)&fe_props);
+                    hr = psldl->AddDataBlock(static_cast<LPVOID>(&fe_props));
                 }
             }
 
