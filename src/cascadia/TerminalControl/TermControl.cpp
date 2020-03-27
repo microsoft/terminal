@@ -1239,15 +1239,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   scrolling on devices where the touchpad doesn't correctly handle
     //   scrolling inactive windows.
     // Arguments:
-    // - location: the location of the mouse during this event
+    // - location: the location of the mouse during this event. This location is
+    //   relative to the origin of the control
     // - delta: the mouse wheel delta that triggered this event.
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
                                    const int32_t delta)
     {
-        // TODO: Right now, the location is window-relative. I believe this needs to get converted to control-relative
-
         const auto modifiers = _GetPressedModifierKeys();
-
         return _DoMouseWheel(location, modifiers, delta, false);
     }
 

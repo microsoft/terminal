@@ -362,7 +362,13 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
             if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
             {
-                if (control.OnMouseWheel(coord, delta))
+                // Translate the event to the coordinate space of the control
+                // we're attempting to dispatch it to
+                const auto transform = e.TransformToVisual(nullptr);
+                const auto controlOrigin = transform.TransformPoint(til::point{ 0, 0 });
+                const til::point offsetPoint{ ::base::ClampSub(coord.x(), controlOrigin.X), ::base::ClampSub(coord.y(), controlOrigin.Y) };
+
+                if (control.OnMouseWheel(offsetPoint, delta))
                 {
                     // If the element handled the mouse wheel event, don't
                     // continue to iterate over the remaining controls.
