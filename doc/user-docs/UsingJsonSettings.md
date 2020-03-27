@@ -109,7 +109,8 @@ instead of the terminal.
 
 ### Binding multiple keys
 
-You can have multiple key chords bound to the same action, but they should each be in their own bindings. For example:
+You can have multiple key chords bound to the same action. To do this, simply
+add multiple bindings for the same action. For example:
 
 ```json
     "keybindings" :
