@@ -238,6 +238,7 @@ CBoolean
 cbt
 cbuffer
 CCCBB
+CCCC
 ccf
 cch
 CCHAR
@@ -534,6 +535,7 @@ dcommon
 DCompile
 dcompiler
 ddb
+DDDD
 dde
 DDESHARE
 DDevice
@@ -710,6 +712,7 @@ edputil
 edu
 eeb
 eee
+EEEE
 Efast
 EHsc
 EJO
@@ -1928,6 +1931,7 @@ pythonw
 qi
 QJ
 qo
+QQQQ
 qsort
 queryable
 QUESTIONMARK

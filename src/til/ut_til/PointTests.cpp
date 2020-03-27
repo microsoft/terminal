@@ -207,6 +207,50 @@ class PointTests
         }
     }
 
+    TEST_METHOD(AdditionInplace)
+    {
+        Log::Comment(L"0.) Addition of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() + pt2.x(), pt.y() + pt2.y() };
+
+            auto actual = pt;
+            actual += pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Addition results in value that is too large (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual += pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Addition results in value that is too large (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual += pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
     TEST_METHOD(Subtraction)
     {
         Log::Comment(L"0.) Subtraction of two things that should be in bounds.");
@@ -240,6 +284,50 @@ class PointTests
 
             auto fn = [&]() {
                 pt2 - pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(SubtractionInplace)
+    {
+        Log::Comment(L"0.) Subtraction of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() - pt2.x(), pt.y() - pt2.y() };
+
+            auto actual = pt;
+            actual -= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Subtraction results in value that is too small (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ -2, -2 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual -= pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Subtraction results in value that is too small (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ -2, -2 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual -= pt;
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -285,6 +373,50 @@ class PointTests
         }
     }
 
+    TEST_METHOD(MultiplicationInplace)
+    {
+        Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() * pt2.x(), pt.y() * pt2.y() };
+
+            auto actual = pt;
+            actual *= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Multiplication results in value that is too large (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 10, 10 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual *= pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Multiplication results in value that is too large (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ 10, 10 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual *= pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
     TEST_METHOD(Division)
     {
         Log::Comment(L"0.) Division of two things that should be in bounds.");
@@ -305,6 +437,35 @@ class PointTests
 
             auto fn = [&]() {
                 pt2 / pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(DivisionInplace)
+    {
+        Log::Comment(L"0.) Division of two things that should be in bounds.");
+        {
+            const til::point pt{ 555, 510 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() / pt2.x(), pt.y() / pt2.y() };
+            auto actual = pt;
+            actual /= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Division by zero");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual /= pt;
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
