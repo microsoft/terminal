@@ -527,7 +527,7 @@ static int shiftInt(std::deque<std::wstring>& container)
 
 static HANDLE shiftHandle(std::deque<std::wstring>& container)
 {
-    return (HANDLE)static_cast<uintptr_t>(shiftInt(container));
+    return (HANDLE) static_cast<uintptr_t>(shiftInt(container));
 }
 
 static int doChild(std::deque<std::wstring> argv)

@@ -31,7 +31,7 @@ typedef _Return_type_success_(return >= 0) long NTSTATUS;
 #define FACILITY_NTWIN32 0x7
 __inline int NTSTATUS_FROM_WIN32(long x)
 {
-    return x <= 0 ? static_cast<NTSTATUS>(x) : static_cast<NTSTATUS>(((x) & 0x0000FFFF) | (FACILITY_NTWIN32 << 16) | ERROR_SEVERITY_ERROR);
+    return x <= 0 ? static_cast<NTSTATUS>(x) : static_cast<NTSTATUS>(((x)&0x0000FFFF) | (FACILITY_NTWIN32 << 16) | ERROR_SEVERITY_ERROR);
 }
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)

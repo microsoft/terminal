@@ -867,7 +867,7 @@ VOID SetRegistryValues(
                                                        CONSOLE_REGISTRY_FACENAME,
                                                        REG_SZ,
                                                        (BYTE*)(pStateInfo->FaceName),
-                                                       static_cast<DWORD>(wcslen(pStateInfo->FaceName)+ 1) * sizeof(TCHAR)));
+                                                       static_cast<DWORD>(wcslen(pStateInfo->FaceName) + 1) * sizeof(TCHAR)));
 
     //
     // Save cursor size

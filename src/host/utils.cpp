@@ -100,7 +100,7 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
     UINT cch = 0;
 
     // String Tables are broken up into 16 string segments.  Find the segment containing the string we are interested in.
-    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)static_cast<LONG_PTR>((static_cast<USHORT>(wID) >> 4) + 1), wLangId);
+    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR) static_cast<LONG_PTR>((static_cast<USHORT>(wID) >> 4) + 1), wLangId);
     if (hResInfo != nullptr)
     {
         // Load that segment.

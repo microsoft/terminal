@@ -643,7 +643,7 @@ class AttrRowTests
         VERIFY_ARE_EQUAL(pSingle->_list.size(), 2u);
 
         VERIFY_ARE_EQUAL(pSingle->_list[0].GetAttributes(), _DefaultAttr);
-        VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), static_cast<unsigned int>(_sDefaultLength -(_sDefaultLength - iTestIndex)));
+        VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), static_cast<unsigned int>(_sDefaultLength - (_sDefaultLength - iTestIndex)));
 
         VERIFY_ARE_EQUAL(pSingle->_list[1].GetAttributes(), TestAttr);
         VERIFY_ARE_EQUAL(pSingle->_list[1].GetLength(), static_cast<unsigned int>(_sDefaultLength - iTestIndex));
