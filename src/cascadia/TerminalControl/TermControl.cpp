@@ -892,6 +892,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->IsTrackingMouseInput();
     }
 
+    // ControlKeyStates TermControl::s_TranslateVirtaulkeys(const Windows::System::VirtualKeyModifiers& modifiers) noexcept :
+    //     _value(0)
+    // {
+    //     // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+    //     // macro directly with a VirtualKeyModifiers
+    //     const auto m = static_cast<uint32_t>(modifiers);
+    //     _value |= WI_IsFlagSet(m, static_cast<uint32_t>(VirtualKeyModifiers::Shift)) ? SHIFT_PRESSED : 0;
+    //     // Since we can't differentiate between the left & right versions of Ctrl & Alt in a VirtualKeyModifiers
+    //     _value |= WI_IsFlagSet(m, static_cast<uint32_t>(VirtualKeyModifiers::Menu)) ? LEFT_ALT_PRESSED : 0;
+    //     _value |= WI_IsFlagSet(m, static_cast<uint32_t>(VirtualKeyModifiers::Ctrl)) ? LEFT_CTRL_PRESSED : 0;
+    // }
+
     // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
@@ -1164,7 +1176,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         const auto point = args.GetCurrentPoint(*this);
         auto result = _DoMouseWheel(point.Position(),
-                                    args.KeyModifiers(),
+                                    ControlKeyStates{ args.KeyModifiers() },
                                     point.Properties().MouseWheelDelta(),
                                     point.Properties().IsLeftButtonPressed());
         if (result)
@@ -1185,7 +1197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
     // - delta: the mouse wheel delta that triggered this event.
     bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
-                                    const VirtualKeyModifiers modifiers,
+                                    const ControlKeyStates modifiers,
                                     const int32_t delta,
                                     const bool isLeftButtonPressed)
     {
@@ -1199,13 +1211,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return _terminal->SendMouseEvent(terminalPosition, uiButton, _GetPressedModifierKeys(), ::base::saturated_cast<short>(delta));
         }
 
-        // Get the state of the Ctrl & Shift keys
-        // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
-        // directly with a VirtualKeyModifiers
-        const auto ctrlPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
-                                              static_cast<uint32_t>(VirtualKeyModifiers::Control));
-        const auto shiftPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
-                                               static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+        const auto ctrlPressed = modifiers.IsCtrlPressed();
+        const auto shiftPressed = modifiers.IsShiftPressed();
 
         if (ctrlPressed && shiftPressed)
         {
@@ -1236,8 +1243,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: Right now, the location is window-relative. I believe this needs to get converted to control-relative
 
         const auto modifiers = _GetPressedModifierKeys();
-        // TODO: Try and use the above to get the current modifiers, instead of just None
-        return _DoMouseWheel(location, Windows::System::VirtualKeyModifiers::None, delta, false);
+
+        return _DoMouseWheel(location, modifiers, delta, false);
     }
 
     // Method Description:
