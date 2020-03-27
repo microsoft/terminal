@@ -533,6 +533,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
                                                                     &props,
                                                                     &_d2dRenderTarget));
 
+        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
 
         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),

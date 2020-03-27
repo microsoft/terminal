@@ -273,7 +273,7 @@ using namespace Microsoft::Console::Render;
     rect.right = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), rect.right);
 
     // Clip all drawing in this glyph run to where we expect.
-    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
     // Ensure we pop it on the way out
     auto popclip = wil::scope_exit([&d2dContext]() noexcept {
         d2dContext->PopAxisAlignedClip();
