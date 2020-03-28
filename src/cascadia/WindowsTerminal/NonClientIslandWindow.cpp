@@ -811,7 +811,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
-    _UpdateIslandRegion();
+    _RecreateDragBarWindow();
 }
 
 // Method Description:
