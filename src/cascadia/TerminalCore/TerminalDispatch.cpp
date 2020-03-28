@@ -401,3 +401,101 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
     }
     return success;
 }
+
+bool TerminalDispatch::SoftReset() noexcept
+{
+    // TODO:GH#1883 much of this method is not yet implemented in the Terminal,
+    // because the Terminal _doesn't need to_ yet. The terminal is only ever
+    // connected to conpty, so it doesn't implement most of these things that
+    // Hard/Soft Reset would reset. As those things are implemented, they should
+
+    // also get cleared here.
+    //
+    // This code is left here (from its original form in conhost) as a reminder
+    // of what needs to be done.
+
+    bool success = CursorVisibility(true); // Cursor enabled.
+    // if (success)
+    // {
+    //     success = SetOriginMode(false); // Absolute cursor addressing.
+    // }
+    // if (success)
+    // {
+    //     success = SetAutoWrapMode(true); // Wrap at end of line.
+    // }
+    if (success)
+    {
+        success = SetCursorKeysMode(false); // Normal characters.
+    }
+    if (success)
+    {
+        success = SetKeypadMode(false); // Numeric characters.
+    }
+    // if (success)
+    // {
+    //     // Top margin = 1; bottom margin = page length.
+    //     success = _DoSetTopBottomScrollingMargins(0, 0);
+    // }
+    // if (success)
+    // {
+    //     success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
+    // }
+    if (success)
+    {
+        const auto opt = DispatchTypes::GraphicsOptions::Off;
+        success = SetGraphicsRendition({ &opt, 1 }); // Normal rendition.
+    }
+    // if (success)
+    // {
+    //     // Reset the saved cursor state.
+    //     // Note that XTerm only resets the main buffer state, but that
+    //     // seems likely to be a bug. Most other terminals reset both.
+    //     _savedCursorState.at(0) = {}; // Main buffer
+    //     _savedCursorState.at(1) = {}; // Alt buffer
+    // }
+
+    return success;
+}
+
+bool TerminalDispatch::HardReset() noexcept
+{
+    // TODO:GH#1883 much of this method is not yet implemented in the Terminal,
+    // because the Terminal _doesn't need to_ yet. The terminal is only ever
+    // connected to conpty, so it doesn't implement most of these things that
+    // Hard/Soft Reset would reset. As those things ar implemented, they should
+    // also get cleared here.
+    //
+    // This code is left here (from its original form in conhost) as a reminder
+    // of what needs to be done.
+
+    // Sets the SGR state to normal - this must be done before EraseInDisplay
+    //      to ensure that it clears with the default background color.
+    bool success = SoftReset();
+
+    // Clears the screen - Needs to be done in two operations.
+    if (success)
+    {
+        success = EraseInDisplay(DispatchTypes::EraseType::All);
+    }
+    if (success)
+    {
+        success = EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
+
+    // // Set the DECSCNM screen mode back to normal.
+    // if (success)
+    // {
+    //     success = SetScreenMode(false);
+    // }
+
+    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
+    if (success)
+    {
+        success = CursorPosition(1, 1);
+    }
+
+    // // delete all current tab stops and reapply
+    // _pConApi->PrivateSetDefaultTabStops();
+
+    return success;
+}

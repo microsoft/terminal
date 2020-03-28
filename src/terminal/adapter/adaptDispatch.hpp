@@ -39,14 +39,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorUp(const size_t distance) override; // CUU
         bool CursorDown(const size_t distance) override; // CUD
         bool CursorForward(const size_t distance) override; // CUF
-        bool CursorBackward(const size_t distance) override; // CUB
+        bool CursorBackward(const size_t distance) override; // CUB, BS
         bool CursorNextLine(const size_t distance) override; // CNL
         bool CursorPrevLine(const size_t distance) override; // CPL
-        bool CursorHorizontalPositionAbsolute(const size_t column) override; // CHA
+        bool CursorHorizontalPositionAbsolute(const size_t column) override; // HPA, CHA
         bool VerticalLinePositionAbsolute(const size_t line) override; // VPA
         bool HorizontalPositionRelative(const size_t distance) override; // HPR
         bool VerticalPositionRelative(const size_t distance) override; // VPR
-        bool CursorPosition(const size_t line, const size_t column) override; // CUP
+        bool CursorPosition(const size_t line, const size_t column) override; // CUP, HVP
         bool CursorSaveState() override; // DECSC
         bool CursorRestoreState() override; // DECRC
         bool CursorVisibility(const bool isVisible) override; // DECTCEM
@@ -56,35 +56,35 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
         bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
-        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR
-        bool DeviceAttributes() override; // DA
+        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-CPR
+        bool DeviceAttributes() override; // DA1
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
-        bool SetColumns(const size_t columns) override; // DECSCPP, DECCOLM
+        bool SetColumns(const size_t columns) override; // DECCOLM
         bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECSET
         bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
-        bool SetScreenMode(const bool reverseMode) override; //DECSCNM
+        bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM
         bool WarningBell() override; // BEL
         bool CarriageReturn() override; // CR
-        bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL
+        bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
         bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
         bool UseAlternateScreenBuffer() override; // ASBSET
         bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
-        bool ForwardTab(const size_t numTabs) override; // CHT
+        bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // DesignateCharset
+        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // SCS
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN

@@ -467,7 +467,7 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
     try
     {
         _vtInputShouldSuppress = true;
-        auto resetVtInputSupress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
+        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
         _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {

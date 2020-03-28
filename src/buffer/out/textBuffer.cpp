@@ -1261,6 +1261,94 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 }
 
 // Method Description:
+// - Update pos to be the beginning of the current glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// Return Value:
+// - pos - The COORD for the first cell of the current glyph (inclusive)
+const til::point TextBuffer::GetGlyphStart(const til::point pos) const
+{
+    COORD resultPos = pos;
+
+    const auto bufferSize = GetSize();
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    {
+        bufferSize.DecrementInBounds(resultPos, true);
+    }
+
+    return resultPos;
+}
+
+// Method Description:
+// - Update pos to be the end of the current glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// Return Value:
+// - pos - The COORD for the last cell of the current glyph (exclusive)
+const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
+{
+    COORD resultPos = pos;
+
+    const auto bufferSize = GetSize();
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    {
+        bufferSize.IncrementInBounds(resultPos, true);
+    }
+
+    // increment one more time to become exclusive
+    bufferSize.IncrementInBounds(resultPos, true);
+    return resultPos;
+}
+
+// Method Description:
+// - Update pos to be the beginning of the next glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first cell of the current glyph (inclusive)
+bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) const
+{
+    COORD resultPos = pos;
+
+    // try to move. If we can't, we're done.
+    const auto bufferSize = GetSize();
+    const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    {
+        bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+    }
+
+    pos = resultPos;
+    return success;
+}
+
+// Method Description:
+// - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first cell of the previous glyph (inclusive)
+bool TextBuffer::MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive) const
+{
+    COORD resultPos = pos;
+
+    // try to move. If we can't, we're done.
+    const auto bufferSize = GetSize();
+    const bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    {
+        bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    }
+
+    pos = resultPos;
+    return success;
+}
+
+// Method Description:
 // - Determines the line-by-line rectangles based on two COORDs
 // - expands the rectangles to support wide glyphs
 // - used for selection rects and UIA bounding rects
@@ -1869,15 +1957,15 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - lastCharacterViewport - Optional. If the caller knows that the last
 //   nonspace character is in a particular Viewport, the caller can provide this
 //   parameter as an optimization, as opposed to searching the entire buffer.
-// - oldViewportTop - Optional. The caller can provide a row in this parameter
-//   and we'll calculate the position of the _end_ of that row in the new
-//   buffer. The row's new value is placed back into this parameter.
+// - positionInfo - Optional. The caller can provide a pair of rows in this
+//   parameter and we'll calculate the position of the _end_ of those rows in
+//   the new buffer. The rows's new value is placed back into this parameter.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
-                           std::optional<short>& oldViewportTop)
+                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1896,7 +1984,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
-    bool foundOldRow = false;
+    bool foundOldMutable = false;
+    bool foundOldVisible = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
@@ -1960,12 +2049,24 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
         // new location of the _end_ of that row in the buffer).
-        if (oldViewportTop.has_value() && !foundOldRow)
+        if (positionInfo.has_value())
         {
-            if (iOldRow >= oldViewportTop.value())
+            if (!foundOldMutable)
             {
-                oldViewportTop = newCursor.GetPosition().Y;
-                foundOldRow = true;
+                if (iOldRow >= positionInfo.value().get().mutableViewportTop)
+                {
+                    positionInfo.value().get().mutableViewportTop = newCursor.GetPosition().Y;
+                    foundOldMutable = true;
+                }
+            }
+
+            if (!foundOldVisible)
+            {
+                if (iOldRow >= positionInfo.value().get().visibleViewportTop)
+                {
+                    positionInfo.value().get().visibleViewportTop = newCursor.GetPosition().Y;
+                    foundOldVisible = true;
+                }
             }
         }
 

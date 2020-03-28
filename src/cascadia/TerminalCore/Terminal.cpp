@@ -45,9 +45,7 @@ Terminal::Terminal() :
     _scrollOffset{ 0 },
     _snapOnInput{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt },
-    _allowSingleCharSelection{ true },
-    _copyOnSelect{ false }
+    _selection{ std::nullopt }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -145,8 +143,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _wordDelimiters = settings.WordDelimiters();
 
-    _copyOnSelect = settings.CopyOnSelect();
-
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
 
     _startingTitle = settings.StartingTitle();
@@ -173,19 +169,26 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
-    const auto dx = viewportSize.X - oldDimensions.X;
+
+    const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
 
     const auto oldTop = _mutableViewport.Top();
 
-    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
+
     COORD bufferSize{ viewportSize.X, newBufferHeight };
 
     // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
     short newViewportTop = oldViewportTop;
+    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+
+    // If the original buffer had _no_ scroll offset, then we should be at the
+    // bottom in the new buffer as well. Track that case now.
+    const bool originalOffsetWasZero = _scrollOffset == 0;
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
@@ -196,12 +199,28 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
-        std::optional<short> oldViewStart{ oldViewportTop };
+        // Build a PositionInformation to track the position of both the top of
+        // the mutable viewport and the top of the visible viewport in the new
+        // buffer.
+        // * the new value of mutableViewportTop will be used to figure out
+        //   where we should place the mutable viewport in the new buffer. This
+        //   requires a bit of trickiness to remain consistent with conpty's
+        //   buffer (as seen below).
+        // * the new value of visibleViewportTop will be used to calculate the
+        //   new scrollOffset in the new buffer, so that the visible lines on
+        //   the screen remain roughly the same.
+        TextBuffer::PositionInformation oldRows{ 0 };
+        oldRows.mutableViewportTop = oldViewportTop;
+        oldRows.visibleViewportTop = newVisibleTop;
+
+        const std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
-                                            oldViewStart));
-        newViewportTop = oldViewStart.value();
+                                            { oldRows }));
+
+        newViewportTop = oldRows.mutableViewportTop;
+        newVisibleTop = oldRows.visibleViewportTop;
     }
     CATCH_RETURN();
 
@@ -245,7 +264,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
-    const short proposedTopFromLastLine = ::base::saturated_cast<short>(maxRow - viewportSize.Y + 1);
+    const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
     const short proposedTopFromScrollback = newViewportTop;
 
     short proposedTop = std::max(proposedTopFromLastLine,
@@ -273,7 +292,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
             {
                 try
                 {
-                    auto row = newTextBuffer->GetRowByOffset(::base::saturated_cast<short>(proposedTop - 1));
+                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
                     if (row.GetCharRow().WasWrapForced())
                     {
                         proposedTop--;
@@ -303,14 +322,29 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.Y)
     {
-        proposedTop = ::base::saturated_cast<short>(proposedTop - (proposedBottom - bufferSize.Y));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
 
     _buffer.swap(newTextBuffer);
 
-    _scrollOffset = 0;
+    // GH#3494: Maintain scrollbar position during resize
+    // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
+    newVisibleTop = std::min(newVisibleTop, _mutableViewport.Top());
+    // Make sure we don't scroll past the top of the scrollback
+    newVisibleTop = std::max<short>(newVisibleTop, 0);
+
+    // If the old scrolloffset was 0, then we weren't scrolled back at all
+    // before, and shouldn't be now either.
+    _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
+
+    // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
+    try
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+    }
+    CATCH_LOG();
     _NotifyScrollEvent();
 
     return S_OK;

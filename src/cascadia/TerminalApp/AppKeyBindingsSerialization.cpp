@@ -344,7 +344,7 @@ static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParse
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
-//   KeyBinding->Action maping.
+//   KeyBinding->Action mapping.
 //   {
 //      keys:[String],
 //      command:String
@@ -516,7 +516,7 @@ std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementat
                 warnings.insert(warnings.end(), parseWarnings.begin(), parseWarnings.end());
 
                 // if an arg parser was registered, but failed, bail
-                if (args == nullptr)
+                if (pfn && args == nullptr)
                 {
                     continue;
                 }

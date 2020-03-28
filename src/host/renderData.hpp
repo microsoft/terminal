@@ -60,6 +60,7 @@ public:
 
 #pragma region IUiaData
     const bool IsSelectionActive() const override;
+    const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept;

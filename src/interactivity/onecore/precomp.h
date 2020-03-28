@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define NOMINMAX
+
 #include <nt.h>
 #include <ntrtl.h>
 #include <nturtl.h>

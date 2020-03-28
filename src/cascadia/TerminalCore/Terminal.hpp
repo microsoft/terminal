@@ -156,6 +156,7 @@ public:
 #pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
+    const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept override;
@@ -180,7 +181,6 @@ public:
         Word,
         Line
     };
-    const bool IsCopyOnSelectActive() const noexcept;
     void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
@@ -221,8 +221,6 @@ private:
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
-    bool _allowSingleCharSelection;
-    bool _copyOnSelect;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -239,7 +237,7 @@ private:
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;
     // TODO this might not be the value we want to store.
-    // We might want to store the height in the scrollback that's currenty visible.
+    // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
     // For example: While looking at the scrollback, we probably want the visible region to "stick"
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
@@ -274,7 +272,6 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 
 #ifdef UNIT_TESTING

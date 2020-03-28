@@ -343,19 +343,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
+try
 {
-    if (_scrollDelta.X != 0)
+    if (_scrollDelta.x() != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.Y == 0)
+    if (_scrollDelta.y() == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.Y;
+    const short dy = _scrollDelta.y<SHORT>();
     const short absDy = static_cast<short>(abs(dy));
 
     HRESULT hr = S_OK;
@@ -391,6 +392,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     return hr;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Notifies us that the console is attempting to scroll the existing screen
@@ -402,38 +404,23 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+try
 {
-    const short dx = pcoordDelta->X;
-    const short dy = pcoordDelta->Y;
+    const til::point delta{ *pcoordDelta };
 
-    if (dx != 0 || dy != 0)
+    if (delta != til::point{ 0, 0 })
     {
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+        _trace.TraceInvalidateScroll(delta);
 
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
+        // Scroll the current offset and invalidate the revealed area
+        _invalidMap.translate(delta, true);
 
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
-
-        COORD invalidScrollNew;
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
-
-        // Store if safemath succeeded
-        _scrollDelta = invalidScrollNew;
+        _scrollDelta += delta;
     }
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the

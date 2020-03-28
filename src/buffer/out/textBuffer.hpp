@@ -134,6 +134,11 @@ public:
     bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
     bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
+    const til::point GetGlyphStart(const til::point pos) const;
+    const til::point GetGlyphEnd(const til::point pos) const;
+    bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+    bool MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
     class TextAndColor
@@ -161,10 +166,16 @@ public:
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
 
+    struct PositionInformation
+    {
+        short mutableViewportTop{ 0 };
+        short visibleViewportTop{ 0 };
+    };
+
     static HRESULT Reflow(TextBuffer& oldBuffer,
                           TextBuffer& newBuffer,
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
-                          std::optional<short>& oldViewportTop);
+                          std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
     std::deque<ROW> _storage;

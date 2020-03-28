@@ -77,6 +77,8 @@ public:
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
 
+    bool DebugFeaturesEnabled() const noexcept;
+
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
@@ -114,6 +116,8 @@ private:
     winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
+
+    bool _debugFeatures;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;

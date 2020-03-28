@@ -254,7 +254,7 @@ void IslandWindow::Initialize()
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0, 0, 0, width, height, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW);
 
     if (_rootGrid)
     {

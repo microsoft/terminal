@@ -5,7 +5,6 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
-#include "../types/inc/ThemeUtils.h"
 #include "../types/inc/utils.hpp"
 #include "TerminalThemeHelpers.h"
 
@@ -454,7 +453,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
             // reveal the taskbar from fullscreen mode. This includes Edge,
-            // Firefox, Chrome, Sublime Text, Powerpoint - none seemed to
+            // Firefox, Chrome, Sublime Text, PowerPoint - none seemed to
             // support this.
             //
             // This does however work fine for maximized.
@@ -659,9 +658,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    case WM_ACTIVATE:
-        // If we do this every time we're activated, it should be close enough to correct.
-        TerminalTrySetDarkTheme(_window.get());
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -732,7 +728,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::BufferedPaintSetAlpha(buf, nullptr, 255);
         ::EndBufferedPaint(buf, TRUE);
     }
 
@@ -781,7 +777,7 @@ void NonClientIslandWindow::_UpdateFrameTheme() const
         break;
     }
 
-    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), isDarkMode));
 }
 
 // Method Description:
@@ -811,6 +807,11 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
+    // always get another window message to trigger us to remove the drag bar.
+    // So, make sure to update the size of the drag region here, so that it
+    // _definitely_ goes away.
+    _UpdateIslandRegion();
 }
 
 // Method Description:

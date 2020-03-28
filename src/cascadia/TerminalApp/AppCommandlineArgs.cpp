@@ -9,7 +9,7 @@
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-// Either a ; at the start of a line, or a ; preceeded by any non-\ char.
+// Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
 AppCommandlineArgs::AppCommandlineArgs()
@@ -172,7 +172,7 @@ void AppCommandlineArgs::_buildNewTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newTabCommand.subcommand->callback([&, this]() {
-        // Buld the NewTab action from the values we've parsed on the commandline.
+        // Build the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();
@@ -207,7 +207,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newPaneCommand.subcommand->callback([&, this]() {
-        // Buld the SplitPane action from the values we've parsed on the commandline.
+        // Build the SplitPane action from the values we've parsed on the commandline.
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
         auto args = winrt::make_self<implementation::SplitPaneArgs>();
@@ -259,7 +259,7 @@ void AppCommandlineArgs::_buildFocusTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _focusTabCommand->callback([&, this]() {
-        // Buld the action from the values we've parsed on the commandline.
+        // Build the action from the values we've parsed on the commandline.
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
 
         if (_focusTabIndex >= 0)
@@ -393,7 +393,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -423,7 +423,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -457,7 +457,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const std::vector<con
 // Function Description:
 // - Update and append Commandline objects for the given arg to the given list
 //   of commands. Each Commandline represents a single command to parse. These
-//   commands can be seperated by ";", which indicates the start of the next
+//   commands can be separated by ";", which indicates the start of the next
 //   commandline. If the user would like to provide ';' in the text of the
 //   commandline, they can escape it as "\;".
 // - As we parse arg, if it doesn't contain a delimiter in it, we'll add it to

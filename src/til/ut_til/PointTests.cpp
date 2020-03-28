@@ -168,21 +168,6 @@ class PointTests
         }
     }
 
-    TEST_METHOD(Boolean)
-    {
-        const til::point empty;
-        VERIFY_IS_FALSE(empty);
-
-        const til::point yOnly{ 0, 10 };
-        VERIFY_IS_TRUE(yOnly);
-
-        const til::point xOnly{ 10, 0 };
-        VERIFY_IS_TRUE(xOnly);
-
-        const til::point both{ 10, 10 };
-        VERIFY_IS_TRUE(both);
-    }
-
     TEST_METHOD(Addition)
     {
         Log::Comment(L"0.) Addition of two things that should be in bounds.");
@@ -216,6 +201,50 @@ class PointTests
 
             auto fn = [&]() {
                 pt + pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(AdditionInplace)
+    {
+        Log::Comment(L"0.) Addition of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() + pt2.x(), pt.y() + pt2.y() };
+
+            auto actual = pt;
+            actual += pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Addition results in value that is too large (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual += pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Addition results in value that is too large (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual += pt2;
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -261,6 +290,50 @@ class PointTests
         }
     }
 
+    TEST_METHOD(SubtractionInplace)
+    {
+        Log::Comment(L"0.) Subtraction of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() - pt2.x(), pt.y() - pt2.y() };
+
+            auto actual = pt;
+            actual -= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Subtraction results in value that is too small (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ -2, -2 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual -= pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Subtraction results in value that is too small (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ -2, -2 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual -= pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
     TEST_METHOD(Multiplication)
     {
         Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
@@ -300,6 +373,50 @@ class PointTests
         }
     }
 
+    TEST_METHOD(MultiplicationInplace)
+    {
+        Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() * pt2.x(), pt.y() * pt2.y() };
+
+            auto actual = pt;
+            actual *= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Multiplication results in value that is too large (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 10, 10 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual *= pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Multiplication results in value that is too large (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::point pt2{ 10, 10 };
+
+            auto fn = [&]() {
+                auto actual = pt;
+                actual *= pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
     TEST_METHOD(Division)
     {
         Log::Comment(L"0.) Division of two things that should be in bounds.");
@@ -320,6 +437,35 @@ class PointTests
 
             auto fn = [&]() {
                 pt2 / pt;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(DivisionInplace)
+    {
+        Log::Comment(L"0.) Division of two things that should be in bounds.");
+        {
+            const til::point pt{ 555, 510 };
+            const til::point pt2{ 23, 47 };
+
+            const til::point expected{ pt.x() / pt2.x(), pt.y() / pt2.y() };
+            auto actual = pt;
+            actual /= pt2;
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Division by zero");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::point pt2{ 1, 1 };
+
+            auto fn = [&]() {
+                auto actual = pt2;
+                actual /= pt;
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -457,5 +603,102 @@ class PointTests
         }
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
+    }
+
+    template<typename T>
+    struct PointTypeWith_xy
+    {
+        T x, y;
+    };
+    template<typename T>
+    struct PointTypeWith_XY
+    {
+        T X, Y;
+    };
+    TEST_METHOD(CastFromFloatWithMathTypes)
+    {
+        PointTypeWith_xy<float> xyFloatIntegral{ 1.f, 2.f };
+        PointTypeWith_xy<float> xyFloat{ 1.6f, 2.4f };
+        PointTypeWith_XY<double> XYDoubleIntegral{ 3., 4. };
+        PointTypeWith_XY<double> XYDouble{ 3.6, 4.4 };
+        Log::Comment(L"0.) Ceiling");
+        {
+            {
+                til::point converted{ til::math::ceiling, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 2, 3 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 4, 5 }), converted);
+            }
+        }
+
+        Log::Comment(L"1.) Flooring");
+        {
+            {
+                til::point converted{ til::math::flooring, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+        }
+
+        Log::Comment(L"2.) Rounding");
+        {
+            {
+                til::point converted{ til::math::rounding, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 2, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 4, 4 }), converted);
+            }
+        }
+
+        Log::Comment(L"3.) Truncating");
+        {
+            {
+                til::point converted{ til::math::truncating, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+        }
     }
 };

@@ -405,7 +405,7 @@ VOID PreviewPaint(
         cy = AspectScale(gcyScreen, gcxScreen, cx);
         if (cy != rcWindow.bottom - rcWindow.top)
         {
-            SetWindowPos(hWnd, NULL, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
+            SetWindowPos(hWnd, nullptr, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
         }
 
         InvalidatePreviewRect(hWnd);

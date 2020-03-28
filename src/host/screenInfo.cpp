@@ -166,7 +166,7 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
 // Arguments:
 // - <none>
 // Return Value:
-// - a viewport whos height is the height of the "terminal" portion of the
+// - a viewport whose height is the height of the "terminal" portion of the
 //      buffer in terminal scrolling mode, and is the height of the full buffer
 //      in normal scrolling mode.
 Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
@@ -765,7 +765,7 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // If we're in terminal scrolling mode, and we're rying to set the viewport
+    // If we're in terminal scrolling mode, and we're trying to set the viewport
     //      below the logical viewport, without updating our virtual bottom
     //      (the logical viewport's position), dont.
     //  Instead move us to the bottom of the logical viewport.
@@ -1414,9 +1414,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    // Reflow requires a optional<short>& , which can't just be done inline with the call.
-    std::optional<short> unused{ std::nullopt };
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, unused);
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
     {

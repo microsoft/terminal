@@ -410,7 +410,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
             // If we're showing the tabs in the titlebar, we need to use a
-            // TitlebarContol here to calculate how much space to reserve.
+            // TitlebarControl here to calculate how much space to reserve.
             //
             // We'll create a fake TitlebarControl, and we'll propose an
             // available size to it with Measure(). After Measure() is called,
