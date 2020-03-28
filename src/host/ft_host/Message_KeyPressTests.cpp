@@ -45,9 +45,9 @@ class KeyPressTests
             VK_SCROLL,
             VK_CAPITAL
         };
-        for (unsigned int modifier : modifiers)
+        for (unsigned int i = 0; i < 8; ++i)
         {
-            PostMessage(hwnd, CM_SET_KEY_STATE, modifier, KEY_STATE_RELEASED);
+            PostMessage(hwnd, CM_SET_KEY_STATE, modifiers[i], KEY_STATE_RELEASED);
         }
     }
 
