@@ -63,6 +63,15 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
+bool AppHost::OnF7Pressed()
+{
+    if (_logic)
+    {
+        return _logic.OnF7Pressed();
+    }
+    return false;
+}
+
 // Method Description:
 // - Retrieve the command line arguments, and pass them to the app logic for processing.
 // - If the logic determined there's an error while processing that commandline,
@@ -203,7 +212,7 @@ void AppHost::Initialize()
 
     if (_useNonClientArea)
     {
-        // Register our callbar for when the app's non-client content changes.
+        // Register our callback for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
@@ -276,7 +285,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 {
     launchMode = _logic.GetLaunchMode();
 
-    // Acquire the actual intial position
+    // Acquire the actual initial position
     winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
     proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
     proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
@@ -285,7 +294,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     long adjustedWidth = 0;
     if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
     {
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
         // Get nearest monitor information
@@ -353,7 +362,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
                                   newPos.Height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
-    // Refresh the dpi of HWND becuase the dpi where the window will launch may be different
+    // Refresh the dpi of HWND because the dpi where the window will launch may be different
     // at this time
     _window->RefreshCurrentDPI();
 

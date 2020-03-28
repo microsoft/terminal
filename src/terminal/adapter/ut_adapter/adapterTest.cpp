@@ -214,6 +214,11 @@ public:
         return _setConsoleTextAttributeResult;
     }
 
+    bool PrivateIsVtInputEnabled() const override
+    {
+        return false;
+    }
+
     bool PrivateSetLegacyAttributes(const WORD attr, const bool foreground, const bool background, const bool meta) override
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
@@ -605,14 +610,10 @@ public:
         return _getConsoleOutputCPResult;
     }
 
-    bool IsConsolePty(bool& isPty) const override
+    bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
-        if (_isConsolePtyResult)
-        {
-            isPty = _isPty;
-        }
-        return _isConsolePtyResult;
+        return _isPty;
     }
 
     bool DeleteLines(const size_t /*count*/) override
@@ -759,7 +760,7 @@ public:
         _viewport.Left = 30;
         _viewport.Right = 59;
 
-        // Call cursor positions seperately
+        // Call cursor positions separately
         PrepCursor(xact, yact);
 
         _cursorSize = 33;
@@ -946,7 +947,6 @@ public:
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
     bool _getConsoleOutputCPResult = false;
-    bool _isConsolePtyResult = false;
     bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
@@ -1707,7 +1707,7 @@ public:
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1742,7 +1742,7 @@ public:
         VERIFY_IS_TRUE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1770,7 +1770,7 @@ public:
         VERIFY_IS_FALSE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -2265,7 +2265,6 @@ public:
 
         // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
         _testGetSet->_isPty = true;
-        _testGetSet->_isConsolePtyResult = true;
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));

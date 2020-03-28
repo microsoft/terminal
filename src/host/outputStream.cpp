@@ -241,7 +241,7 @@ bool ConhostInternalGetSet::PrivateBoldText(const bool bolded)
 // - Retrieves the currently active ExtendedAttributes. See also
 //   DoSrvPrivateGetExtendedTextAttributes
 // Arguments:
-// - attrs: Recieves the ExtendedAttributes value.
+// - attrs: Receives the ExtendedAttributes value.
 // Return Value:
 // - true if successful (see DoSrvPrivateGetExtendedTextAttributes). false otherwise.
 bool ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes& attrs)
@@ -731,7 +731,7 @@ bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 // Routine Description:
 // - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - codepage - recieves the outputCP of the console.
+// - codepage - receives the outputCP of the console.
 // Return Value:
 // - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
 bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
@@ -769,14 +769,17 @@ bool ConhostInternalGetSet::SetCursorColor(const COLORREF cursorColor)
 
 // Routine Description:
 // - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
+// - NOTE: This ONE method behaves differently! The rest of the methods on this
+//   interface return true if successful. This one just returns the result.
 // Arguments:
-// - isPty: recieves the bool indicating whether or not we're in pty mode.
+// - isPty: receives the bool indicating whether or not we're in pty mode.
 // Return Value:
-// - true if successful (see DoSrvIsConsolePty). false otherwise.
-bool ConhostInternalGetSet::IsConsolePty(bool& isPty) const
+// - true if we're in pty mode.
+bool ConhostInternalGetSet::IsConsolePty() const
 {
+    bool isPty = false;
     DoSrvIsConsolePty(isPty);
-    return true;
+    return isPty;
 }
 
 bool ConhostInternalGetSet::DeleteLines(const size_t count)
@@ -890,4 +893,17 @@ bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
                                               clipRect,
                                               destinationOrigin,
                                               standardFillAttrs));
+}
+
+// Routine Description:
+// - Checks if the InputBuffer is willing to accept VT Input directly
+//   PrivateIsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - <none>
+// Return value:
+// - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
+bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
+{
+    return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }

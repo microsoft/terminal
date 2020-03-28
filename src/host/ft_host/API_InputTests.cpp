@@ -243,7 +243,7 @@ void InputTests::TestPeekConsoleInvalid()
 void InputTests::TestReadConsoleInvalid()
 {
     DWORD nRead = (DWORD)-1;
-    VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(0, nullptr, 0, &nRead));
+    VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(nullptr, nullptr, 0, &nRead));
     VERIFY_ARE_EQUAL(nRead, (DWORD)0);
 
     nRead = (DWORD)-1;
@@ -275,7 +275,7 @@ void InputTests::TestReadConsoleInvalid()
 void InputTests::TestWriteConsoleInvalid()
 {
     DWORD nWrite = (DWORD)-1;
-    VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(0, nullptr, 0, &nWrite));
+    VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(nullptr, nullptr, 0, &nWrite));
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
 
     // weird: WriteConsoleInput with INVALID_HANDLE_VALUE writes garbage to lpNumberOfEventsWritten, whereas
@@ -322,7 +322,7 @@ void InputTests::TestReadConsolePasswordScenario()
     // Scenario inspired by net use's password capture code.
     HANDLE const hIn = GetStdHandle(STD_INPUT_HANDLE);
 
-    // 1. Set up our mode to be raw input (mimicing method used by "net use")
+    // 1. Set up our mode to be raw input (mimicking method used by "net use")
     DWORD mode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT;
     GetConsoleMode(hIn, &mode);
 
@@ -347,7 +347,7 @@ void InputTests::TestReadConsolePasswordScenario()
 
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
-    // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
+    // 3. Set up our read loop (mimicking password capture methodology from "net use" command.)
     size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
     wistd::unique_ptr<wchar_t[]> buf = wil::make_unique_nothrow<wchar_t[]>(buflen);
     size_t len = 0;
@@ -358,7 +358,7 @@ void InputTests::TestReadConsolePasswordScenario()
     {
         wchar_t ch;
         DWORD c;
-        int err = ReadConsoleW(hIn, &ch, 1, &c, 0);
+        int err = ReadConsoleW(hIn, &ch, 1, &c, nullptr);
 
         if (!err || c != 1)
         {
@@ -400,7 +400,7 @@ void InputTests::TestReadConsolePasswordScenario()
     VERIFY_ARE_EQUAL(wcslen(pwszExpected), len);
 }
 
-void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFlagsExpected, const DWORD dwConsoleMode)
+void TestMouseWheelReadConsoleInputHelper(const UINT /*msg*/, const DWORD /*dwEventFlagsExpected*/, const DWORD /*dwConsoleMode*/)
 {
     if (!OneCoreDelay::IsIsWindowPresent())
     {
@@ -409,60 +409,64 @@ void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFla
         return;
     }
 
-    HWND const hwnd = GetConsoleWindow();
-    VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
+    Log::Comment(L"This test is flaky. Fix me in GH#4494");
+    Log::Result(WEX::Logging::TestResults::Skipped);
+    return;
 
-    HANDLE const hConsoleInput = GetStdInputHandle();
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwConsoleMode), L"Apply the requested console mode");
+    //HWND const hwnd = GetConsoleWindow();
+    //VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
 
-    // We don't generate mouse console event in QuickEditMode or if MouseInput is not enabled
-    DWORD dwExpectedEvents = 1;
-    if (dwConsoleMode & ENABLE_QUICK_EDIT_MODE || !(dwConsoleMode & ENABLE_MOUSE_INPUT))
-    {
-        Log::Comment(L"QuickEditMode is set or MouseInput is not set, not expecting events");
-        dwExpectedEvents = 0;
-    }
+    //HANDLE const hConsoleInput = GetStdInputHandle();
+    //VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwConsoleMode), L"Apply the requested console mode");
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hConsoleInput), L"Flush input queue to make sure no one else is in the way.");
+    //// We don't generate mouse console event in QuickEditMode or if MouseInput is not enabled
+    //DWORD dwExpectedEvents = 1;
+    //if (dwConsoleMode & ENABLE_QUICK_EDIT_MODE || !(dwConsoleMode & ENABLE_MOUSE_INPUT))
+    //{
+    //    Log::Comment(L"QuickEditMode is set or MouseInput is not set, not expecting events");
+    //    dwExpectedEvents = 0;
+    //}
 
-    // WM_MOUSEWHEEL params
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+    //VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hConsoleInput), L"Flush input queue to make sure no one else is in the way.");
 
-    // WPARAM is HIWORD the wheel delta and LOWORD the keystate (keys pressed with it)
-    // We want no keys pressed in the loword (0) and we want one tick of the wheel in the high word.
-    WPARAM wParam = 0;
-    short sKeyState = 0;
-    short sWheelDelta = -WHEEL_DELTA; // scroll down is negative, up is positive.
-    // we only use the lower 32-bits (in case of 64-bit system)
-    wParam = ((sWheelDelta << 16) | sKeyState) & 0xFFFFFFFF;
+    //// WM_MOUSEWHEEL params
+    //// https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
 
-    // LPARAM is positioning information. We don't care so we'll leave it 0x0
-    LPARAM lParam = 0;
+    //// WPARAM is HIWORD the wheel delta and LOWORD the keystate (keys pressed with it)
+    //// We want no keys pressed in the loword (0) and we want one tick of the wheel in the high word.
+    //WPARAM wParam = 0;
+    //short sKeyState = 0;
+    //short sWheelDelta = -WHEEL_DELTA; // scroll down is negative, up is positive.
+    //// we only use the lower 32-bits (in case of 64-bit system)
+    //wParam = ((sWheelDelta << 16) | sKeyState) & 0xFFFFFFFF;
 
-    Log::Comment(L"Send scroll down message into console window queue.");
-    SendMessageW(hwnd, msg, wParam, lParam);
+    //// LPARAM is positioning information. We don't care so we'll leave it 0x0
+    //LPARAM lParam = 0;
 
-    Sleep(250); // give message time to sink in
+    //Log::Comment(L"Send scroll down message into console window queue.");
+    //SendMessageW(hwnd, msg, wParam, lParam);
 
-    DWORD dwAvailable = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &dwAvailable), L"Retrieve number of events in queue.");
-    VERIFY_ARE_EQUAL(dwExpectedEvents, dwAvailable, NoThrowString().Format(L"We expected %i event from our scroll message.", dwExpectedEvents));
+    //Sleep(250); // give message time to sink in
 
-    INPUT_RECORD ir;
-    DWORD dwRead = 0;
-    if (dwExpectedEvents == 1)
-    {
-        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
-        VERIFY_ARE_EQUAL(1u, dwRead);
+    //DWORD dwAvailable = 0;
+    //VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &dwAvailable), L"Retrieve number of events in queue.");
+    //VERIFY_ARE_EQUAL(dwExpectedEvents, dwAvailable, NoThrowString().Format(L"We expected %i event from our scroll message.", dwExpectedEvents));
 
-        Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
-        VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
-        // hard cast OK. only using lower 32-bits (see above)
-        VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState);
-        // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
-        VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
-        // Don't care about mouse position for ensuring scroll message went through.
-    }
+    //INPUT_RECORD ir;
+    //DWORD dwRead = 0;
+    //if (dwExpectedEvents == 1)
+    //{
+    //    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
+    //    VERIFY_ARE_EQUAL(1u, dwRead);
+
+    //    Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
+    //    VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
+    //    // hard cast OK. only using lower 32-bits (see above)
+    //    VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState);
+    //    // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
+    //    VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
+    //    // Don't care about mouse position for ensuring scroll message went through.
+    //}
 }
 
 void InputTests::TestMouseWheelReadConsoleMouseInput()

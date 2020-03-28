@@ -7,6 +7,7 @@ using WEX::Logging::Log;
 using namespace WEX::Common;
 
 HANDLE Common::_hConsole = INVALID_HANDLE_VALUE;
+bool Common::_isV2 = true;
 extern wil::unique_process_information pi;
 
 bool IsConsoleStillRunning()
@@ -185,9 +186,9 @@ bool Common::TestBufferSetup()
 
     _hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
                                           0 /*dwShareMode*/,
-                                          NULL /*lpSecurityAttributes*/,
+                                          nullptr /*lpSecurityAttributes*/,
                                           CONSOLE_TEXTMODE_BUFFER,
-                                          NULL /*lpReserved*/);
+                                          nullptr /*lpReserved*/);
 
     VERIFY_ARE_NOT_EQUAL(_hConsole, INVALID_HANDLE_VALUE, L"Creating our test screen buffer.");
 

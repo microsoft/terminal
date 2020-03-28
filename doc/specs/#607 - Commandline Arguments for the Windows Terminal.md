@@ -92,7 +92,7 @@ would quickly become hard to parse and understand for the user.
 
 ### Proposal 2 - Commands and Parameters
 
-Instead, we'll try to seperate these arguments by their responsibilities. Some
+Instead, we'll try to separate these arguments by their responsibilities. Some
 of these arguments cause something to happen, like `help`, `version`, or
 `open-settings`. Other arguments act more like modifiers, like for example
 `--profile` or `--startingDirectory`, which provide additional information to
@@ -275,7 +275,7 @@ terminal window.
 `list-profiles [--all,-A] [--showGuids,-g]`
 
 Displays a list of each of the available profiles. Each profile displays it's
-name, seperated by newlines.
+name, separated by newlines.
 
 **Parameters**:
 * `--all,-A`: Show all profiles, including profiles marked `"hidden": true`.
@@ -323,7 +323,7 @@ vertically or horizontally.
 **Parameters**:
 * `--target,-t target-pane`: Creates a new split in the given `target-pane`.
   Each pane has a unique index (per-tab) which can be used to identify them.
-  These indicies are assigned in the order the panes were created. If omitted,
+  These indices are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane.
 * `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
   "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
@@ -355,7 +355,7 @@ Moves focus within the currently focused tab to a given pane.
 
 * `--target,-t target-pane`: moves focus to the given `target-pane`. Each pane
   has a unique index (per-tab) which can be used to identify them. These
-  indicies are assigned in the order the panes were created. If omitted,
+  indices are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane (which is effectively a
   no-op).
 
@@ -410,7 +410,7 @@ like `guid` and `name`, as well as high priority properties to add as arguments.
 Following an investigation performed the week of Nov 18th, 2019, I've determined
 that we should be able to use the [CLI11] open-source library to parse
 our arguments. We'll need to add some additional logic on top of CLI11 in order
-to properly seperate commands with `;`, but that's not impossible to achieve.
+to properly separate commands with `;`, but that's not impossible to achieve.
 
 CLI11 will allow us to parse commandlines as a series of options, with a
 possible sub-command that takes its own set of parameters. This functionality
@@ -440,7 +440,7 @@ developed, to make the initialization of many commands as seamless as possible.
 As this is a very complex feature, there will need to be a number of steps taken
 in the codebase to enable this functionality in a way that users are expecting.
 The following is a suggestion of the individual changelists that could be made
-to iteratively work towards fulling implementing this funcionality.
+to iteratively work towards fulling implementing this functionality.
 
 * [x] Refactor `ShortcutAction` dispatching into its own class
   - Right now, the `AppKeyBindings` is responsible for triggering all
@@ -507,7 +507,7 @@ runtimeclass TerminalParameters {
 * [ ] Add a `ShortcutAction` for `FocusPane`, which accepts a single parameter
   `index`.
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
-    quicky switch to the i'th `Pane`.
+    quickly switch to the i'th `Pane`.
   - This is in order to support the `-t,--target` parameter of `split-pane`.
 
 ## Capabilities
@@ -537,7 +537,7 @@ This change should not regress any existing behaviors.
 
 ### Performance, Power, and Efficiency
 
-This change should not particularily impact startup time or any of these other categories.
+This change should not particularly impact startup time or any of these other categories.
 
 ## Potential Issues
 
@@ -549,7 +549,7 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
-Painfully, powershell uses `;` as a seperator between commands as well. So, if
+Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
 the user would need to also escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab

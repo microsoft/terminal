@@ -123,7 +123,7 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = gci.terminalMouseInput.HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
     }
 
     return fWasHandled;
@@ -1056,7 +1056,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         {
             DispatchMessageW(&msg);
         }
-        // do this so that alt-tab works while journalling
+        // do this so that alt-tab works while journaling
         else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && WI_IsFlagSet(msg.lParam, WM_SYSKEYDOWN_ALT_PRESSED))
         {
             // alt is really down

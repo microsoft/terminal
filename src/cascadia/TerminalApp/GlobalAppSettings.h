@@ -77,17 +77,22 @@ public:
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
 
+    bool DebugFeaturesEnabled() const noexcept;
+
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
+
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
 
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
+    std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
 
@@ -111,6 +116,8 @@ private:
     winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
+
+    bool _debugFeatures;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;

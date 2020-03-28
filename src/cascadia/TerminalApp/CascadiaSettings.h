@@ -34,6 +34,7 @@ namespace TerminalAppLocalTests
 namespace TerminalAppUnitTests
 {
     class DynamicProfileTests;
+    class JsonTests;
 };
 
 namespace TerminalApp
@@ -116,6 +117,7 @@ private:
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
     void _ValidateMediaResources();
+    void _ValidateKeybindings();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
@@ -123,4 +125,5 @@ private:
     friend class TerminalAppLocalTests::KeyBindingsTests;
     friend class TerminalAppLocalTests::TabTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };

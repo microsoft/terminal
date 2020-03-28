@@ -14,3 +14,7 @@ TEST_CODE               = 1
 # -------------------------------------
 
 C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \

@@ -15,7 +15,7 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 
 ```json
 {
-    "commandline" : "cmd.exe /K %USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3",
+    "commandline" : "cmd.exe /k \"%USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3\"",
     "icon" : "%USERPROFILE%/Anaconda3/Menu/anaconda-navigator.ico",
     "name" : "Anaconda3",
     "startingDirectory" : "%USERPROFILE%"
@@ -28,8 +28,9 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
 
 ```json
 {
-    "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+    "commandline" : "cmd.exe /k \"%CMDER_ROOT%\\vendor\\init.bat\"",
     "name" : "cmder",
+    "icon" : "%CMDER_ROOT%/icons/cmder.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
 ```
@@ -71,10 +72,48 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
 ```json
 {
     "name" : "Git Bash",
-    "commandline" : "C:/Program Files/Git/bin/bash.exe",
+    "commandline" : "C:/Program Files/Git/bin/bash.exe -li",
     "icon" : "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
 ````
+
+## Git Bash (WOW64)
+
+Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
+
+```json
+{
+    "name" : "Git Bash",
+    "commandline" : "%ProgramFiles(x86)%/Git/bin/bash.exe -li",
+    "icon" : "%ProgramFiles(x86)%/Git/mingw32/share/git/git-for-windows.ico",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
+## MSYS2
+
+Assuming that you've installed MSYS2 into `C:/msys64`:
+
+```json
+{
+    "name" : "MSYS2",
+    "commandline" : "C:/msys64/msys2_shell.cmd -defterm -no-start -mingw64",
+    "icon": "C:/msys64/msys2.ico",
+    "startingDirectory" : "C:/msys64/home/user"
+}
+````
+
+## Developer Command Prompt for Visual Studio
+
+Assuming that you've installed VS 2019 Professional:
+
+```json
+{
+    "name" : "Developer Command Prompt for VS 2019",
+    "commandline" : "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
 
 <!-- Adding a tool here? Make sure to add it in alphabetical order! -->

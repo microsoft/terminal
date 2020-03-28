@@ -113,7 +113,7 @@ using namespace Microsoft::Console::Types;
         rc.right = rc.left + pcs->cx;
         rc.bottom = rc.top + pcs->cy;
 
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an optional parameter so give two UINTs.
@@ -131,7 +131,7 @@ using namespace Microsoft::Console::Types;
         RECT rectProposed = { rc.left, rc.top, 0, 0 };
         _CalculateWindowRect(_pSettings->GetWindowSize(), &rectProposed);
 
-        SetWindowPos(hWnd, NULL, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
+        SetWindowPos(hWnd, nullptr, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
 
         // Save the proposed window rect dimensions here so we can adjust if the system comes back and changes them on what we asked for.
         ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rectProposed);
@@ -156,7 +156,7 @@ using namespace Microsoft::Console::Types;
         // signal to uia that they can disconnect our uia provider
         if (_pUiaProvider)
         {
-            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            UiaReturnRawElementProvider(hWnd, 0, 0, nullptr);
         }
         break;
     }
@@ -299,7 +299,7 @@ using namespace Microsoft::Console::Types;
         // check if we're minimized (iconic) and set our internal state flags accordingly.
         // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162483(v=vs.85).aspx
         // NOTE: We will not get called to paint ourselves when minimized because we set an icon when registering the window class.
-        //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
+        //       That means this CONSOLE_IS_ICONIC is unnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
             WI_SetFlag(gci.Flags, CONSOLE_IS_ICONIC);
@@ -695,7 +695,7 @@ using namespace Microsoft::Console::Types;
     {
         // Re-read the edit key settings from registry.
         Registry reg(&gci);
-        reg.GetEditKeys(NULL);
+        reg.GetEditKeys(nullptr);
         break;
     }
 

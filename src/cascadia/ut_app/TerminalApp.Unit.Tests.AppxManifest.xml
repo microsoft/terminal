@@ -3,13 +3,13 @@
 
   <!-- This file is used as the Appxmanifest for tests that _need_ to run in a
   packaged environment. It will be copied to the test's OutDir as part of the
-  PostBuid step. It's highly similar to the "PackagedCwaFullTrust" manifest that
+  PostBuild step. It's highly similar to the "PackagedCwaFullTrust" manifest that
   TAEF ships with, with the following modifications:
 
   1. All of our winrt types are included in this manifest, including types from
      MUX.dll. Should this list of types ever change, we'll need to manually
      update this file. The easiest way of doing that is deploying the app from
-     VS, then copying the Extensions from the Appxmandifest.xml that's generated
+     VS, then copying the Extensions from the appxmanifest.xml that's generated
      under `src/cascadia/CascadiaPackage/bin/$(platform)/$(configuration)/appx`.
 
   2. We also _NEED_ the two vclibs listed under the `PackageDependency` block.

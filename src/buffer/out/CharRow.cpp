@@ -269,6 +269,33 @@ std::wstring CharRow::GetText() const
     return wstr;
 }
 
+// Method Description:
+// - get delimiter class for a position in the char row
+// - used for double click selection and uia word navigation
+// Arguments:
+// - column: column to get text data for
+// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
+// Return Value:
+// - the delimiter class for the given char
+const DelimiterClass CharRow::DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _data.size());
+
+    const auto glyph = *GlyphAt(column).begin();
+    if (glyph <= UNICODE_SPACE)
+    {
+        return DelimiterClass::ControlChar;
+    }
+    else if (wordDelimiters.find(glyph) != std::wstring_view::npos)
+    {
+        return DelimiterClass::DelimiterChar;
+    }
+    else
+    {
+        return DelimiterClass::RegularChar;
+    }
+}
+
 UnicodeStorage& CharRow::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();

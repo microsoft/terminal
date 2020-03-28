@@ -102,7 +102,7 @@ namespace Microsoft::Console::VirtualTerminal
             DA_DeviceAttributes = L'c',
             DECSCPP_SetColumnsPerPage = L'|',
             IL_InsertLine = L'L',
-            DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceeded by a CSI, and DL is.
+            DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceded by a CSI, and DL is.
             HPA_HorizontalPositionAbsolute = L'`',
             VPA_VerticalLinePositionAbsolute = L'd',
             HPR_HorizontalPositionRelative = L'a',

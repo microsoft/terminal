@@ -95,7 +95,7 @@ private:
         g_fHostedInFileProperties = TRUE;
         gpStateInfo = &g_csi;
 
-        // Initialize the fIsV2Console with whatever the current v2 seeting is
+        // Initialize the fIsV2Console with whatever the current v2 setting is
         // in the registry. Usually this is set by conhost, but in this path,
         // we're being launched straight from explorer. See GH#2319, GH#2651
         gpStateInfo->fIsV2Console = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2, TRUE);
@@ -144,7 +144,7 @@ private:
         *ppidl = nullptr;
 
         IShellLink* psl;
-        HRESULT hr = psiLink->BindToHandler(NULL, BHID_SFUIObject, IID_PPV_ARGS(&psl));
+        HRESULT hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
         if (SUCCEEDED(hr))
         {
             hr = psl->GetIDList(ppidl);
@@ -218,6 +218,7 @@ private:
                             // Second expensive portion of this method -- cracks the PE header of the .lnk file target
                             // if it's an executable
                             SHFILEINFO sfi = { 0 };
+
                             DWORD_PTR dwFileType = SHGetFileInfo(szFileExpanded,
                                                                  0 /*dwFileAttributes*/,
                                                                  &sfi,

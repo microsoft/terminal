@@ -92,7 +92,8 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
 
 InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
-    _lookingForDSR(lookingForDSR)
+    _lookingForDSR(lookingForDSR),
+    _pfnFlushToInputQueue(nullptr)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
@@ -256,6 +257,27 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
+    if (_pDispatch->IsVtInputEnabled())
+    {
+        // Synthesize string into key events that we'll write to the buffer
+        // similar to TerminalInput::_SendInputSequence
+        if (!string.empty())
+        {
+            try
+            {
+                std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+                for (const auto& wch : string)
+                {
+                    inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
+                }
+                return _pDispatch->WriteInput(inputEvents);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+            }
+        }
+    }
     return ActionPrintString(string);
 }
 
@@ -271,6 +293,11 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                 const std::basic_string_view<wchar_t> /*intermediates*/)
 {
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
+
     bool success = false;
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
@@ -302,13 +329,18 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                 const std::basic_string_view<wchar_t> intermediates,
                                                 const std::basic_string_view<size_t> parameters)
 {
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
+
     DWORD modifierState = 0;
     short vkey = 0;
     unsigned int function = 0;
@@ -368,8 +400,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     case CsiActionCodes::CSI_F1:
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
-        modifierState = _GetCursorKeysModifierState(parameters);
         success = _GetCursorKeysVkey(wch, vkey);
+        modifierState = _GetCursorKeysModifierState(parameters, static_cast<CsiActionCodes>(wch));
         break;
     case CsiActionCodes::CursorBackTab:
         modifierState = SHIFT_PRESSED;
@@ -434,12 +466,17 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
                                                 const std::basic_string_view<size_t> /*parameters*/)
 {
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
+
     // Ss3 sequence keys aren't modified.
     // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
     const DWORD modifierState = 0;
@@ -487,7 +524,7 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
-// - true if we handled the dsipatch.
+// - true if we handled the dispatch.
 bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                 const size_t /*parameter*/,
                                                 const std::wstring_view /*string*/) noexcept
@@ -565,7 +602,10 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         input.push_back(next);
     }
 
-    _GetSingleKeypress(wch, vkey, currentModifiers, input);
+    // Use modifierState instead of currentModifiers here.
+    // This allows other modifiers like ENHANCED_KEY to get
+    //    through on the KeyPress.
+    _GetSingleKeypress(wch, vkey, modifierState, input);
 
     if (ctrl)
     {
@@ -704,22 +744,37 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - Retrieves the modifier state from a set of parameters for a cursor keys
 //      sequence. This is for Arrow keys, Home, End, etc.
 // Arguments:
-// - rgusParams - the set of parameters to get the modifier state from.
-// - cParams - the number of elements in rgusParams
+// - parameters - the set of parameters to get the modifier state from.
+// - actionCode - the actionCode for the sequence we're operating on.
 // Return Value:
-// - the INPUT_RECORD comaptible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
+// - the INPUT_RECORD compatible modifier state.
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept
 {
-    // Both Cursor keys and generic keys keep their modifiers in the same index.
-    return _GetGenericKeysModifierState(parameters);
+    DWORD modifiers = 0;
+    if (_IsModified(parameters.size()) && parameters.size() >= 2)
+    {
+        modifiers = _GetModifier(parameters.at(1));
+    }
+
+    // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
+    //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
+    //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
+    //   of the keypad; and the divide (/) and ENTER keys in the keypad.
+    // This snippet detects the direction keys + HOME + END
+    // actionCode should be one of the above, so just make sure it's not a CSI_F# code
+    if (actionCode < CsiActionCodes::CSI_F1 || actionCode > CsiActionCodes::CSI_F4)
+    {
+        WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
+    return modifiers;
 }
 
 // Method Description:
 // - Retrieves the modifier state from a set of parameters for a "Generic"
 //      keypress - one who's sequence is terminated with a '~'.
 // Arguments:
-// - rgusParams - the set of parameters to get the modifier state from.
-// - cParams - the number of elements in rgusParams
+// - parameters - the set of parameters to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
@@ -729,6 +784,18 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
     {
         modifiers = _GetModifier(parameters.at(1));
     }
+
+    // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
+    //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
+    //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
+    //   of the keypad; and the divide (/) and ENTER keys in the keypad.
+    // This snippet detects the non-direction keys
+    const auto identifier = static_cast<GenericKeyIdentifiers>(til::at(parameters, 0));
+    if (identifier <= GenericKeyIdentifiers::Next)
+    {
+        modifiers = WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
     return modifiers;
 }
 
@@ -762,7 +829,7 @@ DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const std::basic_string
 // Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
-// - paramCount - the nummber of parameters we've collected in this sequence
+// - paramCount - the number of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
 bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
@@ -798,8 +865,8 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // Arguments:
 // - wch: the wchar_t representing whether the button was pressed or released
 // - parameters: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
-// - buttonState: Recieves the button state for the record
-// - eventFlags: Recieves the special mouse events for the record
+// - buttonState: Receives the button state for the record
+// - eventFlags: Receives the special mouse events for the record
 // Return Value:
 // true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
@@ -902,7 +969,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
 // Arguments:
 // - parameters: an array of shorts where the first is the identifier of the key
 //      we're looking for.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_t> parameters, short& vkey) const
@@ -929,7 +996,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
 // - Gets the Vkey from the CSI codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey) const
@@ -950,7 +1017,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey)
 // - Gets the Vkey from the SS3 codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - pVkey: Recieves the vkey
+// - pVkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) const
@@ -971,8 +1038,8 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
-// - vkey: Recieves the vkey
-// - modifierState: Recieves the modifier state
+// - vkey: Receives the vkey
+// - modifierState: Receives the modifier state
 // Return Value:
 // <none>
 bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
@@ -1004,7 +1071,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 }
 
 // Method Description:
-// - Returns true if the engine should dispatch on the last charater of a string
+// - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
@@ -1044,9 +1111,25 @@ bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 }
 
 // Method Description:
+// - Sets us up for vt input passthrough.
+//      We'll set a couple members, and if they aren't null, when we get a
+//      sequence we don't understand, we'll pass it along to the app
+//      instead of eating it ourselves.
+// Arguments:
+// - pfnFlushToInputQueue: This is a callback to the underlying state machine to
+//      trigger it to call ActionPassThroughString with whatever sequence it's
+//      currently processing.
+// Return Value:
+// - <none>
+void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue)
+{
+    _pfnFlushToInputQueue = pfnFlushToInputQueue;
+}
+
+// Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
-//  This is kept seperate from the output version, as there may be
+//  This is kept separate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
 // - parameters - Array of parameters collected
@@ -1082,7 +1165,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:
@@ -1131,7 +1214,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for an SGR Mouse sequence from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:

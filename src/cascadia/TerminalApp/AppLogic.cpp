@@ -27,14 +27,17 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 5> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
     USES_RESOURCE(L"InvalidBackgroundImage"),
-    USES_RESOURCE(L"InvalidIcon")
+    USES_RESOURCE(L"InvalidIcon"),
+    USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
+    USES_RESOURCE(L"TooManyKeysForChord"),
+    USES_RESOURCE(L"MissingRequiredParameter")
 };
-static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
@@ -112,6 +115,27 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
+// Method Description:
+// - Returns whether the user is either a member of the Administrators group or
+//   is currently elevated.
+// Return Value:
+// - true if the user is an administrator
+static bool _isUserAdmin() noexcept
+try
+{
+    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
+    wil::unique_sid adminGroupSid{};
+    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+    BOOL b;
+    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
+    return !!b;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     AppLogic::AppLogic() :
@@ -128,10 +152,11 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
+        _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
     }
 
-    // Method Decscription:
+    // Method Description:
     // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
     // Arguments:
     // - <none> - reports internal state
@@ -140,6 +165,17 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsUwp() const noexcept
     {
         return _isUwp;
+    }
+
+    // Method Description:
+    // - Called around the codebase to discover if Terminal is running elevated
+    // Arguments:
+    // - <none> - reports internal state
+    // Return Value:
+    // - True if elevated, false otherwise.
+    bool AppLogic::IsElevated() const noexcept
+    {
+        return _isElevated;
     }
 
     // Method Description:
@@ -172,7 +208,7 @@ namespace winrt::TerminalApp::implementation
         _root->ShowDialog({ this, &AppLogic::_ShowDialog });
 
         // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overriden to false no matter what the preference is.
+        // so this setting is overridden to false no matter what the preference is.
         if (_isUwp)
         {
             _settings->GlobalSettings().SetShowTabsInTitlebar(false);
@@ -197,8 +233,8 @@ namespace winrt::TerminalApp::implementation
     // - Show a ContentDialog with buttons to take further action. Uses the
     //   FrameworkElements provided as the title and content of this dialog, and
     //   displays buttons (or a single button). Two buttons (primary and secondary)
-    //   will be displayed if this is an warning dialog for closing the termimal,
-    //   this allows the users to abondon the closing action. Otherwise, a single
+    //   will be displayed if this is an warning dialog for closing the terminal,
+    //   this allows the users to abandon the closing action. Otherwise, a single
     //   close button will be displayed.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
@@ -322,7 +358,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Triggered when the application is fiished loading. If we failed to load
+    // - Triggered when the application is finished loading. If we failed to load
     //   the settings, then this will display the error dialog. This is done
     //   here instead of when loading the settings, because we need our UI to be
     //   visible to display the dialog, and when we're loading the settings,
@@ -364,11 +400,44 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto [_, settings] = _settings->BuildSettings(nullptr);
 
-        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
+        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+
+        const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+
+        // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            // If we're showing the tabs in the titlebar, we need to use a
+            // TitlebarControl here to calculate how much space to reserve.
+            //
+            // We'll create a fake TitlebarControl, and we'll propose an
+            // available size to it with Measure(). After Measure() is called,
+            // the TitlebarControl's DesiredSize will contain the _unscaled_
+            // size that the titlebar would like to use. We'll use that as part
+            // of the height calculation here.
+            auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
+            titlebar.Measure({ SHRT_MAX, SHRT_MAX });
+            proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
+        }
+        else if (_settings->GlobalSettings().GetAlwaysShowTabs())
+        {
+            // Otherwise, let's use a TabRowControl to calculate how much extra
+            // space we'll need.
+            //
+            // Similarly to above, we'll measure it with an arbitrarily large
+            // available space, to make sure we get all the space it wants.
+            auto tabControl = TabRowControl();
+            tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-        return TermControl::GetProposedDimensions(settings, dpi);
+            // For whatever reason, there's about 6px of unaccounted-for space
+            // in the application. I couldn't tell you where these 6px are
+            // coming from, but they need to be included in this math.
+            proposedSize.Y += (tabControl.DesiredSize().Height + 6) * scale;
+        }
+
+        return proposedSize;
     }
 
     // Method Description:
@@ -398,7 +467,7 @@ namespace winrt::TerminalApp::implementation
     //   default size, which is provided in IslandWindow::MakeWindow.
     // Arguments:
     // - defaultInitialX: the system default x coordinate value
-    // - defaultInitialY: the system defualt y coordinate value
+    // - defaultInitialY: the system default y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
     winrt::Windows::Foundation::Point AppLogic::GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY)
@@ -689,7 +758,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Used to tell the app that the titlebar has been clicked. The App won't
-    //   actually recieve any clicks in the titlebar area, so this is a helper
+    //   actually receive any clicks in the titlebar area, so this is a helper
     //   to clue the app in that a click has happened. The App will use this as
     //   a indicator that it needs to dismiss any open flyouts.
     // Arguments:
@@ -702,6 +771,41 @@ namespace winrt::TerminalApp::implementation
         {
             _root->TitlebarClicked();
         }
+    }
+
+    // Method Description:
+    // - Implements the F7 handler (per GH#638)
+    // Return value:
+    // - whether F7 was handled
+    bool AppLogic::OnF7Pressed()
+    {
+        if (_root)
+        {
+            // Manually bubble the OnF7Pressed event up through the focus tree.
+            auto xamlRoot{ _root->XamlRoot() };
+            auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
+            do
+            {
+                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
+                {
+                    if (f7Listener.OnF7Pressed())
+                    {
+                        return true;
+                    }
+                    // otherwise, keep walking. bubble the event manually.
+                }
+
+                if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
+                {
+                    focusedObject = focusedElement.Parent();
+                }
+                else
+                {
+                    break; // we hit a non-FE object, stop bubbling.
+                }
+            } while (focusedObject);
+        }
+        return false;
     }
 
     // Method Description:

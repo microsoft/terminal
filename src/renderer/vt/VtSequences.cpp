@@ -54,7 +54,7 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -82,7 +82,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
-
     return _WriteFormattedString(&format, chars);
 }
 
@@ -95,12 +94,11 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dC";
-
     return _WriteFormattedString(&format, chars);
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -234,7 +232,7 @@ using namespace Microsoft::Console::Render;
     //      dark colors. For conhost as a terminal, it can't draw bold
     //      characters, so it displays "bold" as bright, and in fact most
     //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness seperately, we'll make sure the
+    // By specifying the boldness and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30 +
                         (fIsForeground ? 0 : 10) +

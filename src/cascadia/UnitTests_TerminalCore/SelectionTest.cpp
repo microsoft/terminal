@@ -72,7 +72,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionAnchor({ 5, rowValue });
 
             // Simulate move to (x,y) = (15,20)
-            term.SetEndSelectionPosition({ 15, 20 });
+            term.SetSelectionEnd({ 15, 20 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -110,19 +110,19 @@ namespace TerminalCoreUnitTests
         {
             const COORD maxCoord = { SHRT_MAX, SHRT_MAX };
 
-            // Test SetSelectionAnchor(COORD) and SetEndSelectionPosition(COORD)
+            // Test SetSelectionAnchor(COORD) and SetSelectionEnd(COORD)
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
                 DummyRenderTarget emptyRT;
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
-                // NOTE: SetEndSelectionPosition(COORD) is called within SetSelectionAnchor(COORD)
+                // NOTE: SetSelectionEnd(COORD) is called within SetSelectionAnchor(COORD)
                 term.SetSelectionAnchor(maxCoord);
                 ValidateSingleRowSelection(term, expected);
             };
 
-            // Test DoubleClickSelection(COORD)
+            // Test a Double Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
@@ -130,11 +130,11 @@ namespace TerminalCoreUnitTests
                 DummyRenderTarget emptyRT;
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
-                term.DoubleClickSelection(maxCoord);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Word);
                 ValidateSingleRowSelection(term, expected);
             };
 
-            // Test TripleClickSelection(COORD)
+            // Test a Triple Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
@@ -142,7 +142,7 @@ namespace TerminalCoreUnitTests
                 DummyRenderTarget emptyRT;
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
-                term.TripleClickSelection(maxCoord);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Line);
                 ValidateSingleRowSelection(term, expected);
             };
 
@@ -226,17 +226,17 @@ namespace TerminalCoreUnitTests
 
             // Case 1: Move out of right boundary
             Log::Comment(L"Out of bounds: X-value too large");
-            term.SetEndSelectionPosition({ 20, 5 });
+            term.SetSelectionEnd({ 20, 5 });
             ValidateSingleRowSelection(term, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
 
             // Case 2: Move out of left boundary
             Log::Comment(L"Out of bounds: X-value negative");
-            term.SetEndSelectionPosition({ -20, 5 });
+            term.SetSelectionEnd({ -20, 5 });
             ValidateSingleRowSelection(term, { leftBoundary, 5, 5, 5 });
 
             // Case 3: Move out of top boundary
             Log::Comment(L"Out of bounds: Y-value negative");
-            term.SetEndSelectionPosition({ 5, -20 });
+            term.SetSelectionEnd({ 5, -20 });
             {
                 auto selectionRects = term.GetSelectionRects();
 
@@ -267,7 +267,7 @@ namespace TerminalCoreUnitTests
 
             // Case 4: Move out of bottom boundary
             Log::Comment(L"Out of bounds: Y-value too large");
-            term.SetEndSelectionPosition({ 5, 20 });
+            term.SetSelectionEnd({ 5, 20 });
             {
                 auto selectionRects = term.GetSelectionRects();
 
@@ -310,10 +310,10 @@ namespace TerminalCoreUnitTests
 
             // Simulate ALT + click at (x,y) = (5,10)
             term.SetSelectionAnchor({ 5, rowValue });
-            term.SetBoxSelection(true);
+            term.SetBlockSelection(true);
 
             // Simulate move to (x,y) = (15,20)
-            term.SetEndSelectionPosition({ 15, 20 });
+            term.SetSelectionEnd({ 15, 20 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -349,7 +349,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionAnchor({ 5, rowValue });
 
             // Simulate move to (x,y) = (15,20)
-            term.SetEndSelectionPosition({ 15, 20 });
+            term.SetSelectionEnd({ 15, 20 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -449,10 +449,10 @@ namespace TerminalCoreUnitTests
 
             // Simulate ALT + click at (x,y) = (5,8)
             term.SetSelectionAnchor({ 5, 8 });
-            term.SetBoxSelection(true);
+            term.SetBlockSelection(true);
 
             // Simulate move to (x,y) = (7,12)
-            term.SetEndSelectionPosition({ 7, 12 });
+            term.SetSelectionEnd({ 7, 12 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -501,7 +501,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate double click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
@@ -519,7 +519,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -546,7 +546,7 @@ namespace TerminalCoreUnitTests
             // Simulate click at (x,y) = (15,10)
             // this is over the '>' char
             auto clickPos = COORD{ 15, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // ---Validate selection area---
             // "Terminal" is in class 2
@@ -572,14 +572,14 @@ namespace TerminalCoreUnitTests
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
-            term.DoubleClickSelection({ 5, 10 });
+            term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansionMode::Word);
 
             // Simulate move to (x,y) = (21,10)
             //
             // buffer: doubleClickMe dragThroughHere
             //         ^                ^
             //       start            finish
-            term.SetEndSelectionPosition({ 21, 10 });
+            term.SetSelectionEnd({ 21, 10 });
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
@@ -601,14 +601,14 @@ namespace TerminalCoreUnitTests
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
-            term.DoubleClickSelection({ 21, 10 });
+            term.MultiClickSelection({ 21, 10 }, Terminal::SelectionExpansionMode::Word);
 
             // Simulate move to (x,y) = (5,10)
             //
             // buffer: doubleClickMe dragThroughHere
             //         ^                ^
             //       finish            start
-            term.SetEndSelectionPosition({ 5, 10 });
+            term.SetSelectionEnd({ 5, 10 });
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
@@ -622,7 +622,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
@@ -636,10 +636,10 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Simulate move to (x,y) = (7,10)
-            term.SetEndSelectionPosition({ 7, 10 });
+            term.SetSelectionEnd({ 7, 10 });
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
@@ -653,10 +653,10 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Simulate move to (x,y) = (5,11)
-            term.SetEndSelectionPosition({ 5, 11 });
+            term.SetSelectionEnd({ 5, 11 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -671,50 +671,6 @@ namespace TerminalCoreUnitTests
             // verify second selection rect
             selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 11, 99, 11 }));
-        }
-
-        TEST_METHOD(CopyOnSelect)
-        {
-            Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
-
-            // set copyOnSelect for terminal
-            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
-            settings.CopyOnSelect(true);
-            term.UpdateSettings(settings);
-
-            // Simulate click at (x,y) = (5,10)
-            term.SetSelectionAnchor({ 5, 10 });
-
-            // Simulate move to (x,y) = (5,10)
-            // (So, no movement)
-            term.SetEndSelectionPosition({ 5, 10 });
-
-            // Case 1: single cell selection not allowed
-            {
-                // Simulate renderer calling TriggerSelection and acquiring selection area
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(0));
-
-                // single cell selection should not be allowed
-                // thus, selection is NOT active
-                VERIFY_IS_FALSE(term.IsSelectionActive());
-            }
-
-            // Case 2: move off of single cell
-            term.SetEndSelectionPosition({ 6, 10 });
-            ValidateSingleRowSelection(term, { 5, 10, 6, 10 });
-            VERIFY_IS_TRUE(term.IsSelectionActive());
-
-            // Case 3: move back onto single cell (now allowed)
-            term.SetEndSelectionPosition({ 5, 10 });
-            ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
-
-            // single cell selection should now be allowed
-            VERIFY_IS_TRUE(term.IsSelectionActive());
         }
     };
 }
