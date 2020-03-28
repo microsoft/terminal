@@ -157,6 +157,7 @@ std::vector<winrt::hstring> AppHost::_GetArgs() const noexcept
                     --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
                     increment = false; // indicate that iter shall not be incremented because it already points to a new character
                 }
+                [[fallthrough]];
             default: // any other character (including quotation mark)
                 if (!within)
                 {
