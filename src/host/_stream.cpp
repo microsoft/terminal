@@ -171,7 +171,33 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         //      displays the correct text.
         if (newViewOrigin == viewport.Origin())
         {
-            Viewport invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), delta });
+            // Inside this block, we're shifting down at the bottom.
+            // This means that we had something like this:
+            // AAAA
+            // BBBB
+            // CCCC
+            // DDDD
+            // EEEE
+            //
+            // Our margins were set for lines A-D, but not on line E.
+            // So we circled the whole buffer up by one:
+            // BBBB
+            // CCCC
+            // DDDD
+            // EEEE
+            // <blank, was AAAA>
+            //
+            // Then we scrolled the contents of everything OUTSIDE the margin frame down.
+            // BBBB
+            // CCCC
+            // DDDD
+            // <blank, filled during scroll down of EEEE>
+            // EEEE
+            //
+            // And now we need to report that only the bottom line didn't "move" as we put the EEEE
+            // back where it started, but everything else moved.
+            // In this case, delta was 1. So the amount that moved is the entire viewport height minus the delta.
+            Viewport invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
             screenInfo.GetRenderTarget().TriggerRedraw(invalid);
         }
 

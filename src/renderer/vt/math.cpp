@@ -63,8 +63,8 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT
 // - true iff only the next character is invalid
 bool VtEngine::_WillWriteSingleChar() const
 {
-    // If there is scroll delta, return false.
-    if (til::point{ 0, 0 } != til::point{ _scrollDelta })
+    // If there is no scroll delta, return false.
+    if (til::point{ 0, 0 } != _scrollDelta)
     {
         return false;
     }

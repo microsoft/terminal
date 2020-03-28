@@ -53,6 +53,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to size from anything that has a X and a Y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
+            size(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
+        {
+        }
+
+        // This template will convert to size from anything that has a cx and a cy field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().cx)> && std::is_floating_point_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
+            size(TilMath::template cast<ptrdiff_t>(other.cx), TilMath::template cast<ptrdiff_t>(other.cy))
+        {
+        }
+
+        // This template will convert to size from anything that has a Width and a Height field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().Width)> && std::is_floating_point_v<decltype(std::declval<TOther>().Height)>, int> /*sentinel*/ = 0) :
+            size(TilMath::template cast<ptrdiff_t>(other.Width), TilMath::template cast<ptrdiff_t>(other.Height))
+        {
+        }
+
         constexpr bool operator==(const size& other) const noexcept
         {
             return _width == other._width &&
