@@ -112,26 +112,33 @@ void NonClientIslandWindow::_RecreateDragBarWindow() noexcept
 
     const auto dragBarRect = _GetDragAreaRect();
 
-    // WS_EX_LAYERED is required. If it is not present, then for
-    // some reason, the window will not receive any mouse input.
-    const auto ret = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
-                                    className,
-                                    L"",
-                                    WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
-                                    dragBarRect.left,
-                                    dragBarRect.top + _GetTopBorderHeight(),
-                                    dragBarRect.right - dragBarRect.left,
-                                    dragBarRect.bottom - dragBarRect.top,
-                                    GetWindowHandle(),
-                                    nullptr,
-                                    reinterpret_cast<HINSTANCE>(&__ImageBase),
-                                    0);
-    WINRT_ASSERT(ret != NULL);
+    // delete previous window
+    _dragBarWindow = nullptr;
 
-    _dragBarWindow = wil::unique_hwnd(ret);
+    if (dragBarRect.right - dragBarRect.left > 0 &&
+        dragBarRect.bottom - dragBarRect.top > 0)
+    {
+        // WS_EX_LAYERED is required. If it is not present, then for
+        // some reason, the window will not receive any mouse input.
+        const auto ret = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+                                        className,
+                                        L"",
+                                        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+                                        dragBarRect.left,
+                                        dragBarRect.top + _GetTopBorderHeight(),
+                                        dragBarRect.right - dragBarRect.left,
+                                        dragBarRect.bottom - dragBarRect.top,
+                                        GetWindowHandle(),
+                                        nullptr,
+                                        reinterpret_cast<HINSTANCE>(&__ImageBase),
+                                        0);
+        WINRT_ASSERT(ret != NULL);
 
-    // bring it on top of the XAML Islands window
-    WINRT_ASSERT(SetWindowPos(_dragBarWindow.get(), HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOREDRAW));
+        _dragBarWindow = wil::unique_hwnd(ret);
+
+        // bring it on top of the XAML Islands window
+        WINRT_ASSERT(SetWindowPos(_dragBarWindow.get(), HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOREDRAW));
+    }
 }
 
 // Method Description:
@@ -243,7 +250,7 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
-    if (_dragBar)
+    if (_dragBar && _dragBar.Visibility() == Visibility::Visible)
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
