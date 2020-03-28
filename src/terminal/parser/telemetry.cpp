@@ -173,9 +173,9 @@ void TermTelemetry::WriteFinalTraceLog() const
 
         if (!fLoggedSequence)
         {
-            for (int n = 0; n < ARRAYSIZE(_uiTimesUsed); n++)
+            for (unsigned int n : _uiTimesUsed)
             {
-                if (_uiTimesUsed[n] > 0)
+                if (n > 0)
                 {
                     fLoggedSequence = true;
                     break;
@@ -185,9 +185,9 @@ void TermTelemetry::WriteFinalTraceLog() const
 
         if (!fLoggedSequence)
         {
-            for (int n = 0; n < ARRAYSIZE(_uiTimesFailed); n++)
+            for (unsigned int n : _uiTimesFailed)
             {
-                if (_uiTimesFailed[n] > 0)
+                if (n > 0)
                 {
                     fLoggedSequence = true;
                     break;
