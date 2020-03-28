@@ -1,7 +1,6 @@
-# Adding profiles for third-party tools
+# Adding profiles for common tools
 
-This doc will hopefully provide a useful guide for adding profiles for common
-third-party tools to your
+This doc will hopefully provide a useful guide for adding profiles for common tools to your
 [settings.json](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md)
 file.
 
@@ -52,6 +51,18 @@ Note that the starting directory of Cygwin is set as it is to make the path
 work. The default directory opened when starting Cygwin will be `$HOME` because
 of the `--login` flag.
 
+## Developer Command Prompt for Visual Studio
+
+Assuming that you've installed VS 2019 Professional:
+
+```json
+{
+    "name" : "Developer Command Prompt for VS 2019",
+    "commandline" : "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
 ## Far Manager
 
 Assuming that you've installed Far into `c:\Program Files\Far Manager`:
@@ -76,7 +87,7 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
     "icon" : "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
-````
+```
 
 ## Git Bash (WOW64)
 
@@ -102,17 +113,18 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
     "icon": "C:/msys64/msys2.ico",
     "startingDirectory" : "C:/msys64/home/user"
 }
-````
+```
 
-## Developer Command Prompt for Visual Studio
+## SSH
 
-Assuming that you've installed VS 2019 Professional:
+Starting with Windows 10 1809, you can install the native OpenSSH component. Details can be found [here](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse).
+
+Assuming that you've installed the OpenSSH cilent and configured the required authentication:
 
 ```json
 {
-    "name" : "Developer Command Prompt for VS 2019",
-    "commandline" : "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
-    "startingDirectory" : "%USERPROFILE%"
+    "name": "SSH username@hostname",
+    "commandline" : "ssh.exe username@hostname"
 }
 ```
 
