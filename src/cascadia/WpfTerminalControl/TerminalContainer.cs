@@ -26,7 +26,7 @@ namespace Microsoft.Terminal.Wpf
         private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
@@ -35,7 +35,7 @@ namespace Microsoft.Terminal.Wpf
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
-            
+
             var blinkTime = NativeMethods.GetCaretBlinkTime();
 
             if (blinkTime != uint.MaxValue)
