@@ -9,6 +9,8 @@ change. If you notice an error in the docs, please raise an issue. Or better yet
 
 To compile Windows Terminal yourself using the source code, follow the instructions in the [README](/README.md#developer-guidance).
 
+You check the WT [releases changes](https://github.com/microsoft/Terminal/releases).
+
 ### From the Microsoft Store
 
 1. Make sure you have upgraded to the current Windows 10 release (at least build `1903`). To determine your build number, see [winver](https://docs.microsoft.com/en-us/windows/client-management/windows-version-search).
@@ -25,7 +27,8 @@ NOTE: The default shell is PowerShell; you can change this using the _Running a 
 
 ### Command line options
 
-None at this time. See issue [#607](https://github.com/microsoft/terminal/issues/607)
+Please check [Using the wt.exe Commandline](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingCommandlineArguments.md)
+
 
 ## Multiple Tabs
 
