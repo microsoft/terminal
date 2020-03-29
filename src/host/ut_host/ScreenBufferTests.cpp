@@ -69,6 +69,9 @@ class ScreenBufferTests
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
+        // Make sure the viewport always starts off at the default size.
+        auto defaultSize = COORD{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
+        currentBuffer.SetViewport(Viewport::FromDimensions(defaultSize), true);
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         return true;
