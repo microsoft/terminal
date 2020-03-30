@@ -633,7 +633,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // MUL will scale the entire rectangle up by the size factor
-        rectangle operator*(const size& size)
+        rectangle operator*(const size& size) const
         {
             auto topLeft = _topLeft;
             auto bottomRight = _bottomRight;
@@ -642,9 +642,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return til::rectangle{ topLeft, bottomRight };
         }
 
+        rectangle& operator*=(const size& size)
+        {
+            *this = *this * size;
+            return *this;
+        }
+
         // DIV will scale the entire rectangle down by the size factor,
         // but rounds the bottom-right corner out.
-        rectangle operator/(const size& size)
+        rectangle operator/(const size& size) const
         {
             auto topLeft = _topLeft;
             auto bottomRight = _bottomRight;
@@ -656,6 +662,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             bottomRight = til::point{} + til::size{ right(), bottom() }.divide_ceil(size);
 
             return til::rectangle{ topLeft, bottomRight };
+        }
+
+        rectangle& operator/=(const size& size)
+        {
+            *this = *this / size;
+            return *this;
         }
 
 #pragma endregion

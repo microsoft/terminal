@@ -797,6 +797,124 @@ class RectangleTests
         }
     }
 
+    TEST_METHOD(MultiplicationSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Multiply by size to scale from cells to pixels");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
+            const auto actual = start * scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Multiply by size with width way too big.");
+        {
+            const til::size scale{ std::numeric_limits<ptrdiff_t>().max(), static_cast<ptrdiff_t>(7) };
+
+            auto fn = [&]() {
+                const auto actual = start * scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"3.) Multiply by size with height way too big.");
+        {
+            const til::size scale{ static_cast<ptrdiff_t>(3), std::numeric_limits<ptrdiff_t>().max() };
+
+            auto fn = [&]() {
+                const auto actual = start * scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(MultiplicationSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Multiply by size to scale from cells to pixels");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
+            auto actual = start;
+            actual *= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Multiply by size with width way too big.");
+        {
+            const til::size scale{ std::numeric_limits<ptrdiff_t>().max(), static_cast<ptrdiff_t>(7) };
+
+            auto fn = [&]() {
+                auto actual = start;
+                actual *= scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"3.) Multiply by size with height way too big.");
+        {
+            const til::size scale{ static_cast<ptrdiff_t>(3), std::numeric_limits<ptrdiff_t>().max() };
+
+            auto fn = [&]() {
+                auto actual = start;
+                actual *= scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(DivisionSize)
+    {
+        const til::rectangle start{ 10, 20, 29, 40 };
+
+        Log::Comment(L"0.) Division by size to scale from pixels to cells");
+        {
+            const til::size scale{ 3, 7 };
+
+            // Division is special. The top and left round down.
+            // The bottom and right round up. This is to ensure that the cells
+            // the smaller rectangle represents fully cover all the pixels
+            // of the larger rectangle.
+            // L: 10 / 3 = 3.333 --> round down --> 3
+            // T: 20 / 7 = 2.857 --> round down --> 2
+            // R: 29 / 3 = 9.667 --> round up ----> 10
+            // B: 40 / 7 = 5.714 --> round up ----> 6
+            const til::rectangle expected{ 3, 2, 10, 6 };
+            const auto actual = start / scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(DivisionSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 29, 40 };
+
+        Log::Comment(L"0.) Division by size to scale from pixels to cells");
+        {
+            const til::size scale{ 3, 7 };
+
+            // Division is special. The top and left round down.
+            // The bottom and right round up. This is to ensure that the cells
+            // the smaller rectangle represents fully cover all the pixels
+            // of the larger rectangle.
+            // L: 10 / 3 = 3.333 --> round down --> 3
+            // T: 20 / 7 = 2.857 --> round down --> 2
+            // R: 29 / 3 = 9.667 --> round up ----> 10
+            // B: 40 / 7 = 5.714 --> round up ----> 6
+            const til::rectangle expected{ 3, 2, 10, 6 };
+            auto actual = start;
+            actual /= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
     TEST_METHOD(Top)
     {
         const til::rectangle rc{ 5, 10, 15, 20 };
