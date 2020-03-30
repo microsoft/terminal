@@ -75,6 +75,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
+        void CursorPositionChanged() noexcept;
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 

@@ -71,7 +71,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
 {
-    _cursorChanged = true;
     return S_FALSE;
 }
 
@@ -452,6 +451,11 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const /*pResult*/) noexcept
 {
     return S_FALSE;
+}
+
+void UiaEngine::CursorPositionChanged() noexcept
+{
+    _cursorChanged = true;
 }
 
 // Method Description:
