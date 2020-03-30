@@ -1295,6 +1295,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // The letters represent the data in the TMUX pane.
     // The final *** line represents the mode line which we will
     // attempt to hold in place and not scroll.
+    // Note that the last line will contain one '*' less than the width of the window.
 
     Log::Comment(L"Fill host with text pattern by feeding it into VT parser.");
     const auto rowsToWrite = initialTermView.Height() - 1;
@@ -1311,7 +1312,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     }
 
     // For the last one, write out the asterisks for the mode line.
-    for (auto i = 0; i < initialTermView.Width(); ++i)
+    for (auto i = 0; i < initialTermView.Width() - 1; ++i)
     {
         hostSm.ProcessCharacter('*');
     }
@@ -1335,7 +1336,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
         }
 
         // For the last row, verify we have an entire row of asterisks for the mode line.
-        const std::wstring expectedModeLine(initialTermView.Width(), L'*');
+        const std::wstring expectedModeLine(initialTermView.Width() - 1, L'*');
         const COORD expectedPos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
         TestUtils::VerifyExpectedString(tb, expectedModeLine, expectedPos);
     };
@@ -1348,13 +1349,13 @@ void ConptyRoundtripTests::ScrollWithMargins()
         expectedOutput.push_back("\r\n");
     }
     {
-        const std::string expectedString(initialTermView.Width(), '*');
+        const std::string expectedString(initialTermView.Width() - 1, '*');
         expectedOutput.push_back(expectedString);
 
         // Cursor gets reset into bottom right corner as we're writing all the way into that corner.
-        std::stringstream ss;
-        ss << "\x1b[" << initialTermView.Height() << ";" << initialTermView.Width() << "H";
-        expectedOutput.push_back(ss.str());
+        // std::stringstream ss;
+        // ss << "\x1b[" << initialTermView.Height() << ";" << initialTermView.Width() << "H";
+        // expectedOutput.push_back(ss.str());
     }
 
     Log::Comment(L"Verify host buffer contains pattern.");
@@ -1465,7 +1466,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
         // For the last row, verify we have an entire row of asterisks for the mode line.
         {
-            const std::wstring expectedModeLine(initialTermView.Width(), L'*');
+            const std::wstring expectedModeLine(initialTermView.Width() - 1, L'*');
             const COORD modeLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
             TestUtils::VerifyExpectedString(tb, expectedModeLine, modeLinePos);
         }
@@ -1487,8 +1488,9 @@ void ConptyRoundtripTests::ScrollWithMargins()
         expectedOutput.push_back("\r\n");
     }
     {
-        const std::string expectedString(initialTermView.Width(), '*');
-        expectedOutput.push_back(expectedString);
+        const std::string expectedString(initialTermView.Width() - 1, '*');
+        // There will be one extra blank space at the end of the line, because the
+        expectedOutput.push_back(expectedString + " ");
     }
     {
         // Cursor gets reset into second line from bottom, left most column
