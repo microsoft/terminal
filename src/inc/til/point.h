@@ -53,6 +53,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to size from anything that has a X and a Y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
+        {
+        }
+
+        // This template will convert to size from anything that has a x and a y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().x)> && std::is_floating_point_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.x), TilMath::template cast<ptrdiff_t>(other.y))
+        {
+        }
+
         constexpr bool operator==(const point& other) const noexcept
         {
             return _x == other._x &&
@@ -107,6 +123,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator+=(const point& other)
+        {
+            *this = *this + other;
+            return *this;
+        }
+
         point operator-(const point& other) const
         {
             ptrdiff_t x;
@@ -116,6 +138,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator-=(const point& other)
+        {
+            *this = *this - other;
+            return *this;
         }
 
         point operator*(const point& other) const
@@ -129,6 +157,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator*=(const point& other)
+        {
+            *this = *this * other;
+            return *this;
+        }
+
         point operator/(const point& other) const
         {
             ptrdiff_t x;
@@ -138,6 +172,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator/=(const point& other)
+        {
+            *this = *this / other;
+            return *this;
         }
 
         template<typename T>
