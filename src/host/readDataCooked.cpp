@@ -525,7 +525,6 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 loop = false;
                 if (wch == UNICODE_BACKSPACE && _processedInput)
                 {
-                    _bytesRead -= sizeof(WCHAR);
                     _bufPtr -= 1;
                     // clang-format off
 #pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
@@ -533,16 +532,17 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                     *_bufPtr = (WCHAR)' ';
                     _currentPosition -= 1;
 
-                    size_t okay = 2;
+                    _screenInfo.GetTextBuffer().GetCursor().SetPosition(_originalCursorPosition);
                     status = WriteCharsLegacy(_screenInfo,
                                               _backupLimit,
-                                              _bufPtr,
-                                              _bufPtr,
-                                              &okay,
-                                              nullptr,
+                                              _backupLimit,
+                                              _backupLimit,
+                                              &_bytesRead,
+                                              &NumSpaces,
                                               _originalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                              nullptr);
+                                              &ScrollY);
+                    _bytesRead -= sizeof(WCHAR);
 
                     // Repeat until it hits the word boundary
                     if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
