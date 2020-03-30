@@ -140,6 +140,7 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
+        bool _invalidateFullRows;
         til::bitmap _invalidMap;
         til::point _invalidScroll;
 
@@ -237,6 +238,8 @@ namespace Microsoft::Console::Render
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const noexcept;
+
+        til::rectangle _InvalidToFullRow(const til::rectangle& rc) const;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

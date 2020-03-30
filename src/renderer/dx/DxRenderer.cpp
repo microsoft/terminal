@@ -65,6 +65,7 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
+    _invalidateFullRows{ true },
     _invalidMap{},
     _invalidScroll{},
     _presentParams{ 0 },
@@ -676,6 +677,18 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     return _dxgiSwapChain;
 }
 
+til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
+{
+    if (_invalidateFullRows)
+    {
+        return til::rectangle{ til::point{static_cast<ptrdiff_t>(0), rc.top()}, til::size{_invalidMap.size().width(), rc.height()} };
+    }
+    else
+    {
+        return rc;
+    }
+}
+
 // Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
@@ -686,7 +699,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _invalidMap.set(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    _invalidMap.set(_InvalidToFullRow(Viewport::FromExclusive(*psrRegion).ToInclusive()));
 
     return S_OK;
 }
@@ -701,7 +714,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _invalidMap.set(*pcoordCursor);
+    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *pcoordCursor, til::size{1, 1} }));
 
     return S_OK;
 }
@@ -719,7 +732,7 @@ try
 
     // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
     // to cells.
-    _invalidMap.set(til::rectangle{ *prcDirtyClient } / _glyphCell);
+    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *prcDirtyClient } / _glyphCell));
 
     return S_OK;
 }
