@@ -635,10 +635,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // MUL will scale the entire rectangle up by the size factor
         rectangle operator*(const size& size) const
         {
-            auto topLeft = _topLeft;
-            auto bottomRight = _bottomRight;
-            topLeft = topLeft * size;
-            bottomRight = bottomRight * size;
+            const auto topLeft = _topLeft * size;
+            const auto bottomRight = _bottomRight * size;
             return til::rectangle{ topLeft, bottomRight };
         }
 

@@ -370,7 +370,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 // You can find out how to install it here:
 // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
                               // clang-format on
-                              D3D11_CREATE_DEVICE_DEBUG |
+                              // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     const std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels{ D3D_FEATURE_LEVEL_11_1,
@@ -424,7 +424,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
         {
             switch (_chainMode)
             {
-            case SwapChainMode::ForHwnd: {
+            case SwapChainMode::ForHwnd:
+            {
                 // use the HWND's dimensions for the swap chain dimensions.
                 RECT rect = { 0 };
                 RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -453,7 +454,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 
                 break;
             }
-            case SwapChainMode::ForComposition: {
+            case SwapChainMode::ForComposition:
+            {
                 // Use the given target size for compositions.
                 SwapChainDesc.Width = _displaySizePixels.width<UINT>();
                 SwapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -681,7 +683,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 {
     if (_invalidateFullRows)
     {
-        return til::rectangle{ til::point{static_cast<ptrdiff_t>(0), rc.top()}, til::size{_invalidMap.size().width(), rc.height()} };
+        return til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
     }
     else
     {
@@ -714,7 +716,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *pcoordCursor, til::size{1, 1} }));
+    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } }));
 
     return S_OK;
 }
@@ -819,13 +821,15 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         SIZE size = _sizeTarget;
         size.cx = static_cast<LONG>(size.cx * _scale);
         size.cy = static_cast<LONG>(size.cy * _scale);
@@ -1051,7 +1055,6 @@ CATCH_RETURN()
         {
             HRESULT hr = S_OK;
 
-            /*hr = _dxgiSwapChain->Present(1, 0);*/
             hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
             if (FAILED(hr))
@@ -1109,6 +1112,11 @@ CATCH_RETURN()
     _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
     for (const auto rect : _invalidMap.runs())
     {
+        // Use aliased.
+        // For graphics reasons, it'll look better because it will ensure that
+        // the edges are cut nice and sharp (not blended by anti-aliasing).
+        // For performance reasons, it takes a lot less work to not
+        // do anti-alias blending.
         _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear(nothing);
         _d2dRenderTarget->PopAxisAlignedClip();
@@ -1260,7 +1268,7 @@ CATCH_RETURN()
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rectangle{ rect } *_glyphCell;
+    const D2D1_RECT_F draw = til::rectangle{ rect } * _glyphCell;
 
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -1288,8 +1296,8 @@ enum class CursorPaintType
     {
         return S_FALSE;
     }
-    // Create rectangular block representing where the cursor can fill.s
-    D2D1_RECT_F rect = til::rectangle{ til::point{options.coordCursor} } *_glyphCell;
+    // Create rectangular block representing where the cursor can fill.
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } } * _glyphCell;
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)
@@ -1301,29 +1309,34 @@ enum class CursorPaintType
 
     switch (options.cursorType)
     {
-    case CursorType::Legacy: {
+    case CursorType::Legacy:
+    {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
         ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
         rect.top = rect.bottom - ulHeight;
         break;
     }
-    case CursorType::VerticalBar: {
+    case CursorType::VerticalBar:
+    {
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
-    case CursorType::Underscore: {
+    case CursorType::Underscore:
+    {
         rect.top = rect.bottom - 1;
         break;
     }
-    case CursorType::EmptyBox: {
+    case CursorType::EmptyBox:
+    {
         paintType = CursorPaintType::Outline;
         break;
     }
-    case CursorType::FullBox: {
+    case CursorType::FullBox:
+    {
         break;
     }
     default:
@@ -1340,11 +1353,13 @@ enum class CursorPaintType
 
     switch (paintType)
     {
-    case CursorPaintType::Fill: {
+    case CursorPaintType::Fill:
+    {
         _d2dRenderTarget->FillRectangle(rect, brush.Get());
         break;
     }
-    case CursorPaintType::Outline: {
+    case CursorPaintType::Outline:
+    {
         // DrawRectangle in straddles physical pixels in an attempt to draw a line
         // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
@@ -1985,10 +2000,12 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
