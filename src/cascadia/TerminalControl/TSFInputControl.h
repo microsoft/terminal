@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _RedrawCanvas();
         bool _focused;
 
-        COORD _currentTerminalCursorPos;
+        til::point _currentTerminalCursorPos;
         double _currentCanvasWidth;
         double _currentTextBlockHeight;
         winrt::Windows::Foundation::Rect _currentControlBounds;

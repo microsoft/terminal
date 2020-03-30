@@ -148,8 +148,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const double actualTextBlockHeight = TextBlock().ActualHeight();
 
-        if (_currentTerminalCursorPos.X == cursorPos.X &&
-            _currentTerminalCursorPos.Y == cursorPos.Y &&
+        if (_currentTerminalCursorPos.x() == cursorPos.X &&
+            _currentTerminalCursorPos.y() == cursorPos.Y &&
             _currentCanvasWidth == actualCanvasWidth &&
             _currentTextBlockHeight == actualTextBlockHeight)
         {
@@ -181,8 +181,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
+        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<short>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<short>(fontHeight));
 
         // position textblock to cursor position
         Canvas().SetLeft(TextBlock(), clientCursorPos.X);
