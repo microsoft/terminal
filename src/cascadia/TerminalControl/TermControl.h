@@ -196,6 +196,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        winrt::fire_and_forget _TerminalCursorPositionChanged();
 
         void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
         void _MouseZoomHandler(const double delta);
