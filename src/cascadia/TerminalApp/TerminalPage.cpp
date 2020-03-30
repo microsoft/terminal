@@ -224,112 +224,38 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
-    //   the title and text from our Resources using the provided keys.
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
-    // Arguments:
-    // - titleKey: The key to use to lookup the title text from our resources.
-    // - contentKey: The key to use to lookup the content text from our resources.
-    void TerminalPage::ShowOkDialog(const winrt::hstring& titleKey,
-                                    const winrt::hstring& contentKey)
-    {
-        auto title = GetLibraryResourceString(titleKey);
-        auto message = GetLibraryResourceString(contentKey);
-        auto buttonText = RS_(L"Ok");
-
-        WUX::Controls::ContentDialog dialog;
-        dialog.Title(winrt::box_value(title));
-        dialog.Content(winrt::box_value(message));
-        dialog.CloseButtonText(buttonText);
-        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
-
-        _showDialogHandlers(*this, dialog);
-    }
-
-    // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
     //   Name, version, getting started link, documentation link, release
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        const auto title = RS_(L"AboutTitleText");
-        const auto versionLabel = RS_(L"VersionLabelText");
-        const auto gettingStartedLabel = RS_(L"GettingStartedLabelText");
-        const auto documentationLabel = RS_(L"DocumentationLabelText");
-        const auto releaseNotesLabel = RS_(L"ReleaseNotesLabelText");
-        const auto privacyPolicyLabel = RS_(L"PrivacyPolicyLabelText");
-        const auto gettingStartedUriValue = RS_(L"GettingStartedUriValue");
-        const auto documentationUriValue = RS_(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = RS_(L"ReleaseNotesUriValue");
-        const auto privacyPolicyUriValue = RS_(L"PrivacyPolicyUriValue");
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        const auto packageName = package.DisplayName();
-        const auto version = package.Id().Version();
-        winrt::Windows::UI::Xaml::Documents::Run about;
-        winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
-        winrt::Windows::UI::Xaml::Documents::Run documentation;
-        winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
-        winrt::Windows::UI::Xaml::Documents::Run privacyPolicy;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink privacyPolicyLink;
-        std::wstringstream aboutTextStream;
+        _showDialogHandlers(*this, FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+    }
 
-        gettingStarted.Text(gettingStartedLabel);
-        documentation.Text(documentationLabel);
-        releaseNotes.Text(releaseNotesLabel);
-        privacyPolicy.Text(privacyPolicyLabel);
+    winrt::hstring TerminalPage::ApplicationDisplayName()
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            return package.DisplayName();
+        }
+        CATCH_LOG();
 
-        winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
-        winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
-        winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
-        winrt::Windows::Foundation::Uri privacyPolicyUri{ privacyPolicyUriValue };
+        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+    }
 
-        gettingStartedLink.NavigateUri(gettingStartedUri);
-        documentationLink.NavigateUri(documentationUri);
-        releaseNotesLink.NavigateUri(releaseNotesUri);
-        privacyPolicyLink.NavigateUri(privacyPolicyUri);
+    winrt::hstring TerminalPage::ApplicationVersion()
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            const auto version{ package.Id().Version() };
+            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+            return formatted;
+        }
+        CATCH_LOG();
 
-        gettingStartedLink.Inlines().Append(gettingStarted);
-        documentationLink.Inlines().Append(documentation);
-        releaseNotesLink.Inlines().Append(releaseNotes);
-        privacyPolicyLink.Inlines().Append(privacyPolicy);
-
-        // Format our about text. It will look like the following:
-        // <Display Name>
-        // Version: <Major>.<Minor>.<Build>.<Revision>
-        // Getting Started
-        // Documentation
-        // Release Notes
-        // Privacy Policy
-
-        aboutTextStream << packageName.c_str() << L"\n";
-
-        aboutTextStream << versionLabel.c_str() << L" ";
-        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
-
-        winrt::hstring aboutText{ aboutTextStream.str() };
-        about.Text(aboutText);
-
-        const auto buttonText = RS_(L"Ok");
-
-        WUX::Controls::TextBlock aboutTextBlock;
-        aboutTextBlock.Inlines().Append(about);
-        aboutTextBlock.Inlines().Append(gettingStartedLink);
-        aboutTextBlock.Inlines().Append(documentationLink);
-        aboutTextBlock.Inlines().Append(releaseNotesLink);
-        aboutTextBlock.Inlines().Append(privacyPolicyLink);
-        aboutTextBlock.IsTextSelectionEnabled(true);
-
-        WUX::Controls::ContentDialog dialog;
-        dialog.Title(winrt::box_value(title));
-        dialog.Content(aboutTextBlock);
-        dialog.CloseButtonText(buttonText);
-        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
-
-        _showDialogHandlers(*this, dialog);
+        return RS_(L"AboutDialog_VersionUnknown");
     }
 
     // Method Description:
@@ -341,19 +267,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        auto title = RS_(L"CloseWindowWarningTitle");
-        auto primaryButtonText = RS_(L"CloseAll");
-        auto closeButtonText = RS_(L"Cancel");
-
-        WUX::Controls::ContentDialog dialog;
-        dialog.Title(winrt::box_value(title));
-
-        dialog.CloseButtonText(closeButtonText);
-        dialog.PrimaryButtonText(primaryButtonText);
-        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Primary);
-        auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
-
-        _showDialogHandlers(*this, dialog);
+        _showDialogHandlers(*this, FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:

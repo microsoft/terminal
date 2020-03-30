@@ -604,4 +604,101 @@ class PointTests
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
+
+    template<typename T>
+    struct PointTypeWith_xy
+    {
+        T x, y;
+    };
+    template<typename T>
+    struct PointTypeWith_XY
+    {
+        T X, Y;
+    };
+    TEST_METHOD(CastFromFloatWithMathTypes)
+    {
+        PointTypeWith_xy<float> xyFloatIntegral{ 1.f, 2.f };
+        PointTypeWith_xy<float> xyFloat{ 1.6f, 2.4f };
+        PointTypeWith_XY<double> XYDoubleIntegral{ 3., 4. };
+        PointTypeWith_XY<double> XYDouble{ 3.6, 4.4 };
+        Log::Comment(L"0.) Ceiling");
+        {
+            {
+                til::point converted{ til::math::ceiling, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 2, 3 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::ceiling, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 4, 5 }), converted);
+            }
+        }
+
+        Log::Comment(L"1.) Flooring");
+        {
+            {
+                til::point converted{ til::math::flooring, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::flooring, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+        }
+
+        Log::Comment(L"2.) Rounding");
+        {
+            {
+                til::point converted{ til::math::rounding, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 2, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::rounding, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 4, 4 }), converted);
+            }
+        }
+
+        Log::Comment(L"3.) Truncating");
+        {
+            {
+                til::point converted{ til::math::truncating, xyFloatIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, xyFloat };
+                VERIFY_ARE_EQUAL((til::point{ 1, 2 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, XYDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+            {
+                til::point converted{ til::math::truncating, XYDouble };
+                VERIFY_ARE_EQUAL((til::point{ 3, 4 }), converted);
+            }
+        }
+    }
 };

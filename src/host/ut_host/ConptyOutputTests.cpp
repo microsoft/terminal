@@ -30,6 +30,9 @@ class ConptyOutputTests
     static const SHORT TerminalViewWidth = 80;
     static const SHORT TerminalViewHeight = 32;
 
+    // This test class is to write some things into the PTY and then check that
+    // the rendering that is coming out of the VT-sequence generator is exactly
+    // as we expect it to be.
     BEGIN_TEST_CLASS(ConptyOutputTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
     END_TEST_CLASS()
