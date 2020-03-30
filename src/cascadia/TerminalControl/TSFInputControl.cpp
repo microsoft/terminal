@@ -142,14 +142,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
+        const til::point cursorPos { gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().Y) };
 
         const double actualCanvasWidth = Canvas().ActualWidth();
 
         const double actualTextBlockHeight = TextBlock().ActualHeight();
 
-        if (_currentTerminalCursorPos.x() == cursorPos.X &&
-            _currentTerminalCursorPos.y() == cursorPos.Y &&
+        if (_currentTerminalCursorPos == cursorPos &&
             _currentCanvasWidth == actualCanvasWidth &&
             _currentTextBlockHeight == actualTextBlockHeight)
         {
@@ -181,12 +180,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<short>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<short>(fontHeight));
+        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<ptrdiff_t>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<ptrdiff_t>(fontHeight));
 
         // position textblock to cursor position
         Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+        Canvas().SetTop(TextBlock(), clientCursorPos.Y);
 
         // calculate FontSize in pixels from DPIs
         const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;

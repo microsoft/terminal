@@ -57,7 +57,7 @@ namespace Conhost.UIA.Tests
                 reg.BackupRegistry(); // we're going to modify the virtual terminal state for this, so back it up first.
                 VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V2);
                 reg.SetDefaultValue(VIRTUAL_TERMINAL_KEY_NAME, VIRTUAL_TERMINAL_ON_VALUE);
-                
+
                 bool haveVtAppPath = !string.IsNullOrEmpty(vtAppLocation);
 
                 Verify.IsTrue(haveVtAppPath, "Ensure that we passed in the location to VtApp.exe");
@@ -114,12 +114,12 @@ namespace Conhost.UIA.Tests
             Log.Comment("Move cursor to the middle-ish");
             Point cursorExpected = new Point();
             // H is at 5, 1. VT coords are 1-based and buffer is 0-based so adjust.
-            cursorExpected.Y = 5 - 1; 
+            cursorExpected.Y = 5 - 1;
             cursorExpected.X = 1 - 1;
             app.UIRoot.SendKeys("H");
 
             // Move to middle-ish from here. 10 Bs and 10 Cs should about do it.
-            for (int i=0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 app.UIRoot.SendKeys("BC");
                 cursorExpected.Y++;
@@ -715,7 +715,7 @@ namespace Conhost.UIA.Tests
         }
 
         delegate char GetExpectedChar(int rowId, int colId, int height, int width);
-        
+
         private static void ScreenFillHelper(CmdApp app, ViewportArea area, IntPtr hConsole)
         {
             Log.Comment("Fill screen with junk");

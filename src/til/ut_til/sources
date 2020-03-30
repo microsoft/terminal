@@ -18,6 +18,7 @@ SOURCES = \
     ColorTests.cpp \
     OperatorTests.cpp \
     PointTests.cpp \
+    MathTests.cpp \
     RectangleTests.cpp \
     SizeTests.cpp \
     SomeTests.cpp \

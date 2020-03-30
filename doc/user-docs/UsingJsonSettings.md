@@ -107,6 +107,22 @@ add the following to your keybindings:
 This will _unbind_ <kbd>Ctrl+Shift+6</kbd>, allowing vim to use the keystroke
 instead of the terminal.
 
+### Binding multiple keys
+
+You can have multiple key chords bound to the same action. To do this, simply
+add multiple bindings for the same action. For example:
+
+```json
+    "keybindings" :
+    [
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "copy", "keys": "ctrl+c" },
+        { "command": "copy", "keys": "enter" }
+    ]
+```
+
+In this snippet, all three of <kbd>ctrl+shift+c</kbd>, <kbd>ctrl+c</kbd> and <kbd>enter</kbd> are bound to `copy`.
+
 ## Profiles
 
 A profile contains the settings applied when a new WT tab is opened. Each
