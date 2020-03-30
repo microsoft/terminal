@@ -307,7 +307,7 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
         {
             // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
             // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
-            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeryByte Unlimited) which used the bits accidentally and for no purpose
+            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
             //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
             return !!IsAvailableEastAsianCodePage(gci.OutputCP);
         }
@@ -411,7 +411,7 @@ const COORD RenderData::GetSelectionEnd() const noexcept
     //  - SelectionAnchor: the initial position where the selection was started
     //  - SelectionRect: the rectangular region denoting a portion of the buffer that is selected
 
-    // The following is an exerpt from Selection::s_GetSelectionRects
+    // The following is an excerpt from Selection::s_GetSelectionRects
     // if the anchor (start of select) was in the top right or bottom left of the box,
     // we need to remove rectangular overlap in the middle.
     // e.g.

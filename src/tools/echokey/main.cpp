@@ -23,6 +23,7 @@ bool gVtInput = false;
 bool gVtOutput = true;
 bool gWindowInput = false;
 bool gUseAltBuffer = false;
+bool gUseAscii = false;
 
 bool gExitRequested = false;
 
@@ -52,7 +53,7 @@ void useMainBuffer()
     csi("?1049l");
 }
 
-void toPrintableBuffer(char c, char* printBuffer, int* printCch)
+void toPrintableBufferA(char c, char* printBuffer, int* printCch)
 {
     if (c == '\x1b')
     {
@@ -111,13 +112,72 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         *printCch = 2;
     }
 }
+void toPrintableBufferW(wchar_t c, wchar_t* printBuffer, int* printCch)
+{
+    if (c == L'\x1b')
+    {
+        printBuffer[0] = L'^';
+        printBuffer[1] = L'[';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\x03')
+    {
+        printBuffer[0] = L'^';
+        printBuffer[1] = L'C';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\x0')
+    {
+        printBuffer[0] = L'\\';
+        printBuffer[1] = L'0';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\r')
+    {
+        printBuffer[0] = L'\\';
+        printBuffer[1] = L'r';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\n')
+    {
+        printBuffer[0] = L'\\';
+        printBuffer[1] = L'n';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\t')
+    {
+        printBuffer[0] = L'\\';
+        printBuffer[1] = L't';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else if (c == '\b')
+    {
+        printBuffer[0] = L'\\';
+        printBuffer[1] = L'b';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+    else
+    {
+        printBuffer[0] = (wchar_t)c;
+        printBuffer[1] = L' ';
+        printBuffer[2] = L'\0';
+        *printCch = 2;
+    }
+}
 
-void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
+void handleKeyEventA(KEY_EVENT_RECORD keyEvent)
 {
     char printBuffer[3];
     int printCch = 0;
     const char c = keyEvent.uChar.AsciiChar;
-    toPrintableBuffer(c, printBuffer, &printCch);
+    toPrintableBufferA(c, printBuffer, &printCch);
 
     if (!keyEvent.bKeyDown)
     {
@@ -137,8 +197,40 @@ void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
     // restore colors
     csi("0m");
 
-    // Die on Ctrl+C
+    // Die on Ctrl+D
     if (keyEvent.uChar.AsciiChar == CTRL_D)
+    {
+        gExitRequested = true;
+    }
+}
+
+void handleKeyEventW(KEY_EVENT_RECORD keyEvent)
+{
+    wchar_t printBuffer[3];
+    int printCch = 0;
+    const wchar_t c = keyEvent.uChar.UnicodeChar;
+    toPrintableBufferW(c, printBuffer, &printCch);
+
+    if (!keyEvent.bKeyDown)
+    {
+        // Print in grey
+        csi("38;5;242m");
+    }
+
+    wprintf(L"Down: %d Repeat: %d KeyCode: 0x%x ScanCode: 0x%x Char: %s (0x%x) KeyState: 0x%x\r\n",
+            keyEvent.bKeyDown,
+            keyEvent.wRepeatCount,
+            keyEvent.wVirtualKeyCode,
+            keyEvent.wVirtualScanCode,
+            printBuffer,
+            keyEvent.uChar.UnicodeChar,
+            keyEvent.dwControlKeyState);
+
+    // restore colors
+    csi("0m");
+
+    // Die on Ctrl+D
+    if (c == CTRL_D)
     {
         gExitRequested = true;
     }
@@ -190,6 +282,7 @@ void usage()
     wprintf(L"\t-i: enable reading VT input mode.\n");
     wprintf(L"\t-o: disable VT output.\n");
     wprintf(L"\t-w: enable reading window events.\n");
+    wprintf(L"\t-a: Use ReadConsoleInputA instead.\n");
     wprintf(L"\t--alt: run in the alt buffer. Cannot be combined with `-o`\n");
     wprintf(L"\t-?: print this help message\n");
 }
@@ -201,6 +294,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     gWindowInput = false;
     gUseAltBuffer = false;
     gExitRequested = false;
+    gUseAscii = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -225,6 +319,11 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         {
             gVtOutput = false;
             wprintf(L"Disabling VT Output\n");
+        }
+        else if (arg.compare(L"-a") == 0)
+        {
+            gUseAscii = true;
+            wprintf(L"Using ReadConsoleInputA\n");
         }
         else if (arg.compare(L"-?") == 0)
         {
@@ -288,13 +387,28 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     {
         INPUT_RECORD rc;
         DWORD dwRead = 0;
-        ReadConsoleInputA(g_hIn, &rc, 1, &dwRead);
+
+        if (gUseAscii)
+        {
+            ReadConsoleInputA(g_hIn, &rc, 1, &dwRead);
+        }
+        else
+        {
+            ReadConsoleInputW(g_hIn, &rc, 1, &dwRead);
+        }
 
         switch (rc.EventType)
         {
         case KEY_EVENT:
         {
-            handleKeyEvent(rc.Event.KeyEvent);
+            if (gUseAscii)
+            {
+                handleKeyEventA(rc.Event.KeyEvent);
+            }
+            else
+            {
+                handleKeyEventW(rc.Event.KeyEvent);
+            }
             break;
         }
         case WINDOW_BUFFER_SIZE_EVENT:

@@ -111,7 +111,7 @@ namespace Conhost.UIA.Tests
                 default:
                     throw new NotSupportedException();
             }
-            
+
             afterScroll = app.GetScreenBufferInfo();
 
             switch (dir)

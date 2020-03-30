@@ -30,7 +30,7 @@
     <ClCompile Include="TfDispAttr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TfEditses.cpp">
+    <ClCompile Include="TfEditSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TfTxtevCb.cpp">
@@ -65,7 +65,7 @@
     <ClInclude Include="TfDispAttr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TfEditses.h">
+    <ClInclude Include="TfEditSession.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
