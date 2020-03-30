@@ -48,7 +48,8 @@ public:
     }
 
 #ifdef WINRT_Windows_System_H
-    ControlKeyStates(const winrt::Windows::System::VirtualKeyModifiers& modifiers) noexcept
+    ControlKeyStates(const winrt::Windows::System::VirtualKeyModifiers& modifiers) noexcept :
+        _value{ 0 }
     {
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet
         // macro directly with a VirtualKeyModifiers

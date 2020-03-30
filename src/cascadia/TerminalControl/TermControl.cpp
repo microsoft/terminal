@@ -1193,7 +1193,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Actually handle a scrolling event, with from a mouse wheel or a
+    // - Actually handle a scrolling event, wether from a mouse wheel or a
     //   touchpad scroll. Depending upon what modifier keys are pressed,
     //   different actions will take place.
     //   * Attempts to first dispatch the mouse scroll as a VT event
