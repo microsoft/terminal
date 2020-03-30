@@ -1,0 +1,8 @@
+\\registry(?![a-z])
+\\release(?![a-z])
+\\resources?(?![a-z])
+\\result(?![a-z])
+\\resultmacros(?![a-z])
+\\rules(?![a-z])
+\\renderer(?![a-z])
+\\rectread(?![a-z])
