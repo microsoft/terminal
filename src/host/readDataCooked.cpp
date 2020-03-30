@@ -523,38 +523,26 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             while (loop)
             {
                 loop = false;
-                if (_echoInput)
-                {
-                    NumToWrite = sizeof(WCHAR);
-                    status = WriteCharsLegacy(_screenInfo,
-                                              _backupLimit,
-                                              _bufPtr,
-                                              &wch,
-                                              &NumToWrite,
-                                              &NumSpaces,
-                                              _originalCursorPosition.X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                              &ScrollY);
-                    if (NT_SUCCESS(status))
-                    {
-                        _originalCursorPosition.Y += ScrollY;
-                    }
-                    else
-                    {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
-                    }
-                }
-
-                _visibleCharCount += NumSpaces;
                 if (wch == UNICODE_BACKSPACE && _processedInput)
                 {
                     _bytesRead -= sizeof(WCHAR);
+                    _bufPtr -= 1;
                     // clang-format off
 #pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
                     // clang-format on
                     *_bufPtr = (WCHAR)' ';
-                    _bufPtr -= 1;
                     _currentPosition -= 1;
+
+                    size_t okay = 2;
+                    status = WriteCharsLegacy(_screenInfo,
+                                              _backupLimit,
+                                              _bufPtr,
+                                              _bufPtr,
+                                              &okay,
+                                              nullptr,
+                                              _originalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              nullptr);
 
                     // Repeat until it hits the word boundary
                     if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
@@ -571,6 +559,35 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                     _bufPtr += 1;
                     _currentPosition += 1;
                 }
+                if (_echoInput)
+                {
+                    NumToWrite = sizeof(WCHAR);
+                    _screenInfo.GetTextBuffer().GetCursor().SetPosition(_originalCursorPosition);
+
+                    status = WriteCharsLegacy(_screenInfo,
+                                              _backupLimit,
+                                              _backupLimit,
+                                              _backupLimit,
+                                              &_bytesRead,
+                                              &NumSpaces,
+                                              _originalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              &ScrollY);
+                    if (NT_SUCCESS(status))
+                    {
+                        _originalCursorPosition.Y += ScrollY;
+                    }
+                    else
+                    {
+                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
+                    }
+                }
+
+                // if (wch == UNICODE_BACKSPACE && _processedInput)
+                // {
+                //     _bytesRead -= sizeof(WCHAR);
+                // }
+                _visibleCharCount += NumSpaces;
             }
         }
     }
