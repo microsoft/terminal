@@ -52,7 +52,7 @@ namespace Conhost.UIA.Tests.Elements
 
             tab.Click();
             Globals.WaitForTimeout();
-            
+
             this.PopulateItemsOnNavigate(this.propDialog.PropWindow);
 
         }
