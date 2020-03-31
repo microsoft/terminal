@@ -1523,7 +1523,7 @@ void AdaptDispatch::_ResetTabStops() noexcept
 //    current screen width, initializing tab stops every 8 columns in the
 //    newly allocated space, iff the _initDefaultTabStops flag is set.
 // Arguments:
-// - <none>
+// - width - the width of the screen buffer that we need to accomodate
 // Return value:
 // - <none>
 void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
