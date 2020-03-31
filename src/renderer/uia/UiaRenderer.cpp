@@ -70,7 +70,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+try
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+
     // check if cursor moved
     if (*pcoordCursor != _prevCursorPos)
     {
@@ -79,6 +82,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     }
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
