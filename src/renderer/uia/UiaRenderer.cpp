@@ -77,7 +77,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         _prevCursorPos = *pcoordCursor;
         _cursorChanged = true;
     }
-    return S_FALSE;
+    return S_OK;
 }
 
 // Routine Description:
