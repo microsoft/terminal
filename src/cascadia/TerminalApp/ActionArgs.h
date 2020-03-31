@@ -328,7 +328,7 @@ namespace winrt::TerminalApp::implementation
             return TerminalApp::SplitState::Automatic;
         }
         // default behavior for invalid data
-        return TerminalApp::SplitState::None;
+        return TerminalApp::SplitState::Automatic;
     };
 
     // Possible SplitType values
