@@ -68,7 +68,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // Arguments:
 // - pcoordCursor - the new position of the cursor
 // Return Value:
-// - S_FALSE
+// - S_OK
 [[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
     // check if cursor moved
