@@ -1469,6 +1469,12 @@ bool AdaptDispatch::TabClear(const size_t clearType)
     return success;
 }
 
+// Routine Description:
+// - Clears the tab stop in the cursor's current column, if there is one.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ClearSingleTabStop()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -1485,6 +1491,13 @@ bool AdaptDispatch::_ClearSingleTabStop()
     return success;
 }
 
+// Routine Description:
+// - Clears all tab stops and resets the _initDefaultTabStops flag to indicate
+//    that they shouldn't be reinitialized at the default positions.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ClearAllTabStops() noexcept
 {
     _tabStopColumns.clear();
@@ -1492,23 +1505,41 @@ bool AdaptDispatch::_ClearAllTabStops() noexcept
     return true;
 }
 
+// Routine Description:
+// - Clears all tab stops and sets the _initDefaultTabStops flag to indicate
+//    that the default positions should be reinitialized when needed.
+// Arguments:
+// - <none>
+// Return value:
+// - <none>
 void AdaptDispatch::_ResetTabStops() noexcept
 {
     _tabStopColumns.clear();
     _initDefaultTabStops = true;
 }
 
+// Routine Description:
+// - Resizes the _tabStopColumns table so it's large enough to support the
+//    current screen width, initializing tab stops every 8 columns in the
+//    newly allocated space, iff the _initDefaultTabStops flag is set.
+// Arguments:
+// - <none>
+// Return value:
+// - <none>
 void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 {
     const auto initialWidth = _tabStopColumns.size();
     if (width > initialWidth)
     {
         _tabStopColumns.resize(width);
-        for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
+        if (_initDefaultTabStops)
         {
-            if (_initDefaultTabStops && column >= initialWidth)
+            for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
             {
-                til::at(_tabStopColumns, column) = true;
+                if (column >= initialWidth)
+                {
+                    til::at(_tabStopColumns, column) = true;
+                }
             }
         }
     }
