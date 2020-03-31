@@ -414,7 +414,7 @@ following objects into your `globals.keybindings` array:
 { "command": "paste", "keys": ["ctrl+shift+v"] }
 ```
 
-> 👉 **Note**: you can also add a keybinding for the `copyTextWithoutNewlines` command. This removes newlines as the text is copied to your clipboard.
+> 👉 **Note**: you can also add a keybinding for the `copy` command with the argument `"trimWhitespace": true`. This removes newlines as the text is copied to your clipboard.
 
 This will add copy and paste on <kbd>ctrl+shift+c</kbd>
 and <kbd>ctrl+shift+v</kbd> respectively.
