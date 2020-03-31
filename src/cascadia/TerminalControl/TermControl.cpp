@@ -1817,11 +1817,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (!_closing.load())
             {
                 TSFInputControl().TryRedrawCanvas();
-
-                if (_uiaEngine.get())
-                {
-                    _uiaEngine->CursorPositionChanged();
-                }
             }
         }
     }
