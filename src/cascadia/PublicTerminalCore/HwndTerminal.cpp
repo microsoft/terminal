@@ -427,10 +427,8 @@ const wchar_t* _stdcall TerminalGetSelection(void* terminal)
     return returnText.release();
 }
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
+static ControlKeyStates getControlKeyState() noexcept
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
     struct KeyModifier
     {
         int vkey;
@@ -458,10 +456,17 @@ void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
         }
     }
 
-    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
+    return flags;
 }
 
-void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    const auto flags = getControlKeyState();
+    publicTerminal->_terminal->SendKeyEvent(vkey, scanCode, flags);
+}
+
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
 {
     if (ch == '\t')
     {
@@ -469,7 +474,8 @@ void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
     }
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->SendCharEvent(ch);
+    const auto flags = getControlKeyState();
+    publicTerminal->_terminal->SendCharEvent(ch, scanCode, flags);
 }
 
 void _stdcall DestroyTerminal(void* terminal)
