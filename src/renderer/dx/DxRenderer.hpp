@@ -237,7 +237,7 @@ namespace Microsoft::Console::Render
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
-        [[nodiscard]] til::size _GetClientSize() const noexcept;
+        [[nodiscard]] til::size _GetClientSize() const;
 
         til::rectangle _InvalidToFullRow(const til::rectangle& rc) const;
 

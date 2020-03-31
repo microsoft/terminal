@@ -349,6 +349,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 // Return Value:
 // - Could be any DirectX/D3D/D2D/DXGI/DWrite error or memory issue.
 [[nodiscard]] HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
+try
 {
     if (_haveDeviceResources)
     {
@@ -420,72 +421,68 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
-        try
+        switch (_chainMode)
         {
-            switch (_chainMode)
+        case SwapChainMode::ForHwnd:
+        {
+            // use the HWND's dimensions for the swap chain dimensions.
+            RECT rect = { 0 };
+            RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+
+            SwapChainDesc.Width = rect.right - rect.left;
+            SwapChainDesc.Height = rect.bottom - rect.top;
+
+            // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                                     _hwndTarget,
+                                                                                     &SwapChainDesc,
+                                                                                     nullptr,
+                                                                                     nullptr,
+                                                                                     &_dxgiSwapChain);
+            if (FAILED(createSwapChainResult))
             {
-            case SwapChainMode::ForHwnd:
-            {
-                // use the HWND's dimensions for the swap chain dimensions.
-                RECT rect = { 0 };
-                RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
-
-                SwapChainDesc.Width = rect.right - rect.left;
-                SwapChainDesc.Height = rect.bottom - rect.top;
-
-                // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
-                SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-                const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                                         _hwndTarget,
-                                                                                         &SwapChainDesc,
-                                                                                         nullptr,
-                                                                                         nullptr,
-                                                                                         &_dxgiSwapChain);
-                if (FAILED(createSwapChainResult))
-                {
-                    SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-                    RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                           _hwndTarget,
-                                                                           &SwapChainDesc,
-                                                                           nullptr,
-                                                                           nullptr,
-                                                                           &_dxgiSwapChain));
-                }
-
-                break;
-            }
-            case SwapChainMode::ForComposition:
-            {
-                // Use the given target size for compositions.
-                SwapChainDesc.Width = _displaySizePixels.width<UINT>();
-                SwapChainDesc.Height = _displaySizePixels.height<UINT>();
-
-                // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
-                SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-                // It's 100% required to use scaling mode stretch for composition. There is no other choice.
                 SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-
-                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                              &SwapChainDesc,
-                                                                              nullptr,
-                                                                              &_dxgiSwapChain));
-                break;
-            }
-            default:
-                THROW_HR(E_NOTIMPL);
+                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                       _hwndTarget,
+                                                                       &SwapChainDesc,
+                                                                       nullptr,
+                                                                       nullptr,
+                                                                       &_dxgiSwapChain));
             }
 
-            if (_retroTerminalEffects)
+            break;
+        }
+        case SwapChainMode::ForComposition:
+        {
+            // Use the given target size for compositions.
+            SwapChainDesc.Width = _displaySizePixels.width<UINT>();
+            SwapChainDesc.Height = _displaySizePixels.height<UINT>();
+
+            // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            // It's 100% required to use scaling mode stretch for composition. There is no other choice.
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
+                                                                          &SwapChainDesc,
+                                                                          nullptr,
+                                                                          &_dxgiSwapChain));
+            break;
+        }
+        default:
+            THROW_HR(E_NOTIMPL);
+        }
+
+        if (_retroTerminalEffects)
+        {
+            const HRESULT hr = _SetupTerminalEffects();
+            if (FAILED(hr))
             {
-                const HRESULT hr = _SetupTerminalEffects();
-                if (FAILED(hr))
-                {
-                    _retroTerminalEffects = false;
-                    LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
-                }
+                _retroTerminalEffects = false;
+                LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
             }
         }
-        CATCH_RETURN();
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -515,6 +512,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 
     return S_OK;
 }
+CATCH_RETURN();
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
@@ -629,6 +627,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     _In_reads_(stringLength) PCWCHAR string,
     _In_ size_t stringLength,
     _Out_ IDWriteTextLayout** ppTextLayout) noexcept
+try
 {
     return _dwriteFactory->CreateTextLayout(string,
                                             gsl::narrow<UINT32>(stringLength),
@@ -637,6 +636,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
                                             _glyphCell.height() != 0 ? _glyphCell.height<float>() : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Sets the target window handle for our display pipeline
@@ -653,11 +653,13 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 [[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+try
 {
     _sizeTarget = Pixels;
     _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
+CATCH_RETURN();
 
 void DxEngine::SetCallback(std::function<void()> pfn)
 {
@@ -698,6 +700,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
@@ -705,6 +708,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Invalidates one specific character coordinate
@@ -713,6 +717,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
@@ -720,6 +725,7 @@ til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
@@ -766,6 +772,8 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 try
 {
+    RETURN_HR_IF(E_INVALIDARG, !pcoordDelta);
+
     const til::point deltaCells{ *pcoordDelta };
 
     if (deltaCells != til::point{ 0, 0 })
@@ -817,7 +825,7 @@ CATCH_RETURN();
 // - <none>
 // Return Value:
 // - X by Y area in pixels of the surface
-[[nodiscard]] til::size DxEngine::_GetClientSize() const noexcept
+[[nodiscard]] til::size DxEngine::_GetClientSize() const
 {
     switch (_chainMode)
     {
@@ -877,6 +885,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 // Return Value:
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::StartPaint() noexcept
+try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
@@ -894,44 +903,41 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 
     if (_isEnabled)
     {
-        try
+        const auto clientSize = _GetClientSize();
+        if (!_haveDeviceResources)
         {
-            const auto clientSize = _GetClientSize();
-            if (!_haveDeviceResources)
-            {
-                RETURN_IF_FAILED(_CreateDeviceResources(true));
-            }
-            else if (_displaySizePixels != clientSize)
-            {
-                // OK, we're going to play a dangerous game here for the sake of optimizing resize
-                // First, set up a complete clear of all device resources if something goes terribly wrong.
-                auto resetDeviceResourcesOnFailure = wil::scope_exit([&]() noexcept {
-                    _ReleaseDeviceResources();
-                });
-
-                // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
-                _dxgiSurface.Reset();
-                _d2dRenderTarget.Reset();
-
-                // Change the buffer size and recreate the render target (and surface)
-                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
-                RETURN_IF_FAILED(_PrepareRenderTarget());
-
-                // OK we made it past the parts that can cause errors. We can release our failure handler.
-                resetDeviceResourcesOnFailure.release();
-
-                // And persist the new size.
-                _displaySizePixels = clientSize;
-            }
-
-            _d2dRenderTarget->BeginDraw();
-            _isPainting = true;
+            RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
-        CATCH_RETURN();
+        else if (_displaySizePixels != clientSize)
+        {
+            // OK, we're going to play a dangerous game here for the sake of optimizing resize
+            // First, set up a complete clear of all device resources if something goes terribly wrong.
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&]() noexcept {
+                _ReleaseDeviceResources();
+            });
+
+            // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
+            _dxgiSurface.Reset();
+            _d2dRenderTarget.Reset();
+
+            // Change the buffer size and recreate the render target (and surface)
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            RETURN_IF_FAILED(_PrepareRenderTarget());
+
+            // OK we made it past the parts that can cause errors. We can release our failure handler.
+            resetDeviceResourcesOnFailure.release();
+
+            // And persist the new size.
+            _displaySizePixels = clientSize;
+        }
+
+        _d2dRenderTarget->BeginDraw();
+        _isPainting = true;
     }
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Ends batch drawing and captures any state necessary for presentation
@@ -1103,6 +1109,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
+try
 {
     D2D1_COLOR_F nothing = { 0 };
 
@@ -1125,6 +1132,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Places one line of text onto the screen at the given position
@@ -1138,40 +1146,38 @@ CATCH_RETURN()
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
+try
 {
-    try
-    {
-        // Calculate positioning of our origin.
-        D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
+    // Calculate positioning of our origin.
+    const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
-        // Create the text layout
-        CustomTextLayout layout(_dwriteFactory.Get(),
-                                _dwriteTextAnalyzer.Get(),
-                                _dwriteTextFormat.Get(),
-                                _dwriteFontFace.Get(),
-                                clusters,
-                                _glyphCell.width());
+    // Create the text layout
+    CustomTextLayout layout(_dwriteFactory.Get(),
+                            _dwriteTextAnalyzer.Get(),
+                            _dwriteTextFormat.Get(),
+                            _dwriteFontFace.Get(),
+                            clusters,
+                            _glyphCell.width());
 
-        // Get the baseline for this font as that's where we draw from
-        DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+    // Get the baseline for this font as that's where we draw from
+    DWRITE_LINE_SPACING spacing;
+    RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
-        // Assemble the drawing context information
-        DrawingContext context(_d2dRenderTarget.Get(),
-                               _d2dBrushForeground.Get(),
-                               _d2dBrushBackground.Get(),
-                               _dwriteFactory.Get(),
-                               spacing,
-                               _glyphCell,
-                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    // Assemble the drawing context information
+    DrawingContext context(_d2dRenderTarget.Get(),
+                           _d2dBrushForeground.Get(),
+                           _d2dBrushBackground.Get(),
+                           _dwriteFactory.Get(),
+                           spacing,
+                           _glyphCell,
+                           D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
-        // Layout then render the text
-        RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
-    }
-    CATCH_RETURN();
+    // Layout then render the text
+    RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paints lines around cells (draws in pieces of the grid)
@@ -1187,6 +1193,7 @@ CATCH_RETURN()
                                                      COLORREF const color,
                                                      size_t const cchLine,
                                                      COORD const coordTarget) noexcept
+try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
@@ -1254,6 +1261,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paints an overlay highlight on a portion of the frame to represent selected text
@@ -1262,6 +1270,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
 
@@ -1274,6 +1283,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Helper to choose which Direct2D method to use when drawing the cursor rectangle
 enum class CursorPaintType
@@ -1290,6 +1300,7 @@ enum class CursorPaintType
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+try
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
@@ -1376,6 +1387,7 @@ enum class CursorPaintType
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paint terminal effects.
