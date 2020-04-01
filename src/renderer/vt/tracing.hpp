@@ -43,7 +43,7 @@ namespace Microsoft::Console::VirtualTerminal
                              const til::rectangle lastViewport,
                              const til::point scrollDelta,
                              const bool cursorMoved,
-                             std::optional<short> wrappedRow) const;
+                             const std::optional<short>& wrappedRow) const;
         void TraceEndPaint() const;
     };
 }

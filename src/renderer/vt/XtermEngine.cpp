@@ -373,7 +373,6 @@ try
     }
 
     const short dy = _scrollDelta.y<SHORT>();
-    const short absDy = static_cast<short>(abs(dy));
 
     // Shift our internal tracker of the last text position according to how
     // much we've scrolled. If we manually scroll the buffer right now, by

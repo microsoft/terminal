@@ -149,7 +149,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
                                     const til::rectangle lastViewport,
                                     const til::point scrollDelt,
                                     const bool cursorMoved,
-                                    std::optional<short> wrappedRow) const
+                                    const std::optional<short>& wrappedRow) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
