@@ -27,7 +27,7 @@ We could have a global setting that adds the formatting when the user copies. Wh
 
 ### Settings option 2 - key binding argument
 
-We could add an argument to the `copy` key binding to allow for formatted copying when the user chooses to do so.
+We could add an argument to the `copy` key binding argument to allow for formatted copying when the user chooses to do so.
 
 ## UI/UX Design
 
