@@ -1351,11 +1351,6 @@ void ConptyRoundtripTests::ScrollWithMargins()
     {
         const std::string expectedString(initialTermView.Width() - 1, '*');
         expectedOutput.push_back(expectedString);
-
-        // Cursor gets reset into bottom right corner as we're writing all the way into that corner.
-        // std::stringstream ss;
-        // ss << "\x1b[" << initialTermView.Height() << ";" << initialTermView.Width() << "H";
-        // expectedOutput.push_back(ss.str());
     }
 
     Log::Comment(L"Verify host buffer contains pattern.");
