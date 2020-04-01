@@ -1277,7 +1277,7 @@ try
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rectangle{ rect } * _glyphCell;
+    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() } * _glyphCell;
 
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 

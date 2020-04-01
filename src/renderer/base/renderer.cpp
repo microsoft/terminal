@@ -927,10 +927,13 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         {
             for (auto dirtyRect : dirtyAreas)
             {
+                // Make a copy as `TrimToViewport` will manipulate it and
+                // can destroy it for the next dirtyRect to test against.
+                auto rectCopy = rect;
                 Viewport dirtyView = Viewport::FromInclusive(dirtyRect);
-                if (dirtyView.TrimToViewport(&rect))
+                if (dirtyView.TrimToViewport(&rectCopy))
                 {
-                    LOG_IF_FAILED(pEngine->PaintSelection(rect));
+                    LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
             }
         }
