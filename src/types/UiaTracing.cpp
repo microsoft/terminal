@@ -25,9 +25,11 @@ UiaTracing::~UiaTracing() noexcept
     TraceLoggingUnregister(g_UiaProviderTraceProvider);
 }
 
-inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
+inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& siup) noexcept
 {
-    return L" NO IDENTIFYING DATA";
+    std::wstringstream stream;
+    stream << "_id: " << siup.GetId();
+    return stream.str();
 }
 
 inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept

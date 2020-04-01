@@ -24,6 +24,7 @@ Author(s):
 #include "../buffer/out/textBuffer.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
+#include "IUiaTraceable.h"
 
 #include <UIAutomationCore.h>
 
@@ -35,7 +36,8 @@ namespace Microsoft::Console::Types
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
-        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>,
+        public IUiaTraceable
     {
     public:
         virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
@@ -127,5 +129,7 @@ namespace Microsoft::Console::Types
         const Viewport _getViewport() const noexcept;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
+
+        static IdType id;
     };
 }

@@ -131,11 +131,6 @@ try
 }
 CATCH_RETURN();
 
-const IdType UiaTextRangeBase::GetId() const noexcept
-{
-    return _id;
-}
-
 const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept
 {
     switch (endpoint)

@@ -9,6 +9,8 @@
 
 using namespace Microsoft::Console::Types;
 
+IdType ScreenInfoUiaProviderBase::id = 1;
+
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 {
@@ -38,30 +40,34 @@ try
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     _pData = pData;
     _wordDelimiters = wordDelimiters;
+
+    _id = id;
+    ++id;
+
     UiaTracing::TextProvider::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
 
-[[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID id)
+[[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID eventId)
 {
     HRESULT hr = S_OK;
     // check to see if we're already firing this particular event
-    if (_signalFiringMapping.find(id) != _signalFiringMapping.end() &&
-        _signalFiringMapping[id] == true)
+    if (_signalFiringMapping.find(eventId) != _signalFiringMapping.end() &&
+        _signalFiringMapping[eventId] == true)
     {
         return hr;
     }
 
     try
     {
-        _signalFiringMapping[id] = true;
+        _signalFiringMapping[eventId] = true;
     }
     CATCH_RETURN();
 
     IRawElementProviderSimple* pProvider = this;
-    hr = UiaRaiseAutomationEvent(pProvider, id);
-    _signalFiringMapping[id] = false;
+    hr = UiaRaiseAutomationEvent(pProvider, eventId);
+    _signalFiringMapping[eventId] = false;
 
     return hr;
 }
