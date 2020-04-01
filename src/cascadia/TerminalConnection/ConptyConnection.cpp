@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (_environment)
             {
-                // add additional WT env vars like WT_PROFILES, WT_DEFAULTS and WT_PROFILE_ID
+                // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
                 for (auto item : _environment)
                 {
                     environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
