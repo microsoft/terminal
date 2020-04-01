@@ -1134,6 +1134,7 @@ IIo
 IList
 ime
 Imm
+IMouse
 Impl
 implementingtextandtextrange
 inbox
@@ -2423,6 +2424,7 @@ TOPDOWNDIB
 TOPLEFT
 TOPRIGHT
 tosign
+touchpad
 tounicodeex
 towlower
 towupper
@@ -2434,6 +2436,7 @@ tracelogging
 traceloggingprovider
 trackbar
 TRACKCOMPOSITION
+trackpad
 trackpads
 transcoder
 transitioning

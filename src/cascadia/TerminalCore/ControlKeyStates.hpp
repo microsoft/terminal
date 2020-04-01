@@ -47,6 +47,27 @@ public:
         return *this;
     }
 
+#ifdef WINRT_Windows_System_H
+    ControlKeyStates(const winrt::Windows::System::VirtualKeyModifiers& modifiers) noexcept :
+        _value{ 0 }
+    {
+        // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+        // macro directly with a VirtualKeyModifiers
+        const auto m = static_cast<uint32_t>(modifiers);
+        _value |= WI_IsFlagSet(m, static_cast<uint32_t>(winrt::Windows::System::VirtualKeyModifiers::Shift)) ?
+                      SHIFT_PRESSED :
+                      0;
+
+        // Since we can't differentiate between the left & right versions of Ctrl & Alt in a VirtualKeyModifiers
+        _value |= WI_IsFlagSet(m, static_cast<uint32_t>(winrt::Windows::System::VirtualKeyModifiers::Menu)) ?
+                      LEFT_ALT_PRESSED :
+                      0;
+        _value |= WI_IsFlagSet(m, static_cast<uint32_t>(winrt::Windows::System::VirtualKeyModifiers::Control)) ?
+                      LEFT_CTRL_PRESSED :
+                      0;
+    }
+#endif
+
     constexpr DWORD Value() const noexcept
     {
         return _value;

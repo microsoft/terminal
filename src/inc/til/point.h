@@ -180,6 +180,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
+        template<typename T>
+        point operator*(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        template<typename T>
+        point operator/(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
         constexpr ptrdiff_t x() const noexcept
         {
             return _x;
@@ -230,6 +256,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr operator D2D1_POINT_2F() const noexcept
         {
             return D2D1_POINT_2F{ gsl::narrow_cast<float>(_x), gsl::narrow_cast<float>(_y) };
+        }
+#endif
+
+#ifdef WINRT_Windows_Foundation_H
+        operator winrt::Windows::Foundation::Point() const
+        {
+            winrt::Windows::Foundation::Point ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
+            return ret;
         }
 #endif
 
