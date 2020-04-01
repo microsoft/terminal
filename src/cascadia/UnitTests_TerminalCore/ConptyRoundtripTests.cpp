@@ -178,6 +178,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(OutputWrappedLinesAtBottomOfBuffer);
     TEST_METHOD(ScrollWithChangesInMiddle);
     TEST_METHOD(DontWrapMoveCursorInSingleFrame);
+    TEST_METHOD(ClearHostTrickeryTest);
 
     TEST_METHOD(ScrollWithMargins);
 
@@ -1552,6 +1553,76 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
     expectedOutput.push_back("\x1b[4;9H");
     // We're _not_ expecting a cursor on here, because we didn't actually hide
     // the cursor during the course of this frame
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"Checking the terminal buffer state");
+    verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::ClearHostTrickeryTest()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool paintEachNewline;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"paintEachNewline", paintEachNewline), L"TODO: Description");
+
+    // See https://github.com/microsoft/terminal/issues/5039#issuecomment-606833841
+    Log::Comment(L"TODO: Mike, write the description");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    auto verifyBuffer = [](const TextBuffer& tb) {
+        // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
+        // is currently broken due to #381/#4676. So we'll only check the X
+        // position, since the Y will be 1 in the Terminal till the above is
+        // fixed.
+        VERIFY_ARE_EQUAL(8, tb.GetCursor().GetPosition().X);
+        VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
+        auto iter = TestUtils::VerifyExpectedString(tb, L"    ", { 0, 0 });
+        TestUtils::VerifyExpectedString(L"XXXX", iter);
+    };
+
+    _logConpty = true;
+    // TODO: Check the conpty output to make sure it's sensible
+    _checkConptyOutput = false;
+
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    hostSm.ProcessString(L"    ");
+    hostSm.ProcessString(L"XXXX");
+    hostSm.ProcessString(L"\x1b[?1049h");
+    hostSm.ProcessString(L"\x1b#8");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    for (auto i = 0; i < si.GetViewport().Height(); i++)
+    {
+        hostSm.ProcessString(L"\n");
+        if (paintEachNewline)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+    }
+    if (!paintEachNewline)
+    {
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+    hostSm.ProcessString(L"\x1b[?1049l");
+
+    Log::Comment(L"Checking the host buffer state");
+    verifyBuffer(hostTb);
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
