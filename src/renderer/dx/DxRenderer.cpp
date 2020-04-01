@@ -965,6 +965,11 @@ try
                 // Copy `til::rectangles` into RECT map.
                 _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
 
+                // Scale all dirty rectangles into pixels
+                std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
+                    return rc * _glyphCell;
+                });
+
                 // The scroll rect is the entire screen minus the revealed areas.
                 // Get the entire screen into a rectangle.
                 til::rectangle scrollArea{ _displaySizePixels };
