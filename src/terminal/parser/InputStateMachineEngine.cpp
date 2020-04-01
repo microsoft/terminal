@@ -210,6 +210,11 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 {
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
+
     return _DoControlCharacter(wch, true);
 }
 
