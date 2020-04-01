@@ -233,7 +233,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // If all three of these conditions are true, then:
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
-    //     the past cell anyways
+    //     the last cell anyways
     //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
     //     the wrap of a line.
     // If they're all true, DON'T manually paint the cursor this frame.
