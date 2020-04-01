@@ -33,7 +33,6 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
-static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
@@ -501,18 +500,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 // <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
-    // microsoft/terminal#2906: First layer the root object as our globals. If
-    // there is also a `globals` object, layer that one on top of the settings
-    // from the root.
     _globals.LayerJson(json);
-
-    if (auto globals{ json[GlobalsKey.data()] })
-    {
-        if (globals.isObject())
-        {
-            _globals.LayerJson(globals);
-        }
-    }
 
     if (auto schemes{ json[SchemesKey.data()] })
     {
@@ -919,10 +907,5 @@ const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& j
 //   given object
 const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const Json::Value& json)
 {
-    // Check the globals first, then look in the root.
-    if (json.isMember(JsonKey(GlobalsKey)))
-    {
-        return json[JsonKey(GlobalsKey)][JsonKey(DisabledProfileSourcesKey)];
-    }
     return json[JsonKey(DisabledProfileSourcesKey)];
 }

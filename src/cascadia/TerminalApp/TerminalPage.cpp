@@ -292,25 +292,16 @@ namespace winrt::TerminalApp::implementation
             // add the keyboard shortcuts for the first 9 profiles
             if (profileIndex < 9)
             {
-                // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
-                const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
-                // First, attempt to search for the keybinding for the simple
-                // NewTabProfile0-9 ShortcutActions.
-                auto profileKeyChord = keyBindings.GetKeyBindingForAction(action);
-                if (!profileKeyChord)
-                {
-                    // If NewTabProfileN didn't have a binding, look for a
-                    // keychord that is bound to the equivalent
-                    // NewTab(ProfileIndex=N) action
-                    auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
-                    actionAndArgs->Action(ShortcutAction::NewTab);
-                    auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-                    newTerminalArgs->ProfileIndex(profileIndex);
-                    newTabArgs->TerminalArgs(*newTerminalArgs);
-                    actionAndArgs->Args(*newTabArgs);
-                    profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
-                }
+                // Look for a keychord that is bound to the equivalent
+                // NewTab(ProfileIndex=N) action
+                auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+                actionAndArgs->Action(ShortcutAction::NewTab);
+                auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                newTerminalArgs->ProfileIndex(profileIndex);
+                newTabArgs->TerminalArgs(*newTerminalArgs);
+                actionAndArgs->Args(*newTabArgs);
+                auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
 
                 // make sure we find one to display
                 if (profileKeyChord)

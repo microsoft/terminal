@@ -19,7 +19,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _activeTextStart{ 0 }
+        _activeTextStart{ 0 },
+        _focused{ false },
+        _currentTerminalCursorPos{ 0, 0 },
+        _currentCanvasWidth{ 0.0 },
+        _currentTextBlockHeight{ 0.0 },
+        _currentTextBounds{ 0, 0, 0, 0 },
+        _currentControlBounds{ 0, 0, 0, 0 }
     {
         InitializeComponent();
 
@@ -58,7 +64,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
         // See GH#4159 for more info.
+        // Also disconnect compositionCompleted and textUpdating explicitly. It seems to occasionally cause problems if
+        // a composition is active during application teardown.
         _layoutRequestedRevoker.revoke();
+        _compositionCompletedRevoker.revoke();
+        _textUpdatingRevoker.revoke();
     }
 
     // Method Description:
@@ -73,6 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusEnter();
+            _focused = true;
         }
     }
 
@@ -88,6 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusLeave();
+            _focused = false;
         }
     }
 
@@ -114,28 +126,51 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Handler for LayoutRequested event by CoreEditContext responsible
-    //   for returning the current position the IME should be placed
-    //   in screen coordinates on the screen.  TSFInputControls internal
-    //   XAML controls (TextBlock/Canvas) are also positioned and updated.
-    //   NOTE: documentation says application should handle this event
+    // - Redraw the canvas if certain dimensions have changed since the last
+    //   redraw. This includes the Terminal cursor position, the Canvas width, and the TextBlock height.
     // Arguments:
-    // - sender: CoreTextEditContext sending the request.
-    // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
+    // - <none>
     // Return Value:
     // - <none>
-    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    void TSFInputControl::TryRedrawCanvas()
     {
-        auto request = args.Request();
-
-        // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
+        if (!_focused)
+        {
+            return;
+        }
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
+        const til::point cursorPos{ gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().Y) };
 
+        const double actualCanvasWidth = Canvas().ActualWidth();
+
+        const double actualTextBlockHeight = TextBlock().ActualHeight();
+
+        if (_currentTerminalCursorPos == cursorPos &&
+            _currentCanvasWidth == actualCanvasWidth &&
+            _currentTextBlockHeight == actualTextBlockHeight)
+        {
+            return;
+        }
+
+        _currentTerminalCursorPos = cursorPos;
+        _currentCanvasWidth = actualCanvasWidth;
+        _currentTextBlockHeight = actualTextBlockHeight;
+
+        _RedrawCanvas();
+    }
+
+    // Method Description:
+    // - Redraw the Canvas and update the current Text Bounds and Control Bounds for
+    //   the CoreTextEditContext.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_RedrawCanvas()
+    {
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
@@ -145,8 +180,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(cursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
+        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<ptrdiff_t>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<ptrdiff_t>(fontHeight));
+
+        // position textblock to cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), clientCursorPos.Y);
+
+        // calculate FontSize in pixels from DPIs
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        TextBlock().FontSize(fontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        const auto widthToTerminalEnd = _currentCanvasWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        // Make sure that we're setting the MaxWidth to a positive number - a
+        // negative number here will crash us in mysterious ways with a useless
+        // stack trace
+        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
+        TextBlock().MaxWidth(newMaxWidth);
+
+        // Get window in screen coordinates, this is the entire window including tabs
+        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
 
         // Convert from client coordinate to screen coordinate by adding window position
         COORD screenCursorPos;
@@ -162,33 +216,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontHeight;
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
 
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+        _currentTextBounds = ScaleRect(Rect(screenCursorPos.X, textBottom, 0, fontHeight), scaleFactor);
+        _currentControlBounds = ScaleRect(Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight), scaleFactor);
+    }
 
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+    // Method Description:
+    // - Handler for LayoutRequested event by CoreEditContext responsible
+    //   for returning the current position the IME should be placed
+    //   in screen coordinates on the screen.  TSFInputControls internal
+    //   XAML controls (TextBlock/Canvas) are also positioned and updated.
+    //   NOTE: documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request.
+    // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    {
+        auto request = args.Request();
 
-        const auto canvasActualWidth = Canvas().ActualWidth();
-        const auto widthToTerminalEnd = canvasActualWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
-        // Make sure that we're setting the MaxWidth to a positive number - a
-        // negative number here will crash us in mysterious ways with a useless
-        // stack trace
-        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
-        TextBlock().MaxWidth(newMaxWidth);
+        TryRedrawCanvas();
 
         // Set the text block bounds
-        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
-        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
-        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
-        request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
+        request.LayoutBounds().TextBounds(_currentTextBounds);
 
         // Set the control bounds of the whole control
-        Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
-        request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
+        request.LayoutBounds().ControlBounds(_currentControlBounds);
     }
 
     // Method Description:

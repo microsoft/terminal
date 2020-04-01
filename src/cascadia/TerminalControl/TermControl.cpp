@@ -86,6 +86,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
+        auto pfnTerminalCursorPositionChanged = std::bind(&TermControl::_TerminalCursorPositionChanged, this);
+        _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -1793,6 +1796,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Tells TSFInputControl to redraw the Canvas/TextBlock so it'll update
+    //   to be where the current cursor position is.
+    // Arguments:
+    // - N/A
+    winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
+    {
+        if (_closing.load())
+        {
+            return;
+        }
+
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            if (!_closing.load())
+            {
+                TSFInputControl().TryRedrawCanvas();
+            }
+        }
+    }
+
     hstring TermControl::Title()
     {
         hstring hstr{ _terminal->GetConsoleTitle() };
@@ -2243,8 +2271,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const COORD cursorPos = _terminal->GetCursorPosition();
-        Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
+        const til::point cursorPos = _terminal->GetCursorPosition();
+        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()), ::base::ClampedNumeric<float>(cursorPos.y()) };
         eventArgs.CurrentPosition(p);
     }
 
