@@ -88,5 +88,6 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
         std::vector<SMALL_RECT> _prevSelection;
+        til::point _prevCursorPos;
     };
 }

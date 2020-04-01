@@ -68,12 +68,21 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // Arguments:
 // - pcoordCursor - the new position of the cursor
 // Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+// - S_OK
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+try
 {
-    _cursorChanged = true;
-    return S_FALSE;
+    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+
+    // check if cursor moved
+    if (*pcoordCursor != _prevCursorPos)
+    {
+        _prevCursorPos = *pcoordCursor;
+        _cursorChanged = true;
+    }
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
@@ -246,7 +255,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _selectionChanged = false;
     _textBufferChanged = false;
     _cursorChanged = false;
-    _prevSelection.clear();
     _isPainting = false;
 
     return S_OK;
