@@ -681,16 +681,16 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     return _dxgiSwapChain;
 }
 
-til::rectangle DxEngine::_InvalidToFullRow(const til::rectangle& rc) const
+void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
 {
+    auto invalidate = rc;
+
     if (_invalidateFullRows)
     {
-        return til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
+        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
     }
-    else
-    {
-        return rc;
-    }
+
+    _invalidMap.set(invalidate);
 }
 
 // Routine Description:
@@ -704,7 +704,7 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _invalidMap.set(_InvalidToFullRow(Viewport::FromExclusive(*psrRegion).ToInclusive()));
+    _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
 
     return S_OK;
 }
@@ -721,7 +721,7 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } }));
+    _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
 
     return S_OK;
 }
@@ -740,7 +740,7 @@ try
 
     // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
     // to cells.
-    _invalidMap.set(_InvalidToFullRow(til::rectangle{ *prcDirtyClient } / _glyphCell));
+    _InvalidateRectangle(til::rectangle{ *prcDirtyClient } / _glyphCell);
 
     return S_OK;
 }

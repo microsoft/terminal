@@ -239,7 +239,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] til::size _GetClientSize() const;
 
-        til::rectangle _InvalidToFullRow(const til::rectangle& rc) const;
+        void _InvalidateRectangle(const til::rectangle& rc);
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
