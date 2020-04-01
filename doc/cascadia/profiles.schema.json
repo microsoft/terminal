@@ -229,8 +229,7 @@
             }
           }
         }
-      ],
-      "required": [ "split" ]
+      ]
     },
     "Keybinding": {
       "additionalProperties": false,
