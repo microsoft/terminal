@@ -2630,6 +2630,7 @@ VSTT
 vstudio
 vswhere
 vtapp
+VTE
 vtio
 vtmode
 vtpipeterm
