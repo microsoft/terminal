@@ -590,7 +590,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
         {
@@ -650,7 +650,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
@@ -704,7 +704,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
