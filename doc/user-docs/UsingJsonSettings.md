@@ -246,7 +246,7 @@ like to hide all the WSL profiles, you could add the following setting:
 
 ```json
 
-    "disabledProfileSources": ["Microsoft.Terminal.WSL"],
+    "disabledProfileSources": ["Windows.Terminal.WSL"],
     ...
 
 ```
