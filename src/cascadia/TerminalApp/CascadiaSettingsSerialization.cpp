@@ -13,7 +13,7 @@
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
 #include "defaults-universal.h"
-// userDefault.h is like the above, but with a default template for the user's profiles.json.
+// userDefault.h is like the above, but with a default template for the user's settings.json.
 #include "userDefaults.h"
 // Both defaults.h and userDefaults.h are generated at build time into the
 // "Generated Files" directory.
@@ -23,7 +23,8 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace ::Microsoft::Console;
 
-static constexpr std::wstring_view SettingsFilename{ L"profiles.json" };
+static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
+static constexpr std::wstring_view LegacySettingsFilename{ L"profiles.json" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
@@ -47,7 +48,7 @@ static constexpr std::string_view SettingsSchemaFragment{ "\n"
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
-// - Loads both the settings from the defaults.json and the user's profiles.json
+// - Loads both the settings from the defaults.json and the user's settings.json
 // - Also runs and dynamic profile generators. If any of those generators create
 //   new profiles, we'll write the user settings back to the file, with the new
 //   profiles inserted into their list of profiles.
@@ -745,33 +746,31 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 
     if (!hFile)
     {
-        // GH#1770 - Now that we're _not_ roaming our settings, do a quick check
-        // to see if there's a file in the Roaming App data folder. If there is
-        // a file there, but not in the LocalAppData, it's likely the user is
-        // upgrading from a version of the terminal from before this change.
-        // We'll try moving the file from the Roaming app data folder to the
-        // local appdata folder.
+        // GH#5186 - We moved from profiles.json to settings.json; we want to
+        // migrate any file we find. We're using MoveFile in case their settings.json
+        // is a symbolic link.
+        auto pathToLegacySettingsFile{ pathToSettingsFile };
+        pathToLegacySettingsFile.replace_filename(LegacySettingsFilename);
 
-        const auto pathToRoamingSettingsFile{ CascadiaSettings::GetSettingsPath(true) };
-        wil::unique_hfile hRoamingFile{ CreateFileW(pathToRoamingSettingsFile.c_str(),
-                                                    GENERIC_READ,
-                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                    nullptr,
-                                                    OPEN_EXISTING,
-                                                    FILE_ATTRIBUTE_NORMAL,
-                                                    nullptr) };
+        wil::unique_hfile hLegacyFile{ CreateFileW(pathToLegacySettingsFile.c_str(),
+                                                   GENERIC_READ,
+                                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                   nullptr,
+                                                   OPEN_EXISTING,
+                                                   FILE_ATTRIBUTE_NORMAL,
+                                                   nullptr) };
 
-        if (hRoamingFile)
+        if (hLegacyFile)
         {
             // Close the file handle, move it, and re-open the file in its new location.
-            hRoamingFile.reset();
+            hLegacyFile.reset();
 
             // Note: We're unsure if this is unsafe. Theoretically it's possible
             // that two instances of the app will try and move the settings file
             // simultaneously. We don't know what might happen in that scenario,
             // but we're also not sure how to safely lock the file to prevent
             // that from occurring.
-            THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
+            THROW_LAST_ERROR_IF(!MoveFile(pathToLegacySettingsFile.c_str(),
                                           pathToSettingsFile.c_str()));
 
             hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
@@ -829,22 +828,18 @@ std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 //   package, or in its unpackaged location. This path is under the "Local
 //   AppData" folder, so it _doesn't_ roam to other machines.
 // - If the application is unpackaged,
-//   the file will end up under e.g. C:\Users\admin\AppData\Local\Microsoft\Windows Terminal\profiles.json
+//   the file will end up under e.g. C:\Users\admin\AppData\Local\Microsoft\Windows Terminal\settings.json
 // Arguments:
 // - <none>
 // Return Value:
 // - the full path to the settings file
-std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
+std::filesystem::path CascadiaSettings::GetSettingsPath()
 {
     wil::unique_cotaskmem_string localAppDataFolder;
     // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
     // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
     // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    const auto knowFolderId = useRoamingPath ? FOLDERID_RoamingAppData : FOLDERID_LocalAppData;
-    if (FAILED(SHGetKnownFolderPath(knowFolderId, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder)))
-    {
-        THROW_LAST_ERROR();
-    }
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder));
 
     std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
 
@@ -859,7 +854,7 @@ std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
     return parentDirectoryForSettingsFile / SettingsFilename;
 }
 
-std::wstring CascadiaSettings::GetDefaultSettingsPath()
+std::filesystem::path CascadiaSettings::GetDefaultSettingsPath()
 {
     // Both of these posts suggest getting the path to the exe, then removing
     // the exe's name to get the package root:

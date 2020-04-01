@@ -617,7 +617,7 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         // Get the containing folder.
-        std::filesystem::path settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const auto settingsPath{ CascadiaSettings::GetSettingsPath() };
         const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
