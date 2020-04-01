@@ -223,13 +223,22 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // cursor at { 119, 0 }. If we do that movement, then we'll break line
     // wrapping.
     // See GH#5113, GH#1245, GH#357
-    if (!(_delayedEolWrap && _wrappedRow.has_value()))
+    const auto nextCursorPosition = options.coordCursor;
+    // Only skip this paint when we think the cursor is in the cell
+    // immediately off the edge of the terminal, and the actual cursor is in
+    // the last cell of the row. We're in a deferred wrap, but the host
+    // thinks the cursor is actually in-frame.
+    // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
+    const bool cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
+    // If all three of these contitions are true, then:
+    //   * cursorIsInDeferredWrap: The cursor is in a position where the line
+    //     filled the last cell of the row, but the host tried to paint it in
+    //     the past cell anyways
+    //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
+    //     the wrap of a line.
+    // If they're all true, DON'T manually paint the cursor this frame.
+    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
     {
-        // TODO: Only skip this when we think the cursor is in the cell
-        // immediately off the edge of the terminal, and the actual cursor is in
-        // the last cell of the row. We're in a deferred wrap, but the host
-        // thinks the cursor is actually in-frame.
-        // The test case is ^[[?25l^[[H^[[115CXXXXX^[[4;9H^[[?25h
         return VtEngine::PaintCursor(options);
     }
 

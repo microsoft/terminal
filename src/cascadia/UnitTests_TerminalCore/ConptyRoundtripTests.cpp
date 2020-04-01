@@ -1529,6 +1529,9 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
     _flushFirstFrame();
 
     auto verifyBuffer = [](const TextBuffer& tb) {
+        // Simple verification: Make sure the cursor is in the correct place,
+        // and that it's visible. We don't care so much about the buffer
+        // contents in this test.
         const COORD expectedCursor{ 8, 3 };
         VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
@@ -1542,7 +1545,8 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
     expectedOutput.push_back("\x1b[75C");
     expectedOutput.push_back("XXXXX");
     expectedOutput.push_back("\x1b[4;9H");
-    expectedOutput.push_back("\x1b[?25h");
+    // We're _not_ expecting a cursor on here, because we didn't actually hide
+    // the cursor during the course of this frame
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
