@@ -35,7 +35,7 @@ We could add an argument to the `copy` key binding to allow for formatted copyin
 
 a. The user could list which kinds of formats they want included when they copy. When right clicking, they would copy with these formats. If this is set to something other than `plain`, holding `alt` and right clicking would copy plain text.
 
-`"copyFormats": "html,rtf,plain"`
+`"copyFormats": ["html","rtf","plain"]`
 
 b. We could also just combine html and rtf into a single boolean. Users would either get plain text only (`false`) or all formatting (`true`) onto their clipboard. If this is set to `true`, the default right click behavior is reversed: right clicking copies the formatting and holding `alt` copies only the plain text.
 
@@ -43,13 +43,13 @@ b. We could also just combine html and rtf into a single boolean. Users would ei
 
 ### Settings option 2 - key binding argument
 
-a. Just like the the `trimWhitespace` argument you can add to the `copy` key binding, we could add one for text formatting.
+a. Just like the the `trimWhitespace` argument you can add to the `copy` key binding, we could add one for text formatting. This would not change the right click behavior.
 
 `{"command": {"action": "copy", "keepFormatting": true}, "keys": "ctrl+a"}`
 
-b. We could also split out the html and rtf formats.
+b. We could also split out the html and rtf formats. The right click behavior would still stay as default.
 
-`{"command": {"action": "copy", "formats": "rtf,html,plain"}, "keys": "ctrl+a"}`
+`{"command": {"action": "copy", "formats": ["html","rtf","plain"]}, "keys": "ctrl+a"}`
 
 ## Capabilities
 
@@ -76,5 +76,7 @@ This breaks the existing behavior of always copying the formatting. The justific
 One possible issue is that discovering how to copy the formatting might be difficult to find. We could mitigate this by adding it into the settings.json file and commenting it out.
 
 ## Future considerations
+
+We could add the option we don't include later if people want it. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa.
 
 ## Resources
