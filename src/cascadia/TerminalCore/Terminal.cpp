@@ -701,8 +701,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
-        // TODO: don't do this, thanks migrie
-        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _buffer->GetRenderTarget().TriggerScroll();
         _NotifyScrollEvent();
     }
 }
@@ -715,7 +714,7 @@ void Terminal::UserScrollViewport(const int viewTop)
     // if viewTop > realTop, we want the offset to be 0.
 
     _scrollOffset = std::max(0, newDelta);
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+    _buffer->GetRenderTarget().TriggerScroll();
 }
 
 int Terminal::GetScrollOffset() noexcept
