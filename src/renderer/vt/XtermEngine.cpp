@@ -230,7 +230,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // thinks the cursor is actually in-frame.
     // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
     const bool cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
-    // If all three of these contitions are true, then:
+    // If all three of these conditions are true, then:
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
     //     the past cell anyways

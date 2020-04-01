@@ -1537,7 +1537,12 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
     };
 
-    hostSm.ProcessString(L"\x1b[?25l\x1b[H\x1b[75CXXXXX\x1b[4;9H\x1b[?25h");
+    hostSm.ProcessString(L"\x1b[?25l");
+    hostSm.ProcessString(L"\x1b[H");
+    hostSm.ProcessString(L"\x1b[75C");
+    hostSm.ProcessString(L"XXXXX");
+    hostSm.ProcessString(L"\x1b[4;9H");
+    hostSm.ProcessString(L"\x1b[?25h");
 
     Log::Comment(L"Checking the host buffer state");
     verifyBuffer(hostTb);
