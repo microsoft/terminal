@@ -129,7 +129,5 @@ namespace Microsoft::Console::Types
         const Viewport _getViewport() const noexcept;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
-
-        static IdType id;
     };
 }

@@ -33,9 +33,6 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    typedef unsigned long long IdType;
-    constexpr IdType InvalidId = 0;
-
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
         ::Microsoft::Console::Types::IUiaEventDispatcher,

@@ -38,9 +38,6 @@ namespace Microsoft::Console::Types
     class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>,
         public IUiaTraceable
     {
-    private:
-        static IdType id;
-
     protected:
         // indicates which direction a movement operation
         // is going

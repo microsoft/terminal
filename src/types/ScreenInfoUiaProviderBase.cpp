@@ -9,8 +9,6 @@
 
 using namespace Microsoft::Console::Types;
 
-IdType ScreenInfoUiaProviderBase::id = 1;
-
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 {
@@ -40,9 +38,6 @@ try
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     _pData = pData;
     _wordDelimiters = wordDelimiters;
-
-    _id = id;
-    ++id;
 
     UiaTracing::TextProvider::Constructor(*this);
     return S_OK;

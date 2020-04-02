@@ -15,6 +15,28 @@ TRACELOGGING_DEFINE_PROVIDER(g_UiaProviderTraceProvider,
 
 using namespace Microsoft::Console::Types;
 
+// The first valid ID is 1 for each of our traced UIA object types
+IdType UiaTracing::_utrId = 1;
+IdType UiaTracing::_siupId = 1;
+
+void UiaTracing::_assignId(UiaTextRangeBase& utr)
+{
+    auto temp = utr.AssignId(_utrId);
+    if (temp)
+    {
+        ++_utrId;
+    }
+}
+
+void UiaTracing::_assignId(ScreenInfoUiaProviderBase& siup)
+{
+    auto temp = siup.AssignId(_siupId);
+    if (temp)
+    {
+        ++_siupId;
+    }
+}
+
 UiaTracing::UiaTracing() noexcept
 {
     TraceLoggingRegister(g_UiaProviderTraceProvider);
@@ -88,11 +110,12 @@ inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
     }
 }
 
-void UiaTracing::TextRange::Constructor(const UiaTextRangeBase& result) noexcept
+void UiaTracing::TextRange::Constructor(UiaTextRangeBase& result) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Constructor",
@@ -362,11 +385,12 @@ void UiaTracing::TextRange::GetChildren(const UiaTextRangeBase& result) noexcept
     }
 }
 
-void UiaTracing::TextProvider::Constructor(const ScreenInfoUiaProviderBase& result) noexcept
+void UiaTracing::TextProvider::Constructor(ScreenInfoUiaProviderBase& result) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::Constructor",

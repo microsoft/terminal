@@ -27,7 +27,20 @@ namespace Microsoft::Console::Types
             return _id;
         }
 
-    protected:
+        bool AssignId(IdType id) noexcept
+        {
+            if (_id == InvalidId)
+            {
+                _id = id;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+    private:
         // used to debug objects passed back and forth
         // between the provider and the client
         IdType _id{};
