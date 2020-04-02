@@ -407,7 +407,10 @@ try
         _wrappedRow.value() += dy;
         _trace.TraceSetWrapped(_wrappedRow.value());
     }
-    _newBottomLine = true;
+
+    const bool allInvalidated = _invalidMap.all();
+
+    _newBottomLine = !allInvalidated;
 
     return S_OK;
 }

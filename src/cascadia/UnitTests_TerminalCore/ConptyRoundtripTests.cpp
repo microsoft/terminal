@@ -48,6 +48,11 @@ namespace TerminalCoreUnitTests
 };
 using namespace TerminalCoreUnitTests;
 
+// Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
+#define INIT_TEST_PROPERTY(type, identifer, description) \
+    type identifer;                                      \
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L#identifer, identifer), description);
+
 class TerminalCoreUnitTests::ConptyRoundtripTests final
 {
     static const SHORT TerminalViewWidth = 80;
@@ -1564,31 +1569,49 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
 void ConptyRoundtripTests::ClearHostTrickeryTest()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        // TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
-        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{2}")
-        // TEST_METHOD_PROPERTY(L"Data:cursorOnNextLine", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:cursorOnNextLine", L"{false}")
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:cursorOnNextLine", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:paintAfterDECALN", L"{false, true}")
-        // TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{true}")
+        TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:useLongSpaces", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int PaintEveryNewline = 0;
     constexpr int PaintAfterAllNewlines = 1;
     constexpr int DontPaintAfterNewlines = 2;
-    int paintEachNewline;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"paintEachNewline", paintEachNewline), L"TODO: Description");
 
-    bool cursorOnNextLine;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"cursorOnNextLine", cursorOnNextLine), L"TODO: Description");
-
-    bool paintAfterDECALN;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"paintAfterDECALN", paintAfterDECALN), L"TODO: Description");
-
-    bool changeAttributes;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"changeAttributes", changeAttributes), L"TODO: Description");
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"Ene of manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
+    INIT_TEST_PROPERTY(bool, cursorOnNextLine, L"Either leave the cursor on the first line, or place it on the second line of the buffer");
+    INIT_TEST_PROPERTY(bool, paintAfterDECALN, L"Controls whether we manually paint a frame after the DECALN sequence is emitted.");
+    INIT_TEST_PROPERTY(bool, changeAttributes, L"If true, change the text attributes after the 'A's and spaces");
+    INIT_TEST_PROPERTY(bool, useLongSpaces, L"If true, print 10 spaces instead of 5, longer than a CUF sequence.");
 
     // See https://github.com/microsoft/terminal/issues/5039#issuecomment-606833841
-    Log::Comment(L"TODO: Mike, write the description");
+    Log::Comment(L"This is a more than comprehensive test for GH#5039. We're "
+                 L"going to print some text to the buffer, then fill the alt-"
+                 L"buffer with text, then switch back to the main buffer. The "
+                 L"text from the alt buffer should not pollute the main buffer.");
+
+    // The text we're printing will look like one of the following, with the
+    // cursor on the _
+    //  * cursorOnNextLine=false, useLongSpaces=false:
+    //    AAAAA     ZZZZZ_
+    //  * cursorOnNextLine=false, useLongSpaces=true:
+    //    AAAAA          ZZZZZ_
+    //  * cursorOnNextLine=true, useLongSpaces=false:
+    //    AAAAA     ZZZZZ
+    //    BBBBB_
+    //  * cursorOnNextLine=true, useLongSpaces=true:
+    //    AAAAA          ZZZZZ
+    //    BBBBB_
+    //
+    // The interesting case that repros the bug in GH#5039 is
+    //  - paintEachNewline=DontPaintAfterNewlines (2)
+    //  - cursorOnNextLine=false
+    //  - paintAfterDECALN=<any>
+    //  - changeAttributes=true
+    //  - useLongSpaces=<any>
+    //
+    // All the possible cases are left here though, to catch potential future regressions.
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -1601,20 +1624,21 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
 
     _flushFirstFrame();
 
-    auto verifyBuffer = [&cursorOnNextLine](const TextBuffer& tb, const til::rectangle viewport) {
+    auto verifyBuffer = [&cursorOnNextLine, &useLongSpaces](const TextBuffer& tb,
+                                                            const til::rectangle viewport) {
         // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
-        // is currently broken due to #381/#4676. So we'll only check the X
-        // position, since the Y will be 1 in the Terminal till the above is
-        // fixed.
+        // is currently broken due to #381/#4676. So we'll use the viewport
+        // provided to find the actual Y position of the cursor.
         const short viewTop = viewport.origin().y<short>();
         const short cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
-        const short cursorCol = (cursorOnNextLine ? 5 : 15);
+        const short cursorCol = (cursorOnNextLine ? 5 :
+                                                    (15 + (useLongSpaces ? 5 : 0)));
         const COORD expectedCursor{ cursorCol, cursorRow };
-        // VERIFY_ARE_EQUAL(8, tb.GetCursor().GetPosition().X);
+
         VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
         auto iter = TestUtils::VerifyExpectedString(tb, L"AAAAA", { 0, viewTop });
-        TestUtils::VerifyExpectedString(L"     ", iter);
+        TestUtils::VerifyExpectedString(useLongSpaces ? L"          " : L"     ", iter);
         TestUtils::VerifyExpectedString(L"ZZZZZ", iter);
 
         if (cursorOnNextLine)
@@ -1624,14 +1648,15 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     };
 
     _logConpty = true;
-    // TODO: Check the conpty output to make sure it's sensible
+    // We're _not_ checking the conpty output during this test, only the side effects.
     _checkConptyOutput = false;
 
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
+    Log::Comment(L"Setting up the host buffer...");
     hostSm.ProcessString(L"AAAAA");
-    hostSm.ProcessString(L"     ");
+    hostSm.ProcessString(useLongSpaces ? L"          " : L"     ");
     if (changeAttributes)
     {
         hostSm.ProcessString(L"\x1b[44m");
@@ -1644,7 +1669,10 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         hostSm.ProcessString(L"\n");
         hostSm.ProcessString(L"BBBBB");
     }
+    Log::Comment(L"Painting after the initial setup.");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 
+    Log::Comment(L"Switching to the alt buffer and using DECALN to fill it with 'E's");
     hostSm.ProcessString(L"\x1b[?1049h");
     hostSm.ProcessString(L"\x1b#8");
     if (paintAfterDECALN)
@@ -1664,13 +1692,13 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     {
         VERIFY_SUCCEEDED(renderer.PaintFrame());
     }
+    Log::Comment(L"Returning to the main buffer.");
     hostSm.ProcessString(L"\x1b[?1049l");
 
     Log::Comment(L"Checking the host buffer state");
     verifyBuffer(hostTb, si.GetViewport().ToInclusive());
 
     Log::Comment(L"Painting the frame");
-    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Checking the terminal buffer state");
