@@ -184,6 +184,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(ScrollWithChangesInMiddle);
     TEST_METHOD(DontWrapMoveCursorInSingleFrame);
     TEST_METHOD(ClearHostTrickeryTest);
+    TEST_METHOD(OverstrikeAtBottomOfBuffer);
 
     TEST_METHOD(ScrollWithMargins);
 
@@ -1717,5 +1718,77 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Checking the terminal buffer state");
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
+{
+    // See https://github.com/microsoft/terminal/pull/5181#issuecomment-607545241
+    Log::Comment(L"TODO: description");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    auto verifyBuffer = [](const TextBuffer& tb,
+                           const til::rectangle viewport) {
+        const auto lastRow = viewport.bottom<short>() - 1;
+        const til::point expectedCursor{ 0, lastRow - 1 };
+        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
+
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA             DDDDDDDDDD", til::point{ 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"BBBBBBBBBB", til::point{ 0, lastRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"FFFFFFFFFE", til::point{ 0, lastRow });
+    };
+
+    _logConpty = true;
+    // We're _not_ checking the conpty output during this test, only the side effects.
+    _checkConptyOutput = false;
+
+    hostSm.ProcessString(L"\x1b#8");
+
+    hostSm.ProcessString(L"\x1b[32;1H");
+
+    hostSm.ProcessString(L"\x1b[J");
+    hostSm.ProcessString(L"AAAAAAAAAA");
+    hostSm.ProcessString(L"\x1b[K");
+    hostSm.ProcessString(L"\r");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"BBBBBBBBBB");
+    hostSm.ProcessString(L"\x1b[K");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"CCCCCCCCCC");
+    hostSm.ProcessString(L"\x1b[2A");
+    hostSm.ProcessString(L"\r");
+    hostSm.ProcessString(L"\x1b[23C");
+    hostSm.ProcessString(L"DDDDDDDDDD");
+    hostSm.ProcessString(L"\x1b[K");
+    hostSm.ProcessString(L"\r");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"\x1b[1B");
+    hostSm.ProcessString(L"EEEEEEEEEE");
+    hostSm.ProcessString(L"\r");
+    hostSm.ProcessString(L"FFFFFFFFF");
+    hostSm.ProcessString(L"\r");
+    hostSm.ProcessString(L"\x1b[A");
+    hostSm.ProcessString(L"\x1b[A");
+    hostSm.ProcessString(L"\n");
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    // DebugBreak();
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }
