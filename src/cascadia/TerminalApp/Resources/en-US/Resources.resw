@@ -163,7 +163,7 @@ Temporarily using the Windows Terminal default settings.
     <value>Failed to reload settings</value>
   </data>
   <data name="FeedbackUriValue" xml:space="preserve">
-    <value>https://aka.ms/terminal-feedback</value>
+    <value>https://go.microsoft.com/fwlink/?linkid=2125419</value>
   </data>
   <data name="AboutMenuItem" xml:space="preserve">
     <value>About</value>
