@@ -48,7 +48,8 @@
         "splitPane",
         "switchToTab",
         "toggleFullscreen",
-        "find"
+        "find",
+        "unbound"
       ],
       "type": "string"
     },
@@ -232,7 +233,8 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
-              { "$ref": "#/definitions/SplitPaneAction" }
+              { "$ref": "#/definitions/SplitPaneAction" },
+              { "type": "null" }
             ]
         },
         "keys": {
