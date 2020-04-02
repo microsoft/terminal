@@ -35,8 +35,7 @@ class UiaTextRangeTests;
 
 namespace Microsoft::Console::Types
 {
-    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>,
-        public IUiaTraceable
+    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>, public IUiaTraceable
     {
     protected:
         // indicates which direction a movement operation
