@@ -269,15 +269,25 @@ namespace winrt::TerminalApp::implementation
         // theme on each element up to the root. We're relying a bit on Xaml's implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
-        auto theme{ _settings->GlobalSettings().GetRequestedTheme() };
-        dialog.Loaded([dialog, theme](auto&&, auto&&) {
-            auto element{ dialog.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
+            auto theme{ _settings->GlobalSettings().GetRequestedTheme() };
+            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
                 element.RequestedTheme(theme);
                 element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
             }
-        });
+        } };
+
+        FrameworkElement::Loaded_revoker loadedRevoker{};
+        if (dialog.Parent()) // Dialog is already in a visual tree
+        {
+            themingLambda(dialog, nullptr);
+        }
+        else
+        {
+            loadedRevoker = dialog.Loaded(winrt::auto_revoke, themingLambda);
+        }
 
         // Display the dialog.
         co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
