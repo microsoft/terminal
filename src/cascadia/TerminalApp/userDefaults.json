@@ -41,6 +41,12 @@
     // To unbind a default keybinding, set the command to "unbound"
     "keybindings": [
 
+        // Copy and paste are bound to Ctrl+Shift+C and Ctrl+Shift+V in your defaults.json
+        // These bindings additionally bind them to Ctrl+C and Ctrl+V
+        // To learn more about selection, visit https://aka.ms/terminal-documentation
+        { "command": "copy", "keys": "ctrl+c" },
+        { "command": "paste", "keys": "ctrl+v" }
+
         // Press Ctrl+Shift+F to open the search box
         // To learn more about search, visit https://aka.ms/terminal-documentation
         { "command": "find", "keys": "ctrl+shift+f"},
