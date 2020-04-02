@@ -1887,8 +1887,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - collapseText: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool collapseText)
+    // - singleLine: collapse all of the text to one line
+    bool TermControl::CopySelectionToClipboard(bool singleLine)
     {
         if (_closing)
         {
@@ -1905,7 +1905,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _selectionNeedsToBeCopied = false;
 
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
 
         // convert text: vector<string> --> string
         std::wstring textData;

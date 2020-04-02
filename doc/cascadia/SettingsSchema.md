@@ -115,7 +115,7 @@ For commands with arguments:
 | `closePane` | Close the active pane. | | | |
 | `closeTab` | Close the current tab. | | | |
 | `closeWindow` | Close the current window and all tabs within it. | | | |
-| `copy` | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
+| `copy` | Copy the selected terminal content to your Windows Clipboard. | `singleLine` | boolean | When `true`, the copied content will be copied as a single line. When `false`, newlines persist from the selected text. |
 | `duplicateTab` | Make a copy and open the current tab. | | | |
 | `find` | Open the search dialog box. | | | |
 | `moveFocus` | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |

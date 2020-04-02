@@ -1376,14 +1376,13 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
+    // - singleLine: if enabled, copy contents as a single line of text
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
+    bool TerminalPage::_CopyText(const bool singleLine)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(!trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(singleLine);
     }
 
     // Method Description:

@@ -131,10 +131,10 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "copy" },
-            "trimWhitespace": {
+            "singleLine": {
               "type": "boolean",
-              "default": true,
-              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
+              "default": false,
+              "description": "If true, newlines are removed and whitespace is maintained. If false, whitespace is removed and newlines are maintained."
             }
           }
         }
