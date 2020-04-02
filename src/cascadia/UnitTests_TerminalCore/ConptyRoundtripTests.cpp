@@ -1574,6 +1574,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         TEST_METHOD_PROPERTY(L"Data:paintAfterDECALN", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:useLongSpaces", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:printTextAfterSpaces", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int PaintEveryNewline = 0;
     constexpr int PaintAfterAllNewlines = 1;
@@ -1584,6 +1585,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     INIT_TEST_PROPERTY(bool, paintAfterDECALN, L"Controls whether we manually paint a frame after the DECALN sequence is emitted.");
     INIT_TEST_PROPERTY(bool, changeAttributes, L"If true, change the text attributes after the 'A's and spaces");
     INIT_TEST_PROPERTY(bool, useLongSpaces, L"If true, print 10 spaces instead of 5, longer than a CUF sequence.");
+    INIT_TEST_PROPERTY(bool, printTextAfterSpaces, L"If true, print \"ZZZZZ\" after the spaces on the first line.");
 
     // See https://github.com/microsoft/terminal/issues/5039#issuecomment-606833841
     Log::Comment(L"This is a more than comprehensive test for GH#5039. We're "
@@ -1604,12 +1606,15 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     //    AAAAA          ZZZZZ
     //    BBBBB_
     //
+    // If printTextAfterSpaces=false, then we won't print the "ZZZZZ"
+    //
     // The interesting case that repros the bug in GH#5039 is
     //  - paintEachNewline=DontPaintAfterNewlines (2)
     //  - cursorOnNextLine=false
     //  - paintAfterDECALN=<any>
     //  - changeAttributes=true
     //  - useLongSpaces=<any>
+    //  - printTextAfterSpaces=<any>
     //
     // All the possible cases are left here though, to catch potential future regressions.
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
@@ -1624,22 +1629,30 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
 
     _flushFirstFrame();
 
-    auto verifyBuffer = [&cursorOnNextLine, &useLongSpaces](const TextBuffer& tb,
-                                                            const til::rectangle viewport) {
+    auto verifyBuffer = [&cursorOnNextLine, &useLongSpaces, &printTextAfterSpaces](const TextBuffer& tb,
+                                                                                   const til::rectangle viewport) {
         // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
         // is currently broken due to #381/#4676. So we'll use the viewport
         // provided to find the actual Y position of the cursor.
         const short viewTop = viewport.origin().y<short>();
         const short cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
         const short cursorCol = (cursorOnNextLine ? 5 :
-                                                    (15 + (useLongSpaces ? 5 : 0)));
+                                                    (10 + (useLongSpaces ? 5 : 0) + (printTextAfterSpaces ? 5 : 0)));
         const COORD expectedCursor{ cursorCol, cursorRow };
 
         VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
         auto iter = TestUtils::VerifyExpectedString(tb, L"AAAAA", { 0, viewTop });
         TestUtils::VerifyExpectedString(useLongSpaces ? L"          " : L"     ", iter);
-        TestUtils::VerifyExpectedString(L"ZZZZZ", iter);
+        if (printTextAfterSpaces)
+        {
+            TestUtils::VerifyExpectedString(L"ZZZZZ", iter);
+        }
+        else
+        {
+            TestUtils::VerifyExpectedString(L"     ", iter);
+        }
+        TestUtils::VerifyExpectedString(L"     ", iter);
 
         if (cursorOnNextLine)
         {
@@ -1647,7 +1660,6 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         }
     };
 
-    _logConpty = true;
     // We're _not_ checking the conpty output during this test, only the side effects.
     _checkConptyOutput = false;
 
@@ -1661,7 +1673,10 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     {
         hostSm.ProcessString(L"\x1b[44m");
     }
-    hostSm.ProcessString(L"ZZZZZ");
+    if (printTextAfterSpaces)
+    {
+        hostSm.ProcessString(L"ZZZZZ");
+    }
     hostSm.ProcessString(L"\x1b[0m");
 
     if (cursorOnNextLine)
