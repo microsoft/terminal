@@ -229,7 +229,7 @@
             },
             "splitMode": {
               "default": "duplicate",
-              "description": "Mode how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
+              "description": "Control how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
             }
           }
         }
