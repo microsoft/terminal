@@ -1564,11 +1564,28 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
 void ConptyRoundtripTests::ClearHostTrickeryTest()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+        // TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{2}")
+        // TEST_METHOD_PROPERTY(L"Data:cursorOnNextLine", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:cursorOnNextLine", L"{false}")
+        TEST_METHOD_PROPERTY(L"Data:paintAfterDECALN", L"{false, true}")
+        // TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:changeAttributes", L"{true}")
     END_TEST_METHOD_PROPERTIES();
-
-    bool paintEachNewline;
+    constexpr int PaintEveryNewline = 0;
+    constexpr int PaintAfterAllNewlines = 1;
+    constexpr int DontPaintAfterNewlines = 2;
+    int paintEachNewline;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"paintEachNewline", paintEachNewline), L"TODO: Description");
+
+    bool cursorOnNextLine;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"cursorOnNextLine", cursorOnNextLine), L"TODO: Description");
+
+    bool paintAfterDECALN;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"paintAfterDECALN", paintAfterDECALN), L"TODO: Description");
+
+    bool changeAttributes;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"changeAttributes", changeAttributes), L"TODO: Description");
 
     // See https://github.com/microsoft/terminal/issues/5039#issuecomment-606833841
     Log::Comment(L"TODO: Mike, write the description");
@@ -1584,15 +1601,26 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
 
     _flushFirstFrame();
 
-    auto verifyBuffer = [](const TextBuffer& tb) {
+    auto verifyBuffer = [&cursorOnNextLine](const TextBuffer& tb, const til::rectangle viewport) {
         // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
         // is currently broken due to #381/#4676. So we'll only check the X
         // position, since the Y will be 1 in the Terminal till the above is
         // fixed.
-        VERIFY_ARE_EQUAL(8, tb.GetCursor().GetPosition().X);
+        const short viewTop = viewport.origin().y<short>();
+        const short cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
+        const short cursorCol = (cursorOnNextLine ? 5 : 15);
+        const COORD expectedCursor{ cursorCol, cursorRow };
+        // VERIFY_ARE_EQUAL(8, tb.GetCursor().GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
-        auto iter = TestUtils::VerifyExpectedString(tb, L"    ", { 0, 0 });
-        TestUtils::VerifyExpectedString(L"XXXX", iter);
+        auto iter = TestUtils::VerifyExpectedString(tb, L"AAAAA", { 0, viewTop });
+        TestUtils::VerifyExpectedString(L"     ", iter);
+        TestUtils::VerifyExpectedString(L"ZZZZZ", iter);
+
+        if (cursorOnNextLine)
+        {
+            TestUtils::VerifyExpectedString(tb, L"BBBBB", { 0, cursorRow });
+        }
     };
 
     _logConpty = true;
@@ -1602,31 +1630,49 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    hostSm.ProcessString(L"    ");
-    hostSm.ProcessString(L"XXXX");
+    hostSm.ProcessString(L"AAAAA");
+    hostSm.ProcessString(L"     ");
+    if (changeAttributes)
+    {
+        hostSm.ProcessString(L"\x1b[44m");
+    }
+    hostSm.ProcessString(L"ZZZZZ");
+    hostSm.ProcessString(L"\x1b[0m");
+
+    if (cursorOnNextLine)
+    {
+        hostSm.ProcessString(L"\n");
+        hostSm.ProcessString(L"BBBBB");
+    }
+
     hostSm.ProcessString(L"\x1b[?1049h");
     hostSm.ProcessString(L"\x1b#8");
-    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    if (paintAfterDECALN)
+    {
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+
     for (auto i = 0; i < si.GetViewport().Height(); i++)
     {
         hostSm.ProcessString(L"\n");
-        if (paintEachNewline)
+        if (paintEachNewline == PaintEveryNewline)
         {
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
     }
-    if (!paintEachNewline)
+    if (paintEachNewline == PaintAfterAllNewlines)
     {
         VERIFY_SUCCEEDED(renderer.PaintFrame());
     }
     hostSm.ProcessString(L"\x1b[?1049l");
 
     Log::Comment(L"Checking the host buffer state");
-    verifyBuffer(hostTb);
+    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
 
     Log::Comment(L"Painting the frame");
+    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Checking the terminal buffer state");
-    verifyBuffer(termTb);
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }
