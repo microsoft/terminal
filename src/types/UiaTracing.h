@@ -105,7 +105,7 @@ namespace Microsoft::Console::Types
         static IdType _utrId;
         static IdType _siupId;
 
-        static void _assignId(UiaTextRangeBase& utr);
-        static void _assignId(ScreenInfoUiaProviderBase& siup);
+        static void _assignId(UiaTextRangeBase& utr) noexcept;
+        static void _assignId(ScreenInfoUiaProviderBase& siup) noexcept;
     };
 }

@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Types;
 IdType UiaTracing::_utrId = 1;
 IdType UiaTracing::_siupId = 1;
 
-void UiaTracing::_assignId(UiaTextRangeBase& utr)
+void UiaTracing::_assignId(UiaTextRangeBase& utr) noexcept
 {
     auto temp = utr.AssignId(_utrId);
     if (temp)
@@ -28,7 +28,7 @@ void UiaTracing::_assignId(UiaTextRangeBase& utr)
     }
 }
 
-void UiaTracing::_assignId(ScreenInfoUiaProviderBase& siup)
+void UiaTracing::_assignId(ScreenInfoUiaProviderBase& siup) noexcept
 {
     auto temp = siup.AssignId(_siupId);
     if (temp)
