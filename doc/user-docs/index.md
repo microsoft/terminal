@@ -27,7 +27,7 @@ NOTE: The default shell is PowerShell; you can change this using the _Running a 
 
 ### Command line options
 
-Please check [Using the wt.exe Commandline](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingCommandlineArguments.md)
+Please refer to [Using the wt.exe Commandline](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingCommandlineArguments.md) for details on how to use the `wt.exe` commandline arguments.
 
 
 ## Multiple Tabs
