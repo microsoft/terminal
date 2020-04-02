@@ -260,7 +260,24 @@ namespace winrt::TerminalApp::implementation
         // IMPORTANT: Set the requested theme of the dialog, because the
         // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
         // won't inherit our RequestedTheme automagically.
-        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+        // GH#5195, GH#3654 Because we cannot set RequestedTheme at the application level,
+        // we occasionally run into issues where parts of our UI end up themed incorrectly.
+        // Dialogs, for example, live under a different Xaml root element than the rest of
+        // our application. This makes our popup menus and buttons "disappear" when the
+        // user wants Terminal to be in a different theme than the rest of the system.
+        // This hack---and it _is_ a hack--walks up a dialog's ancestry and forces the
+        // theme on each element up to the root. We're relying a bit on Xaml's implementation
+        // details here, but it does have the desired effect.
+        // It's not enough to set the theme on the dialog alone.
+        auto theme{ _settings->GlobalSettings().GetRequestedTheme() };
+        dialog.Loaded([dialog, theme](auto&&, auto&&) {
+            auto element{ dialog.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+            while (element)
+            {
+                element.RequestedTheme(theme);
+                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+            }
+        });
 
         // Display the dialog.
         co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
