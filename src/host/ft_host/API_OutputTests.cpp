@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -46,6 +46,8 @@ class OutputTests
     TEST_METHOD(WriteBackspaceTest);
 
     TEST_METHOD(WinPtyWrite);
+
+    TEST_METHOD(WriteTwoColumnCharacterToCheckOverflow);
 };
 
 bool OutputTests::TestSetup()
@@ -1061,4 +1063,56 @@ void OutputTests::WinPtyWrite()
         VERIFY_FAIL(L"Unknown test type.");
         break;
     }
+}
+
+void OutputTests::WriteTwoColumnCharacterToCheckOverflow()
+{
+    // Get output buffer information.
+    const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
+    sbiex.cbSize = sizeof(sbiex);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
+    const auto bufferSize = sbiex.dwSize;
+
+    // Establish a writing region that is the width of the buffer and half the height.
+    const SMALL_RECT region{ 0, 0, bufferSize.X - 1, 1 };
+    const COORD regionDimensions{ region.Right - region.Left + 1, region.Bottom - region.Top + 1 };
+    const auto regionSize = regionDimensions.X * regionDimensions.Y;
+    const COORD regionOrigin{ 0, 0 };
+
+    // Make a double width character value with lead bit and fill an array (via a vector) full of it.
+    // We just want the character to be in the last column of the buffer.
+    CHAR_INFO testValue;
+    testValue.Attributes = 0x0100;
+    testValue.Char.UnicodeChar = L'是';
+
+    std::vector<CHAR_INFO> buffer(regionSize, testValue);
+
+    CHAR_INFO lastColumnValue;
+    lastColumnValue.Attributes = 0x0100;
+    lastColumnValue.Char.UnicodeChar = L'我';
+    buffer[regionSize - 1] = lastColumnValue;
+
+    // Call the API and confirm results.
+    SMALL_RECT affected = region;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
+    VERIFY_ARE_EQUAL(region, affected);
+
+    // Move the cursor to the last column of the buffer
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCursorPosition(consoleOutputHandle, { bufferSize.X - 1, 0 }));
+
+    // Check that the character
+    const auto cursorPos = sbiex.dwCursorPosition;
+
+    // Make an array that can hold the output
+    std::vector<CHAR_INFO> singleBuf(1);
+
+    // Call the API and confirm results
+    SMALL_RECT singleAffectedRegion = { 0, 0, 1, 1 };
+    const COORD singleRegionDimension = { 1, 1 };
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(consoleOutputHandle, singleBuf.data(), singleRegionDimension, cursorPos, &affected));
+    VERIFY_ARE_EQUAL(singleBuf[0], lastColumnValue);
 }

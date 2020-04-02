@@ -683,6 +683,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         notifyScroll = true;
     }
 
+    proposedCursorPosition.X = base::ClampMin(proposedCursorPosition.X, ::base::ClampedNumeric<short>(bufferSize.Width() - 1));
+
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
