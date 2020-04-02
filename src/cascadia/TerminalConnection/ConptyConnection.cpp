@@ -213,7 +213,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     try
     {
         const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
-        THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, 0, &_inPipe, &_outPipe, &_hPC));
+        THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK, &_inPipe, &_outPipe, &_hPC));
         THROW_IF_FAILED(_LaunchAttachedClient());
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -371,6 +371,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
+        // Keep us alive until the output thread terminates; the destructor
+        // won't wait for us, and the known exit points _do_.
+        auto strongThis{ get_strong() };
+
         // process the data of the output pipe in a loop
         while (true)
         {

@@ -21,7 +21,7 @@ static bool ConhostV2ForcedInRegistry()
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
     // Otherwise, in the case of an explicit value of 0, we should use the legacy console.
     bool fShouldUseConhostV2 = true;
-    PCSTR pszErrorDescription = NULL;
+    PCSTR pszErrorDescription = nullptr;
     bool fIgnoreError = false;
 
     // open HKCU\Console
@@ -110,10 +110,10 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     // We expect legacy launches to be infrequent enough to not cause an issue.
     TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded", TraceLoggingBool(true, "ConsoleLegacy"), TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
 
-    PCWSTR pszConhostDllName = L"ConhostV1.dll";
+    const PCWSTR pszConhostDllName = L"ConhostV1.dll";
 
     // Load our implementation, and then Load/Launch the IO thread.
-    wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32));
+    wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
     if (hConhostBin.get() != nullptr)
     {
         typedef NTSTATUS (*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);

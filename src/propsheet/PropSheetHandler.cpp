@@ -144,7 +144,7 @@ private:
         *ppidl = nullptr;
 
         IShellLink* psl;
-        HRESULT hr = psiLink->BindToHandler(NULL, BHID_SFUIObject, IID_PPV_ARGS(&psl));
+        HRESULT hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
         if (SUCCEEDED(hr))
         {
             hr = psl->GetIDList(ppidl);
@@ -218,6 +218,7 @@ private:
                             // Second expensive portion of this method -- cracks the PE header of the .lnk file target
                             // if it's an executable
                             SHFILEINFO sfi = { 0 };
+
                             DWORD_PTR dwFileType = SHGetFileInfo(szFileExpanded,
                                                                  0 /*dwFileAttributes*/,
                                                                  &sfi,

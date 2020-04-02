@@ -103,8 +103,7 @@ public:
     // Scroll needs access to this to quickly rotate around the buffer.
     bool IncrementCircularBuffer(const bool inVtMode = false);
 
-    COORD GetLastNonSpaceCharacter() const;
-    COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
+    COORD GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
     Cursor& GetCursor() noexcept;
     const Cursor& GetCursor() const noexcept;
@@ -135,6 +134,11 @@ public:
     bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
     bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
+    const til::point GetGlyphStart(const til::point pos) const;
+    const til::point GetGlyphEnd(const til::point pos) const;
+    bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+    bool MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
     class TextAndColor
@@ -145,11 +149,11 @@ public:
         std::vector<std::vector<COLORREF>> BkAttr;
     };
 
-    const TextAndColor GetTextForClipboard(const bool lineSelection,
-                                           const bool trimTrailingWhitespace,
-                                           const std::vector<SMALL_RECT>& selectionRects,
-                                           std::function<COLORREF(TextAttribute&)> GetForegroundColor,
-                                           std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
+    const TextAndColor GetText(const bool lineSelection,
+                               const bool trimTrailingWhitespace,
+                               const std::vector<SMALL_RECT>& textRects,
+                               std::function<COLORREF(TextAttribute&)> GetForegroundColor = nullptr,
+                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor = nullptr) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
@@ -162,7 +166,16 @@ public:
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
 
-    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer);
+    struct PositionInformation
+    {
+        short mutableViewportTop{ 0 };
+        short visibleViewportTop{ 0 };
+    };
+
+    static HRESULT Reflow(TextBuffer& oldBuffer,
+                          TextBuffer& newBuffer,
+                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
+                          std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
     std::deque<ROW> _storage;

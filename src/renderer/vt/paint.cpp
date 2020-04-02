@@ -26,13 +26,13 @@ using namespace Microsoft::Console::Types;
     }
 
     // If there's nothing to do, quick return
-    bool somethingToDo = _fInvalidRectUsed ||
-                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+    bool somethingToDo = _invalidMap.any() ||
+                         _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
 
     _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn, _fInvalidRectUsed, _invalidRect, _lastViewport, _scrollDelta, _cursorMoved);
+    _trace.TraceStartPaint(_quickReturn, _invalidMap, _lastViewport.ToInclusive(), _scrollDelta, _cursorMoved);
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -50,9 +50,9 @@ using namespace Microsoft::Console::Types;
 {
     _trace.TraceEndPaint();
 
-    _invalidRect = Viewport::Empty();
-    _fInvalidRectUsed = false;
-    _scrollDelta = { 0 };
+    _invalidMap.reset_all();
+
+    _scrollDelta = { 0, 0 };
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
@@ -529,7 +529,7 @@ using namespace Microsoft::Console::Types;
         //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
 
-        if (_deferredCursorPos.X < _lastViewport.RightInclusive())
+        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         }

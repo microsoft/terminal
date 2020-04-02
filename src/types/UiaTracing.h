@@ -72,6 +72,14 @@ namespace Microsoft::Console::Types
             static void get_SupportedTextSelection(const ScreenInfoUiaProviderBase& base, SupportedTextSelection result) noexcept;
         };
 
+        class Signal final
+        {
+        public:
+            static void SelectionChanged() noexcept;
+            static void TextChanged() noexcept;
+            static void CursorChanged() noexcept;
+        };
+
     private:
         // Implement this as a singleton class.
         static UiaTracing& EnsureRegistration() noexcept

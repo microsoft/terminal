@@ -16,15 +16,15 @@ using namespace Microsoft::Terminal::Core;
  *                  |-position where we double-clicked
  *                 _|_
  *               |word|
- *                |--| 
+ *                |--|
  *  start & pivot-|  |-end
  *
  *     2. Drag your mouse down a line
  *
- *                    
- *  start & pivot-|__________ 
+ *
+ *  start & pivot-|__________
  *             __|word_______|
- *            |______| 
+ *            |______|
  *                  |
  *                  |-end & mouse position
  *
@@ -33,7 +33,7 @@ using namespace Microsoft::Terminal::Core;
  *                  |-start & mouse position
  *                  |________
  *             ____|   ______|
- *            |___w|ord           
+ *            |___w|ord
  *                |-end & pivot
  *
  *    The pivot never moves until a new selection is created. It ensures that that cell will always be selected.
@@ -83,36 +83,17 @@ const COORD Terminal::GetSelectionEnd() const noexcept
 }
 
 // Method Description:
-// - Checks if selection is on a single cell
-// Return Value:
-// - bool representing if selection is only a single cell. Used for copyOnSelect
-const bool Terminal::_IsSingleCellSelection() const noexcept
-{
-    return (_selection->start == _selection->end);
-}
-
-// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
-    // A single cell selection is not considered an active selection,
-    // if it's not allowed
-    if (!_allowSingleCharSelection && _IsSingleCellSelection())
-    {
-        return false;
-    }
     return _selection.has_value();
 }
 
-// Method Description:
-// - Checks if the CopyOnSelect setting is active
-// Return Value:
-// - true if feature is active, false otherwise.
-const bool Terminal::IsCopyOnSelectActive() const noexcept
+const bool Terminal::IsBlockSelection() const noexcept
 {
-    return _copyOnSelect;
+    return _blockSelection;
 }
 
 // Method Description:
@@ -143,8 +124,6 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
-
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
     SetSelectionEnd(viewportPos);
 
@@ -167,13 +146,6 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 
     const auto anchors = _PivotSelection(textBufferPos);
     std::tie(_selection->start, _selection->end) = _ExpandSelectionAnchors(anchors);
-
-    // moving the endpoint of what used to be a single cell selection
-    // allows the user to drag back and select just one cell
-    if (_copyOnSelect && !_IsSingleCellSelection())
-    {
-        _allowSingleCharSelection = true;
-    }
 }
 
 // Method Description:
@@ -243,27 +215,27 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 #pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
-    _allowSingleCharSelection = false;
     _selection = std::nullopt;
 }
 
 // Method Description:
 // - get wstring text from highlighted portion of text buffer
 // Arguments:
-// - trimTrailingWhitespace: enable removing any whitespace from copied selection
-//    and get text to appear on separate lines.
+// - collapseText: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool collapseText) const
 {
+    const auto selectionRects = _GetSelectionRects();
+
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    return _buffer->GetTextForClipboard(!_blockSelection,
-                                        trimTrailingWhitespace,
-                                        _GetSelectionRects(),
-                                        GetForegroundColor,
-                                        GetBackgroundColor);
+    return _buffer->GetText(!collapseText,
+                            !collapseText,
+                            selectionRects,
+                            GetForegroundColor,
+                            GetBackgroundColor);
 }
 
 // Method Description:

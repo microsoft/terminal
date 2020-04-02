@@ -10,6 +10,13 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="BitmapTests.cpp" />
+    <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
+    <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

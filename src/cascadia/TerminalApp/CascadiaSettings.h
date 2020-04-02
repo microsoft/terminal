@@ -34,6 +34,7 @@ namespace TerminalAppLocalTests
 namespace TerminalAppUnitTests
 {
     class DynamicProfileTests;
+    class JsonTests;
 };
 
 namespace TerminalApp
@@ -65,8 +66,8 @@ public:
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
-    static std::wstring GetSettingsPath(const bool useRoamingPath = false);
-    static std::wstring GetDefaultSettingsPath();
+    static std::filesystem::path GetSettingsPath();
+    static std::filesystem::path GetDefaultSettingsPath();
 
     std::optional<GUID> FindGuid(const std::wstring& profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
@@ -124,4 +125,5 @@ private:
     friend class TerminalAppLocalTests::KeyBindingsTests;
     friend class TerminalAppLocalTests::TabTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };

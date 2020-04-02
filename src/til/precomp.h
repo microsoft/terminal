@@ -25,7 +25,17 @@ Abstract:
 // Windows Header Files:
 #include <windows.h>
 
+#define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
+
+#include "WexTestClass.h"
+
+// Include DirectX common structures so we can test them.
+// (before TIL so its support lights up)
+#include <dcommon.h>
+
+// Include TIL after Wex to get test comparators.
+#include "til.h"
 
 // clang-format on

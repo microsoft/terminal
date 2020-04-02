@@ -20,6 +20,13 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    enum StartupState : int
+    {
+        NotInitialized = 0,
+        InStartup = 1,
+        Initialized = 2
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -31,11 +38,12 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
 
-        void ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
-
         void TitlebarClicked();
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
+        winrt::hstring ApplicationDisplayName();
+        winrt::hstring ApplicationVersion();
 
         void CloseWindow();
 
@@ -48,8 +56,11 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
+        friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
+
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the app.
@@ -75,9 +86,12 @@ namespace winrt::TerminalApp::implementation
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
+        winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        StartupState _startupState{ StartupState::NotInitialized };
+
         ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
-        fire_and_forget _ProcessNextStartupAction();
+        winrt::fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -122,7 +136,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
+        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::SplitType splitMode = winrt::TerminalApp::SplitType::Manual, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
@@ -141,6 +155,8 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
+        void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
+        void _UpdatedSelectedTab(const int32_t index);
 
         void _Find();
 

@@ -250,7 +250,7 @@ void CommandHistory::Empty()
 {
     _commands.clear();
     LastDisplayed = -1;
-    Flags = CLE_RESET;
+    WI_SetFlag(Flags, CLE_RESET);
 }
 
 bool CommandHistory::AtFirstCommand() const

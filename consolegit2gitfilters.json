@@ -17,7 +17,11 @@
     "/src/winconpty/",
     "/.nuget/",
     "/.github/",
-    "/samples/"
+    "/samples/",
+    "/res/terminal/",
+    "/doc/specs/",
+    "/doc/cascadia/",
+    "/doc/user-docs/"
   ],
   "SuffixFilters": [
     ".dbb",

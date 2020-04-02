@@ -21,6 +21,12 @@ Abstract:
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    // The DEC STD 070 reference recommends supporting up to at least 16384 for
+    // parameter values, so 32767 should be more than enough. At most we might
+    // want to increase this to 65535, since that is what XTerm and VTE support,
+    // but for now 32767 is the safest limit for our existing code base.
+    constexpr size_t MAX_PARAMETER_VALUE = 32767;
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -49,7 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionCollect(const wchar_t wch);
         void _ActionParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
-        void _ActionOscParam(const wchar_t wch);
+        void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
         void _ActionOscDispatch(const wchar_t wch);
         void _ActionSs3Dispatch(const wchar_t wch);
@@ -77,13 +83,13 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
-        void _EventOscParam(const wchar_t wch);
+        void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
 
-        void _AccumulateTo(const wchar_t wch, size_t& value);
+        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 
         enum class VTStates
         {
@@ -114,6 +120,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::wstring _oscString;
         size_t _oscParameter;
+
+        std::optional<std::wstring> _cachedSequence;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.

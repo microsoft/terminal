@@ -38,7 +38,7 @@ namespace Microsoft.Terminal.Wpf
             WM_MOUSEACTIVATE = 0x0021,
 
             WM_GETOBJECT = 0x003D,
-            
+
             /// <summary>
             /// The WM_WINDOWPOSCHANGED message is sent to a window whose size, position, or place in the Z order has changed as a result of a call to the SetWindowPos function or another window-management function.
             /// </summary>

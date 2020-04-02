@@ -4,8 +4,9 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-      "type": "string"
+      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "type": "string",
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
     },
     "Color": {
       "default": "#",
@@ -24,29 +25,15 @@
     },
     "ShortcutActionName": {
       "enum": [
+        "adjustFontSize",
         "closePane",
         "closeTab",
         "closeWindow",
         "copy",
-        "copyTextWithoutNewlines",
         "decreaseFontSize",
         "duplicateTab",
-        "increaseFontSize",
         "moveFocus",
-        "moveFocusDown",
-        "moveFocusLeft",
-        "moveFocusRight",
-        "moveFocusUp",
         "newTab",
-        "newTabProfile0",
-        "newTabProfile1",
-        "newTabProfile2",
-        "newTabProfile3",
-        "newTabProfile4",
-        "newTabProfile5",
-        "newTabProfile6",
-        "newTabProfile7",
-        "newTabProfile8",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
@@ -54,29 +41,15 @@
         "prevTab",
         "resetFontSize",
         "resizePane",
-        "resizePaneDown",
-        "resizePaneLeft",
-        "resizePaneRight",
-        "resizePaneUp",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
-        "splitHorizontal",
-        "splitVertical",
         "splitPane",
         "switchToTab",
-        "switchToTab0",
-        "switchToTab1",
-        "switchToTab2",
-        "switchToTab3",
-        "switchToTab4",
-        "switchToTab5",
-        "switchToTab6",
-        "switchToTab7",
-        "switchToTab8",
         "toggleFullscreen",
-        "find"
+        "find",
+        "unbound"
       ],
       "type": "string"
     },
@@ -133,6 +106,23 @@
         "action"
       ],
       "type": "object"
+    },
+    "AdjustFontSizeAction": {
+      "description": "Arguments corresponding to an Adjust Font Size Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "adjustFontSize" },
+            "delta": {
+              "type": "integer",
+              "default": 0,
+              "description": "How much to change the current font point size"
+            }
+          }
+        }
+      ],
+      "required": [ "delta" ]
     },
     "CopyAction": {
       "description": "Arguments corresponding to a Copy Text Action",
@@ -228,8 +218,7 @@
             }
           }
         }
-      ],
-      "required": [ "split" ]
+      ]
     },
     "Keybinding": {
       "additionalProperties": false,
@@ -237,13 +226,15 @@
         "command": {
           "description": "The action executed when the associated key bindings are pressed.",
             "oneOf": [
+              { "$ref": "#/definitions/AdjustFontSizeAction" },
               { "$ref": "#/definitions/CopyAction" },
               { "$ref": "#/definitions/ShortcutActionName" },
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
-              { "$ref": "#/definitions/SplitPaneAction" }
+              { "$ref": "#/definitions/SplitPaneAction" },
+              { "type": "null" }
             ]
         },
         "keys": {
@@ -554,8 +545,7 @@
         },
         "cursorColor": {
           "$ref": "#/definitions/Color",
-          "default": "#FFFFFF",
-          "description": "Sets the cursor color for the profile. Uses hex color format: \"#rrggbb\"."
+          "description": "Sets the cursor color of the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
@@ -580,7 +570,7 @@
           "type": "boolean"
         },
         "fontFace": {
-          "default": "Consolas",
+          "default": "Cascadia Code",
           "description": "Name of the font face used in the profile.",
           "type": "string"
         },
@@ -745,6 +735,11 @@
           "brightYellow": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI bright yellow."
+          },
+          "cursorColor": {
+            "$ref": "#/definitions/Color",
+            "default": "#FFFFFF",
+            "description": "Sets the cursor color of the color scheme."
           },
           "cyan": {
             "$ref": "#/definitions/Color",

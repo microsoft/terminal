@@ -404,13 +404,6 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         {
             // jiggle the handle
             screenInfo.GetStateMachine().ResetState();
-            screenInfo.ClearTabStops();
-        }
-        // if we're moving from VT off->on
-        else if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
-                 WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-        {
-            screenInfo.SetDefaultVtTabStops();
         }
 
         gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
@@ -759,15 +752,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
         //      will only return the buffer size, so we can't use that to clip the arg here.
         // So only clip the requested size if we're not headless
+        if (g.getConsoleInformation().IsInVtIoMode())
+        {
+            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
+            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+        }
         if (!g.IsHeadless())
         {
             COORD const coordMax = context.GetMaxWindowSizeInCharacters();
             RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
-        }
-        else if (g.getConsoleInformation().IsInVtIoMode())
-        {
-            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
-            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
@@ -776,7 +769,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
             context.PostUpdateWindowSize();
-            WriteToScreen(context, context.GetViewport());
+
+            // Use WriteToScreen to invalidate the viewport with the renderer.
+            // GH#3490 - If we're in conpty mode, don't invalidate the entire
+            // viewport. In conpty mode, the VtEngine will later decide what
+            // part of the buffer actually needs to be re-sent to the terminal.
+            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
+            {
+                WriteToScreen(context, context.GetViewport());
+            }
         }
         return S_OK;
     }
@@ -1515,99 +1516,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for setting a VT tab stop in the cursor's current column.
-// Parameters:
-// <none>
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet()
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-
-    const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-    try
-    {
-        _screenBuffer.AddTabStop(cursorPos.X);
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - A private helper for executing a number of tabs.
-// Parameters:
-// sNumTabs - The number of tabs to execute
-// fForward - whether to tab forward or backwards
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-
-    FAIL_FAST_IF(!(sNumTabs >= 0));
-    for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs; sTabsExecuted++)
-    {
-        cursorPos = (fForward) ? _screenBuffer.GetForwardTab(cursorPos) : _screenBuffer.GetReverseTab(cursorPos);
-    }
-
-    return AdjustCursorPosition(_screenBuffer, cursorPos, TRUE, nullptr);
-}
-
-// Routine Description:
-// - A private API call for performing a forwards tab. This will take the
-//     cursor to the tab stop following its current location. If there are no
-//     more tabs in this row, it will take it to the right side of the window.
-//     If it's already in the last column of the row, it will move it to the next line.
-// Parameters:
-// - sNumTabs - The number of tabs to perform.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
-{
-    return DoPrivateTabHelper(sNumTabs, true);
-}
-
-// Routine Description:
-// - A private API call for performing a backwards tab. This will take the
-//     cursor to the tab stop previous to its current location. It will not reverse line feed.
-// Parameters:
-// - sNumTabs - The number of tabs to perform.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
-{
-    return DoPrivateTabHelper(sNumTabs, false);
-}
-
-// Routine Description:
-// - A private API call for clearing the VT tabs that have been set.
-// Parameters:
-// - fClearAll - If false, only clears the tab in the current column (if it exists)
-//      otherwise clears all set tabs. (and reverts to legacy 8-char tabs behavior.)
-// Return value:
-// - None
-void DoSrvPrivateTabClear(const bool fClearAll)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    if (fClearAll)
-    {
-        screenBuffer.ClearTabStops();
-    }
-    else
-    {
-        const COORD cursorPos = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        screenBuffer.ClearTabStop(cursorPos.X);
-    }
-}
-
-// Routine Description:
 // - A private API call for enabling VT200 style mouse mode.
 // Parameters:
 // - fEnable - true to enable default tracking mode, false to disable mouse mode.
@@ -1616,7 +1524,7 @@ void DoSrvPrivateTabClear(const bool fClearAll)
 void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableDefaultTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableDefaultTracking(fEnable);
 }
 
 // Routine Description:
@@ -1628,7 +1536,7 @@ void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetUtf8ExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1640,7 +1548,7 @@ void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetSGRExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1652,7 +1560,7 @@ void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableButtonEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableButtonEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1664,7 +1572,7 @@ void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAnyEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAnyEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1676,7 +1584,7 @@ void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAlternateScroll(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAlternateScroll(fEnable);
 }
 
 // Routine Description:
@@ -2070,13 +1978,6 @@ void DoSrvIsConsolePty(bool& isPty)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     isPty = gci.IsInVtIoMode();
-}
-
-// Routine Description:
-// - a private API call for setting the default tab stops in the active screen buffer.
-void DoSrvPrivateSetDefaultTabStops()
-{
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().SetDefaultVtTabStops();
 }
 
 // Routine Description:

@@ -35,6 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetConsoleCursorPosition(const COORD position) = 0;
         virtual bool SetConsoleTextAttribute(const WORD attr) = 0;
 
+        virtual bool PrivateIsVtInputEnabled() const = 0;
+
         virtual bool PrivateSetLegacyAttributes(const WORD attr,
                                                 const bool foreground,
                                                 const bool background,
@@ -72,11 +74,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetConsoleTitleW(const std::wstring_view title) = 0;
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
         virtual bool PrivateUseMainScreenBuffer() = 0;
-        virtual bool PrivateHorizontalTabSet() = 0;
-        virtual bool PrivateForwardTab(const size_t numTabs) = 0;
-        virtual bool PrivateBackwardsTab(const size_t numTabs) = 0;
-        virtual bool PrivateTabClear(const bool clearAll) = 0;
-        virtual bool PrivateSetDefaultTabStops() = 0;
 
         virtual bool PrivateEnableVT200MouseMode(const bool enabled) = 0;
         virtual bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) = 0;
@@ -96,7 +93,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool GetConsoleOutputCP(unsigned int& codepage) = 0;
 
         virtual bool PrivateSuppressResizeRepaint() = 0;
-        virtual bool IsConsolePty(bool& isPty) const = 0;
+        virtual bool IsConsolePty() const = 0;
 
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;
