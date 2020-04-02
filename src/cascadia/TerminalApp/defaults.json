@@ -1,56 +1,94 @@
 // THIS IS AN AUTO-GENERATED FILE! Changes to this file will be ignored.
 {
-    "alwaysShowTabs": true,
     "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+
+    // Launch Settings
     "initialCols": 120,
     "initialRows": 30,
-    "requestedTheme": "system",
+    "initialPosition": ",",
+    "launchMode": "default",
+
+    // Selection
+    "copyOnSelect": false,
+    "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+
+    // Tab UI
+    "alwaysShowTabs": true,
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
-    "snapToGridOnResize": true,
-    "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+
+    // Miscellaneous
     "confirmCloseAllTabs": true,
+    "requestedTheme": "system",
+    "rowsToScroll": "system",
+    "snapToGridOnResize": true,
 
     "profiles":
-    [
-        {
-            "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-            "name": "Windows PowerShell",
-            "commandline": "powershell.exe",
-            "hidden": false,
-            "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
-            "colorScheme": "Campbell Powershell",
-            "cursorShape": "bar",
-            "fontFace": "Cascadia Code",
-            "fontSize": 12,
+    {
+        "defaults": {
+            // Console Settings
             "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
-            "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
-        },
-        {
-            "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
-            "name": "cmd",
-            "commandline": "cmd.exe",
-            "hidden": false,
+            "padding": "8, 8, 8, 8",
             "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
+
+            // Acrylic Settings
+            "useAcrylic": false,
+            "acrylicOpacity": 0.5,
+
+            // Background Image
+            "backgroundImage": null,
+            "backgroundImageAlignment": "center",
+            "backgroundImageOpacity": "1.0",
+            "backgroundImageStretchMode": "uniformToFill",
+
+            // Color Scheme
             "colorScheme": "Campbell",
+            "foreground": null,
+            "background": null,
+            "selectionBackground": null,
+
+            // Cursor
+            "cursorColor": null,
+            "cursorHeight": null,
             "cursorShape": "bar",
+
+            // Font
             "fontFace": "Cascadia Code",
             "fontSize": 12,
-            "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
-            "padding": "8, 8, 8, 8",
-            "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
-        }
-    ],
+
+            // Tab and Dropdown UI
+            "icon": null,
+            "suppressApplicationTitle": false,
+            "tabTitle": null,
+
+            // Miscellaneous
+            "antialiasingMode": "grayscale",
+            "scrollbarState": "hidden",
+            "closeOnExit": "graceful",
+            "hidden": false,
+            "source": null,
+
+            // Experimental Settings
+            "experimental.retroTerminalEffect": false
+        },
+        "list": [
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+                "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
+                "colorScheme": "Campbell Powershell"
+            },
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "cmd",
+                "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
+                "commandline": "cmd.exe"
+            }
+        ]
+    },
     "schemes":
     [
         {
