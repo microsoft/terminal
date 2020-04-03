@@ -484,14 +484,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged()
     {
-        { // lock scope
-            auto terminalLock = _terminal->LockForReading();
-            if (!_initializedTerminal)
-            {
-                return;
-            }
-        }
-
+        // This event is only registered during terminal initialization,
+        // so we don't need to check _initializedTerminal.
+        // We also don't lock for things that come back from the renderer.
         auto chain = _renderEngine->GetSwapChain();
         auto weakThis{ get_weak() };
 
@@ -499,8 +494,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            auto terminalLock = _terminal->LockForWriting();
-
             _AttachDxgiSwapChainToXaml(chain.Get());
         }
     }
