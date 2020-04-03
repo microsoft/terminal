@@ -23,6 +23,7 @@
 class InputBuffer; // This for some reason needs to be fwd-decl'd
 #include "../host/inputBuffer.hpp"
 #include "../host/readDataCooked.hpp"
+#include "../host/output.h"
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -1829,13 +1830,15 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     auto verifyBuffer = [](const TextBuffer& tb,
                            const til::rectangle viewport) {
         const auto lastRow = viewport.bottom<short>() - 1;
-        const til::point expectedCursor{ 0, lastRow - 1 };
+        const til::point expectedCursor{ 1, lastRow };
         VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
 
-        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA          DDDDDDDDDD", til::point{ 0, lastRow - 2 });
-        TestUtils::VerifyExpectedString(tb, L"BBBBBBBBBB", til::point{ 0, lastRow - 1 });
-        TestUtils::VerifyExpectedString(tb, L"FFFFFFFFFE", til::point{ 0, lastRow });
+        TestUtils::VerifyExpectedString(tb, L"EEEEEEEEEE", til::point{ 0, lastRow - 4 });
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA", til::point{ 0, lastRow - 3 });
+        TestUtils::VerifyExpectedString(tb, L"          ", til::point{ 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"XBBBBBBBBB", til::point{ 0, lastRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"YCCCCCCCCC", til::point{ 0, lastRow });
     };
 
     _logConpty = true;
@@ -1844,33 +1847,76 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
 
     hostSm.ProcessString(L"\x1b#8");
 
-    hostSm.ProcessString(L"\x1b[1;30r");
+    const short originalBottom = si.GetViewport().BottomInclusive();
     hostSm.ProcessString(L"\x1b[30;1H");
-
-    hostSm.ProcessString(L"\x1b[J");
+    // COORD nearBottom{ 0, originalBottom - 2 };
+    // SetConsoleCursorPosition(hOut, nearBottom);
     hostSm.ProcessString(L"AAAAAAAAAA");
-    hostSm.ProcessString(L"\x1b[K");
-    hostSm.ProcessString(L"\r");
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"BBBBBBBBBB");
-    hostSm.ProcessString(L"\x1b[K");
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"CCCCCCCCCC");
-    hostSm.ProcessString(L"\x1b[2A");
-    hostSm.ProcessString(L"\r");
-    hostSm.ProcessString(L"\x1b[20C");
-    hostSm.ProcessString(L"DDDDDDDDDD");
-    hostSm.ProcessString(L"\x1b[K");
-    hostSm.ProcessString(L"\r");
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Sleep(1000);
+    // COORD atBottom{ 0, height };
+    // SetConsoleCursorPosition(hOut, nearBottom);
     hostSm.ProcessString(L"\n");
-    hostSm.ProcessString(L"\x1b[1B");
-    hostSm.ProcessString(L"EEEEEEEEEE");
-    hostSm.ProcessString(L"\r");
-    hostSm.ProcessString(L"FFFFFFFFF");
-    hostSm.ProcessString(L"\r");
-    hostSm.ProcessString(L"\x1b[A");
-    hostSm.ProcessString(L"\x1b[A");
+    const short newBottom = si.GetViewport().BottomInclusive();
+    // Sleep(1000);
+
+    // CHAR_INFO clear;
+    // clear.Char.UnicodeChar = L' ';
+    // clear.Attributes = csbiex.wAttributes;
+    DebugBreak();
+    SMALL_RECT src;
+    src.Top = newBottom - 2;
+    src.Left = 0;
+    src.Right = si.GetViewport().Width();
+    src.Bottom = originalBottom;
+    COORD tgt = { 0, newBottom - 1 };
+    // ScrollConsoleScreenBuffer(hOut, &src, nullptr, tgt, &clear);
+    TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
+    ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+
+    // Sleep(1000);
+    // COORD statusLine{ 0, newBottom - 1 };
+    // SetConsoleCursorPosition(hOut, statusLine);
+    hostSm.ProcessString(L"\x1b[31;1H");
+
+    hostSm.ProcessString(L"X");
     hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"Y");
+
+    // hostSm.ProcessString(L"\x1b[1;30r");
+    // hostSm.ProcessString(L"\x1b[30;1H");
+
+    // hostSm.ProcessString(L"\x1b[J");
+    // hostSm.ProcessString(L"AAAAAAAAAA");
+    // hostSm.ProcessString(L"\x1b[K");
+    // hostSm.ProcessString(L"\r");
+    // hostSm.ProcessString(L"\n");
+    // hostSm.ProcessString(L"BBBBBBBBBB");
+    // hostSm.ProcessString(L"\x1b[K");
+    // hostSm.ProcessString(L"\n");
+    // hostSm.ProcessString(L"CCCCCCCCCC");
+    // hostSm.ProcessString(L"\x1b[2A");
+    // hostSm.ProcessString(L"\r");
+    // hostSm.ProcessString(L"\x1b[20C");
+    // hostSm.ProcessString(L"DDDDDDDDDD");
+    // hostSm.ProcessString(L"\x1b[K");
+    // hostSm.ProcessString(L"\r");
+    // hostSm.ProcessString(L"\n");
+    // hostSm.ProcessString(L"\x1b[1B");
+    // hostSm.ProcessString(L"EEEEEEEEEE");
+    // hostSm.ProcessString(L"\r");
+    // hostSm.ProcessString(L"FFFFFFFFF");
+    // hostSm.ProcessString(L"\r");
+    // hostSm.ProcessString(L"\x1b[A");
+    // hostSm.ProcessString(L"\x1b[A");
+    // hostSm.ProcessString(L"\n");
 
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(hostTb, si.GetViewport().ToInclusive());

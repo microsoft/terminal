@@ -50,7 +50,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     // if (!fSuccess) return -1;
 
     auto restoreCursor = wil::scope_exit([&]() {
-        const COORD adjusted{ 0, csbiex.dwCursorPosition.Y + 1 };
+        // const COORD adjusted{ 0, csbiex.dwCursorPosition.Y + 1 };
+        const COORD adjusted{ srViewport.Left, srViewport.Top };
         SetConsoleCursorPosition(hOut, adjusted);
     });
 
@@ -104,29 +105,37 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
         // COORD atBottom{ 0, height };
         // SetConsoleCursorPosition(hOut, nearBottom);
         wprintf(L"\n");
-        const short newBottom = originalBottom + 1;
-        Sleep(1000);
+
+        fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
+        if (!fSuccess)
+            return -1;
+
+        srViewport = csbiex.srWindow;
+
+        // const short newBottom = originalBottom + 1;
+        const short newBottom = srViewport.Bottom;
+        // Sleep(1000);
 
         CHAR_INFO clear;
         clear.Char.UnicodeChar = L' ';
         clear.Attributes = csbiex.wAttributes;
 
         SMALL_RECT src;
-        src.Top = originalBottom - 1;
+        src.Top = newBottom - 2;
         src.Left = 0;
         src.Right = width;
         src.Bottom = originalBottom;
         COORD tgt = { 0, newBottom - 1 };
         ScrollConsoleScreenBuffer(hOut, &src, nullptr, tgt, &clear);
 
-        Sleep(1000);
+        // Sleep(1000);
         COORD statusLine{ 0, newBottom - 1 };
         SetConsoleCursorPosition(hOut, statusLine);
 
         wprintf(L"D---");
         wprintf(L"\n");
         wprintf(L"E---");
-        Sleep(1000);
+        // Sleep(1000);
     }
 
     return 0;
