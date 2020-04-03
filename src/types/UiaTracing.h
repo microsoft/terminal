@@ -33,7 +33,7 @@ namespace Microsoft::Console::Types
         {
         public:
             static void Constructor(UiaTextRangeBase& result) noexcept;
-            static void Clone(const UiaTextRangeBase& base, const UiaTextRangeBase& result) noexcept;
+            static void Clone(const UiaTextRangeBase& base, UiaTextRangeBase& result) noexcept;
             static void Compare(const UiaTextRangeBase& base, const UiaTextRangeBase& other, bool result) noexcept;
             static void CompareEndpoints(const UiaTextRangeBase& base, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result) noexcept;
             static void ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& result) noexcept;

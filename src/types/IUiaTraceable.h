@@ -6,7 +6,7 @@ Module Name:
 - IUiaTraceable.hpp
 
 Abstract:
-- This module is used for assigning and retrieving IDs to Uia objects
+- This module is used for assigning and retrieving IDs to UIA objects
 
 Author(s):
 - Carlos Zamora (cazamor)     Apr 2020
@@ -27,6 +27,12 @@ namespace Microsoft::Console::Types
             return _id;
         }
 
+        // Routine Description:
+        // - assigns an ID to the IUiaTraceable object if it doesn't have one
+        // Arguments:
+        // - id - the id value that we are trying to assign
+        // Return Value:
+        // - true if the assignment was successful, false otherwise (it already has an id).
         bool AssignId(IdType id) noexcept
         {
             if (_id == InvalidId)

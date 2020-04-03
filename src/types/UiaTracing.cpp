@@ -16,9 +16,19 @@ TRACELOGGING_DEFINE_PROVIDER(g_UiaProviderTraceProvider,
 using namespace Microsoft::Console::Types;
 
 // The first valid ID is 1 for each of our traced UIA object types
+// ID assignment is handled between UiaTracing and IUiaTraceable to...
+//  - prevent multiple objects with the same ID
+//  - only assign IDs if UiaTracing is enabled
+//  - ensure objects are only assigned an ID once
 IdType UiaTracing::_utrId = 1;
 IdType UiaTracing::_siupId = 1;
 
+// Routine Description:
+// - assign an ID to the UiaTextRange, if it doesn't have one already
+// Arguments:
+// - utr - the UiaTextRange we are assigning an ID to
+// Return Value:
+// - N/A
 void UiaTracing::_assignId(UiaTextRangeBase& utr) noexcept
 {
     auto temp = utr.AssignId(_utrId);
@@ -28,6 +38,12 @@ void UiaTracing::_assignId(UiaTextRangeBase& utr) noexcept
     }
 }
 
+// Routine Description:
+// - assign an ID to the ScreenInfoUiaProvider, if it doesn't have one already
+// Arguments:
+// - siup - the ScreenInfoUiaProvider we are assigning an ID to
+// Return Value:
+// - N/A
 void UiaTracing::_assignId(ScreenInfoUiaProviderBase& siup) noexcept
 {
     auto temp = siup.AssignId(_siupId);
@@ -124,11 +140,12 @@ void UiaTracing::TextRange::Constructor(UiaTextRangeBase& result) noexcept
     }
 }
 
-void UiaTracing::TextRange::Clone(const UiaTextRangeBase& utr, const UiaTextRangeBase& result) noexcept
+void UiaTracing::TextRange::Clone(const UiaTextRangeBase& utr, UiaTextRangeBase& result) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Clone",
