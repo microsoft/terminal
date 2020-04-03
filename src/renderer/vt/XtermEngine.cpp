@@ -389,7 +389,7 @@ try
 
     if (dy < 0)
     {
-        // Save the old wrap state here. We're gonig to clear it so that
+        // Save the old wrap state here. We're going to clear it so that
         // _MoveCursor will definitely move us to the right position. We'll
         // restore the state afterwards.
         const auto oldWrappedRow = _wrappedRow;

@@ -1595,7 +1595,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     constexpr int PaintAfterAllNewlines = 1;
     constexpr int DontPaintAfterNewlines = 2;
 
-    INIT_TEST_PROPERTY(int, paintEachNewline, L"Ene of manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"Any of: manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
     INIT_TEST_PROPERTY(bool, cursorOnNextLine, L"Either leave the cursor on the first line, or place it on the second line of the buffer");
     INIT_TEST_PROPERTY(bool, paintAfterDECALN, L"Controls whether we manually paint a frame after the DECALN sequence is emitted.");
     INIT_TEST_PROPERTY(bool, changeAttributes, L"If true, change the text attributes after the 'A's and spaces");

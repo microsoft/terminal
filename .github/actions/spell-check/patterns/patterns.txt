@@ -5,3 +5,5 @@ https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
 Scro\&ll
 # selectionInput.cpp
  :\\windows\\syste\b
+TestUtils::VerifyExpectedString\(tb, L"[^"]+"
+hostSm.ProcessString(L"[^"]+"
