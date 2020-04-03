@@ -68,6 +68,7 @@ DxEngine::DxEngine() :
     _invalidateFullRows{ true },
     _invalidMap{},
     _invalidScroll{},
+    _firstFrame{ true },
     _presentParams{ 0 },
     _presentReady{ false },
     _presentScroll{ 0 },
@@ -486,6 +487,9 @@ try
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
+
+        // This is our first frame on this new target.
+        _firstFrame = true;
 
         RETURN_IF_FAILED(_PrepareRenderTarget());
     }
@@ -938,6 +942,9 @@ try
 
             // And persist the new size.
             _displaySizePixels = clientSize;
+
+            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
+            _firstFrame = true;
         }
 
         _d2dRenderTarget->BeginDraw();
@@ -1075,7 +1082,17 @@ CATCH_RETURN()
         {
             HRESULT hr = S_OK;
 
-            hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+            // On the first frame, we cannot use partial presentation.
+            // Just call the old Present method to present the entire frame.
+            if (_firstFrame)
+            {
+                hr = _dxgiSwapChain->Present(1, 0);
+                _firstFrame = false;
+            }
+            else
+            {
+                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+            }
 
             if (FAILED(hr))
             {

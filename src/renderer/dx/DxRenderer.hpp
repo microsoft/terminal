@@ -140,6 +140,7 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
+        bool _firstFrame;
         bool _invalidateFullRows;
         til::bitmap _invalidMap;
         til::point _invalidScroll;
