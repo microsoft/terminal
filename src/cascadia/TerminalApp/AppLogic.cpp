@@ -862,6 +862,32 @@ namespace winrt::TerminalApp::implementation
         return { L"" };
     }
 
+    winrt::hstring AppLogic::ApplicationDisplayName() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            return package.DisplayName();
+        }
+        CATCH_LOG();
+
+        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+    }
+
+    winrt::hstring AppLogic::ApplicationVersion() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            const auto version{ package.Id().Version() };
+            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+            return formatted;
+        }
+        CATCH_LOG();
+
+        return RS_(L"AboutDialog_VersionUnknown");
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
