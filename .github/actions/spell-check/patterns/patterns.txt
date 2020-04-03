@@ -6,4 +6,4 @@ Scro\&ll
 # selectionInput.cpp
  :\\windows\\syste\b
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
-hostSm.ProcessString(L"[^"]+"
+hostSm\.ProcessString\(L"[^"]+"

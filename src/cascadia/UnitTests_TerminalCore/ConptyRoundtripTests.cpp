@@ -1738,7 +1738,9 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
 void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
 {
     // See https://github.com/microsoft/terminal/pull/5181#issuecomment-607545241
-    Log::Comment(L"TODO: description");
+    Log::Comment(L"This test replicates the zsh menu-complete functionality. In"
+                 L" the course of a single frame, we're going to both scroll "
+                 L"the frame and print multiple lines of text above the bottom line.");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -1803,6 +1805,5 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
-    // DebugBreak();
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }

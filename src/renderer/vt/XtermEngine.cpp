@@ -438,6 +438,16 @@ try
 
     if (_delayedEolWrap && _wrappedRow.has_value())
     {
+        // If we wrapped the last line, and we're in the middle of painting it,
+        // then the newline we did above just manually broke the line. What
+        // we're doing here is a hack: we're going to manually re-invalidate the
+        // last character of the wrapped row. When the PaintBufferLine calls
+        // come back through, we'll paint this last character again, causing us
+        // to get into the wrapped state once again. This is the only way to
+        // ensure that if a line was wrapped, and we painted the first line in
+        // one frame, and the second line in another frame that included other
+        // changes _above_ the wrapped line, that we maintain the wrap state in
+        // the Terminal.
         const til::rectangle lastCellOfWrappedRow{
             til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
             til::size{ 1, 1 }
