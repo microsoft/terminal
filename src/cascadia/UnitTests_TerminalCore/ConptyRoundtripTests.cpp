@@ -1180,7 +1180,6 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
 
     verifyBuffer(hostTb, hostView.BottomInclusive() - 1);
 
-    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb, term->_mutableViewport.BottomInclusive() - 1);
