@@ -126,7 +126,7 @@ namespace Microsoft::Console::Render
 
         COORD _lastRealCursor;
         COORD _lastText;
-        COORD _scrollDelta;
+        til::point _scrollDelta;
 
         bool _quickReturn;
         bool _clearedAllThisFrame;

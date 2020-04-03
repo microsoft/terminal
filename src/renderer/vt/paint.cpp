@@ -27,7 +27,7 @@ using namespace Microsoft::Console::Types;
 
     // If there's nothing to do, quick return
     bool somethingToDo = _invalidMap.any() ||
-                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+                         _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
 
@@ -52,7 +52,7 @@ using namespace Microsoft::Console::Types;
 
     _invalidMap.reset_all();
 
-    _scrollDelta = { 0 };
+    _scrollDelta = { 0, 0 };
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;

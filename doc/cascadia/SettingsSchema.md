@@ -42,7 +42,7 @@ Properties listed below are specific to each unique profile.
 | `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | Optional | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
+| `fontFace` | Optional | String | `Cascadia Code` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
@@ -111,14 +111,13 @@ For commands with arguments:
 
 | Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
 | ------- | ------------------- | ------ | ---------------- | ----------------- |
+| `adjustFontSize` | Change the text size by a specified point amount. | `delta` | integer | Amount of size change per command invocation. |
 | `closePane` | Close the active pane. | | | |
 | `closeTab` | Close the current tab. | | | |
 | `closeWindow` | Close the current window and all tabs within it. | | | |
-| `copy` | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
-| `decreaseFontSize` | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
+| `copy` | Copy the selected terminal content to your Windows Clipboard. | `singleLine` | boolean | When `true`, the copied content will be copied as a single line. When `false`, newlines persist from the selected text. |
 | `duplicateTab` | Make a copy and open the current tab. | | | |
 | `find` | Open the search dialog box. | | | |
-| `increaseFontSize` | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
 | `moveFocus` | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
 | `newTab` | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
 | `nextTab` | Open the tab to the right of the current one. | | | |

@@ -217,7 +217,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         args->SplitStyle(SplitState::Automatic);
         // Make sure to use the `Option`s here to check if they were set -
         // _getNewTerminalArgs might reset them while parsing a commandline
-        if ((*_horizontalOption || *_verticalOption) && (_splitHorizontal))
+        if ((*_horizontalOption || *_verticalOption))
         {
             if (_splitHorizontal)
             {
@@ -225,7 +225,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
             }
             else if (_splitVertical)
             {
-                args->SplitStyle(SplitState::Horizontal);
+                args->SplitStyle(SplitState::Vertical);
             }
         }
 

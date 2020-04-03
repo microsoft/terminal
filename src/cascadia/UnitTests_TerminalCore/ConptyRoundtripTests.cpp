@@ -53,6 +53,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     static const SHORT TerminalViewWidth = 80;
     static const SHORT TerminalViewHeight = 32;
 
+    // This test class is for tests that are supposed to emit something in the PTY layer
+    // and then check that they've been staged for presentation correctly inside
+    // the Terminal application. Which sequences were used to get here don't matter.
     TEST_CLASS(ConptyRoundtripTests);
 
     TEST_CLASS_SETUP(ClassSetup)
@@ -170,6 +173,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(MoveCursorAtEOL);
 
     TEST_METHOD(TestResizeHeight);
+
+    TEST_METHOD(ScrollWithMargins);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -1054,4 +1059,246 @@ void ConptyRoundtripTests::PassthroughHardReset()
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
+}
+
+void ConptyRoundtripTests::ScrollWithMargins()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    const auto initialTermView = term->GetViewport();
+
+    Log::Comment(L"Flush first frame.");
+    _flushFirstFrame();
+
+    // Fill up the buffer with some text.
+    // We're going to write something like this:
+    // AAAA
+    // BBBB
+    // CCCC
+    // ........
+    // QQQQ
+    // ****************
+    // The letters represent the data in the TMUX pane.
+    // The final *** line represents the mode line which we will
+    // attempt to hold in place and not scroll.
+
+    Log::Comment(L"Fill host with text pattern by feeding it into VT parser.");
+    const auto rowsToWrite = initialTermView.Height() - 1;
+
+    // For all lines but the last one, write out a few of a letter.
+    for (auto i = 0; i < rowsToWrite; ++i)
+    {
+        const wchar_t wch = static_cast<wchar_t>(L'A' + i);
+        hostSm.ProcessCharacter(wch);
+        hostSm.ProcessCharacter(wch);
+        hostSm.ProcessCharacter(wch);
+        hostSm.ProcessCharacter(wch);
+        hostSm.ProcessCharacter('\n');
+    }
+
+    // For the last one, write out the asterisks for the mode line.
+    for (auto i = 0; i < initialTermView.Width(); ++i)
+    {
+        hostSm.ProcessCharacter('*');
+    }
+
+    // no newline in the bottom right corner or it will move unexpectedly.
+
+    // Now set up the verification that the buffers are full of the pattern we expect.
+    // This function will verify the text backing buffers.
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor is waiting in the bottom right corner
+        VERIFY_ARE_EQUAL(initialTermView.Height() - 1, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(initialTermView.Width() - 1, cursor.GetPosition().X);
+
+        // For all rows except the last one, verify that we have a run of four letters.
+        for (auto i = 0; i < rowsToWrite; ++i)
+        {
+            const std::wstring expectedString(4, static_cast<wchar_t>(L'A' + i));
+            const COORD expectedPos{ 0, gsl::narrow<SHORT>(i) };
+            TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
+        }
+
+        // For the last row, verify we have an entire row of asterisks for the mode line.
+        const std::wstring expectedModeLine(initialTermView.Width(), L'*');
+        const COORD expectedPos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
+        TestUtils::VerifyExpectedString(tb, expectedModeLine, expectedPos);
+    };
+
+    // This will verify the text emitted from the PTY.
+    for (auto i = 0; i < rowsToWrite; ++i)
+    {
+        const std::string expectedString(4, static_cast<char>('A' + i));
+        expectedOutput.push_back(expectedString);
+        expectedOutput.push_back("\r\n");
+    }
+    {
+        const std::string expectedString(initialTermView.Width(), '*');
+        expectedOutput.push_back(expectedString);
+
+        // Cursor gets reset into bottom right corner as we're writing all the way into that corner.
+        std::stringstream ss;
+        ss << "\x1b[" << initialTermView.Height() << ";" << initialTermView.Width() << "H";
+        expectedOutput.push_back(ss.str());
+    }
+
+    Log::Comment(L"Verify host buffer contains pattern.");
+    // Verify the host side.
+    verifyBuffer(hostTb);
+
+    Log::Comment(L"Emit PTY frame and validate it transmits the right data.");
+    // Paint the frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"Verify terminal buffer contains pattern.");
+    // Verify the terminal side.
+    verifyBuffer(termTb);
+
+    Log::Comment(L"!!! OK. Set up the scroll region and let's get scrolling!");
+    // This is a simulation of what TMUX does to scroll everything except the mode line.
+    // First build up our VT strings...
+    std::wstring reducedScrollRegion;
+    {
+        std::wstringstream wss;
+        // For 20 tall buffer...
+        // ESC[1;19r
+        // Set scroll region to lines 1-19.
+        wss << L"\x1b[1;" << initialTermView.Height() - 1 << L"r";
+        reducedScrollRegion = wss.str();
+    }
+    std::wstring completeScrollRegion;
+    {
+        std::wstringstream wss;
+        // For 20 tall buffer...
+        // ESC[1;20r
+        // Set scroll region to lines 1-20. (or the whole buffer)
+        wss << L"\x1b[1;" << initialTermView.Height() << L"r";
+        completeScrollRegion = wss.str();
+    }
+    std::wstring reducedCursorBottomRight;
+    {
+        std::wstringstream wss;
+        // For 20 tall and 100 wide buffer
+        // ESC[19;100H
+        // Put cursor on line 19 (1 before last) and the right most column 100.
+        // (Remember that in VT, we start counting from 1 not 0.)
+        wss << L"\x1b[" << initialTermView.Height() - 1 << L";" << initialTermView.Width() << "H";
+        reducedCursorBottomRight = wss.str();
+    }
+    std::wstring completeCursorAtPromptLine;
+    {
+        std::wstringstream wss;
+        // For 20 tall and 100 wide buffer
+        // ESC[19;1H
+        // Put cursor on line 19 (1 before last) and the left most column 1.
+        // (Remember that in VT, we start counting from 1 not 0.)
+        wss << L"\x1b[" << initialTermView.Height() - 1 << L";1H";
+        completeCursorAtPromptLine = wss.str();
+    }
+
+    Log::Comment(L"Perform all the operations on the buffer.");
+
+    // OK this is what TMUX does.
+    // 1. Mark off the scroll area as everything but the mode line.
+    hostSm.ProcessString(reducedScrollRegion);
+    // 2. Put the cursor in the bottom-right corner of the scroll region.
+    hostSm.ProcessString(reducedCursorBottomRight);
+    // 3. Send a single newline which should do the heavy lifting
+    //    of pushing everything in the scroll region up by 1 line and
+    //    leave everything outside the region alone.
+
+    // This entire block is subject to change in the future with optimizations.
+    {
+        // Cursor gets redrawn in the bottom right of the scroll region with the repaint that is forced
+        // early while the screen is rotated.
+        std::stringstream ss;
+        ss << "\x1b[" << initialTermView.Height() - 1 << ";" << initialTermView.Width() << "H";
+        expectedOutput.push_back(ss.str());
+
+        expectedOutput.push_back("\x1b[?25h"); // turn the cursor back on too.
+    }
+
+    hostSm.ProcessString(L"\n");
+    // 4. Remove the scroll area by setting it to the entire size of the viewport.
+    hostSm.ProcessString(completeScrollRegion);
+    // 5. Put the cursor back at the beginning of the new line that was just revealed.
+    hostSm.ProcessString(completeCursorAtPromptLine);
+
+    // Set up the verifications like above.
+    auto verifyBufferAfter = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor is waiting on the freshly revealed line (1 above mode line)
+        // and in the left most column.
+        VERIFY_ARE_EQUAL(initialTermView.Height() - 2, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+
+        // For all rows except the last two, verify that we have a run of four letters.
+        for (auto i = 0; i < rowsToWrite - 1; ++i)
+        {
+            // Start with B this time because the A line got scrolled off the top.
+            const std::wstring expectedString(4, static_cast<wchar_t>(L'B' + i));
+            const COORD expectedPos{ 0, gsl::narrow<SHORT>(i) };
+            TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
+        }
+
+        // For the second to last row, verify that it is blank.
+        {
+            const std::wstring expectedBlankLine(initialTermView.Width(), L' ');
+            const COORD blankLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite - 1) };
+            TestUtils::VerifyExpectedString(tb, expectedBlankLine, blankLinePos);
+        }
+
+        // For the last row, verify we have an entire row of asterisks for the mode line.
+        {
+            const std::wstring expectedModeLine(initialTermView.Width(), L'*');
+            const COORD modeLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
+            TestUtils::VerifyExpectedString(tb, expectedModeLine, modeLinePos);
+        }
+    };
+
+    // This will verify the text emitted from the PTY.
+
+    expectedOutput.push_back("\x1b[H"); // cursor returns to top left corner.
+    for (auto i = 0; i < rowsToWrite - 1; ++i)
+    {
+        const std::string expectedString(4, static_cast<char>('B' + i));
+        expectedOutput.push_back(expectedString);
+        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
+        expectedOutput.push_back("\r\n");
+    }
+    {
+        expectedOutput.push_back(""); // nothing for the empty line
+        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
+        expectedOutput.push_back("\r\n");
+    }
+    {
+        const std::string expectedString(initialTermView.Width(), '*');
+        expectedOutput.push_back(expectedString);
+    }
+    {
+        // Cursor gets reset into second line from bottom, left most column
+        std::stringstream ss;
+        ss << "\x1b[" << initialTermView.Height() - 1 << ";1H";
+        expectedOutput.push_back(ss.str());
+    }
+    expectedOutput.push_back("\x1b[?25h"); // turn the cursor back on too.
+
+    Log::Comment(L"Verify host buffer contains pattern moved up one and mode line still in place.");
+    // Verify the host side.
+    verifyBufferAfter(hostTb);
+
+    Log::Comment(L"Emit PTY frame and validate it transmits the right data.");
+    // Paint the frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"Verify terminal buffer contains pattern moved up one and mode line still in place.");
+    // Verify the terminal side.
+    verifyBufferAfter(termTb);
 }

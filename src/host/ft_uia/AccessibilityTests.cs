@@ -481,7 +481,7 @@ namespace Conhost.UIA.Tests
                 TextPatternRange testRange = visibleRanges.First().Clone();
 
                 // assumes that range is a line range at the top of the screen buffer
-                Action<TextPatternRange> testTopBoundary = delegate(TextPatternRange range)
+                Action<TextPatternRange> testTopBoundary = delegate (TextPatternRange range)
                 {
                     // the first visible range is at the top of the screen
                     // buffer, we shouldn't be able to move the starting endpoint up

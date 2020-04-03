@@ -19,13 +19,11 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
-static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
-static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
@@ -105,7 +103,6 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _defaultBackground{},
     _selectionBackground{},
     _cursorColor{},
-    _colorTable{},
     _tabTitle{},
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
@@ -171,11 +168,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    auto const colorTableCount = gsl::narrow_cast<int>(_colorTable.size());
-    for (int i = 0; i < colorTableCount; i++)
-    {
-        terminalSettings.SetColorTableEntry(i, _colorTable[i]);
-    }
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
     terminalSettings.CursorHeight(_cursorHeight);
@@ -307,15 +299,6 @@ Json::Value Profile::ToJson() const
     {
         const auto scheme = winrt::to_string(_schemeName.value());
         root[JsonKey(ColorSchemeKey)] = scheme;
-    }
-    else
-    {
-        Json::Value tableArray{};
-        for (auto& color : _colorTable)
-        {
-            tableArray.append(Utils::ColorToHexString(color));
-        }
-        root[JsonKey(ColorTableKey)] = tableArray;
     }
     root[JsonKey(HistorySizeKey)] = _historySize;
     root[JsonKey(SnapOnInputKey)] = _snapOnInput;
@@ -644,26 +627,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetOptionalColor(json, CursorColorKey, _cursorColor);
 
     JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
-    // TODO:GH#1069 deprecate old settings key
-    JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
-
-    // Only look for the "table" if there's no "schemeName"
-    if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
-        !(json.isMember(JsonKey(ColorSchemeKeyOld))) &&
-        json.isMember(JsonKey(ColorTableKey)))
-    {
-        auto colortable{ json[JsonKey(ColorTableKey)] };
-        int i = 0;
-        for (const auto& tableEntry : colortable)
-        {
-            if (tableEntry.isString())
-            {
-                const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                _colorTable[i] = color;
-            }
-            i++;
-        }
-    }
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::GetInt(json, HistorySizeKey, _historySize);

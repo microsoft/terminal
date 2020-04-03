@@ -244,7 +244,7 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 }
 
 // Method Description:
-// - Checks if the "globals.defaultProfile" is set to one of the profiles we
+// - Checks if the "defaultProfile" is set to one of the profiles we
 //   actually have. If the value is unset, or the value is set to something that
 //   doesn't exist in the list of profiles, we'll arbitrarily pick the first
 //   profile to use temporarily as the default.

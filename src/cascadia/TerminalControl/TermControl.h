@@ -77,11 +77,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
-        winrt::fire_and_forget SwapChainChanged();
+        winrt::fire_and_forget RenderEngineSwapChainChanged();
+        void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
 
         void CreateSearchBoxControl();
 
         bool OnF7Pressed();
+
+        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 
         ~TermControl();
 
@@ -183,24 +186,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
-        winrt::fire_and_forget _DoDragDrop(Windows::UI::Xaml::DragEventArgs const e);
 
-        void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
         void _SendPastedTextToConnection(const std::wstring& wstr);
-        winrt::fire_and_forget _SwapChainRoutine();
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        winrt::fire_and_forget _TerminalCursorPositionChanged();
 
-        void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
+        void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
+        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const bool isLeftButtonPressed);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);

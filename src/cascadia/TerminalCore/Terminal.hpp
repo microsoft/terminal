@@ -168,6 +168,7 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn) noexcept;
@@ -194,6 +195,7 @@ private:
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
+    std::function<void()> _pfnCursorPositionChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -265,6 +267,8 @@ private:
     void _AdjustCursorPosition(const COORD proposedPosition);
 
     void _NotifyScrollEvent() noexcept;
+
+    void _NotifyTerminalCursorPositionChanged() noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

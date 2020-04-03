@@ -1362,7 +1362,18 @@ bool AdaptDispatch::UseMainScreenBuffer()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HorizontalTabSet()
 {
-    return _pConApi->PrivateHorizontalTabSet();
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto column = csbiex.dwCursorPosition.X;
+
+        _InitTabStopsForWidth(width);
+        _tabStopColumns.at(column) = true;
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1376,7 +1387,29 @@ bool AdaptDispatch::HorizontalTabSet()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::ForwardTab(const size_t numTabs)
 {
-    return _pConApi->PrivateForwardTab(numTabs);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto row = csbiex.dwCursorPosition.Y;
+        auto column = csbiex.dwCursorPosition.X;
+        auto tabsPerformed = 0u;
+
+        _InitTabStopsForWidth(width);
+        while (column + 1 < width && tabsPerformed < numTabs)
+        {
+            column++;
+            if (til::at(_tabStopColumns, column))
+            {
+                tabsPerformed++;
+            }
+        }
+
+        success = _pConApi->SetConsoleCursorPosition({ column, row });
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1388,7 +1421,29 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 {
-    return _pConApi->PrivateBackwardsTab(numTabs);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto row = csbiex.dwCursorPosition.Y;
+        auto column = csbiex.dwCursorPosition.X;
+        auto tabsPerformed = 0u;
+
+        _InitTabStopsForWidth(width);
+        while (column > 0 && tabsPerformed < numTabs)
+        {
+            column--;
+            if (til::at(_tabStopColumns, column))
+            {
+                tabsPerformed++;
+            }
+        }
+
+        success = _pConApi->SetConsoleCursorPosition({ column, row });
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1405,13 +1460,89 @@ bool AdaptDispatch::TabClear(const size_t clearType)
     switch (clearType)
     {
     case DispatchTypes::TabClearType::ClearCurrentColumn:
-        success = _pConApi->PrivateTabClear(false);
+        success = _ClearSingleTabStop();
         break;
     case DispatchTypes::TabClearType::ClearAllColumns:
-        success = _pConApi->PrivateTabClear(true);
+        success = _ClearAllTabStops();
         break;
     }
     return success;
+}
+
+// Routine Description:
+// - Clears the tab stop in the cursor's current column, if there is one.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_ClearSingleTabStop()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto column = csbiex.dwCursorPosition.X;
+
+        _InitTabStopsForWidth(width);
+        _tabStopColumns.at(column) = false;
+    }
+    return success;
+}
+
+// Routine Description:
+// - Clears all tab stops and resets the _initDefaultTabStops flag to indicate
+//    that they shouldn't be reinitialized at the default positions.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_ClearAllTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = false;
+    return true;
+}
+
+// Routine Description:
+// - Clears all tab stops and sets the _initDefaultTabStops flag to indicate
+//    that the default positions should be reinitialized when needed.
+// Arguments:
+// - <none>
+// Return value:
+// - <none>
+void AdaptDispatch::_ResetTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = true;
+}
+
+// Routine Description:
+// - Resizes the _tabStopColumns table so it's large enough to support the
+//    current screen width, initializing tab stops every 8 columns in the
+//    newly allocated space, iff the _initDefaultTabStops flag is set.
+// Arguments:
+// - width - the width of the screen buffer that we need to accomodate
+// Return value:
+// - <none>
+void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
+{
+    const auto initialWidth = _tabStopColumns.size();
+    if (width > initialWidth)
+    {
+        _tabStopColumns.resize(width);
+        if (_initDefaultTabStops)
+        {
+            for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
+            {
+                if (column >= initialWidth)
+                {
+                    til::at(_tabStopColumns, column) = true;
+                }
+            }
+        }
+    }
 }
 
 //Routine Description:
@@ -1559,7 +1690,7 @@ bool AdaptDispatch::HardReset()
     }
 
     // delete all current tab stops and reapply
-    _pConApi->PrivateSetDefaultTabStops();
+    _ResetTabStops();
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected

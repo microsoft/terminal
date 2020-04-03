@@ -238,6 +238,7 @@ CBoolean
 cbt
 cbuffer
 CCCBB
+CCCC
 ccf
 cch
 CCHAR
@@ -291,6 +292,7 @@ Clcompile
 CLE
 cleartype
 CLICKACTIVE
+clickdown
 climits
 clipbrd
 CLIPCHILDREN
@@ -480,6 +482,7 @@ cwchar
 cwctype
 cwd
 cx
+cxcy
 CXFRAME
 CXFULLSCREEN
 CXHSCROLL
@@ -533,6 +536,7 @@ dcommon
 DCompile
 dcompiler
 ddb
+DDDD
 dde
 DDESHARE
 DDevice
@@ -595,6 +599,7 @@ deff
 DEFFACE
 defing
 DEFPUSHBUTTON
+defterm
 DELAYLOAD
 deletable
 DELETEONRELEASE
@@ -708,6 +713,7 @@ edputil
 edu
 eeb
 eee
+EEEE
 Efast
 EHsc
 EJO
@@ -1128,6 +1134,7 @@ IIo
 IList
 ime
 Imm
+IMouse
 Impl
 implementingtextandtextrange
 inbox
@@ -1143,10 +1150,12 @@ INITDIALOG
 initguid
 INITMENU
 inl
+INLINEPREFIX
 Inlines
 INotify
 inout
 INPATHROOT
+Inplace
 inproc
 inputdev
 Inputkeyinfo
@@ -1282,6 +1291,7 @@ LEFTALIGN
 LEFTSHIFT
 len
 lhs
+libpopcnt
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1486,6 +1496,7 @@ msixbundle
 msrc
 msvcrt
 MSVS
+msys
 msysgit
 mui
 Mul
@@ -1781,6 +1792,7 @@ pid
 pidl
 PIDLIST
 pii
+pinam
 pinvoke
 pipename
 pipestr
@@ -1921,6 +1933,7 @@ pythonw
 qi
 QJ
 qo
+QQQQ
 qsort
 queryable
 QUESTIONMARK
@@ -2206,6 +2219,8 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
+SOURCESDIRECTORY
+SPACEBAR
 spammy
 spand
 Spc
@@ -2409,6 +2424,7 @@ TOPDOWNDIB
 TOPLEFT
 TOPRIGHT
 tosign
+touchpad
 tounicodeex
 towlower
 towupper
@@ -2420,6 +2436,7 @@ tracelogging
 traceloggingprovider
 trackbar
 TRACKCOMPOSITION
+trackpad
 trackpads
 transcoder
 transitioning
@@ -2613,6 +2630,7 @@ VSTT
 vstudio
 vswhere
 vtapp
+VTE
 vtio
 vtmode
 vtpipeterm
