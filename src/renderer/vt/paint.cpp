@@ -447,6 +447,8 @@ using namespace Microsoft::Console::Types;
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
     const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
+    // This fixes the bug, but why?
+    // const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine && coord.Y == _lastViewport.BottomInclusive()));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
