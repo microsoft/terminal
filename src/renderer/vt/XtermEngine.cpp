@@ -260,9 +260,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
-
+    const auto originalPos = _lastText;
     _trace.TraceMoveCursor(_lastText, coord);
-
+    bool performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -288,6 +288,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             if (previousLineWrapped)
             {
+                performedSoftWrap = true;
                 _trace.TraceWrapped();
                 hr = S_OK;
             }
@@ -346,10 +347,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _lastText = coord;
         }
     }
-    if (_lastText.Y != _lastViewport.ToOrigin().BottomInclusive())
-    {
-        _newBottomLine = false;
-    }
+
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
@@ -386,7 +384,38 @@ try
         return S_OK;
     }
 
-    const short dy = _scrollDelta.y<SHORT>();
+    const short dy = _scrollDelta.y<short>();
+    const short absDy = static_cast<short>(abs(dy));
+
+    if (dy < 0)
+    {
+        // Save the old wrap state here. We're gonig to clear it so that
+        // _MoveCursor will definitely move us to the right position. We'll
+        // restore the state afterwards.
+        const auto oldWrappedRow = _wrappedRow;
+        const auto oldDelayedEolWrap = _delayedEolWrap;
+        _delayedEolWrap = false;
+        _wrappedRow = std::nullopt;
+
+        // TODO GH#5228 - We could optimize this by only doing this newline work
+        // when there's more invalid than just the bottom line. If only the
+        // bottom line is invalid, then the next thing the Renderer is going to
+        // tell us to do is print the new line at the bottom of the viewport,
+        // and _MoveCursor will automatically give us the newline we want.
+        // When that's implemented, we'll probably want to make sure to add a
+        //   _lastText.Y += dy;
+        // statement here.
+
+        // Move the cursor to the bottom of the current viewport
+        const short bottom = _lastViewport.BottomInclusive();
+        RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
+        // Emit some number of newlines to create space in the buffer.
+        RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
+
+        // Restore our wrap state.
+        _wrappedRow = oldWrappedRow;
+        _delayedEolWrap = oldDelayedEolWrap;
+    }
 
     // Shift our internal tracker of the last text position according to how
     // much we've scrolled. If we manually scroll the buffer right now, by
@@ -400,7 +429,6 @@ try
     // position we think we left the cursor.
     //
     // See GH#5113
-    _lastText.Y += dy;
     _trace.TraceLastText(_lastText);
     if (_wrappedRow.has_value())
     {
@@ -408,8 +436,20 @@ try
         _trace.TraceSetWrapped(_wrappedRow.value());
     }
 
-    const bool allInvalidated = _invalidMap.all();
+    if (_delayedEolWrap && _wrappedRow.has_value())
+    {
+        const til::rectangle lastCellOfWrappedRow{
+            til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
+            til::size{ 1, 1 }
+        };
+        _trace.TraceInvalidate(lastCellOfWrappedRow);
+        _invalidMap.set(lastCellOfWrappedRow);
+    }
 
+    // If the entire viewport was invalidated this frame, don't mark the bottom
+    // line as new. There are cases where this can cause visual artifacts - see
+    // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
+    const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
 
     return S_OK;

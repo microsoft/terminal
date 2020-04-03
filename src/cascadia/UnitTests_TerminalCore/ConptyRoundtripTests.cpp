@@ -963,7 +963,8 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
             expectedOutput.push_back("");
         }
 
@@ -1038,7 +1039,8 @@ void ConptyRoundtripTests::PassthroughHardReset()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
             expectedOutput.push_back("");
         }
 
@@ -1142,7 +1144,8 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
             expectedOutput.push_back("");
         }
 
@@ -1154,7 +1157,12 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     const auto wrappedLineLength = TerminalViewWidth + 20;
 
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    expectedOutput.push_back(std::string(20, 'A'));
+    // TODO GH#5228 might break the "newline & repaint the wrapped char" checks here, that's okay.
+    expectedOutput.push_back("\r"); // This \r\n is emitted by ScrollFrame to
+    expectedOutput.push_back("\n"); // add a newline to the bottom of the buffer
+    expectedOutput.push_back("\x1b[31;80H"); // Move the cursor BACK to the wrapped row
+    expectedOutput.push_back(std::string(1, 'A')); // Reprint the last character of the wrapped row
+    expectedOutput.push_back(std::string(20, 'A')); // Print the second line.
 
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
 
@@ -1172,6 +1180,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
 
     verifyBuffer(hostTb, hostView.BottomInclusive() - 1);
 
+    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb, term->_mutableViewport.BottomInclusive() - 1);
@@ -1212,7 +1221,8 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
             expectedOutput.push_back("");
         }
 
@@ -1233,7 +1243,12 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     // this frame
     expectedOutput.push_back("\x1b[?25h"); // hide the cursor
     // On the subsequent frame:
-    expectedOutput.push_back(std::string(20, 'A')); // print the remaining 'A's
+    // TODO GH#5228 might break the "newline & repaint the wrapped char" checks here, that's okay.
+    expectedOutput.push_back("\r"); // This \r\n is emitted by ScrollFrame to
+    expectedOutput.push_back("\n"); // add a newline to the bottom of the buffer
+    expectedOutput.push_back("\x1b[31;80H"); // Move the cursor BACK to the wrapped row
+    expectedOutput.push_back(std::string(1, 'A')); // Reprint the last character of the wrapped row
+    expectedOutput.push_back(std::string(20, 'A')); // Print the second line.
 
     _logConpty = true;
 
@@ -1744,7 +1759,7 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
         VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
 
-        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA             DDDDDDDDDD", til::point{ 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA          DDDDDDDDDD", til::point{ 0, lastRow - 2 });
         TestUtils::VerifyExpectedString(tb, L"BBBBBBBBBB", til::point{ 0, lastRow - 1 });
         TestUtils::VerifyExpectedString(tb, L"FFFFFFFFFE", til::point{ 0, lastRow });
     };
@@ -1768,7 +1783,7 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     hostSm.ProcessString(L"CCCCCCCCCC");
     hostSm.ProcessString(L"\x1b[2A");
     hostSm.ProcessString(L"\r");
-    hostSm.ProcessString(L"\x1b[23C");
+    hostSm.ProcessString(L"\x1b[20C");
     hostSm.ProcessString(L"DDDDDDDDDD");
     hostSm.ProcessString(L"\x1b[K");
     hostSm.ProcessString(L"\r");

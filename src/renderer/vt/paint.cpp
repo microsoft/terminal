@@ -553,7 +553,7 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else
+        else if (numSpaces > 0)
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
@@ -562,9 +562,12 @@ using namespace Microsoft::Console::Types;
         }
     }
 
-    // If we previously though that this was a new bottom line, it certainly
-    //      isn't new any longer.
-    _newBottomLine = false;
+    // If we printed to the bottom line, and we previously thought that this was
+    // a new bottom line, it certainly isn't new any longer.
+    if (coord.Y == _lastViewport.BottomInclusive())
+    {
+        _newBottomLine = false;
+    }
 
     return S_OK;
 }
