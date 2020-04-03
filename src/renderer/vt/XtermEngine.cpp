@@ -19,7 +19,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
@@ -64,16 +63,15 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirtyRect = GetDirtyRectInChars();
-        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
-        if (!_resized && dirtyView == _lastViewport)
+        const auto dirty = GetDirtyArea();
+
+        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+
+        // If there's more than 1, union them all up with the 1 we already have.
+        for (size_t i = 1; i < dirty.size(); ++i)
         {
-            // TODO: MSFT:21096414 - This is never actually hit. We set
-            // _resized=true on every frame (see VtEngine::UpdateViewport).
-            // Unfortunately, not always setting _resized is not a good enough
-            // solution, see that work item for a description why.
-            RETURN_IF_FAILED(_ClearScreen());
-            _clearedAllThisFrame = true;
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
         }
     }
 
@@ -235,6 +233,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
+    _trace.TraceMoveCursor(_lastText, coord);
+
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -242,14 +242,25 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            if (_previousLineWrapped)
+            bool previousLineWrapped = false;
+            if (_wrappedRow.has_value())
             {
+                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
+            }
+
+            if (previousLineWrapped)
+            {
+                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else
@@ -257,6 +268,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                 std::string seq = "\r\n";
                 hr = _Write(seq);
             }
+        }
+        else if (_delayedEolWrap)
+        {
+            // GH#1245, GH#357 - If we were in the delayed EOL wrap state, make
+            // sure to _manually_ position the cursor now, with a full CUP
+            // sequence, don't try and be clever with \b or \r or other control
+            // sequences. Different terminals (conhost, gnome-terminal, wt) all
+            // behave differently with how the cursor behaves at an end of line.
+            // This is the only solution that works in all of them, and also
+            // works wrapped lines emitted by conpty.
+            //
+            // Make sure to do this _after_ the possible \r\n branch above,
+            // otherwise we might accidentally break wrapped lines (GH#405)
+            hr = _CursorPosition(coord);
         }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
@@ -298,6 +323,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         _newBottomLine = false;
     }
     _deferredCursorPos = INVALID_COORDS;
+
+    _wrappedRow = std::nullopt;
+
+    _delayedEolWrap = false;
+
     return hr;
 }
 
@@ -313,19 +343,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
+try
 {
-    if (_scrollDelta.X != 0)
+    if (_scrollDelta.x() != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.Y == 0)
+    if (_scrollDelta.y() == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.Y;
+    const short dy = _scrollDelta.y<SHORT>();
     const short absDy = static_cast<short>(abs(dy));
 
     HRESULT hr = S_OK;
@@ -361,6 +392,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     return hr;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Notifies us that the console is attempting to scroll the existing screen
@@ -372,38 +404,23 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+try
 {
-    const short dx = pcoordDelta->X;
-    const short dy = pcoordDelta->Y;
+    const til::point delta{ *pcoordDelta };
 
-    if (dx != 0 || dy != 0)
+    if (delta != til::point{ 0, 0 })
     {
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+        _trace.TraceInvalidateScroll(delta);
 
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
+        // Scroll the current offset and invalidate the revealed area
+        _invalidMap.translate(delta, true);
 
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
-
-        COORD invalidScrollNew;
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
-
-        // Store if safemath succeeded
-        _scrollDelta = invalidScrollNew;
+        _scrollDelta += delta;
     }
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the
@@ -415,15 +432,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
-                                                   const bool /*trimLeft*/) noexcept
+                                                   const bool /*trimLeft*/,
+                                                   const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
 }
 
 // Method Description:
@@ -433,11 +454,23 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
 {
-    return _fUseAsciiOnly ?
-               VtEngine::_WriteTerminalAscii(wstr) :
-               VtEngine::_WriteTerminalUtf8(wstr);
+    RETURN_IF_FAILED(_fUseAsciiOnly ?
+                         VtEngine::_WriteTerminalAscii(wstr) :
+                         VtEngine::_WriteTerminalUtf8(wstr));
+    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // StateMachine, when we've encountered a string we don't understand. When
+    // this happens, we usually don't actually trigger another frame, but we
+    // _do_ want this string to immediately be sent to the terminal. Since we
+    // only flush our buffer on actual frames, this means that strings we've
+    // decided to pass through would have gotten buffered here until the next
+    // actual frame is triggered.
+    //
+    // To fix this, flush here, so this string is sent to the connected terminal
+    // application.
+
+    return _Flush();
 }
 
 // Method Description:

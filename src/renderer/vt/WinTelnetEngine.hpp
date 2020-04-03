@@ -39,7 +39,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
-        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring& wstr) noexcept override;
+        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view wstr) noexcept override;
 
     protected:
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept;

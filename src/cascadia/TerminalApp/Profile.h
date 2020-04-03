@@ -64,12 +64,13 @@ public:
 
     bool HasGuid() const noexcept;
     bool HasSource() const noexcept;
-    GUID GetGuid() const noexcept;
+    GUID GetGuid() const;
     void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
+    void SetGuid(GUID guid) noexcept { _guid = guid; }
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     std::optional<std::wstring>& GetSchemeName() noexcept;
@@ -89,9 +90,11 @@ public:
     bool HasIcon() const noexcept;
     winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
+    void ResetIconPath();
 
     bool HasBackgroundImage() const noexcept;
     winrt::hstring GetExpandedBackgroundImagePath() const;
+    void ResetBackgroundImagePath();
 
     CloseOnExitMode GetCloseOnExitMode() const noexcept;
     bool GetSuppressApplicationTitle() const noexcept;
@@ -100,6 +103,8 @@ public:
     void GenerateGuidIfNecessary() noexcept;
 
     static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
+
+    void SetRetroTerminalEffect(bool value) noexcept;
 
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -118,7 +123,12 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
+    static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
+    static std::wstring_view SerializeTextAntialiasingMode(const winrt::Microsoft::Terminal::Settings::TextAntialiasingMode antialiasingMode);
+
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
+
+    static bool _ConvertJsonToBool(const Json::Value& json);
 
     std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
@@ -132,12 +142,11 @@ private:
     std::optional<uint32_t> _defaultForeground;
     std::optional<uint32_t> _defaultBackground;
     std::optional<uint32_t> _selectionBackground;
-    std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
+    std::optional<uint32_t> _cursorColor;
     std::optional<std::wstring> _tabTitle;
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
-    uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 
@@ -159,8 +168,12 @@ private:
 
     std::optional<std::wstring> _icon;
 
+    winrt::Microsoft::Terminal::Settings::TextAntialiasingMode _antialiasingMode;
+
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppUnitTests::JsonTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
+
+    std::optional<bool> _retroTerminalEffect;
 };

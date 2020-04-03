@@ -24,40 +24,36 @@ namespace Microsoft::Console::Interactivity::Win32
     class UiaTextRange final : public Microsoft::Console::Types::UiaTextRangeBase
     {
     public:
-        static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                          _In_ IRawElementProviderSimple* pProvider,
-                                          _Out_ std::deque<WRL::ComPtr<UiaTextRange>>& ranges);
-
         UiaTextRange() = default;
 
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider);
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Cursor& cursor);
+                                       const Cursor& cursor,
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Endpoint start,
-                                       const Endpoint end,
-                                       const bool degenerate);
+                                       _In_ const COORD start,
+                                       _In_ const COORD end,
+                                       _In_ bool blockRange = false,
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // range from a UiaPoint
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const UiaPoint point);
+                                       const UiaPoint point,
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-        IFACEMETHODIMP FindText(_In_ BSTR text,
-                                _In_ BOOL searchBackward,
-                                _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
         void _ChangeViewport(const SMALL_RECT NewWindow) override;

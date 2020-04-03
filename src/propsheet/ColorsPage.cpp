@@ -178,12 +178,12 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
 
             // repaint new color
             hWnd = GetDlgItem(hDlg, ColorArray[iColor] + IDD_COLOR_1);
-            InvalidateRect(hWnd, NULL, TRUE);
+            InvalidateRect(hWnd, nullptr, TRUE);
 
             // repaint old color
             if (hWndOld != hWnd)
             {
-                InvalidateRect(hWndOld, NULL, TRUE);
+                InvalidateRect(hWndOld, nullptr, TRUE);
             }
 
             return TRUE;
@@ -247,11 +247,11 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
                              * Update the preview windows with the new value
                              */
                 hWnd = GetDlgItem(hDlg, IDD_COLOR_SCREEN_COLORS);
-                InvalidateRect(hWnd, NULL, FALSE);
+                InvalidateRect(hWnd, nullptr, FALSE);
                 hWnd = GetDlgItem(hDlg, IDD_COLOR_POPUP_COLORS);
-                InvalidateRect(hWnd, NULL, FALSE);
+                InvalidateRect(hWnd, nullptr, FALSE);
                 hWnd = GetDlgItem(hDlg, ColorArray[iColor] + IDD_COLOR_1);
-                InvalidateRect(hWnd, NULL, FALSE);
+                InvalidateRect(hWnd, nullptr, FALSE);
                 break;
             }
             return TRUE;
@@ -357,11 +357,11 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
         {
             hWnd = GetDlgItem(hDlg, IDD_COLOR_POPUP_COLORS);
         }
-        InvalidateRect(hWnd, NULL, TRUE);
+        InvalidateRect(hWnd, nullptr, TRUE);
 
         // repaint new color
         hWnd = GetDlgItem(hDlg, ColorArray[iColor] + IDD_COLOR_1);
-        InvalidateRect(hWnd, NULL, TRUE);
+        InvalidateRect(hWnd, nullptr, TRUE);
         SetFocus(hWnd);
 
         UpdateItem(hDlg, IDD_COLOR_RED, GetRValue(AttrToRGB(ColorArray[iColor])));
@@ -371,7 +371,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
         // repaint old color
         if (hWndOld != hWnd)
         {
-            InvalidateRect(hWndOld, NULL, TRUE);
+            InvalidateRect(hWndOld, nullptr, TRUE);
         }
         return TRUE;
 

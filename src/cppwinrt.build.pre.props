@@ -3,7 +3,7 @@
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
     <!-- 17134 is RS4, 17763 is RS5, 18362 is 19H1 -->
@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <!-- These settings tell MsBuild to treat the project as a "Universal Windows"
-       application. This includes doing things like creating a seperate
+       application. This includes doing things like creating a separate
        subdirectory for our binary output, and making sure that a wapproj looks
        at the winmd we build to generate type info.
        In general, cppwinrt projects all want this.

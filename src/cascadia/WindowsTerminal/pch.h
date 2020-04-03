@@ -30,6 +30,8 @@ Abstract:
 #include <shellscalingapi.h>
 #include <windowsx.h>
 
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#define BLOCK_TIL
 #include "../inc/LibraryIncludes.h"
 
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -63,3 +65,9 @@ Abstract:
 TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
+
+// For commandline argument processing
+#include <shellapi.h>
+#include <processenv.h>
+
+#include "til.h"

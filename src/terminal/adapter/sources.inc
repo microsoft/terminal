@@ -34,7 +34,6 @@ SOURCES= \
     ..\DispatchCommon.cpp \
     ..\InteractDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
-    ..\MouseInput.cpp \
     ..\terminalOutput.cpp \
     ..\telemetry.cpp \
     ..\tracing.cpp \

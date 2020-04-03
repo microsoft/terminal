@@ -248,10 +248,10 @@ bool WddmConEngine::IsInitialized()
             NewChar = &_displayState[rowIndex]->New[colIndex];
 
             OldChar->Character = NewChar->Character;
-            OldChar->Atribute = NewChar->Atribute;
+            OldChar->Attribute = NewChar->Attribute;
 
             NewChar->Character = L' ';
-            NewChar->Atribute = 0x0;
+            NewChar->Attribute = 0x0;
         }
     }
 
@@ -260,7 +260,8 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                      const COORD coord,
-                                                     const bool /*trimLeft*/) noexcept
+                                                     const bool /*trimLeft*/,
+                                                     const bool /*lineWrapped*/) noexcept
 {
     try
     {
@@ -275,10 +276,10 @@ bool WddmConEngine::IsInitialized()
             NewChar = &_displayState[coord.Y]->New[coord.X + i];
 
             OldChar->Character = NewChar->Character;
-            OldChar->Atribute = NewChar->Atribute;
+            OldChar->Attribute = NewChar->Attribute;
 
             NewChar->Character = clusters.at(i).GetTextAsSingle();
-            NewChar->Atribute = _currentLegacyColorAttribute;
+            NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
         return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
@@ -354,7 +355,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-SMALL_RECT WddmConEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -362,7 +363,7 @@ SMALL_RECT WddmConEngine::GetDirtyRectInChars()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return r;
+    return { r };
 }
 
 RECT WddmConEngine::GetDisplaySize()

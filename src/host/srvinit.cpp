@@ -269,7 +269,7 @@ void ConsoleCheckDebug()
     ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
     RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
 
-    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, 0, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, nullptr, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -447,7 +447,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 // Routine Description:
 // - This routine reads the connection information from a 'connect' IO, validates it and stores them in an internal format.
-// - N.B. The internal informat contains information not sent by clients in their connect IOs and intialized by other routines.
+// - N.B. The internal connection contains information not sent by clients in their connect IOs and initialized by other routines.
 // Arguments:
 // - Server - Supplies a handle to the console server.
 // - Message - Supplies the message representing the connect IO.

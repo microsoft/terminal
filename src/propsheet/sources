@@ -98,6 +98,7 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
+    $(ONECOREBASE_INTERNAL_LIB_VPATH_L)\ext-ms-win-appmodel-shellexecute-l1.lib \
     $(ONECOREWINDOWS_INTERNAL_LIB_PATH_L)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
 

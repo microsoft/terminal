@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8}</ProjectGuid>
+    <RootNamespace>TestHostApp</RootNamespace>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <OutputSubDir>Tests\Data</OutputSubDir>
+    <UseWmXml>true</UseWmXml>
+    <ConfigurationType>Application</ConfigurationType>
+    <NoOutputRedirection>true</NoOutputRedirection>
+
+    <!--
+    These two properties are very important!
+    Without them, msbuild will stomp MinVersion and MaxVersionTested in the
+    Package.appxmanifest and replace them with whatever our values for
+    TargetPlatformMinVersion and TargetPlatformVersion are.
+     -->
+    <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
+    <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
+
+  </PropertyGroup>
+
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+
+  <!-- This project is _heavily_ cribbed directly from the TAEF samples. In
+  order to avoid breaking this project, it's been left largely unmodified. The
+  only modifications are those near the bottom of the file:
+  * References to our dependent winrt projects (Connection, Settings, Control,
+    App)
+  * Manual copy steps to copy the actual test code (TerminalApp.LocalTests.dll)
+    and the dlls that TerminalConnection is dependent upon, but don't roll up
+    here for whatever reason.
+  -->
+
+  <!-- This is important: It somehow convinces the CI to not validate that
+    "taef.png" is actually in the package. taef.png will get copied to the
+    OutputPath when taef is run, but if this isn't set to false, then the CI
+    will try and make sure taef.png is in the OutputPath at build time.-->
+  
+  <PropertyGroup Label="UserMacros">
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+  </PropertyGroup>
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)
+        ;$(IntermediateOutputPath)
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(AdditionalDependencies);windowsapp.lib</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="UnitTestApp.xaml.h">
+      <DependentUpon>UnitTestApp.xaml</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="UnitTestApp.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="UnitTestApp.xaml.cpp">
+      <DependentUpon>UnitTestApp.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <!-- Reference all the WinRT projects that we want to role up into this test project. -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
+      <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
+    </ProjectReference>
+
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Some helper paths to find our test code -->
+    <_TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</_TestBinRoot>
+    <_CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</_CppWinrtBinRoot>
+    <_CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</_CppWinrtBinRoot>
+    <_TAEFPlatformName>$(Platform)</_TAEFPlatformName>
+    <_TAEFPlatformName Condition="'$(Platform)'=='Win32'">x86</_TAEFPlatformName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
+      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.51.200127004\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+
+      <!-- This path is _relative to the .winmd_ -->
+      <Implementation>..\build\Binaries\$(_TAEFPlatformName)\TE.AppxUnitTestClient.dll</Implementation>
+    </Reference>
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+
+  <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
+    don't roll these up automatically, so we'll need to copy them manually
+    (below)
+
+    The dependencies from TerminalConnection get rolled up in the
+    GetPackagingOutputs step, when it produces the "appx recipe". This means
+    they only show up when the build produces an AppX\ folder for either running
+    or packaging.
+
+    It is literally impossible to produce an AppX\ folder using MSBuild without
+    packaging an appx, and we don't want to do that anyway, so we use these copy
+    rules instead.
+  -->
+  <ItemGroup>
+      <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
+
+  <Target Name="AfterBuild">
+
+    <!-- Copy the AppxManifest.xml to another file, because when TAEF is
+      deploying the app, it'll delete the AppxManifest.xml file from this
+      directory when it tries to clean up after itself. -->
+    <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
+
+    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
+    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
+          DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
+
+    <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
+      get rolled up into this  directory -->
+    <Copy SourceFiles="@(TerminalConnectionDlls)"
+          DestinationFiles="@(TerminalConnectionDlls->'$(TargetDir)\%(Filename).dll')" />
+
+  </Target>
+</Project>

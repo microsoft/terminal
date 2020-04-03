@@ -46,7 +46,7 @@ class CommandNumberPopupTests
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
-        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
             return false;
@@ -56,7 +56,7 @@ class CommandNumberPopupTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        CommandHistory::s_Free((HANDLE)0);
+        CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
@@ -104,7 +104,7 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismissAllPopups)
     {
         Log::Comment(L"that that all popups are dismissed when CommandNumberPopup is dismissed");
-        // CommanNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
+        // CommandNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
         // popups when exiting
         // function to simulate user pressing escape key
         Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {

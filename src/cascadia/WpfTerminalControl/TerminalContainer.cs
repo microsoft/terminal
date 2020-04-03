@@ -72,6 +72,8 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         internal int Columns { get; private set; }
 
+        internal IntPtr Hwnd => this.hwnd;
+
         /// <summary>
         /// Sets the connection to the terminal backend.
         /// </summary>
@@ -172,7 +174,6 @@ namespace Microsoft.Terminal.Wpf
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
-
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
@@ -228,23 +229,6 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
-                        break;
-                    case NativeMethods.WindowMessage.WM_LBUTTONDOWN:
-                        this.LeftClickHandler((int)lParam);
-                        break;
-                    case NativeMethods.WindowMessage.WM_RBUTTONDOWN:
-                        if (NativeMethods.TerminalIsSelectionActive(this.terminal))
-                        {
-                            Clipboard.SetText(NativeMethods.TerminalGetSelection(this.terminal));
-                        }
-                        else
-                        {
-                            this.connection.WriteInput(Clipboard.GetText());
-                        }
-
-                        break;
-                    case NativeMethods.WindowMessage.WM_MOUSEMOVE:
-                        this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         NativeMethods.TerminalSetCursorVisible(this.terminal, true);

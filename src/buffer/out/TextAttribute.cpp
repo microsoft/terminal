@@ -155,11 +155,6 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     }
 }
 
-bool TextAttribute::_IsReverseVideo() const noexcept
-{
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
-}
-
 bool TextAttribute::IsLeadingByte() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
@@ -265,4 +260,13 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 bool TextAttribute::BackgroundIsDefault() const noexcept
 {
     return _background.IsDefault();
+}
+
+// Routine Description:
+// - Resets the meta and extended attributes, which is what the VT standard
+//      requires for most erasing and filling operations.
+void TextAttribute::SetStandardErase() noexcept
+{
+    SetExtendedAttributes(ExtendedAttributes::Normal);
+    SetMetaAttributes(0);
 }

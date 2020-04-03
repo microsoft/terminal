@@ -19,13 +19,11 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
-static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
-static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
@@ -49,6 +47,8 @@ static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
+static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
+static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 
 // Possible values for closeOnExit
 static constexpr std::string_view CloseOnExitAlways{ "always" };
@@ -83,6 +83,11 @@ static constexpr std::string_view ImageAlignmentTopRight{ "topRight" };
 static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
+// Possible values for TextAntialiasingMode
+static constexpr std::wstring_view AntialiasingModeGrayscale{ L"grayscale" };
+static constexpr std::wstring_view AntialiasingModeCleartype{ L"cleartype" };
+static constexpr std::wstring_view AntialiasingModeAliased{ L"aliased" };
+
 Profile::Profile() :
     Profile(std::nullopt)
 {
@@ -97,12 +102,11 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _defaultForeground{},
     _defaultBackground{},
     _selectionBackground{},
-    _colorTable{},
+    _cursorColor{},
     _tabTitle{},
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
-    _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -120,7 +124,9 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _backgroundImage{},
     _backgroundImageOpacity{},
     _backgroundImageStretchMode{},
-    _backgroundImageAlignment{}
+    _backgroundImageAlignment{},
+    _retroTerminalEffect{},
+    _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
 }
 
@@ -138,7 +144,7 @@ bool Profile::HasSource() const noexcept
     return _source.has_value();
 }
 
-GUID Profile::GetGuid() const noexcept
+GUID Profile::GetGuid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
@@ -162,18 +168,13 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    auto const colorTableCount = gsl::narrow_cast<int>(_colorTable.size());
-    for (int i = 0; i < colorTableCount; i++)
-    {
-        terminalSettings.SetColorTableEntry(i, _colorTable[i]);
-    }
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
-    terminalSettings.CursorColor(_cursorColor);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
     // Fill in the remaining properties from the profile
+    terminalSettings.ProfileName(_name);
     terminalSettings.UseAcrylic(_useAcrylic);
     terminalSettings.TintOpacity(_acrylicTransparency);
 
@@ -181,12 +182,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.FontSize(_fontSize);
     terminalSettings.Padding(_padding);
 
-    terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
+    terminalSettings.Commandline(_commandline);
 
     if (_startingDirectory)
     {
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
-        terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+        terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
     // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
@@ -218,6 +219,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     {
         terminalSettings.SelectionBackground(_selectionBackground.value());
     }
+    if (_cursorColor)
+    {
+        terminalSettings.CursorColor(_cursorColor.value());
+    }
 
     if (_scrollbarState)
     {
@@ -227,7 +232,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
     if (_backgroundImageOpacity)
@@ -247,6 +252,13 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
     }
+
+    if (_retroTerminalEffect)
+    {
+        terminalSettings.RetroTerminalEffect(_retroTerminalEffect.value());
+    }
+
+    terminalSettings.AntialiasingMode(_antialiasingMode);
 
     return terminalSettings;
 }
@@ -279,23 +291,17 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
     }
+    if (_cursorColor)
+    {
+        root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor.value());
+    }
     if (_schemeName)
     {
         const auto scheme = winrt::to_string(_schemeName.value());
         root[JsonKey(ColorSchemeKey)] = scheme;
     }
-    else
-    {
-        Json::Value tableArray{};
-        for (auto& color : _colorTable)
-        {
-            tableArray.append(Utils::ColorToHexString(color));
-        }
-        root[JsonKey(ColorTableKey)] = tableArray;
-    }
     root[JsonKey(HistorySizeKey)] = _historySize;
     root[JsonKey(SnapOnInputKey)] = _snapOnInput;
-    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
     // Only add the cursor height property if we're a legacy-style cursor.
     if (_cursorShape == CursorStyle::Vintage)
     {
@@ -362,6 +368,13 @@ Json::Value Profile::ToJson() const
     }
 
     root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
+
+    if (_retroTerminalEffect)
+    {
+        root[JsonKey(RetroTerminalEffectKey)] = _retroTerminalEffect.value();
+    }
+
+    root[JsonKey(AntialiasingModeKey)] = SerializeTextAntialiasingMode(_antialiasingMode).data();
 
     return root;
 }
@@ -572,6 +585,18 @@ std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignm
 }
 
 // Method Description:
+// - Helper function to convert a json value into a bool.
+//   Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - A bool
+bool Profile::_ConvertJsonToBool(const Json::Value& json)
+{
+    return json.asBool();
+}
+
+// Method Description:
 // - Layer values from the given json object on top of the existing properties
 //   of this object. For any keys we're expecting to be able to parse in the
 //   given object, we'll parse them and replace our settings with values from
@@ -586,19 +611,11 @@ std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignm
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
-    if (json.isMember(JsonKey(NameKey)))
-    {
-        auto name{ json[JsonKey(NameKey)] };
-        _name = GetWstringFromJson(name);
-    }
+    JsonUtils::GetWstring(json, NameKey, _name);
 
     JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
 
-    if (json.isMember(JsonKey(HiddenKey)))
-    {
-        auto hidden{ json[JsonKey(HiddenKey)] };
-        _hidden = hidden.asBool();
-    }
+    JsonUtils::GetBool(json, HiddenKey, _hidden);
 
     // Core Settings
     JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
@@ -607,49 +624,17 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
 
-    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
-    // TODO:GH#1069 deprecate old settings key
-    JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
+    JsonUtils::GetOptionalColor(json, CursorColorKey, _cursorColor);
 
-    // Only look for the "table" if there's no "schemeName"
-    if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
-        !(json.isMember(JsonKey(ColorSchemeKeyOld))) &&
-        json.isMember(JsonKey(ColorTableKey)))
-    {
-        auto colortable{ json[JsonKey(ColorTableKey)] };
-        int i = 0;
-        for (const auto& tableEntry : colortable)
-        {
-            if (tableEntry.isString())
-            {
-                const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                _colorTable[i] = color;
-            }
-            i++;
-        }
-    }
-    if (json.isMember(JsonKey(HistorySizeKey)))
-    {
-        auto historySize{ json[JsonKey(HistorySizeKey)] };
-        // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        _historySize = historySize.asInt();
-    }
-    if (json.isMember(JsonKey(SnapOnInputKey)))
-    {
-        auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
-        _snapOnInput = snapOnInput.asBool();
-    }
-    if (json.isMember(JsonKey(CursorColorKey)))
-    {
-        auto cursorColor{ json[JsonKey(CursorColorKey)] };
-        const auto color = Utils::ColorFromHexString(cursorColor.asString());
-        _cursorColor = color;
-    }
-    if (json.isMember(JsonKey(CursorHeightKey)))
-    {
-        auto cursorHeight{ json[JsonKey(CursorHeightKey)] };
-        _cursorHeight = cursorHeight.asUInt();
-    }
+    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+
+    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+    JsonUtils::GetInt(json, HistorySizeKey, _historySize);
+
+    JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
+
+    JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
+
     if (json.isMember(JsonKey(CursorShapeKey)))
     {
         auto cursorShape{ json[JsonKey(CursorShapeKey)] };
@@ -660,46 +645,25 @@ void Profile::LayerJson(const Json::Value& json)
     // Control Settings
     JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
 
-    if (json.isMember(JsonKey(CommandlineKey)))
-    {
-        auto commandline{ json[JsonKey(CommandlineKey)] };
-        _commandline = GetWstringFromJson(commandline);
-    }
-    if (json.isMember(JsonKey(FontFaceKey)))
-    {
-        auto fontFace{ json[JsonKey(FontFaceKey)] };
-        _fontFace = GetWstringFromJson(fontFace);
-    }
-    if (json.isMember(JsonKey(FontSizeKey)))
-    {
-        auto fontSize{ json[JsonKey(FontSizeKey)] };
-        _fontSize = fontSize.asInt();
-    }
-    if (json.isMember(JsonKey(AcrylicTransparencyKey)))
-    {
-        auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] };
-        _acrylicTransparency = acrylicTransparency.asFloat();
-    }
-    if (json.isMember(JsonKey(UseAcrylicKey)))
-    {
-        auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
-        _useAcrylic = useAcrylic.asBool();
-    }
-    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
-    {
-        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
-        _suppressApplicationTitle = suppressApplicationTitle.asBool();
-    }
+    JsonUtils::GetWstring(json, CommandlineKey, _commandline);
+
+    JsonUtils::GetWstring(json, FontFaceKey, _fontFace);
+
+    JsonUtils::GetInt(json, FontSizeKey, _fontSize);
+
+    JsonUtils::GetDouble(json, AcrylicTransparencyKey, _acrylicTransparency);
+
+    JsonUtils::GetBool(json, UseAcrylicKey, _useAcrylic);
+
+    JsonUtils::GetBool(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
+
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
         _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
     }
-    if (json.isMember(JsonKey(PaddingKey)))
-    {
-        auto padding{ json[JsonKey(PaddingKey)] };
-        _padding = GetWstringFromJson(padding);
-    }
+
+    JsonUtils::GetWstring(json, PaddingKey, _padding);
 
     JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
 
@@ -714,6 +678,14 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
 
     JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
+
+    JsonUtils::GetOptionalValue(json, RetroTerminalEffectKey, _retroTerminalEffect, Profile::_ConvertJsonToBool);
+
+    if (json.isMember(JsonKey(AntialiasingModeKey)))
+    {
+        auto antialiasingMode{ json[JsonKey(AntialiasingModeKey)] };
+        _antialiasingMode = ParseTextAntialiasingMode(GetWstringFromJson(antialiasingMode));
+    }
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -820,6 +792,14 @@ void Profile::SetIconPath(std::wstring_view path)
 }
 
 // Method Description:
+// - Resets the std::optional holding the icon file path string.
+//   HasIcon() will return false after the execution of this function.
+void Profile::ResetIconPath()
+{
+    _icon.reset();
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the
 //   empty string. This method will expand any environment variables in the
 //   path, if there are any.
@@ -850,6 +830,14 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     }
 
     return result;
+}
+
+// Method Description:
+// - Resets the std::optional holding the background image file path string.
+//   HasBackgroundImage() will return false after the execution of this function.
+void Profile::ResetBackgroundImagePath()
+{
+    _backgroundImage.reset();
 }
 
 // Method Description:
@@ -892,7 +880,7 @@ CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - true iff the profile chould be hidden from the list of profiles.
+// - true iff the profile should be hidden from the list of profiles.
 bool Profile::IsHidden() const noexcept
 {
     return _hidden;
@@ -1265,7 +1253,7 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
-    // our source to build the naespace guid, instead of using the default GUID.
+    // our source to build the namespace guid, instead of using the default GUID.
 
     const GUID namespaceGuid = source.has_value() ?
                                    Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :
@@ -1299,4 +1287,55 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     JsonUtils::GetOptionalString(json, SourceKey, source);
 
     return Profile::_GenerateGuidForProfile(name, source);
+}
+
+void Profile::SetRetroTerminalEffect(bool value) noexcept
+{
+    _retroTerminalEffect = value;
+}
+
+// Method Description:
+// - Helper function for converting a user-specified antialiasing mode
+//   corresponding TextAntialiasingMode enum value
+// Arguments:
+// - antialiasingMode: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& antialiasingMode)
+{
+    if (antialiasingMode == AntialiasingModeCleartype)
+    {
+        return TextAntialiasingMode::Cleartype;
+    }
+    else if (antialiasingMode == AntialiasingModeAliased)
+    {
+        return TextAntialiasingMode::Aliased;
+    }
+    else if (antialiasingMode == AntialiasingModeGrayscale)
+    {
+        return TextAntialiasingMode::Grayscale;
+    }
+    // default behavior for invalid data
+    return TextAntialiasingMode::Grayscale;
+}
+
+// Method Description:
+// - Helper function for converting a TextAntialiasingMode to its corresponding
+//   string value.
+// Arguments:
+// - antialiasingMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given TextAntialiasingMode
+std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingMode antialiasingMode)
+{
+    switch (antialiasingMode)
+    {
+    case TextAntialiasingMode::Cleartype:
+        return AntialiasingModeCleartype;
+    case TextAntialiasingMode::Aliased:
+        return AntialiasingModeAliased;
+    default:
+    case TextAntialiasingMode::Grayscale:
+        return AntialiasingModeGrayscale;
+    }
 }

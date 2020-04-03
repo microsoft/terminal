@@ -40,7 +40,7 @@ namespace Conhost.UIA.Tests
                     IntPtr handle = app.GetStdOutHandle();
                     Verify.IsNotNull(handle, "Ensure we have the output handle.");
 
-                    Log.Comment("Set up the window so the buffer is larger than the window. Retreive existing properties then set the viewport to smaller than the buffer.");
+                    Log.Comment("Set up the window so the buffer is larger than the window. Retrieve existing properties then set the viewport to smaller than the buffer.");
 
                     WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX info = app.GetScreenBufferInfo(handle);
 
@@ -111,7 +111,7 @@ namespace Conhost.UIA.Tests
                 default:
                     throw new NotSupportedException();
             }
-            
+
             afterScroll = app.GetScreenBufferInfo();
 
             switch (dir)
@@ -125,7 +125,7 @@ namespace Conhost.UIA.Tests
                 case ScrollDir.Horizontal:
                     // Scrolling "negative" horizontally is pushing the wheel left which makes lines move left.
                     // This means that if you scroll left, before = 3 and after = 0. 0 - 3 = -3.
-                    // The - sign of the detal here then alighs with the left = negative rule.
+                    // The - sign of the delta here then aligns with the left = negative rule.
                     deltaActual = afterScroll.srWindow.Left - beforeScroll.srWindow.Left;
                     break;
                 default:

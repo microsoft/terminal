@@ -17,6 +17,7 @@ Author(s):
 
 #include "../../renderer/inc/RenderEngineBase.hpp"
 
+#include "../../types/IUiaEventDispatcher.h"
 #include "../../types/inc/Viewport.hpp"
 
 namespace Microsoft::Console::Render
@@ -24,7 +25,7 @@ namespace Microsoft::Console::Render
     class UiaEngine final : public RenderEngineBase
     {
     public:
-        UiaEngine() noexcept;
+        UiaEngine(Microsoft::Console::Types::IUiaEventDispatcher* dispatcher);
 
         // Only one UiaEngine may present information at a time.
         // This ensures that an automation client isn't overwhelmed
@@ -52,7 +53,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               COORD const coord,
-                                              bool const fTrimLeft) noexcept override;
+                                              bool const fTrimLeft,
+                                              const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
@@ -69,7 +71,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() noexcept override;
+        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -79,5 +81,13 @@ namespace Microsoft::Console::Render
     private:
         bool _isEnabled;
         bool _isPainting;
+        bool _selectionChanged;
+        bool _textBufferChanged;
+        bool _cursorChanged;
+
+        Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
+
+        std::vector<SMALL_RECT> _prevSelection;
+        til::point _prevCursorPos;
     };
 }

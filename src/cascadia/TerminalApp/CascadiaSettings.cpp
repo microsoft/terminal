@@ -64,6 +64,34 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 }
 
 // Method Description:
+// - Finds a GUID associated with the given profile name. If no profile matches
+//      the profile name, returns a std::nullopt.
+// Arguments:
+// - profileName: the name of the profile's GUID to return.
+// Return Value:
+// - the GUID associated with the profile name.
+std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) const noexcept
+{
+    std::optional<GUID> profileGuid{};
+
+    for (const auto& profile : _profiles)
+    {
+        if (profileName == profile.GetName())
+        {
+            try
+            {
+                profileGuid = profile.GetGuid();
+            }
+            CATCH_LOG();
+
+            break;
+        }
+    }
+
+    return profileGuid;
+}
+
+// Method Description:
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
 // Arguments:
@@ -75,41 +103,16 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
-        if (profile.GetGuid() == profileGuid)
+        try
         {
-            return &profile;
+            if (profile.GetGuid() == profileGuid)
+            {
+                return &profile;
+            }
         }
+        CATCH_LOG();
     }
     return nullptr;
-}
-
-// Method Description:
-// - Create a TerminalSettings object from the given profile.
-//      If the profileGuidArg is not provided, this method will use the default
-//      profile.
-//   The TerminalSettings object that is created can be used to initialize both
-//      the Control's settings, and the Core settings of the terminal.
-// Arguments:
-// - profileGuidArg: an optional GUID to use to lookup the profile to create the
-//      settings from. If this arg is not provided, or the GUID does not match a
-//       profile, then this method will use the default profile.
-// Return Value:
-// - <none>
-TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
-{
-    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
-    const Profile* const profile = FindProfile(profileGuid);
-    if (profile == nullptr)
-    {
-        throw E_INVALIDARG;
-    }
-
-    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
-
-    // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplyToSettings(result);
-
-    return result;
 }
 
 // Method Description:
@@ -195,13 +198,19 @@ void CascadiaSettings::_ValidateSettings()
     // just use the hardcoded defaults
     _ValidateAllSchemesExist();
 
+    // Ensure all profile's with specified images resources have valid file path.
+    // This validates icons and background images.
+    _ValidateMediaResources();
+
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
 
-    // TODO:GH#3522 With variable args to keybindings, it's possible that a user
+    // GH#3522 - With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+    // This will also catch other keybinding warnings, like from GH#4239
+    _ValidateKeybindings();
 }
 
 // Method Description:
@@ -225,7 +234,7 @@ void CascadiaSettings::_ValidateProfilesExist()
 // Method Description:
 // - Walks through each profile, and ensures that they had a GUID set at some
 //   point. If the profile did _not_ have a GUID ever set for it, generate a
-//   temporary runtime GUID for it. This valitation does not add any warnnings.
+//   temporary runtime GUID for it. This validation does not add any warnings.
 void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
     for (auto& profile : _profiles)
@@ -235,7 +244,7 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 }
 
 // Method Description:
-// - Checks if the "globals.defaultProfile" is set to one of the profiles we
+// - Checks if the "defaultProfile" is set to one of the profiles we
 //   actually have. If the value is unset, or the value is set to something that
 //   doesn't exist in the list of profiles, we'll arbitrarily pick the first
 //   profile to use temporarily as the default.
@@ -276,7 +285,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 {
     bool foundDupe = false;
 
-    std::vector<size_t> indiciesToDelete;
+    std::vector<size_t> indicesToDelete;
 
     std::set<GUID> uniqueGuids;
 
@@ -287,13 +296,13 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
         if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
             foundDupe = true;
-            indiciesToDelete.push_back(i);
+            indicesToDelete.push_back(i);
         }
     }
 
     // Remove all the duplicates we've marked
     // Walk backwards, so we don't accidentally shift any of the elements
-    for (auto iter = indiciesToDelete.rbegin(); iter != indiciesToDelete.rend(); iter++)
+    for (auto iter = indicesToDelete.rbegin(); iter != indicesToDelete.rend(); iter++)
     {
         _profiles.erase(_profiles.begin() + *iter);
     }
@@ -418,5 +427,249 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     if (foundInvalidScheme)
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+    }
+}
+
+// Method Description:
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
+//   This does not verify that the icon or background image files are encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_ValidateMediaResources()
+{
+    bool invalidBackground{ false };
+    bool invalidIcon{ false };
+
+    for (auto& profile : _profiles)
+    {
+        if (profile.HasBackgroundImage())
+        {
+            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+            // This covers file paths on the machine, app data, URLs, and other resource paths.
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+            }
+            catch (...)
+            {
+                profile.ResetBackgroundImagePath();
+                invalidBackground = true;
+            }
+        }
+
+        if (profile.HasIcon())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+            }
+            catch (...)
+            {
+                profile.ResetIconPath();
+                invalidIcon = true;
+            }
+        }
+    }
+
+    if (invalidBackground)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+    }
+
+    if (invalidIcon)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
+    }
+}
+
+// Method Description:
+// - Create a TerminalSettings object for the provided newTerminalArgs. We'll
+//   use the newTerminalArgs to look up the profile that should be used to
+//   create these TerminalSettings. Then, we'll apply settings contained in the
+//   newTerminalArgs to the profile's settings, to enable customization on top
+//   of the profile's default values.
+// Arguments:
+// - newTerminalArgs: An object that may contain a profile name or GUID to
+//   actually use. If the Profile value is not a guid, we'll treat it as a name,
+//   and attempt to look the profile up by name instead.
+//   * Additionally, we'll use other values (such as Commandline,
+//     StartingDirectory) in this object to override the settings directly from
+//     the profile.
+// Return Value:
+// - the GUID of the created profile, and a fully initialized TerminalSettings object
+std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
+{
+    const GUID profileGuid = _GetProfileForArgs(newTerminalArgs);
+    auto settings = BuildSettings(profileGuid);
+
+    if (newTerminalArgs)
+    {
+        // Override commandline, starting directory if they exist in newTerminalArgs
+        if (!newTerminalArgs.Commandline().empty())
+        {
+            settings.Commandline(newTerminalArgs.Commandline());
+        }
+        if (!newTerminalArgs.StartingDirectory().empty())
+        {
+            settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+        }
+        if (!newTerminalArgs.TabTitle().empty())
+        {
+            settings.StartingTitle(newTerminalArgs.TabTitle());
+        }
+    }
+
+    return { profileGuid, settings };
+}
+
+// Method Description:
+// - Create a TerminalSettings object for the profile with a GUID matching the
+//   provided GUID. If no profile matches this GUID, then this method will
+//   throw.
+// Arguments:
+// - profileGuid: The GUID of a profile to use to create a settings object for.
+// Return Value:
+// - the GUID of the created profile, and a fully initialized TerminalSettings object
+TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
+{
+    const Profile* const profile = FindProfile(profileGuid);
+    THROW_HR_IF_NULL(E_INVALIDARG, profile);
+
+    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
+
+    // Place our appropriate global settings into the Terminal Settings
+    _globals.ApplyToSettings(result);
+
+    return result;
+}
+
+// Method Description:
+// - Helper to get the GUID of a profile, given an optional index and a possible
+//   "profile" value to override that.
+// - First, we'll try looking up the profile for the given index. This will
+//   either get us the GUID of the Nth profile, or the GUID of the default
+//   profile.
+// - Then, if there was a Profile set in the NewTerminalArgs, we'll use that to
+//   try and look the profile up by either GUID or name.
+// Arguments:
+// - index: if provided, the index in the list of profiles to get the GUID for.
+//   If omitted, instead use the default profile's GUID
+// - newTerminalArgs: An object that may contain a profile name or GUID to
+//   actually use. If the Profile value is not a guid, we'll treat it as a name,
+//   and attempt to look the profile up by name instead.
+// Return Value:
+// - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
+GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
+{
+    std::optional<int> profileIndex{ std::nullopt };
+    if (newTerminalArgs &&
+        newTerminalArgs.ProfileIndex() != nullptr)
+    {
+        profileIndex = newTerminalArgs.ProfileIndex().Value();
+    }
+    GUID profileGuid = _GetProfileForIndex(profileIndex);
+
+    if (newTerminalArgs)
+    {
+        const auto profileString = newTerminalArgs.Profile();
+
+        // First, try and parse the "profile" argument as a GUID. If it's a
+        // GUID, and the GUID of one of our profiles, then use that as the
+        // profile GUID instead. If it's not, then try looking it up as a
+        // name of a profile. If it's still not that, then just ignore it.
+        if (!profileString.empty())
+        {
+            bool wasGuid = false;
+
+            // Do a quick heuristic check - is the profile 38 chars long (the
+            // length of a GUID string), and does it start with '{'? Because if
+            // it doesn't, it's _definitely_ not a GUID.
+            if (profileString.size() == 38 && profileString[0] == L'{')
+            {
+                try
+                {
+                    const auto newGUID = Utils::GuidFromString(profileString.c_str());
+                    if (FindProfile(newGUID))
+                    {
+                        profileGuid = newGUID;
+                        wasGuid = true;
+                    }
+                }
+                CATCH_LOG();
+            }
+
+            // Here, we were unable to use the profile string as a GUID to
+            // lookup a profile. Instead, try using the string to look the
+            // Profile up by name.
+            if (!wasGuid)
+            {
+                const auto guidFromName = FindGuid(profileString.c_str());
+                if (guidFromName.has_value())
+                {
+                    profileGuid = guidFromName.value();
+                }
+            }
+        }
+    }
+
+    return profileGuid;
+}
+
+// Method Description:
+// - Helper to find the profile GUID for a the profile at the given index in the
+//   list of profiles. If no index is provided, this instead returns the default
+//   profile's guid. This is used by the NewTabProfile<N> ShortcutActions to
+//   create a tab for the Nth profile in the list of profiles.
+// Arguments:
+// - index: if provided, the index in the list of profiles to get the GUID for.
+//   If omitted, instead return the default profile's GUID
+// Return Value:
+// - the Nth profile's GUID, or the default profile's GUID
+GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
+{
+    GUID profileGuid;
+    if (index)
+    {
+        const auto realIndex = index.value();
+        // If we don't have that many profiles, then do nothing.
+        if (realIndex < 0 ||
+            realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
+        {
+            return _globals.GetDefaultProfile();
+        }
+        const auto& selectedProfile = _profiles.at(realIndex);
+        profileGuid = selectedProfile.GetGuid();
+    }
+    else
+    {
+        // get Guid for the default profile
+        profileGuid = _globals.GetDefaultProfile();
+    }
+    return profileGuid;
+}
+
+// Method Description:
+// - If there were any warnings we generated while parsing the user's
+//   keybindings, add them to the list of warnings here. If there were warnings
+//   generated in this way, we'll add a AtLeastOneKeybindingWarning, which will
+//   act as a header for the other warnings
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ValidateKeybindings()
+{
+    auto keybindingWarnings = _globals.GetKeybindingsWarnings();
+
+    if (!keybindingWarnings.empty())
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
     }
 }

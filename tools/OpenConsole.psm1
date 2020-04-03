@@ -159,7 +159,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -181,14 +181,17 @@ function Invoke-OpenConsoleTests()
         return
     }
     $OpenConsolePlatform = $Platform
+    $TestHostAppPath = "$env:OpenConsoleRoot\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
+        $TestHostAppPath = "$env:OpenConsoleRoot\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
-    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.38.190610001-uapadmin\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.51.200127004\build\Binaries\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
+
     [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 
     # check if WinAppDriver needs to be started
@@ -222,6 +225,11 @@ function Invoke-OpenConsoleTests()
     {
         if ($t.type -eq "unit")
         {
+            if ($t.runInHostApp -eq "true")
+            {
+                & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
+            }
+
             & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
@@ -318,11 +326,21 @@ function Invoke-ClangFormat {
         [string[]]$Path
     )
 
+    Begin {
+        $BatchSize = [int]64
+        $Paths = @()
+    }
+
     Process {
         ForEach($_ in $Path) {
+            $Paths += Get-Item $_ -ErrorAction Stop | Select -Expand FullName
+        }
+    }
+
+    End {
+        For($i = [int]0; $i -Lt $Paths.Length; $i += $BatchSize) {
             Try {
-                $n = Get-Item $_ -ErrorAction Stop | Select -Expand FullName
-                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $n
+                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $Paths[$i .. ($i + $BatchSize - 1)]
             } Catch {
                 Write-Error $_
             }
