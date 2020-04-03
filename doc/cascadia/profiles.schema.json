@@ -783,37 +783,15 @@
       "type": "array"
     }
   },
-  "oneOf": [
+  "allOf": [
+    { "$ref": "#/definitions/Globals" },
     {
-      "allOf": [
-        { "$ref": "#/definitions/Globals" },
-        {
-          "additionalItems": true,
-          "properties": {
-            "profiles": {
-              "oneOf": [
-              { "$ref": "#/definitions/ProfileList" },
-              { "$ref": "#/definitions/ProfilesObject" }
-              ]
-            },
-            "schemes": { "$ref": "#/definitions/SchemeList" }
-          },
-          "required": [
-            "profiles",
-            "schemes",
-            "defaultProfile"
-          ]
-        }
-      ]
-    },
-    {
-      "additionalItems": false,
+      "additionalItems": true,
       "properties": {
-        "globals": { "$ref": "#/definitions/Globals" },
         "profiles": {
           "oneOf": [
-          { "$ref": "#/definitions/ProfileList" },
-          { "$ref": "#/definitions/ProfilesObject" }
+            { "$ref": "#/definitions/ProfileList" },
+            { "$ref": "#/definitions/ProfilesObject" }
           ]
         },
         "schemes": { "$ref": "#/definitions/SchemeList" }
@@ -821,7 +799,7 @@
       "required": [
         "profiles",
         "schemes",
-        "globals"
+        "defaultProfile"
       ]
     }
   ]
