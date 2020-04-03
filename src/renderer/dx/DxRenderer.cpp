@@ -889,6 +889,15 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
+    // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
+    // Yes, this will further impact the performance of retro terminal effects.
+    // But we're talking about running the entire display pipeline through a shader for
+    // cosmetic effect, so performance isn't likely the top concern with this feature.
+    if (_retroTerminalEffects)
+    {
+        _invalidMap.set_all();
+    }
+
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         const auto invalidatedStr = _invalidMap.to_string();
