@@ -279,15 +279,8 @@ namespace winrt::TerminalApp::implementation
             }
         } };
 
-        FrameworkElement::Loaded_revoker loadedRevoker{};
-        if (dialog.Parent()) // Dialog is already in a visual tree
-        {
-            themingLambda(dialog, nullptr);
-        }
-        else
-        {
-            loadedRevoker = dialog.Loaded(winrt::auto_revoke, themingLambda);
-        }
+        themingLambda(dialog, nullptr); // if it's already in the tree
+        auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
         co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
