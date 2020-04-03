@@ -22,6 +22,7 @@ Author(s):
 #include "../buffer/out/textBuffer.hpp"
 #include "IUiaData.h"
 #include "unicode.hpp"
+#include "IUiaTraceable.h"
 
 #include <UIAutomationCore.h>
 #include <deque>
@@ -32,18 +33,10 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-typedef unsigned long long IdType;
-constexpr IdType InvalidId = 0;
-
 namespace Microsoft::Console::Types
 {
-    class UiaTracing;
-
-    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
+    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>, public IUiaTraceable
     {
-    private:
-        static IdType id;
-
     protected:
         // indicates which direction a movement operation
         // is going
@@ -84,7 +77,6 @@ namespace Microsoft::Console::Types
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
         ~UiaTextRangeBase() = default;
 
-        const IdType GetId() const noexcept;
         const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
@@ -140,10 +132,6 @@ namespace Microsoft::Console::Types
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
         void Initialize(_In_ const UiaPoint point);
-
-        // used to debug objects passed back and forth
-        // between the provider and the client
-        IdType _id{};
 
         // measure units in the form [_start, _end).
         // These are in the TextBuffer coordinate space.
