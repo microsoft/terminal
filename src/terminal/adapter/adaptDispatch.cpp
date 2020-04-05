@@ -1663,9 +1663,21 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
+    bool success = true;
+
+    // If in the alt buffer, switch back to main before doing anything else.
+    if (_usingAltBuffer)
+    {
+        success = _pConApi->PrivateUseMainScreenBuffer();
+        _usingAltBuffer = !success;
+    }
+
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
-    bool success = SoftReset();
+    if (success)
+    {
+        success = SoftReset();
+    }
 
     // Clears the screen - Needs to be done in two operations.
     if (success)
