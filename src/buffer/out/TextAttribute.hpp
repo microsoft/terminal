@@ -40,14 +40,13 @@ public:
     {
     }
 
-    constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
-        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
+    TextAttribute(const WORD wLegacyAttr) noexcept :
+        _wAttrLegacy{},
+        _foreground{},
+        _background{},
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
-        // If we're given lead/trailing byte information with the legacy color, strip it.
-        WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
+        SetFromLegacy(wLegacyAttr);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground,
@@ -63,7 +62,14 @@ public:
     {
         const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
+        WORD meta = (_wAttrLegacy & META_ATTRS);
+        if (_foreground.IsDefault() || _background.IsDefault())
+        {
+            WI_ClearAllFlags(meta, COMMON_HAX_MASK);
+            WI_SetFlag(meta, COMMON_HAX_USE_ALT_META_MEANINGS);
+            WI_UpdateFlag(meta, COMMON_HAX_META_FG_DEFAULT, _foreground.IsDefault());
+            WI_UpdateFlag(meta, COMMON_HAX_META_BG_DEFAULT, _background.IsDefault());
+        }
         return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
     }
 
@@ -86,7 +92,14 @@ public:
         const BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
         const BYTE fg = (fgIndex & FG_ATTRS);
         const BYTE bg = (bgIndex << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
+        WORD meta = (_wAttrLegacy & META_ATTRS);
+        if (_foreground.IsDefault() || _background.IsDefault())
+        {
+            WI_ClearAllFlags(meta, COMMON_HAX_MASK);
+            WI_SetFlag(meta, COMMON_HAX_USE_ALT_META_MEANINGS);
+            WI_UpdateFlag(meta, COMMON_HAX_META_FG_DEFAULT, _foreground.IsDefault());
+            WI_UpdateFlag(meta, COMMON_HAX_META_BG_DEFAULT, _background.IsDefault());
+        }
         return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
     }
 

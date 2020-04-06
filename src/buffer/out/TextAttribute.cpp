@@ -64,6 +64,7 @@ void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 {
     WI_UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
+    WI_ClearAllFlags(_wAttrLegacy, COMMON_HAX_MASK);
 }
 
 WORD TextAttribute::GetMetaAttributes() const noexcept
@@ -72,6 +73,7 @@ WORD TextAttribute::GetMetaAttributes() const noexcept
     WI_ClearAllFlags(wMeta, FG_ATTRS);
     WI_ClearAllFlags(wMeta, BG_ATTRS);
     WI_ClearAllFlags(wMeta, COMMON_LVB_SBCSDBCS);
+    WI_ClearAllFlags(wMeta, COMMON_HAX_MASK);
     return wMeta;
 }
 
@@ -93,6 +95,18 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
     const BYTE bgIndex = gsl::narrow_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
+    if (WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_USE_ALT_META_MEANINGS))
+    {
+        if (WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_META_FG_DEFAULT))
+        {
+            _foreground.SetDefault();
+        }
+        if (WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_META_BG_DEFAULT))
+        {
+            _background.SetDefault();
+        }
+        WI_ClearAllFlags(_wAttrLegacy, COMMON_HAX_MASK); // don't pollute the LVB region
+    }
 }
 
 void TextAttribute::SetLegacyAttributes(const WORD attrs,
@@ -109,6 +123,18 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
     {
         const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
         _background = TextColor(bgIndex);
+    }
+    if (WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_USE_ALT_META_MEANINGS))
+    {
+        if (setForeground && WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_META_FG_DEFAULT))
+        {
+            _foreground.SetDefault();
+        }
+        if (setBackground && WI_IsFlagSet(_wAttrLegacy, COMMON_HAX_META_BG_DEFAULT))
+        {
+            _background.SetDefault();
+        }
+        WI_ClearAllFlags(_wAttrLegacy, COMMON_HAX_MASK); // don't pollute the LVB region
     }
     if (setMeta)
     {
