@@ -1,3 +1,14 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
+
 pr:
   branches:
     include:
@@ -26,7 +37,13 @@ jobs:
       platform: x64
 
   - template: ./templates/build-console-ci.yml
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     parameters:
       platform: x86
+
+  - template: ./templates/build-console-ci.yml
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    parameters:
+      platform: ARM64
 
   - template: ./templates/check-formatting.yml
