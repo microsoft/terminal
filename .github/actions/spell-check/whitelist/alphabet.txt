@@ -9,6 +9,7 @@ abcdefghijk
 abcdefghijklmnop
 ABCDEFGHIJKLMNOPQRST
 abcdefghijklmnopqrstuvwxyz
+BBBBB
 BBBBBBBBBB
 CCCCCCCCCC
 QQQQQ
