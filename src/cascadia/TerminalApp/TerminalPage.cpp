@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
+#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -234,24 +235,22 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            return ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().ApplicationDisplayName();
+            return appLogic->ApplicationDisplayName();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+        return RS_(L"ApplicationDisplayNameUnpackaged");
     }
 
     winrt::hstring TerminalPage::ApplicationVersion()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            return ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().ApplicationVersion();
+            return appLogic->ApplicationVersion();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_VersionUnknown");
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // Method Description:

@@ -138,6 +138,29 @@ catch (...)
 
 namespace winrt::TerminalApp::implementation
 {
+    // Function Description:
+    // - Get the AppLogic for the current active Xaml application, or null if there isn't one.
+    // Return value:
+    // - A pointer (bare) to the applogic, or nullptr. The app logic outlives all other objects,
+    //   unless the application is in a terrible way, so this is "safe."
+    AppLogic* AppLogic::Current() noexcept
+    try
+    {
+        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appLogicPointer{ winrt::get_self<AppLogic>(currentXamlApp.Logic()) })
+            {
+                return appLogicPointer;
+            }
+        }
+        return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return nullptr;
+    }
+
     AppLogic::AppLogic() :
         _dialogLock{},
         _loadedInitialSettings{ false },
@@ -871,7 +894,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
-        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+        return RS_(L"ApplicationDisplayNameUnpackaged");
     }
 
     winrt::hstring AppLogic::ApplicationVersion() const
@@ -885,7 +908,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
-        return RS_(L"AboutDialog_VersionUnknown");
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // -------------------------------- WinRT Events ---------------------------------

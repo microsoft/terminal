@@ -31,29 +31,13 @@ static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af
 static constexpr std::wstring_view DEFAULT_WINDOWS_POWERSHELL_GUID{ L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}" };
 
 // Method Description:
-// - Returns the active application logic singleton
-// Throws:
-// - HR E_INVALIDARG if the app isn't up and running.
-static auto GetAppLogic()
-{
-    auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().as<winrt::TerminalApp::App>() };
-    THROW_HR_IF_NULL(E_INVALIDARG, currentXamlApp);
-
-    auto appLogicPointer = winrt::get_self<winrt::TerminalApp::implementation::AppLogic>(currentXamlApp.Logic());
-    THROW_HR_IF_NULL(E_INVALIDARG, appLogicPointer);
-
-    winrt::com_ptr<winrt::TerminalApp::implementation::AppLogic> appLogic;
-    appLogic.copy_from(appLogicPointer);
-    return appLogic;
-}
-
-// Method Description:
 // - Returns the settings currently in use by the entire Terminal application.
 // Throws:
 // - HR E_INVALIDARG if the app isn't up and running.
 const CascadiaSettings& CascadiaSettings::GetCurrentAppSettings()
 {
-    auto appLogic{ GetAppLogic() };
+    auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
+    THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
     return *(appLogic->GetSettings());
 }
 
@@ -689,6 +673,14 @@ void CascadiaSettings::_ValidateKeybindings()
     }
 }
 
+// Method Description
+// - Replaces known tokens DEFAULT_PROFILE, PRODUCT and VERSION in the settings template
+//   with their expected values. DEFAULT_PROFILE is updated to match PowerShell Core's GUID
+//   if such a profile is detected. If it isn't, it'll be set to Windows PowerShell's GUID.
+// Arguments:
+// - settingsTemplate: a settings template
+// Return value:
+// - The new settings string.
 std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const
 {
     std::string finalSettings{ settingsTemplate };
@@ -707,7 +699,11 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     }
 
     replace(finalSettings, "%DEFAULT_PROFILE%", til::u16u8(defaultProfileGuid));
-    replace(finalSettings, "%VERSION%", til::u16u8(GetAppLogic()->ApplicationVersion()));
-    replace(finalSettings, "%PRODUCT%", til::u16u8(GetAppLogic()->ApplicationDisplayName()));
+    if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+    {
+        replace(finalSettings, "%VERSION%", til::u16u8(appLogic->ApplicationVersion()));
+        replace(finalSettings, "%PRODUCT%", til::u16u8(appLogic->ApplicationDisplayName()));
+    }
+
     return finalSettings;
 }

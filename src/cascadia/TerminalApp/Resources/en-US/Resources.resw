@@ -266,11 +266,11 @@ Temporarily using the Windows Terminal default settings.
     <value>Privacy Policy</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
-  <data name="AboutDialog_DisplayNameUnpackaged" xml:space="preserve">
+  <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Windows Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
-  <data name="AboutDialog_VersionUnknown" xml:space="preserve">
+  <data name="ApplicationVersionUnknown" xml:space="preserve">
     <value>Unknown</value>
     <comment>This is displayed when the version of the application cannot be determined</comment>
   </data>

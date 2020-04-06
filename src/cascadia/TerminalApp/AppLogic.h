@@ -15,6 +15,8 @@ namespace winrt::TerminalApp::implementation
     struct AppLogic : AppLogicT<AppLogic>
     {
     public:
+        static AppLogic* Current() noexcept;
+
         AppLogic();
         ~AppLogic() = default;
 
