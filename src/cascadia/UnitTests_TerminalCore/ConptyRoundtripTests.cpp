@@ -1814,7 +1814,14 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
 void ConptyRoundtripTests::MarginsWithStatusLine()
 {
     // See https://github.com/microsoft/terminal/issues/5161
-    Log::Comment(L"TODO: description");
+    //
+    // This test reproduces a case from the MSYS/cygwin vim. From what I can
+    // tell, they implement scrolling by emitting a newline at the bototm of the
+    // buffer (to create a new blank line), then they use
+    // ScrollConsoleScreenBuffer to shift the status line(s) down a line, and
+    // then they repring the status line.
+    Log::Comment(L"Newline, and scroll the bottom lines of the buffer down with"
+                 L" ScrollConsoleScreenBuffer to emulate how cygwin VIM works");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -1841,16 +1848,21 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
         TestUtils::VerifyExpectedString(tb, L"YCCCCCCCCC", til::point{ 0, lastRow });
     };
 
-    _logConpty = true;
     // We're _not_ checking the conpty output during this test, only the side effects.
     _checkConptyOutput = false;
 
+    // Use DECALN to fill the buffer with 'E's.
     hostSm.ProcessString(L"\x1b#8");
 
     const short originalBottom = si.GetViewport().BottomInclusive();
+    // Print 3 lines into the bottom of the buffer:
+    // AAAAAAAAAA
+    // BBBBBBBBBB
+    // CCCCCCCCCC
+    // In this test, the 'B' and 'C' lines represent the status lines at the
+    // bottom of vim, and the 'A' line is a buffer line.
     hostSm.ProcessString(L"\x1b[30;1H");
-    // COORD nearBottom{ 0, originalBottom - 2 };
-    // SetConsoleCursorPosition(hOut, nearBottom);
+
     hostSm.ProcessString(L"AAAAAAAAAA");
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"BBBBBBBBBB");
@@ -1860,63 +1872,31 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    // Sleep(1000);
-    // COORD atBottom{ 0, height };
-    // SetConsoleCursorPosition(hOut, nearBottom);
+    // After printing the 'C' line, the cursor is on the bottom line of the viewport.
+    // Emit a newline here to get a new line at the bottom of the viewport.
     hostSm.ProcessString(L"\n");
     const short newBottom = si.GetViewport().BottomInclusive();
-    // Sleep(1000);
 
-    // CHAR_INFO clear;
-    // clear.Char.UnicodeChar = L' ';
-    // clear.Attributes = csbiex.wAttributes;
-    DebugBreak();
-    SMALL_RECT src;
-    src.Top = newBottom - 2;
-    src.Left = 0;
-    src.Right = si.GetViewport().Width();
-    src.Bottom = originalBottom;
-    COORD tgt = { 0, newBottom - 1 };
-    // ScrollConsoleScreenBuffer(hOut, &src, nullptr, tgt, &clear);
-    TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
-    ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+    {
+        // Emulate calling ScrollConsoleScreenBuffer to scroll the B and C lines
+        // down one line.
+        SMALL_RECT src;
+        src.Top = newBottom - 2;
+        src.Left = 0;
+        src.Right = si.GetViewport().Width();
+        src.Bottom = originalBottom;
+        COORD tgt = { 0, newBottom - 1 };
+        TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
+        ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+    }
 
-    // Sleep(1000);
-    // COORD statusLine{ 0, newBottom - 1 };
-    // SetConsoleCursorPosition(hOut, statusLine);
+    // Move the cursor to the location of the B line
     hostSm.ProcessString(L"\x1b[31;1H");
 
+    // Print an 'X' on the 'B' line, and a 'Y' on the 'C' line.
     hostSm.ProcessString(L"X");
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"Y");
-
-    // hostSm.ProcessString(L"\x1b[1;30r");
-    // hostSm.ProcessString(L"\x1b[30;1H");
-
-    // hostSm.ProcessString(L"\x1b[J");
-    // hostSm.ProcessString(L"AAAAAAAAAA");
-    // hostSm.ProcessString(L"\x1b[K");
-    // hostSm.ProcessString(L"\r");
-    // hostSm.ProcessString(L"\n");
-    // hostSm.ProcessString(L"BBBBBBBBBB");
-    // hostSm.ProcessString(L"\x1b[K");
-    // hostSm.ProcessString(L"\n");
-    // hostSm.ProcessString(L"CCCCCCCCCC");
-    // hostSm.ProcessString(L"\x1b[2A");
-    // hostSm.ProcessString(L"\r");
-    // hostSm.ProcessString(L"\x1b[20C");
-    // hostSm.ProcessString(L"DDDDDDDDDD");
-    // hostSm.ProcessString(L"\x1b[K");
-    // hostSm.ProcessString(L"\r");
-    // hostSm.ProcessString(L"\n");
-    // hostSm.ProcessString(L"\x1b[1B");
-    // hostSm.ProcessString(L"EEEEEEEEEE");
-    // hostSm.ProcessString(L"\r");
-    // hostSm.ProcessString(L"FFFFFFFFF");
-    // hostSm.ProcessString(L"\r");
-    // hostSm.ProcessString(L"\x1b[A");
-    // hostSm.ProcessString(L"\x1b[A");
-    // hostSm.ProcessString(L"\n");
 
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(hostTb, si.GetViewport().ToInclusive());
