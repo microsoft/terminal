@@ -67,7 +67,7 @@ This does not affect reliability.
 
 ### Compatibility
 
-This breaks the existing behavior of always copying the formatting. The justification for breaking this default behavior is in the response from the community saying the default should be plain text only.
+This breaks the existing behavior of always copying the formatting. The justification for breaking this default behavior is in response to the community saying the default should be plain text only.
 
 ### Performance, Power, and Efficiency
 
