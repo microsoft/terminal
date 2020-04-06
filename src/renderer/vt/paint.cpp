@@ -445,8 +445,13 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
 
     // If we're not using erase char, but we did erase all at the start of the
-    //      frame, don't add spaces at the end.
-    const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
+    // frame, don't add spaces at the end.
+    //
+    // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
+    // line we're trying to print right now _actually is the bottom line_
+    const bool removeSpaces = useEraseChar ||
+                              _clearedAllThisFrame ||
+                              (_newBottomLine && coord.Y == _lastViewport.BottomInclusive());
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;

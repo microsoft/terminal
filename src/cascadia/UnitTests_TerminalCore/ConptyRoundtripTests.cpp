@@ -23,6 +23,7 @@
 class InputBuffer; // This for some reason needs to be fwd-decl'd
 #include "../host/inputBuffer.hpp"
 #include "../host/readDataCooked.hpp"
+#include "../host/output.h"
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -185,6 +186,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(DontWrapMoveCursorInSingleFrame);
     TEST_METHOD(ClearHostTrickeryTest);
     TEST_METHOD(OverstrikeAtBottomOfBuffer);
+    TEST_METHOD(MarginsWithStatusLine);
 
     TEST_METHOD(ScrollWithMargins);
 
@@ -1805,5 +1807,104 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
+
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::MarginsWithStatusLine()
+{
+    // See https://github.com/microsoft/terminal/issues/5161
+    //
+    // This test reproduces a case from the MSYS/cygwin vim. From what I can
+    // tell, they implement scrolling by emitting a newline at the bototm of the
+    // buffer (to create a new blank line), then they use
+    // ScrollConsoleScreenBuffer to shift the status line(s) down a line, and
+    // then they repring the status line.
+    Log::Comment(L"Newline, and scroll the bottom lines of the buffer down with"
+                 L" ScrollConsoleScreenBuffer to emulate how cygwin VIM works");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    auto verifyBuffer = [](const TextBuffer& tb,
+                           const til::rectangle viewport) {
+        const auto lastRow = viewport.bottom<short>() - 1;
+        const til::point expectedCursor{ 1, lastRow };
+        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
+
+        TestUtils::VerifyExpectedString(tb, L"EEEEEEEEEE", til::point{ 0, lastRow - 4 });
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA", til::point{ 0, lastRow - 3 });
+        TestUtils::VerifyExpectedString(tb, L"          ", til::point{ 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"XBBBBBBBBB", til::point{ 0, lastRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"YCCCCCCCCC", til::point{ 0, lastRow });
+    };
+
+    // We're _not_ checking the conpty output during this test, only the side effects.
+    _checkConptyOutput = false;
+
+    // Use DECALN to fill the buffer with 'E's.
+    hostSm.ProcessString(L"\x1b#8");
+
+    const short originalBottom = si.GetViewport().BottomInclusive();
+    // Print 3 lines into the bottom of the buffer:
+    // AAAAAAAAAA
+    // BBBBBBBBBB
+    // CCCCCCCCCC
+    // In this test, the 'B' and 'C' lines represent the status lines at the
+    // bottom of vim, and the 'A' line is a buffer line.
+    hostSm.ProcessString(L"\x1b[30;1H");
+
+    hostSm.ProcessString(L"AAAAAAAAAA");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"BBBBBBBBBB");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"CCCCCCCCCC");
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // After printing the 'C' line, the cursor is on the bottom line of the viewport.
+    // Emit a newline here to get a new line at the bottom of the viewport.
+    hostSm.ProcessString(L"\n");
+    const short newBottom = si.GetViewport().BottomInclusive();
+
+    {
+        // Emulate calling ScrollConsoleScreenBuffer to scroll the B and C lines
+        // down one line.
+        SMALL_RECT src;
+        src.Top = newBottom - 2;
+        src.Left = 0;
+        src.Right = si.GetViewport().Width();
+        src.Bottom = originalBottom;
+        COORD tgt = { 0, newBottom - 1 };
+        TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
+        ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+    }
+
+    // Move the cursor to the location of the B line
+    hostSm.ProcessString(L"\x1b[31;1H");
+
+    // Print an 'X' on the 'B' line, and a 'Y' on the 'C' line.
+    hostSm.ProcessString(L"X");
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"Y");
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }
