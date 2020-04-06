@@ -43,7 +43,7 @@ b. We could also just combine html and rtf into a single boolean. Users would ei
 
 ### Settings option 2 - key binding argument
 
-a. Just like the the `trimWhitespace` argument you can add to the `copy` key binding, we could add one for text formatting. This would not change the right click behavior.
+a. Just like the `trimWhitespace` argument you can add to the `copy` key binding, we could add one for text formatting. This would not change the right click behavior.
 
 `{"command": {"action": "copy", "keepFormatting": true}, "keys": "ctrl+a"}`
 
