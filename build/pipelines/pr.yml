@@ -1,14 +1,3 @@
-trigger:
-  batch: true
-  branches:
-    include:
-      - master
-  paths:
-    exclude:
-      - doc/*
-      - samples/*
-      - tools/*
-
 pr:
   branches:
     include:
@@ -39,9 +28,5 @@ jobs:
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: x86
-
-  - template: ./templates/build-console-ci.yml
-    parameters:
-      platform: ARM64
 
   - template: ./templates/check-formatting.yml
