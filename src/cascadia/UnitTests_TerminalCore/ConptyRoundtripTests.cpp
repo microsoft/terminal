@@ -1508,7 +1508,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     }
     {
         const std::string expectedString(initialTermView.Width() - 1, '*');
-        // There will be one extra blank space at the end of the line, because the
+        // There will be one extra blank space at the end of the line, to prevent delayed EOL wrapping
         expectedOutput.push_back(expectedString + " ");
     }
     {
@@ -1815,9 +1815,9 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
 {
     // See https://github.com/microsoft/terminal/issues/5161
     //
-    // This test reproduces a case from the MSYS/cygwin vim. From what I can
-    // tell, they implement scrolling by emitting a newline at the bottom of the
-    // buffer (to create a new blank line), then they use
+    // This test reproduces a case from the MSYS/cygwin (runtime < 3.1) vim.
+    // From what I can tell, they implement scrolling by emitting a newline at
+    // the bottom of the buffer (to create a new blank line), then they use
     // ScrollConsoleScreenBuffer to shift the status line(s) down a line, and
     // then they re-printing the status line.
     Log::Comment(L"Newline, and scroll the bottom lines of the buffer down with"
