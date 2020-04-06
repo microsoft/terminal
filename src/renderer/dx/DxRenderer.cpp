@@ -571,7 +571,6 @@ CATCH_RETURN();
 
             ::Microsoft::WRL::ComPtr<IDXGISwapChain2> sc2;
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
-
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
         }
         return S_OK;
@@ -744,7 +743,7 @@ try
 
     // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
     // to cells.
-    _InvalidateRectangle(til::rectangle{ *prcDirtyClient } / _glyphCell);
+    _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
 
     return S_OK;
 }
@@ -782,13 +781,9 @@ try
 
     if (deltaCells != til::point{ 0, 0 })
     {
-        const til::point deltaPixels = deltaCells * _glyphCell;
-
         // Shift the contents of the map and fill in revealed area.
         _invalidMap.translate(deltaCells, true);
-
-        // TODO: should we just maintain it all in cells?
-        _invalidScroll += deltaPixels;
+        _invalidScroll += deltaCells;
     }
 
     return S_OK;
@@ -983,21 +978,25 @@ try
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
-                    return rc * _glyphCell;
+                    return rc.scale_up(_glyphCell).scale(til::math::rounding, _scale);
                 });
 
-                // The scroll rect is the entire screen minus the revealed areas.
-                // Get the entire screen into a rectangle.
-                til::rectangle scrollArea{ _displaySizePixels };
+                // Invalid scroll is in characters, convert it to pixels.
+                const auto scrollPixels = (_invalidScroll * _glyphCell).scale(til::math::rounding, _scale);
+
+                // The scroll rect is the entire field of cells, but in pixels.
+                til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
+
+                scrollArea = scrollArea.scale(til::math::ceiling, _scale);
 
                 // Reduce the size of the rectangle by the scroll.
-                scrollArea -= til::size{} - _invalidScroll;
+                scrollArea -= til::size{} - scrollPixels;
 
                 // Assign the area to the present storage
                 _presentScroll = scrollArea;
 
                 // Pass the offset.
-                _presentOffset = _invalidScroll;
+                _presentOffset = scrollPixels;
 
                 // Now fill up the parameters structure from the member variables.
                 _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
@@ -1308,7 +1307,7 @@ try
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() } * _glyphCell;
+    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_glyphCell);
 
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -1339,7 +1338,7 @@ try
         return S_FALSE;
     }
     // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } } * _glyphCell;
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(_glyphCell);
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)

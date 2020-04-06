@@ -175,6 +175,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to rectangle from anything that has a Left, Top, Right, and Bottom field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().Left)> && std::is_floating_point_v<decltype(std::declval<TOther>().Top)> && std::is_floating_point_v<decltype(std::declval<TOther>().Right)> && std::is_floating_point_v<decltype(std::declval<TOther>().Bottom)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ TilMath{}, other.Left, other.Top }, til::point{ TilMath{}, other.Right, other.Bottom })
+        {
+        }
+
+        // This template will convert to rectangle from anything that has a left, top, right, and bottom field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().left)> && std::is_floating_point_v<decltype(std::declval<TOther>().top)> && std::is_floating_point_v<decltype(std::declval<TOther>().right)> && std::is_floating_point_v<decltype(std::declval<TOther>().bottom)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ TilMath{}, other.left, other.top }, til::point{ TilMath{}, other.right, other.bottom })
+        {
+        }
+
         constexpr bool operator==(const rectangle& other) const noexcept
         {
             return _topLeft == other._topLeft &&
@@ -632,23 +648,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
-        // MUL will scale the entire rectangle up by the size factor
-        rectangle operator*(const size& size) const
+        // scale_up will scale the entire rectangle up by the size factor
+        // This includes moving the origin.
+        rectangle scale_up(const size& size) const
         {
             const auto topLeft = _topLeft * size;
             const auto bottomRight = _bottomRight * size;
             return til::rectangle{ topLeft, bottomRight };
         }
 
-        rectangle& operator*=(const size& size)
-        {
-            *this = *this * size;
-            return *this;
-        }
-
-        // DIV will scale the entire rectangle down by the size factor,
+        // scale_down will scale the entire rectangle down by the size factor,
         // but rounds the bottom-right corner out.
-        rectangle operator/(const size& size) const
+        // This includes moving the origin.
+        rectangle scale_down(const size& size) const
         {
             auto topLeft = _topLeft;
             auto bottomRight = _bottomRight;
@@ -662,10 +674,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return til::rectangle{ topLeft, bottomRight };
         }
 
-        rectangle& operator/=(const size& size)
+        template<typename TilMath>
+        rectangle scale(TilMath, const float scale) const
         {
-            *this = *this / size;
-            return *this;
+            return til::rectangle{ _topLeft.scale(TilMath{}, scale), _bottomRight.scale(TilMath{}, scale) };
         }
 
 #pragma endregion
