@@ -387,16 +387,16 @@ try
     const short dy = _scrollDelta.y<short>();
     const short absDy = static_cast<short>(abs(dy));
 
+    // Save the old wrap state here. We're going to clear it so that
+    // _MoveCursor will definitely move us to the right position. We'll
+    // restore the state afterwards.
+    const auto oldWrappedRow = _wrappedRow;
+    const auto oldDelayedEolWrap = _delayedEolWrap;
+    _delayedEolWrap = false;
+    _wrappedRow = std::nullopt;
+
     if (dy < 0)
     {
-        // Save the old wrap state here. We're going to clear it so that
-        // _MoveCursor will definitely move us to the right position. We'll
-        // restore the state afterwards.
-        const auto oldWrappedRow = _wrappedRow;
-        const auto oldDelayedEolWrap = _delayedEolWrap;
-        _delayedEolWrap = false;
-        _wrappedRow = std::nullopt;
-
         // TODO GH#5228 - We could optimize this by only doing this newline work
         // when there's more invalid than just the bottom line. If only the
         // bottom line is invalid, then the next thing the Renderer is going to
@@ -411,11 +411,18 @@ try
         RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
         // Emit some number of newlines to create space in the buffer.
         RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
-
-        // Restore our wrap state.
-        _wrappedRow = oldWrappedRow;
-        _delayedEolWrap = oldDelayedEolWrap;
     }
+    else if (dy > 0)
+    {
+        // If we've scrolled _down_, then move the cursor to the top of the
+        // buffer, and insert some newlines using the InsertLines VT sequence
+        RETURN_IF_FAILED(_MoveCursor({ 0, 0 }));
+        RETURN_IF_FAILED(_InsertLine(absDy));
+    }
+
+    // Restore our wrap state.
+    _wrappedRow = oldWrappedRow;
+    _delayedEolWrap = oldDelayedEolWrap;
 
     // Shift our internal tracker of the last text position according to how
     // much we've scrolled. If we manually scroll the buffer right now, by
