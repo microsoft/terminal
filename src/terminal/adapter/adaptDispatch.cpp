@@ -1645,6 +1645,8 @@ bool AdaptDispatch::SoftReset()
 //Routine Description:
 // Full Reset - Perform a hard reset of the terminal. http://vt100.net/docs/vt220-rm/chapter4.html
 //  RIS performs the following actions: (Items with sub-bullets are supported)
+//   - Switches to the main screen buffer if in the alt buffer.
+//      * This matches the XTerm behaviour, which is the de facto standard for the alt buffer.
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
