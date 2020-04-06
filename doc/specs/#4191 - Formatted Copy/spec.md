@@ -19,7 +19,7 @@ Solutions for the right click behavior and user settings are described below.
 
 ### Right click behavior
 
-Be default, right clicking to copy would only copy the plain text. If the user would like to copy the formatting, they can hold `alt` and right click (this behavior is the same in conhost).
+By default, right clicking to copy would only copy the plain text. If the user would like to copy the formatting, they can hold `alt` and right click (this behavior is the same in conhost).
 
 ### Settings option 1 - global setting
 
