@@ -39,6 +39,7 @@ namespace Microsoft.Terminal.Settings
         IKeyBindings KeyBindings;
 
         Boolean CopyOnSelect;
+        Boolean CopyFormatting;
 
         String Commandline;
         String StartingDirectory;

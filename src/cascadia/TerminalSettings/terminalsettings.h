@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void WordDelimiters(hstring const& value);
         bool CopyOnSelect() noexcept;
         void CopyOnSelect(bool value) noexcept;
+        bool CopyFormatting() noexcept;
+        void CopyFormatting(bool value) noexcept;
         // ------------------------ End of Core Settings -----------------------
 
         hstring ProfileName();
@@ -134,6 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         winrt::Windows::UI::Xaml::HorizontalAlignment _backgroundImageHorizontalAlignment;
         winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
         bool _copyOnSelect;
+        bool _copyFormatting;
         hstring _commandline;
         hstring _startingDir;
         hstring _startingTitle;
