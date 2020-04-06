@@ -1816,10 +1816,10 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     // See https://github.com/microsoft/terminal/issues/5161
     //
     // This test reproduces a case from the MSYS/cygwin vim. From what I can
-    // tell, they implement scrolling by emitting a newline at the bototm of the
+    // tell, they implement scrolling by emitting a newline at the bottom of the
     // buffer (to create a new blank line), then they use
     // ScrollConsoleScreenBuffer to shift the status line(s) down a line, and
-    // then they repring the status line.
+    // then they re-printing the status line.
     Log::Comment(L"Newline, and scroll the bottom lines of the buffer down with"
                  L" ScrollConsoleScreenBuffer to emulate how cygwin VIM works");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
