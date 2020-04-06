@@ -1,2 +1,0 @@
-\\native(?![a-z])
-\\nihilist(?![a-z])
