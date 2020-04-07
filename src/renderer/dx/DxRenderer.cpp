@@ -1247,19 +1247,27 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
         RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+
+        // GH#5098: If we're rendering with cleartype text, we need to always render
+        // onto an opaque background. If our background's opacity is 1.0f, that's
+        // great,
+        const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+        const bool usingTransparency = _backgroundOpacity != 1.0f;
         const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
                                  (_backgroundColor.r == _defaultBackgroundColor.r) &&
                                  (_backgroundColor.g == _defaultBackgroundColor.g) &&
                                  (_backgroundColor.b == _defaultBackgroundColor.b);
-        const bool useGrayscaleAA = (_antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE) &&
-                                    _backgroundOpacity != 1.0f &&
-                                    bgIsDefault;
+        // const auto bgHasTransparency = _backgroundColor.a != 1.0f;
+        const auto bgHasTransparency = bgIsDefault;
+        const bool forceGrayscaleAA = usingCleartype &&
+                                      usingTransparency &&
+                                      bgHasTransparency;
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
                                _d2dBrushForeground.Get(),
-                               // _d2dBrushBackground.Get(),
-                               (useGrayscaleAA) ? nullptr : _d2dBrushBackground.Get(),
+                               _d2dBrushBackground.Get(),
+                               forceGrayscaleAA,
                                _dwriteFactory.Get(),
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
@@ -1558,10 +1566,19 @@ CATCH_RETURN()
                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
-    // If we're doing cleartype & opacity != 1.0f, then set all the high bits to OPAQUE here
-    const bool useBgTransparency = (_antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE) && _backgroundOpacity != 1.0f;
+    // GH#5098: If we're rendering with cleartype text, we need to always render
+    // onto an opaque background. If our background's opacity is 1.0f, that's
+    // great, we can actually use cleartext in that case. In that scenario
+    // (cleartext && opacity == 1.0), we'll force the opacity bits of the
+    // COLORREF to 0xff so we draw as cleartext. In any other case, leave the
+    // opacity bits unchanged. PaintBufferLine will later do some logic to
+    // determine if we should paint the text as grayscale or not.
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _backgroundOpacity != 1.0f;
+    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
-    _backgroundColor = _ColorFFromColorRef((useBgTransparency ? 0 : OPACITY_OPAQUE) | colorBackground);
+    _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);

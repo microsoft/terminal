@@ -284,16 +284,13 @@ using namespace Microsoft::Console::Render;
         d2dContext->PopAxisAlignedClip();
     });
 
+    d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+
     auto popLayer = wil::scope_exit([&d2dContext]() noexcept {
         d2dContext->PopLayer();
     });
 
-    if (drawingContext->backgroundBrush)
-    {
-        d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
-        popLayer.release();
-    }
-    else
+    if (drawingContext->forceGrayscaleAA)
     {
         auto params = D2D1::LayerParameters(rect,
                                             nullptr,
@@ -303,6 +300,10 @@ using namespace Microsoft::Console::Render;
                                             nullptr,
                                             D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE);
         d2dContext->PushLayer(params, nullptr);
+    }
+    else
+    {
+        popLayer.release();
     }
     // Now go onto drawing the text.
 
