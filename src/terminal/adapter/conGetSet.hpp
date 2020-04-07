@@ -74,11 +74,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetConsoleTitleW(const std::wstring_view title) = 0;
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
         virtual bool PrivateUseMainScreenBuffer() = 0;
-        virtual bool PrivateHorizontalTabSet() = 0;
-        virtual bool PrivateForwardTab(const size_t numTabs) = 0;
-        virtual bool PrivateBackwardsTab(const size_t numTabs) = 0;
-        virtual bool PrivateTabClear(const bool clearAll) = 0;
-        virtual bool PrivateSetDefaultTabStops() = 0;
 
         virtual bool PrivateEnableVT200MouseMode(const bool enabled) = 0;
         virtual bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) = 0;

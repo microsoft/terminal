@@ -13,7 +13,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
 | `launchMode` | Optional | String | `default` | Defines whether the Terminal will launch as maximized or not. Possible values: `"default"`, `"maximized"` |
 | `rowsToScroll` | Optional | Integer | `system` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or "system". |
-| `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
+| `theme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | `true` | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
 | `showTabsInTitlebar` | Optional | Boolean | `true` | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
 | `snapToGridOnResize` | Optional | Boolean | `false` | When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize "smoothly" |
@@ -111,14 +111,13 @@ For commands with arguments:
 
 | Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
 | ------- | ------------------- | ------ | ---------------- | ----------------- |
+| `adjustFontSize` | Change the text size by a specified point amount. | `delta` | integer | Amount of size change per command invocation. |
 | `closePane` | Close the active pane. | | | |
 | `closeTab` | Close the current tab. | | | |
 | `closeWindow` | Close the current window and all tabs within it. | | | |
-| `copy` | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
-| `decreaseFontSize` | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
+| `copy` | Copy the selected terminal content to your Windows Clipboard. | `singleLine` | boolean | When `true`, the copied content will be copied as a single line. When `false`, newlines persist from the selected text. |
 | `duplicateTab` | Make a copy and open the current tab. | | | |
 | `find` | Open the search dialog box. | | | |
-| `increaseFontSize` | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
 | `moveFocus` | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
 | `newTab` | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
 | `nextTab` | Open the tab to the right of the current one. | | | |
@@ -132,7 +131,7 @@ For commands with arguments:
 | `scrollUp` | Move the screen up. | | | |
 | `scrollUpPage` | Move the screen up a whole page. | | | |
 | `scrollDownPage` | Move the screen down a whole page. | | | |
-| `splitPane` | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name. |
+| `splitPane` | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile`<br>7. `splitMode` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string<br>7. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name.<br>7. Controls how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane. |
 | `switchToTab` | Open a specific tab depending on index. | `index`* | integer | Tab that will open based on its position in the tab bar (starting at 0). |
 | `toggleFullscreen` | Switch between fullscreen and default window sizes. | | | |
 | `unbound` | Unbind the associated keys from any command. | | | |

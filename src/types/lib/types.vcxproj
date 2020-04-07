@@ -50,6 +50,7 @@
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
+    <ClInclude Include="..\IUiaTraceable.h" />
     <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\TermControlUiaTextRange.hpp" />
     <ClInclude Include="..\TermControlUiaProvider.hpp" />

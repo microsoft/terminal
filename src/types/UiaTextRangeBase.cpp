@@ -9,8 +9,6 @@
 
 using namespace Microsoft::Console::Types;
 
-IdType UiaTextRangeBase::id = 1;
-
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
@@ -25,9 +23,6 @@ try
     _end = pData->GetViewport().Origin();
     _blockRange = false;
     _wordDelimiters = wordDelimiters;
-
-    _id = id;
-    ++id;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
@@ -123,18 +118,10 @@ try
     _pData = a._pData;
     _wordDelimiters = a._wordDelimiters;
 
-    _id = id;
-    ++id;
-
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
-
-const IdType UiaTextRangeBase::GetId() const noexcept
-{
-    return _id;
-}
 
 const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept
 {

@@ -605,6 +605,112 @@ class PointTests
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
 
+    TEST_METHOD(Scaling)
+    {
+        Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const int scale = 23;
+
+            const til::point expected{ pt.x() * scale, pt.y() * scale };
+
+            VERIFY_ARE_EQUAL(expected, pt * scale);
+        }
+
+        Log::Comment(L"1.) Multiplication results in value that is too large (x).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ bigSize, static_cast<ptrdiff_t>(0) };
+            const int scale = 10;
+
+            auto fn = [&]() {
+                pt* scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Multiplication results in value that is too large (y).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ static_cast<ptrdiff_t>(0), bigSize };
+            const int scale = 10;
+
+            auto fn = [&]() {
+                pt* scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"3.) Division of two things that should be in bounds.");
+        {
+            const til::point pt{ 555, 510 };
+            const int scale = 23;
+
+            const til::point expected{ pt.x() / scale, pt.y() / scale };
+
+            VERIFY_ARE_EQUAL(expected, pt / scale);
+        }
+
+        Log::Comment(L"4.) Division by zero");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::point pt{ 1, 1 };
+            const int scale = 0;
+
+            auto fn = [&]() {
+                pt / scale;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"5.) Multiplication of floats that should be in bounds.");
+        {
+            const til::point pt{ 3, 10 };
+            const float scale = 5.5f;
+
+            // 3 * 5.5 = 15.5, which we'll round to 15
+            const til::point expected{ 16, 55 };
+
+            VERIFY_ARE_EQUAL(expected, pt * scale);
+        }
+
+        Log::Comment(L"6.) Multiplication of doubles that should be in bounds.");
+        {
+            const til::point pt{ 3, 10 };
+            const double scale = 5.5f;
+
+            // 3 * 5.5 = 15.5, which we'll round to 15
+            const til::point expected{ 16, 55 };
+
+            VERIFY_ARE_EQUAL(expected, pt * scale);
+        }
+
+        Log::Comment(L"5.) Division of floats that should be in bounds.");
+        {
+            const til::point pt{ 15, 10 };
+            const float scale = 2.0f;
+
+            // 15 / 2 = 7.5, which we'll floor to 7
+            const til::point expected{ 7, 5 };
+
+            VERIFY_ARE_EQUAL(expected, pt / scale);
+        }
+
+        Log::Comment(L"6.) Division of doubles that should be in bounds.");
+        {
+            const til::point pt{ 15, 10 };
+            const double scale = 2.0;
+
+            // 15 / 2 = 7.5, which we'll floor to 7
+            const til::point expected{ 7, 5 };
+
+            VERIFY_ARE_EQUAL(expected, pt / scale);
+        }
+    }
+
     template<typename T>
     struct PointTypeWith_xy
     {

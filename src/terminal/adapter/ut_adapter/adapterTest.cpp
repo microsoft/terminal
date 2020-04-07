@@ -445,49 +445,6 @@ public:
         return true;
     }
 
-    bool PrivateHorizontalTabSet() override
-    {
-        Log::Comment(L"PrivateHorizontalTabSet MOCK called...");
-        // We made it through the adapter, woo! Return true.
-        return TRUE;
-    }
-
-    bool PrivateForwardTab(const size_t numTabs) override
-    {
-        Log::Comment(L"PrivateForwardTab MOCK called...");
-        if (_privateForwardTabResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedNumTabs, numTabs);
-        }
-        return TRUE;
-    }
-
-    bool PrivateBackwardsTab(const size_t numTabs) override
-    {
-        Log::Comment(L"PrivateBackwardsTab MOCK called...");
-        if (_privateBackwardsTabResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedNumTabs, numTabs);
-        }
-        return TRUE;
-    }
-
-    bool PrivateTabClear(const bool clearAll) override
-    {
-        Log::Comment(L"PrivateTabClear MOCK called...");
-        if (_privateTabClearResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedClearAll, clearAll);
-        }
-        return TRUE;
-    }
-
-    bool PrivateSetDefaultTabStops() override
-    {
-        Log::Comment(L"PrivateSetDefaultTabStops MOCK called...");
-        return TRUE;
-    }
-
     bool PrivateEnableVT200MouseMode(const bool enabled) override
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
@@ -924,12 +881,6 @@ public:
 
     bool _setConsoleTitleWResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _privateHorizontalTabSetResult = false;
-    bool _privateForwardTabResult = false;
-    bool _privateBackwardsTabResult = false;
-    size_t _expectedNumTabs = 0;
-    bool _privateTabClearResult = false;
-    bool _expectedClearAll = false;
     bool _expectedMouseEnabled = false;
     bool _expectedAlternateScrollEnabled = false;
     bool _privateEnableVT200MouseModeResult = false;
@@ -2049,29 +2000,6 @@ public:
         _testGetSet->_privateGetLineFeedModeResult = true;
         _testGetSet->_expectedLineFeedWithReturn = true;
         VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
-    }
-
-    TEST_METHOD(TabSetClearTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        _testGetSet->_privateHorizontalTabSetResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->HorizontalTabSet());
-
-        _testGetSet->_expectedNumTabs = 16;
-
-        _testGetSet->_privateForwardTabResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->ForwardTab(16));
-
-        _testGetSet->_privateBackwardsTabResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->BackwardsTab(16));
-
-        _testGetSet->_privateTabClearResult = TRUE;
-        _testGetSet->_expectedClearAll = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->TabClear(DispatchTypes::TabClearType::ClearAllColumns));
-
-        _testGetSet->_expectedClearAll = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->TabClear(DispatchTypes::TabClearType::ClearCurrentColumn));
     }
 
     TEST_METHOD(SetConsoleTitleTest)

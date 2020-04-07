@@ -152,6 +152,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
+        bool _ClearSingleTabStop();
+        bool _ClearAllTabStops() noexcept;
+        void _ResetTabStops() noexcept;
+        void _InitTabStopsForWidth(const size_t width);
+
+        std::vector<bool> _tabStopColumns;
+        bool _initDefaultTabStops = true;
+
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;

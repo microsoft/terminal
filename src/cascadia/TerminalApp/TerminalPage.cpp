@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
+#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -234,28 +235,22 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            return package.DisplayName();
+            return appLogic->ApplicationDisplayName();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+        return RS_(L"ApplicationDisplayNameUnpackaged");
     }
 
     winrt::hstring TerminalPage::ApplicationVersion()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto version{ package.Id().Version() };
-            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
-            return formatted;
+            return appLogic->ApplicationVersion();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_VersionUnknown");
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // Method Description:
@@ -292,25 +287,16 @@ namespace winrt::TerminalApp::implementation
             // add the keyboard shortcuts for the first 9 profiles
             if (profileIndex < 9)
             {
-                // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
-                const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
-                // First, attempt to search for the keybinding for the simple
-                // NewTabProfile0-9 ShortcutActions.
-                auto profileKeyChord = keyBindings.GetKeyBindingForAction(action);
-                if (!profileKeyChord)
-                {
-                    // If NewTabProfileN didn't have a binding, look for a
-                    // keychord that is bound to the equivalent
-                    // NewTab(ProfileIndex=N) action
-                    auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
-                    actionAndArgs->Action(ShortcutAction::NewTab);
-                    auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-                    newTerminalArgs->ProfileIndex(profileIndex);
-                    newTabArgs->TerminalArgs(*newTerminalArgs);
-                    actionAndArgs->Args(*newTabArgs);
-                    profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
-                }
+                // Look for a keychord that is bound to the equivalent
+                // NewTab(ProfileIndex=N) action
+                auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+                actionAndArgs->Action(ShortcutAction::NewTab);
+                auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                newTerminalArgs->ProfileIndex(profileIndex);
+                newTabArgs->TerminalArgs(*newTerminalArgs);
+                actionAndArgs->Args(*newTabArgs);
+                auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -1385,14 +1371,13 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
+    // - singleLine: if enabled, copy contents as a single line of text
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
+    bool TerminalPage::_CopyText(const bool singleLine)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(!trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(singleLine);
     }
 
     // Method Description:
