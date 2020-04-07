@@ -1282,7 +1282,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color, false));
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
     const auto font = _GetFontSize();
     D2D_POINT_2F target;
@@ -1549,7 +1549,7 @@ CATCH_RETURN()
                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
-    _foregroundColor = _ColorFFromColorRef(colorForeground, false);
+    _foregroundColor = _ColorFFromColorRef(colorForeground);
     _backgroundColor = _ColorFFromColorRef(colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
@@ -2128,7 +2128,7 @@ float DxEngine::GetScaling() const noexcept
 // - color - GDI color
 // Return Value:
 // - D2D color
-[[nodiscard]] D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color, const bool useAlpha) noexcept
+[[nodiscard]] D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
 {
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
@@ -2141,18 +2141,11 @@ float DxEngine::GetScaling() const noexcept
     }
     case SwapChainMode::ForComposition:
     {
-        if (useAlpha)
-        {
-            // Get the A value we've snuck into the highest byte
-            const BYTE a = ((color >> 24) & 0xFF);
-            const float aFloat = a / 255.0f;
+        // Get the A value we've snuck into the highest byte
+        const BYTE a = ((color >> 24) & 0xFF);
+        const float aFloat = a / 255.0f;
 
-            return D2D1::ColorF(rgb, aFloat);
-        }
-        else
-        {
-            return D2D1::ColorF(rgb, 1.0f);
-        }
+        return D2D1::ColorF(rgb, aFloat);
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
