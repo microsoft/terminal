@@ -257,8 +257,9 @@
         { "command": "find", "keys": "ctrl+shift+f" },
 
         // Tab Management
+        // "command": "closeTab" is unbound by default.
+        //   It closes the whole tab without confirmation, even if it has multiple panes.
         { "command": "newTab", "keys": "ctrl+shift+t" },
-        { "command": "closeTab", "keys": null },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
         { "command": { "action": "newTab", "index": 2 }, "keys": "ctrl+shift+3" },
@@ -283,8 +284,8 @@
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal"}, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical"}, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
