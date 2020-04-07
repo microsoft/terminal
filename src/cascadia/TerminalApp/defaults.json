@@ -258,7 +258,7 @@
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
-        //   It closes the whole tab without confirmation, even if it has multiple panes.
+        //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
         { "command": "newTab", "keys": "ctrl+shift+t" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
