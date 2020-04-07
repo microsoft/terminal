@@ -284,8 +284,36 @@ using namespace Microsoft::Console::Render;
         d2dContext->PopAxisAlignedClip();
     });
 
-    d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+    auto popLayer = wil::scope_exit([&d2dContext]() noexcept {
+        d2dContext->PopLayer();
+    });
+    if (drawingContext->backgroundBrush)
+    {
+        d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+        popLayer.release();
+    }
+    else
+    {
+        // auto params = D2D1::LayerParameters(D2D1::InfiniteRect(),
+        auto params = D2D1::LayerParameters(rect,
+                                            nullptr,
+                                            D2D1_ANTIALIAS_MODE_ALIASED,
+                                            D2D1::IdentityMatrix(),
+                                            1.0,
+                                            nullptr,
+                                            D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE);
+        // const auto params1 = D2D1::LayerParameters1(D2D1::InfiniteRect(),
+        //                                             nullptr,
+        //                                             D2D1_ANTIALIAS_MODE_ALIASED,
+        //                                             D2D1::IdentityMatrix(),
+        //                                             1.0,
+        //                                             nullptr,
+        //                                             // D2D1_LAYER_OPTIONS1_IGNORE_ALPHA);
+        //                                             D2D1_LAYER_OPTIONS1_INITIALIZE_FROM_BACKGROUND);
 
+        // d2dContext->PushLayer(&params1, nullptr);
+        d2dContext->PushLayer(params, nullptr);
+    }
     // Now go onto drawing the text.
 
     // First check if we want a color font and try to extract color emoji first.

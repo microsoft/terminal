@@ -1246,11 +1246,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
         RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
-
+        const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                                 (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                                 (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                                 (_backgroundColor.b == _defaultBackgroundColor.b);
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
                                _d2dBrushForeground.Get(),
-                               _d2dBrushBackground.Get(),
+                               // _d2dBrushBackground.Get(),
+                               (bgIsDefault) ? nullptr : _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
@@ -1549,7 +1553,7 @@ CATCH_RETURN()
                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
-    _foregroundColor = _ColorFFromColorRef(colorForeground);
+    _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     _backgroundColor = _ColorFFromColorRef(colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
@@ -1558,8 +1562,8 @@ CATCH_RETURN()
     // If this flag is set, then we need to update the default brushes too and the swap chain background.
     if (isSettingDefaultBrushes)
     {
-        _defaultForegroundColor = _foregroundColor;
-        _defaultBackgroundColor = _backgroundColor;
+        _defaultForegroundColor = _ColorFFromColorRef(colorForeground);
+        _defaultBackgroundColor = _ColorFFromColorRef(colorBackground);
 
         // If we have a swap chain, set the background color there too so the area
         // outside the chain on a resize can be filled in with an appropriate color value.
