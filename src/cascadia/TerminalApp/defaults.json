@@ -5,7 +5,6 @@
     // Launch Settings
     "initialCols": 120,
     "initialRows": 30,
-    "initialPosition": ",",
     "launchMode": "default",
 
     // Selection
@@ -30,41 +29,53 @@
             "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
             "name": "Windows PowerShell",
             "commandline": "powershell.exe",
-            "hidden": false,
-            "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
+            "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "colorScheme":"Campbell Powershell",
+
+            // The following settings are the same across all profiles
+            // To learn more about other profile settings,
+            //   visit https://aka.ms/terminal-profile-settings
+            "antialiasingMode": "grayscale",
+            "closeOnExit": "graceful",
             "cursorShape": "bar",
             "fontFace": "Cascadia Code",
             "fontSize": 12,
+            "hidden": false,
             "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
+            "startingDirectory": "%USERPROFILE%",
+            "useAcrylic": false
         },
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
             "name": "cmd",
             "commandline": "cmd.exe",
-            "hidden": false,
-            "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
+            "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
+
+            // The following settings are the same across all profiles
+            // To learn more about other profile settings,
+            //   visit https://aka.ms/terminal-profile-settings
+            "antialiasingMode": "grayscale",
+            "closeOnExit": "graceful",
             "cursorShape": "bar",
             "fontFace": "Cascadia Code",
             "fontSize": 12,
+            "hidden": false,
             "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
+            "startingDirectory": "%USERPROFILE%",
+            "useAcrylic": false
         }
     ],
     "schemes":
     [
+        // A profile can override the following color scheme values:
+        //   - "foreground"
+        //   - "background"
+        //   - "cursorColor"
         {
             "name": "Campbell",
             "foreground": "#CCCCCC",
