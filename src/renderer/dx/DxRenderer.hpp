@@ -248,7 +248,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] SIZE _GetClientSize() const noexcept;
 
-        [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
+        [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color, const bool useAlpha = true) noexcept;
 
         // Routine Description:
         // - Helps convert a Direct2D ColorF into a DXGI RGBA
