@@ -258,6 +258,7 @@
 
         // Tab Management
         { "command": "newTab", "keys": "ctrl+shift+t" },
+        { "command": "closeTab", "keys": null },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
         { "command": { "action": "newTab", "index": 2 }, "keys": "ctrl+shift+3" },
@@ -294,8 +295,8 @@
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
 
         // OS Integration
-        { "command": "copy", "keys": "ctrl+shift+c" },
-        { "command": "copy", "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
 
