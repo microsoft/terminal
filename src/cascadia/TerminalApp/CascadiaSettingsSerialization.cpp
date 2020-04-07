@@ -94,7 +94,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // _userDefaultProfileSettings here. When we LayerJson below to apply the
     // user settings, we'll make sure to use these defaultSettings _before_ any
     // profiles the user might have.
-    resultPtr->_ApplyDefaultsFromUserSettings();
+    resultPtr->_ApplyDefaultsForProfiles();
 
     // Apply the user's settings
     resultPtr->LayerJson(resultPtr->_userSettings);
@@ -552,6 +552,13 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         {
             Profile profile{};
 
+            // If we have a set of default profile settings from our defaults json file,
+            // apply them here.
+            if (_primaryDefaultProfileSettings)
+            {
+                profile.LayerJson(_primaryDefaultProfileSettings);
+            }
+
             // GH#2325: If we have a set of default profile settings, apply them here.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
@@ -593,33 +600,61 @@ Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
 }
 
 // Method Description:
-// - Finds the "default profile settings" if they exist in the users settings,
-//   and applies them to the existing profiles. The "default profile settings"
-//   are settings that should be applied to every profile a user has, with the
-//   option of being overridden by explicit values in the profile. This should
-//   be called _after_ the defaults have been parsed and dynamic profiles have
-//   been generated, but before the other user profiles have been loaded.
+// - Finds the "default profile settings" if they exist in the default settings and
+//   user's settings, then applies them to the existing profiles.
+//   The "default profile settings" are settings that should be applied to
+//   every profile a user has, with the option of being overridden by explicit values
+//   in the profile. This should be called _after_ the defaults have been parsed
+//   and dynamic profiles have been generated, but before the other user profiles
+//   have been loaded.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_ApplyDefaultsFromUserSettings()
+void CascadiaSettings::_ApplyDefaultsForProfiles()
 {
     // If `profiles` was an object, then look for the `defaults` object
     // underneath it for the default profile settings.
-    auto defaultSettings{ Json::Value::null };
+    auto primaryDefaultSettings{ Json::Value::null };
+    if (const auto profiles{ _defaultSettings[JsonKey(ProfilesKey)] })
+    {
+        if (profiles.isObject())
+        {
+            primaryDefaultSettings = profiles[JsonKey(DefaultSettingsKey)];
+        }
+    }
 
+    // Now, do the same for user settings
+    auto userDefaultSettings{ Json::Value::null };
     if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
     {
         if (profiles.isObject())
         {
-            defaultSettings = profiles[JsonKey(DefaultSettingsKey)];
+            userDefaultSettings = profiles[JsonKey(DefaultSettingsKey)];
         }
     }
 
-    if (defaultSettings)
+    // cache and apply default profiles settings
+    // from default settings file
+    if (primaryDefaultSettings)
     {
-        _userDefaultProfileSettings = defaultSettings;
+        _primaryDefaultProfileSettings = primaryDefaultSettings;
+
+        // Remove the `guid` member from the default settings. That'll
+        // hyper-explode, so just don't let them do that.
+        _primaryDefaultProfileSettings.removeMember({ "guid" });
+
+        for (auto& profile : _profiles)
+        {
+            profile.LayerJson(_primaryDefaultProfileSettings);
+        }
+    }
+
+    // cache and apply default profile settings
+    // from user settings file
+    if (userDefaultSettings)
+    {
+        _userDefaultProfileSettings = userDefaultSettings;
 
         // Remove the `guid` member from the default settings. That'll
         // hyper-explode, so just don't let them do that.

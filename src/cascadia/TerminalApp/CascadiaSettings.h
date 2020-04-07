@@ -84,6 +84,7 @@ private:
     std::string _userSettingsString;
     Json::Value _userSettings;
     Json::Value _defaultSettings;
+    Json::Value _primaryDefaultProfileSettings{ Json::Value::null };
     Json::Value _userDefaultProfileSettings{ Json::Value::null };
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
@@ -96,7 +97,7 @@ private:
     bool _PrependSchemaDirective();
     bool _AppendDynamicProfilesToUserSettings();
 
-    void _ApplyDefaultsFromUserSettings();
+    void _ApplyDefaultsForProfiles();
 
     void _LoadDynamicProfiles();
 

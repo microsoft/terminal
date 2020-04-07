@@ -1480,7 +1480,7 @@ namespace TerminalAppLocalTests
             CascadiaSettings settings{ false };
             settings._ParseJsonString(settings0String, false);
             VERIFY_IS_TRUE(settings._userDefaultProfileSettings == Json::Value::null);
-            settings._ApplyDefaultsFromUserSettings();
+            settings._ApplyDefaultsForProfiles();
             VERIFY_IS_FALSE(settings._userDefaultProfileSettings == Json::Value::null);
             settings.LayerJson(settings._userSettings);
 
@@ -1531,7 +1531,7 @@ namespace TerminalAppLocalTests
 
             settings._ParseJsonString(settings0String, false);
             VERIFY_IS_TRUE(settings._userDefaultProfileSettings == Json::Value::null);
-            settings._ApplyDefaultsFromUserSettings();
+            settings._ApplyDefaultsForProfiles();
             VERIFY_IS_FALSE(settings._userDefaultProfileSettings == Json::Value::null);
 
             Log::Comment(NoThrowString().Format(
@@ -1630,7 +1630,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(2222, settings._profiles.at(1)._historySize);
         VERIFY_ARE_EQUAL(3333, settings._profiles.at(2)._historySize);
 
-        settings._ApplyDefaultsFromUserSettings();
+        settings._ApplyDefaultsForProfiles();
 
         VERIFY_ARE_EQUAL(1234, settings._profiles.at(0)._historySize);
         VERIFY_ARE_EQUAL(1234, settings._profiles.at(1)._historySize);
