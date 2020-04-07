@@ -487,7 +487,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {
-        vkey = _ScanCodeFromVirtualKey(scanCode);
+        vkey = _VirtualKeyFromScanCode(scanCode);
     }
     if (vkey == 0)
     {
