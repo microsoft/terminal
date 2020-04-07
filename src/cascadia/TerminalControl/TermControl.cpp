@@ -350,11 +350,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 RootGrid().Background(acrylic);
             }
+
+            if (_renderEngine)
+            {
+                _renderEngine->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            }
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             RootGrid().Background(solidColor);
+
+            if (_renderEngine)
+            {
+                _renderEngine->SetBackgroundOpacity(1.0f);
+            }
         }
 
         if (!_settings.BackgroundImage().empty())
@@ -1275,13 +1285,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             try
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                acrylicBrush.TintOpacity(_settings.TintOpacity());
+
                 if (acrylicBrush.TintOpacity() == 1.0)
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
                     uint32_t bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
+                }
+                else
+                {
+                    if (_renderEngine)
+                    {
+                        _renderEngine->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                    }
                 }
             }
             CATCH_LOG();

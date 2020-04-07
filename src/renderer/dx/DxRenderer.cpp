@@ -83,6 +83,7 @@ DxEngine::DxEngine() :
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
+    _backgroundOpacity{ 1.0f },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -1250,11 +1251,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                  (_backgroundColor.r == _defaultBackgroundColor.r) &&
                                  (_backgroundColor.g == _defaultBackgroundColor.g) &&
                                  (_backgroundColor.b == _defaultBackgroundColor.b);
+        const bool useGrayscaleAA = (_antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE) &&
+                                    _backgroundOpacity != 1.0f &&
+                                    bgIsDefault;
+
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
                                _d2dBrushForeground.Get(),
                                // _d2dBrushBackground.Get(),
-                               (bgIsDefault) ? nullptr : _d2dBrushBackground.Get(),
+                               (useGrayscaleAA) ? nullptr : _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
@@ -1553,8 +1558,10 @@ CATCH_RETURN()
                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
+    // If we're doing cleartype & opacity != 1.0f, then set all the high bits to OPAQUE here
+    const bool useBgTransparency = (_antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE) && _backgroundOpacity != 1.0f;
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
-    _backgroundColor = _ColorFFromColorRef(colorBackground);
+    _backgroundColor = _ColorFFromColorRef((useBgTransparency ? 0 : OPACITY_OPAQUE) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
@@ -1562,8 +1569,8 @@ CATCH_RETURN()
     // If this flag is set, then we need to update the default brushes too and the swap chain background.
     if (isSettingDefaultBrushes)
     {
-        _defaultForegroundColor = _ColorFFromColorRef(colorForeground);
-        _defaultBackgroundColor = _ColorFFromColorRef(colorBackground);
+        _defaultForegroundColor = _foregroundColor;
+        _defaultBackgroundColor = _backgroundColor;
 
         // If we have a swap chain, set the background color there too so the area
         // outside the chain on a resize can be filled in with an appropriate color value.
@@ -2182,4 +2189,9 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
     _antialiasingMode = antialiasingMode;
+}
+
+void DxEngine::SetBackgroundOpacity(const float opacity) noexcept
+{
+    _backgroundOpacity = opacity;
 }

@@ -29,6 +29,7 @@ namespace Microsoft::Console::Render
         ID2D1RenderTarget* renderTarget;
         ID2D1Brush* foregroundBrush;
         ID2D1Brush* backgroundBrush;
+        float backgroundOpacity;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;

@@ -54,6 +54,7 @@ namespace Microsoft::Console::Render
         void SetCallback(std::function<void()> pfn);
 
         void SetRetroTerminalEffects(bool enable) noexcept;
+        void SetBackgroundOpacity(const float opacity) noexcept;
 
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
@@ -194,6 +195,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
+
+        float _backgroundOpacity;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
