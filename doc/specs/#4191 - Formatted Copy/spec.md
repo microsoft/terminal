@@ -1,7 +1,7 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
 created on: <2020-04-01>
-last updated: <2020-04-01>
+last updated: <2020-04-07>
 issue id: <#4191>
 ---
 
@@ -77,6 +77,6 @@ One possible issue is that discovering how to copy the formatting might be diffi
 
 ## Future considerations
 
-We could add the option we don't include later if people want it. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa.
+We could always add an additional option if people want more flexibility. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa.
 
 ## Resources
