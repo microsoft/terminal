@@ -20,7 +20,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "requestedTheme": "system",
+    "theme": "system",
     "rowsToScroll": "system",
     "snapToGridOnResize": true,
 
@@ -40,7 +40,7 @@
             // Background Image
             "backgroundImage": null,
             "backgroundImageAlignment": "center",
-            "backgroundImageOpacity": "1.0",
+            "backgroundImageOpacity": 1.0,
             "backgroundImageStretchMode": "uniformToFill",
 
             // Color Scheme
