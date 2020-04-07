@@ -119,6 +119,8 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
 
 Starting with Windows 10 1809, you can install the native OpenSSH component. Details can be found [here](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse).
 
+Additionally you may want to use more recent version of OpenSSH client, which can be found [here](https://github.com/PowerShell/Win32-OpenSSH).
+
 Assuming that you've installed the OpenSSH client and configured the required authentication:
 
 ```json
