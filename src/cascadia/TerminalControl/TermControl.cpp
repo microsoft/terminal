@@ -351,9 +351,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 RootGrid().Background(acrylic);
             }
 
+            // GH#5098: Inform the engine of the new opacity of the default text background.
             if (_renderEngine)
             {
-                _renderEngine->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
             }
         }
         else
@@ -361,9 +362,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             Media::SolidColorBrush solidColor{};
             RootGrid().Background(solidColor);
 
+            // GH#5098: Inform the engine of the new opacity of the default text background.
             if (_renderEngine)
             {
-                _renderEngine->SetBackgroundOpacity(1.0f);
+                _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
             }
         }
 
@@ -1297,9 +1299,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
+                    // GH#5098: Inform the engine of the new opacity of the default text background.
                     if (_renderEngine)
                     {
-                        _renderEngine->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
                     }
                 }
             }
