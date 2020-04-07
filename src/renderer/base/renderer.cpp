@@ -832,6 +832,10 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             // Draw it within the viewport
             LOG_IF_FAILED(pEngine->PaintCursor(options));
         }
+        else
+        {
+            OutputDebugString(L"PaintCursor NOT In Bounds \n");
+        }
     }
 }
 

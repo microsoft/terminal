@@ -165,6 +165,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 [[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
+
+    if (!_buffer->GetSize().IsInBounds(_buffer->GetCursor().GetPosition()))
+    {
+        OutputDebugString(L"UserResize not in bounds\n");
+    }   
+
     if (viewportSize == oldDimensions)
     {
         return S_FALSE;
@@ -630,6 +636,12 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // If "wch" was a surrogate character, we just consumed 2 code units above.
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
             proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+
+            if (!_buffer->GetSize().IsInBounds(proposedCursorPosition))
+            {
+                OutputDebugString(L"InDist > 0 not in Bounds\n");
+            }
+
             i += inputDistance - 1;
         }
         else
@@ -646,6 +658,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // Try the character again.
             i--;
 
+            OutputDebugString(L"Reset to 0\n");
+
             // If we write the last cell of the row here, TextBuffer::Write will
             // mark this line as wrapped for us. If the next character we
             // process is a newline, the Terminal::CursorLineFeed will unmark
@@ -658,6 +672,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         }
 
         _AdjustCursorPosition(proposedCursorPosition);
+    }
+
+    if (!_buffer->GetSize().IsInBounds(_buffer->GetCursor().GetPosition()))
+    {
+        OutputDebugString(L"Still not in Bounds\n");
     }
 
     cursor.EndDeferDrawing();
@@ -682,8 +701,6 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
         notifyScroll = true;
     }
-
-    //proposedCursorPosition.X = base::ClampMin(proposedCursorPosition.X, ::base::ClampedNumeric<short>(bufferSize.Width() - 1));
 
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
@@ -800,6 +817,7 @@ CATCH_LOG()
 // - isVisible: whether the cursor should be visible
 void Terminal::SetCursorOn(const bool isOn) noexcept
 {
+    auto lock = LockForWriting();
     _buffer->GetCursor().SetIsOn(isOn);
 }
 
