@@ -138,6 +138,29 @@ catch (...)
 
 namespace winrt::TerminalApp::implementation
 {
+    // Function Description:
+    // - Get the AppLogic for the current active Xaml application, or null if there isn't one.
+    // Return value:
+    // - A pointer (bare) to the applogic, or nullptr. The app logic outlives all other objects,
+    //   unless the application is in a terrible way, so this is "safe."
+    AppLogic* AppLogic::Current() noexcept
+    try
+    {
+        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appLogicPointer{ winrt::get_self<AppLogic>(currentXamlApp.Logic()) })
+            {
+                return appLogicPointer;
+            }
+        }
+        return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return nullptr;
+    }
+
     AppLogic::AppLogic() :
         _dialogLock{},
         _loadedInitialSettings{ false },
@@ -860,6 +883,32 @@ namespace winrt::TerminalApp::implementation
             return _root->EarlyExitMessage();
         }
         return { L"" };
+    }
+
+    winrt::hstring AppLogic::ApplicationDisplayName() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            return package.DisplayName();
+        }
+        CATCH_LOG();
+
+        return RS_(L"ApplicationDisplayNameUnpackaged");
+    }
+
+    winrt::hstring AppLogic::ApplicationVersion() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            const auto version{ package.Id().Version() };
+            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+            return formatted;
+        }
+        CATCH_LOG();
+
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // -------------------------------- WinRT Events ---------------------------------
