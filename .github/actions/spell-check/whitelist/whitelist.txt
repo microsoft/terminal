@@ -1135,7 +1135,7 @@ IList
 ime
 Imm
 IMouse
-Impl
+impl
 implementingtextandtextrange
 inbox
 inclusivity
@@ -2437,7 +2437,6 @@ traceloggingprovider
 trackbar
 TRACKCOMPOSITION
 trackpad
-trackpads
 transcoder
 transitioning
 trc
@@ -2588,7 +2587,6 @@ vcrt
 vcvarsall
 vcxitems
 vcxproj
-ve
 vec
 VERCTRL
 versioning
@@ -2872,7 +2870,7 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xxxx
-XY
+xy
 yact
 YAML
 YCast
