@@ -913,7 +913,7 @@ namespace winrt::TerminalApp::implementation
         {
             struct LocalizationInfo
             {
-                WORD lcid, codepage;
+                WORD language, codepage;
             };
             // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
             auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetCurrentModuleHandleW()) };
