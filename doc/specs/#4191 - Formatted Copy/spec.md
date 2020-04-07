@@ -1,8 +1,8 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
-created on: <2020-04-01>
-last updated: <2020-04-07>
-issue id: <#4191>
+created on: 2020-04-01
+last updated: 2020-04-07
+issue id: #4191
 ---
 
 # Formatted Copy
@@ -13,9 +13,13 @@ When copying text, the Terminal should provide the option of including formattin
 
 ![Twitter poll](twitter-poll.png)
 
-## Solution Design
+## Solution Proposals
 
-Solutions for the right click behavior and user settings are described below.
+A proposal for the right click behavior as well as two user settings proposals are described below:
+
+1. [Right click behavior](#right-click-behavior)
+2. [Settings option 1 - global setting](#settings-option-1---global-setting)
+3. [Settings option 2 - key binding argument](#settings-option-2---key-binding-argument)
 
 ### Right click behavior
 
@@ -78,5 +82,9 @@ One possible issue is that discovering how to copy the formatting might be diffi
 ## Future considerations
 
 We could always add an additional option if people want more flexibility. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa.
+
+## Conclusions
+
+The team has decided to have plain text as the default copy behavior and to enable formatted copying with a global setting that accepts a boolean value (settings option 1 - global setting, option b). In the future, we can modify this setting to also accept an array, so the user can specify which formats they would like to copy. Additionally, a key binding can be added to allow for greater flexibility.
 
 ## Resources
