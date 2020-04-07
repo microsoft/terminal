@@ -908,6 +908,28 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        // Try to get the version the old-fashioned way
+        try
+        {
+            // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
+            auto filename{ wil::GetModuleFileNameW<std::wstring>(nullptr /* wil::GetModuleInstanceHandle() */) };
+            auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
+            THROW_LAST_ERROR_IF(size == 0);
+            auto versionBuffer{ std::make_unique<std::byte[]>(size) };
+            THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.c_str(), 0, size, versionBuffer.get()));
+            void* pFixedFileInfoUntyped{ nullptr }; // points into versionBuffer; do not delete
+            UINT fixedFileInfoLen{ 0 };
+            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\", &pFixedFileInfoUntyped, &fixedFileInfoLen));
+            auto pFixedFileInfo{ static_cast<VS_FIXEDFILEINFO*>(pFixedFileInfoUntyped) };
+            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u",
+                                                                    HIWORD(pFixedFileInfo->dwProductVersionMS),
+                                                                    LOWORD(pFixedFileInfo->dwProductVersionMS),
+                                                                    HIWORD(pFixedFileInfo->dwProductVersionLS),
+                                                                    LOWORD(pFixedFileInfo->dwProductVersionLS)) };
+            return formatted;
+        }
+        CATCH_LOG();
+
         return RS_(L"ApplicationVersionUnknown");
     }
 
