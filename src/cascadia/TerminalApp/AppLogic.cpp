@@ -916,7 +916,7 @@ namespace winrt::TerminalApp::implementation
                 WORD language, codepage;
             };
             // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
-            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetCurrentModuleHandleW()) };
+            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
             auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
             THROW_LAST_ERROR_IF(size == 0);
             auto versionBuffer{ std::make_unique<std::byte[]>(size) };
