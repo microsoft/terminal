@@ -650,8 +650,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto ch = e.Character();
-
-        const bool handled = _terminal->SendCharEvent(ch);
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        const auto modifiers = _GetPressedModifierKeys();
+        const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
 
