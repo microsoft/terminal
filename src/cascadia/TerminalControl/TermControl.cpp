@@ -1861,8 +1861,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto weakThis{ get_weak() };
 
-        // Even with muffling, we dispatch this tens of times _per hundredth of a second_.
-        // Muffle it harder.
+        // Muffle 2: Muffle Harder
+        // If we're the lucky coroutine who gets through, we'll still wait 100ms to clog
+        // the atomic above so we don't service the cursor update too fast. If we get through
+        // and finish processing the update quickly but similar requests are still beating
+        // down the door above in the atomic, we may still update the cursor way more than
+        // is visible to anyone's eye, which is a waste of effort.
         static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
         co_await winrt::resume_after(CursorUpdateQuiesceTime);
 
