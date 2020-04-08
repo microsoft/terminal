@@ -70,7 +70,7 @@ This will not impact reliability.
 
 A change in profile name, especially one that happens after the product ships
 (due to a changing i18n setting on the system), will impact users accustomed to
-`wt -p profilename`. I have no answer for how best to resolve this, except "get
+`wt -p profile`. I have no answer for how best to resolve this, except "get
 used to it".
 
 Since we also emit the name `cmd` in the user's settings template, we will want
