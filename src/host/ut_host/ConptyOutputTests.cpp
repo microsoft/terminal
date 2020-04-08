@@ -27,6 +27,9 @@ using namespace Microsoft::Console::Types;
 
 class ConptyOutputTests
 {
+    // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
+    // to be 80x32. If you change these, you'll probably inadvertently break a
+    // bunch of tests !!!
     static const SHORT TerminalViewWidth = 80;
     static const SHORT TerminalViewHeight = 32;
 

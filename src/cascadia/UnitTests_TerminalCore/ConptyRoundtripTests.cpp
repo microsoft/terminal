@@ -49,13 +49,11 @@ namespace TerminalCoreUnitTests
 };
 using namespace TerminalCoreUnitTests;
 
-// Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
-#define INIT_TEST_PROPERTY(type, identifer, description) \
-    type identifer;                                      \
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L#identifer, identifer), description);
-
 class TerminalCoreUnitTests::ConptyRoundtripTests final
 {
+    // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
+    // to be 80x32. If you change these, you'll probably inadvertently break a
+    // bunch of tests !!!
     static const SHORT TerminalViewWidth = 80;
     static const SHORT TerminalViewHeight = 32;
 
