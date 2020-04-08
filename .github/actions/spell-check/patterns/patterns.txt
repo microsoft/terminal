@@ -7,3 +7,4 @@ Scro\&ll
  :\\windows\\syste\b
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
 hostSm\.ProcessString\(L"[^"]+"
+([A-Za-z])\1{3,}
