@@ -632,11 +632,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
-            _connection.Start();
             _initializedTerminal = true;
         } // scope for TerminalLock
-        // call this event dispatcher outside of lock
 
+        // Start the connection outside of lock, because it could
+        // start writing output immediately.
+        _connection.Start();
+
+        // Likewise, run the event handlers outside of lock (they could
+        // be reentrant)
         _InitializedHandlers(*this, nullptr);
         return true;
     }
