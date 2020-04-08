@@ -1847,12 +1847,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - N/A
     winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
     {
-        std::unique_lock muffleLock{ _stateUpdateMuffleMutex, std::defer_lock };
-        // ownership of the muffling lock moves into the coroutine
-        // and is only released when the coroutine is done
-        // this stops us from overwhelming the dispatcher with events.
-        if (!muffleLock.try_lock())
+        bool expectedFalse{ false };
+        if (!_coroutineDispatchStateUpdateInProgress.compare_exchange_weak(expectedFalse, true))
         {
+            // somebody's already in here.
             return;
         }
 
@@ -1863,6 +1861,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto weakThis{ get_weak() };
 
+        // Even with muffling, we dispatch this tens of times _per hundredth of a second_.
+        // Muffle it harder.
+        static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
+        co_await winrt::resume_after(CursorUpdateQuiesceTime);
+
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
@@ -1871,6 +1874,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 TSFInputControl().TryRedrawCanvas();
             }
+            _coroutineDispatchStateUpdateInProgress.store(false);
         }
     }
 
