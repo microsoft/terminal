@@ -11,6 +11,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "AppLogic.h"
 #include "Utils.h"
+#include "LibraryResources.h"
 
 #include "PowershellCoreProfileGenerator.h"
 #include "WslDistroGenerator.h"
@@ -704,6 +705,8 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
         replace(finalSettings, "%VERSION%", til::u16u8(appLogic->ApplicationVersion()));
         replace(finalSettings, "%PRODUCT%", til::u16u8(appLogic->ApplicationDisplayName()));
     }
+
+    replace(finalSettings, "%COMMAND_PROMPT_LOCALIZED_NAME%", RS_A(L"CommandPromptDisplayName"));
 
     return finalSettings;
 }
