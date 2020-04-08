@@ -17,7 +17,7 @@
     "copyOnSelect": false,
 
     // A profile specifies a command to execute paired with information about how it should look and feel.
-    // Each one of then will appear in the 'New Tab' dropdown,
+    // Each one of them will appear in the 'New Tab' dropdown,
     //   and can be invoked from the commandline with `wt.exe -p xxx`
     // To learn more about profiles, visit https://aka.ms/terminal-profile-settings
     "profiles":
@@ -65,7 +65,7 @@
 
         // Press Alt+Shift+D to open a new pane.
         // - "split": "auto" makes this pane open in the direction that provides the most surface area.
-        // - "splitMode": "duplicate" makes this pane a duplicate of the focused pane's profile.
+        // - "splitMode": "duplicate" makes the new pane use the focused pane's profile.
         // To learn more about panes, visit https://aka.ms/terminal-panes
         { "command": { "action": "splitPane", "split": "auto", "splitMode": "duplicate" }, "keys": "alt+shift+d" }
     ]
