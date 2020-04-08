@@ -478,16 +478,13 @@ using namespace Microsoft::Console::Types;
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
-    // If we've written text to the last column of the viewport, then mark
+    // GH#4415, GH#5181
+    // If the renderer told us that this was a wrapped line, then mark
     // that we've wrapped this line. The next time we attempt to move the
     // cursor, if we're trying to move it to the start of the next line,
     // we'll remember that this line was wrapped, and not manually break the
     // line.
-    // Don't do this if the last character we're writing is a space - The last
-    // char will always be a space, but if we see that, we shouldn't wrap.
-    const short lastWrittenChar = base::ClampAdd(_lastText.X, base::ClampSub(totalWidth, numSpaces));
-    if (lineWrapped &&
-        lastWrittenChar > _lastViewport.RightInclusive())
+    if (lineWrapped)
     {
         _wrappedRow = coord.Y;
         _trace.TraceSetWrapped(coord.Y);
@@ -558,7 +555,7 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (numSpaces > 0)
+        else if (removeSpaces && numSpaces > 0)
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));

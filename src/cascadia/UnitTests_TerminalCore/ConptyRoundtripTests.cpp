@@ -186,6 +186,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(OverstrikeAtBottomOfBuffer);
     TEST_METHOD(MarginsWithStatusLine);
     TEST_METHOD(OutputWrappedLineWithSpace);
+    TEST_METHOD(OutputWrappedLineWithSpaceAtBottomOfBuffer);
 
     TEST_METHOD(ScrollWithMargins);
 
@@ -1094,6 +1095,15 @@ void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
     sm.ProcessString(std::wstring(wrappedLineLength, L'A'));
 
     auto verifyBuffer = [](const TextBuffer& tb) {
+        // Buffer contents should look like the following: (80 wide)
+        // (w) means we hard wrapped the line
+        // (b) means the line is _not_ wrapped (it's broken, the default state.)
+        // cursor is on the '_'
+        //
+        // |AAAAAAAA...AAAA| (w)
+        // |AAAAA_  ...    | (b) (There are 20 'A's on this line.)
+        // |        ...    | (b)
+
         VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
         VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
@@ -1157,17 +1167,75 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
 
     const auto wrappedLineLength = TerminalViewWidth + 20;
 
+    // The following diagrams show the buffer contents after each string emitted
+    // from conpty. For each of these diagrams:
+    // (w) means we hard wrapped the line
+    // (b) means the line is _not_ wrapped (it's broken, the default state.)
+    // cursor is on the '_'
+
+    // Initial state:
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |_              | (b)
+
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AAAA|_ (w) The cursor is actually on the last A here
+
     // TODO GH#5228 might break the "newline & repaint the wrapped char" checks here, that's okay.
     expectedOutput.push_back("\r"); // This \r\n is emitted by ScrollFrame to
     expectedOutput.push_back("\n"); // add a newline to the bottom of the buffer
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AAAA| (b)
+    // |_              | (b)
+
     expectedOutput.push_back("\x1b[31;80H"); // Move the cursor BACK to the wrapped row
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AAAA| (b) The cursor is actually on the last A here
+    // |               | (b)
+
     expectedOutput.push_back(std::string(1, 'A')); // Reprint the last character of the wrapped row
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AAAA|_ (w) The cursor is actually on the last A here
+    // |               | (b)
+
     expectedOutput.push_back(std::string(20, 'A')); // Print the second line.
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AAAA| (w)
+    // |AAAAA_         | (b) There are 20 'A's on this line.
 
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
 
     auto verifyBuffer = [](const TextBuffer& tb, const short wrappedRow) {
+        // Buffer contents should look like the following: (80 wide)
+        // (w) means we hard wrapped the line
+        // (b) means the line is _not_ wrapped (it's broken, the default state.)
+        // cursor is on the '_'
+        //
+        // |X              | (b)
+        // |X              | (b)
+        // ...
+        // |X              | (b)
+        // |AAAAAAAA...AAAA| (w)
+        // |AAAAA_  ...    | (b) (There are 20 'A's on this line.)
+
         VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
         VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
 
@@ -1275,6 +1343,7 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 
         auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
+
         auto iter1 = tb.GetCellDataAt({ 0, wrappedRow + 1 });
         TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
         auto iter2 = tb.GetCellDataAt({ 20, wrappedRow + 1 });
@@ -1934,12 +2003,23 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     sm.ProcessString(std::wstring(secondTextLength, L'B'));
 
     auto verifyBuffer = [&](const TextBuffer& tb) {
+        // Buffer contents should look like the following: (80 wide)
+        // (w) means we hard wrapped the line
+        // (b) means the line is _not_ wrapped (it's broken, the default state.)
+        //
+        // |AAAA...AA  | (w)
+        // | B_ ...    | (b) (cursor is on the '_')
+        // |    ...    | (b)
+
         VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
         VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
 
+        // First row
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, firstTextLength);
         TestUtils::VerifySpanOfText(L" ", iter0, 0, 2);
+
+        // Second row
         auto iter1 = tb.GetCellDataAt({ 0, 1 });
         TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
         auto iter2 = tb.GetCellDataAt({ 1, 1 });
@@ -1949,14 +2029,160 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(hostTb);
 
-    // TODO: Actually check the conpty output here.
-    _checkConptyOutput = false;
-    _logConpty = true;
-    // expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    // expectedOutput.push_back(std::string(20, 'A'));
+    std::string firstLine = std::string(firstTextLength, 'A');
+    firstLine += "  ";
+    std::string secondLine{ " B" };
+
+    expectedOutput.push_back(firstLine);
+    expectedOutput.push_back(secondLine);
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
+{
+    // See https://github.com/microsoft/terminal/pull/5181#issuecomment-610110348
+    // This is the same test as OutputWrappedLineWithSpace, but at the bottom of
+    // the buffer, so we get scrolling behavior as well.
+    Log::Comment(L"Ensures that a buffer line in conhost that wrapped _on a "
+                 L"space_ will still be emitted as wrapped.");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    // First, fill the buffer with contents, so conpty starts circling
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        Log::Comment(NoThrowString().Format(L"Writing line %d/%d", i, end));
+        expectedOutput.push_back("X");
+        if (i < hostView.BottomInclusive())
+        {
+            expectedOutput.push_back("\r\n");
+        }
+        else
+        {
+            // After we hit the bottom of the viewport, the newlines come in
+            // separated by empty writes for whatever reason.
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
+            expectedOutput.push_back("");
+        }
+
+        sm.ProcessString(L"X\n");
+
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+
+    const auto firstTextLength = TerminalViewWidth - 2;
+    const auto spacesLength = 3;
+    const auto secondTextLength = 1;
+
+    std::string firstLine = std::string(firstTextLength, 'A');
+    firstLine += "  ";
+    std::string secondLine{ " B" };
+
+    // The following diagrams show the buffer contents after each string emitted
+    // from conpty. For each of these diagrams:
+    // (w) means we hard wrapped the line
+    // (b) means the line is _not_ wrapped (it's broken, the default state.)
+    // cursor is on the '_'
+
+    // Initial state:
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |_              | (b)
+
+    expectedOutput.push_back(firstLine);
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AA _| (w) The cursor is actually on the last ' ' here
+
+    // TODO GH#5228 might break the "newline & repaint the wrapped char" checks here, that's okay.
+    expectedOutput.push_back("\r"); // This \r\n is emitted by ScrollFrame to
+    expectedOutput.push_back("\n"); // add a newline to the bottom of the buffer
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AA | (b)
+    // |_              | (b)
+
+    expectedOutput.push_back("\x1b[31;80H"); // Move the cursor BACK to the wrapped row
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AA _| (b) The cursor is actually on the last ' ' here
+    // |               | (b)
+
+    expectedOutput.push_back(std::string(1, ' ')); // Reprint the last character of the wrapped row
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AA  |_ (w) The cursor is actually on the last ' ' here
+    // |               | (b)
+
+    expectedOutput.push_back(secondLine);
+    // |X              | (b)
+    // |X              | (b)
+    // ...
+    // |X              | (b)
+    // |AAAAAAAA...AA  | (w)
+    // | B_            | (b)
+
+    sm.ProcessString(std::wstring(firstTextLength, L'A'));
+    sm.ProcessString(std::wstring(spacesLength, L' '));
+    sm.ProcessString(std::wstring(secondTextLength, L'B'));
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
+        // Buffer contents should look like the following: (80 wide)
+        // (w) means we hard wrapped the line
+        // (b) means the line is _not_ wrapped (it's broken, the default state.)
+        //
+        // |AAAA...AA  | (w)
+        // | B_ ...    | (b) (cursor is on the '_')
+        // |    ...    | (b)
+
+        const short wrappedRow = viewport.bottom<short>() - 2;
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+
+        // First row
+        auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, firstTextLength);
+        TestUtils::VerifySpanOfText(L" ", iter0, 0, 2);
+
+        // Second row
+        auto iter1 = tb.GetCellDataAt({ 0, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
+        auto iter2 = tb.GetCellDataAt({ 1, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L"B", iter2, 0, secondTextLength);
+    };
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(hostTb, hostView.ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }
