@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
         winrt::hstring _lastIconPath{};
-        bool _closing = false;
+        bool _closing{ false };
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };

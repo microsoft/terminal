@@ -66,7 +66,6 @@ public:
     std::optional<winrt::TerminalApp::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     void Shutdown();
-    void Close();
 
     int GetLeafPaneCount() const noexcept;
 
@@ -101,12 +100,9 @@ private:
 
     Borders _borders{ Borders::None };
 
-    bool _closeInitiatedByUI{ false };
-
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
-    // winrt::fire_and_forget _CloseAsync();
 
     bool _CanSplit(winrt::TerminalApp::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::TerminalApp::SplitState splitType,
