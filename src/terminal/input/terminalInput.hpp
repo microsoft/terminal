@@ -33,8 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         ~TerminalInput() = default;
 
-        bool HandleKey(const IInputEvent* const pInEvent) const;
-        bool HandleChar(const wchar_t ch);
+        bool HandleKey(const IInputEvent* const pInEvent);
         void ChangeKeypadMode(const bool applicationMode) noexcept;
         void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
@@ -71,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _keypadApplicationMode = false;
         bool _cursorApplicationMode = false;
 
+        void _SendChar(const wchar_t ch);
         void _SendNullInputSequence(const DWORD dwControlKeyState) const;
         void _SendInputSequence(const std::wstring_view sequence) const noexcept;
         void _SendEscapedInputSequence(const wchar_t wch) const;

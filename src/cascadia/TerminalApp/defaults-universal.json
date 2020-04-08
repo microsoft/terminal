@@ -4,7 +4,7 @@
     "defaultProfile": "{550ce7b8-d500-50ad-8a1a-c400c3262db3}",
     "initialCols": 120,
     "initialRows": 30,
-    "requestedTheme": "system",
+    "theme": "system",
     "showTabsInTitlebar": false,
     "showTerminalTitleInTitlebar": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",

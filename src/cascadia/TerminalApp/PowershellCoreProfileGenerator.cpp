@@ -21,6 +21,7 @@ static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShel
 static constexpr std::wstring_view PWSH_EXE{ L"pwsh.exe" };
 static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_ICON{ L"ms-appx:///ProfileIcons/pwsh-preview.png" };
+static constexpr std::wstring_view POWERSHELL_PREFERRED_PROFILE_NAME{ L"PowerShell" };
 
 namespace
 {
@@ -322,8 +323,17 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
         // (or the closest approximation thereof). It may choose a preview instance as the "best" if it is a higher version.
         auto firstProfile = profiles.begin();
         firstProfile->SetGuid(PowershellCoreGuid);
-        firstProfile->SetName(L"PowerShell");
+        firstProfile->SetName(POWERSHELL_PREFERRED_PROFILE_NAME);
     }
 
     return profiles;
+}
+
+// Function Description:
+// - Returns the thing it's named for.
+// Return value:
+// - the thing it says in the name
+const std::wstring_view PowershellCoreProfileGenerator::GetPreferredPowershellProfileName()
+{
+    return POWERSHELL_PREFERRED_PROFILE_NAME;
 }
