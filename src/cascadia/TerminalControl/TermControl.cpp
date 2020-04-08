@@ -484,14 +484,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged()
     {
-        { // lock scope
-            auto terminalLock = _terminal->LockForReading();
-            if (!_initializedTerminal)
-            {
-                return;
-            }
-        }
-
+        // This event is only registered during terminal initialization,
+        // so we don't need to check _initializedTerminal.
+        // We also don't lock for things that come back from the renderer.
         auto chain = _renderEngine->GetSwapChain();
         auto weakThis{ get_weak() };
 
@@ -499,8 +494,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            auto terminalLock = _terminal->LockForWriting();
-
             _AttachDxgiSwapChainToXaml(chain.Get());
         }
     }
@@ -657,8 +650,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto ch = e.Character();
-
-        const bool handled = _terminal->SendCharEvent(ch);
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        const auto modifiers = _GetPressedModifierKeys();
+        const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
 
@@ -1887,8 +1881,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - collapseText: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool collapseText)
+    // - singleLine: collapse all of the text to one line
+    bool TermControl::CopySelectionToClipboard(bool singleLine)
     {
         if (_closing)
         {
@@ -1905,7 +1899,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _selectionNeedsToBeCopied = false;
 
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
 
         // convert text: vector<string> --> string
         std::wstring textData;

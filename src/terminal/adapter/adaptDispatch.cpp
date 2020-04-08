@@ -1645,6 +1645,8 @@ bool AdaptDispatch::SoftReset()
 //Routine Description:
 // Full Reset - Perform a hard reset of the terminal. http://vt100.net/docs/vt220-rm/chapter4.html
 //  RIS performs the following actions: (Items with sub-bullets are supported)
+//   - Switches to the main screen buffer if in the alt buffer.
+//      * This matches the XTerm behaviour, which is the de facto standard for the alt buffer.
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
@@ -1663,9 +1665,21 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
+    bool success = true;
+
+    // If in the alt buffer, switch back to main before doing anything else.
+    if (_usingAltBuffer)
+    {
+        success = _pConApi->PrivateUseMainScreenBuffer();
+        _usingAltBuffer = !success;
+    }
+
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
-    bool success = SoftReset();
+    if (success)
+    {
+        success = SoftReset();
+    }
 
     // Clears the screen - Needs to be done in two operations.
     if (success)
