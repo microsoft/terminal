@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void NotifyFocusEnter();
         void NotifyFocusLeave();
         void ClearBuffer();
+        void TryRedrawCanvas();
 
         void Close();
 
@@ -73,6 +74,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _inComposition;
         size_t _activeTextStart;
         void _SendAndClearText();
+        void _RedrawCanvas();
+        bool _focused;
+
+        til::point _currentTerminalCursorPos;
+        double _currentCanvasWidth;
+        double _currentTextBlockHeight;
+        winrt::Windows::Foundation::Rect _currentControlBounds;
+        winrt::Windows::Foundation::Rect _currentTextBounds;
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation

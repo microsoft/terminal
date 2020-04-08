@@ -15,6 +15,8 @@ namespace winrt::TerminalApp::implementation
     struct AppLogic : AppLogicT<AppLogic>
     {
     public:
+        static AppLogic* Current() noexcept;
+
         AppLogic();
         ~AppLogic() = default;
 
@@ -27,6 +29,9 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         winrt::hstring EarlyExitMessage();
+
+        winrt::hstring ApplicationDisplayName() const;
+        winrt::hstring ApplicationVersion() const;
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);

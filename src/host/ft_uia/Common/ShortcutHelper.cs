@@ -31,7 +31,7 @@ namespace Conhost.UIA.Tests.Common
 
         ~ShortcutHelper()
         {
-           this.Dispose(false);
+            this.Dispose(false);
         }
 
         public void Dispose()

@@ -25,20 +25,10 @@ static constexpr std::string_view ActionKey{ "action" };
 static constexpr std::string_view UnboundKey{ "unbound" };
 
 static constexpr std::string_view CopyTextKey{ "copy" };
-static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" }; // Legacy
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
 static constexpr std::string_view NewTabKey{ "newTab" };
-static constexpr std::string_view NewTabWithProfile0Key{ "newTabProfile0" }; // Legacy
-static constexpr std::string_view NewTabWithProfile1Key{ "newTabProfile1" }; // Legacy
-static constexpr std::string_view NewTabWithProfile2Key{ "newTabProfile2" }; // Legacy
-static constexpr std::string_view NewTabWithProfile3Key{ "newTabProfile3" }; // Legacy
-static constexpr std::string_view NewTabWithProfile4Key{ "newTabProfile4" }; // Legacy
-static constexpr std::string_view NewTabWithProfile5Key{ "newTabProfile5" }; // Legacy
-static constexpr std::string_view NewTabWithProfile6Key{ "newTabProfile6" }; // Legacy
-static constexpr std::string_view NewTabWithProfile7Key{ "newTabProfile7" }; // Legacy
-static constexpr std::string_view NewTabWithProfile8Key{ "newTabProfile8" }; // Legacy
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view CloseWindowKey{ "closeWindow" };
 static constexpr std::string_view CloseTabKey{ "closeTab" };
@@ -46,37 +36,17 @@ static constexpr std::string_view ClosePaneKey{ "closePane" };
 static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
-static constexpr std::string_view IncreaseFontSizeKey{ "increaseFontSize" };
-static constexpr std::string_view DecreaseFontSizeKey{ "decreaseFontSize" };
+static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
 static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
-static constexpr std::string_view SwitchToTab0Key{ "switchToTab0" }; // Legacy
-static constexpr std::string_view SwitchToTab1Key{ "switchToTab1" }; // Legacy
-static constexpr std::string_view SwitchToTab2Key{ "switchToTab2" }; // Legacy
-static constexpr std::string_view SwitchToTab3Key{ "switchToTab3" }; // Legacy
-static constexpr std::string_view SwitchToTab4Key{ "switchToTab4" }; // Legacy
-static constexpr std::string_view SwitchToTab5Key{ "switchToTab5" }; // Legacy
-static constexpr std::string_view SwitchToTab6Key{ "switchToTab6" }; // Legacy
-static constexpr std::string_view SwitchToTab7Key{ "switchToTab7" }; // Legacy
-static constexpr std::string_view SwitchToTab8Key{ "switchToTab8" }; // Legacy
-static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // Legacy
+static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
-static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" }; // Legacy
-static constexpr std::string_view SplitVerticalKey{ "splitVertical" }; // Legacy
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
-static constexpr std::string_view ResizePaneLeftKey{ "resizePaneLeft" }; // Legacy
-static constexpr std::string_view ResizePaneRightKey{ "resizePaneRight" }; // Legacy
-static constexpr std::string_view ResizePaneUpKey{ "resizePaneUp" }; // Legacy
-static constexpr std::string_view ResizePaneDownKey{ "resizePaneDown" }; // Legacy
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
-static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" }; // Legacy
-static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" }; // Legacy
-static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" }; // Legacy
-static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" }; // Legacy
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 
@@ -90,55 +60,25 @@ static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 // about here.
 static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames{
     { CopyTextKey, ShortcutAction::CopyText },
-    { CopyTextWithoutNewlinesKey, ShortcutAction::CopyTextWithoutNewlines },
     { PasteTextKey, ShortcutAction::PasteText },
     { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
     { DuplicateTabKey, ShortcutAction::DuplicateTab },
     { NewTabKey, ShortcutAction::NewTab },
-    { NewTabWithProfile0Key, ShortcutAction::NewTabProfile0 },
-    { NewTabWithProfile1Key, ShortcutAction::NewTabProfile1 },
-    { NewTabWithProfile2Key, ShortcutAction::NewTabProfile2 },
-    { NewTabWithProfile3Key, ShortcutAction::NewTabProfile3 },
-    { NewTabWithProfile4Key, ShortcutAction::NewTabProfile4 },
-    { NewTabWithProfile5Key, ShortcutAction::NewTabProfile5 },
-    { NewTabWithProfile6Key, ShortcutAction::NewTabProfile6 },
-    { NewTabWithProfile7Key, ShortcutAction::NewTabProfile7 },
-    { NewTabWithProfile8Key, ShortcutAction::NewTabProfile8 },
     { NewWindowKey, ShortcutAction::NewWindow },
     { CloseWindowKey, ShortcutAction::CloseWindow },
     { CloseTabKey, ShortcutAction::CloseTab },
     { ClosePaneKey, ShortcutAction::ClosePane },
     { NextTabKey, ShortcutAction::NextTab },
     { PrevTabKey, ShortcutAction::PrevTab },
-    { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
-    { DecreaseFontSizeKey, ShortcutAction::DecreaseFontSize },
+    { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
     { ResetFontSizeKey, ShortcutAction::ResetFontSize },
     { ScrollupKey, ShortcutAction::ScrollUp },
     { ScrolldownKey, ShortcutAction::ScrollDown },
     { ScrolluppageKey, ShortcutAction::ScrollUpPage },
     { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
     { SwitchToTabKey, ShortcutAction::SwitchToTab },
-    { SwitchToTab0Key, ShortcutAction::SwitchToTab0 },
-    { SwitchToTab1Key, ShortcutAction::SwitchToTab1 },
-    { SwitchToTab2Key, ShortcutAction::SwitchToTab2 },
-    { SwitchToTab3Key, ShortcutAction::SwitchToTab3 },
-    { SwitchToTab4Key, ShortcutAction::SwitchToTab4 },
-    { SwitchToTab5Key, ShortcutAction::SwitchToTab5 },
-    { SwitchToTab6Key, ShortcutAction::SwitchToTab6 },
-    { SwitchToTab7Key, ShortcutAction::SwitchToTab7 },
-    { SwitchToTab8Key, ShortcutAction::SwitchToTab8 },
-    { SplitHorizontalKey, ShortcutAction::SplitHorizontal },
-    { SplitVerticalKey, ShortcutAction::SplitVertical },
     { ResizePaneKey, ShortcutAction::ResizePane },
-    { ResizePaneLeftKey, ShortcutAction::ResizePaneLeft },
-    { ResizePaneRightKey, ShortcutAction::ResizePaneRight },
-    { ResizePaneUpKey, ShortcutAction::ResizePaneUp },
-    { ResizePaneDownKey, ShortcutAction::ResizePaneDown },
     { MoveFocusKey, ShortcutAction::MoveFocus },
-    { MoveFocusLeftKey, ShortcutAction::MoveFocusLeft },
-    { MoveFocusRightKey, ShortcutAction::MoveFocusRight },
-    { MoveFocusUpKey, ShortcutAction::MoveFocusUp },
-    { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
     { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
     { SplitPaneKey, ShortcutAction::SplitPane },
@@ -149,146 +89,6 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
 using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
 using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
-// Function Description:
-// - Creates a function that can be used to generate a SplitPaneArgs for the
-//   legacy Split[SplitState] actions. These actions don't accept args from
-//   json, instead, they just return a SplitPaneArgs with the style already
-//   pre-defined, based on the input param.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - style: the split style to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into one of the legacy
-//   Split[SplitState] args.
-ParseActionFunction LegacyParseSplitPaneArgs(SplitState style)
-{
-    auto pfn = [style](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::SplitPaneArgs>();
-        args->SplitStyle(style);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
-// Function Description:
-// - Creates a function that can be used to generate a MoveFocusArgs for the
-//   legacy MoveFocus[Direction] actions. These actions don't accept args from
-//   json, instead, they just return a MoveFocusArgs with the Direction already
-//   per-defined, based on the input param.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - direction: the direction to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into one of the legacy
-//   MoveFocus[Direction] args.
-ParseActionFunction LegacyParseMoveFocusArgs(Direction direction)
-{
-    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::MoveFocusArgs>();
-        args->Direction(direction);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
-// Function Description:
-// - Creates a function that can be used to generate a ResizePaneArgs for the
-//   legacy ResizePane[Direction] actions. These actions don't accept args from
-//   json, instead, they just return a ResizePaneArgs with the Direction already
-//   per-defined, based on the input param.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - direction: the direction to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into one of the legacy
-//   ResizePane[Direction] args.
-ParseActionFunction LegacyParseResizePaneArgs(Direction direction)
-{
-    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::ResizePaneArgs>();
-        args->Direction(direction);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
-// Function Description:
-// - Creates a function that can be used to generate a NewTabWithProfileArgs for
-//   the legacy NewTabWithProfile[Index] actions. These actions don't accept
-//   args from json, instead, they just return a NewTabWithProfileArgs with the
-//   index already per-defined, based on the input param.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - index: the profile index to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into one of the legacy
-//   NewTabWithProfile[Index] args.
-ParseActionFunction LegacyParseNewTabWithProfileArgs(int index)
-{
-    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-        auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-        newTerminalArgs->ProfileIndex(index);
-        args->TerminalArgs(*newTerminalArgs);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
-// Function Description:
-// - Creates a function that can be used to generate a SwitchToTabArgs for the
-//   legacy SwitchToTab[Index] actions. These actions don't accept args from
-//   json, instead, they just return a SwitchToTabArgs with the index already
-//   per-defined, based on the input param.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - index: the tab index to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into one of the legacy
-//   SwitchToTab[Index] args.
-ParseActionFunction LegacyParseSwitchToTabArgs(int index)
-{
-    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
-        args->TabIndex(index);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
-// Function Description:
-// - Used to generate a CopyTextArgs for the legacy CopyTextWithoutNewlines
-//   action.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - direction: the direction to create the parse function for.
-// Return Value:
-// - A CopyTextArgs with TrimWhitespace set to true, to emulate "CopyTextWithoutNewlines".
-ParseResult LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
-{
-    auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
-    args->TrimWhitespace(false);
-    return { *args, {} };
-};
-
-// Function Description:
-// - Used to generate a AdjustFontSizeArgs for IncreaseFontSize/DecreaseFontSize
-//   actions with a delta of 1/-1.
-// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
-// Arguments:
-// - delta: the font size delta to create the parse function for.
-// Return Value:
-// - A function that can be used to "parse" json into an AdjustFontSizeArgs.
-ParseActionFunction LegacyParseAdjustFontSizeArgs(int delta)
-{
-    auto pfn = [delta](const Json::Value & /*value*/) -> ParseResult {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::AdjustFontSizeArgs>();
-        args->Delta(delta);
-        return { *args, {} };
-    };
-    return pfn;
-}
-
 // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
 // a set of deserializer functions that can be used to deserialize a IActionArgs
 // from json. Each type of IActionArgs that can accept arbitrary args should be
@@ -296,55 +96,25 @@ ParseActionFunction LegacyParseAdjustFontSizeArgs(int delta)
 // value.
 static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
     { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
-    { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
 
     { ShortcutAction::NewTab, winrt::TerminalApp::implementation::NewTabArgs::FromJson },
-    { ShortcutAction::NewTabProfile0, LegacyParseNewTabWithProfileArgs(0) },
-    { ShortcutAction::NewTabProfile1, LegacyParseNewTabWithProfileArgs(1) },
-    { ShortcutAction::NewTabProfile2, LegacyParseNewTabWithProfileArgs(2) },
-    { ShortcutAction::NewTabProfile3, LegacyParseNewTabWithProfileArgs(3) },
-    { ShortcutAction::NewTabProfile4, LegacyParseNewTabWithProfileArgs(4) },
-    { ShortcutAction::NewTabProfile5, LegacyParseNewTabWithProfileArgs(5) },
-    { ShortcutAction::NewTabProfile6, LegacyParseNewTabWithProfileArgs(6) },
-    { ShortcutAction::NewTabProfile7, LegacyParseNewTabWithProfileArgs(7) },
-    { ShortcutAction::NewTabProfile8, LegacyParseNewTabWithProfileArgs(8) },
 
     { ShortcutAction::SwitchToTab, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
-    { ShortcutAction::SwitchToTab0, LegacyParseSwitchToTabArgs(0) },
-    { ShortcutAction::SwitchToTab1, LegacyParseSwitchToTabArgs(1) },
-    { ShortcutAction::SwitchToTab2, LegacyParseSwitchToTabArgs(2) },
-    { ShortcutAction::SwitchToTab3, LegacyParseSwitchToTabArgs(3) },
-    { ShortcutAction::SwitchToTab4, LegacyParseSwitchToTabArgs(4) },
-    { ShortcutAction::SwitchToTab5, LegacyParseSwitchToTabArgs(5) },
-    { ShortcutAction::SwitchToTab6, LegacyParseSwitchToTabArgs(6) },
-    { ShortcutAction::SwitchToTab7, LegacyParseSwitchToTabArgs(7) },
-    { ShortcutAction::SwitchToTab8, LegacyParseSwitchToTabArgs(8) },
 
     { ShortcutAction::ResizePane, winrt::TerminalApp::implementation::ResizePaneArgs::FromJson },
-    { ShortcutAction::ResizePaneLeft, LegacyParseResizePaneArgs(Direction::Left) },
-    { ShortcutAction::ResizePaneRight, LegacyParseResizePaneArgs(Direction::Right) },
-    { ShortcutAction::ResizePaneUp, LegacyParseResizePaneArgs(Direction::Up) },
-    { ShortcutAction::ResizePaneDown, LegacyParseResizePaneArgs(Direction::Down) },
 
     { ShortcutAction::MoveFocus, winrt::TerminalApp::implementation::MoveFocusArgs::FromJson },
-    { ShortcutAction::MoveFocusLeft, LegacyParseMoveFocusArgs(Direction::Left) },
-    { ShortcutAction::MoveFocusRight, LegacyParseMoveFocusArgs(Direction::Right) },
-    { ShortcutAction::MoveFocusUp, LegacyParseMoveFocusArgs(Direction::Up) },
-    { ShortcutAction::MoveFocusDown, LegacyParseMoveFocusArgs(Direction::Down) },
 
-    { ShortcutAction::DecreaseFontSize, LegacyParseAdjustFontSizeArgs(-1) },
-    { ShortcutAction::IncreaseFontSize, LegacyParseAdjustFontSizeArgs(1) },
+    { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
 
     { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
-    { ShortcutAction::SplitVertical, LegacyParseSplitPaneArgs(SplitState::Vertical) },
-    { ShortcutAction::SplitHorizontal, LegacyParseSplitPaneArgs(SplitState::Horizontal) },
 
     { ShortcutAction::Invalid, nullptr },
 };
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
-//   KeyBinding->Action maping.
+//   KeyBinding->Action mapping.
 //   {
 //      keys:[String],
 //      command:String

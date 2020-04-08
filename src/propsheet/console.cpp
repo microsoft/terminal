@@ -106,7 +106,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
                 WCHAR awchBuffer[MAX_PATH] = { 0 };
                 STARTUPINFOW si;
 
-                // An error occured try to save the link file, display a message box to that effect...
+                // An error occurred try to save the link file, display a message box to that effect...
                 GetStartupInfoW(&si);
                 LoadStringW(ghInstance, IDS_LINKERROR, awchBuffer, ARRAYSIZE(awchBuffer));
                 StringCchPrintf(szMessage,

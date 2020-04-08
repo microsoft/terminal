@@ -515,4 +515,140 @@ class SizeTests
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
+
+    template<typename T>
+    struct SizeTypeWith_XY
+    {
+        T X, Y;
+    };
+    template<typename T>
+    struct SizeTypeWith_cxcy
+    {
+        T cx, cy;
+    };
+    template<typename T>
+    struct SizeTypeWith_WidthHeight
+    {
+        T Width, Height;
+    };
+    TEST_METHOD(CastFromFloatWithMathTypes)
+    {
+        SizeTypeWith_XY<float> XYFloatIntegral{ 1.f, 2.f };
+        SizeTypeWith_XY<float> XYFloat{ 1.6f, 2.4f };
+        SizeTypeWith_cxcy<double> cxcyDoubleIntegral{ 3., 4. };
+        SizeTypeWith_cxcy<double> cxcyDouble{ 3.6, 4.4 };
+        SizeTypeWith_WidthHeight<double> WHDoubleIntegral{ 5., 6. };
+        SizeTypeWith_WidthHeight<double> WHDouble{ 5.6, 6.4 };
+        Log::Comment(L"0.) Ceiling");
+        {
+            {
+                til::size converted{ til::math::ceiling, XYFloatIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::ceiling, XYFloat };
+                VERIFY_ARE_EQUAL((til::size{ 2, 3 }), converted);
+            }
+            {
+                til::size converted{ til::math::ceiling, cxcyDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::ceiling, cxcyDouble };
+                VERIFY_ARE_EQUAL((til::size{ 4, 5 }), converted);
+            }
+            {
+                til::size converted{ til::math::ceiling, WHDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+            {
+                til::size converted{ til::math::ceiling, WHDouble };
+                VERIFY_ARE_EQUAL((til::size{ 6, 7 }), converted);
+            }
+        }
+
+        Log::Comment(L"1.) Flooring");
+        {
+            {
+                til::size converted{ til::math::flooring, XYFloatIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::flooring, XYFloat };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::flooring, cxcyDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::flooring, cxcyDouble };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::flooring, WHDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+            {
+                til::size converted{ til::math::flooring, WHDouble };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"2.) Rounding");
+        {
+            {
+                til::size converted{ til::math::rounding, XYFloatIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::rounding, XYFloat };
+                VERIFY_ARE_EQUAL((til::size{ 2, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::rounding, cxcyDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::rounding, cxcyDouble };
+                VERIFY_ARE_EQUAL((til::size{ 4, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::rounding, WHDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+            {
+                til::size converted{ til::math::rounding, WHDouble };
+                VERIFY_ARE_EQUAL((til::size{ 6, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"3.) Truncating");
+        {
+            {
+                til::size converted{ til::math::truncating, XYFloatIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::truncating, XYFloat };
+                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
+            }
+            {
+                til::size converted{ til::math::truncating, cxcyDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::truncating, cxcyDouble };
+                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
+            }
+            {
+                til::size converted{ til::math::truncating, WHDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+            {
+                til::size converted{ til::math::truncating, WHDouble };
+                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
+            }
+        }
+    }
 };

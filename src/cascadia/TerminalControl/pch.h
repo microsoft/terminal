@@ -9,6 +9,8 @@
 
 #define WIN32_LEAN_AND_MEAN
 
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#define BLOCK_TIL
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
 //      SDK definition of this function, so the only fix is to undef it.
@@ -23,6 +25,7 @@
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.system.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
@@ -46,3 +49,5 @@
 #include <TraceLoggingProvider.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
+
+#include "til.h"

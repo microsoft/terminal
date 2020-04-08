@@ -25,7 +25,7 @@ static constexpr std::string_view InitialColsKey{ "initialCols" };
 static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
-static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
+static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
 static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
 static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
@@ -42,6 +42,14 @@ static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
+static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
+
+#ifdef _DEBUG
+static constexpr bool debugFeaturesDefault{ true };
+#else
+static constexpr bool debugFeaturesDefault{ false };
+#endif
+
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _keybindingsWarnings{},
@@ -56,11 +64,12 @@ GlobalAppSettings::GlobalAppSettings() :
     _initialY{},
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
-    _requestedTheme{ ElementTheme::Default },
+    _theme{ ElementTheme::Default },
     _tabWidthMode{ TabViewWidthMode::Equal },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
     _launchMode{ LaunchMode::DefaultMode },
+    _debugFeatures{ debugFeaturesDefault }
     _StartOnUserLogin{ false }
 {
 }
@@ -114,14 +123,14 @@ void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) n
     _showTitleInTitlebar = showTitleInTitlebar;
 }
 
-ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
+ElementTheme GlobalAppSettings::GetTheme() const noexcept
 {
-    return _requestedTheme;
+    return _theme;
 }
 
-void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
+void GlobalAppSettings::SetTheme(const ElementTheme theme) noexcept
 {
-    _requestedTheme = requestedTheme;
+    _theme = theme;
 }
 
 TabViewWidthMode GlobalAppSettings::GetTabWidthMode() const noexcept
@@ -171,6 +180,11 @@ bool GlobalAppSettings::GetConfirmCloseAllTabs() const noexcept
 void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept
 {
     _confirmCloseAllTabs = confirmCloseAllTabs;
+}
+
+bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
+{
+    return _debugFeatures;
 }
 
 #pragma region ExperimentalSettings
@@ -234,11 +248,12 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
     jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
-    jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(ThemeKey)] = winrt::to_string(_SerializeTheme(_theme));
     jsonObject[JsonKey(TabWidthModeKey)] = winrt::to_string(_SerializeTabWidthMode(_tabWidthMode));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
     jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
+    jsonObject[JsonKey(DebugFeaturesKey)] = _debugFeatures;
     jsonObject[JsonKey(EnableStartupTaskKey)] = _StartOnUserLogin;
 
     return jsonObject;
@@ -304,9 +319,28 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _launchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
     }
 
-    if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
+    if (auto theme{ json[JsonKey(ThemeKey)] })
     {
-        _requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+        _theme = _ParseTheme(GetWstringFromJson(theme));
+    }
+
+    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
+    {
+        _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
+    }
+
+    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
+    {
+        auto warnings = _keybindings->LayerJson(keybindings);
+        // It's possible that the user provided keybindings have some warnings
+        // in them - problems that we should alert the user to, but we can
+        // recover from. Most of these warnings cannot be detected later in the
+        // Validate settings phase, so we'll collect them now. If there were any
+        // warnings generated from parsing these keybindings, add them to our
+        // list of warnings.
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+    }
+
     }
 
     if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
@@ -328,6 +362,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
+    // GetBool will only override the current value if the key exists
+    JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
+    
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 

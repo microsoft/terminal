@@ -525,7 +525,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
+        VERIFY_ARE_EQUAL(mach._oscParameter, MAX_PARAMETER_VALUE);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -542,7 +542,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
+        VERIFY_ARE_EQUAL(mach._oscParameter, MAX_PARAMETER_VALUE);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -1064,14 +1064,19 @@ class StateMachineExternalTest final
     void ApplyParameterBoundary(size_t* uiExpected, size_t uiGiven)
     {
         // 0 and 1 should be 1. Use the preset value.
-        // 2019-12: No longer bound by SHORT_MAX. Goes all the way to size_t.
+        // 1-MAX_PARAMETER_VALUE should be what we set.
+        // > MAX_PARAMETER_VALUE should be MAX_PARAMETER_VALUE.
         if (uiGiven <= 1)
         {
             *uiExpected = 1u;
         }
-        else if (uiGiven > 1)
+        else if (uiGiven > 1 && uiGiven <= MAX_PARAMETER_VALUE)
         {
             *uiExpected = uiGiven;
+        }
+        else if (uiGiven > MAX_PARAMETER_VALUE)
+        {
+            *uiExpected = MAX_PARAMETER_VALUE; // 32767 is our max value.
         }
     }
 

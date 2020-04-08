@@ -140,6 +140,29 @@ catch (...)
 
 namespace winrt::TerminalApp::implementation
 {
+    // Function Description:
+    // - Get the AppLogic for the current active Xaml application, or null if there isn't one.
+    // Return value:
+    // - A pointer (bare) to the applogic, or nullptr. The app logic outlives all other objects,
+    //   unless the application is in a terrible way, so this is "safe."
+    AppLogic* AppLogic::Current() noexcept
+    try
+    {
+        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appLogicPointer{ winrt::get_self<AppLogic>(currentXamlApp.Logic()) })
+            {
+                return appLogicPointer;
+            }
+        }
+        return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return nullptr;
+    }
+
     AppLogic::AppLogic() :
         _dialogLock{},
         _loadedInitialSettings{ false },
@@ -220,7 +243,7 @@ namespace winrt::TerminalApp::implementation
         _root->Loaded({ this, &AppLogic::_OnLoaded });
         _root->Create();
 
-        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+        _ApplyTheme(_settings->GlobalSettings().GetTheme());
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
@@ -263,7 +286,27 @@ namespace winrt::TerminalApp::implementation
         // IMPORTANT: Set the requested theme of the dialog, because the
         // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
         // won't inherit our RequestedTheme automagically.
-        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+        // GH#5195, GH#3654 Because we cannot set RequestedTheme at the application level,
+        // we occasionally run into issues where parts of our UI end up themed incorrectly.
+        // Dialogs, for example, live under a different Xaml root element than the rest of
+        // our application. This makes our popup menus and buttons "disappear" when the
+        // user wants Terminal to be in a different theme than the rest of the system.
+        // This hack---and it _is_ a hack--walks up a dialog's ancestry and forces the
+        // theme on each element up to the root. We're relying a bit on Xaml's implementation
+        // details here, but it does have the desired effect.
+        // It's not enough to set the theme on the dialog alone.
+        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
+            auto theme{ _settings->GlobalSettings().GetTheme() };
+            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+            while (element)
+            {
+                element.RequestedTheme(theme);
+                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+            }
+        } };
+
+        themingLambda(dialog, nullptr); // if it's already in the tree
+        auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
         co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
@@ -413,7 +456,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
             // If we're showing the tabs in the titlebar, we need to use a
-            // TitlebarContol here to calculate how much space to reserve.
+            // TitlebarControl here to calculate how much space to reserve.
             //
             // We'll create a fake TitlebarControl, and we'll propose an
             // available size to it with Measure(). After Measure() is called,
@@ -505,7 +548,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetRequestedTheme();
+        return _settings->GlobalSettings().GetTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -620,7 +663,7 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         // Get the containing folder.
-        std::filesystem::path settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const auto settingsPath{ CascadiaSettings::GetSettingsPath() };
         const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
@@ -686,7 +729,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(_root->Dispatcher());
 
         // Refresh the UI theme
-        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+        _ApplyTheme(_settings->GlobalSettings().GetTheme());
     }
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
@@ -881,6 +924,32 @@ namespace winrt::TerminalApp::implementation
             return _root->EarlyExitMessage();
         }
         return { L"" };
+    }
+
+    winrt::hstring AppLogic::ApplicationDisplayName() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            return package.DisplayName();
+        }
+        CATCH_LOG();
+
+        return RS_(L"ApplicationDisplayNameUnpackaged");
+    }
+
+    winrt::hstring AppLogic::ApplicationVersion() const
+    {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            const auto version{ package.Id().Version() };
+            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+            return formatted;
+        }
+        CATCH_LOG();
+
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // -------------------------------- WinRT Events ---------------------------------

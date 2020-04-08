@@ -672,49 +672,5 @@ namespace TerminalCoreUnitTests
             selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 11, 99, 11 }));
         }
-
-        TEST_METHOD(CopyOnSelect)
-        {
-            Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
-
-            // set copyOnSelect for terminal
-            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
-            settings.CopyOnSelect(true);
-            term.UpdateSettings(settings);
-
-            // Simulate click at (x,y) = (5,10)
-            term.SetSelectionAnchor({ 5, 10 });
-
-            // Simulate move to (x,y) = (5,10)
-            // (So, no movement)
-            term.SetSelectionEnd({ 5, 10 });
-
-            // Case 1: single cell selection not allowed
-            {
-                // Simulate renderer calling TriggerSelection and acquiring selection area
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(0));
-
-                // single cell selection should not be allowed
-                // thus, selection is NOT active
-                VERIFY_IS_FALSE(term.IsSelectionActive());
-            }
-
-            // Case 2: move off of single cell
-            term.SetSelectionEnd({ 6, 10 });
-            ValidateSingleRowSelection(term, { 5, 10, 6, 10 });
-            VERIFY_IS_TRUE(term.IsSelectionActive());
-
-            // Case 3: move back onto single cell (now allowed)
-            term.SetSelectionEnd({ 5, 10 });
-            ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
-
-            // single cell selection should now be allowed
-            VERIFY_IS_TRUE(term.IsSelectionActive());
-        }
     };
 }

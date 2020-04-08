@@ -21,7 +21,7 @@ TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name)
                                                                     gsl::as_bytes(gsl::make_span(name))) };
     TerminalApp::Profile newProfile{ profileGuid };
 
-    newProfile.SetName(static_cast<std::wstring>(name));
+    newProfile.SetName(name);
 
     std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));

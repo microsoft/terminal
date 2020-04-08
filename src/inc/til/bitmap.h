@@ -14,7 +14,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         class _bitmap_const_iterator
         {
         public:
-            _bitmap_const_iterator(const std::vector<bool>& values, til::rectangle rc, ptrdiff_t pos) :
+            using iterator_category = typename std::input_iterator_tag;
+            using value_type = typename const til::rectangle;
+            using difference_type = typename ptrdiff_t;
+            using pointer = typename const til::rectangle*;
+            using reference = typename const til::rectangle&;
+
+            _bitmap_const_iterator(const dynamic_bitset<>& values, til::rectangle rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -28,6 +34,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _pos = _nextPos;
                 _calculateArea();
                 return (*this);
+            }
+
+            _bitmap_const_iterator operator++(int)
+            {
+                const auto prev = *this;
+                ++*this;
+                return prev;
             }
 
             constexpr bool operator==(const _bitmap_const_iterator& other) const noexcept
@@ -50,13 +63,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return _pos > other._pos;
             }
 
-            constexpr til::rectangle operator*() const noexcept
+            constexpr reference operator*() const noexcept
             {
                 return _run;
             }
 
+            constexpr pointer operator->() const noexcept
+            {
+                return &_run;
+            }
+
         private:
-            const std::vector<bool>& _values;
+            const dynamic_bitset<>& _values;
             const til::rectangle _rc;
             ptrdiff_t _pos;
             ptrdiff_t _nextPos;
@@ -69,7 +87,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _nextPos = _pos;
 
                 // Seek forward until we find an on bit.
-                while (_nextPos < _end && !_values.at(_nextPos))
+                while (_nextPos < _end && !_values[_nextPos])
                 {
                     ++_nextPos;
                 }
@@ -92,7 +110,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     {
                         ++_nextPos;
                         ++runLength;
-                    } while (_nextPos < rowEndIndex && _values.at(_nextPos));
+                    } while (_nextPos < rowEndIndex && _values[_nextPos]);
                     // Keep going until we reach end of row, end of the buffer, or the next bit is off.
 
                     // Assemble and store that run.
@@ -117,7 +135,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz{},
             _rc{},
             _bits{},
-            _dirty{}
+            _dirty{},
+            _runs{}
         {
         }
 
@@ -129,9 +148,28 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         bitmap(til::size sz, bool fill) :
             _sz(sz),
             _rc(sz),
-            _bits(sz.area(), fill),
-            _dirty(fill ? sz : til::rectangle{})
+            _bits(_sz.area()),
+            _dirty(fill ? sz : til::rectangle{}),
+            _runs{}
         {
+            if (fill)
+            {
+                set_all();
+            }
+        }
+
+        constexpr bool operator==(const bitmap& other) const noexcept
+        {
+            return _sz == other._sz &&
+                   _rc == other._rc &&
+                   _dirty == other._dirty && // dirty is before bits because it's a rough estimate of bits and a faster comparison.
+                   _bits == other._bits;
+            // _runs excluded because it's a cache of generated state.
+        }
+
+        constexpr bool operator!=(const bitmap& other) const noexcept
+        {
+            return !(*this == other);
         }
 
         const_iterator begin() const
@@ -144,17 +182,106 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_bits, _sz, _sz.area());
         }
 
+        const std::vector<til::rectangle>& runs() const
+        {
+            // If we don't have cached runs, rebuild.
+            if (!_runs.has_value())
+            {
+                // If there's only one square dirty, quick save it off and be done.
+                if (one())
+                {
+                    _runs.emplace({ _dirty });
+                }
+                else
+                {
+                    _runs.emplace(begin(), end());
+                }
+            }
+
+            // Return a reference to the runs.
+            return _runs.value();
+        }
+
+        // optional fill the uncovered area with bits.
+        void translate(const til::point delta, bool fill = false)
+        {
+            // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
+            til::bitmap other{ _sz };
+
+            for (auto run : *this)
+            {
+                // Offset by the delta
+                run += delta;
+
+                // Intersect with the bounds of our bitmap area
+                // as part of it could have slid out of bounds.
+                run &= _rc;
+
+                // Set it into the new bitmap.
+                other.set(run);
+            }
+
+            // If we were asked to fill... find the uncovered region.
+            if (fill)
+            {
+                // Original Rect of As.
+                //
+                // X <-- origin
+                // A A A A
+                // A A A A
+                // A A A A
+                // A A A A
+                const auto originalRect = _rc;
+
+                // If Delta = (2, 2)
+                // Translated Rect of Bs.
+                //
+                // X <-- origin
+                //
+                //
+                //     B B B B
+                //     B B B B
+                //     B B B B
+                //     B B B B
+                const auto translatedRect = _rc + delta;
+
+                // Subtract the B from the A one to see what wasn't filled by the move.
+                // C is the overlap of A and B:
+                //
+                // X <-- origin
+                // A A A A                     1 1 1 1
+                // A A A A                     1 1 1 1
+                // A A C C B B     subtract    2 2
+                // A A C C B B    --------->   2 2
+                //     B B B B      A - B
+                //     B B B B
+                //
+                // 1 and 2 are the spaces to fill that are "uncovered".
+                const auto fillRects = originalRect - translatedRect;
+                for (const auto& f : fillRects)
+                {
+                    other.set(f);
+                }
+            }
+
+            // Swap us with the temporary one.
+            std::swap(other, *this);
+        }
+
         void set(const til::point pt)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
+            _runs.reset(); // reset cached runs on any non-const method
 
             til::at(_bits, _rc.index_of(pt)) = true;
+
             _dirty |= til::rectangle{ pt };
         }
 
         void set(const til::rectangle rc)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
+            _runs.reset(); // reset cached runs on any non-const method
 
             for (const auto pt : rc)
             {
@@ -164,20 +291,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _dirty |= rc;
         }
 
-        void set_all()
+        void set_all() noexcept
         {
-            // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
-            // .assign(_size(), true) throws an assert (unsupported operation)
-            _bits = std::vector<bool>(_sz.area(), true);
+            _runs.reset(); // reset cached runs on any non-const method
+            _bits.set();
             _dirty = _rc;
         }
 
-        void reset_all()
+        void reset_all() noexcept
         {
-            // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
-            // .assign(_size(), false) throws an assert (unsupported operation)
-
-            _bits = std::vector<bool>(_sz.area(), false);
+            _runs.reset(); // reset cached runs on any non-const method
+            _bits.reset();
             _dirty = {};
         }
 
@@ -185,7 +309,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Set fill if you want the new region (on growing) to be marked dirty.
         bool resize(til::size size, bool fill = false)
         {
-            // FYI .resize(_size(), true/false) throws an assert (unsupported operation)
+            _runs.reset(); // reset cached runs on any non-const method
 
             // Don't resize if it's not different
             if (_sz != size)
@@ -254,14 +378,71 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _dirty == _rc;
         }
 
+        std::wstring to_string() const
+        {
+            std::wstringstream wss;
+            wss << std::endl
+                << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
+            wss << L"Runs:" << std::endl;
+
+            for (auto& item : *this)
+            {
+                wss << L"\t- " << item.to_string() << std::endl;
+            }
+
+            return wss.str();
+        }
+
     private:
         til::rectangle _dirty;
         til::size _sz;
         til::rectangle _rc;
-        std::vector<bool> _bits;
+        dynamic_bitset<> _bits;
+
+        mutable std::optional<std::vector<til::rectangle>> _runs;
 
 #ifdef UNIT_TESTING
         friend class ::BitmapTests;
 #endif
     };
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::bitmap>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::bitmap& rect)
+        {
+            return WEX::Common::NoThrowString(rect.to_string().c_str());
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits<::til::bitmap, ::til::bitmap>
+    {
+    public:
+        static bool AreEqual(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const ::til::bitmap& expectedLess, const ::til::bitmap& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const ::til::bitmap& expectedGreater, const ::til::bitmap& expectedLess) = delete;
+
+        static bool IsNull(const ::til::bitmap& object) noexcept
+        {
+            return object == til::bitmap{};
+        }
+    };
+
+};
+#endif

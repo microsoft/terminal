@@ -65,7 +65,7 @@ Not currently supported "out of the box". See issue [#1060](https://github.com/m
 
 ## Configuring Windows Terminal
 
-All Windows Terminal settings are currently managed using the `profiles.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState`.
+All Windows Terminal settings are currently managed using the `settings.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState`.
 
 To open the settings file from Windows Terminal:
 
@@ -73,7 +73,7 @@ To open the settings file from Windows Terminal:
 2. From the dropdown list, click `Settings`. You can also use a shortcut: <kbd>Ctrl</kbd>+<kbd>,</kbd>.
 3. Your default `json` editor will open the settings file.
 
-For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
+For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [settings.json documentation](../cascadia/SettingsSchema.md) section.
 
 ## Tips and Tricks
 

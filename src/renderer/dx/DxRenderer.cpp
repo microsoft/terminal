@@ -533,6 +533,11 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
                                                                     &props,
                                                                     &_d2dRenderTarget));
 
+        // We need the AntialiasMode for non-text object to be Aliased to ensure
+        //  that background boxes line up with each other and don't leave behind
+        //  stray colors.
+        // See GH#3626 for more details.
+        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
 
         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
@@ -1686,7 +1691,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea()
+[[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
