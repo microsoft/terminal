@@ -33,12 +33,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));
         }
 
-        template<typename TilMath, typename T>
-        constexpr point(TilMath, T x, T y, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<T>())>, int> /*sentinel*/ = 0) :
-            point(, TilMath::template cast<ptrdiff_t>(y))
-        {
-        }
-
         constexpr point(ptrdiff_t x, ptrdiff_t y) noexcept :
             _x(x),
             _y(y)
