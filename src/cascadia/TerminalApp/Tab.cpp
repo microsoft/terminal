@@ -24,6 +24,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
         _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+            _closing = true;
             _ClosedHandlers(nullptr, nullptr);
         });
 
@@ -338,6 +339,11 @@ namespace winrt::TerminalApp::implementation
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void Tab::Shutdown()
     {
+        if (_closing)
+        {
+            return;
+        }
+
         _rootPane->Shutdown();
     }
 

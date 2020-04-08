@@ -313,7 +313,9 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
 
     const auto newConnectionState = _control.ConnectionState();
 
-    if (newConnectionState < ConnectionState::Closed)
+    if (newConnectionState != ConnectionState::Closed)
+    // if (newConnectionState != ConnectionState::Closing)
+    // if (newConnectionState < ConnectionState::Closing)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
         return;
@@ -324,7 +326,8 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
     if (paneProfile)
     {
         auto mode = paneProfile->GetCloseOnExitMode();
-        if ((mode == CloseOnExitMode::Always) ||
+        if ( //(_closeInitiatedByUI) ||
+            (mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
             _ClosedHandlers(nullptr, nullptr);
@@ -358,6 +361,12 @@ void Pane::Close()
     _ClosedHandlers(nullptr, nullptr);
 }
 
+// winrt::fire_and_forget Pane::_CloseAsync()
+// {
+//     co_await winrt::resume_background();
+//     _control.Close();
+// }
+
 // Method Description:
 // - Prepare this pane to be removed from the UI hierarchy by closing all controls
 //   and connections beneath it.
@@ -368,7 +377,10 @@ void Pane::Shutdown()
     std::unique_lock lock{ _createCloseLock };
     if (_IsLeaf())
     {
+        _closeInitiatedByUI = true;
         _control.Close();
+        Close();
+        // _CloseAsync();
     }
     else
     {
