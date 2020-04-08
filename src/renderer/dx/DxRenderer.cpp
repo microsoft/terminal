@@ -837,10 +837,7 @@ CATCH_RETURN();
     }
     case SwapChainMode::ForComposition:
     {
-        SIZE size = _sizeTarget;
-        size.cx = static_cast<LONG>(size.cx * _scale);
-        size.cy = static_cast<LONG>(size.cy * _scale);
-        return size;
+        return _sizeTarget.scale(til::math::ceiling, _scale);
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
