@@ -434,7 +434,7 @@ class PointTests
         Log::Comment(L"1.) Scale results in value that is too large.");
         {
             const til::point pt{ 5, 10 };
-            const float scale = std::numeric_limits<float>().max();
+            constexpr float scale = std::numeric_limits<float>().max();
 
             auto fn = [&]() {
                 pt.scale(til::math::ceiling, scale);
