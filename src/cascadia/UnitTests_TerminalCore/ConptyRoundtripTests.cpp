@@ -185,6 +185,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(ClearHostTrickeryTest);
     TEST_METHOD(OverstrikeAtBottomOfBuffer);
     TEST_METHOD(MarginsWithStatusLine);
+    TEST_METHOD(OutputWrappedLineWithSpace);
 
     TEST_METHOD(ScrollWithMargins);
 
@@ -1905,4 +1906,57 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     Log::Comment(L"========== Checking the terminal buffer state ==========");
 
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::OutputWrappedLineWithSpace()
+{
+    // See https://github.com/microsoft/terminal/pull/5181#issuecomment-610110348
+    Log::Comment(L"Ensures that a buffer line in conhost that wrapped _on a "
+                 L"space_ will still be emitted as wrapped.");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    const auto firstTextLength = TerminalViewWidth - 2;
+    const auto spacesLength = 3;
+    const auto secondTextLength = 1;
+
+    sm.ProcessString(std::wstring(firstTextLength, L'A'));
+    sm.ProcessString(std::wstring(spacesLength, L' '));
+    sm.ProcessString(std::wstring(secondTextLength, L'B'));
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+
+        auto iter0 = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, firstTextLength);
+        TestUtils::VerifySpanOfText(L" ", iter0, 0, 2);
+        auto iter1 = tb.GetCellDataAt({ 0, 1 });
+        TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
+        auto iter2 = tb.GetCellDataAt({ 1, 1 });
+        TestUtils::VerifySpanOfText(L"B", iter2, 0, secondTextLength);
+    };
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(hostTb);
+
+    // TODO: Actually check the conpty output here.
+    _checkConptyOutput = false;
+    _logConpty = true;
+    // expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    // expectedOutput.push_back(std::string(20, 'A'));
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(termTb);
 }
