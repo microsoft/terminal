@@ -236,13 +236,6 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
         {
             LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
 
-            if (!_pData->GetTextBuffer().GetSize().IsInBounds(_pData->GetTextBuffer().GetCursor().GetPosition()))
-            {
-                char buf[2000];
-                sprintf_s(buf, "TriggerRedraw: bufferX: %d, cursorpos: %d, updateCoord: %d\n", gsl::narrow_cast<int>(_pData->GetTextBuffer().GetSize().RightExclusive()), gsl::narrow_cast<int>(_pData->GetTextBuffer().GetCursor().GetPosition().X), updateCoord.X);
-                OutputDebugStringA(buf);
-            }
-
             // Double-wide cursors need to invalidate the right half as well.
             if (_pData->IsCursorDoubleWidth())
             {

@@ -729,7 +729,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // If "wch" was a surrogate character, we just consumed 2 code units above.
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
             proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-
             i += inputDistance - 1;
         }
         else
