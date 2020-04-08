@@ -166,11 +166,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
 
-    if (!_buffer->GetSize().IsInBounds(_buffer->GetCursor().GetPosition()))
-    {
-        OutputDebugString(L"UserResize not in bounds\n");
-    }   
-
     if (viewportSize == oldDimensions)
     {
         return S_FALSE;
@@ -195,6 +190,23 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // If the original buffer had _no_ scroll offset, then we should be at the
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
+
+    // Defer the cursor drawing here right before the Reflow call
+    // because we only want the renderer to redraw the cursor right
+    // after we swap out the old buffer with the new buffer from Reflow.
+    // This swap happens down below, and so we'll EndDeferDrawing right
+    // after the swap.
+    // What would happen is that at the end of Reflow, we would call
+    // EndDeferDrawing, causing the renderer to go and attempt to redraw
+    // the cursor. However there's a race condition where, sometimes it
+    // would check for the _buffer properties before we swap out the
+    // buffer with the new one. This would make it crash if the old
+    // buffer's cursor position was out of bounds.
+    // Now that StartDeferDrawing uses a counter and will only redraw
+    // when the counter reaches 0, this StartDeferDrawing call here will
+    // force the renderer to redraw at least until this particular
+    // deferral is met with its corresponding EndDeferral down below.
+    _buffer->GetCursor().StartDeferDrawing();
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
@@ -334,6 +346,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
 
     _buffer.swap(newTextBuffer);
+
+    _buffer->GetCursor().EndDeferDrawing();
 
     // GH#3494: Maintain scrollbar position during resize
     // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
@@ -716,11 +730,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
             proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
 
-            if (!_buffer->GetSize().IsInBounds(proposedCursorPosition))
-            {
-                OutputDebugString(L"InDist > 0 not in Bounds\n");
-            }
-
             i += inputDistance - 1;
         }
         else
@@ -737,8 +746,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // Try the character again.
             i--;
 
-            OutputDebugString(L"Reset to 0\n");
-
             // If we write the last cell of the row here, TextBuffer::Write will
             // mark this line as wrapped for us. If the next character we
             // process is a newline, the Terminal::CursorLineFeed will unmark
@@ -751,11 +758,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         }
 
         _AdjustCursorPosition(proposedCursorPosition);
-    }
-
-    if (!_buffer->GetSize().IsInBounds(_buffer->GetCursor().GetPosition()))
-    {
-        OutputDebugString(L"Still not in Bounds\n");
     }
 
     cursor.EndDeferDrawing();
