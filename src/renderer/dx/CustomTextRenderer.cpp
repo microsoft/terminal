@@ -290,9 +290,9 @@ using namespace Microsoft::Console::Render;
     // onto an opaque background. If our background _isn't_ opaque, then we need
     // to use grayscale AA for this run of text.
     //
-    // We can force grayscale AA for just this run of text by pusing a new layer
-    // onto the d2d context. We'll only need to do this for cleartype text, when
-    // our eventual background isn't actaully opaque. See
+    // We can force grayscale AA for just this run of text by pushing a new
+    // layer onto the d2d context. We'll only need to do this for cleartype
+    // text, when our eventual background isn't actually opaque. See
     // DxEngine::PaintBufferLine and DxEngine::UpdateDrawingBrushes for more
     // details.
 

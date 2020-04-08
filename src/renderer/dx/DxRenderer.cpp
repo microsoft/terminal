@@ -1574,9 +1574,9 @@ CATCH_RETURN()
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background's opacity is 1.0f, that's
-    // great, we can actually use cleartext in that case. In that scenario
-    // (cleartext && opacity == 1.0), we'll force the opacity bits of the
-    // COLORREF to 0xff so we draw as cleartext. In any other case, leave the
+    // great, we can actually use cleartype in that case. In that scenario
+    // (cleartype && opacity == 1.0), we'll force the opacity bits of the
+    // COLORREF to 0xff so we draw as cleartype. In any other case, leave the
     // opacity bits unchanged. PaintBufferLine will later do some logic to
     // determine if we should paint the text as grayscale or not.
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
@@ -2231,5 +2231,5 @@ void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.
     // We don't terribly care if this fails.
-    (void)InvalidateAll();
+    LOG_IF_FAILED(InvalidateAll());
 }
