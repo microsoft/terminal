@@ -547,7 +547,7 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_EraseLine());
         }
     }
-    else if (_newBottomLine)
+    else if (_newBottomLine && coord.Y == _lastViewport.BottomInclusive())
     {
         // If we're on a new line, then we don't need to erase the line. The
         //      line is already empty.
@@ -555,7 +555,7 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (removeSpaces && numSpaces > 0)
+        else if (numSpaces > 0)
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
