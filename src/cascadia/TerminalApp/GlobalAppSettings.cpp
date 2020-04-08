@@ -69,7 +69,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
     _launchMode{ LaunchMode::DefaultMode },
-    _debugFeatures{ debugFeaturesDefault }
+    _debugFeatures{ debugFeaturesDefault },
     _StartOnUserLogin{ false }
 {
 }
@@ -341,8 +341,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 
-    }
-
     if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
     {
         _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
@@ -364,7 +362,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
-    
+
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 
