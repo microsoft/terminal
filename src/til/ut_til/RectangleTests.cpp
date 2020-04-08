@@ -868,7 +868,6 @@ class RectangleTests
         const auto actual = start.scale(til::math::ceiling, scale);
 
         VERIFY_ARE_EQUAL(actual, expected);
-  
     }
 
     TEST_METHOD(Top)
@@ -1435,4 +1434,101 @@ class RectangleTests
     }
 
 #pragma endregion
+
+    template<typename T>
+    struct RectangleTypeWithLowercase
+    {
+        T left, top, right, bottom;
+    };
+    template<typename T>
+    struct RectangleTypeWithCapitalization
+    {
+        T Left, Top, Right, Bottom;
+    };
+    TEST_METHOD(CastFromFloatWithMathTypes)
+    {
+        RectangleTypeWithLowercase<float> lowerFloatIntegral{ 1.f, 2.f, 3.f, 4.f };
+        RectangleTypeWithLowercase<float> lowerFloat{ 1.6f, 2.4f, 3.2f, 4.8f };
+        RectangleTypeWithCapitalization<double> capitalDoubleIntegral{ 3., 4., 5., 6. };
+        RectangleTypeWithCapitalization<double> capitalDouble{ 3.6, 4.4, 5.7, 6.3 };
+        Log::Comment(L"0.) Ceiling");
+        {
+            {
+                til::rectangle converted{ til::math::ceiling, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 2, 3, 4, 5 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 4, 5, 6, 7 }), converted);
+            }
+        }
+
+        Log::Comment(L"1.) Flooring");
+        {
+            {
+                til::rectangle converted{ til::math::flooring, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"2.) Rounding");
+        {
+            {
+                til::rectangle converted{ til::math::rounding, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 2, 2, 3, 5 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 4, 4, 6, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"3.) Truncating");
+        {
+            {
+                til::rectangle converted{ til::math::truncating, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+        }
+    }
 };

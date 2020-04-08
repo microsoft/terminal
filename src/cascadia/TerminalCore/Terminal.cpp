@@ -713,7 +713,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 void Terminal::UserScrollViewport(const int viewTop)
 {
     // we're going to modify state here that the renderer could be reading.
-    auto lock = LockForWriting(); 
+    auto lock = LockForWriting();
 
     const auto clampedNewTop = std::max(0, viewTop);
     const auto realTop = ViewStartIndex();

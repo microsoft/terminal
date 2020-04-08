@@ -179,7 +179,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // a math type is required.
         template<typename TilMath, typename TOther>
         constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().Left)> && std::is_floating_point_v<decltype(std::declval<TOther>().Top)> && std::is_floating_point_v<decltype(std::declval<TOther>().Right)> && std::is_floating_point_v<decltype(std::declval<TOther>().Bottom)>, int> /*sentinel*/ = 0) :
-            rectangle(til::point{ TilMath{}, other.Left, other.Top }, til::point{ TilMath{}, other.Right, other.Bottom })
+            rectangle(til::point{ TilMath::template cast<ptrdiff_t>(other.Left), TilMath::template cast<ptrdiff_t>(other.Top) }, til::point{ TilMath::template cast<ptrdiff_t>(other.Right), TilMath::template cast<ptrdiff_t>(other.Bottom) })
         {
         }
 
@@ -187,7 +187,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // a math type is required.
         template<typename TilMath, typename TOther>
         constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().left)> && std::is_floating_point_v<decltype(std::declval<TOther>().top)> && std::is_floating_point_v<decltype(std::declval<TOther>().right)> && std::is_floating_point_v<decltype(std::declval<TOther>().bottom)>, int> /*sentinel*/ = 0) :
-            rectangle(til::point{ TilMath{}, other.left, other.top }, til::point{ TilMath{}, other.right, other.bottom })
+            rectangle(til::point{ TilMath::template cast<ptrdiff_t>(other.left), TilMath::template cast<ptrdiff_t>(other.top) }, til::point{ TilMath::template cast<ptrdiff_t>(other.right), TilMath::template cast<ptrdiff_t>(other.bottom) })
         {
         }
 

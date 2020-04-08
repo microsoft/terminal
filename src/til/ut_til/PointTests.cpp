@@ -424,7 +424,7 @@ class PointTests
             const til::point pt{ 5, 10 };
             const float scale = 1.783f;
 
-            const til::point expected{ static_cast<ptrdiff_t>(ceil(5*scale)), static_cast<ptrdiff_t>(ceil(10*scale)) };
+            const til::point expected{ static_cast<ptrdiff_t>(ceil(5 * scale)), static_cast<ptrdiff_t>(ceil(10 * scale)) };
 
             const auto actual = pt.scale(til::math::ceiling, scale);
 
