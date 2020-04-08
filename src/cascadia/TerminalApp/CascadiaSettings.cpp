@@ -27,18 +27,17 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
+// make sure this matches defaults.json.
+static constexpr std::wstring_view DEFAULT_WINDOWS_POWERSHELL_GUID{ L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}" };
+
 // Method Description:
 // - Returns the settings currently in use by the entire Terminal application.
 // Throws:
 // - HR E_INVALIDARG if the app isn't up and running.
 const CascadiaSettings& CascadiaSettings::GetCurrentAppSettings()
 {
-    auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().as<winrt::TerminalApp::App>() };
-    THROW_HR_IF_NULL(E_INVALIDARG, currentXamlApp);
-
-    auto appLogic = winrt::get_self<winrt::TerminalApp::implementation::AppLogic>(currentXamlApp.Logic());
+    auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
     THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
-
     return *(appLogic->GetSettings());
 }
 
@@ -70,7 +69,7 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 // - profileName: the name of the profile's GUID to return.
 // Return Value:
 // - the GUID associated with the profile name.
-std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) const noexcept
+std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring_view profileName) const noexcept
 {
     std::optional<GUID> profileGuid{};
 
@@ -672,4 +671,39 @@ void CascadiaSettings::_ValidateKeybindings()
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
         _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
     }
+}
+
+// Method Description
+// - Replaces known tokens DEFAULT_PROFILE, PRODUCT and VERSION in the settings template
+//   with their expected values. DEFAULT_PROFILE is updated to match PowerShell Core's GUID
+//   if such a profile is detected. If it isn't, it'll be set to Windows PowerShell's GUID.
+// Arguments:
+// - settingsTemplate: a settings template
+// Return value:
+// - The new settings string.
+std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const
+{
+    std::string finalSettings{ settingsTemplate };
+    auto replace{ [](std::string& haystack, std::string_view needle, std::string_view replacement) {
+        auto pos{ std::string::npos };
+        while ((pos = haystack.rfind(needle, pos)) != std::string::npos)
+        {
+            haystack.replace(pos, needle.size(), replacement);
+        }
+    } };
+
+    std::wstring defaultProfileGuid{ DEFAULT_WINDOWS_POWERSHELL_GUID };
+    if (const auto psCoreProfileGuid{ FindGuid(PowershellCoreProfileGenerator::GetPreferredPowershellProfileName()) })
+    {
+        defaultProfileGuid = Utils::GuidToString(*psCoreProfileGuid);
+    }
+
+    replace(finalSettings, "%DEFAULT_PROFILE%", til::u16u8(defaultProfileGuid));
+    if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+    {
+        replace(finalSettings, "%VERSION%", til::u16u8(appLogic->ApplicationVersion()));
+        replace(finalSettings, "%PRODUCT%", til::u16u8(appLogic->ApplicationDisplayName()));
+    }
+
+    return finalSettings;
 }

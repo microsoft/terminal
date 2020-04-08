@@ -207,10 +207,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendKeyEvent(IntPtr terminal, IntPtr wParam);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch);
+        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);

@@ -718,9 +718,9 @@ void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
     _startingDirectory = std::move(startingDirectory);
 }
 
-void Profile::SetName(std::wstring name) noexcept
+void Profile::SetName(const std::wstring_view name) noexcept
 {
-    _name = std::move(name);
+    _name = static_cast<std::wstring>(name);
 }
 
 void Profile::SetUseAcrylic(bool useAcrylic) noexcept

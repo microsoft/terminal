@@ -387,14 +387,21 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
-// - Send this particular key event to the terminal. The terminal will translate
-//   the key and the modifiers pressed into the appropriate VT sequence for that
-//   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT be processed any further. If we return false, the event
-//   was NOT translated, and we should instead use the event to try and get the
-//   real character out of the event.
+// - Send this particular (non-character) key event to the terminal.
+// - The terminal will translate the key and the modifiers pressed into the
+//   appropriate VT sequence for that key chord. If we do translate the key,
+//   we'll return true. In that case, the event should NOT be processed any further.
+// - Character events (e.g. WM_CHAR) are generally the best way to properly receive
+//   keyboard input on Windows though, as the OS is suited best at handling the
+//   translation of the current keyboard layout, dead keys, etc.
+//   As a result of this false is returned for all key events that contain characters.
+//   SendCharEvent may then be called with the data obtained from a character event.
+// - As a special case we'll always handle VK_TAB key events.
+//   This must be done due to TermControl::_KeyDownHandler (one of the callers)
+//   always marking tab key events as handled, causing no character event to be raised.
 // Arguments:
-// - vkey: The vkey of the key pressed.
+// - vkey: The vkey of the last pressed key.
+// - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
@@ -402,50 +409,35 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
 {
     TrySnapOnInput();
+    _StoreKeyEvent(vkey, scanCode);
 
-    // Alt key sequences _require_ the char to be in the keyevent. If alt is
-    // pressed, manually get the character that's being typed, and put it in the
-    // KeyEvent.
+    const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
+
     // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close
-    wchar_t ch = UNICODE_NULL;
-    if (states.IsAltPressed() && vkey != VK_SPACE)
+    // the system menu for restore, min/maximize, size, move, close.
+    // (This doesn't apply to Ctrl+Alt+Space.)
+    if (isAltOnlyPressed && vkey == VK_SPACE)
     {
-        ch = _CharacterFromKeyEvent(vkey, scanCode, states);
+        return false;
     }
 
-    if (states.IsCtrlPressed())
-    {
-        switch (vkey)
-        {
-        case 0x48:
-            // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
-            // correctly, the keyEvents's char needs to be set to Backspace.
-            // 0x48 is the VKEY for 'H', which isn't named
-            ch = UNICODE_BACKSPACE;
-            break;
-        case VK_SPACE:
-            // Manually handle Ctrl+Space here. The terminalInput translator requires
-            // the char to be set to Space for space handling to work correctly.
-            ch = UNICODE_SPACE;
-            break;
-        }
-    }
+    const auto ch = _CharacterFromKeyEvent(vkey, scanCode, states);
 
-    // Manually handle Escape here. If we let it fall through, it'll come
-    // back up through the character handler. It's registered as a translation
-    // in TerminalInput, so we'll let TerminalInput control it.
-    if (vkey == VK_ESCAPE)
+    // Delegate it to the character event handler if this key event can be
+    // mapped to one (see method description above). For Alt+key combinations
+    // we'll not receive another character event for some reason though.
+    // -> Don't delegate the event if this is a Alt+key combination.
+    //
+    // As a special case we'll furthermore always handle VK_TAB
+    // key events here instead of in Terminal::SendCharEvent.
+    // See the method description for more information.
+    if (!isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
     {
-        ch = UNICODE_ESC;
+        return false;
     }
-
-    const bool manuallyHandled = ch != UNICODE_NULL;
 
     KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
-    const bool translated = _terminalInput->HandleKey(&keyEv);
-
-    return translated && manuallyHandled;
+    return _terminalInput->HandleKey(&keyEv);
 }
 
 // Method Description:
@@ -474,9 +466,39 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
     return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
 }
 
-bool Terminal::SendCharEvent(const wchar_t ch)
+// Method Description:
+// - Send this particular character to the terminal.
+// - This method is the counterpart to SendKeyEvent and behaves almost identical.
+//   The difference is the focus on sending characters to the terminal,
+//   whereas SendKeyEvent handles the sending of keys like the arrow keys.
+// Arguments:
+// - ch: The UTF-16 code unit to be sent.
+// - scanCode: The scan code of the last pressed key. Can be left 0.
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// Return Value:
+// - true if we translated the character event, and it should not be processed any further.
+// - false otherwise.
+bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    return _terminalInput->HandleChar(ch);
+    // DON'T manually handle Alt+Space - the system will use this to bring up
+    // the system menu for restore, min/maximize, size, move, close.
+    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
+    {
+        return false;
+    }
+
+    auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
+    if (vkey == 0 && scanCode != 0)
+    {
+        vkey = _VirtualKeyFromScanCode(scanCode);
+    }
+    if (vkey == 0)
+    {
+        vkey = _VirtualKeyFromCharacter(ch);
+    }
+
+    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    return _terminalInput->HandleKey(&keyEv);
 }
 
 // Method Description:
@@ -488,6 +510,29 @@ bool Terminal::SendCharEvent(const wchar_t ch)
 WORD Terminal::_ScanCodeFromVirtualKey(const WORD vkey) noexcept
 {
     return LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
+}
+
+// Method Description:
+// - Returns the virtual key code for the given keyboard's scan code.
+// Arguments:
+// - scanCode: The keyboard's scan code.
+// Return Value:
+// - The virtual key code. 0 if no mapping can be found.
+WORD Terminal::_VirtualKeyFromScanCode(const WORD scanCode) noexcept
+{
+    return LOWORD(MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK));
+}
+
+// Method Description:
+// - Returns any virtual key code that produces the given character.
+// Arguments:
+// - scanCode: The keyboard's scan code.
+// Return Value:
+// - The virtual key code. 0 if no mapping can be found.
+WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
+{
+    const auto vkey = LOWORD(VkKeyScanW(ch));
+    return vkey == -1 ? 0 : vkey;
 }
 
 // Method Description:
@@ -530,6 +575,40 @@ catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
     return UNICODE_INVALID;
+}
+
+// Method Description:
+// - It's possible for a single scan code on a keyboard to
+//   produce different key codes depending on the keyboard state.
+//   MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK) will always chose one of the
+//   possibilities no matter what though and thus can't be used in SendCharEvent.
+// - This method stores the key code from a key event (SendKeyEvent).
+//   If the key event contains character data, handling of the event will be
+//   denied, in order to delegate the work to the character event handler.
+// - The character event handler (SendCharEvent) will now pick up
+//   the stored key code to restore the full key event data.
+// Arguments:
+// - vkey: The virtual key code.
+// - scanCode: The scan code.
+void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode)
+{
+    _lastKeyEventCodes.emplace(KeyEventCodes{ vkey, scanCode });
+}
+
+// Method Description:
+// - This method acts as a counterpart to _StoreKeyEvent and extracts a stored
+//   key code. As a safety measure it'll ensure that the given scan code
+//   matches the stored scan code from the previous key event.
+// - See _StoreKeyEvent for more information.
+// Arguments:
+// - scanCode: The scan code.
+// Return Value:
+// - The key code matching the given scan code. Otherwise 0.
+WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
+{
+    const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});
+    _lastKeyEventCodes.reset();
+    return codes.ScanCode == scanCode ? codes.VirtualKey : 0;
 }
 
 // Method Description:

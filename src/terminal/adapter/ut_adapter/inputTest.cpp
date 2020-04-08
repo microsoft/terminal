@@ -31,8 +31,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 // For magic reasons, this has to live outside the class. Something wonderful about TAEF macros makes it
 // invisible to the linker when inside the class.
-static PWSTR s_pwszInputExpected;
-static wchar_t s_pwsInputBuffer[256];
+static std::wstring s_expectedInput;
+
 class Microsoft::Console::VirtualTerminal::InputTest
 {
 public:
@@ -82,10 +82,7 @@ void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInp
 {
     auto records = IInputEvent::ToInputRecords(inEvents);
 
-    size_t cInputExpected = 0;
-    VERIFY_SUCCEEDED(StringCchLengthW(s_pwszInputExpected, STRSAFE_MAX_CCH, &cInputExpected));
-
-    if (VERIFY_ARE_EQUAL(cInputExpected, records.size(), L"Verify expected and actual input array lengths matched."))
+    if (VERIFY_ARE_EQUAL(s_expectedInput.size(), records.size(), L"Verify expected and actual input array lengths matched."))
     {
         Log::Comment(L"We are expecting always key events and always key down. All other properties should not be written by simulated keys.");
 
@@ -97,8 +94,8 @@ void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInp
         Log::Comment(L"Verifying individual array members...");
         for (size_t i = 0; i < records.size(); i++)
         {
-            irExpected.Event.KeyEvent.uChar.UnicodeChar = s_pwszInputExpected[i];
-            VERIFY_ARE_EQUAL(irExpected, records[i], NoThrowString().Format(L"%c, %c", s_pwszInputExpected[i], records[i].Event.KeyEvent.uChar.UnicodeChar));
+            irExpected.Event.KeyEvent.uChar.UnicodeChar = s_expectedInput[i];
+            VERIFY_ARE_EQUAL(irExpected, records[i], NoThrowString().Format(L"%c, %c", s_expectedInput[i], records[i].Event.KeyEvent.uChar.UnicodeChar));
         }
     }
 }
@@ -157,7 +154,7 @@ void InputTest::TerminalInputTests()
 {
     Log::Comment(L"Starting test...");
 
-    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -171,109 +168,100 @@ void InputTest::TerminalInputTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-// MapVirtualKey's return value must be mapped to a wchar_t because
-// that's what we're requesting from it, there isn't any data loss
-// from the cast.
-#pragma warning(push)
-#pragma warning(disable : 4242)
-        irTest.Event.KeyEvent.uChar.UnicodeChar = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
-#pragma warning(pop)
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
         // Set up expected result
         switch (vkey)
         {
         case VK_TAB:
-            s_pwszInputExpected = L"\x09";
+            s_expectedInput = L"\x09";
             break;
         case VK_BACK:
-            s_pwszInputExpected = L"\x7f";
+            s_expectedInput = L"\x7f";
             break;
         case VK_ESCAPE:
-            s_pwszInputExpected = L"\x1b";
+            s_expectedInput = L"\x1b";
             break;
         case VK_PAUSE:
-            s_pwszInputExpected = L"\x1a";
+            s_expectedInput = L"\x1a";
             break;
         case VK_UP:
-            s_pwszInputExpected = L"\x1b[A";
+            s_expectedInput = L"\x1b[A";
             break;
         case VK_DOWN:
-            s_pwszInputExpected = L"\x1b[B";
+            s_expectedInput = L"\x1b[B";
             break;
         case VK_RIGHT:
-            s_pwszInputExpected = L"\x1b[C";
+            s_expectedInput = L"\x1b[C";
             break;
         case VK_LEFT:
-            s_pwszInputExpected = L"\x1b[D";
+            s_expectedInput = L"\x1b[D";
             break;
         case VK_HOME:
-            s_pwszInputExpected = L"\x1b[H";
+            s_expectedInput = L"\x1b[H";
             break;
         case VK_INSERT:
-            s_pwszInputExpected = L"\x1b[2~";
+            s_expectedInput = L"\x1b[2~";
             break;
         case VK_DELETE:
-            s_pwszInputExpected = L"\x1b[3~";
+            s_expectedInput = L"\x1b[3~";
             break;
         case VK_END:
-            s_pwszInputExpected = L"\x1b[F";
+            s_expectedInput = L"\x1b[F";
             break;
         case VK_PRIOR:
-            s_pwszInputExpected = L"\x1b[5~";
+            s_expectedInput = L"\x1b[5~";
             break;
         case VK_NEXT:
-            s_pwszInputExpected = L"\x1b[6~";
+            s_expectedInput = L"\x1b[6~";
             break;
         case VK_F1:
-            s_pwszInputExpected = L"\x1bOP";
+            s_expectedInput = L"\x1bOP";
             break;
         case VK_F2:
-            s_pwszInputExpected = L"\x1bOQ";
+            s_expectedInput = L"\x1bOQ";
             break;
         case VK_F3:
-            s_pwszInputExpected = L"\x1bOR";
+            s_expectedInput = L"\x1bOR";
             break;
         case VK_F4:
-            s_pwszInputExpected = L"\x1bOS";
+            s_expectedInput = L"\x1bOS";
             break;
         case VK_F5:
-            s_pwszInputExpected = L"\x1b[15~";
+            s_expectedInput = L"\x1b[15~";
             break;
         case VK_F6:
-            s_pwszInputExpected = L"\x1b[17~";
+            s_expectedInput = L"\x1b[17~";
             break;
         case VK_F7:
-            s_pwszInputExpected = L"\x1b[18~";
+            s_expectedInput = L"\x1b[18~";
             break;
         case VK_F8:
-            s_pwszInputExpected = L"\x1b[19~";
+            s_expectedInput = L"\x1b[19~";
             break;
         case VK_F9:
-            s_pwszInputExpected = L"\x1b[20~";
+            s_expectedInput = L"\x1b[20~";
             break;
         case VK_F10:
-            s_pwszInputExpected = L"\x1b[21~";
+            s_expectedInput = L"\x1b[21~";
             break;
         case VK_F11:
-            s_pwszInputExpected = L"\x1b[23~";
+            s_expectedInput = L"\x1b[23~";
             break;
         case VK_F12:
-            s_pwszInputExpected = L"\x1b[24~";
+            s_expectedInput = L"\x1b[24~";
             break;
         case VK_CANCEL:
-            s_pwszInputExpected = L"\x3";
+            s_expectedInput = L"\x3";
             break;
         default:
             fExpectedKeyHandled = false;
             break;
         }
-        if (!fExpectedKeyHandled && (vkey >= '0' && vkey <= 'Z'))
+        if (!fExpectedKeyHandled && irTest.Event.KeyEvent.uChar.UnicodeChar != 0)
         {
-            // we need to have some sort of string to compare to in the
-            // callback, we'll build it here.
-            static wchar_t keyArr[2] = { 0 };
-            keyArr[0] = vkey;
-            s_pwszInputExpected = keyArr;
+            s_expectedInput.clear();
+            s_expectedInput.push_back(irTest.Event.KeyEvent.uChar.UnicodeChar);
             fExpectedKeyHandled = true;
         }
         auto inputEvent = IInputEvent::Create(irTest);
@@ -335,150 +323,143 @@ void InputTest::TerminalInputModifierKeyTests()
         TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x000A, 0x000C, 0x000E, 0x0010, 0x0011, 0x0012, 0x0013}")
     END_TEST_METHOD_PROPERTIES()
 
-    unsigned int uiActualKeystate;
-    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiActualKeystate));
-    unsigned int uiKeystate = uiActualKeystate;
+    unsigned int uiKeystate;
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiKeystate));
 
-    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
     const BYTE slashVkey = LOBYTE(VkKeyScanW(L'/'));
+    const BYTE nullVkey = LOBYTE(VkKeyScanW(0));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
-        // zero memory
-        memset(s_pwsInputBuffer, 0, ARRAYSIZE(s_pwsInputBuffer) * sizeof(wchar_t));
 
         bool fExpectedKeyHandled = true;
         bool fModifySequence = false;
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
-        irTest.Event.KeyEvent.dwControlKeyState = uiActualKeystate;
+        irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
-        // Ctrl-/ is handled in another test, because it's weird.
-        if (ControlPressed(uiKeystate) && (vkey == VK_DIVIDE || vkey == slashVkey))
+        if (ControlPressed(uiKeystate))
         {
-            continue;
+            // For Ctrl-/ see DifferentModifiersTest.
+            if (vkey == VK_DIVIDE || vkey == slashVkey)
+            {
+                continue;
+            }
+
+            // For Ctrl-@/Ctrl-Space see TerminalInputNullKeyTests.
+            if (vkey == nullVkey || vkey == ' ')
+            {
+                continue;
+            }
         }
 
         // Set up expected result
         switch (vkey)
         {
-        case '@':
-        case '2':
-            if (ControlPressed(uiKeystate))
-            {
-                continue;
-            }
-            // C-@ gets translated to null, which doesn't play nicely with this test.
-            // So theres the TerminalInputNullKeyTests Test instead.
-            break;
-        case 0x20:
-            // Space generally gets translated to null, which again, doesn't play well.
-            continue;
         case VK_BACK:
             // Backspace is kinda different from other keys - we'll handle in another test.
         case VK_OEM_2:
             // VK_OEM_2 is typically the '/?' key
             continue;
-            // wcscpy_s(s_pwsInputBuffer, L"\x7f");
-            break;
-        case VK_ESCAPE:
-            wcscpy_s(s_pwsInputBuffer, L"\x1b");
+            // s_expectedInput = L"\x7f";
             break;
         case VK_PAUSE:
-            wcscpy_s(s_pwsInputBuffer, L"\x1a");
+            s_expectedInput = L"\x1a";
             break;
         case VK_UP:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mA");
+            s_expectedInput = L"\x1b[1;mA";
             break;
         case VK_DOWN:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mB");
+            s_expectedInput = L"\x1b[1;mB";
             break;
         case VK_RIGHT:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mC");
+            s_expectedInput = L"\x1b[1;mC";
             break;
         case VK_LEFT:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mD");
+            s_expectedInput = L"\x1b[1;mD";
             break;
         case VK_HOME:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mH");
+            s_expectedInput = L"\x1b[1;mH";
             break;
         case VK_INSERT:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[2;m~");
+            s_expectedInput = L"\x1b[2;m~";
             break;
         case VK_DELETE:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[3;m~");
+            s_expectedInput = L"\x1b[3;m~";
             break;
         case VK_END:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mF");
+            s_expectedInput = L"\x1b[1;mF";
             break;
         case VK_PRIOR:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[5;m~");
+            s_expectedInput = L"\x1b[5;m~";
             break;
         case VK_NEXT:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[6;m~");
+            s_expectedInput = L"\x1b[6;m~";
             break;
         case VK_F1:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mP");
+            s_expectedInput = L"\x1b[1;mP";
             break;
         case VK_F2:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mQ");
+            s_expectedInput = L"\x1b[1;mQ";
             break;
         case VK_F3:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mR");
+            s_expectedInput = L"\x1b[1;mR";
             break;
         case VK_F4:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mS");
+            s_expectedInput = L"\x1b[1;mS";
             break;
         case VK_F5:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[15;m~");
+            s_expectedInput = L"\x1b[15;m~";
             break;
         case VK_F6:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[17;m~");
+            s_expectedInput = L"\x1b[17;m~";
             break;
         case VK_F7:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[18;m~");
+            s_expectedInput = L"\x1b[18;m~";
             break;
         case VK_F8:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[19;m~");
+            s_expectedInput = L"\x1b[19;m~";
             break;
         case VK_F9:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[20;m~");
+            s_expectedInput = L"\x1b[20;m~";
             break;
         case VK_F10:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[21;m~");
+            s_expectedInput = L"\x1b[21;m~";
             break;
         case VK_F11:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[23;m~");
+            s_expectedInput = L"\x1b[23;m~";
             break;
         case VK_F12:
             fModifySequence = true;
-            wcscpy_s(s_pwsInputBuffer, L"\x1b[24;m~");
+            s_expectedInput = L"\x1b[24;m~";
             break;
         case VK_TAB:
             if (AltPressed(uiKeystate))
@@ -488,62 +469,64 @@ void InputTest::TerminalInputModifierKeyTests()
             }
             else if (ShiftPressed(uiKeystate))
             {
-                wcscpy_s(s_pwsInputBuffer, L"\x1b[Z");
-                fExpectedKeyHandled = true;
+                s_expectedInput = L"\x1b[Z";
             }
             else if (ControlPressed(uiKeystate))
             {
-                wcscpy_s(s_pwsInputBuffer, L"\t");
-                fExpectedKeyHandled = true;
+                s_expectedInput = L"\t";
             }
             break;
         default:
-            // Alt+Key generates [0x1b, key] into the stream
-            if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A))
+            wchar_t ch = irTest.Event.KeyEvent.uChar.UnicodeChar;
+
+            // Alt+Key generates [0x1b, Ctrl+key] into the stream
+            // Pressing the control key causes all bits but the 5 least
+            // significant ones to be zeroed out (when using ASCII).
+            if (AltPressed(uiKeystate) && ControlPressed(uiKeystate) && ch >= 0x40 && ch < 0x7F)
             {
-                wcscpy_s(s_pwsInputBuffer, L"\x1bm");
-                wchar_t wchShifted = vkey;
-                // Alt + Ctrl + key generates [0x1b, control key] in the stream.
-                if (ControlPressed(uiKeystate))
-                {
-                    // Generally the control key is key-0x40
-                    wchShifted = vkey - 0x40;
-                }
-                s_pwsInputBuffer[1] = wchShifted;
-                fExpectedKeyHandled = true;
+                s_expectedInput.clear();
+                s_expectedInput.push_back(L'\x1b');
+                s_expectedInput.push_back(ch & 0b11111);
+                break;
             }
-            else if (ControlPressed(uiKeystate) && (vkey >= '1' && vkey <= '9'))
+
+            // Alt+Key generates [0x1b, key] into the stream
+            if (AltPressed(uiKeystate) && ch != 0)
+            {
+                s_expectedInput.clear();
+                s_expectedInput.push_back(L'\x1b');
+                s_expectedInput.push_back(ch);
+                break;
+            }
+
+            if (ControlPressed(uiKeystate) && (vkey >= '1' && vkey <= '9'))
             {
                 // The C-# keys get translated into very specific control
                 // characters that don't play nicely with this test. These keys
                 // are tested in the CtrlNumTest Test instead.
                 continue;
             }
-            else
+
+            if (ch != 0)
             {
-                fExpectedKeyHandled = false;
+                s_expectedInput.clear();
+                s_expectedInput.push_back(irTest.Event.KeyEvent.uChar.UnicodeChar);
+                break;
             }
+
+            fExpectedKeyHandled = false;
             break;
         }
-        if (!fExpectedKeyHandled && ((vkey >= '0' && vkey <= 'Z') || vkey == VK_CANCEL))
+
+        if (fModifySequence && s_expectedInput.size() > 1)
         {
-            fExpectedKeyHandled = true;
+            bool fShift = !!(uiKeystate & SHIFT_PRESSED);
+            bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
+            bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
+            s_expectedInput[s_expectedInput.size() - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
         }
 
-        if (fModifySequence)
-        {
-            size_t cch = 0;
-            VERIFY_SUCCEEDED(StringCchLengthW(s_pwsInputBuffer, 8, &cch));
-            if (cch > 1)
-            {
-                bool fShift = !!(uiKeystate & SHIFT_PRESSED);
-                bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
-                bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
-                s_pwsInputBuffer[cch - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
-            }
-        }
-        s_pwszInputExpected = s_pwsInputBuffer;
-        Log::Comment(NoThrowString().Format(L"Expected, Buffer = \"%s\", \"%s\"", s_pwszInputExpected, s_pwsInputBuffer));
+        Log::Comment(NoThrowString().Format(L"Expected = \"%s\"", s_expectedInput.c_str()));
 
         auto inputEvent = IInputEvent::Create(irTest);
         // Send key into object (will trigger callback and verification)
@@ -557,7 +540,7 @@ void InputTest::TerminalInputNullKeyTests()
 
     unsigned int uiKeystate = LEFT_CTRL_PRESSED;
 
-    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestNullCallback);
+    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestNullCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
@@ -593,16 +576,9 @@ void InputTest::TerminalInputNullKeyTests()
     irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
     inputEvent = IInputEvent::Create(irTest);
     VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
-
-    uiKeystate = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
-    // This is AltGr, this ISN'T handled.
-    Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
-    irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
-    inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 }
 
-void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey, const wchar_t wch)
+void TestKey(TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey, const wchar_t wch = 0)
 {
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
@@ -618,69 +594,64 @@ void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, c
     auto inputEvent = IInputEvent::Create(irTest);
     VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 }
-void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey)
-{
-    // Callers of this version don't expect the wchar to matter.
-    TestKey(pInput, uiKeystate, vkey, 0);
-}
 
 void InputTest::DifferentModifiersTest()
 {
     Log::Comment(L"Starting test...");
 
-    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending a bunch of keystrokes that are a little weird.");
 
     unsigned int uiKeystate = 0;
     BYTE vkey = VK_BACK;
-    s_pwszInputExpected = L"\x7f";
+    s_expectedInput = L"\x7f";
     TestKey(pInput, uiKeystate, vkey);
 
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = VK_BACK;
-    s_pwszInputExpected = L"\x8";
+    s_expectedInput = L"\x8";
     TestKey(pInput, uiKeystate, vkey, L'\x8');
     uiKeystate = RIGHT_CTRL_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'\x8');
 
     uiKeystate = LEFT_ALT_PRESSED;
     vkey = VK_BACK;
-    s_pwszInputExpected = L"\x1b\x7f";
+    s_expectedInput = L"\x1b\x7f";
     TestKey(pInput, uiKeystate, vkey, L'\x8');
     uiKeystate = RIGHT_ALT_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'\x8');
 
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = VK_DELETE;
-    s_pwszInputExpected = L"\x1b[3;5~";
+    s_expectedInput = L"\x1b[3;5~";
     TestKey(pInput, uiKeystate, vkey);
     uiKeystate = RIGHT_CTRL_PRESSED;
     TestKey(pInput, uiKeystate, vkey);
 
     uiKeystate = LEFT_ALT_PRESSED;
     vkey = VK_DELETE;
-    s_pwszInputExpected = L"\x1b[3;3~";
+    s_expectedInput = L"\x1b[3;3~";
     TestKey(pInput, uiKeystate, vkey);
     uiKeystate = RIGHT_ALT_PRESSED;
     TestKey(pInput, uiKeystate, vkey);
 
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = VK_TAB;
-    s_pwszInputExpected = L"\t";
+    s_expectedInput = L"\t";
     TestKey(pInput, uiKeystate, vkey);
     uiKeystate = RIGHT_CTRL_PRESSED;
     TestKey(pInput, uiKeystate, vkey);
 
     uiKeystate = SHIFT_PRESSED;
     vkey = VK_TAB;
-    s_pwszInputExpected = L"\x1b[Z";
+    s_expectedInput = L"\x1b[Z";
     TestKey(pInput, uiKeystate, vkey);
 
     // C-/ -> C-_ -> 0x1f
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = LOBYTE(VkKeyScan(L'/'));
-    s_pwszInputExpected = L"\x1f";
+    s_expectedInput = L"\x1f";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_CTRL_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'/');
@@ -688,7 +659,7 @@ void InputTest::DifferentModifiersTest()
     // M-/ -> ESC /
     uiKeystate = LEFT_ALT_PRESSED;
     vkey = LOBYTE(VkKeyScan(L'/'));
-    s_pwszInputExpected = L"\x1b/";
+    s_expectedInput = L"\x1b/";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_ALT_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'/');
@@ -698,7 +669,7 @@ void InputTest::DifferentModifiersTest()
     Log::Comment(NoThrowString().Format(L"Checking C-?"));
     // Use SHIFT_PRESSED to force us into differentiating between '/' and '?'
     vkey = LOBYTE(VkKeyScan(L'?'));
-    s_pwszInputExpected = L"\x7f";
+    s_expectedInput = L"\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED, vkey, L'?');
 
@@ -706,7 +677,7 @@ void InputTest::DifferentModifiersTest()
     Log::Comment(NoThrowString().Format(L"Checking C-M-/"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
     vkey = LOBYTE(VkKeyScan(L'/'));
-    s_pwszInputExpected = L"\x1b\x1f";
+    s_expectedInput = L"\x1b\x1f";
     TestKey(pInput, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
     TestKey(pInput, RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
     // LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED is skipped because that's AltGr
@@ -716,7 +687,7 @@ void InputTest::DifferentModifiersTest()
     Log::Comment(NoThrowString().Format(L"Checking C-M-?"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
     vkey = LOBYTE(VkKeyScan(L'?'));
-    s_pwszInputExpected = L"\x1b\x7f";
+    s_expectedInput = L"\x1b\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
     // LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED is skipped because that's AltGr
@@ -727,13 +698,13 @@ void InputTest::CtrlNumTest()
 {
     Log::Comment(L"Starting test...");
 
-    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending the various Ctrl+Num keys.");
 
     unsigned int uiKeystate = LEFT_CTRL_PRESSED;
     BYTE vkey = static_cast<WORD>('1');
-    s_pwszInputExpected = L"1";
+    s_expectedInput = L"1";
     TestKey(pInput, uiKeystate, vkey);
 
     Log::Comment(NoThrowString().Format(
@@ -741,30 +712,30 @@ void InputTest::CtrlNumTest()
         L"nicely with this test. Ctrl+2 is covered by other tests in this class."));
 
     vkey = static_cast<WORD>('3');
-    s_pwszInputExpected = L"\x1b";
+    s_expectedInput = L"\x1b";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('4');
-    s_pwszInputExpected = L"\x1c";
+    s_expectedInput = L"\x1c";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('5');
-    s_pwszInputExpected = L"\x1d";
+    s_expectedInput = L"\x1d";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('6');
-    s_pwszInputExpected = L"\x1e";
+    s_expectedInput = L"\x1e";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('7');
-    s_pwszInputExpected = L"\x1f";
+    s_expectedInput = L"\x1f";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('8');
-    s_pwszInputExpected = L"\x7f";
+    s_expectedInput = L"\x7f";
     TestKey(pInput, uiKeystate, vkey);
 
     vkey = static_cast<WORD>('9');
-    s_pwszInputExpected = L"9";
+    s_expectedInput = L"9";
     TestKey(pInput, uiKeystate, vkey);
 }
