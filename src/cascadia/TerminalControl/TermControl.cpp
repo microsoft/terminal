@@ -1847,6 +1847,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - N/A
     winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
     {
+        std::unique_lock muffleLock{ _stateUpdateMuffleMutex, std::defer_lock };
+        // ownership of the muffling lock moves into the coroutine
+        // and is only released when the coroutine is done
+        // this stops us from overwhelming the dispatcher with events.
+        if (!muffleLock.try_lock())
+        {
+            return;
+        }
+
         if (_closing.load())
         {
             return;
