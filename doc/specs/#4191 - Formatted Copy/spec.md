@@ -27,7 +27,7 @@ By default, right clicking to copy would only copy the plain text. If the user w
 
 ### Settings option 1 - global setting
 
-We could have a global setting that adds the formatting when the user copies. When set, this would change the right click behavior.
+We could have a global setting that when enabled, would copy formatting to the clipboard on all copy operations.
 
 ### Settings option 2 - key binding argument
 
