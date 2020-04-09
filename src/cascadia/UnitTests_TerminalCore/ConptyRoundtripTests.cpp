@@ -188,6 +188,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(OutputWrappedLineWithSpace);
     TEST_METHOD(OutputWrappedLineWithSpaceAtBottomOfBuffer);
 
+    TEST_METHOD(BreakLinesOnCursorMovement);
+
     TEST_METHOD(ScrollWithMargins);
 
 private:
@@ -2184,5 +2186,99 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::BreakLinesOnCursorMovement()
+{
+    Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
+                 L" ends of blank lines, not EL. This test ensures that conhost"
+                 L" properly treats those lines as _not actually wrapped_,"
+                 L" because if we leave them \"wrapped\", conpty won't newline"
+                 L" in between them.");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    auto verifyBuffer = [](const TextBuffer& tb,
+                           const til::rectangle viewport) {
+        const auto lastRow = viewport.bottom<short>() - 1;
+        const til::point expectedCursor{ 5, lastRow };
+        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
+
+        for (auto y = viewport.top<short>(); y < lastRow; y++)
+        {
+            TestUtils::VerifyExpectedString(tb, L"~    ", til::point{ 0, y });
+        }
+
+        TestUtils::VerifyExpectedString(tb, L"AAAAA", til::point{ 0, lastRow });
+    };
+
+    // We're _not_ checking the conpty output during this test, only the side effects.
+    _logConpty = true;
+    _checkConptyOutput = false;
+
+    // Lock must be taken to manipulate alt/main buffer state.
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    // Use DECALN to fill the buffer with 'E's.
+    hostSm.ProcessString(L"\x1b#8");
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"Switching to the alt buffer");
+    hostSm.ProcessString(L"\x1b[?1049h");
+    auto restoreBuffer = wil::scope_exit([&] { hostSm.ProcessString(L"\x1b[?1049l"); });
+    auto& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altTextBuffer = altBuffer.GetTextBuffer();
+
+    // Go home and clear the screen.
+    hostSm.ProcessString(L"\x1b[H");
+    hostSm.ProcessString(L"\x1b[2J");
+
+    // Write out lines of '~' followed by enough spaes to fill the line.
+    hostSm.ProcessString(L"\x1b[94m");
+    for (auto y = 0; y < altBuffer.GetViewport().BottomInclusive(); y++)
+    {
+        {
+            std::wstringstream ss;
+            ss << L"\x1b[";
+            ss << y + 1;
+            ss << L";1H";
+            hostSm.ProcessString(ss.str());
+        }
+
+        // IMPORTANT! The way vim writes these blank lines is as '~' followed by
+        // enough spaces to fill the line.
+        // This bug (GH#5291 won't repro if you don't have the spaces).
+        std::wstring line{ L"~" };
+        line += std::wstring(79, L' ');
+        hostSm.ProcessString(line);
+    }
+
+    // Print the "Status Line"
+    hostSm.ProcessString(L"\x1b[32;1H");
+    hostSm.ProcessString(L"\x1b[m");
+    hostSm.ProcessString(L"AAAAA");
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(altTextBuffer, altBuffer.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
 }
