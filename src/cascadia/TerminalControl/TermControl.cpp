@@ -1969,6 +1969,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
+    winrt::fire_and_forget TermControl::_asyncCloseConnection()
+    {
+        if (auto localConnection{ std::exchange(_connection, nullptr) })
+        {
+            co_await winrt::resume_background();
+            localConnection.Close();
+            // connection is destroyed.
+        }
+        // _control.Close();
+    }
     void TermControl::Close()
     {
         if (!_closing.exchange(true))
@@ -1980,11 +1990,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
 
-            if (auto localConnection{ std::exchange(_connection, nullptr) })
-            {
-                localConnection.Close();
-                // connection is destroyed.
-            }
+            _asyncCloseConnection();
+            // if (auto localConnection{ std::exchange(_connection, nullptr) })
+            // {
+            //     localConnection.Close();
+            //     // connection is destroyed.
+            // }
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {

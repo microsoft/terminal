@@ -349,6 +349,12 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
+winrt::fire_and_forget Pane::_asyncCloseControl()
+{
+    co_await winrt::resume_background();
+    _control.Close();
+}
+
 // Method Description:
 // - Prepare this pane to be removed from the UI hierarchy by closing all controls
 //   and connections beneath it.
@@ -376,6 +382,10 @@ void Pane::Shutdown()
 
         // Fire our Closed event to tell our parent that we should be removed.
         _ClosedHandlers(nullptr, nullptr);
+
+        // Close our attached control.
+        // _control.Close();
+        // _asyncCloseControl();
     }
     else
     {
