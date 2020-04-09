@@ -272,7 +272,7 @@
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
 
-        // OS Integration
+        // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
