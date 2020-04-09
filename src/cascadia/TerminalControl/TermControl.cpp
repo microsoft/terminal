@@ -632,11 +632,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
-            _connection.Start();
             _initializedTerminal = true;
         } // scope for TerminalLock
-        // call this event dispatcher outside of lock
 
+        // Start the connection outside of lock, because it could
+        // start writing output immediately.
+        _connection.Start();
+
+        // Likewise, run the event handlers outside of lock (they could
+        // be reentrant)
         _InitializedHandlers(*this, nullptr);
         return true;
     }
@@ -1847,12 +1851,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - N/A
     winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
     {
+        bool expectedFalse{ false };
+        if (!_coroutineDispatchStateUpdateInProgress.compare_exchange_weak(expectedFalse, true))
+        {
+            // somebody's already in here.
+            return;
+        }
+
         if (_closing.load())
         {
             return;
         }
 
         auto weakThis{ get_weak() };
+
+        // Muffle 2: Muffle Harder
+        // If we're the lucky coroutine who gets through, we'll still wait 100ms to clog
+        // the atomic above so we don't service the cursor update too fast. If we get through
+        // and finish processing the update quickly but similar requests are still beating
+        // down the door above in the atomic, we may still update the cursor way more than
+        // is visible to anyone's eye, which is a waste of effort.
+        static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
+        co_await winrt::resume_after(CursorUpdateQuiesceTime);
 
         co_await winrt::resume_foreground(Dispatcher());
 
@@ -1862,6 +1882,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 TSFInputControl().TryRedrawCanvas();
             }
+            _coroutineDispatchStateUpdateInProgress.store(false);
         }
     }
 
