@@ -69,7 +69,6 @@ public:
     void SetCopyOnSelect(const bool copyOnSelect) noexcept;
 
     bool GetCopyFormatting() const noexcept;
-    void SetCopyFormatting(const bool copyFormatting) noexcept;
 
     std::optional<int32_t> GetInitialX() const noexcept;
 

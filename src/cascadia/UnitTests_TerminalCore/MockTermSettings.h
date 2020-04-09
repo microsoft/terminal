@@ -34,7 +34,6 @@ namespace TerminalCoreUnitTests
         uint32_t CursorHeight() { return 42UL; }
         winrt::hstring WordDelimiters() { return winrt::hstring(DEFAULT_WORD_DELIMITERS); }
         bool CopyOnSelect() { return _copyOnSelect; }
-        bool CopyFormatting() { return _copyFormatting; }
         winrt::hstring StartingTitle() { return _startingTitle; }
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
@@ -55,7 +54,6 @@ namespace TerminalCoreUnitTests
         void CursorHeight(uint32_t) {}
         void WordDelimiters(winrt::hstring) {}
         void CopyOnSelect(bool copyOnSelect) { _copyOnSelect = copyOnSelect; }
-        void CopyFormatting(bool copyFormatting) { _copyFormatting = copyFormatting; }
         void StartingTitle(winrt::hstring const& value) { _startingTitle = value; }
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
@@ -68,7 +66,6 @@ namespace TerminalCoreUnitTests
         int32_t _initialRows;
         int32_t _initialCols;
         bool _copyOnSelect{ false };
-        bool _copyFormatting{ false };
         bool _suppressApplicationTitle{ false };
         winrt::hstring _startingTitle;
     };

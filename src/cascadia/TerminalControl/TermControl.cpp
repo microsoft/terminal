@@ -1908,23 +1908,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             textData += text;
         }
 
-        std::string htmlData{};
-        std::string rtfData{};
-        if (_settings.CopyFormatting())
-        {
-            // convert text to HTML format
-            htmlData = TextBuffer::GenHTML(bufferData,
-                                           _actualFont.GetUnscaledSize().Y,
-                                           _actualFont.GetFaceName(),
-                                           _settings.DefaultBackground(),
-                                           "Windows Terminal");
+        // convert text to HTML format
+        const auto htmlData = TextBuffer::GenHTML(bufferData,
+                                                  _actualFont.GetUnscaledSize().Y,
+                                                  _actualFont.GetFaceName(),
+                                                  _settings.DefaultBackground(),
+                                                  "Windows Terminal");
 
-            // convert to RTF format
-            rtfData = TextBuffer::GenRTF(bufferData,
-                                         _actualFont.GetUnscaledSize().Y,
-                                         _actualFont.GetFaceName(),
-                                         _settings.DefaultBackground());
-        }
+        // convert to RTF format
+        const auto rtfData = TextBuffer::GenRTF(bufferData,
+                                                _actualFont.GetUnscaledSize().Y,
+                                                _actualFont.GetFaceName(),
+                                                _settings.DefaultBackground());
 
         if (!_settings.CopyOnSelect())
         {

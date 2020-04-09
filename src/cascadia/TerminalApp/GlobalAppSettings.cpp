@@ -168,11 +168,6 @@ bool GlobalAppSettings::GetCopyFormatting() const noexcept
     return _copyFormatting;
 }
 
-void GlobalAppSettings::SetCopyFormatting(const bool copyFormatting) noexcept
-{
-    _copyFormatting = copyFormatting;
-}
-
 LaunchMode GlobalAppSettings::GetLaunchMode() const noexcept
 {
     return _launchMode;
@@ -235,7 +230,6 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
-    settings.CopyFormatting(_copyFormatting);
 }
 
 // Method Description:
