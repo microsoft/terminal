@@ -283,4 +283,8 @@ Temporarily using the Windows Terminal default settings.
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CommandPromptDisplayName" xml:space="preserve">
+    <value>Command Prompt</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
 </root>

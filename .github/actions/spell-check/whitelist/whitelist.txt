@@ -2893,6 +2893,7 @@ ZCtrl
 zd
 zh
 ZM
+zsh
 zu
 zxcvbnm
 zy

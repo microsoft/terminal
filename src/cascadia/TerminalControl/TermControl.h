@@ -231,6 +231,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
+
+        // this atomic is to be used as a guard against dispatching billions of coroutines for
+        // routine state changes that might happen millions of times a second.
+        // Unbounded main dispatcher use leads to massive memory leaks and intense slowdowns
+        // on the UI thread.
+        std::atomic<bool> _coroutineDispatchStateUpdateInProgress{ false };
     };
 }
 

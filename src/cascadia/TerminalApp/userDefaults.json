@@ -26,7 +26,7 @@
             {
                 // Make changes here to the cmd.exe profile
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
-                "name": "cmd",
+                "name": "%COMMAND_PROMPT_LOCALIZED_NAME%",
                 "commandline": "cmd.exe",
                 "hidden": false
             }
