@@ -23,7 +23,7 @@ A proposal for the right click behavior as well as two user settings proposals a
 
 ### Right click behavior
 
-By default, right clicking to copy would only copy the plain text. If the user would like to copy the formatting, they can hold `alt` and right click (this behavior is the same in conhost).
+By default, right clicking to copy would only copy the plain text.
 
 ### Settings option 1 - global setting
 
@@ -37,11 +37,11 @@ We could add an argument to the `copy` key binding argument to allow for formatt
 
 ### Settings option 1 - global setting
 
-a. The user could list which kinds of formats they want included when they copy. When right clicking, they would copy with these formats. If this is set to something other than `plain`, holding `alt` and right clicking would copy plain text.
+a. The user could list which kinds of formats they want included when they copy. When right clicking, they would copy with these formats.
 
 `"copyFormats": ["html","rtf","plain"]`
 
-b. We could also just combine html and rtf into a single boolean. Users would either get plain text only (`false`) or all formatting (`true`) onto their clipboard. If this is set to `true`, the default right click behavior is reversed: right clicking copies the formatting and holding `alt` copies only the plain text.
+b. We could also just combine html and rtf into a single boolean. Users would either get plain text only (`false`) or all formatting (`true`) onto their clipboard. If this is set to `true`, the default right click behavior is reversed: right clicking copies the formatting.
 
 `"copyFormatting": true`
 
