@@ -1863,6 +1863,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        auto dispatcher{ Dispatcher() }; // cache a strong ref to this in case TermControl dies
         auto weakThis{ get_weak() };
 
         // Muffle 2: Muffle Harder
@@ -1874,7 +1875,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
         co_await winrt::resume_after(CursorUpdateQuiesceTime);
 
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await winrt::resume_foreground(dispatcher);
 
         if (auto control{ weakThis.get() })
         {
