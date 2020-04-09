@@ -91,7 +91,7 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
 * `sudo apt install zsh` 
 * `sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`
 * `sudo apt-get install fonts-powerline`
-* `code ~/.zshrc` # to customize it
+* `vim ~/.zshrc` # to customize it
 * Then change the `ZSH_THEME="random"`. Your terminal sessions always having unique theme.
 6. Please add more tips & tricks
 
