@@ -573,52 +573,62 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
     {
         profileIndex = newTerminalArgs.ProfileIndex().Value();
     }
-    GUID profileGuid = _GetProfileForIndex(profileIndex);
+    GUID profileGuid = _GetProfileByIndex(profileIndex);
 
     if (newTerminalArgs)
     {
         const auto profileString = newTerminalArgs.Profile();
-
-        // First, try and parse the "profile" argument as a GUID. If it's a
-        // GUID, and the GUID of one of our profiles, then use that as the
-        // profile GUID instead. If it's not, then try looking it up as a
-        // name of a profile. If it's still not that, then just ignore it.
-        if (!profileString.empty())
+        if (auto guidFromName{ _GetProfileByName(profileString) })
         {
-            bool wasGuid = false;
-
-            // Do a quick heuristic check - is the profile 38 chars long (the
-            // length of a GUID string), and does it start with '{'? Because if
-            // it doesn't, it's _definitely_ not a GUID.
-            if (profileString.size() == 38 && profileString[0] == L'{')
-            {
-                try
-                {
-                    const auto newGUID = Utils::GuidFromString(profileString.c_str());
-                    if (FindProfile(newGUID))
-                    {
-                        profileGuid = newGUID;
-                        wasGuid = true;
-                    }
-                }
-                CATCH_LOG();
-            }
-
-            // Here, we were unable to use the profile string as a GUID to
-            // lookup a profile. Instead, try using the string to look the
-            // Profile up by name.
-            if (!wasGuid)
-            {
-                const auto guidFromName = FindGuid(profileString.c_str());
-                if (guidFromName.has_value())
-                {
-                    profileGuid = guidFromName.value();
-                }
-            }
+            // we only set this if the optional was populated; otherwise, it's the index or default
+            profileGuid = guidFromName.value();
         }
     }
 
     return profileGuid;
+}
+
+// Method Description:
+// - Helper to get the GUID of a profile given a name that could be a guid or an actual name.
+// Arguments:
+// - name: a guid string _or_ the name of a profile
+// Return Value:
+// - the GUID of the profile corresponding to this name
+std::optional<GUID> CascadiaSettings::_GetProfileByName(const std::wstring_view name) const
+{
+    // First, try and parse the "name" as a GUID. If it's a
+    // GUID, and the GUID of one of our profiles, then use that as the
+    // profile GUID instead. If it's not, then try looking it up as a
+    // name of a profile. If it's still not that, then just ignore it.
+    if (!name.empty())
+    {
+        // Do a quick heuristic check - is the profile 38 chars long (the
+        // length of a GUID string), and does it start with '{'? Because if
+        // it doesn't, it's _definitely_ not a GUID.
+        if (name.size() == 38 && name[0] == L'{')
+        {
+            try
+            {
+                const auto newGUID{ Utils::GuidFromString(static_cast<std::wstring>(name)) };
+                if (FindProfile(newGUID))
+                {
+                    return newGUID;
+                }
+            }
+            CATCH_LOG();
+        }
+
+        // Here, we were unable to use the profile string as a GUID to
+        // lookup a profile. Instead, try using the string to look the
+        // Profile up by name.
+        const auto guidFromName{ FindGuid(name.c_str()) };
+        if (guidFromName.has_value())
+        {
+            return guidFromName; // this was already an optional<GUID>
+        }
+    }
+
+    return std::nullopt;
 }
 
 // Method Description:
@@ -631,7 +641,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
 //   If omitted, instead return the default profile's GUID
 // Return Value:
 // - the Nth profile's GUID, or the default profile's GUID
-GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
+GUID CascadiaSettings::_GetProfileByIndex(std::optional<int> index) const
 {
     GUID profileGuid;
     if (index)

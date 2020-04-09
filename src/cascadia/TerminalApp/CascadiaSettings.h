@@ -106,7 +106,8 @@ private:
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    GUID _GetProfileForIndex(std::optional<int> index) const;
+    GUID _GetProfileByName(const std::wstring_view) const;
+    GUID _GetProfileByIndex(std::optional<int> index) const;
     GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
