@@ -23,6 +23,8 @@ namespace TerminalApp
     class PowershellCoreProfileGenerator : public TerminalApp::IDynamicProfileGenerator
     {
     public:
+        static const std::wstring_view GetPreferredPowershellProfileName();
+
         PowershellCoreProfileGenerator() = default;
         ~PowershellCoreProfileGenerator() = default;
         std::wstring_view GetNamespace() override;

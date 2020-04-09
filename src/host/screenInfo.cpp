@@ -1547,10 +1547,18 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
                                               const bool Visible) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
+    const auto originalSize = cursor.GetSize();
 
     cursor.SetSize(Size);
     cursor.SetIsVisible(Visible);
-    cursor.SetType(CursorType::Legacy);
+
+    // If we are just trying to change the visibility, we don't want to reset
+    // the cursor type. We only need to force it to the Legacy style if the
+    // size is actually being changed.
+    if (Size != originalSize)
+    {
+        cursor.SetType(CursorType::Legacy);
+    }
 
     // If we're an alt buffer, also update our main buffer.
     // Users of the API expect both to be set - this can't be set by VT
