@@ -685,6 +685,9 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statu
 
     switch (statusType)
     {
+    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+        success = _OperatingStatus();
+        break;
     case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
         success = _CursorPositionReport();
         break;
@@ -704,6 +707,18 @@ bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
     return _WriteResponse(L"\x1b[?1;0c");
+}
+
+// Routine Description:
+// - DSR-OS - Reports the operating status back to the input channel
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_OperatingStatus() const
+{
+    // We always report a good operating condition.
+    return _WriteResponse(L"\x1b[0n");
 }
 
 // Routine Description:

@@ -1113,6 +1113,10 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
         switch (param)
         {
         // This looks kinda silly, but I want the parser to reject (success = false) any status types we haven't put here.
+        case (unsigned short)DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+            statusType = DispatchTypes::AnsiStatusType::OS_OperatingStatus;
+            success = true;
+            break;
         case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;
