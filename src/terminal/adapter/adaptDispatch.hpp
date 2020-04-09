@@ -56,7 +56,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
         bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
-        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-CPR
+        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
@@ -145,6 +145,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
+        bool _OperatingStatus() const;
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
