@@ -24,11 +24,6 @@ namespace winrt::TerminalApp::implementation
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
         _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-            // GH#1996 - Mark that we've begun closing. Subsequent calls to
-            // Tab::Shutdown shouldn't need to do anything.
-            _closing = true;
-
-            // Fire our own Closed event.
             _ClosedHandlers(nullptr, nullptr);
         });
 
@@ -343,15 +338,6 @@ namespace winrt::TerminalApp::implementation
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void Tab::Shutdown()
     {
-        // GH#1996 - If we already began closing, then it's because the root
-        // pane already fired it's Closed event. Our owner might roundtrip back
-        // into here however, in response to our own Closed event firing. If
-        // that's the case, then just do nothing.
-        if (_closing)
-        {
-            return;
-        }
-
         _rootPane->Shutdown();
     }
 
@@ -365,7 +351,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ClosePane()
     {
-        _activePane->Shutdown();
+        _activePane->Close();
     }
 
     // Method Description:

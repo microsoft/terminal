@@ -292,9 +292,6 @@ bool Pane::NavigateFocus(const Direction& direction)
 // - If this was called, and we became a parent pane (due to work on another
 //   thread), this function will do nothing (allowing the control's new parent
 //   to handle the event instead).
-// - This is only triggered if the close was initiated by the connection itself.
-//   If we were Shutdown(), then this handler won't ever be fired for the final
-//   Closed event. See GH#1996
 // Arguments:
 // - <none>
 // Return Value:
@@ -349,19 +346,21 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
-winrt::fire_and_forget Pane::_asyncCloseControl()
+// Method Description:
+// - Fire our Closed event to tell our parent that we should be removed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::Close()
 {
-    co_await winrt::resume_background();
-    _control.Close();
+    // Fire our Closed event to tell our parent that we should be removed.
+    _ClosedHandlers(nullptr, nullptr);
 }
 
 // Method Description:
 // - Prepare this pane to be removed from the UI hierarchy by closing all controls
 //   and connections beneath it.
-// - This is only ever initiated by the UI. If the connection is closed, then
-//   it'll call _ControlConnectionStateChangedHandler
-// - If we're a leaf, fire our Closed event to tell our parent that we should be
-//   removed.
 void Pane::Shutdown()
 {
     // Lock the create/close lock so that another operation won't concurrently
@@ -369,23 +368,7 @@ void Pane::Shutdown()
     std::unique_lock lock{ _createCloseLock };
     if (_IsLeaf())
     {
-        // Close our attached control.
         _control.Close();
-        //  GH#1996 During TermControl::Close, it's going to detach the
-        // ConnectionStateChanged event we're listening to. If it didn't, we'd
-        // call into Pane::_ControlConnectionStateChangedHandler, and then
-        // become deadlocked as that method attempts to take the lock.
-        //
-        // Since Shutdown is being initiated by the UI (and not the connection
-        // itself), we don't actually really care about the final Closed event,
-        // nor do we care to wait for it. Just trigger our Closed event now.
-
-        // Fire our Closed event to tell our parent that we should be removed.
-        _ClosedHandlers(nullptr, nullptr);
-
-        // Close our attached control.
-        // _control.Close();
-        // _asyncCloseControl();
     }
     else
     {
