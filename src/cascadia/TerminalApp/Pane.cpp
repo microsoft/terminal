@@ -316,7 +316,7 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
 
     const auto newConnectionState = _control.ConnectionState();
 
-    if (newConnectionState != ConnectionState::Closed)
+    if (newConnectionState < ConnectionState::Closed)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
         return;
@@ -365,9 +365,10 @@ void Pane::Shutdown()
     {
         // Close our attached control.
         _control.Close();
-        //  GH#1996
-        // During TermControl::Close, it's going to detach the ConnectionStateChanged event we're listening to.
-        // If it didn't, we'd call into Pane::_ControlConnectionStateChangedHandler, and then become deadlocked as thet method attempts to take the lock.
+        //  GH#1996 During TermControl::Close, it's going to detach the
+        // ConnectionStateChanged event we're listening to. If it didn't, we'd
+        // call into Pane::_ControlConnectionStateChangedHandler, and then
+        // become deadlocked as that method attempts to take the lock.
         //
         // Since Shutdown is being initiated by the UI (and not the connection
         // itself), we don't actually really care about the final Closed event,
