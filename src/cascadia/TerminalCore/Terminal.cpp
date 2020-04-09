@@ -190,23 +190,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
 
-    // Defer the cursor drawing here right before the Reflow call
-    // because we only want the renderer to redraw the cursor right
-    // after we swap out the old buffer with the new buffer from Reflow.
-    // This swap happens down below, and so we'll EndDeferDrawing right
-    // after the swap.
-    // What would happen is that at the end of Reflow, we would call
-    // EndDeferDrawing, causing the renderer to go and attempt to redraw
-    // the cursor. However there's a race condition where, sometimes it
-    // would check for the _buffer properties before we swap out the
-    // buffer with the new one. This would make it crash if the old
-    // buffer's cursor position was out of bounds.
-    // Now that StartDeferDrawing uses a counter and will only redraw
-    // when the counter reaches 0, this StartDeferDrawing call here will
-    // force the renderer to redraw at least until this particular
-    // deferral is met with its corresponding EndDeferral down below.
-    _buffer->GetCursor().StartDeferDrawing();
-
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -215,6 +198,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      _buffer->GetCurrentAttributes(),
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
+
+        // skip any drawing updates that might occur as we manipulate the new buffer, until we swap the new with the old.
+        _buffer->GetCursor().StartDeferDrawing();
+        newTextBuffer->GetCursor().StartDeferDrawing();
 
         // Build a PositionInformation to track the position of both the top of
         // the mutable viewport and the top of the visible viewport in the new
@@ -239,7 +226,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
     }
-    CATCH_RETURN();
+    catch (...)
+    {
+        _buffer->GetCursor().EndDeferDrawing();
+        RETURN_CAUGHT_EXCEPTION();
+    }
 
     // Conpty resizes a little oddly - if the height decreased, and there were
     // blank lines at the bottom, those lines will get trimmed. If there's not
@@ -346,6 +337,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _buffer.swap(newTextBuffer);
 
+    // Now that the new buffer was swapped to be Terminal's buffer, we can tell its cursor to start drawing again.
     _buffer->GetCursor().EndDeferDrawing();
 
     // GH#3494: Maintain scrollbar position during resize

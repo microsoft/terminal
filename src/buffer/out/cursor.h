@@ -107,7 +107,6 @@ private:
     bool _fDelayedEolWrap; // don't wrap at EOL till the next char comes in.
     COORD _coordDelayedAt; // coordinate the EOL wrap was delayed at.
 
-    int _iDeferCounter;
     bool _fDeferCursorRedraw; // whether we should defer redrawing the cursor or not
     bool _fHaveDeferredCursorRedraw; // have we been asked to redraw the cursor while it was being deferred?
 

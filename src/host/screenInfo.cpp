@@ -1403,6 +1403,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
+    // Tell the both the new and old buffer to not redraw its cursor as we reflow and swap them.
+    newTextBuffer->GetCursor().StartDeferDrawing();
+    _textBuffer->GetCursor().StartDeferDrawing();
+
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
@@ -1416,6 +1420,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
         _textBuffer.swap(newTextBuffer);
     }
+
+    // Only tell _textBuffer to EndDefer (and not newTextBuffer) because whether or not Reflow failed,
+    // _textBuffer will end up being the buffer that we use after returning.
+    _textBuffer->GetCursor().EndDeferDrawing();
 
     return NTSTATUS_FROM_HRESULT(hr);
 }

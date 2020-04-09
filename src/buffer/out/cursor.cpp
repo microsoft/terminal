@@ -29,8 +29,7 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _ulSize(ulSize),
     _cursorType(CursorType::Legacy),
     _fUseColor(false),
-    _color(s_InvertCursorColor),
-    _iDeferCounter{ 0 }
+    _color(s_InvertCursorColor)
 {
 }
 
@@ -167,7 +166,7 @@ void Cursor::_RedrawCursor() noexcept
     // (Conversion areas have cursors to mark the insertion point internally, but the user's actual cursor is the one on the primary screen buffer.)
     if (IsOn() && !IsConversionArea())
     {
-        if (_iDeferCounter > 0)
+        if (_fDeferCursorRedraw)
         {
             _fHaveDeferredCursorRedraw = true;
         }
@@ -282,7 +281,6 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
 
     _fDeferCursorRedraw = OtherCursor._fDeferCursorRedraw;
     _fHaveDeferredCursorRedraw = OtherCursor._fHaveDeferredCursorRedraw;
-    _iDeferCounter = OtherCursor._iDeferCounter;
 
     // Size will be handled separately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
@@ -314,22 +312,17 @@ bool Cursor::IsDelayedEOLWrap() const noexcept
 
 void Cursor::StartDeferDrawing() noexcept
 {
-    ++_iDeferCounter;
+    _fDeferCursorRedraw = true;
 }
 
 void Cursor::EndDeferDrawing() noexcept
 {
-    // Nobody has started a defer drawing.
-    if (_iDeferCounter == 0)
-    {
-        return;
-    }
-
-    --_iDeferCounter;
-    if (_iDeferCounter == 0)
+    if (_fHaveDeferredCursorRedraw)
     {
         _RedrawCursorAlways();
     }
+
+    _fDeferCursorRedraw = FALSE;
 }
 
 const CursorType Cursor::GetType() const noexcept

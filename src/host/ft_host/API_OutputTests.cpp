@@ -1077,7 +1077,7 @@ void OutputTests::WriteTwoColumnCharacterToCheckOverflow()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
     const auto bufferSize = sbiex.dwSize;
 
-    // Establish a writing region that is the width of the buffer and half the height.
+    // Establish a writing region that is the width of the buffer and just one row tall.
     const SMALL_RECT region{ 0, 0, bufferSize.X - 1, 0 };
     const COORD regionDimensions{ region.Right - region.Left + 1, region.Bottom - region.Top + 1 };
     const auto regionSize = regionDimensions.X * regionDimensions.Y;
