@@ -2248,7 +2248,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     hostSm.ProcessString(L"\x1b[H");
     hostSm.ProcessString(L"\x1b[2J");
 
-    // Write out lines of '~' followed by enough spaes to fill the line.
+    // Write out lines of '~' followed by enough spaces to fill the line.
     hostSm.ProcessString(L"\x1b[94m");
     for (auto y = 0; y < altBuffer.GetViewport().BottomInclusive(); y++)
     {
