@@ -61,7 +61,7 @@
         { "command": "paste", "keys": "ctrl+v" },
 
         // Press Ctrl+Shift+F to open the search box
-        { "command": "find", "keys": "ctrl+shift+f"},
+        { "command": "find", "keys": "ctrl+shift+f" },
 
         // Press Alt+Shift+D to open a new pane.
         // - "split": "auto" makes this pane open in the direction that provides the most surface area.
