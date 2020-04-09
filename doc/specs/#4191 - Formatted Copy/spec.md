@@ -15,15 +15,11 @@ When copying text, the Terminal should provide the option of including formattin
 
 ## Solution Proposals
 
-A proposal for the right click behavior as well as two user settings proposals are described below:
+A proposal for the right click behavior as well as two user settings proposals are described below. The conclusion the team arrived at is at the bottom under the [Conclusions section](#conclusions).
 
-1. [Right click behavior](#right-click-behavior)
-2. [Settings option 1 - global setting](#settings-option-1---global-setting)
-3. [Settings option 2 - key binding argument](#settings-option-2---key-binding-argument)
-
-### Right click behavior
-
-By default, right clicking to copy would only copy the plain text.
+1. [Settings option 1 - global setting](#settings-option-1---global-setting)
+2. [Settings option 2 - key binding argument](#settings-option-2---key-binding-argument)
+3. [Right click behavior](#right-click-behavior)
 
 ### Settings option 1 - global setting
 
@@ -32,6 +28,10 @@ We could have a global setting that when enabled, would copy formatting to the c
 ### Settings option 2 - key binding argument
 
 We could add an argument to the `copy` key binding argument to allow for formatted copying when the user chooses to do so.
+
+### Right click behavior
+
+By default, right clicking to copy would only copy the plain text.
 
 ## UI/UX Design
 
@@ -79,12 +79,10 @@ This breaks the existing behavior of always copying the formatting. The justific
 
 One possible issue is that discovering how to copy the formatting might be difficult to find. We could mitigate this by adding it into the settings.json file and commenting it out.
 
-## Future considerations
-
-We could always add an additional option if people want more flexibility. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa.
-
 ## Conclusions
 
 The team has decided to have plain text as the default copy behavior and to enable formatted copying with a global setting that accepts a boolean value (settings option 1 - global setting, option b). In the future, we can modify this setting to also accept an array, so the user can specify which formats they would like to copy. Additionally, a key binding can be added to allow for greater flexibility.
 
-## Resources
+## Future considerations
+
+We could always add an additional option if people want more flexibility. For example, if we ship a global setting now, we could ship a key binding later that lets you choose how you want to copy, and vice versa. Additionally, we can add functionality to the global setting that allows for specific formats or styles to be copied.
