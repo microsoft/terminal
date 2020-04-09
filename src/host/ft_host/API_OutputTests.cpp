@@ -1102,19 +1102,4 @@ void OutputTests::WriteTwoColumnCharacterToCheckOverflow()
 
     // Move the cursor to the last column of the buffer
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCursorPosition(consoleOutputHandle, { bufferSize.X - 1, 0 }));
-
-    //// Make an array that can hold the output
-    //std::vector<CHAR_INFO> readBuffer(regionSize);
-
-    //// Call the API and confirm results
-    //SMALL_RECT readRegion = region;
-    //VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(consoleOutputHandle, readBuffer.data(), regionDimensions, regionOrigin, &readRegion));
-    //for (auto x : readBuffer)
-    //{
-    //    for (int i = 0; i < 1000; ++i)
-    //    {
-    //        VERIFY_ARE_EQUAL(x, testValue);
-    //    }
-    //    
-    //}
 }

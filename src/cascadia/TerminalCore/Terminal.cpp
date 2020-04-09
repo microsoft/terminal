@@ -165,7 +165,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 [[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
-
     if (viewportSize == oldDimensions)
     {
         return S_FALSE;
