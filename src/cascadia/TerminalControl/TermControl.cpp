@@ -1970,6 +1970,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
+    // Method Description:
+    // - Asynchronously close our connection. The Connection will likely wait
+    //   until the attached process terminates before Close returns. If that's
+    //   the case, we don't want to block the UI thread waiting on that process
+    //   handle.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_AsyncCloseConnection()
+    {
+        if (auto localConnection{ std::exchange(_connection, nullptr) })
+        {
+            // Close the connection on the background thread.
+            co_await winrt::resume_background();
+            localConnection.Close();
+            // connection is destroyed.
+        }
+    }
+
     void TermControl::Close()
     {
         if (!_closing.exchange(true))
@@ -1981,11 +2001,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
 
-            if (auto localConnection{ std::exchange(_connection, nullptr) })
-            {
-                localConnection.Close();
-                // connection is destroyed.
-            }
+            // GH#1996 - Close the connection asynchronously on a background
+            // thread.
+            // Since TermControl::Close is only ever triggered by the UI, we
+            // don't really care to wait for the connection to be completely
+            // closed. We can just do it whenever.
+            _AsyncCloseConnection();
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
