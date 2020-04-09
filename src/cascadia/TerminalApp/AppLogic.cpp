@@ -908,6 +908,39 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        // Try to get the version the old-fashioned way
+        try
+        {
+            struct LocalizationInfo
+            {
+                WORD language, codepage;
+            };
+            // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
+            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+            auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
+            THROW_LAST_ERROR_IF(size == 0);
+            auto versionBuffer{ std::make_unique<std::byte[]>(size) };
+            THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.c_str(), 0, size, versionBuffer.get()));
+
+            // Get the list of Version localizations
+            LocalizationInfo* pVarLocalization{ nullptr };
+            UINT varLen{ 0 };
+            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pVarLocalization), &varLen));
+            THROW_HR_IF(E_UNEXPECTED, varLen < sizeof(*pVarLocalization)); // there must be at least one translation
+
+            // Get the product version from the localized version compartment
+            // We're using String/ProductVersion here because our build pipeline puts more rich information in it (like the branch name)
+            // than in the unlocalized numeric version fields.
+            WCHAR* pProductVersion{ nullptr };
+            UINT versionLen{ 0 };
+            const auto localizedVersionName{ wil::str_printf<std::wstring>(L"\\StringFileInfo\\%04x%04x\\ProductVersion",
+                                                                           pVarLocalization->language ? pVarLocalization->language : 0x0409, // well-known en-US LCID
+                                                                           pVarLocalization->codepage) };
+            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), localizedVersionName.c_str(), reinterpret_cast<void**>(&pProductVersion), &versionLen));
+            return { pProductVersion };
+        }
+        CATCH_LOG();
+
         return RS_(L"ApplicationVersionUnknown");
     }
 
