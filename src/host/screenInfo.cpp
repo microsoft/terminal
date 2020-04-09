@@ -1663,6 +1663,24 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
         return STATUS_INVALID_PARAMETER;
     }
 
+    // GH#5291 - If we're moving the cursor, we're definitely manually breaking
+    // the line. Check if the cursor is currently in the "delayed EOL wrap"
+    // state. If it is, then the current cursor line is being treated as
+    // wrapped, and the next char should go on the subsequent line.
+    //
+    // However, If we're moving the cursor manually, then we're certainly not
+    // wrapping the current line. In that case, clear the wrap flag from the
+    // current cursor position.
+    const COORD oldCursorPos = cursor.GetPosition();
+    if (cursor.IsDelayedEOLWrap())
+    {
+        ROW& prevRow = _textBuffer->GetRowByOffset(oldCursorPos.Y);
+        if (prevRow.GetCharRow().WasWrapForced())
+        {
+            prevRow.GetCharRow().SetWrapForced(false);
+        }
+    }
+
     cursor.SetPosition(Position);
 
     // if we have the focus, adjust the cursor state

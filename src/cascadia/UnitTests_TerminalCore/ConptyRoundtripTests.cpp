@@ -2217,6 +2217,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
         for (auto y = viewport.top<short>(); y < lastRow; y++)
         {
+            VERIFY_IS_FALSE(tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
             TestUtils::VerifyExpectedString(tb, L"~    ", til::point{ 0, y });
         }
 
