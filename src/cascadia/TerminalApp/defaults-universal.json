@@ -1,13 +1,27 @@
 // THIS IS AN AUTO-GENERATED FILE! Changes to this file will be ignored.
 {
-    "alwaysShowTabs": true,
     "defaultProfile": "{550ce7b8-d500-50ad-8a1a-c400c3262db3}",
+
+    // Launch Settings
     "initialCols": 120,
     "initialRows": 30,
-    "theme": "system",
-    "showTabsInTitlebar": false,
-    "showTerminalTitleInTitlebar": true,
+    "launchMode": "default",
+
+    // Selection
+    "copyOnSelect": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+
+    // Tab UI
+    "alwaysShowTabs": true,
+    "showTabsInTitlebar": true,
+    "showTerminalTitleInTitlebar": true,
+    "tabWidthMode": "equal",
+
+    // Miscellaneous
+    "confirmCloseAllTabs": true,
+    "theme": "system",
+    "rowsToScroll": "system",
+    "snapToGridOnResize": true,
 
     "profiles":
     [
@@ -68,6 +82,8 @@
         { "command": "find", "keys": "ctrl+shift+f" },
 
         // Tab Management
+        // "command": "closeTab" is unbound by default.
+        //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
         { "command": "newTab", "keys": "ctrl+shift+t" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
@@ -93,8 +109,8 @@
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal"}, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical"}, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
@@ -104,9 +120,9 @@
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
 
-        // OS Integration
-        { "command": "copy", "keys": "ctrl+shift+c" },
-        { "command": "copy", "keys": "ctrl+insert" },
+        // Clipboard Integration
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
 
