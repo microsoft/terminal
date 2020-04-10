@@ -29,7 +29,10 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceString(const std::string_view& str) const;
         void TraceInvalidate(const til::rectangle view) const;
         void TraceLastText(const til::point lastText) const;
+        void TraceScrollFrame(const til::point scrollDelta) const;
         void TraceMoveCursor(const til::point lastText, const til::point cursor) const;
+        void TraceSetWrapped(const short wrappedRow) const;
+        void TraceClearWrapped() const;
         void TraceWrapped() const;
         void TracePaintCursor(const til::point coordCursor) const;
         void TraceInvalidateAll(const til::rectangle view) const;
@@ -39,7 +42,8 @@ namespace Microsoft::Console::VirtualTerminal
                              const til::bitmap invalidMap,
                              const til::rectangle lastViewport,
                              const til::point scrollDelta,
-                             const bool cursorMoved) const;
+                             const bool cursorMoved,
+                             const std::optional<short>& wrappedRow) const;
         void TraceEndPaint() const;
     };
 }

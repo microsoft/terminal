@@ -632,11 +632,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
-            _connection.Start();
             _initializedTerminal = true;
         } // scope for TerminalLock
-        // call this event dispatcher outside of lock
 
+        // Start the connection outside of lock, because it could
+        // start writing output immediately.
+        _connection.Start();
+
+        // Likewise, run the event handlers outside of lock (they could
+        // be reentrant)
         _InitializedHandlers(*this, nullptr);
         return true;
     }
@@ -1847,14 +1851,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - N/A
     winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
     {
+        bool expectedFalse{ false };
+        if (!_coroutineDispatchStateUpdateInProgress.compare_exchange_weak(expectedFalse, true))
+        {
+            // somebody's already in here.
+            return;
+        }
+
         if (_closing.load())
         {
             return;
         }
 
+        auto dispatcher{ Dispatcher() }; // cache a strong ref to this in case TermControl dies
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(Dispatcher());
+        // Muffle 2: Muffle Harder
+        // If we're the lucky coroutine who gets through, we'll still wait 100ms to clog
+        // the atomic above so we don't service the cursor update too fast. If we get through
+        // and finish processing the update quickly but similar requests are still beating
+        // down the door above in the atomic, we may still update the cursor way more than
+        // is visible to anyone's eye, which is a waste of effort.
+        static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
+        co_await winrt::resume_after(CursorUpdateQuiesceTime);
+
+        co_await winrt::resume_foreground(dispatcher);
 
         if (auto control{ weakThis.get() })
         {
@@ -1862,6 +1883,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 TSFInputControl().TryRedrawCanvas();
             }
+            _coroutineDispatchStateUpdateInProgress.store(false);
         }
     }
 
@@ -1948,6 +1970,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
+    // Method Description:
+    // - Asynchronously close our connection. The Connection will likely wait
+    //   until the attached process terminates before Close returns. If that's
+    //   the case, we don't want to block the UI thread waiting on that process
+    //   handle.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_AsyncCloseConnection()
+    {
+        if (auto localConnection{ std::exchange(_connection, nullptr) })
+        {
+            // Close the connection on the background thread.
+            co_await winrt::resume_background();
+            localConnection.Close();
+            // connection is destroyed.
+        }
+    }
+
     void TermControl::Close()
     {
         if (!_closing.exchange(true))
@@ -1959,11 +2001,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
 
-            if (auto localConnection{ std::exchange(_connection, nullptr) })
-            {
-                localConnection.Close();
-                // connection is destroyed.
-            }
+            // GH#1996 - Close the connection asynchronously on a background
+            // thread.
+            // Since TermControl::Close is only ever triggered by the UI, we
+            // don't really care to wait for the connection to be completely
+            // closed. We can just do it whenever.
+            _AsyncCloseConnection();
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
