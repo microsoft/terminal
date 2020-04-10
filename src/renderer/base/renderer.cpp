@@ -303,6 +303,22 @@ void Renderer::TriggerSelection()
         // Get selection rectangles
         const auto rects = _GetSelectionRects();
 
+        // Restrict all previous selection rectangles to inside the current viewport bounds
+        for (auto& sr : _previousSelection)
+        {
+            // Make the exclusive SMALL_RECT into a til::rectangle.
+            til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
+
+            // Make a viewport representing the coordinates that are currently presentable.
+            const til::rectangle viewport{ til::size{Viewport::FromInclusive(_srViewportPrevious).Dimensions()} };
+
+            // Intersect them so we only invalidate things that are still visible.
+            rc &= viewport;
+
+            // Convert back into the exclusive SMALL_RECT and store in the vector.
+            sr = Viewport::FromInclusive(rc).ToExclusive();
+        }
+
         std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
@@ -330,13 +346,20 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        LOG_IF_FAILED(pEngine->UpdateViewport(srNewViewport));
-        LOG_IF_FAILED(pEngine->InvalidateScroll(&coordDelta));
-    });
-    _srViewportPrevious = srNewViewport;
+    if (coordDelta.X != 0 || coordDelta.Y != 0)
+    {
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->UpdateViewport(srNewViewport));
+            LOG_IF_FAILED(pEngine->InvalidateScroll(&coordDelta));
+                      });
+        _srViewportPrevious = srNewViewport;
 
-    return coordDelta.X != 0 || coordDelta.Y != 0;
+        _ScrollPreviousSelection(coordDelta);
+
+        return true;
+    }
+
+    return false;
 }
 
 // Routine Description:
@@ -368,6 +391,8 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     });
+
+    _ScrollPreviousSelection(*pcoordDelta);
 
     _NotifyPaintFrame();
 }
@@ -1003,6 +1028,33 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
     }
 
     return result;
+}
+
+// Method Description:
+// - Offsets all of the selection rectangles we might be holding onto
+//   as the previously selected area. If the whole viewport scrolls,
+//   we need to scroll these areas also to ensure they're invalidated
+//   properly when the selection further changes.
+// Arguments:
+// - delta - The scroll delta
+// Return Value:
+// - <none> - Updates internal state instead.
+void Renderer::_ScrollPreviousSelection(const til::point delta)
+{
+    if (delta != til::point{ 0, 0 })
+    {
+        for (auto& sr : _previousSelection)
+        {
+            // Get a rectangle representing this piece of the selection.
+            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
+
+            // Offset the entire existing rectangle by the delta.
+            rc += delta;
+
+            // Store it back into the vector.
+            sr = Viewport::FromInclusive(rc).ToExclusive();
+        }
+    }
 }
 
 // Method Description:
