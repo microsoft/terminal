@@ -368,7 +368,7 @@
         },
         "confirmCloseAllTabs": {
           "default": true,
-          "description": " When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
+          "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type":"boolean"
         }
       },
@@ -401,7 +401,7 @@
         "background": {
           "$ref": "#/definitions/Color",
           "default": "#0c0c0c",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
+          "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "backgroundImage": {
@@ -443,7 +443,7 @@
         },
         "closeOnExit": {
           "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
@@ -476,7 +476,7 @@
             { "$ref": "#/definitions/Color" },
             {"type": "null"}
           ],
-          "description": "Sets the cursor color of the profile. Overrides the cursor color set in the color scheme. Uses hex color format: \"#rrggbb\"."
+          "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
@@ -487,7 +487,7 @@
         },
         "cursorShape": {
           "default": "bar",
-          "description": "Sets the cursor shape for the profile. Possible values:\n -\"bar\" ( ┃, default )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
+          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
           "enum": [
             "bar",
             "emptyBox",
@@ -515,7 +515,7 @@
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#cccccc",
-          "description": "Sets the foreground color of text. Overrides foreground set in the color scheme. Uses hex color format: \"#rrggbb\".",
+          "description": "Sets the text color. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {
