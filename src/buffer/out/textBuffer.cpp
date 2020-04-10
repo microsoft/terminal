@@ -2077,7 +2077,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
+            if (iRight <= cOldColsTotal && !charRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
