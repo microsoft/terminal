@@ -2192,13 +2192,15 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
 void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int MoveCursorWithCUP = 0;
-    constexpr int MoveCursorWithCRLF = 1;
-    constexpr int MoveCursorWithLFCR = 2;
-
-    INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP or newline/carriage-return");
+    constexpr int MoveCursorWithCR_LF = 1;
+    constexpr int MoveCursorWithLF_CR = 2;
+    constexpr int MoveCursorWithVPR_CR = 3;
+    constexpr int MoveCursorWithCUB_NL = 4;
+    constexpr int MoveCursorWithCUD_CR = 5;
+    INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP, newline/carriage-return, or some other VT sequence");
 
     Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
                  L" ends of blank lines, not EL. This test ensures that conhost"
@@ -2271,7 +2273,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
             hostSm.ProcessString(ss.str());
         }
         // As an additional test, try breaking lines manually with \r\n
-        else if (cursorMovementMode == MoveCursorWithCRLF)
+        else if (cursorMovementMode == MoveCursorWithCR_LF)
         {
             // Don't need to newline on the 0'th row
             if (y > 0)
@@ -2280,12 +2282,42 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
             }
         }
         // As an additional test, try breaking lines manually with \n\r
-        else if (cursorMovementMode == MoveCursorWithLFCR)
+        else if (cursorMovementMode == MoveCursorWithLF_CR)
         {
             // Don't need to newline on the 0'th row
             if (y > 0)
             {
                 hostSm.ProcessString(L"\n\r");
+            }
+        }
+        // As an additional test, move the cursor down with VPR, then to the start of the line with CR
+        else if (cursorMovementMode == MoveCursorWithVPR_CR)
+        {
+            // Don't need to newline on the 0'th row
+            if (y > 0)
+            {
+                hostSm.ProcessString(L"\x1b[1e");
+                hostSm.ProcessString(L"\r");
+            }
+        }
+        // As an additional test, move the cursor back with CUB, then down with LF
+        else if (cursorMovementMode == MoveCursorWithCUB_NL)
+        {
+            // Don't need to newline on the 0'th row
+            if (y > 0)
+            {
+                hostSm.ProcessString(L"\x1b[80D");
+                hostSm.ProcessString(L"\n");
+            }
+        }
+        // As an additional test, move the cursor down with CUD, then to the start of the line with CR
+        else if (cursorMovementMode == MoveCursorWithCUD_CR)
+        {
+            // Don't need to newline on the 0'th row
+            if (y > 0)
+            {
+                hostSm.ProcessString(L"\x1b[B");
+                hostSm.ProcessString(L"\r");
             }
         }
 
