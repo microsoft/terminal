@@ -2417,7 +2417,7 @@ void ConptyRoundtripTests::ExactWrapResize()
 
     // Break the line manually. This next section is adapted from
     // ConptyRoundtripTests::BreakLinesOnCursorMovement. We specifically care
-    // about the \r\n case, because that's how apps usually move hte cursor to
+    // about the \r\n case, because that's how apps usually move the cursor to
     // the next line, but these are all different ways an application could move
     // the cursor to the second line.
 
