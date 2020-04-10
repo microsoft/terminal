@@ -1745,7 +1745,18 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 2: Check CSR (cursor position command) case 6. Should succeed.");
+        Log::Comment(L"Test 2: Check OS (operating status) case 5. Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::OS_OperatingStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check CPR (cursor position report) case 6. Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'6');
@@ -1756,7 +1767,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 3: Check unimplemented case 1. Should fail.");
+        Log::Comment(L"Test 4: Check unimplemented case 1. Should fail.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'1');
