@@ -760,15 +760,10 @@ CATCH_RETURN();
             }
 
             // Try to draw it
-            // NOTE: Using GDI_CLASSIC as the DWRITE_MEASURING_MODE will ensure that
-            // we're not blurring/blending pixels vertically as the D2D Render Target
-            // is scaled from Device-Independent-Pixels (DIPs) to the actual monitor
-            // pixels as dictated by `SetDpi()`. The classic mode appears to take
-            // the actual display characteristics into account and doesn't get half-pixels.
             RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
                                                     mutableOrigin.x,
                                                     mutableOrigin.y,
-                                                    DWRITE_MEASURING_MODE_GDI_CLASSIC,
+                                                    DWRITE_MEASURING_MODE_NATURAL,
                                                     &glyphRun,
                                                     &glyphRunDescription,
                                                     nullptr));
