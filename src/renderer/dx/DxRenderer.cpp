@@ -1078,32 +1078,61 @@ CATCH_RETURN()
         {
             HRESULT hr = S_OK;
 
-            // On the first frame, we cannot use partial presentation.
-            // Just call the old Present method to present the entire frame.
-            if (_firstFrame)
+            bool recreate = false;
+
+            // On anything but the first frame, try partial presentation.
+            // We'll do it first because if it fails, we'll try again with full presentation.
+            if (!_firstFrame)
+            {
+                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+
+                // These two error codes are indicated for destroy-and-recreate
+                // If we were told to destroy-and-recreate, we're going to skip straight into doing that
+                // and not try again with full presentation.
+                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+
+                // Log this as we actually don't expect it to happen, we just will try again
+                // below for robustness of our drawing.
+                if (FAILED(hr) && !recreate)
+                {
+                    LOG_HR(hr);
+                }
+            }
+
+            // If it's the first frame through, we cannot do partial presentation.
+            // Also if partial presentation failed above and we weren't told to skip straight to
+            // device recreation.
+            // In both of these circumstances, do a full presentation.
+            if (_firstFrame || (FAILED(hr) && !recreate))
             {
                 hr = _dxgiSwapChain->Present(1, 0);
                 _firstFrame = false;
-            }
-            else
-            {
-                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+
+                // These two error codes are indicated for destroy-and-recreate
+                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
             }
 
+            // Now check for failure cases from either presentation mode.
             if (FAILED(hr))
             {
-                // These two error codes are indicated for destroy-and-recreate
-                if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+                // If we were told to recreate the device surface, do that.
+                if (recreate)
                 {
                     // We don't need to end painting here, as the renderer has done it for us.
                     _ReleaseDeviceResources();
                     FAIL_FAST_IF_FAILED(InvalidateAll());
                     return E_PENDING; // Indicate a retry to the renderer.
                 }
-
-                FAIL_FAST_HR(hr);
+                // Otherwise, we don't know what to do with this error. Report it.
+                else
+                {
+                    FAIL_FAST_HR(hr);
+                }
             }
 
+            // Finally copy the front image (being presented now) onto the backing buffer
+            // (where we are about to draw the next frame) so we can draw only the differences
+            // next frame.
             RETURN_IF_FAILED(_CopyFrontToBack());
             _presentReady = false;
 
