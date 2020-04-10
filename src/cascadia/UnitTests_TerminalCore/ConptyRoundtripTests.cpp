@@ -2191,6 +2191,14 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
 
 void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1}")
+    END_TEST_METHOD_PROPERTIES();
+    constexpr int MoveCursorWithCUP = 0;
+    constexpr int MoveCursorWithNewline = 1;
+
+    INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP or newline/carriage-return");
+
     Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
                  L" ends of blank lines, not EL. This test ensures that conhost"
                  L" properly treats those lines as _not actually wrapped_,"
@@ -2252,12 +2260,23 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     hostSm.ProcessString(L"\x1b[94m");
     for (auto y = 0; y < altBuffer.GetViewport().BottomInclusive(); y++)
     {
+        // Vim uses CUP to position the cursor on the first cell of each row, every row.
+        if (cursorMovementMode == MoveCursorWithCUP)
         {
             std::wstringstream ss;
             ss << L"\x1b[";
             ss << y + 1;
             ss << L";1H";
             hostSm.ProcessString(ss.str());
+        }
+        // As an additional test, try breaking lines manually with \r\n
+        else if (cursorMovementMode == MoveCursorWithNewline)
+        {
+            // Don't need to newline on the 0'th row
+            if (y > 0)
+            {
+                hostSm.ProcessString(L"\r\n");
+            }
         }
 
         // IMPORTANT! The way vim writes these blank lines is as '~' followed by
