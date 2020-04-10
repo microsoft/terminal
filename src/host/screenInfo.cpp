@@ -1665,6 +1665,12 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 
     cursor.SetPosition(Position);
 
+    // If the cursor has moved below the virtual bottom, the bottom should be updated.
+    if (Position.Y > _virtualBottom)
+    {
+        _virtualBottom = Position.Y;
+    }
+
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
     {
