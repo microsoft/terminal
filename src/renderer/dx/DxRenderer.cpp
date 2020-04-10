@@ -1169,22 +1169,33 @@ try
 {
     D2D1_COLOR_F nothing = { 0 };
 
-    // Runs are counts of cells.
-    // Use a transform by the size of one cell to convert cells-to-pixels
-    // as we clear.
-    _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-    for (const auto rect : _invalidMap.runs())
+    // If the entire thing is invalid, just use one big clear operation.
+    // This will also hit the gutters outside the usual paintable area.
+    // Invalidating everything is supposed to happen with resizes of the
+    // entire canvas, changes of the font, and other such adjustments.
+    if (_invalidMap.all())
     {
-        // Use aliased.
-        // For graphics reasons, it'll look better because it will ensure that
-        // the edges are cut nice and sharp (not blended by anti-aliasing).
-        // For performance reasons, it takes a lot less work to not
-        // do anti-alias blending.
-        _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear(nothing);
-        _d2dRenderTarget->PopAxisAlignedClip();
     }
-    _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    else
+    {
+        // Runs are counts of cells.
+        // Use a transform by the size of one cell to convert cells-to-pixels
+        // as we clear.
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
+        for (const auto rect : _invalidMap.runs())
+        {
+            // Use aliased.
+            // For graphics reasons, it'll look better because it will ensure that
+            // the edges are cut nice and sharp (not blended by anti-aliasing).
+            // For performance reasons, it takes a lot less work to not
+            // do anti-alias blending.
+            _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _d2dRenderTarget->Clear(nothing);
+            _d2dRenderTarget->PopAxisAlignedClip();
+        }
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 
     return S_OK;
 }
