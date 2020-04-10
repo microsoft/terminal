@@ -937,6 +937,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                auto lock = _terminal->LockForWriting();
+
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -978,6 +980,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _lastMouseClickTimestamp = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
                 }
+
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
@@ -1036,6 +1039,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                auto lock = _terminal->LockForWriting();
+
                 const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
