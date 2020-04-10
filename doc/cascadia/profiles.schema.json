@@ -218,7 +218,7 @@
             },
             "splitMode": {
               "default": "duplicate",
-              "description": "Control how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
+              "description": "Control how the pane splits. Only accepts \"duplicate\" which will duplicate the focused pane's profile into a new pane."
             }
           }
         }
@@ -329,7 +329,7 @@
         },
         "theme": {
           "default": "system",
-          "description": "Sets the theme of the application. \"system\" will use the theme Windows is set to.",
+          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
           "enum": [
             "light",
             "dark",
@@ -349,12 +349,12 @@
         },
         "snapToGridOnResize": {
           "default": false,
-          "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize \"smoothly\"",
+          "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize smoothly",
           "type": "boolean"
         },
         "tabWidthMode": {
           "default": "equal",
-          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab has the same width\n -\"titleLength\" sizes each tab to the length of its title",
+          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title",
           "enum": [
             "equal",
             "titleLength"
@@ -368,7 +368,7 @@
         },
         "confirmCloseAllTabs": {
           "default": true,
-          "description": " When set to `true` closing a window with multiple tabs open will require confirmation.  When set to `false`, the confirmation dialog will not appear.",
+          "description": " When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type":"boolean"
         }
       },
