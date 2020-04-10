@@ -894,6 +894,13 @@ try
         _invalidMap.set_all();
     }
 
+    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
+    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
+    if (_scale != 1.0f)
+    {
+        _invalidMap.set_all();
+    }
+
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         const auto invalidatedStr = _invalidMap.to_string();
