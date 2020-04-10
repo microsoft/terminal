@@ -20,21 +20,37 @@ Revision History:
 
 #include <wil\resource.h>
 
-class DeviceComm
+class IDeviceComm
 {
 public:
-    DeviceComm(_In_ HANDLE Server);
-    ~DeviceComm();
+    virtual ~IDeviceComm() = default;
 
-    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const;
+    [[nodiscard]] virtual HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const = 0;
+    [[nodiscard]] virtual HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
+                                         _Out_ CONSOLE_API_MSG* const pMessage) const = 0;
+    [[nodiscard]] virtual HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const = 0;
+
+    [[nodiscard]] virtual HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const = 0;
+    [[nodiscard]] virtual HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const = 0;
+
+    [[nodiscard]] virtual HRESULT AllowUIAccess() const = 0;
+};
+
+class ConDrvDeviceComm : public IDeviceComm
+{
+public:
+    ConDrvDeviceComm(_In_ HANDLE Server);
+    ~ConDrvDeviceComm();
+
+    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const override;
     [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
-                                 _Out_ CONSOLE_API_MSG* const pMessage) const;
-    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const;
+                                 _Out_ CONSOLE_API_MSG* const pMessage) const override;
+    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const override;
 
-    [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const;
-    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const;
+    [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override;
+    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const override;
 
-    [[nodiscard]] HRESULT AllowUIAccess() const;
+    [[nodiscard]] HRESULT AllowUIAccess() const override;
 
 private:
     [[nodiscard]] HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,

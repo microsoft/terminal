@@ -4,13 +4,13 @@
 #include "precomp.h"
 #include "DeviceComm.h"
 
-DeviceComm::DeviceComm(_In_ HANDLE Server) :
+ConDrvDeviceComm::ConDrvDeviceComm(_In_ HANDLE Server) :
     _Server(Server)
 {
     THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
-DeviceComm::~DeviceComm()
+ConDrvDeviceComm::~ConDrvDeviceComm()
 {
 }
 
@@ -22,7 +22,7 @@ DeviceComm::~DeviceComm()
 // - pServerInfo - Structure containing information required to initialize driver state for this console connection.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const
 {
     return _CallIoctl(IOCTL_CONDRV_SET_SERVER_INFORMATION,
                       pServerInfo,
@@ -38,8 +38,8 @@ DeviceComm::~DeviceComm()
 // - pMessage - A structure to hold the message data retrieved from the driver.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
-                                         _Out_ CONSOLE_API_MSG* const pMessage) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
+                                               _Out_ CONSOLE_API_MSG* const pMessage) const
 {
     HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
                             pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
@@ -62,7 +62,7 @@ DeviceComm::~DeviceComm()
 // - pCompletion - Completion structure from the previous activity (can be used in lieu of calling CompleteIo separately.)
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
 {
     return _CallIoctl(IOCTL_CONDRV_COMPLETE_IO,
                       pCompletion,
@@ -78,7 +78,7 @@ DeviceComm::~DeviceComm()
 //                  to hold retrieved buffered input data from the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_READ_INPUT,
                       pIoOperation,
@@ -94,7 +94,7 @@ DeviceComm::~DeviceComm()
 //                  to hold buffered output data to be sent to the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_WRITE_OUTPUT,
                       pIoOperation,
@@ -110,7 +110,7 @@ DeviceComm::~DeviceComm()
 // - <none>
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::AllowUIAccess() const
+[[nodiscard]] HRESULT ConDrvDeviceComm::AllowUIAccess() const
 {
     return _CallIoctl(IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
                       nullptr,
@@ -130,11 +130,11 @@ DeviceComm::~DeviceComm()
 // - cbOutBufferSize - The length in bytes of the optional output buffer.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]] HRESULT DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
-                                             _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
-                                             _In_ DWORD cbInBufferSize,
-                                             _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
-                                             _In_ DWORD cbOutBufferSize) const
+[[nodiscard]] HRESULT ConDrvDeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
+                                                   _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
+                                                   _In_ DWORD cbInBufferSize,
+                                                   _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
+                                                   _In_ DWORD cbOutBufferSize) const
 {
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/aa363216(v=vs.85).aspx
     // Written is unused but cannot be nullptr because we aren't using overlapped.

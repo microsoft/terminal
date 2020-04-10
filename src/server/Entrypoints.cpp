@@ -44,6 +44,12 @@
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
         HANDLE const hServer = ServerHandle.release();
+        std::wstring ppp{ pwszCmdLine };
+        if (ppp.rfind(L".bin") != std::wstring::npos)
+        {
+            // replaying a bin
+            ExitThread(S_OK);
+        }
 
         // Now that the console object was created, we're in a state that lets us
         // create the default io objects.

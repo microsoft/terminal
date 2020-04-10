@@ -31,13 +31,257 @@ using namespace Microsoft::Console::Render;
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
+enum class LogPacketType : uint16_t
+{
+    Read = 1,
+    InputBuffer = 2,
+    Completion = 3,
+};
+
+#pragma pack(push, 1)
+struct LogPacketDescriptor
+{
+    LogPacketType PacketType;
+    uint64_t TimeDeltaInNs;
+    uint32_t Length;
+};
+#pragma pack(pop)
+
+class LoggingDeviceComm : public IDeviceComm
+{
+    wil::unique_hfile _file;
+    IDeviceComm* _loggee;
+
+    mutable std::chrono::high_resolution_clock::time_point _lastEvent;
+
+public:
+    LoggingDeviceComm(IDeviceComm* loggee, const std::wstring_view file) :
+        _loggee(loggee),
+        _lastEvent(std::chrono::high_resolution_clock::now())
+    {
+        _file.reset(CreateFileW(file.data(), GENERIC_WRITE | DELETE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+        USHORT processMachine{};
+        USHORT nativeMachine{};
+        THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
+        WriteFile(_file.get(), &nativeMachine, sizeof(USHORT), nullptr, nullptr);
+    }
+    ~LoggingDeviceComm() = default;
+
+    uint64_t _timeDelta() const
+    {
+        auto thisEventTime{ std::chrono::high_resolution_clock::now() };
+        int64_t delta{ (thisEventTime - _lastEvent).count() };
+        _lastEvent = thisEventTime;
+        return delta;
+    }
+
+    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const override
+    {
+        return _loggee->SetServerInformation(pServerInfo);
+    }
+    [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
+                                 _Out_ CONSOLE_API_MSG* const pMessage) const override
+    {
+        RETURN_IF_FAILED(_loggee->ReadIo(pReplyMsg, pMessage));
+        uint32_t length{ sizeof(CONSOLE_API_MSG) - offsetof(CONSOLE_API_MSG, Descriptor) };
+        LogPacketDescriptor descriptor{ LogPacketType::Read, _timeDelta(), length };
+        WriteFile(_file.get(), &descriptor, sizeof(descriptor), nullptr, nullptr);
+        WriteFile(_file.get(), &pMessage->Descriptor, length, nullptr, nullptr);
+        return S_OK;
+    }
+    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const override
+    {
+        RETURN_IF_FAILED(_loggee->CompleteIo(pCompletion));
+        // Save the completion data buffer _and_ the completion information
+        uint32_t length{ pCompletion->Write.Size + sizeof(pCompletion->IoStatus.Information) };
+        LogPacketDescriptor descriptor{ LogPacketType::Completion, _timeDelta(), length };
+        WriteFile(_file.get(), &descriptor, sizeof(descriptor), nullptr, nullptr);
+        WriteFile(_file.get(), &pCompletion->IoStatus.Information, sizeof(pCompletion->IoStatus.Information), nullptr, nullptr);
+        WriteFile(_file.get(), pCompletion->Write.Data, pCompletion->Write.Size, nullptr, nullptr);
+        return S_OK;
+    }
+
+    [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override
+    {
+        RETURN_IF_FAILED(_loggee->ReadInput(pIoOperation));
+        uint32_t length{ pIoOperation->Buffer.Size };
+        LogPacketDescriptor descriptor{ LogPacketType::InputBuffer, _timeDelta(), length };
+        WriteFile(_file.get(), &descriptor, sizeof(descriptor), nullptr, nullptr);
+        WriteFile(_file.get(), pIoOperation->Buffer.Data, length, nullptr, nullptr);
+        return S_OK;
+    }
+    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const override
+    {
+        return _loggee->WriteOutput(pIoOperation);
+    }
+
+    [[nodiscard]] HRESULT AllowUIAccess() const override
+    {
+        return _loggee->AllowUIAccess();
+    }
+};
+
+class LogReplayDeviceComm : public IDeviceComm
+{
+    wil::unique_hfile _file;
+    double _timeDilation;
+    mutable std::optional<std::tuple<LUID, ULONG>> _requestPendingCompletion;
+    mutable std::map<ULONG_PTR, ULONG_PTR> _handleRemapping;
+
+public:
+    LogReplayDeviceComm(const std::wstring_view file, double timeDilation = 1.0) :
+        _timeDilation(timeDilation)
+    {
+        _file.reset(CreateFileW(file.data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+        USHORT nativeMachineFromDump{};
+        USHORT processMachine{};
+        USHORT nativeMachine{};
+        THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
+        ReadFile(_file.get(), &nativeMachineFromDump, sizeof(USHORT), nullptr, nullptr);
+        if (nativeMachine != nativeMachineFromDump)
+        {
+            MessageBoxW(nullptr, wil::str_printf<std::wstring>(L"This dump was created on a conhost of a different architecture (expected %2.02x, got %2.02x).", nativeMachineFromDump, nativeMachine).c_str(), L"Error", MB_OK | MB_ICONERROR);
+            ExitProcess(1);
+        }
+    }
+    ~LogReplayDeviceComm() = default;
+
+    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const /*pServerInfo*/) const override
+    {
+        return S_OK;
+    }
+
+    void _remap(ULONG_PTR& v) const
+    {
+        if (v == 0)
+            return;
+        auto found{ _handleRemapping.find(v) };
+        if (found != _handleRemapping.end())
+        {
+            v = found->second;
+            return;
+        }
+        OutputDebugStringW(wil::str_printf<std::wstring>(L"REPLAY: Failed to remap %llx\n", v).c_str());
+    }
+
+    [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const /*pReplyMsg*/,
+                                 _Out_ CONSOLE_API_MSG* const pMessage) const override
+    {
+        auto requestStartTime{ std::chrono::high_resolution_clock::now() };
+
+        static constexpr uint32_t maxLen{ sizeof(CONSOLE_API_MSG) - offsetof(CONSOLE_API_MSG, Descriptor) };
+        LogPacketDescriptor descriptor{};
+        ReadFile(_file.get(), &descriptor, sizeof(LogPacketDescriptor), nullptr, nullptr);
+        if (descriptor.PacketType != LogPacketType::Read || descriptor.Length != maxLen)
+        {
+            return E_UNEXPECTED;
+        }
+
+        ReadFile(_file.get(), &pMessage->Descriptor, descriptor.Length, nullptr, nullptr);
+        _requestPendingCompletion = std::tie(pMessage->Descriptor.Identifier, pMessage->Descriptor.Function);
+
+        _remap(pMessage->Descriptor.Process);
+        _remap(pMessage->Descriptor.Object);
+        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
+        return S_OK;
+    }
+    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const override
+    {
+        auto requestStartTime{ std::chrono::high_resolution_clock::now() };
+        LogPacketDescriptor descriptor{};
+        ReadFile(_file.get(), &descriptor, sizeof(LogPacketDescriptor), nullptr, nullptr);
+        if (descriptor.PacketType != LogPacketType::Completion)
+        {
+            return E_UNEXPECTED;
+        }
+
+        ULONG_PTR storedCompletionInfo{};
+        auto length{ descriptor.Length };
+        length -= sizeof(storedCompletionInfo);
+        ReadFile(_file.get(), &storedCompletionInfo, sizeof(storedCompletionInfo), nullptr, nullptr);
+
+        std::unique_ptr<uint8_t[]> buffer;
+        if (length)
+        {
+            buffer = std::make_unique<uint8_t[]>(length);
+            // read the stored packet to get any interesting info from it
+            // for connect completions, we want to cache the current active handle values as mappings from the old handle values
+            ReadFile(_file.get(), buffer.get(), length, nullptr, nullptr);
+        }
+
+        if (_requestPendingCompletion)
+        {
+            auto [id, function] = _requestPendingCompletion.value();
+            if (memcmp(&pCompletion->Identifier, &id, sizeof(id)) == 0)
+            {
+                _requestPendingCompletion.reset();
+                switch (function)
+                {
+                case CONSOLE_IO_CONNECT:
+                {
+                    auto liveConnectionInfo{ static_cast<CD_CONNECTION_INFORMATION*>(pCompletion->Write.Data) };
+                    auto storedConnectionInfo{ reinterpret_cast<CD_CONNECTION_INFORMATION*>(buffer.get()) };
+                    _handleRemapping[storedConnectionInfo->Process] = liveConnectionInfo->Process;
+                    _handleRemapping[storedConnectionInfo->Input] = liveConnectionInfo->Input;
+                    _handleRemapping[storedConnectionInfo->Output] = liveConnectionInfo->Output;
+                    break;
+                }
+                case CONSOLE_IO_CREATE_OBJECT:
+                {
+                    _handleRemapping[storedCompletionInfo] = pCompletion->IoStatus.Information;
+                    break;
+                }
+                default:
+                    ; //nothing
+                }
+            }
+        }
+
+        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
+        return S_OK;
+    }
+
+    [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override
+    {
+        auto requestStartTime{ std::chrono::high_resolution_clock::now() };
+        LogPacketDescriptor descriptor{};
+        ReadFile(_file.get(), &descriptor, sizeof(LogPacketDescriptor), nullptr, nullptr);
+        if (descriptor.PacketType != LogPacketType::InputBuffer)
+        {
+            return E_UNEXPECTED;
+        }
+
+        ReadFile(_file.get(), static_cast<uint8_t*>(pIoOperation->Buffer.Data) /* + pIoOperation->Buffer.Offset*/, descriptor.Length, nullptr, nullptr);
+        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
+        return S_OK;
+    }
+    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const /*pIoOperation*/) const override
+    {
+        return S_OK;
+    }
+
+    [[nodiscard]] HRESULT AllowUIAccess() const override
+    {
+        return S_OK;
+    }
+};
+
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
     try
     {
-        Globals.pDeviceComm = new DeviceComm(Server);
+        const auto cmdline{ args->GetClientCommandline() };
+        if (cmdline.rfind(L".bin") != std::wstring::npos)
+        {
+            Globals.pDeviceComm = new LogReplayDeviceComm(cmdline, 1.0);
+        }
+        else
+        {
+            Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+            Globals.pDeviceComm = new LoggingDeviceComm(Globals.pDeviceComm, L"conhost_log.bin");
+        }
 
         Globals.launchArgs = *args;
 
