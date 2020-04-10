@@ -2195,8 +2195,8 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
         TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int MoveCursorWithCUP = 0;
-    constexpr int MoveCursorWithCRNL = 1;
-    constexpr int MoveCursorWithNLCR = 2;
+    constexpr int MoveCursorWithCRLF = 1;
+    constexpr int MoveCursorWithLFCR = 2;
 
     INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP or newline/carriage-return");
 
@@ -2271,7 +2271,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
             hostSm.ProcessString(ss.str());
         }
         // As an additional test, try breaking lines manually with \r\n
-        else if (cursorMovementMode == MoveCursorWithCRNL)
+        else if (cursorMovementMode == MoveCursorWithCRLF)
         {
             // Don't need to newline on the 0'th row
             if (y > 0)
@@ -2280,7 +2280,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
             }
         }
         // As an additional test, try breaking lines manually with \n\r
-        else if (cursorMovementMode == MoveCursorWithNLCR)
+        else if (cursorMovementMode == MoveCursorWithLFCR)
         {
             // Don't need to newline on the 0'th row
             if (y > 0)
