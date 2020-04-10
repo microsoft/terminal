@@ -346,13 +346,19 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
+    for (auto engine : _rgpEngines)
+    {
+        LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
+    }
+
+    _srViewportPrevious = srNewViewport;
+
     if (coordDelta.X != 0 || coordDelta.Y != 0)
     {
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            LOG_IF_FAILED(pEngine->UpdateViewport(srNewViewport));
-            LOG_IF_FAILED(pEngine->InvalidateScroll(&coordDelta));
-        });
-        _srViewportPrevious = srNewViewport;
+        for (auto engine : _rgpEngines)
+        {
+            LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
+        }
 
         _ScrollPreviousSelection(coordDelta);
 
