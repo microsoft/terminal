@@ -308,9 +308,9 @@ void Renderer::TriggerSelection()
         {
             // Make the exclusive SMALL_RECT into a til::rectangle.
             til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
-
+            
             // Make a viewport representing the coordinates that are currently presentable.
-            const til::rectangle viewport{ til::size{Viewport::FromInclusive(_srViewportPrevious).Dimensions()} };
+            const til::rectangle viewport{ til::size{_pData->GetViewport().Dimensions()} };
 
             // Intersect them so we only invalidate things that are still visible.
             rc &= viewport;
