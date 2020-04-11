@@ -85,4 +85,16 @@ namespace Microsoft::Console::Utils
     }
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+
+    template<typename T>
+    T CoalesceOptionals(std::optional<T> t1, const T& base)
+    {
+        return t1.value_or(base);
+    }
+
+    template<typename T, typename... Ts>
+    T CoalesceOptionals(std::optional<T> t1, Ts&&... t2, const T& base)
+    {
+        return t1.value_or(CoalesceOptionals(std::forward<Ts>(t2)..., base));
+    }
 }

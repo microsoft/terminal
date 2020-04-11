@@ -567,25 +567,18 @@ TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
 GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
 {
-    std::optional<int> profileIndex{ std::nullopt };
-    if (newTerminalArgs &&
-        newTerminalArgs.ProfileIndex() != nullptr)
-    {
-        profileIndex = newTerminalArgs.ProfileIndex().Value();
-    }
-    GUID profileGuid = _GetProfileByIndex(profileIndex);
-
+    std::optional<GUID> profileByIndex, profileByName;
     if (newTerminalArgs)
     {
-        const auto profileString = newTerminalArgs.Profile();
-        if (auto guidFromName{ _GetProfileByName(profileString) })
+        if (newTerminalArgs.ProfileIndex() != nullptr)
         {
-            // we only set this if the optional was populated; otherwise, it's the index or default
-            profileGuid = guidFromName.value();
+            profileByIndex = _GetProfileByIndex(newTerminalArgs.ProfileIndex().Value());
         }
+
+        profileByName = _GetProfileByName(newTerminalArgs.Profile());
     }
 
-    return profileGuid;
+    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.GetDefaultProfile());
 }
 
 // Method Description:
@@ -621,7 +614,7 @@ std::optional<GUID> CascadiaSettings::_GetProfileByName(const std::wstring_view 
         // Here, we were unable to use the profile string as a GUID to
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
-        const auto guidFromName{ FindGuid(name.c_str()) };
+        const auto guidFromName{ FindGuid(name)) };
         if (guidFromName.has_value())
         {
             return guidFromName; // this was already an optional<GUID>
@@ -641,27 +634,20 @@ std::optional<GUID> CascadiaSettings::_GetProfileByName(const std::wstring_view 
 //   If omitted, instead return the default profile's GUID
 // Return Value:
 // - the Nth profile's GUID, or the default profile's GUID
-GUID CascadiaSettings::_GetProfileByIndex(std::optional<int> index) const
+std::optional<GUID> CascadiaSettings::_GetProfileByIndex(std::optional<int> index) const
 {
-    GUID profileGuid;
     if (index)
     {
         const auto realIndex = index.value();
         // If we don't have that many profiles, then do nothing.
-        if (realIndex < 0 ||
-            realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
+        if (realIndex >= 0 &&
+            realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
-            return _globals.GetDefaultProfile();
+            const auto& selectedProfile = _profiles.at(realIndex);
+            return selectedProfile.GetGuid();
         }
-        const auto& selectedProfile = _profiles.at(realIndex);
-        profileGuid = selectedProfile.GetGuid();
     }
-    else
-    {
-        // get Guid for the default profile
-        profileGuid = _globals.GetDefaultProfile();
-    }
-    return profileGuid;
+    return std::nullopt;
 }
 
 // Method Description:
