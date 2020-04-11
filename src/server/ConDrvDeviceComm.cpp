@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "DeviceComm.h"
+#include "ConDrvDeviceComm.h"
 
 ConDrvDeviceComm::ConDrvDeviceComm(_In_ HANDLE Server) :
     _Server(Server)
