@@ -49,6 +49,7 @@ struct LogPacketDescriptor
     LogPacketType PacketType;
     uint64_t TimeDeltaInNs;
     uint32_t Length;
+    uint32_t _PositionInFile;
 };
 #pragma pack(pop)
 
@@ -102,6 +103,25 @@ public:
         return delta;
     }
 
+    void _writeInFull(void* buffer, const size_t length) const
+    {
+        auto remaining{ length };
+        DWORD written{};
+        while (WriteFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &written, nullptr) != 0)
+        {
+            if ((remaining -= written) == 0)
+            {
+                break;
+            }
+            OutputDebugStringW(L"needed another go-round\r\n");
+        }
+
+        if (remaining)
+        {
+            THROW_HR(E_BOUNDS);
+        }
+    }
+
     void _writeDataWithHeader(LogPacketType packetType, uint64_t timeDelta, size_t length, const void* buffer) const
     {
         auto fullPacketLen{ length + sizeof(LogPacketDescriptor) };
@@ -111,8 +131,9 @@ public:
         }
         *(reinterpret_cast<LogPacketDescriptor*>(_dataArena.data())) = LogPacketDescriptor{ packetType, timeDelta, gsl::narrow_cast<uint32_t>(length) };
         const auto bufferAsByte{ reinterpret_cast<const std::byte*>(buffer) };
-        std::copy(bufferAsByte, bufferAsByte + length, _dataArena.data() + sizeof(LogPacketDescriptor));
-        WriteFile(_file.get(), _dataArena.data(), gsl::narrow_cast<DWORD>(fullPacketLen), nullptr, nullptr);
+        std::copy(bufferAsByte, bufferAsByte + length, _dataArena.data() + (offsetof(LogPacketDescriptor, _PositionInFile)));
+
+        _writeInFull(_dataArena.data(), fullPacketLen);
     }
 
     [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const override
@@ -200,10 +221,35 @@ public:
         }
     }
 
+    void _readInFull(void* buffer, const size_t length) const
+    {
+        auto remaining{ length };
+        DWORD read{};
+        while (!!ReadFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &read, nullptr))
+        {
+            if ((remaining -= read) == 0)
+            {
+                OutputDebugStringW(wil::str_printf<std::wstring>(L"READ %x BYTES IN FULL\r\n", (DWORD)length).c_str());
+                break;
+            }
+            OutputDebugStringW(L"needed another go-round\r\n");
+        }
+
+        if (remaining)
+        {
+            THROW_HR(E_BOUNDS);
+        }
+    }
+
+    mutable std::vector<LogPacketDescriptor> _packets;
+
     LogPacketDescriptor _readDescriptor() const
     {
         LogPacketDescriptor descriptor{};
-        ReadFile(_file.get(), &descriptor, sizeof(LogPacketDescriptor), nullptr, nullptr);
+        auto filepos{ SetFilePointer(_file.get(), 0, nullptr, FILE_CURRENT) };
+        _readInFull(&descriptor, offsetof(LogPacketDescriptor, _PositionInFile));
+        descriptor._PositionInFile = filepos;
+        _packets.emplace_back(descriptor); // COPY
         return descriptor;
     }
 
@@ -214,9 +260,9 @@ public:
 
         static constexpr uint32_t maxLen{ sizeof(CONSOLE_API_MSG) - offsetof(CONSOLE_API_MSG, Descriptor) };
         auto descriptor{ _readDescriptor() };
-        RETURN_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Read || descriptor.Length < maxLen);
+        THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Read || descriptor.Length < maxLen);
 
-        ReadFile(_file.get(), &pMessage->Descriptor, descriptor.Length, nullptr, nullptr);
+        _readInFull(&pMessage->Descriptor, descriptor.Length);
         _requestPendingCompletion = std::tie(pMessage->Descriptor.Identifier, pMessage->Descriptor.Function);
 
         auto oldProcess{ pMessage->Descriptor.Process };
@@ -240,21 +286,21 @@ public:
     {
         auto requestStartTime{ std::chrono::high_resolution_clock::now() };
         auto descriptor{ _readDescriptor() };
-        RETURN_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Completion && descriptor.PacketType != LogPacketType::CompletionWithData);
+        THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Completion && descriptor.PacketType != LogPacketType::CompletionWithData);
 
         ULONG_PTR storedCompletionInfo{};
         std::unique_ptr<uint8_t[]> buffer;
         if (descriptor.PacketType == LogPacketType::Completion) // no data, just one pointer-size return val
         {
-            RETURN_HR_IF(E_UNEXPECTED, descriptor.Length != sizeof(storedCompletionInfo));
-            ReadFile(_file.get(), &storedCompletionInfo, sizeof(storedCompletionInfo), nullptr, nullptr);
+            THROW_HR_IF(E_UNEXPECTED, descriptor.Length != sizeof(storedCompletionInfo));
+            _readInFull(&storedCompletionInfo, sizeof(storedCompletionInfo));
         }
         else
         {
             buffer = std::make_unique<uint8_t[]>(descriptor.Length);
             // read the stored packet to get any interesting info from it
             // for connect completions, we want to cache the current active handle values as mappings from the old handle values
-            ReadFile(_file.get(), buffer.get(), descriptor.Length, nullptr, nullptr);
+            _readInFull(buffer.get(), descriptor.Length);
         }
 
         if (_requestPendingCompletion)
@@ -265,8 +311,7 @@ public:
                 _requestPendingCompletion.reset();
                 switch (function)
                 {
-                case CONSOLE_IO_CONNECT:
-                {
+                case CONSOLE_IO_CONNECT: {
                     auto liveConnectionInfo{ static_cast<CD_CONNECTION_INFORMATION*>(pCompletion->Write.Data) };
                     auto storedConnectionInfo{ reinterpret_cast<CD_CONNECTION_INFORMATION*>(buffer.get()) };
                     _handleRemapping[storedConnectionInfo->Process] = liveConnectionInfo->Process;
@@ -274,8 +319,7 @@ public:
                     _handleRemapping[storedConnectionInfo->Output] = liveConnectionInfo->Output;
                     break;
                 }
-                case CONSOLE_IO_CREATE_OBJECT:
-                {
+                case CONSOLE_IO_CREATE_OBJECT: {
                     _handleRemapping[storedCompletionInfo] = pCompletion->IoStatus.Information;
                     break;
                 }
@@ -293,9 +337,9 @@ public:
     {
         auto requestStartTime{ std::chrono::high_resolution_clock::now() };
         auto descriptor{ _readDescriptor() };
-        RETURN_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::InputBuffer);
+        THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::InputBuffer);
 
-        ReadFile(_file.get(), static_cast<uint8_t*>(pIoOperation->Buffer.Data) /* + pIoOperation->Buffer.Offset*/, descriptor.Length, nullptr, nullptr);
+        _readInFull(static_cast<uint8_t*>(pIoOperation->Buffer.Data) /* + pIoOperation->Buffer.Offset*/, descriptor.Length);
         std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
         return S_OK;
     }
