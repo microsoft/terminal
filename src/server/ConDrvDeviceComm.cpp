@@ -150,3 +150,18 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 
     return S_OK;
 }
+
+[[nodiscard]] ULONG_PTR ConDrvDeviceComm::PutHandle(const void* handle)
+{
+    return reinterpret_cast<ULONG_PTR>(handle);
+}
+
+[[nodiscard]] void* ConDrvDeviceComm::GetHandle(ULONG_PTR handleId) const
+{
+    return reinterpret_cast<void*>(handleId);
+}
+
+void ConDrvDeviceComm::DestroyHandle(ULONG_PTR /*handleId*/)
+{
+    // nothing
+}

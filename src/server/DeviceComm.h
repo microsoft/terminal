@@ -32,4 +32,8 @@ public:
     [[nodiscard]] virtual HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const = 0;
 
     [[nodiscard]] virtual HRESULT AllowUIAccess() const = 0;
+
+    [[nodiscard]] virtual ULONG_PTR PutHandle(const void*) = 0;
+    [[nodiscard]] virtual void* GetHandle(ULONG_PTR) const = 0;
+    virtual void DestroyHandle(ULONG_PTR) = 0;
 };

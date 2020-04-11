@@ -37,6 +37,10 @@ public:
 
     [[nodiscard]] HRESULT AllowUIAccess() const override;
 
+    [[nodiscard]] ULONG_PTR PutHandle(const void*) override;
+    [[nodiscard]] void* GetHandle(ULONG_PTR) const override;
+    void DestroyHandle(ULONG_PTR) override;
+
 private:
     [[nodiscard]] HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,
                                      _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
