@@ -199,7 +199,6 @@ class LogReplayDeviceComm : public IDeviceComm
 {
     wil::unique_hfile _file;
     double _timeDilation;
-    mutable std::optional<std::tuple<LUID, ULONG>> _requestPendingCompletion;
     mutable std::map<ULONG_PTR, ULONG_PTR> _handleRemapping;
     std::vector<void*> _handleTable;
 
@@ -250,10 +249,7 @@ public:
     }
     ~LogReplayDeviceComm() = default;
 
-    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const /*pServerInfo*/) const override
-    {
-        return S_OK;
-    }
+    [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const /*pServerInfo*/) const override { return S_OK; }
 
     [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const /*pReplyMsg*/,
                                  _Out_ CONSOLE_API_MSG* const pMessage) const override
@@ -265,16 +261,12 @@ public:
         THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Read || descriptor.Length < maxLen);
 
         _readInFull(&pMessage->Descriptor, descriptor.Length);
-        _requestPendingCompletion = std::tie(pMessage->Descriptor.Identifier, pMessage->Descriptor.Function);
 
         std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
         return S_OK;
     }
 
-    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const /*pCompletion*/) const override
-    {
-        return S_OK;
-    }
+    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const /*pCompletion*/) const override { return S_OK; }
 
     [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override
     {
@@ -287,15 +279,9 @@ public:
         return S_OK;
     }
 
-    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const /*pIoOperation*/) const override
-    {
-        return S_OK;
-    }
+    [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const /*pIoOperation*/) const override { return S_OK; }
 
-    [[nodiscard]] HRESULT AllowUIAccess() const override
-    {
-        return S_OK;
-    }
+    [[nodiscard]] HRESULT AllowUIAccess() const override { return S_OK; }
 
     [[nodiscard]] ULONG_PTR PutHandle(const void* handle)
     {
