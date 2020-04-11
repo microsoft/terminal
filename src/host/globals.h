@@ -28,6 +28,7 @@ Revision History:
 #include "..\renderer\inc\IFontDefaultList.hpp"
 
 #include "..\server\DeviceComm.h"
+#include "..\server\ConDrvDeviceComm.h"
 
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
