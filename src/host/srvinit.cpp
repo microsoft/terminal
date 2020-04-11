@@ -40,6 +40,7 @@ enum class LogPacketType : uint16_t
 #pragma pack(push, 1)
 struct LogHeader
 {
+    uint8_t Version;
     uint16_t HostArchitecture;
 };
 struct LogPacketDescriptor
@@ -128,6 +129,7 @@ public:
         THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
 
         LogHeader header{};
+        header.Version = 1;
         header.HostArchitecture = nativeMachine;
         _writeInFull(&header, sizeof(LogHeader));
 
@@ -199,11 +201,11 @@ class LogReplayDeviceComm : public IDeviceComm
 {
     wil::unique_hfile _file;
     double _timeDilation;
-    mutable std::map<ULONG_PTR, ULONG_PTR> _handleRemapping;
     std::vector<void*> _handleTable;
 
     void _readInFull(void* buffer, const size_t length) const
     {
+        /*
         auto remaining{ length };
         DWORD read{};
         while (!!ReadFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &read, nullptr))
@@ -218,23 +220,46 @@ class LogReplayDeviceComm : public IDeviceComm
         {
             THROW_HR(E_BOUNDS);
         }
+        */
+        if (length > _max - _off)
+        {
+            THROW_HR(E_BOUNDS);
+        }
+        memcpy(buffer, _fileMapView.get() + _off, length);
+        _off += length;
     }
 
-    LogPacketDescriptor _readDescriptor() const
+    const LogPacketDescriptor& _readDescriptor() const
     {
-        LogPacketDescriptor descriptor{};
-        auto filepos{ SetFilePointer(_file.get(), 0, nullptr, FILE_CURRENT) };
-        _readInFull(&descriptor, offsetof(LogPacketDescriptor, _PositionInFile));
-        descriptor._PositionInFile = filepos;
-        return descriptor;
+        //LogPacketDescriptor descriptor{};
+        //auto filepos{ SetFilePointer(_file.get(), 0, nullptr, FILE_CURRENT) };
+        //_readInFull(&descriptor, offsetof(LogPacketDescriptor, _PositionInFile));
+        //descriptor._PositionInFile = filepos;
+        auto oldOff{ _off };
+        _off += offsetof(LogPacketDescriptor, _PositionInFile);
+        return *reinterpret_cast<LogPacketDescriptor*>(_fileMapView.get() + oldOff);
+        //return descriptor;
     }
+
+    wil::unique_handle _fileMapping;
+    wil::unique_mapview_ptr<std::byte> _fileMapView;
+    mutable ptrdiff_t _off{ 0 };
+    size_t _max{};
 
 public:
     LogReplayDeviceComm(const std::wstring_view file, double timeDilation = 1.0) :
         _timeDilation(timeDilation)
     {
         _file.reset(CreateFileW(file.data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-        USHORT nativeMachineFromDump{};
+        _fileMapping.reset(CreateFileMappingW(_file.get(), nullptr, PAGE_READONLY, 0, 0, nullptr));
+        THROW_HR_IF_NULL(E_FAIL, _fileMapping);
+        _fileMapView.reset(static_cast<std::byte*>(MapViewOfFile(_fileMapping.get(), FILE_MAP_READ, 0, 0, 0)));
+        THROW_HR_IF_NULL(E_FAIL, _fileMapView);
+
+        MEMORY_BASIC_INFORMATION mbi{};
+        VirtualQuery(_fileMapView.get(), &mbi, sizeof(mbi));
+        _max = mbi.RegionSize;
+
         USHORT processMachine{};
         USHORT nativeMachine{};
         THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
@@ -243,7 +268,7 @@ public:
         _readInFull(&header, sizeof(header));
         if (nativeMachine != header.HostArchitecture)
         {
-            MessageBoxW(nullptr, wil::str_printf<std::wstring>(L"This dump was created on a conhost of a different architecture (expected %2.02x, got %2.02x).", nativeMachineFromDump, nativeMachine).c_str(), L"Error", MB_OK | MB_ICONERROR);
+            MessageBoxW(nullptr, wil::str_printf<std::wstring>(L"This dump was created on a conhost of a different architecture (expected %2.02x, got %2.02x).", header.HostArchitecture, nativeMachine).c_str(), L"Error", MB_OK | MB_ICONERROR);
             ExitProcess(1);
         }
     }
@@ -257,12 +282,14 @@ public:
         auto requestStartTime{ std::chrono::high_resolution_clock::now() };
 
         static constexpr uint32_t maxLen{ sizeof(CONSOLE_API_MSG) - offsetof(CONSOLE_API_MSG, Descriptor) };
-        auto descriptor{ _readDescriptor() };
+        auto& descriptor{ _readDescriptor() };
         THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Read || descriptor.Length < maxLen);
 
         _readInFull(&pMessage->Descriptor, descriptor.Length);
 
-        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
+        auto finishTime{ requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)) };
+        if (finishTime > std::chrono::high_resolution_clock::now())
+            std::this_thread::sleep_until(finishTime);
         return S_OK;
     }
 
@@ -271,11 +298,13 @@ public:
     [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override
     {
         auto requestStartTime{ std::chrono::high_resolution_clock::now() };
-        auto descriptor{ _readDescriptor() };
+        auto& descriptor{ _readDescriptor() };
         THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::InputBuffer);
 
         _readInFull(static_cast<uint8_t*>(pIoOperation->Buffer.Data), descriptor.Length);
-        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
+        auto finishTime{ requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)) };
+        if (finishTime > std::chrono::high_resolution_clock::now())
+            std::this_thread::sleep_until(finishTime);
         return S_OK;
     }
 
