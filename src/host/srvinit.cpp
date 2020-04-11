@@ -35,8 +35,6 @@ enum class LogPacketType : uint16_t
 {
     Read = 1,
     InputBuffer = 2,
-    CompletionWithData = 3,
-    Completion = 4,
 };
 
 #pragma pack(push, 1)
@@ -60,8 +58,50 @@ class LoggingDeviceComm : public IDeviceComm
 
     mutable std::chrono::high_resolution_clock::time_point _lastEvent;
 
+    std::vector<ULONG_PTR> _handleTable;
+
     std::thread _logThread;
+
+    uint64_t _timeDelta() const
+    {
+        auto thisEventTime{ std::chrono::high_resolution_clock::now() };
+        int64_t delta{ (thisEventTime - _lastEvent).count() };
+        _lastEvent = thisEventTime;
+        return delta;
+    }
+
+    void _writeInFull(void* buffer, const size_t length) const
+    {
+        auto remaining{ length };
+        DWORD written{};
+        while (WriteFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &written, nullptr) != 0)
+        {
+            if ((remaining -= written) == 0)
+            {
+                break;
+            }
+        }
+
+        if (remaining)
+        {
+            THROW_HR(E_BOUNDS);
+        }
+    }
+
     mutable std::vector<std::byte> _dataArena;
+    void _writeDataWithHeader(LogPacketType packetType, uint64_t timeDelta, size_t length, const void* buffer) const
+    {
+        auto fullPacketLen{ length + offsetof(LogPacketDescriptor, _PositionInFile) };
+        if (_dataArena.size() < fullPacketLen)
+        {
+            _dataArena.resize(fullPacketLen);
+        }
+        *(reinterpret_cast<LogPacketDescriptor*>(_dataArena.data())) = LogPacketDescriptor{ packetType, timeDelta, gsl::narrow_cast<uint32_t>(length) };
+        const auto bufferAsByte{ reinterpret_cast<const std::byte*>(buffer) };
+        std::copy(bufferAsByte, bufferAsByte + length, _dataArena.data() + (offsetof(LogPacketDescriptor, _PositionInFile)));
+
+        _writeInFull(_dataArena.data(), fullPacketLen);
+    }
 
     void _logThreadBody()
     {
@@ -89,57 +129,17 @@ public:
 
         LogHeader header{};
         header.HostArchitecture = nativeMachine;
-        WriteFile(_file.get(), &header, sizeof(LogHeader), nullptr, nullptr);
+        _writeInFull(&header, sizeof(LogHeader));
 
         //_startLogThread();
     }
     ~LoggingDeviceComm() = default;
 
-    uint64_t _timeDelta() const
-    {
-        auto thisEventTime{ std::chrono::high_resolution_clock::now() };
-        int64_t delta{ (thisEventTime - _lastEvent).count() };
-        _lastEvent = thisEventTime;
-        return delta;
-    }
-
-    void _writeInFull(void* buffer, const size_t length) const
-    {
-        auto remaining{ length };
-        DWORD written{};
-        while (WriteFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &written, nullptr) != 0)
-        {
-            if ((remaining -= written) == 0)
-            {
-                break;
-            }
-            OutputDebugStringW(L"needed another go-round\r\n");
-        }
-
-        if (remaining)
-        {
-            THROW_HR(E_BOUNDS);
-        }
-    }
-
-    void _writeDataWithHeader(LogPacketType packetType, uint64_t timeDelta, size_t length, const void* buffer) const
-    {
-        auto fullPacketLen{ length + sizeof(LogPacketDescriptor) };
-        if (_dataArena.size() < fullPacketLen)
-        {
-            _dataArena.resize(fullPacketLen);
-        }
-        *(reinterpret_cast<LogPacketDescriptor*>(_dataArena.data())) = LogPacketDescriptor{ packetType, timeDelta, gsl::narrow_cast<uint32_t>(length) };
-        const auto bufferAsByte{ reinterpret_cast<const std::byte*>(buffer) };
-        std::copy(bufferAsByte, bufferAsByte + length, _dataArena.data() + (offsetof(LogPacketDescriptor, _PositionInFile)));
-
-        _writeInFull(_dataArena.data(), fullPacketLen);
-    }
-
     [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const override
     {
         return _loggee->SetServerInformation(pServerInfo);
     }
+
     [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                                  _Out_ CONSOLE_API_MSG* const pMessage) const override
     {
@@ -148,18 +148,10 @@ public:
         _writeDataWithHeader(LogPacketType::Read, _timeDelta(), apiMsgLen, &pMessage->Descriptor);
         return S_OK;
     }
+
     [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const override
     {
-        RETURN_IF_FAILED(_loggee->CompleteIo(pCompletion));
-        if (pCompletion->Write.Size == 0) // we only care about info
-        {
-            _writeDataWithHeader(LogPacketType::Completion, _timeDelta(), sizeof(pCompletion->IoStatus.Information), &pCompletion->IoStatus.Information);
-        }
-        else
-        {
-            _writeDataWithHeader(LogPacketType::CompletionWithData, _timeDelta(), pCompletion->Write.Size, pCompletion->Write.Data);
-        }
-        return S_OK;
+        return _loggee->CompleteIo(pCompletion);
     }
 
     [[nodiscard]] HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const override
@@ -177,6 +169,30 @@ public:
     {
         return _loggee->AllowUIAccess();
     }
+
+    [[nodiscard]] ULONG_PTR PutHandle(const void* handle)
+    {
+        auto upstreamMapping{ _loggee->PutHandle(handle) };
+        auto found{ std::find(_handleTable.begin(), _handleTable.end(), upstreamMapping) };
+        if (found == _handleTable.end())
+        {
+            // append, get pos
+            found = _handleTable.emplace(found, upstreamMapping);
+        }
+        return found - _handleTable.begin();
+    }
+
+    [[nodiscard]] void* GetHandle(ULONG_PTR handleId) const
+    {
+        return _loggee->GetHandle(_handleTable.at(handleId));
+    }
+
+    void DestroyHandle(ULONG_PTR handleId)
+    {
+        auto& pos{ _handleTable.at(handleId) };
+        _loggee->DestroyHandle(pos);
+        pos = 0;
+    }
 };
 
 class LogReplayDeviceComm : public IDeviceComm
@@ -185,6 +201,34 @@ class LogReplayDeviceComm : public IDeviceComm
     double _timeDilation;
     mutable std::optional<std::tuple<LUID, ULONG>> _requestPendingCompletion;
     mutable std::map<ULONG_PTR, ULONG_PTR> _handleRemapping;
+    std::vector<void*> _handleTable;
+
+    void _readInFull(void* buffer, const size_t length) const
+    {
+        auto remaining{ length };
+        DWORD read{};
+        while (!!ReadFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &read, nullptr))
+        {
+            if ((remaining -= read) == 0)
+            {
+                break;
+            }
+        }
+
+        if (remaining)
+        {
+            THROW_HR(E_BOUNDS);
+        }
+    }
+
+    LogPacketDescriptor _readDescriptor() const
+    {
+        LogPacketDescriptor descriptor{};
+        auto filepos{ SetFilePointer(_file.get(), 0, nullptr, FILE_CURRENT) };
+        _readInFull(&descriptor, offsetof(LogPacketDescriptor, _PositionInFile));
+        descriptor._PositionInFile = filepos;
+        return descriptor;
+    }
 
 public:
     LogReplayDeviceComm(const std::wstring_view file, double timeDilation = 1.0) :
@@ -195,8 +239,10 @@ public:
         USHORT processMachine{};
         USHORT nativeMachine{};
         THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
-        ReadFile(_file.get(), &nativeMachineFromDump, sizeof(USHORT), nullptr, nullptr);
-        if (nativeMachine != nativeMachineFromDump)
+
+        LogHeader header{};
+        _readInFull(&header, sizeof(header));
+        if (nativeMachine != header.HostArchitecture)
         {
             MessageBoxW(nullptr, wil::str_printf<std::wstring>(L"This dump was created on a conhost of a different architecture (expected %2.02x, got %2.02x).", nativeMachineFromDump, nativeMachine).c_str(), L"Error", MB_OK | MB_ICONERROR);
             ExitProcess(1);
@@ -207,50 +253,6 @@ public:
     [[nodiscard]] HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const /*pServerInfo*/) const override
     {
         return S_OK;
-    }
-
-    void _remap(ULONG_PTR& v) const
-    {
-        if (v == 0)
-            return;
-        auto found{ _handleRemapping.find(v) };
-        if (found != _handleRemapping.end())
-        {
-            v = found->second;
-            return;
-        }
-    }
-
-    void _readInFull(void* buffer, const size_t length) const
-    {
-        auto remaining{ length };
-        DWORD read{};
-        while (!!ReadFile(_file.get(), reinterpret_cast<std::byte*>(buffer) + (length - remaining), gsl::narrow_cast<DWORD>(remaining), &read, nullptr))
-        {
-            if ((remaining -= read) == 0)
-            {
-                OutputDebugStringW(wil::str_printf<std::wstring>(L"READ %x BYTES IN FULL\r\n", (DWORD)length).c_str());
-                break;
-            }
-            OutputDebugStringW(L"needed another go-round\r\n");
-        }
-
-        if (remaining)
-        {
-            THROW_HR(E_BOUNDS);
-        }
-    }
-
-    mutable std::vector<LogPacketDescriptor> _packets;
-
-    LogPacketDescriptor _readDescriptor() const
-    {
-        LogPacketDescriptor descriptor{};
-        auto filepos{ SetFilePointer(_file.get(), 0, nullptr, FILE_CURRENT) };
-        _readInFull(&descriptor, offsetof(LogPacketDescriptor, _PositionInFile));
-        descriptor._PositionInFile = filepos;
-        _packets.emplace_back(descriptor); // COPY
-        return descriptor;
     }
 
     [[nodiscard]] HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const /*pReplyMsg*/,
@@ -265,71 +267,12 @@ public:
         _readInFull(&pMessage->Descriptor, descriptor.Length);
         _requestPendingCompletion = std::tie(pMessage->Descriptor.Identifier, pMessage->Descriptor.Function);
 
-        auto oldProcess{ pMessage->Descriptor.Process };
-        auto oldObject{ pMessage->Descriptor.Object };
-        _remap(pMessage->Descriptor.Process);
-        _remap(pMessage->Descriptor.Object);
-
-        if (pMessage->Descriptor.Function == CONSOLE_IO_CLOSE_OBJECT)
-        {
-            _handleRemapping.erase(oldObject);
-        }
-        if (pMessage->Descriptor.Function == CONSOLE_IO_DISCONNECT)
-        {
-            _handleRemapping.erase(oldProcess);
-        }
-
         std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
         return S_OK;
     }
-    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const override
+
+    [[nodiscard]] HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const /*pCompletion*/) const override
     {
-        auto requestStartTime{ std::chrono::high_resolution_clock::now() };
-        auto descriptor{ _readDescriptor() };
-        THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::Completion && descriptor.PacketType != LogPacketType::CompletionWithData);
-
-        ULONG_PTR storedCompletionInfo{};
-        std::unique_ptr<uint8_t[]> buffer;
-        if (descriptor.PacketType == LogPacketType::Completion) // no data, just one pointer-size return val
-        {
-            THROW_HR_IF(E_UNEXPECTED, descriptor.Length != sizeof(storedCompletionInfo));
-            _readInFull(&storedCompletionInfo, sizeof(storedCompletionInfo));
-        }
-        else
-        {
-            buffer = std::make_unique<uint8_t[]>(descriptor.Length);
-            // read the stored packet to get any interesting info from it
-            // for connect completions, we want to cache the current active handle values as mappings from the old handle values
-            _readInFull(buffer.get(), descriptor.Length);
-        }
-
-        if (_requestPendingCompletion)
-        {
-            auto [id, function] = _requestPendingCompletion.value();
-            if (memcmp(&pCompletion->Identifier, &id, sizeof(id)) == 0)
-            {
-                _requestPendingCompletion.reset();
-                switch (function)
-                {
-                case CONSOLE_IO_CONNECT: {
-                    auto liveConnectionInfo{ static_cast<CD_CONNECTION_INFORMATION*>(pCompletion->Write.Data) };
-                    auto storedConnectionInfo{ reinterpret_cast<CD_CONNECTION_INFORMATION*>(buffer.get()) };
-                    _handleRemapping[storedConnectionInfo->Process] = liveConnectionInfo->Process;
-                    _handleRemapping[storedConnectionInfo->Input] = liveConnectionInfo->Input;
-                    _handleRemapping[storedConnectionInfo->Output] = liveConnectionInfo->Output;
-                    break;
-                }
-                case CONSOLE_IO_CREATE_OBJECT: {
-                    _handleRemapping[storedCompletionInfo] = pCompletion->IoStatus.Information;
-                    break;
-                }
-                default:
-                    ; //nothing
-                }
-            }
-        }
-
-        std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
         return S_OK;
     }
 
@@ -339,10 +282,11 @@ public:
         auto descriptor{ _readDescriptor() };
         THROW_HR_IF(E_UNEXPECTED, descriptor.PacketType != LogPacketType::InputBuffer);
 
-        _readInFull(static_cast<uint8_t*>(pIoOperation->Buffer.Data) /* + pIoOperation->Buffer.Offset*/, descriptor.Length);
+        _readInFull(static_cast<uint8_t*>(pIoOperation->Buffer.Data), descriptor.Length);
         std::this_thread::sleep_until(requestStartTime + std::chrono::nanoseconds(static_cast<long long>(descriptor.TimeDeltaInNs * _timeDilation)));
         return S_OK;
     }
+
     [[nodiscard]] HRESULT WriteOutput(_In_ CD_IO_OPERATION* const /*pIoOperation*/) const override
     {
         return S_OK;
@@ -352,6 +296,28 @@ public:
     {
         return S_OK;
     }
+
+    [[nodiscard]] ULONG_PTR PutHandle(const void* handle)
+    {
+        auto found{ std::find(_handleTable.begin(), _handleTable.end(), handle) };
+        if (found == _handleTable.end())
+        {
+            // append, get pos
+            found = _handleTable.emplace(found, const_cast<void*>(handle));
+        }
+        return found - _handleTable.begin();
+    }
+
+    [[nodiscard]] void* GetHandle(ULONG_PTR handleId) const
+    {
+        return _handleTable.at(handleId);
+    }
+
+    void DestroyHandle(ULONG_PTR handleId)
+    {
+        auto& pos{ _handleTable.at(handleId) };
+        pos = nullptr;
+    }
 };
 
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
@@ -360,10 +326,9 @@ public:
 
     try
     {
-        const auto cmdline{ args->GetClientCommandline() };
-        if (cmdline.rfind(L".bin") != std::wstring::npos)
+        if (!Server)
         {
-            Globals.pDeviceComm = new LogReplayDeviceComm(cmdline, 1.0);
+            Globals.pDeviceComm = new LogReplayDeviceComm(args->GetClientCommandline(), 1.0);
         }
         else
         {

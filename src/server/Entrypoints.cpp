@@ -44,12 +44,6 @@
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
         HANDLE const hServer = ServerHandle.release();
-        std::wstring ppp{ pwszCmdLine };
-        if (ppp.rfind(L".bin") != std::wstring::npos)
-        {
-            // replaying a bin
-            ExitThread(S_OK);
-        }
 
         // Now that the console object was created, we're in a state that lets us
         // create the default io objects.
@@ -176,6 +170,18 @@
     }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
+    ExitThread(S_OK);
+
+    // We won't hit this. The ExitThread above will kill the caller at this point.
+    FAIL_FAST_HR(E_UNEXPECTED);
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT Entrypoints::StartConsoleForAPIDump(const ConsoleArguments* const args)
+{
+    // Create a scope because we're going to exit thread if everything goes well.
+    // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
+    RETURN_IF_FAILED(ConsoleCreateIoThreadLegacy(nullptr, args));
     ExitThread(S_OK);
 
     // We won't hit this. The ExitThread above will kill the caller at this point.

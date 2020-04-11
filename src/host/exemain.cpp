@@ -193,7 +193,12 @@ int CALLBACK wWinMain(
         }
         else
         {
-            if (args.ShouldCreateServerHandle())
+            auto clientCommandLine{ args.GetClientCommandline() };
+            if (clientCommandLine.rfind(L".bin") != std::wstring::npos)
+            {
+                hr = Entrypoints::StartConsoleForAPIDump(&args);
+            }
+            else if (args.ShouldCreateServerHandle())
             {
                 hr = Entrypoints::StartConsoleForCmdLine(args.GetClientCommandline().c_str(), &args);
             }
