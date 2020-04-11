@@ -40,7 +40,7 @@ public:
     const ConsoleProcessPolicy GetPolicy() const;
     const ConsoleShimPolicy GetShimPolicy() const;
 
-    CD_CONNECTION_INFORMATION GetConnectionInformation() const;
+    CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
 private:
     ConsoleProcessHandle(const DWORD dwProcessId,

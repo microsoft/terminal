@@ -35,12 +35,12 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     }
 }
 
-CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation() const
+CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation(IDeviceComm* deviceComm) const
 {
     CD_CONNECTION_INFORMATION result = { 0 };
-    result.Process = reinterpret_cast<ULONG_PTR>(this);
-    result.Input = reinterpret_cast<ULONG_PTR>(pInputHandle.get());
-    result.Output = reinterpret_cast<ULONG_PTR>(pOutputHandle.get());
+    result.Process = deviceComm->PutHandle(this);
+    result.Input = deviceComm->PutHandle(pInputHandle.get());
+    result.Output = deviceComm->PutHandle(pOutputHandle.get());
     return result;
 }
 

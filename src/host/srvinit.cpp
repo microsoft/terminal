@@ -37,7 +37,7 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
     try
     {
-        Globals.pDeviceComm = new DeviceComm(Server);
+        Globals.pDeviceComm = new ConDrvDeviceComm(Server);
 
         Globals.launchArgs = *args;
 
