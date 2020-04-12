@@ -24,27 +24,15 @@
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Azure;
 
-using namespace utility;
 using namespace web;
-using namespace web::json;
 using namespace web::http;
 using namespace web::http::client;
 using namespace web::websockets::client;
-using namespace concurrency::streams;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr int CurrentCredentialVersion = 1;
 static constexpr auto PasswordVaultResourceName = L"Terminal";
 static constexpr auto HttpUserAgent = L"Terminal/0.0";
-
-#define FAILOUT_IF_OPTIONAL_EMPTY(optional) \
-    do                                      \
-    {                                       \
-        if (!((optional).has_value()))      \
-        {                                   \
-            return E_FAIL;                  \
-        }                                   \
-    } while (0)
 
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
@@ -123,12 +111,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          StaticOutputThreadProc,
-                                          this,
-                                          0,
-                                          nullptr));
+        _hOutputThread.reset(CreateThread(
+            nullptr,
+            0,
+            [](LPVOID lpParameter) noexcept {
+                AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
+                if (pInstance)
+                {
+                    return pInstance->_OutputThread();
+                }
+                return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+            },
+            this,
+            0,
+            nullptr));
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
@@ -146,7 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        _TerminalOutputHandlers(L"\x1b[92m"); // Make prompted user input green
+        _TerminalOutputHandlers(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
@@ -242,8 +238,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _HeaderHelper(terminalRequest);
             terminalRequest.set_body(json::value(L""));
 
-            // Send the request
-            const auto response = _RequestHelper(terminalClient, terminalRequest);
+            // Send the request (don't care about the response)
+            (void)_RequestHelper(terminalClient, terminalRequest);
         }
     }
 
@@ -300,22 +296,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             displayName = wil::str_printf<std::wstring>(L"%.*s, %.*s", displayName.size(), displayName.data(), defaultDomain.size(), defaultDomain.data());
         }
         return { tenantId, displayName };
-    }
-
-    // Method description:
-    // - this method bridges the thread to the Azure connection instance
-    // Arguments:
-    // - lpParameter: the Azure connection parameter
-    // Return value:
-    // - the exit code of the thread
-    DWORD WINAPI AzureConnection::StaticOutputThreadProc(LPVOID lpParameter)
-    {
-        AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
-        if (pInstance)
-        {
-            return pInstance->_OutputThread();
-        }
-        return gsl::narrow_cast<DWORD>(E_INVALIDARG);
     }
 
     // Method description:
@@ -480,7 +460,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         do
         {
             auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-            FAILOUT_IF_OPTIONAL_EMPTY(maybeTenantSelection);
+            RETURN_HR_IF(E_FAIL, !maybeTenantSelection);
 
             const auto& tenantSelection = maybeTenantSelection.value();
             if (tenantSelection == RS_(L"AzureUserEntry_RemoveStored"))
@@ -632,7 +612,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             do
             {
                 auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-                FAILOUT_IF_OPTIONAL_EMPTY(maybeTenantSelection);
+                RETURN_HR_IF(E_FAIL, !maybeTenantSelection);
 
                 const auto& tenantSelection = maybeTenantSelection.value();
                 try
@@ -678,7 +658,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         do
         {
             auto maybeStoreCredentials = _ReadUserInput(InputMode::Line);
-            FAILOUT_IF_OPTIONAL_EMPTY(maybeStoreCredentials);
+            RETURN_HR_IF(E_FAIL, !maybeStoreCredentials);
 
             const auto& storeCredentials = maybeStoreCredentials.value();
             if (storeCredentials == RS_(L"AzureUserEntry_Yes"))
@@ -945,10 +925,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the http_request
     void AzureConnection::_HeaderHelper(http_request theRequest)
     {
-        theRequest.headers().add(L"Accept", L"application/json");
-        theRequest.headers().add(L"Content-Type", L"application/json");
-        theRequest.headers().add(L"Authorization", L"Bearer " + _accessToken);
-        theRequest.headers().add(L"User-Agent", HttpUserAgent);
+        auto& headers{ theRequest.headers() };
+        headers.add(L"Accept", L"application/json");
+        headers.add(L"Content-Type", L"application/json");
+        headers.add(L"Authorization", L"Bearer " + _accessToken);
+        headers.add(L"User-Agent", HttpUserAgent);
     }
 
     // Method description:
@@ -956,7 +937,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - we store the display name, tenant ID, access/refresh tokens, and token expiry
     void AzureConnection::_StoreCredential()
     {
-        auto vault = PasswordVault();
         json::value userName;
         userName[U("ver")] = CurrentCredentialVersion;
         userName[U("displayName")] = json::value::string(_displayName);
@@ -965,7 +945,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         passWord[U("accessToken")] = json::value::string(_accessToken);
         passWord[U("refreshToken")] = json::value::string(_refreshToken);
         passWord[U("expiry")] = json::value::string(std::to_wstring(_expiry));
-        auto newCredential = PasswordCredential(PasswordVaultResourceName, userName.serialize(), passWord.serialize());
+
+        PasswordVault vault;
+        PasswordCredential newCredential{ PasswordVaultResourceName, userName.serialize(), passWord.serialize() };
         vault.Add(newCredential);
     }
 
@@ -973,7 +955,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to remove all stored credentials
     void AzureConnection::_RemoveCredentials()
     {
-        auto vault = PasswordVault();
+        PasswordVault vault;
         winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
         try
