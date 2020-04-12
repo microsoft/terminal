@@ -284,7 +284,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     static std::tuple<utility::string_t, utility::string_t> _crackTenant(const json::value& tenant)
     {
         auto tenantId{ tenant.at(L"tenantId").as_string() };
-        std::wstring displayName{ tenant.has_string_field(L"displayName") ? tenant.at(L"displayName").as_string() : static_cast<std::wstring>(RS_(L"AzureUnknownTenantName")) };
+        std::wstring displayName{};
+        if (tenant.has_string_field(L"displayName"))
+        {
+            displayName = tenant.at(L"displayName").as_string();
+        }
+        else
+        {
+            displayName = std::wstring{ RS_(L"AzureUnknownTenantName") };
+        }
+
+        if (tenant.has_string_field(L"defaultDomain"))
+        {
+            auto defaultDomain{ tenant.at(L"defaultDomain").as_string() };
+            displayName = wil::str_printf<std::wstring>(L"%.*s, %.*s", displayName.size(), displayName.data(), defaultDomain.size(), defaultDomain.data());
+        }
         return { tenantId, displayName };
     }
 
@@ -832,7 +846,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Initialize the request
         http_request tenantRequest(L"GET");
-        tenantRequest.set_request_uri(L"tenants?api-version=2018-01-01");
+        tenantRequest.set_request_uri(L"tenants?api-version=2020-01-01");
         _HeaderHelper(tenantRequest);
 
         // Send the request and return the response as a json value
