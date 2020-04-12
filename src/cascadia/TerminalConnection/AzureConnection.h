@@ -40,7 +40,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             StoreTokens,
             TermConnecting,
             TermConnected,
-            NoConnect
         };
 
         AzureState _state{ AzureState::AccessStored };
@@ -69,11 +68,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         utility::string_t _terminalID;
 
         void _WriteStringWithNewline(const std::wstring_view str);
+        void _WriteCaughtExceptionRecord();
         web::json::value _RequestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
         web::json::value _GetDeviceCode();
         web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
         web::json::value _GetTenants();
-        web::json::value _RefreshTokens();
+        void _RefreshTokens();
         web::json::value _GetCloudShellUserSettings();
         utility::string_t _GetCloudShell();
         utility::string_t _GetTerminal(utility::string_t shellType);

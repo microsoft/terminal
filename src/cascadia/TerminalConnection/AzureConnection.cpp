@@ -16,9 +16,13 @@
 
 #include "AzureConnection.g.cpp"
 
+#include "AzureClient.h"
+
+#include "winrt/Windows.System.UserProfile.h"
 #include "../../types/inc/Utils.hpp"
 
 using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Azure;
 
 using namespace utility;
 using namespace web;
@@ -40,7 +44,7 @@ static constexpr auto HttpUserAgent = L"Terminal/0.0";
         {                                   \
             return E_FAIL;                  \
         }                                   \
-    } while (0, 0)
+    } while (0)
 
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
@@ -89,6 +93,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
         _TerminalOutputHandlers(str + L"\r\n");
+    }
+
+    // Method description:
+    // - helper that prints exception information to the output stream.
+    // Arguments:
+    // - [IMPLICIT] the current exception context
+    void AzureConnection::_WriteCaughtExceptionRecord()
+    {
+        try
+        {
+            throw;
+        }
+        catch (const std::exception& runtimeException)
+        {
+            // This also catches the AzureException, which has a .what()
+            _TerminalOutputHandlers(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
     }
 
     // Method description:
@@ -366,17 +391,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     }
                     return S_OK;
                 }
-                case AzureState::NoConnect:
-                {
-                    _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-                    _transitionToState(ConnectionState::Failed);
-                    return E_FAIL;
-                }
                 }
             }
             catch (...)
             {
-                _state = AzureState::NoConnect;
+                _WriteCaughtExceptionRecord();
+                _transitionToState(ConnectionState::Failed);
+                return E_FAIL;
             }
         }
     }
@@ -500,12 +521,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Check if the token is close to expiring and refresh if so
         if (timeNow + _expireLimit > _expiry)
         {
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-            // Store the updated tokens under the same username
-            _StoreCredential();
+            try
+            {
+                _RefreshTokens();
+                // Store the updated tokens under the same username
+                _StoreCredential();
+            }
+            catch (const AzureException& e)
+            {
+                if (e.GetCode() == ErrorCodes::InvalidGrant)
+                {
+                    _WriteCaughtExceptionRecord();
+                    vault.Remove(desiredCredential);
+                    // Delete this credential and try again.
+                    _state = AzureState::AccessStored;
+                    return S_FALSE;
+                }
+                throw; // rethrow. we couldn't handle this error.
+            }
         }
 
         // We have everything we need, so go ahead and connect
@@ -532,17 +565,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto expiresIn = std::stoi(deviceCodeResponse.at(L"expires_in").as_string());
 
         // Wait for user authentication and obtain the access/refresh tokens
-        json::value authenticatedResponse;
-        try
-        {
-            authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
-        }
-        catch (...)
-        {
-            _WriteStringWithNewline(RS_(L"AzureExitStr"));
-            return E_FAIL;
-        }
-
+        json::value authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
         _accessToken = authenticatedResponse.at(L"access_token").as_string();
         _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
 
@@ -562,11 +585,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
 
             // We have to refresh now that we have the tenantID
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-
+            _RefreshTokens();
             _state = AzureState::StoreTokens;
         }
         else
@@ -626,11 +645,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
 
             // We have to refresh now that we have the tenantID
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-
+            _RefreshTokens();
             _state = AzureState::StoreTokens;
             return S_OK;
         }
@@ -724,19 +739,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     json::value AzureConnection::_RequestHelper(http_client theClient, http_request theRequest)
     {
         json::value jsonResult;
-        try
-        {
-            const auto responseTask = theClient.request(theRequest);
-            responseTask.wait();
-            const auto response = responseTask.get();
-            const auto responseJsonTask = response.extract_json();
-            responseJsonTask.wait();
-            jsonResult = responseJsonTask.get();
-        }
-        catch (...)
-        {
-            _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-        }
+        const auto responseTask = theClient.request(theRequest);
+        responseTask.wait();
+        const auto response = responseTask.get();
+        const auto responseJsonTask = response.extract_json();
+        responseJsonTask.wait();
+        jsonResult = responseJsonTask.get();
+
+        THROW_IF_AZURE_ERROR(jsonResult);
         return jsonResult;
     }
 
@@ -776,7 +786,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Continuously send a poll request until the user authenticates
         const auto body = hstring() + L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
         const auto requestUri = L"common/oauth2/token";
-        json::value responseJson;
         for (int count = 0; count < expiresIn / pollInterval; count++)
         {
             // User might close the tab while we wait for them to authenticate, this case handles that
@@ -784,28 +793,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 throw "Tab closed.";
             }
+
             http_request pollRequest(L"POST");
             pollRequest.set_request_uri(requestUri);
             pollRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
-            responseJson = _RequestHelper(pollingClient, pollRequest);
-
-            if (responseJson.has_field(L"error"))
+            try
             {
-                Sleep(pollInterval * 1000); // Sleep takes arguments in milliseconds
-                continue; // Still waiting for authentication
-            }
-            else
-            {
+                auto response{ _RequestHelper(pollingClient, pollRequest) };
                 _WriteStringWithNewline(RS_(L"AzureSuccessfullyAuthenticated"));
-                break; // Authentication is done, break from loop
+                // Got a valid response: we're done
+                return response;
             }
+            catch (const AzureException& e)
+            {
+                if (e.GetCode() == ErrorCodes::AuthorizationPending)
+                {
+                    // Handle the "auth pending" exception by retrying.
+                    Sleep(pollInterval * 1000);
+                    continue;
+                }
+                throw;
+            } // uncaught exceptions bubble up to the caller
         }
-        if (responseJson.has_field(L"error"))
-        {
-            throw "Time out.";
-        }
-        return responseJson;
+
+        throw "Time out.";
+        return json::value::null();
     }
 
     // Method description:
@@ -830,7 +843,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to refresh the access/refresh tokens
     // Return value:
     // - the response with the new tokens
-    json::value AzureConnection::_RefreshTokens()
+    void AzureConnection::_RefreshTokens()
     {
         // Initialize the client
         http_client refreshClient(_loginUri);
@@ -843,7 +856,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         refreshRequest.headers().add(L"User-Agent", HttpUserAgent);
 
         // Send the request and return the response as a json value
-        return _RequestHelper(refreshClient, refreshRequest);
+        auto refreshResponse{ _RequestHelper(refreshClient, refreshRequest) };
+        _accessToken = refreshResponse.at(L"access_token").as_string();
+        _refreshToken = refreshResponse.at(L"refresh_token").as_string();
+        _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
     }
 
     // Method description:
