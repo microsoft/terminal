@@ -893,7 +893,7 @@ CATCH_LOG()
 //   Visible, then it will immediately become visible.
 // Arguments:
 // - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
+void Terminal::SetCursorOn(const bool isOn)
 {
     auto lock = LockForWriting();
     _buffer->GetCursor().SetIsOn(isOn);
