@@ -295,6 +295,10 @@ using namespace Microsoft::Console::Render;
     // text, when our eventual background isn't actually opaque. See
     // DxEngine::PaintBufferLine and DxEngine::UpdateDrawingBrushes for more
     // details.
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing).
 
     // First, create the scope_exit to pop the layer. If we don't need the
     // layer, we'll just gracefully release it.

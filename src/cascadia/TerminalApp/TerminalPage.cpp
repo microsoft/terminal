@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
+#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -234,28 +235,22 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            return package.DisplayName();
+            return appLogic->ApplicationDisplayName();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_DisplayNameUnpackaged");
+        return RS_(L"ApplicationDisplayNameUnpackaged");
     }
 
     winrt::hstring TerminalPage::ApplicationVersion()
     {
-        try
+        if (const auto appLogic{ implementation::AppLogic::Current() })
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto version{ package.Id().Version() };
-            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
-            return formatted;
+            return appLogic->ApplicationVersion();
         }
-        CATCH_LOG();
 
-        return RS_(L"AboutDialog_VersionUnknown");
+        return RS_(L"ApplicationVersionUnknown");
     }
 
     // Method Description:
@@ -1315,18 +1310,21 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        // copy html to dataPack
-        const auto htmlData = copiedData.Html();
-        if (!htmlData.empty())
+        if (_settings->GlobalSettings().GetCopyFormatting())
         {
-            dataPack.SetHtmlFormat(htmlData);
-        }
+            // copy html to dataPack
+            const auto htmlData = copiedData.Html();
+            if (!htmlData.empty())
+            {
+                dataPack.SetHtmlFormat(htmlData);
+            }
 
-        // copy rtf data to dataPack
-        const auto rtfData = copiedData.Rtf();
-        if (!rtfData.empty())
-        {
-            dataPack.SetRtf(rtfData);
+            // copy rtf data to dataPack
+            const auto rtfData = copiedData.Rtf();
+            if (!rtfData.empty())
+            {
+                dataPack.SetRtf(rtfData);
+            }
         }
 
         try

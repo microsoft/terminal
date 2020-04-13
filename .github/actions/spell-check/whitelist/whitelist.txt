@@ -958,6 +958,7 @@ ggggggg
 gh
 github
 githubusercontent
+gitlab
 gle
 globals
 gmail
@@ -986,6 +987,7 @@ GWL
 GWLP
 gwsz
 HABCDEF
+hackathon
 halfwidth
 HALTCOND
 HANGEUL
@@ -1135,7 +1137,7 @@ IList
 ime
 Imm
 IMouse
-Impl
+impl
 implementingtextandtextrange
 inbox
 inclusivity
@@ -2437,7 +2439,6 @@ traceloggingprovider
 trackbar
 TRACKCOMPOSITION
 trackpad
-trackpads
 transcoder
 transitioning
 trc
@@ -2588,7 +2589,6 @@ vcrt
 vcvarsall
 vcxitems
 vcxproj
-ve
 vec
 VERCTRL
 versioning
@@ -2872,7 +2872,7 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xxxx
-XY
+xy
 yact
 YAML
 YCast
@@ -2895,6 +2895,7 @@ ZCtrl
 zd
 zh
 ZM
+zsh
 zu
 zxcvbnm
 zy

@@ -150,7 +150,6 @@ Please file new issues, feature requests and suggestions, but **DO search for si
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
 * Kayla Cinnamon, Program Manager: [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
-* Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
 * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 * Mike Griese, Developer: [@zadjii](https://twitter.com/zadjii)

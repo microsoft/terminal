@@ -266,11 +266,11 @@ Temporarily using the Windows Terminal default settings.
     <value>Privacy Policy</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
-  <data name="AboutDialog_DisplayNameUnpackaged" xml:space="preserve">
+  <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Windows Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
-  <data name="AboutDialog_VersionUnknown" xml:space="preserve">
+  <data name="ApplicationVersionUnknown" xml:space="preserve">
     <value>Unknown</value>
     <comment>This is displayed when the version of the application cannot be determined</comment>
   </data>
@@ -282,5 +282,9 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="CommandPromptDisplayName" xml:space="preserve">
+    <value>Command Prompt</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
   </data>
 </root>

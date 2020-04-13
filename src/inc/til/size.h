@@ -126,6 +126,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return size{ width, height };
         }
 
+        template<typename TilMath>
+        size scale(TilMath, const float scale) const
+        {
+            struct
+            {
+                float Width, Height;
+            } sz;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _width).AssignIfValid(&sz.Width));
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _height).AssignIfValid(&sz.Height));
+
+            return til::size(TilMath(), sz);
+        }
+
         size operator/(const size& other) const
         {
             ptrdiff_t width;
