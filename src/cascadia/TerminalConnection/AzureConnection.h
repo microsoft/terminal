@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
-        static bool IsAzureConnectionAvailable();
+        static bool IsAzureConnectionAvailable() noexcept;
         AzureConnection(const uint32_t rows, const uint32_t cols);
 
         void Start();
@@ -31,12 +31,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     private:
         uint32_t _initialRows{};
         uint32_t _initialCols{};
-        int _storedNumber{ -1 };
-        int _maxStored;
-        int _tenantNumber{ -1 };
-        int _maxSize;
-        std::condition_variable _canProceed;
-        std::mutex _commonMutex;
 
         enum class AzureState
         {
@@ -51,9 +45,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         AzureState _state{ AzureState::AccessStored };
 
-        std::optional<bool> _store;
-        std::optional<bool> _removeOrNew;
-
         wil::unique_handle _hOutputThread;
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
@@ -67,17 +58,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
         const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
-        int _expireLimit{ 2700 };
+        const int _expireLimit{ 2700 };
         web::json::value _tenantList;
         utility::string_t _displayName;
         utility::string_t _tenantID;
         utility::string_t _accessToken;
         utility::string_t _refreshToken;
-        int _expiry;
+        int _expiry{ 0 };
         utility::string_t _cloudShellUri;
         utility::string_t _terminalID;
 
-        void _WriteStringWithNewline(const winrt::hstring& str);
+        void _WriteStringWithNewline(const std::wstring_view str);
         web::json::value _RequestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
         web::json::value _GetDeviceCode();
         web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
@@ -89,6 +80,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _HeaderHelper(web::http::http_request theRequest);
         void _StoreCredential();
         void _RemoveCredentials();
+
+        enum class InputMode
+        {
+            None = 0,
+            Line
+        };
+        InputMode _currentInputMode{ InputMode::None };
+        std::wstring _userInput;
+        std::condition_variable _inputEvent;
+        std::mutex _inputMutex;
+
+        std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };

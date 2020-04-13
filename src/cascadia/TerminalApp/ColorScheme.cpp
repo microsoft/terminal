@@ -14,10 +14,10 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view TableKey{ "colors" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
+static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::array<std::string_view, 16> TableColors = {
     "black",
     "red",
@@ -42,16 +42,18 @@ ColorScheme::ColorScheme() :
     _table{},
     _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
     _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
-    _selectionBackground{ DEFAULT_FOREGROUND }
+    _selectionBackground{ DEFAULT_FOREGROUND },
+    _cursorColor{ DEFAULT_CURSOR_COLOR }
 {
 }
 
-ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
+ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor) :
     _schemeName{ name },
     _table{},
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg },
-    _selectionBackground{ DEFAULT_FOREGROUND }
+    _selectionBackground{ DEFAULT_FOREGROUND },
+    _cursorColor{ cursorColor }
 {
 }
 
@@ -71,6 +73,7 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     terminalSettings.DefaultForeground(_defaultForeground);
     terminalSettings.DefaultBackground(_defaultBackground);
     terminalSettings.SelectionBackground(_selectionBackground);
+    terminalSettings.CursorColor(_cursorColor);
 
     auto const tableCount = gsl::narrow_cast<int>(_table.size());
     for (int i = 0; i < tableCount; i++)
@@ -92,6 +95,7 @@ Json::Value ColorScheme::ToJson() const
     root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground);
     root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground);
     root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground);
+    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
 
     int i = 0;
     for (const auto& colorName : TableColors)
@@ -166,21 +170,10 @@ void ColorScheme::LayerJson(const Json::Value& json)
         const auto color = Utils::ColorFromHexString(sbString.asString());
         _selectionBackground = color;
     }
-
-    // Legacy Deserialization. Leave in place to allow forward compatibility
-    if (auto table{ json[JsonKey(TableKey)] })
+    if (auto sbString{ json[JsonKey(CursorColorKey)] })
     {
-        int i = 0;
-
-        for (const auto& tableEntry : table)
-        {
-            if (tableEntry.isString())
-            {
-                auto color = Utils::ColorFromHexString(tableEntry.asString());
-                _table.at(i) = color;
-            }
-            i++;
-        }
+        const auto color = Utils::ColorFromHexString(sbString.asString());
+        _cursorColor = color;
     }
 
     int i = 0;
@@ -218,6 +211,11 @@ COLORREF ColorScheme::GetBackground() const noexcept
 COLORREF ColorScheme::GetSelectionBackground() const noexcept
 {
     return _selectionBackground;
+}
+
+COLORREF ColorScheme::GetCursorColor() const noexcept
+{
+    return _cursorColor;
 }
 
 // Method Description:

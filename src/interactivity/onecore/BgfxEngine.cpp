@@ -138,7 +138,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
         for (SHORT j = 0; j < _displayWidth; j++)
         {
             NewRun[j].Character = L' ';
-            NewRun[j].Atribute = 0;
+            NewRun[j].Attribute = 0;
         }
     }
 
@@ -147,7 +147,8 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::basic_string_view<Cluster> clusters,
                                                   const COORD coord,
-                                                  const bool /*trimLeft*/) noexcept
+                                                  const bool /*trimLeft*/,
+                                                  const bool /*lineWrapped*/) noexcept
 {
     try
     {
@@ -157,7 +158,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
         for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
         {
             NewRun[coord.X + i].Character = clusters.at(i).GetTextAsSingle();
-            NewRun[coord.X + i].Atribute = _currentLegacyColorAttribute;
+            NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
         }
 
         return S_OK;
@@ -231,7 +232,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-SMALL_RECT BgfxEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -239,7 +240,7 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return r;
+    return { r };
 }
 
 [[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept

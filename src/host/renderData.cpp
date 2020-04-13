@@ -12,7 +12,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 #pragma region IBaseData
@@ -24,6 +24,19 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetViewport();
+}
+
+// Routine Description:
+// - Retrieves the end position of the text buffer. We use
+//   the cursor position as the text buffer end position
+// Return Value:
+// - COORD of the end position of the text buffer
+COORD RenderData::GetTextBufferEndPosition() const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Viewport bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
+    COORD endPosition{ bufferSize.Width() - 1, bufferSize.BottomInclusive() };
+    return endPosition;
 }
 
 // Routine Description:
@@ -294,7 +307,7 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
         {
             // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
             // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
-            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeryByte Unlimited) which used the bits accidentally and for no purpose
+            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
             //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
             return !!IsAvailableEastAsianCodePage(gci.OutputCP);
         }
@@ -346,6 +359,11 @@ const bool RenderData::IsSelectionActive() const
     return Selection::Instance().IsAreaSelected();
 }
 
+const bool RenderData::IsBlockSelection() const noexcept
+{
+    return !Selection::Instance().IsLineSelection();
+}
+
 // Routine Description:
 // - If a selection exists, clears it and restores the state.
 //   Will also unblock a blocked write if one exists.
@@ -376,9 +394,48 @@ void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 // - none
 // Return Value:
 // - current selection anchor
-const COORD RenderData::GetSelectionAnchor() const
+const COORD RenderData::GetSelectionAnchor() const noexcept
 {
     return Selection::Instance().GetSelectionAnchor();
+}
+
+// Routine Description:
+// - Gets the current end selection anchor position
+// Arguments:
+// - none
+// Return Value:
+// - current selection anchor
+const COORD RenderData::GetSelectionEnd() const noexcept
+{
+    // The selection area in ConHost is encoded as two things...
+    //  - SelectionAnchor: the initial position where the selection was started
+    //  - SelectionRect: the rectangular region denoting a portion of the buffer that is selected
+
+    // The following is an excerpt from Selection::s_GetSelectionRects
+    // if the anchor (start of select) was in the top right or bottom left of the box,
+    // we need to remove rectangular overlap in the middle.
+    // e.g.
+    // For selections with the anchor in the top left (A) or bottom right (B),
+    // it is valid to maintain the inner rectangle (+) as part of the selection
+    //               A+++++++================
+    // ==============++++++++B
+    // + and = are valid highlights in this scenario.
+    // For selections with the anchor in in the top right (A) or bottom left (B),
+    // we must remove a portion of the first/last line that lies within the rectangle (+)
+    //               +++++++A=================
+    // ==============B+++++++
+    // Only = is valid for highlight in this scenario.
+    // This is only needed for line selection. Box selection doesn't need to account for this.
+    const auto selectionRect = Selection::Instance().GetSelectionRectangle();
+
+    // To extract the end anchor from this rect, we need to know which corner of the rect is the SelectionAnchor
+    // Then choose the opposite corner.
+    const auto anchor = Selection::Instance().GetSelectionAnchor();
+
+    const short x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
+    const short y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+
+    return { x_pos, y_pos };
 }
 
 // Routine Description:
@@ -392,5 +449,17 @@ const COORD RenderData::GetSelectionAnchor() const
 void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
+}
+
+// Method Description:
+// - Returns true if the screen is globally inverted
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the screen is globally inverted
+bool RenderData::IsScreenReversed() const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsScreenReversed();
 }
 #pragma endregion

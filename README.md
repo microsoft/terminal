@@ -17,7 +17,15 @@ Related repositories include:
 
 > 👉 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
 
-### Manually installing builds from this repository
+### Microsoft Store [Recommended]
+
+Install the [Windows Terminal from the Microsoft Store][store-install-link]. This allows you to always be on the latest version when we release new builds with automatic upgrades. 
+
+This is our preferred method.
+
+### Other install methods
+
+#### Via GitHub
 
 For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
@@ -26,7 +34,7 @@ For users who are unable to install Terminal from the Microsoft Store, Terminal 
 > * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
 > * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
-### Install via Chocolatey (unofficial)
+#### Via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
 
@@ -131,7 +139,7 @@ All project documentation is located in the `./doc` folder. If you would like to
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
 
-***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/contributing.md) to help avoid any wasted or duplicate effort.
+***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/CONTRIBUTING.md) to help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
 
@@ -142,11 +150,11 @@ Please file new issues, feature requests and suggestions, but **DO search for si
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
 * Kayla Cinnamon, Program Manager: [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
-* Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
 * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 * Mike Griese, Developer: [@zadjii](https://twitter.com/zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
+* Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 
 ## Developer Guidance
 
@@ -187,15 +195,13 @@ Invoke-OpenConsoleBuild
 bcz
 ```
 
-## Debugging Terminal
+## Running & Debugging
 
-To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties. In the Debug menu, change "Application process" and "Background task process" to "Native Only".
+To debug the Windows Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties. In the Debug menu, change "Application process" and "Background task process" to "Native Only".
 
 You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>.
 
-### Debugging
-
-* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
+> 👉 You will _not_ be able to launch the Terminal directly by running the WindowsTerminal.exe. For more details on why, see [#926](https://github.com/microsoft/terminal/issues/926), [#4043](https://github.com/microsoft/terminal/issues/4043)
 
 ### Coding Guidance
 
@@ -220,3 +226,4 @@ For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [open
 [conduct-code]: https://opensource.microsoft.com/codeofconduct/
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
+[store-install-link]: https://aka.ms/windowsterminal

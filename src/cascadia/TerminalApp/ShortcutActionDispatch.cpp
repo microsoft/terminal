@@ -33,11 +33,6 @@ namespace winrt::TerminalApp::implementation
             _CopyTextHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::CopyTextWithoutNewlines:
-        {
-            _CopyTextHandlers(*this, *eventArgs);
-            break;
-        }
         case ShortcutAction::PasteText:
         {
             _PasteTextHandlers(*this, *eventArgs);
@@ -60,15 +55,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         case ShortcutAction::NewTab:
-        case ShortcutAction::NewTabProfile0:
-        case ShortcutAction::NewTabProfile1:
-        case ShortcutAction::NewTabProfile2:
-        case ShortcutAction::NewTabProfile3:
-        case ShortcutAction::NewTabProfile4:
-        case ShortcutAction::NewTabProfile5:
-        case ShortcutAction::NewTabProfile6:
-        case ShortcutAction::NewTabProfile7:
-        case ShortcutAction::NewTabProfile8:
         {
             _NewTabHandlers(*this, *eventArgs);
             break;
@@ -136,48 +122,31 @@ namespace winrt::TerminalApp::implementation
         }
 
         case ShortcutAction::SwitchToTab:
-        case ShortcutAction::SwitchToTab0:
-        case ShortcutAction::SwitchToTab1:
-        case ShortcutAction::SwitchToTab2:
-        case ShortcutAction::SwitchToTab3:
-        case ShortcutAction::SwitchToTab4:
-        case ShortcutAction::SwitchToTab5:
-        case ShortcutAction::SwitchToTab6:
-        case ShortcutAction::SwitchToTab7:
-        case ShortcutAction::SwitchToTab8:
         {
             _SwitchToTabHandlers(*this, *eventArgs);
             break;
         }
 
         case ShortcutAction::ResizePane:
-        case ShortcutAction::ResizePaneLeft:
-        case ShortcutAction::ResizePaneRight:
-        case ShortcutAction::ResizePaneUp:
-        case ShortcutAction::ResizePaneDown:
         {
             _ResizePaneHandlers(*this, *eventArgs);
             break;
         }
 
         case ShortcutAction::MoveFocus:
-        case ShortcutAction::MoveFocusLeft:
-        case ShortcutAction::MoveFocusRight:
-        case ShortcutAction::MoveFocusUp:
-        case ShortcutAction::MoveFocusDown:
         {
             _MoveFocusHandlers(*this, *eventArgs);
             break;
         }
 
-        case ShortcutAction::IncreaseFontSize:
+        case ShortcutAction::AdjustFontSize:
         {
             _AdjustFontSizeHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::DecreaseFontSize:
+        case ShortcutAction::Find:
         {
-            _AdjustFontSizeHandlers(*this, *eventArgs);
+            _FindHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::ResetFontSize:

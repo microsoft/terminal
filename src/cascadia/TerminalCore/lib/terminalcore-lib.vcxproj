@@ -10,6 +10,11 @@
     <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
   </PropertyGroup>
 
+  <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
+  <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
+    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalSettings\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalSettings;$(CAExcludePath)</CAExcludePath>
+  </PropertyGroup>
+    
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
@@ -49,7 +54,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-
-  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+    <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

@@ -29,7 +29,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(ColorSchemeTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(CanLayerColorScheme);
@@ -100,6 +100,7 @@ namespace TerminalAppLocalTests
             "foreground": "#000000",
             "background": "#010101",
             "selectionBackground": "#010100",
+            "cursorColor": "#010001",
             "red": "#010000",
             "green": "#000100",
             "blue": "#000001"
@@ -109,6 +110,7 @@ namespace TerminalAppLocalTests
             "foreground": "#020202",
             "background": "#030303",
             "selectionBackground": "#020200",
+            "cursorColor": "#040004",
             "red": "#020000",
 
             "blue": "#000002"
@@ -118,6 +120,7 @@ namespace TerminalAppLocalTests
             "foreground": "#040404",
             "background": "#050505",
             "selectionBackground": "#030300",
+            "cursorColor": "#060006",
             "red": "#030000",
             "green": "#000300"
         })" };
@@ -130,8 +133,8 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"scheme0", scheme0._schemeName);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0._defaultForeground);
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 0), scheme0._selectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 1), scheme0._cursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 0), scheme0._table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0._table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 1), scheme0._table[XTERM_BLUE_ATTR]);
@@ -143,6 +146,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme0._defaultForeground);
         VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme0._defaultBackground);
         VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 0), scheme0._selectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 4, 0, 4), scheme0._cursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 2, 0, 0), scheme0._table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0._table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0._table[XTERM_BLUE_ATTR]);
@@ -154,6 +158,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
         VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
         VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 0), scheme0._selectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 6, 0, 6), scheme0._cursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 3, 0, 0), scheme0._table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 3, 0), scheme0._table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0._table[XTERM_BLUE_ATTR]);

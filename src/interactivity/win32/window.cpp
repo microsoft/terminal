@@ -10,7 +10,8 @@
 #include "windowio.hpp"
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
-#include "windowtheme.hpp"
+
+#include "..\..\inc\conint.h"
 
 #include "..\..\host\globals.h"
 #include "..\..\host\dbcs.h"
@@ -52,7 +53,7 @@ Window* Window::s_Instance = nullptr;
 Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
-    _hWnd(0),
+    _hWnd(nullptr),
     _pUiaProvider(nullptr)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
@@ -216,7 +217,7 @@ void Window::_UpdateSystemMetrics() const
             // determine the initial window size, which happens BEFORE the
             // window is created, we'll want to make sure the DX engine does
             // math in the hwnd mode, not the Composition mode.
-            THROW_IF_FAILED(pDxEngine->SetHwnd(0));
+            THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
             g.pRender->AddRenderEngine(pDxEngine);
         }
         else
@@ -349,12 +350,7 @@ void Window::_UpdateSystemMetrics() const
                     siAttached.PostUpdateWindowSize();
 
                     // Locate window theming modules and try to set the dark mode.
-                    try
-                    {
-                        WindowTheme theme;
-                        LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
-                    }
-                    CATCH_LOG();
+                    LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
                 }
             }
         }
@@ -669,7 +665,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
         // when the window viewport is updated.
         // ---
         // - The specific scenario that this impacts is ConEmu (wrapping our console) to use Bash in WSL.
-        // - The reason this is a problem is because ConEmu has to programatically manipulate our buffer and window size
+        // - The reason this is a problem is because ConEmu has to programmatically manipulate our buffer and window size
         //   one after another to get our dimensions to change.
         // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the
         //   WSL environment. This isn't technically correct to use a Buffer message to know when Window changes, but

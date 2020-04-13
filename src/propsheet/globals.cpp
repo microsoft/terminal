@@ -40,18 +40,18 @@ BYTE DefaultFontFamily;
 ULONG DefaultFontIndex = 0;
 ULONG g_currentFontIndex = 0;
 
-PFONT_INFO FontInfo = NULL;
+PFONT_INFO FontInfo = nullptr;
 ULONG NumberOfFonts;
 ULONG FontInfoLength;
 BOOL gbEnumerateFaces = FALSE;
-PFACENODE gpFaceNames = NULL;
+PFACENODE gpFaceNames = nullptr;
 
 BOOL g_fSettingsDlgInitialized = FALSE;
 
 BOOL InEM_UNDO = FALSE;
 
 // These values are used to "remember" the colors across a disable/re-enable,
-//      so that if we disable the setting then re-enable it, we can re-initalize
+//      so that if we disable the setting then re-enable it, we can re-initialize
 //      it with the same value it had before.
 COLORREF g_fakeForegroundColor = RGB(242, 242, 242); // Default bright white
 COLORREF g_fakeBackgroundColor = RGB(12, 12, 12); // Default black

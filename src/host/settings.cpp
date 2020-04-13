@@ -53,6 +53,7 @@ Settings::Settings() :
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
+    _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
@@ -394,6 +395,15 @@ void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed
     }
 }
 
+bool Settings::IsScreenReversed() const
+{
+    return _fScreenReversed;
+}
+void Settings::SetScreenReversed(const bool fScreenReversed)
+{
+    _fScreenReversed = fScreenReversed;
+}
+
 bool Settings::GetFilterOnPaste() const
 {
     return _fFilterOnPaste;
@@ -527,7 +537,7 @@ void Settings::SetPopupFillAttribute(const WORD wPopupFillAttribute)
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
-    // everywhere by defualt.
+    // everywhere by default.
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
@@ -933,7 +943,7 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 }
 
 // Method Description:
-// - Get the foregroud color of a particular text attribute, using our color
+// - Get the foreground color of a particular text attribute, using our color
 //      table, and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
@@ -942,7 +952,14 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    if (_fScreenReversed)
+    {
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
+    else
+    {
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 // Method Description:
@@ -955,7 +972,14 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    if (_fScreenReversed)
+    {
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
+    else
+    {
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 bool Settings::GetCopyColor() const noexcept
