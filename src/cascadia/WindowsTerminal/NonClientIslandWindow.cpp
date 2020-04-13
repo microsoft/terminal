@@ -366,7 +366,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // GH#1438 - Attempt to detect if there's an autohide taskbar, and if there
     // is, reduce our size a bit on the side with the taskbar, so the user can
     // still mouse-over the taskbar to reveal it.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONULL);
+    // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
+    // still find the right monitor even when we're restoring from minimized.
+    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };

@@ -113,12 +113,6 @@ public:
 
     bool PrivateUseMainScreenBuffer() override;
 
-    bool PrivateHorizontalTabSet();
-    bool PrivateForwardTab(const size_t numTabs) override;
-    bool PrivateBackwardsTab(const size_t numTabs) override;
-    bool PrivateTabClear(const bool clearAll) override;
-    bool PrivateSetDefaultTabStops() override;
-
     bool PrivateEnableVT200MouseMode(const bool enabled) override;
     bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) override;
     bool PrivateEnableSGRExtendedMouseMode(const bool enabled) override;

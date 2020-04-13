@@ -115,7 +115,7 @@ public:
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
-    bool SendCharEvent(const wchar_t ch) override;
+    bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
@@ -168,6 +168,7 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn) noexcept;
@@ -194,6 +195,7 @@ private:
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
+    std::function<void()> _pfnCursorPositionChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -249,8 +251,21 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
 
+    // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
+    struct KeyEventCodes
+    {
+        WORD VirtualKey;
+        WORD ScanCode;
+    };
+    std::optional<KeyEventCodes> _lastKeyEventCodes;
+
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
+    static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
+    static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
+
+    void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
+    WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
     int _VisibleStartIndex() const noexcept;
     int _VisibleEndIndex() const noexcept;
@@ -265,6 +280,8 @@ private:
     void _AdjustCursorPosition(const COORD proposedPosition);
 
     void _NotifyScrollEvent() noexcept;
+
+    void _NotifyTerminalCursorPositionChanged() noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

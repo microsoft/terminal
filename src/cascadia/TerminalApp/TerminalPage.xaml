@@ -33,16 +33,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </TextBlock>
                 <HyperlinkButton
                     x:Uid="AboutDialog_GettingStartedLink"
-                    NavigateUri="https://aka.ms/terminal-getting-started" />
+                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125715" />
                 <HyperlinkButton
                     x:Uid="AboutDialog_DocumentationLink"
-                    NavigateUri="https://aka.ms/terminal-documentation" />
+                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
                 <HyperlinkButton
                     x:Uid="AboutDialog_ReleaseNotesLink"
-                    NavigateUri="https://aka.ms/terminal-release-notes" />
+                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
                 <HyperlinkButton
                     x:Uid="AboutDialog_PrivacyPolicyLink"
-                    NavigateUri="https://aka.ms/terminal-privacy-policy" />
+                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
             </StackPanel>
         </ContentDialog>
 

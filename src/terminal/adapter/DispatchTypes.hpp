@@ -75,6 +75,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class AnsiStatusType : unsigned int
     {
+        OS_OperatingStatus = 5,
         CPR_CursorPositionReport = 6,
     };
 

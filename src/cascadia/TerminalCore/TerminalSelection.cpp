@@ -221,18 +221,18 @@ void Terminal::ClearSelection()
 // Method Description:
 // - get wstring text from highlighted portion of text buffer
 // Arguments:
-// - collapseText: collapse all of the text to one line
+// - singleLine: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool collapseText) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine) const
 {
     const auto selectionRects = _GetSelectionRects();
 
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    return _buffer->GetText(!collapseText,
-                            !collapseText,
+    return _buffer->GetText(!singleLine,
+                            !singleLine,
                             selectionRects,
                             GetForegroundColor,
                             GetBackgroundColor);

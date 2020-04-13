@@ -2,7 +2,7 @@
 
 This doc will hopefully provide a useful guide for adding profiles for common
 third-party tools to your
-[profiles.json](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md)
+[settings.json](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md)
 file.
 
 All of these profiles are provided _without_ their `guid` set. If you'd like to

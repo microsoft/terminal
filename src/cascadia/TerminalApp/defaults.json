@@ -1,16 +1,27 @@
 // THIS IS AN AUTO-GENERATED FILE! Changes to this file will be ignored.
 {
-    "alwaysShowTabs": true,
     "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+
+    // Launch Settings
     "initialCols": 120,
     "initialRows": 30,
-    "requestedTheme": "system",
+    "launchMode": "default",
+
+    // Selection
+    "copyOnSelect": false,
+    "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+
+    // Tab UI
+    "alwaysShowTabs": true,
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
-    "snapToGridOnResize": true,
-    "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+
+    // Miscellaneous
     "confirmCloseAllTabs": true,
+    "theme": "system",
+    "rowsToScroll": "system",
+    "snapToGridOnResize": true,
 
     "profiles":
     [
@@ -18,41 +29,45 @@
             "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
             "name": "Windows PowerShell",
             "commandline": "powershell.exe",
-            "hidden": false,
-            "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
+            "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "colorScheme": "Campbell Powershell",
+            "antialiasingMode": "grayscale",
+            "closeOnExit": "graceful",
             "cursorShape": "bar",
             "fontFace": "Cascadia Code",
             "fontSize": 12,
+            "hidden": false,
             "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
+            "startingDirectory": "%USERPROFILE%",
+            "useAcrylic": false
         },
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
-            "name": "cmd",
+            "name": "Command Prompt",
             "commandline": "cmd.exe",
-            "hidden": false,
-            "startingDirectory": "%USERPROFILE%",
-            "closeOnExit": "graceful",
+            "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
+            "antialiasingMode": "grayscale",
+            "closeOnExit": "graceful",
             "cursorShape": "bar",
             "fontFace": "Cascadia Code",
             "fontSize": 12,
+            "hidden": false,
             "historySize": 9001,
-            "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false,
-            "antialiasingMode": "grayscale"
+            "startingDirectory": "%USERPROFILE%",
+            "useAcrylic": false
         }
     ],
     "schemes":
     [
+        // A profile can override the following color scheme values:
+        //   - "foreground"
+        //   - "background"
+        //   - "cursorColor"
         {
             "name": "Campbell",
             "foreground": "#CCCCCC",
@@ -210,17 +225,17 @@
     ],
     "keybindings":
     [
-        { "command": "closePane", "keys": "ctrl+shift+w" },
+        // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
-        { "command": "copy", "keys": "ctrl+shift+c" },
-        { "command": "copy", "keys": "ctrl+insert" },
-        { "command": "decreaseFontSize", "keys": "ctrl+-" },
-        { "command": "duplicateTab", "keys": "ctrl+shift+d" },
-        { "command": "increaseFontSize", "keys": "ctrl+=" },
-        { "command": { "action": "moveFocus", "direction": "down" }, "keys": "alt+down" },
-        { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
-        { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
-        { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+        { "command": "toggleFullscreen", "keys": "alt+enter" },
+        { "command": "toggleFullscreen", "keys": "f11" },
+        { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
+        { "command": "openSettings", "keys": "ctrl+," },
+        { "command": "find", "keys": "ctrl+shift+f" },
+
+        // Tab Management
+        // "command": "closeTab" is unbound by default.
+        //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
         { "command": "newTab", "keys": "ctrl+shift+t" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
@@ -231,23 +246,9 @@
         { "command": { "action": "newTab", "index": 6 }, "keys": "ctrl+shift+7" },
         { "command": { "action": "newTab", "index": 7 }, "keys": "ctrl+shift+8" },
         { "command": { "action": "newTab", "index": 8 }, "keys": "ctrl+shift+9" },
+        { "command": "duplicateTab", "keys": "ctrl+shift+d" },
         { "command": "nextTab", "keys": "ctrl+tab" },
-        { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
-        { "command": "openSettings", "keys": "ctrl+," },
-        { "command": "paste", "keys": "ctrl+shift+v" },
-        { "command": "paste", "keys": "shift+insert" },
         { "command": "prevTab", "keys": "ctrl+shift+tab" },
-        { "command": "resetFontSize", "keys": "ctrl+0" },
-        { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
-        { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
-        { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
-        { "command": { "action": "resizePane", "direction": "up" }, "keys": "alt+shift+up" },
-        { "command": "scrollDown", "keys": "ctrl+shift+down" },
-        { "command": "scrollDownPage", "keys": "ctrl+shift+pgdn" },
-        { "command": "scrollUp", "keys": "ctrl+shift+up" },
-        { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
-        { "command": { "action": "splitPane", "split": "horizontal"}, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical"}, "keys": "alt+shift+plus" },
         { "command": { "action": "switchToTab", "index": 0 }, "keys": "ctrl+alt+1" },
         { "command": { "action": "switchToTab", "index": 1 }, "keys": "ctrl+alt+2" },
         { "command": { "action": "switchToTab", "index": 2 }, "keys": "ctrl+alt+3" },
@@ -257,8 +258,35 @@
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
         { "command": { "action": "switchToTab", "index": 8 }, "keys": "ctrl+alt+9" },
-        { "command": "find", "keys": "ctrl+shift+f" },
-        { "command": "toggleFullscreen", "keys": "alt+enter" },
-        { "command": "toggleFullscreen", "keys": "f11" }
+
+        // Pane Management
+        { "command": "closePane", "keys": "ctrl+shift+w" },
+        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
+        { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
+        { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
+        { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
+        { "command": { "action": "resizePane", "direction": "up" }, "keys": "alt+shift+up" },
+        { "command": { "action": "moveFocus", "direction": "down" }, "keys": "alt+down" },
+        { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
+        { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
+        { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+
+        // Clipboard Integration
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": "paste", "keys": "ctrl+shift+v" },
+        { "command": "paste", "keys": "shift+insert" },
+
+        // Scrollback
+        { "command": "scrollDown", "keys": "ctrl+shift+down" },
+        { "command": "scrollDownPage", "keys": "ctrl+shift+pgdn" },
+        { "command": "scrollUp", "keys": "ctrl+shift+up" },
+        { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
+
+        // Visual Adjustments
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": "resetFontSize", "keys": "ctrl+0" }
     ]
 }
