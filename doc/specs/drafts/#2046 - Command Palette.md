@@ -99,7 +99,7 @@ palette for each profile, and every time the user adds a profile, they'd need to
 update the list of commands to add a new entry for that profile as well.
 
 This is a fairly complicated addition to this feature, so I'd hold it for
-"Command Palette v2", thoguh I believe it's solution deserves special
+"Command Palette v2", though I believe it's solution deserves special
 consideration from the outset.
 
 I suggest that we need a mechanism by which the user can specify a single
@@ -241,9 +241,9 @@ For example, consider the following list of commands:
 * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
   S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
   Controls".
-* Even more powerfully, "sv" would return "[ | ] **S**plit **V**ertical". This
-  is a great example of how a user could execute a command with very few
-  keystrokes.
+* Even more powerfully, "sv" would return "[ | ] Split Vertical" (by matching
+  the **S** in "Split", then the **V** in "Vertical"). This is a great example
+  of how a user could execute a command with very few keystrokes.
 
 As the user types, we should **bold** each matching character in the command
 name, to show how their input correlates to the results on screen.
