@@ -221,6 +221,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Arguments:
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
+    try
     {
         if (!_isConnected())
         {
@@ -235,13 +236,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Initialize the request
             http_request terminalRequest(L"POST");
             terminalRequest.set_request_uri(L"terminals/" + _terminalID + L"/size?cols=" + std::to_wstring(columns) + L"&rows=" + std::to_wstring(rows) + L"&version=2019-01-01");
-            _HeaderHelper(terminalRequest);
-            terminalRequest.set_body(json::value(L""));
+            terminalRequest.set_body(json::value::null());
 
             // Send the request (don't care about the response)
-            (void)_RequestHelper(terminalClient, terminalRequest);
+            (void)_SendAuthenticatedRequestReturningJson(terminalClient, terminalRequest);
         }
     }
+    CATCH_LOG();
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
@@ -707,14 +708,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
-    // - helper function to send requests and extract responses as json values
+    // - helper function to send requests with default headers and extract responses as json values
     // Arguments:
     // - a http_client
     // - a http_request for the client to send
     // Return value:
     // - the response from the server as a json value
-    json::value AzureConnection::_RequestHelper(http_client theClient, http_request theRequest)
+    json::value AzureConnection::_SendRequestReturningJson(http_client& theClient, http_request theRequest)
     {
+        auto& headers{ theRequest.headers() };
+        headers.add(L"User-Agent", HttpUserAgent);
+        headers.add(L"Accept", L"application/json");
+
         json::value jsonResult;
         const auto responseTask = theClient.request(theRequest);
         responseTask.wait();
@@ -725,6 +730,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_AZURE_ERROR(jsonResult);
         return jsonResult;
+    }
+
+    // Method description:
+    // - helper function to send _authenticated_ requests with json bodies whose responses are expected
+    //   to be json. builds on _SendRequestReturningJson.
+    // Arguments:
+    // - the http_request
+    json::value AzureConnection::_SendAuthenticatedRequestReturningJson(http_client& theClient, http_request theRequest)
+    {
+        auto& headers{ theRequest.headers() };
+        headers.add(L"Authorization", L"Bearer " + _accessToken);
+
+        return _SendRequestReturningJson(theClient, std::move(theRequest));
     }
 
     // Method description:
@@ -743,7 +761,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         commonRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and receive the response as a json value
-        return _RequestHelper(loginClient, commonRequest);
+        return _SendRequestReturningJson(loginClient, commonRequest);
     }
 
     // Method description:
@@ -783,7 +801,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             try
             {
-                auto response{ _RequestHelper(pollingClient, pollRequest) };
+                auto response{ _SendRequestReturningJson(pollingClient, pollRequest) };
                 _WriteStringWithNewline(RS_(L"AzureSuccessfullyAuthenticated"));
                 // Got a valid response: we're done
                 return response;
@@ -814,10 +832,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize the request
         http_request tenantRequest(L"GET");
         tenantRequest.set_request_uri(L"tenants?api-version=2020-01-01");
-        _HeaderHelper(tenantRequest);
 
         // Send the request and return the response as a json value
-        return _RequestHelper(tenantClient, tenantRequest);
+        return _SendAuthenticatedRequestReturningJson(tenantClient, tenantRequest);
     }
 
     // Method description:
@@ -834,10 +851,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
         refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
-        refreshRequest.headers().add(L"User-Agent", HttpUserAgent);
 
         // Send the request and return the response as a json value
-        auto refreshResponse{ _RequestHelper(refreshClient, refreshRequest) };
+        auto refreshResponse{ _SendRequestReturningJson(refreshClient, refreshRequest) };
         _accessToken = refreshResponse.at(L"access_token").as_string();
         _refreshToken = refreshResponse.at(L"refresh_token").as_string();
         _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
@@ -855,9 +871,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize request
         http_request settingsRequest(L"GET");
         settingsRequest.set_request_uri(L"providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2018-10-01");
-        _HeaderHelper(settingsRequest);
 
-        return _RequestHelper(settingsClient, settingsRequest);
+        return _SendAuthenticatedRequestReturningJson(settingsClient, settingsRequest);
     }
 
     // Method description:
@@ -872,13 +887,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize request
         http_request shellRequest(L"PUT");
         shellRequest.set_request_uri(L"providers/Microsoft.Portal/consoles/default?api-version=2018-10-01");
-        _HeaderHelper(shellRequest);
         // { "properties": { "osType": "linux" } }
         auto body = json::value::object({ { U("properties"), json::value::object({ { U("osType"), json::value::string(U("linux")) } }) } });
         shellRequest.set_body(body);
 
         // Send the request and get the response as a json value
-        const auto cloudShell = _RequestHelper(cloudShellClient, shellRequest);
+        const auto cloudShell = _SendAuthenticatedRequestReturningJson(cloudShellClient, shellRequest);
 
         // Return the uri
         return cloudShell.at(L"properties").at(L"uri").as_string() + L"/";
@@ -896,27 +910,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize the request
         http_request terminalRequest(L"POST");
         terminalRequest.set_request_uri(L"terminals?cols=" + std::to_wstring(_initialCols) + L"&rows=" + std::to_wstring(_initialRows) + L"&version=2019-01-01&shell=" + shellType);
-        _HeaderHelper(terminalRequest);
+        // LOAD-BEARING. the API returns "'content-type' should be 'application/json' or 'multipart/form-data'"
+        terminalRequest.set_body(json::value::null());
 
         // Send the request and get the response as a json value
-        const auto terminalResponse = _RequestHelper(terminalClient, terminalRequest);
+        const auto terminalResponse = _SendAuthenticatedRequestReturningJson(terminalClient, terminalRequest);
         _terminalID = terminalResponse.at(L"id").as_string();
 
         // Return the uri
         return terminalResponse.at(L"socketUri").as_string();
-    }
-
-    // Method description:
-    // - helper function to set the headers of a http_request
-    // Arguments:
-    // - the http_request
-    void AzureConnection::_HeaderHelper(http_request theRequest)
-    {
-        auto& headers{ theRequest.headers() };
-        headers.add(L"Accept", L"application/json");
-        headers.add(L"Content-Type", L"application/json");
-        headers.add(L"Authorization", L"Bearer " + _accessToken);
-        headers.add(L"User-Agent", HttpUserAgent);
     }
 
     // Method description:

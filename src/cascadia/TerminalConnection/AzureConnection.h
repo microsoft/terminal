@@ -68,7 +68,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
-        web::json::value _RequestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
+        web::json::value _SendRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
+        web::json::value _SendAuthenticatedRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
         web::json::value _GetDeviceCode();
         web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
         web::json::value _GetTenants();
@@ -76,7 +77,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         web::json::value _GetCloudShellUserSettings();
         utility::string_t _GetCloudShell();
         utility::string_t _GetTerminal(utility::string_t shellType);
-        void _HeaderHelper(web::http::http_request theRequest);
         void _StoreCredential();
         void _RemoveCredentials();
 
