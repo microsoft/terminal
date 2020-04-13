@@ -190,6 +190,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
 
+    // skip any drawing updates that might occur until we swap _buffer with the new buffer.
+    _buffer->GetCursor().StartDeferDrawing();
+
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -199,8 +202,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
-        // skip any drawing updates that might occur as we manipulate the new buffer, until we swap the new with the old.
-        _buffer->GetCursor().StartDeferDrawing();
         newTextBuffer->GetCursor().StartDeferDrawing();
 
         // Build a PositionInformation to track the position of both the top of
@@ -218,10 +219,16 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         oldRows.visibleViewportTop = newVisibleTop;
 
         const std::optional<short> oldViewStart{ oldViewportTop };
-        RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
-                                            *newTextBuffer.get(),
-                                            _mutableViewport,
-                                            { oldRows }));
+        const HRESULT reflowHR = TextBuffer::Reflow(*_buffer.get(),
+                                                    *newTextBuffer.get(),
+                                                    _mutableViewport,
+                                                    { oldRows });
+
+        if (FAILED(reflowHR))
+        {
+            _buffer->GetCursor().EndDeferDrawing();
+            return reflowHR;
+        }
 
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;

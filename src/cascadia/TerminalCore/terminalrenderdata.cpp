@@ -105,7 +105,7 @@ COLORREF Terminal::GetCursorColor() const noexcept
     return _buffer->GetCursor().GetColor();
 }
 
-bool Terminal::IsCursorDoubleWidth() const noexcept
+bool Terminal::IsCursorDoubleWidth() const
 {
     const auto position = _buffer->GetCursor().GetPosition();
     TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
