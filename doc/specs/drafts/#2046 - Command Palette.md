@@ -1,11 +1,13 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2019-12-11
+last updated: 2020-04-13
 issue id: 2046
 ---
 
-# Spec Title
+_This is a draft spec. It should be considered a work-in-progress._
+
+# Command Palette
 
 ## Abstract
 
@@ -163,7 +165,10 @@ below](#localization), we'd update the built-in commands to the following:
     ],
 ```
 
-In this example, we'll look up the `NewTabWithProfileCommandName` resource when we're first parsing the command, to find a string similar to `"New Tab with ${profile.name}"`. When we then later expand the command, we'll see the `${profile.name}` bit from the resource, and expand that like we normally would.
+In this example, we'll look up the `NewTabWithProfileCommandName` resource when
+we're first parsing the command, to find a string similar to `"New Tab with
+${profile.name}"`. When we then later expand the command, we'll see the
+`${profile.name}` bit from the resource, and expand that like we normally would.
 
 Trickily, we'll need to make sure to have a helper for replacing strings like
 this that can be used for general purpose arg parsing. As you can see, the
@@ -301,38 +306,12 @@ won't need to worry about handling the input ourselves.
 
 Because we'll be shipping a set of default commands with the terminal, we should
 make sure that list of commands can be localizable. Each of the names we'll give
-to the commands should be locale-specific. This would require a change to the
-generation of the `defaults.json` file.
+to the commands should be locale-specific.
 
-1. Should we ship one defaults.json per locale (that we support), and use the
-   system locale at runtime to load the one we want? This would mean that when
-   the user opens the `defaults.json` file, they'll open a file like
-   `defaults.en-us.json`.
-2. Should we somehow build the Terminal for each locale separately? This doesn't
-   seem like a feasible choice.
-3. Use strings straight from the resources file somehow?
-
-Option 1 seems more similar to how XAML resources work today, where all of the
-resources are compiled into the app, but only the appropriate one is used at
-runtime. We would need to be able to generate a variety of `defaults.LANG.json`
-files based upon entries in another file, with a list of locales we support, and
-a map of ShortcutAction->name pairings for each language. This set of json files
-should be generated at build time.
-
-We'll need to modify `GenerateHeaderForJson.ps1` to generate headers for _all_
-these files, and we'll additionally need to create a mechanism by which all
-these generated headers are included, not just the singular `defaults.json`. We
-could combine all the per-language defaults strings into globals within a single
-header, so that we don't need to worry about including lots of files.
-
-If at runtime we _don't_ find a `defaults.json` for the current locale, we'll
-fall back to the en-us variant.
-
-Overall, this seems wildly overcomplicated.
-
-Option 3 was suggested in passing one of the few times I was in the office.
-We'll use a syntax like the following to suggest that we should load a string
-from our resources, as opposed to using the value from the file:
+To facilitate this, we'll use a special type of object in JSON that will let us
+specify a resource name in JSON. We'll use a syntax like the following to
+suggest that we should load a string from our resources, as opposed to using the
+value from the file:
 
 ```json
     "commands": [
@@ -353,6 +332,16 @@ an object, we'll attempt to use the `key` property of that object to look up a
 string from our `ResourceDictionary`. This way, we'll be able to ship localized
 strings for all the built-in commands, while aslo allowing the user to easily
 add their own commands.
+
+During the spec review process, we considered other options for localization as
+well. The original proposal included options such as having one `defaults.json`
+file per-locale, and building the Terminal independently for each locale. Those
+were not really feasible options, so we instead settled on this solution, as it
+allowed us to leverage the existing localization support provided to us by the
+platform.
+
+The `{ "key": "resourceName" }` solution proposed here was also touched on in
+[#5280].
 
 
 ## Future considerations
@@ -426,6 +415,8 @@ Allow dropdown menu customization in profiles.json [#1571](https://github.com/mi
 
 Search or run a command in Dropdown menu [#3879]
 
+Spec: Introduce a mini-specification for localized resource use from JSON [#5280]
+
 <!-- Footnotes -->
 [#754]: https://github.com/microsoft/terminal/issues/754
 [#1205]: https://github.com/microsoft/terminal/issues/1205
@@ -433,3 +424,4 @@ Search or run a command in Dropdown menu [#3879]
 [#2046]: https://github.com/microsoft/terminal/issues/2046
 [#1571]: https://github.com/microsoft/terminal/issues/1571
 [#3879]: https://github.com/microsoft/terminal/issues/3879
+[#5280]: https://github.com/microsoft/terminal/pull/5280
