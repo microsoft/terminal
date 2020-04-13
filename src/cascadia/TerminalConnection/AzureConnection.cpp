@@ -761,14 +761,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_client pollingClient(_loginUri);
 
         // Continuously send a poll request until the user authenticates
-        const auto body = hstring() + L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
+        const auto body = L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
         const auto requestUri = L"common/oauth2/token";
-        for (int count = 0; count < expiresIn / pollInterval; count++)
+
+        // use a steady clock here so it's not impacted by local time discontinuities
+        const auto tokenExpiry{ std::chrono::steady_clock::now() + std::chrono::seconds(expiresIn) };
+        while (std::chrono::steady_clock::now() < tokenExpiry)
         {
+            std::this_thread::sleep_for(std::chrono::seconds(pollInterval));
+
             // User might close the tab while we wait for them to authenticate, this case handles that
             if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
-                throw "Tab closed.";
+                // We're going down, there's no valid user for us to return
+                break;
             }
 
             http_request pollRequest(L"POST");
@@ -787,14 +793,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 if (e.GetCode() == ErrorCodes::AuthorizationPending)
                 {
                     // Handle the "auth pending" exception by retrying.
-                    Sleep(pollInterval * 1000);
                     continue;
                 }
                 throw;
             } // uncaught exceptions bubble up to the caller
         }
 
-        throw "Time out.";
         return json::value::null();
     }
 
