@@ -891,13 +891,6 @@ try
         _invalidMap.set_all();
     }
 
-    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
-    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
-    if (_scale != 1.0f)
-    {
-        _invalidMap.set_all();
-    }
-
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         const auto invalidatedStr = _invalidMap.to_string();
@@ -979,16 +972,14 @@ try
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
-                    return rc.scale_up(_glyphCell).scale(til::math::rounding, _scale);
+                    return rc.scale_up(_glyphCell);
                 });
 
                 // Invalid scroll is in characters, convert it to pixels.
-                const auto scrollPixels = (_invalidScroll * _glyphCell).scale(til::math::rounding, _scale);
+                const auto scrollPixels = (_invalidScroll * _glyphCell);
 
                 // The scroll rect is the entire field of cells, but in pixels.
                 til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
-
-                scrollArea = scrollArea.scale(til::math::ceiling, _scale);
 
                 // Reduce the size of the rectangle by the scroll.
                 scrollArea -= til::size{} - scrollPixels;
