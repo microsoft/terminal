@@ -174,12 +174,6 @@
   <data name="AzureTokensRemoved" xml:space="preserve">
     <value>Saved connection settings removed.</value>
   </data>
-  <data name="AzureExitStr" xml:space="preserve">
-    <value>Exit.</value>
-  </data>
-  <data name="AzureAuthString" xml:space="preserve">
-    <value>Authenticated.</value>
-  </data>
   <data name="AzureOldCredentialsFlushedMessage" xml:space="preserve">
     <value>Authentication parameters changed. You'll need to log in again.</value>
   </data>
