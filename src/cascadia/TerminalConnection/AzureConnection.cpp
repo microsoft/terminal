@@ -321,32 +321,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // or allow them to login with a different account or allow them to remove the saved settings
                 case AzureState::AccessStored:
                 {
-                    RETURN_IF_FAILED(_AccessHelper());
+                    RETURN_IF_FAILED(_RunAccessState());
                     break;
                 }
                 // User has no saved connection settings or has opted to login with a different account
                 // Azure authentication happens here
                 case AzureState::DeviceFlow:
                 {
-                    RETURN_IF_FAILED(_DeviceFlowHelper());
+                    RETURN_IF_FAILED(_RunDeviceFlowState());
                     break;
                 }
                 // User has multiple tenants in their Azure account, they need to choose which one to connect to
                 case AzureState::TenantChoice:
                 {
-                    RETURN_IF_FAILED(_TenantChoiceHelper());
+                    RETURN_IF_FAILED(_RunTenantChoiceState());
                     break;
                 }
                 // Ask the user if they want to save these connection settings for future logins
                 case AzureState::StoreTokens:
                 {
-                    RETURN_IF_FAILED(_StoreHelper());
+                    RETURN_IF_FAILED(_RunStoreState());
                     break;
                 }
                 // Connect to Azure, we only get here once we have everything we need (tenantID, accessToken, refreshToken)
                 case AzureState::TermConnecting:
                 {
-                    RETURN_IF_FAILED(_ConnectHelper());
+                    RETURN_IF_FAILED(_RunConnectState());
                     break;
                 }
                 // We are connected, continuously read from the websocket until its closed
@@ -402,7 +402,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - S_FALSE if there are no stored credentials
     // - S_OK if the user opts to login with a stored set of credentials or login with a different account
     // - E_FAIL if the user closes the tab
-    HRESULT AzureConnection::_AccessHelper()
+    HRESULT AzureConnection::_RunAccessState()
     {
         bool oldVersionEncountered = false;
         auto vault = PasswordVault();
@@ -545,7 +545,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Return value:
     // - E_FAIL if the user closes the tab, does not authenticate in time or has no tenants in their Azure account
     // - S_OK otherwise
-    HRESULT AzureConnection::_DeviceFlowHelper()
+    HRESULT AzureConnection::_RunDeviceFlowState()
     {
         // Initiate device code flow
         const auto deviceCodeResponse = _GetDeviceCode();
@@ -594,7 +594,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Return value:
     // - E_FAIL if the user closes the tab
     // - S_OK otherwise
-    HRESULT AzureConnection::_TenantChoiceHelper()
+    HRESULT AzureConnection::_RunTenantChoiceState()
     {
         try
         {
@@ -651,7 +651,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Return value:
     // - E_FAIL if the user closes the tab
     // - S_OK otherwise
-    HRESULT AzureConnection::_StoreHelper()
+    HRESULT AzureConnection::_RunStoreState()
     {
         _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureStorePrompt"), USES_RESOURCE(L"AzureUserEntry_Yes"), USES_RESOURCE(L"AzureUserEntry_No")));
         // Wait for user input
@@ -685,7 +685,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Return value:
     // - E_FAIL if the user has not set up their cloud shell yet
     // - S_OK after successful connection
-    HRESULT AzureConnection::_ConnectHelper()
+    HRESULT AzureConnection::_RunConnectState()
     {
         // Get user's cloud shell settings
         const auto settingsResponse = _GetCloudShellUserSettings();
