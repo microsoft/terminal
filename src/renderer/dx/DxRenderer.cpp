@@ -88,6 +88,7 @@ DxEngine::DxEngine() :
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
+    _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
@@ -569,6 +570,8 @@ CATCH_RETURN();
             ::Microsoft::WRL::ComPtr<IDXGISwapChain2> sc2;
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
+
+            _prevScale = _scale;
         }
         return S_OK;
     }
@@ -910,7 +913,7 @@ try
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
-        else if (_displaySizePixels != clientSize)
+        else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
             // OK, we're going to play a dangerous game here for the sake of optimizing resize
             // First, set up a complete clear of all device resources if something goes terribly wrong.
