@@ -92,14 +92,14 @@ same as pressing the keybinding.
 ### Commands for each profile?
 
 [#3879] Is a request for being able to launch a profile directly, via the
-command pallete. Esentially, the user will type the name of a profile, and hit
+command palette. Essentially, the user will type the name of a profile, and hit
 enter to launch that profile. I quite like this idea, but with the current spec,
 this won't work great. We'd need to manually have one entry in the command
 palette for each profile, and every time the user adds a profile, they'd need to
 update the list of commands to add a new entry for that profile as well.
 
 This is a fairly complicated addition to this feature, so I'd hold it for
-"Command Palette v2", thoguh I believe it's solution deserves special
+"Command Palette v2", though I believe it's solution deserves special
 consideration from the outset.
 
 I suggest that we need a mechanism by which the user can specify a single
@@ -173,11 +173,11 @@ ${profile.name}"`. When we then later expand the command, we'll see the
 Trickily, we'll need to make sure to have a helper for replacing strings like
 this that can be used for general purpose arg parsing. As you can see, the
 `profile` property of the `newTab` command also needs the name of the profile.
-Either the command validator will need to go through and update these strings
+Either the command validation will need to go through and update these strings
 manually, or we'll need another of enabling these `IActionArgs` classes to fill
 those parameters in based on the profile being used. Perhaps the command
 pre-expansion could just stash the json for the action, then expand it later?
-This implementation detail is why this particualr feature is not slated for
+This implementation detail is why this particular feature is not slated for
 inclusion in an initial Command Palette implementation.
 
 ## UI/UX Design
@@ -206,7 +206,7 @@ the first entry in the list.
 
 The user can navigate the list of entries with the arrow keys. Hitting enter
 will close the palette and execute the action that's highlighted. Hitting escape
-will dismiss the pallete, returning control to the terminal. When the palette is
+will dismiss the palette, returning control to the terminal. When the palette is
 closed for any reason (executing a command, dismissing with either escape or the
 `toggleCommandPalette` keybinding), we'll clear out any search text from the
 palette, so the user can start fresh again.
@@ -241,9 +241,9 @@ For example, consider the following list of commands:
 * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
   S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
   Controls".
-* Even more powerfully, "sv" would return "[ | ] **S**plit **V**ertical". This
-  is a great example of how a user could execute a command with very few
-  keystrokes.
+* Even more powerfully, "sv" would return "[ | ] Split Vertical" (by matching
+  the **S** in "Split", then the **V** in "Vertical"). This is a great example
+  of how a user could execute a command with very few keystrokes.
 
 As the user types, we should **bold** each matching character in the command
 name, to show how their input correlates to the results on screen.
@@ -254,7 +254,7 @@ name, to show how their input correlates to the results on screen.
 
 As the entire command palette will be a native XAML element, it'll automatically
 be hooked up to the UIA tree, allowing for screen readers to naturally find it.
- * When the palette is opened, it will automatically recieve focus.
+ * When the palette is opened, it will automatically receive focus.
  * The terminal panes will not be able to be interacted with while the palette
    is open, which will help keep the UIA tree simple while the palette is open.
 
@@ -287,7 +287,7 @@ to the commands list, so that everyone wouldn't need to define them manually.
 We'll be adding a few extra XAML elements to our tree which will certainly
 increase our runtime memory footprint while the palette is open.
 
-We'll aditionally be introducing a few extra json values to parse, so that could
+We'll additionally be introducing a few extra json values to parse, so that could
 increase our load times (though this will likely be negligible).
 
 ## Potential Issues
@@ -298,7 +298,7 @@ However, when the command palette is opened, focus will move out of the terminal
 control into the command palette, which leads to some hard to debug crashes.
 
 Additionally, we'll need to ensure that the "fuzzy search" algorithm proposed
-above will work for non-english languages, where a single charater might be
+above will work for non-english languages, where a single character might be
 multiple `char`s long. As we'll be using a standard XAML text box for input, we
 won't need to worry about handling the input ourselves.
 
@@ -330,7 +330,7 @@ We'll check at parse time if the `name` property is a string or an object. If
 it's a string, we'll treat that string as the literal text. Otherwise, if it's
 an object, we'll attempt to use the `key` property of that object to look up a
 string from our `ResourceDictionary`. This way, we'll be able to ship localized
-strings for all the built-in commands, while aslo allowing the user to easily
+strings for all the built-in commands, while also allowing the user to easily
 add their own commands.
 
 During the spec review process, we considered other options for localization as
@@ -360,7 +360,7 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
   relatively well, so long as you're sitting at a shell prompt. If you were in
   an application like `vim`, this might be handy for executing a sequence of
   vim-specific keybindings. Otherwise, you're just going to end up writing a
-  commadline to the buffer of vim. It would be weird, but not unexpected.
+  commandline to the buffer of vim. It would be weird, but not unexpected.
 * Additionally mentioned in [#2046] was the potential for profile-scoped
   commands. While that's a great idea, I believe it's out of scope for this
   spec.
@@ -372,7 +372,7 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
   the `ListViewItem` for the command. We'd need some way to correlate a
   command's action to a keybinding's action. This could be done in a follow-up
   task.
-* We might want to alter the fuzzy-search algorithim, to give higher precedence
+* We might want to alter the fuzzy-search algorithm, to give higher precedence
   in the results list to commands with more consecutive matching characters.
   Alternatively we could give more weight to commands where the search matched
   the initial character of words in the command.
