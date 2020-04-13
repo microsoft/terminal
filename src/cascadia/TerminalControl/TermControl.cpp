@@ -518,8 +518,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 return false;
             }
 
-            const auto windowWidth = SwapChainPanel().ActualWidth(); // Width() and Height() are NaN?
-            const auto windowHeight = SwapChainPanel().ActualHeight();
+            const auto windowWidth = SwapChainPanel().ActualWidth() * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
+            const auto windowHeight = SwapChainPanel().ActualHeight() * SwapChainPanel().CompositionScaleY();
 
             if (windowWidth == 0 || windowHeight == 0)
             {
@@ -1636,9 +1636,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto scale = sender.CompositionScaleX();
             const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
 
-            // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
             THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
-            _renderer->TriggerRedrawAll();
         }
     }
 
@@ -1979,23 +1977,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
-        const float scale = dxEngine->GetScaling();
         const auto fontSize = actualFont.GetSize();
-
-        // Manually multiply by the scaling factor. The DX engine doesn't
-        // actually store the scaled font size in the fontInfo.GetSize()
-        // property when the DX engine is in Composition mode (which it is for
-        // the Terminal). At runtime, this is fine, as we'll transform
-        // everything by our scaling, so it'll work out. However, right now we
-        // need to get the exact pixel count.
-        const float fFontWidth = gsl::narrow_cast<float>(fontSize.X * scale);
-        const float fFontHeight = gsl::narrow_cast<float>(fontSize.Y * scale);
+        const auto scale = dxEngine->GetScaling();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * fFontWidth;
+        double width = cols * fontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (settings.ScrollState() == ScrollbarState::Visible)
@@ -2003,7 +1992,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * fFontHeight;
+        double height = rows * fontSize.Y;
         auto thickness = _ParseThicknessFromPadding(settings.Padding());
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -2197,6 +2186,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - the corresponding viewport terminal position for the given Point parameter
     const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
+        // compensate for DPI scenarios.
+        cursorPosition.X *= SwapChainPanel().CompositionScaleX();
+        cursorPosition.Y *= SwapChainPanel().CompositionScaleY();
+
         // Exclude padding from cursor position calculation
         COORD terminalPosition = {
             static_cast<SHORT>(cursorPosition.X - SwapChainPanel().Margin().Left),

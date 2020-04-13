@@ -562,9 +562,6 @@ CATCH_RETURN();
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
         {
-            const auto fdpi = static_cast<float>(_dpi);
-            _d2dRenderTarget->SetDpi(fdpi, fdpi);
-
             DXGI_MATRIX_3X2_F inverseScale = { 0 };
             inverseScale._11 = 1.0f / _scale;
             inverseScale._22 = inverseScale._11;
@@ -837,7 +834,7 @@ CATCH_RETURN();
     }
     case SwapChainMode::ForComposition:
     {
-        return _sizeTarget.scale(til::math::ceiling, _scale);
+        return _sizeTarget;
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
@@ -1971,13 +1968,9 @@ CATCH_RETURN();
         // The advance is the number of pixels left-to-right (X dimension) for the given font.
         // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
 
-        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-        // For composition swap chains, we scale by the DPI later during drawing and presentation.
-        if (_chainMode == SwapChainMode::ForHwnd)
-        {
-            heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
-        }
-
+        // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
+        heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
+        
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 
         // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
