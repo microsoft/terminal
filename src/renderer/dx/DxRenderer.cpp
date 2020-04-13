@@ -1961,7 +1961,7 @@ CATCH_RETURN();
 
         // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
         heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
-        
+
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 
         // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
