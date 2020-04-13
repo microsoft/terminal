@@ -1674,7 +1674,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        const auto foundationSize = e.NewSize();
+        auto foundationSize = e.NewSize();
+        foundationSize.Width *= SwapChainPanel().CompositionScaleX();
+        foundationSize.Height *= SwapChainPanel().CompositionScaleY();
 
         _DoResize(foundationSize.Width, foundationSize.Height);
     }
@@ -2092,8 +2094,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
-        const auto fontSize = actualFont.GetSize();
         const auto scale = dxEngine->GetScaling();
+        const auto fontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
