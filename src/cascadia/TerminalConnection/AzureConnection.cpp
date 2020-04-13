@@ -321,32 +321,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // or allow them to login with a different account or allow them to remove the saved settings
                 case AzureState::AccessStored:
                 {
-                    RETURN_IF_FAILED(_RunAccessState());
+                    _RunAccessState();
                     break;
                 }
                 // User has no saved connection settings or has opted to login with a different account
                 // Azure authentication happens here
                 case AzureState::DeviceFlow:
                 {
-                    RETURN_IF_FAILED(_RunDeviceFlowState());
+                    _RunDeviceFlowState();
                     break;
                 }
                 // User has multiple tenants in their Azure account, they need to choose which one to connect to
                 case AzureState::TenantChoice:
                 {
-                    RETURN_IF_FAILED(_RunTenantChoiceState());
+                    _RunTenantChoiceState();
                     break;
                 }
                 // Ask the user if they want to save these connection settings for future logins
                 case AzureState::StoreTokens:
                 {
-                    RETURN_IF_FAILED(_RunStoreState());
+                    _RunStoreState();
                     break;
                 }
                 // Connect to Azure, we only get here once we have everything we need (tenantID, accessToken, refreshToken)
                 case AzureState::TermConnecting:
                 {
-                    RETURN_IF_FAILED(_RunConnectState());
+                    _RunConnectState();
                     break;
                 }
                 // We are connected, continuously read from the websocket until its closed
@@ -398,11 +398,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method description:
     // - helper function to get the stored credentials (if any) and let the user choose what to do next
-    // Return value:
-    // - S_FALSE if there are no stored credentials
-    // - S_OK if the user opts to login with a stored set of credentials or login with a different account
-    // - E_FAIL if the user closes the tab
-    HRESULT AzureConnection::_RunAccessState()
+    void AzureConnection::_RunAccessState()
     {
         bool oldVersionEncountered = false;
         auto vault = PasswordVault();
@@ -416,7 +412,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             // No credentials are stored, so start the device flow
             _state = AzureState::DeviceFlow;
-            return S_FALSE;
+            return;
         }
 
         int numTenants{ 0 };
@@ -449,7 +445,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             // No valid up-to-date credentials were found, so start the device flow
             _state = AzureState::DeviceFlow;
-            return S_FALSE;
+            return;
         }
 
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
@@ -460,7 +456,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         do
         {
             auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-            RETURN_HR_IF(E_FAIL, !maybeTenantSelection);
+            if (!maybeTenantSelection.has_value())
+            {
+                return;
+            }
 
             const auto& tenantSelection = maybeTenantSelection.value();
             if (tenantSelection == RS_(L"AzureUserEntry_RemoveStored"))
@@ -468,13 +467,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // User wants to remove the stored settings
                 _RemoveCredentials();
                 _state = AzureState::DeviceFlow;
-                return S_OK;
+                return;
             }
             else if (tenantSelection == RS_(L"AzureUserEntry_NewLogin"))
             {
                 // User wants to login with a different account
                 _state = AzureState::DeviceFlow;
-                return S_OK;
+                return;
             }
             else
             {
@@ -529,7 +528,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     vault.Remove(desiredCredential);
                     // Delete this credential and try again.
                     _state = AzureState::AccessStored;
-                    return S_FALSE;
+                    return;
                 }
                 throw; // rethrow. we couldn't handle this error.
             }
@@ -537,15 +536,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // We have everything we need, so go ahead and connect
         _state = AzureState::TermConnecting;
-        return S_OK;
     }
 
     // Method description:
     // - helper function to start the device code flow (required for authentication to Azure)
-    // Return value:
-    // - E_FAIL if the user closes the tab, does not authenticate in time or has no tenants in their Azure account
-    // - S_OK otherwise
-    HRESULT AzureConnection::_RunDeviceFlowState()
+    void AzureConnection::_RunDeviceFlowState()
     {
         // Initiate device code flow
         const auto deviceCodeResponse = _GetDeviceCode();
@@ -571,7 +566,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _WriteStringWithNewline(RS_(L"AzureNoTenants"));
             _transitionToState(ConnectionState::Failed);
-            return E_FAIL;
+            return;
         }
         else if (_tenantList.size() == 1)
         {
@@ -586,79 +581,73 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _state = AzureState::TenantChoice;
         }
-        return S_OK;
     }
 
     // Method description:
     // - helper function to list the user's tenants and let them decide which tenant they wish to connect to
-    // Return value:
-    // - E_FAIL if the user closes the tab
-    // - S_OK otherwise
-    HRESULT AzureConnection::_RunTenantChoiceState()
+    void AzureConnection::_RunTenantChoiceState()
     {
-        try
+        const auto tenantListAsArray = _tenantList.as_array();
+        auto numTenants = gsl::narrow<int>(tenantListAsArray.size());
+        for (int i = 0; i < numTenants; i++)
         {
-            const auto tenantListAsArray = _tenantList.as_array();
-            auto numTenants = gsl::narrow<int>(tenantListAsArray.size());
-            for (int i = 0; i < numTenants; i++)
-            {
-                const auto& tenant = tenantListAsArray.at(i);
-                const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
-                _WriteStringWithNewline(_formatTenantLine(i, tenantDisplayName, tenantId));
-            }
-            _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
-
-            int selectedTenant{ -1 };
-            do
-            {
-                auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-                RETURN_HR_IF(E_FAIL, !maybeTenantSelection);
-
-                const auto& tenantSelection = maybeTenantSelection.value();
-                try
-                {
-                    selectedTenant = std::stoi(tenantSelection);
-
-                    if (selectedTenant < 0 || selectedTenant >= numTenants)
-                    {
-                        _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
-                        continue;
-                    }
-                    break;
-                }
-                catch (...)
-                {
-                    // suppress exceptions in conversion
-                }
-
-                // if we got here, we didn't break out of the loop early and need to go 'round again
-                _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
-            } while (true);
-
-            const auto& chosenTenant = tenantListAsArray.at(selectedTenant);
-            std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
-
-            // We have to refresh now that we have the tenantID
-            _RefreshTokens();
-            _state = AzureState::StoreTokens;
-            return S_OK;
+            const auto& tenant = tenantListAsArray.at(i);
+            const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
+            _WriteStringWithNewline(_formatTenantLine(i, tenantDisplayName, tenantId));
         }
-        CATCH_RETURN();
+        _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
+
+        int selectedTenant{ -1 };
+        do
+        {
+            auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
+            if (!maybeTenantSelection.has_value())
+            {
+                return;
+            }
+
+            const auto& tenantSelection = maybeTenantSelection.value();
+            try
+            {
+                selectedTenant = std::stoi(tenantSelection);
+
+                if (selectedTenant < 0 || selectedTenant >= numTenants)
+                {
+                    _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
+                    continue;
+                }
+                break;
+            }
+            catch (...)
+            {
+                // suppress exceptions in conversion
+            }
+
+            // if we got here, we didn't break out of the loop early and need to go 'round again
+            _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
+        } while (true);
+
+        const auto& chosenTenant = tenantListAsArray.at(selectedTenant);
+        std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
+
+        // We have to refresh now that we have the tenantID
+        _RefreshTokens();
+        _state = AzureState::StoreTokens;
     }
 
     // Method description:
     // - helper function to ask the user if they wish to store their credentials
-    // Return value:
-    // - E_FAIL if the user closes the tab
-    // - S_OK otherwise
-    HRESULT AzureConnection::_RunStoreState()
+    void AzureConnection::_RunStoreState()
     {
         _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureStorePrompt"), USES_RESOURCE(L"AzureUserEntry_Yes"), USES_RESOURCE(L"AzureUserEntry_No")));
         // Wait for user input
         do
         {
             auto maybeStoreCredentials = _ReadUserInput(InputMode::Line);
-            RETURN_HR_IF(E_FAIL, !maybeStoreCredentials);
+            if (!maybeStoreCredentials.has_value())
+            {
+                return;
+            }
 
             const auto& storeCredentials = maybeStoreCredentials.value();
             if (storeCredentials == RS_(L"AzureUserEntry_Yes"))
@@ -677,15 +666,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         } while (true);
 
         _state = AzureState::TermConnecting;
-        return S_OK;
     }
 
     // Method description:
     // - helper function to connect the user to the Azure cloud shell
-    // Return value:
-    // - E_FAIL if the user has not set up their cloud shell yet
-    // - S_OK after successful connection
-    HRESULT AzureConnection::_RunConnectState()
+    void AzureConnection::_RunConnectState()
     {
         // Get user's cloud shell settings
         const auto settingsResponse = _GetCloudShellUserSettings();
@@ -693,7 +678,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _WriteStringWithNewline(RS_(L"AzureNoCloudAccount"));
             _transitionToState(ConnectionState::Failed);
-            return E_FAIL;
+            return;
         }
 
         // Request for a cloud shell
@@ -719,8 +704,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             WriteInput(static_cast<winrt::hstring>(queuedUserInput)); // send the user's queued up input back through
         }
-
-        return S_OK;
     }
 
     // Method description:

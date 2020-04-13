@@ -47,11 +47,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_handle _hOutputThread;
 
         DWORD _OutputThread();
-        HRESULT _RunAccessState();
-        HRESULT _RunDeviceFlowState();
-        HRESULT _RunTenantChoiceState();
-        HRESULT _RunStoreState();
-        HRESULT _RunConnectState();
+        void _RunAccessState();
+        void _RunDeviceFlowState();
+        void _RunTenantChoiceState();
+        void _RunStoreState();
+        void _RunConnectState();
 
         const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
