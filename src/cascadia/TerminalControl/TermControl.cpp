@@ -1689,7 +1689,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto scale = sender.CompositionScaleX();
             const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
 
-            THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
+            _renderer->TriggerFontChange(dpi, _desiredFont, _actualFont);
         }
     }
 
