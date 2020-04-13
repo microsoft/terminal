@@ -210,7 +210,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(float const /*iDpi*/) noexcept
 {
     return S_OK;
 }

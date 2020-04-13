@@ -524,7 +524,7 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
         // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            ServiceLocator::LocateGlobals().pRender->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
+            ServiceLocator::LocateGlobals().pRender->TriggerFontChange(gsl::narrow_cast<float>(ServiceLocator::LocateGlobals().dpi),
                                                                        GetDesiredFont(),
                                                                        GetCurrentFont());
 

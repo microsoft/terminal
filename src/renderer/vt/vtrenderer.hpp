@@ -82,7 +82,7 @@ namespace Microsoft::Console::Render
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(const float iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,

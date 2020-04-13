@@ -268,7 +268,7 @@ CATCH_RETURN();
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateDpi(const float /*iDpi*/) noexcept
 {
     return S_OK;
 }

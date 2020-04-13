@@ -262,9 +262,9 @@ GdiEngine::~GdiEngine()
 // - iDpi - The Dots Per Inch to use for scaling. We will use this relative to the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-[[nodiscard]] HRESULT GdiEngine::UpdateDpi(const int iDpi) noexcept
+[[nodiscard]] HRESULT GdiEngine::UpdateDpi(const float iDpi) noexcept
 {
-    _iCurrentDpi = iDpi;
+    _iCurrentDpi = gsl::narrow_cast<int>(iDpi);
     return S_OK;
 }
 

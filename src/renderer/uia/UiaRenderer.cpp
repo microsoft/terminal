@@ -396,7 +396,7 @@ CATCH_RETURN();
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateDpi(float const /*iDpi*/) noexcept
 {
     return S_FALSE;
 }

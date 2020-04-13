@@ -560,7 +560,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
         {
-            const auto fdpi = static_cast<float>(_dpi);
+            const auto fdpi = _dpi;
             _d2dRenderTarget->SetDpi(fdpi, fdpi);
 
             DXGI_MATRIX_3X2_F inverseScale = { 0 };
@@ -1615,7 +1615,7 @@ CATCH_RETURN()
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDpi(float const iDpi) noexcept
 {
     _dpi = iDpi;
 
@@ -1671,7 +1671,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                                 FontInfo& pfiFontInfo,
-                                                int const iDpi) noexcept
+                                                int const dpi) noexcept
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
@@ -1679,7 +1679,7 @@ float DxEngine::GetScaling() const noexcept
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
-                            iDpi,
+                            static_cast<float>(dpi),
                             format,
                             analyzer,
                             face);
@@ -1975,7 +1975,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                                  FontInfo& actual,
-                                                 const int dpi,
+                                                 const float dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                  Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
@@ -2015,7 +2015,7 @@ float DxEngine::GetScaling() const noexcept
         // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
         // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
         // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
-        float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
+        float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(POINTS_PER_INCH);
 
         // The advance is the number of pixels left-to-right (X dimension) for the given font.
         // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
@@ -2024,7 +2024,7 @@ float DxEngine::GetScaling() const noexcept
         // For composition swap chains, we scale by the DPI later during drawing and presentation.
         if (_chainMode == SwapChainMode::ForHwnd)
         {
-            heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
+            heightDesired *= (dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
         }
 
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;

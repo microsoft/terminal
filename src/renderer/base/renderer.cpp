@@ -431,7 +431,7 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 // - FontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
+void Renderer::TriggerFontChange(const float iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));

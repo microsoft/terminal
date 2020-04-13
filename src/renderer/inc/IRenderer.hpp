@@ -46,7 +46,7 @@ namespace Microsoft::Console::Render
         virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
         virtual void TriggerTitleChange() = 0;
-        virtual void TriggerFontChange(const int iDpi,
+        virtual void TriggerFontChange(const float iDpi,
                                        const FontInfoDesired& FontInfoDesired,
                                        _Out_ FontInfo& FontInfo) = 0;
 

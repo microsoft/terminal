@@ -1617,7 +1617,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   concerned with initialization process. Value forwarded to event handler.
     void TermControl::_UpdateFont(const bool initialUpdate)
     {
-        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
+        const float newDpi = static_cast<float>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
@@ -1680,7 +1680,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_renderEngine)
         {
             const auto scale = sender.CompositionScaleX();
-            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+            const auto dpi = (float)(scale * static_cast<float>(USER_DEFAULT_SCREEN_DPI));
 
             // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
             THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
@@ -2086,7 +2086,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT:21254947 - use a static function to do this instead of
         // instantiating a DxEngine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
+        THROW_IF_FAILED(dxEngine->UpdateDpi(gsl::narrow_cast<float>(dpi)));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const float scale = dxEngine->GetScaling();

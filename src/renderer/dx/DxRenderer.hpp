@@ -90,10 +90,10 @@ namespace Microsoft::Console::Render
                                                    const ExtendedAttributes extendedAttrs,
                                                    bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(float const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
-        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const dpi) noexcept override;
 
         [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
 
@@ -122,7 +122,7 @@ namespace Microsoft::Console::Render
 
         HWND _hwndTarget;
         SIZE _sizeTarget;
-        int _dpi;
+        float _dpi;
         float _scale;
 
         std::function<void()> _pfn;
@@ -239,7 +239,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                                FontInfo& actual,
-                                               const int dpi,
+                                               const float dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;

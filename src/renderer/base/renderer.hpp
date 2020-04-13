@@ -61,7 +61,7 @@ namespace Microsoft::Console::Render
         void TriggerCircling() override;
         void TriggerTitleChange() override;
 
-        void TriggerFontChange(const int iDpi,
+        void TriggerFontChange(const float iDpi,
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;
 

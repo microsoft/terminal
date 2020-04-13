@@ -321,7 +321,7 @@ bool WddmConEngine::IsInitialized()
     return GetProposedFont(fiFontInfoDesired, fiFontInfo, USER_DEFAULT_SCREEN_DPI);
 }
 
-[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(float const /*iDpi*/) noexcept
 {
     return S_OK;
 }
