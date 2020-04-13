@@ -119,6 +119,7 @@ namespace Microsoft::Console::Render
         SMALL_RECT _srViewportPrevious;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
+        void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
 
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
