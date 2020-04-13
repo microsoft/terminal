@@ -188,7 +188,7 @@ using namespace Microsoft::Console::Types;
         FontInfoDesired fiDesired(fiCurrent);
         FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
 
-        const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
+        const HRESULT hr = g.pRender->GetProposedFont(static_cast<float>(dpiProposed), fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
@@ -465,7 +465,7 @@ using namespace Microsoft::Console::Types;
         // which will have a better suggested rectangle than this one.
         // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
         // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
-        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
+        const int dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
         if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);

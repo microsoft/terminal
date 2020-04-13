@@ -115,7 +115,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired,
                                                       _Out_ FontInfo& FontInfo,
-                                                      const int iDpi) noexcept = 0;
+                                                      const float dpi) noexcept = 0;
 
         virtual std::vector<til::rectangle> GetDirtyArea() = 0;
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;

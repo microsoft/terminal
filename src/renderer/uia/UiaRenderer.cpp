@@ -422,7 +422,7 @@ CATCH_RETURN();
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
                                                  FontInfo& /*pfiFontInfo*/,
-                                                 int const /*iDpi*/) noexcept
+                                                 float const /*dpi*/) noexcept
 {
     return S_FALSE;
 }

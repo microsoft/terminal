@@ -87,7 +87,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
                                               _Out_ FontInfo& Font,
-                                              const int iDpi) noexcept override;
+                                              const float dpi) noexcept override;
 
         std::vector<til::rectangle> GetDirtyArea() override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;

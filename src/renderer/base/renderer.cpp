@@ -450,7 +450,7 @@ void Renderer::TriggerFontChange(const float iDpi, const FontInfoDesired& FontIn
 // - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-[[nodiscard]] HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
+[[nodiscard]] HRESULT Renderer::GetProposedFont(const float dpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
@@ -468,7 +468,7 @@ void Renderer::TriggerFontChange(const float iDpi, const FontInfoDesired& FontIn
     FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, dpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {

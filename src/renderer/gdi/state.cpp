@@ -226,7 +226,7 @@ GdiEngine::~GdiEngine()
 [[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
     wil::unique_hfont hFont;
-    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont));
+    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, static_cast<float>(_iCurrentDpi), hFont));
 
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
@@ -291,10 +291,10 @@ GdiEngine::~GdiEngine()
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-[[nodiscard]] HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi) noexcept
+[[nodiscard]] HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const float dpi) noexcept
 {
     wil::unique_hfont hFont;
-    return _GetProposedFont(FontDesired, Font, iDpi, hFont);
+    return _GetProposedFont(FontDesired, Font, dpi, hFont);
 }
 
 // Method Description:
@@ -324,9 +324,10 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                                   _Out_ FontInfo& Font,
-                                                  const int iDpi,
+                                                  const float dpi,
                                                   _Inout_ wil::unique_hfont& hFont) noexcept
 {
+    const int iDpi = static_cast<int>(dpi);
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 

@@ -348,7 +348,7 @@ CATCH_RETURN();
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]] HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
                                                 _Out_ FontInfo& /*pfiFont*/,
-                                                const int /*iDpi*/) noexcept
+                                                const float /*dpi*/) noexcept
 {
     return S_FALSE;
 }

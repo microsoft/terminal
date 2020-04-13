@@ -340,7 +340,7 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
                                                      FontInfo& fiFontInfo,
-                                                     int const /*iDpi*/) noexcept
+                                                     float const /*dpi*/) noexcept
 {
     COORD coordSize = { 0 };
     LOG_IF_FAILED(GetFontSize(&coordSize));

@@ -93,7 +93,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateDpi(float const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
-        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const dpi) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, float const dpi) noexcept override;
 
         [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
 

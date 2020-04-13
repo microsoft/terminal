@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Render;
 
     float dpiX, dpiY;
     drawingContext->renderTarget->GetDpi(&dpiX, &dpiY);
-    *pixelsPerDip = dpiX / USER_DEFAULT_SCREEN_DPI;
+    *pixelsPerDip = dpiX / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     return S_OK;
 }
 

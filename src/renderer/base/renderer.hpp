@@ -65,7 +65,7 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;
 
-        [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
+        [[nodiscard]] HRESULT GetProposedFont(const float dpi,
                                               const FontInfoDesired& FontInfoDesired,
                                               _Out_ FontInfo& FontInfo) override;
 

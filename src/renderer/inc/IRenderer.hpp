@@ -50,7 +50,7 @@ namespace Microsoft::Console::Render
                                        const FontInfoDesired& FontInfoDesired,
                                        _Out_ FontInfo& FontInfo) = 0;
 
-        [[nodiscard]] virtual HRESULT GetProposedFont(const int iDpi,
+        [[nodiscard]] virtual HRESULT GetProposedFont(const float dpi,
                                                       const FontInfoDesired& FontInfoDesired,
                                                       _Out_ FontInfo& FontInfo) = 0;
 
