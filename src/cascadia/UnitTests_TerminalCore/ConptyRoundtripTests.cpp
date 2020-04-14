@@ -2219,8 +2219,12 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
     _flushFirstFrame();
 
-    auto verifyBuffer = [](const TextBuffer& tb,
-                           const til::rectangle viewport) {
+    const bool expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
+                                 (cursorMovementMode == MoveCursorWithCR_LF) ||
+                                 (cursorMovementMode == MoveCursorWithCUB_NL);
+
+    auto verifyBuffer = [&](const TextBuffer& tb,
+                            const til::rectangle viewport) {
         const auto lastRow = viewport.bottom<short>() - 1;
         const til::point expectedCursor{ 5, lastRow };
         VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
@@ -2228,7 +2232,13 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
         for (auto y = viewport.top<short>(); y < lastRow; y++)
         {
-            VERIFY_IS_FALSE(tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
+            // VERIFY_IS_FALSE(tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
+            const auto rowWrapped = (!expectHardBreak) || (y == lastRow - 1);
+            Log::Comment(NoThrowString().Format(
+                L"y, lastRow, expectHardBreak, rowWrapped=%d, %d, %d, %d", y, lastRow, expectHardBreak, rowWrapped));
+
+            // VERIFY_ARE_EQUAL(!expectHardBreak, tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
+            VERIFY_ARE_EQUAL(rowWrapped, tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
             TestUtils::VerifyExpectedString(tb, L"~    ", til::point{ 0, y });
         }
 

@@ -449,9 +449,9 @@ using namespace Microsoft::Console::Types;
     //
     // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
     // line we're trying to print right now _actually is the bottom line_
-    const bool removeSpaces = useEraseChar ||
-                              _clearedAllThisFrame ||
-                              (_newBottomLine && coord.Y == _lastViewport.BottomInclusive());
+    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+                                               _clearedAllThisFrame ||
+                                               (_newBottomLine && coord.Y == _lastViewport.BottomInclusive()));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
