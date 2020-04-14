@@ -172,7 +172,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorOn(const bool isOn) noexcept;
+    void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
