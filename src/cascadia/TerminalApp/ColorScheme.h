@@ -17,8 +17,14 @@ Author(s):
 #pragma once
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/TerminalApp.h>
 #include "../../inc/conattrs.hpp"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class ColorSchemeTests;
+};
 
 namespace TerminalApp
 {
@@ -29,22 +35,33 @@ class TerminalApp::ColorScheme
 {
 public:
     ColorScheme();
-    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg);
+    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
     ~ColorScheme();
 
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
 
     Json::Value ToJson() const;
     static ColorScheme FromJson(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json) const;
+    void LayerJson(const Json::Value& json);
 
     std::wstring_view GetName() const noexcept;
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;
     COLORREF GetForeground() const noexcept;
     COLORREF GetBackground() const noexcept;
+    COLORREF GetSelectionBackground() const noexcept;
+    COLORREF GetCursorColor() const noexcept;
+
+    static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
 private:
     std::wstring _schemeName;
     std::array<COLORREF, COLOR_TABLE_SIZE> _table;
     COLORREF _defaultForeground;
     COLORREF _defaultBackground;
+    COLORREF _selectionBackground;
+    COLORREF _cursorColor;
+
+    friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
 };

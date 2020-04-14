@@ -1,0 +1,56 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "../TerminalPage.idl";
+import "../ShortcutActionDispatch.idl";
+import "../IF7Listener.idl";
+
+namespace TerminalApp
+{
+    enum LaunchMode
+    {
+        DefaultMode,
+        MaximizedMode,
+    };
+
+    [default_interface] runtimeclass AppLogic: IF7Listener {
+        AppLogic();
+
+        // For your own sanity, it's better to do setup outside the ctor.
+        // If you do any setup in the ctor that ends up throwing an exception,
+        // then it might look like TermApp just failed to activate, which will
+        // cause you to chase down the rabbit hole of "why is TermApp not
+        // registered?" when it definitely is.
+        void Create();
+
+        Boolean IsUwp();
+        void RunAsUwp();
+        Boolean IsElevated();
+
+        Int32 SetStartupCommandline(String[] commands);
+        String EarlyExitMessage { get; };
+
+        void LoadSettings();
+        Windows.UI.Xaml.UIElement GetRoot();
+
+        String Title { get; };
+
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
+        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
+        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
+        LaunchMode GetLaunchMode();
+        Boolean GetShowTabsInTitlebar();
+        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
+        void TitlebarClicked();
+        void WindowCloseButtonClicked();
+
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+    }
+}

@@ -8,18 +8,10 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-TerminalOutput::TerminalOutput()
-{
-}
-
-TerminalOutput::~TerminalOutput()
-{
-}
-
 // We include a full table so all we have to do is the lookup.
 // The tables only ever change the values x20 - x7f, hence why the table starts at \x20
 // From http://vt100.net/docs/vt220-rm/table2-4.html
-const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters]{
+static constexpr std::array<wchar_t, 96> s_decSpecialGraphicsTranslations{
     L'\x20',
     L'\x21',
     L'\x22',
@@ -83,27 +75,27 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\x5c',
     L'\x5d',
     L'\x5e',
-    L'\x5f',
-    L'\u25C6', // L'\x60',   -> Diamond
+    L'\u0020', // L'\x5f',   -> Blank
+    L'\u2666', // L'\x60',   -> Diamond (more commonly U+25C6, but U+2666 renders better for us)
     L'\u2592', // L'\x61',   -> Checkerboard
     L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
     L'\u240c', // L'\x63',   -> FF, SYMBOL FOR FORM FEED
     L'\u240d', // L'\x64',   -> CR, SYMBOL FOR CARRIAGE RETURN
     L'\u240a', // L'\x65',   -> LF, SYMBOL FOR LINE FEED
-    L'\u00B0', // L'\x66',   -> Degree symbol
-    L'\u00B1', // L'\x67',   -> Plus/minus
+    L'\u00b0', // L'\x66',   -> Degree symbol
+    L'\u00b1', // L'\x67',   -> Plus/minus
     L'\u2424', // L'\x68',   -> NL, SYMBOL FOR NEWLINE
     L'\u240b', // L'\x69',   -> VT, SYMBOL FOR VERTICAL TABULATION
     L'\u2518', // L'\x6a',   -> Lower-right corner
     L'\u2510', // L'\x6b',   -> Upper-right corner
     L'\u250c', // L'\x6c',   -> Upper-left corner
     L'\u2514', // L'\x6d',   -> Lower-left corner
-    L'\u253C', // L'\x6e',   -> crossing lines
-    L'\u23ba', // L'\x6f',   -> HORIZONTAL SCAN LINE-3
-    L'\u23bb', // L'\x70',   -> HORIZONTAL SCAN LINE-3
-    L'\u2500', // L'\x71',   -> HORIZONTAL SCAN LINE-5
-    L'\u23bc', // L'\x72',   -> HORIZONTAL SCAN LINE-7
-    L'\u23bd', // L'\x73',   -> HORIZONTAL SCAN LINE-7
+    L'\u253c', // L'\x6e',   -> Crossing lines
+    L'\u23ba', // L'\x6f',   -> Horizontal line - Scan 1
+    L'\u23bb', // L'\x70',   -> Horizontal line - Scan 3
+    L'\u2500', // L'\x71',   -> Horizontal line - Scan 5
+    L'\u23bc', // L'\x72',   -> Horizontal line - Scan 7
+    L'\u23bd', // L'\x73',   -> Horizontal line - Scan 9
     L'\u251c', // L'\x74',   -> Left "T"
     L'\u2524', // L'\x75',   -> Right "T"
     L'\u2534', // L'\x76',   -> Bottom "T"
@@ -111,20 +103,20 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\u2502', // L'\x78',   -> | Vertical bar
     L'\u2264', // L'\x79',   -> Less than or equal to
     L'\u2265', // L'\x7a',   -> Greater than or equal to
-    L'\u03C0', // L'\x7b',   -> Pi
+    L'\u03c0', // L'\x7b',   -> Pi
     L'\u2260', // L'\x7c',   -> Not equal to
-    L'\u00A3', // L'\x7d',   -> UK pound sign
-    L'\u00B7', // L'\x7e',   -> Centered dot
+    L'\u00a3', // L'\x7d',   -> UK pound sign
+    L'\u00b7', // L'\x7e',   -> Centered dot
     L'\x7f' // L'\x7f',   -> DEL
 };
 
-bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
+bool TerminalOutput::DesignateCharset(const wchar_t newCharset) noexcept
 {
     bool result = false;
-    if (wchNewCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
-        wchNewCharset == DispatchTypes::VTCharacterSets::USASCII)
+    if (newCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
+        newCharset == DispatchTypes::VTCharacterSets::USASCII)
     {
-        _wchCurrentCharset = wchNewCharset;
+        _currentCharset = newCharset;
         result = true;
     }
     return result;
@@ -136,37 +128,35 @@ bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
 // - <none>
 // Return Value:
 // - True if the current charset is not USASCII
-bool TerminalOutput::NeedToTranslate() const
+bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return _wchCurrentCharset != DispatchTypes::VTCharacterSets::USASCII;
+    return _currentCharset != DispatchTypes::VTCharacterSets::USASCII;
 }
 
-const wchar_t* TerminalOutput::_GetTranslationTable() const
+const std::wstring_view TerminalOutput::_GetTranslationTable() const noexcept
 {
-    const wchar_t* pwchTranslation = nullptr;
-    switch (_wchCurrentCharset)
+    switch (_currentCharset)
     {
     case DispatchTypes::VTCharacterSets::DEC_LineDrawing:
-        pwchTranslation = TerminalOutput::s_rgDECSpecialGraphicsTranslations;
-        break;
+        return { s_decSpecialGraphicsTranslations.data(), s_decSpecialGraphicsTranslations.size() };
     }
-    return pwchTranslation;
+    return {};
 }
 
-wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
+wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     wchar_t wchFound = wch;
-    if (_wchCurrentCharset == DispatchTypes::VTCharacterSets::USASCII ||
-        wch < '\x60' || wch > '\x7f') // filter out the region we know is unchanged
+    if (_currentCharset == DispatchTypes::VTCharacterSets::USASCII ||
+        wch < '\x5f' || wch > '\x7f') // filter out the region we know is unchanged
     {
         ; // do nothing, these are the same as default.
     }
     else
     {
-        const wchar_t* pwchTranslationTable = _GetTranslationTable();
-        if (pwchTranslationTable != nullptr)
+        const auto translationTable = _GetTranslationTable();
+        if (!translationTable.empty())
         {
-            wchFound = (pwchTranslationTable[wch - '\x20']);
+            wchFound = translationTable.at(wch - '\x20');
         }
     }
     return wchFound;

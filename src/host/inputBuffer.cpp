@@ -466,6 +466,8 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
 {
     try
     {
+        _vtInputShouldSuppress = true;
+        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
         _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
@@ -556,6 +558,8 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
 {
     try
     {
+        _vtInputShouldSuppress = true;
+        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
         _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
@@ -716,7 +720,7 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
 }
 
 // Routine Description:
-// - checks two KeyEvents to see if they're similiar enough to be coalesced
+// - checks two KeyEvents to see if they're similar enough to be coalesced
 // Arguments:
 // - a - the first KeyEvent
 // - b - the other KeyEvent
@@ -841,8 +845,7 @@ bool InputBuffer::IsInVirtualTerminalInputMode() const
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs
 // Arguments:
-// - rgInput - Series of input records to insert into the buffer
-// - cInput - Length of input records array
+// - inEvents - Series of input records to insert into the buffer
 // Return Value:
 // - <none>
 void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
@@ -855,6 +858,12 @@ void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInput
             std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
             inEvents.pop_front();
             _storage.push_back(std::move(inEvent));
+        }
+
+        if (!_vtInputShouldSuppress)
+        {
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+            WakeUpReadersWaitingForData();
         }
     }
     catch (...)

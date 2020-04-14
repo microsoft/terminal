@@ -228,13 +228,6 @@ class DbcsTests
 {
     BEGIN_TEST_CLASS(DbcsTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-l1-2-1.lib")
     END_TEST_CLASS();
 
     TEST_METHOD_SETUP(DbcsTestSetup);
@@ -468,7 +461,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         }
 
         // This is the stated size of the buffer we're passing.
-        // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO charcters.
+        // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO characters.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
         coordBufferSize.X = cChars;
@@ -2328,7 +2321,7 @@ void ReadStringWithReadConsoleInputAHelper(HANDLE hIn, PCSTR pszExpectedText, si
     while (cchRead < cchExpectedText)
     {
         // expected read is either the size of the buffer or the number of characters remaining, whichever is smaller.
-        DWORD const dwReadExpected = (DWORD)min(cbBuffer, cchExpectedText - cchRead);
+        DWORD const dwReadExpected = (DWORD)std::min(cbBuffer, cchExpectedText - cchRead);
 
         DWORD dwRead;
         if (!VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputA(hIn, irRead, (DWORD)cbBuffer, &dwRead), L"Attempt to read input into buffer."))

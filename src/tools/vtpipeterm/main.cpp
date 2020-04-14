@@ -525,7 +525,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed:
-    srand((unsigned int)time(NULL));
+    srand((unsigned int)time(nullptr));
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -567,7 +567,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     if (g_useOutfile)
     {
-        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (hOutFile == INVALID_HANDLE_VALUE)
         {
             printf("Failed to open outfile (%ls) for writing\n", outfile.c_str());
@@ -588,7 +588,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     if (fUseDebug)
     {
-        // Create a debug console for writting debugging output to.
+        // Create a debug console for writing debugging output to.
         debug = new VtConsole(DebugReadCallback, false, false, { 80, 32 });
         // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
         // debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");

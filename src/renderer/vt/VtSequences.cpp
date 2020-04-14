@@ -54,7 +54,7 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -82,7 +82,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
-
     return _WriteFormattedString(&format, chars);
 }
 
@@ -95,12 +94,11 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dC";
-
     return _WriteFormattedString(&format, chars);
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -234,7 +232,7 @@ using namespace Microsoft::Console::Render;
     //      dark colors. For conhost as a terminal, it can't draw bold
     //      characters, so it displays "bold" as bright, and in fact most
     //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness seperately, we'll make sure the
+    // By specifying the boldness and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30 +
                         (fIsForeground ? 0 : 10) +
@@ -344,4 +342,92 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EndUnderline() noexcept
 {
     return _Write("\x1b[24m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginItalics() noexcept
+{
+    return _Write("\x1b[3m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndItalics() noexcept
+{
+    return _Write("\x1b[23m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginBlink() noexcept
+{
+    return _Write("\x1b[5m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndBlink() noexcept
+{
+    return _Write("\x1b[25m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginInvisible() noexcept
+{
+    return _Write("\x1b[8m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndInvisible() noexcept
+{
+    return _Write("\x1b[28m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginCrossedOut() noexcept
+{
+    return _Write("\x1b[9m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
+{
+    return _Write("\x1b[29m");
 }

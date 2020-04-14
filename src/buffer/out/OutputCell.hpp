@@ -25,7 +25,7 @@ Author:
 
 class InvalidCharInfoConversionException : public std::exception
 {
-    const char* what() const noexcept
+    const char* what() const noexcept override
     {
         return "Cannot convert to CHAR_INFO without explicit TextAttribute";
     }
@@ -34,7 +34,7 @@ class InvalidCharInfoConversionException : public std::exception
 class OutputCell final
 {
 public:
-    OutputCell();
+    OutputCell() noexcept;
 
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,

@@ -9,6 +9,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization
@@ -27,7 +28,7 @@ IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 Globals ServiceLocator::s_globals;
 
 bool ServiceLocator::s_pseudoWindowInitialized = false;
-wil::unique_hwnd ServiceLocator::s_pseudoWindow = 0;
+wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 #pragma endregion
 

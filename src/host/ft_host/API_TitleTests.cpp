@@ -11,12 +11,6 @@ using namespace WEX::Common;
 class TitleTests
 {
     BEGIN_TEST_CLASS(TitleTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-ansi-l2-1-0.lib")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -97,7 +91,7 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
     TestGetConsoleTitleWFillHelper(wchReadExpected, cchReadExpected, L'Z');
 
     // Prep expected data
-    size_t const cchCopy = min(cchTitle, cchTryToRead);
+    size_t const cchCopy = std::min(cchTitle, cchTryToRead);
     VERIFY_SUCCEEDED(StringCchCopyNW(wchReadExpected, cchReadBuffer, wchTitle, cchCopy - 1)); // Copy as much room as we said we had leaving space for null terminator
 }
 

@@ -33,7 +33,7 @@ This spec will outline how various terminal frontends will be able to interact w
 5. Visual Studio should be able to persist and edit settings globally, without
    the need for a globals/profiles structure.
 6. The Terminal should be able to read information from a settings structure
-   that's independant of how it's persisted / implemented by the Application
+   that's independent of how it's persisted / implemented by the Application
 7. The Component should be able to have its own settings independent of the
    application that's embedding it, such as font size and face, scrollbar
    visibility, etc. These should be settings that are specific to the component,
@@ -79,7 +79,7 @@ Shell Commandline       |
 
 ### Simple Settings
 
-An application like VS might not even care about settings profiles. They should be able to persist the settings as just a singular entity, and change those as needed, without the additional overhead. Profiles will be something that's more specifc to Project Cascadia.
+An application like VS might not even care about settings profiles. They should be able to persist the settings as just a singular entity, and change those as needed, without the additional overhead. Profiles will be something that's more specific to Project Cascadia.
 
 ### Interface Descriptions
 
@@ -228,6 +228,6 @@ I don't like that - if we change the font size, we should just recalculate how m
 ## Questions / TODO
 * How does this interplay with setting properties of the terminal component in XAML?
     * I would think that the component would load the XAML properties first, and if the controlling application calls `UpdateSettings` on the component, then those in-XAML properties would likely get overwritten.
-    * It's not necessary to create the component with a `IComponentSettings`, nor is it necessary to call `UpdateSettings`. If you wanted to create a trivial settings-less terminal component entriely in XAML, go right ahead.
+    * It's not necessary to create the component with a `IComponentSettings`, nor is it necessary to call `UpdateSettings`. If you wanted to create a trivial settings-less terminal component entirely in XAML, go right ahead.
     * Any settings that *are* exposed through XAML properties *should* also be exposed in the component's settings implementation as well.
         * Can that be enforced any way? I doubt it.

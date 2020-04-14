@@ -17,12 +17,6 @@ using namespace WEX::Common;
 class DimensionsTests
 {
     BEGIN_TEST_CLASS(DimensionsTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -483,7 +477,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     }
 
     // 2b. Do the comparison. Y should be correct, but X will be the lesser of the size we asked for or the window limit for word wrap.
-    if (sbiex.dwSize.Y == sbiexAfter.dwSize.Y && min(sbiex.dwSize.X, sWidthLimit) == sbiexAfter.dwSize.X)
+    if (sbiex.dwSize.Y == sbiexAfter.dwSize.Y && std::min(sbiex.dwSize.X, sWidthLimit) == sbiexAfter.dwSize.X)
     {
         fBufferSizePassed = true;
     }

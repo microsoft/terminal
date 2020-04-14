@@ -173,7 +173,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         std::wstring_view writtenView(wideChars);
         writtenView = writtenView.substr(0, wideCharsWritten);
 
-        // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
+        // Look over written wide chars to find equivalent count of ascii chars so we can properly report back
         // how many elements were actually written
         used = GetALengthFromW(codepage, writtenView);
     }
@@ -219,24 +219,6 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     try
     {
         TextAttribute useThisAttr(attribute);
-
-        // Here we're being a little clever -
-        // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
-        // because their first call to GetScreenBufferInfo returned a legacy attr.
-        // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-        // This could create a scenario where someone emitted RGB with VT,
-        // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-        // they had set.
-        if (screenBuffer.InVTMode())
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            auto bufferLegacy = gci.GenerateLegacyAttributes(screenBuffer.GetAttributes());
-            if (bufferLegacy == attribute)
-            {
-                useThisAttr = TextAttribute(screenBuffer.GetAttributes());
-            }
-        }
-
         const OutputCellIterator it(useThisAttr, lengthToWrite);
         const auto done = screenBuffer.Write(it, startingCoordinate);
 
@@ -290,7 +272,10 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     try
     {
         const OutputCellIterator it(character, lengthToWrite);
-        const auto done = screenInfo.Write(it, startingCoordinate);
+
+        // when writing to the buffer, specifically unset wrap if we get to the last column.
+        // a fill operation should UNSET wrap in that scenario. See GH #1126 for more details.
+        const auto done = screenInfo.Write(it, startingCoordinate, false);
         cellsModified = done.GetInputDistance(it);
 
         // Notify accessibility
@@ -318,7 +303,11 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
                                                                    size_t& cellsModified) noexcept
+try
 {
+    // In case ConvertToW throws causing an early return, set modified cells to 0.
+    cellsModified = 0;
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // convert to wide chars and call W version
@@ -328,3 +317,4 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     return FillConsoleOutputCharacterWImpl(OutContext, wchs.at(0), lengthToWrite, startingCoordinate, cellsModified);
 }
+CATCH_RETURN()

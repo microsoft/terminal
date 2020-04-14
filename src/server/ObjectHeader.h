@@ -47,4 +47,8 @@ private:
     ULONG _ulWriterCount;
     ULONG _ulReadShareCount;
     ULONG _ulWriteShareCount;
+
+#ifdef UNIT_TESTING
+    friend class ObjectTests;
+#endif
 };

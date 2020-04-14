@@ -60,7 +60,6 @@ SOURCES = \
     ..\VtInputThread.cpp   \
     ..\PtySignalInputThread.cpp \
     ..\consoleInformation.cpp \
-    ..\search.cpp    \
     ..\directio.cpp  \
     ..\getset.cpp    \
     ..\globals.cpp   \
@@ -180,6 +179,7 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
+    $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-namespace-l1.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uiacore-l1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(WINCORE_OBJ_PATH)\console\conint\$(O)\conint.lib \

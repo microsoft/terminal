@@ -19,7 +19,6 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
-#include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 
 using namespace WEX::Common;
@@ -85,10 +84,8 @@ class ClipboardTests
         selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
         selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
 
-        return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
-                                                            fLineSelection,
-                                                            selection)
-            .text;
+        const auto& buffer = screenInfo.GetTextBuffer();
+        return buffer.GetText(true, fLineSelection, selection).text;
     }
 
 #pragma prefast(push)
@@ -177,7 +174,7 @@ class ClipboardTests
 
                 const short keyState = pInputServices->VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -218,7 +215,7 @@ class ClipboardTests
                 const short keyScanError = -1;
                 const short keyState = pInputServices->VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -233,8 +230,8 @@ class ClipboardTests
                     events.pop_front();
 
                     const short keyState2 = pInputServices->VkKeyScanW(wch);
-                    VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                    const WORD virtualScanCode2 = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                    VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
+                    const WORD virtualScanCode2 = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {

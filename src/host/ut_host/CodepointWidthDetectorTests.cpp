@@ -32,30 +32,10 @@ class CodepointWidthDetectorTests
 {
     TEST_CLASS(CodepointWidthDetectorTests);
 
-    TEST_METHOD(CodepointWidthDetectDefersMapPopulation)
-    {
-        CodepointWidthDetector widthDetector;
-        VERIFY_IS_TRUE(widthDetector._map.empty());
-        widthDetector.IsWide(UNICODE_SPACE);
-        VERIFY_IS_TRUE(widthDetector._map.empty());
-        // now force checking
-        widthDetector.GetWidth(emoji);
-        VERIFY_IS_FALSE(widthDetector._map.empty());
-    }
-
     TEST_METHOD(CanLookUpEmoji)
     {
         CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector.IsWide(emoji));
-    }
-
-    TEST_METHOD(TestUnicodeRangeCompare)
-    {
-        CodepointWidthDetector::UnicodeRangeCompare compare;
-        // test comparing 2 search terms
-        CodepointWidthDetector::UnicodeRange a{ 0x10 };
-        CodepointWidthDetector::UnicodeRange b{ 0x15 };
-        VERIFY_IS_TRUE(static_cast<bool>(compare(a, b)));
     }
 
     TEST_METHOD(CanExtractCodepoint)

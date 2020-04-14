@@ -2,10 +2,11 @@
 jobs:
 - job: CodeFormatCheck
   displayName: Proper Code Formatting Check
-  pool: { vmImage: vs2017-win2016 }
+  pool: { vmImage: windows-2019 }
 
   steps:
   - checkout: self
+    fetchDepth: 1
     submodules: false
     clean: true
 

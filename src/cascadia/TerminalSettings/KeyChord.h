@@ -9,14 +9,14 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     struct KeyChord : KeyChordT<KeyChord>
     {
-        KeyChord() = default;
-        KeyChord(Settings::KeyModifiers const& modifiers, int32_t vkey);
-        KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey);
+        KeyChord() noexcept;
+        KeyChord(Settings::KeyModifiers const& modifiers, int32_t vkey) noexcept;
+        KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept;
 
-        Settings::KeyModifiers Modifiers();
-        void Modifiers(Settings::KeyModifiers const& value);
-        int32_t Vkey();
-        void Vkey(int32_t value);
+        Settings::KeyModifiers Modifiers() noexcept;
+        void Modifiers(Settings::KeyModifiers const& value) noexcept;
+        int32_t Vkey() noexcept;
+        void Vkey(int32_t value) noexcept;
 
     private:
         Settings::KeyModifiers _modifiers;

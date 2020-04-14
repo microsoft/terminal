@@ -120,9 +120,6 @@
     <ClCompile Include="..\ntprivapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\search.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -297,9 +294,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ntprivapi.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\init.hpp">

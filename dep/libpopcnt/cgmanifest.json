@@ -1,0 +1,13 @@
+{"Registrations":[ 
+    {
+      "component": { 
+       "type": "git", 
+       "git": { 
+         "repositoryUrl": "https://github.com/kimwalisch/libpopcnt", 
+         "commitHash": "043a99fba31121a70bcb2f589faa17f534ae6085" 
+         }
+       }
+    }
+ ],
+ "Version": 1
+}

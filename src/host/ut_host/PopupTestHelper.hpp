@@ -39,7 +39,7 @@ public:
     static void InitHistory(CommandHistory& history) noexcept
     {
         history.Empty();
-        history.Flags |= CLE_ALLOCATED;
+        history.Flags |= CommandHistory::CLE_ALLOCATED;
         VERIFY_SUCCEEDED(history.Add(L"I'm a little teapot", false));
         VERIFY_SUCCEEDED(history.Add(L"hear me shout", false));
         VERIFY_SUCCEEDED(history.Add(L"here is my handle", false));
@@ -50,7 +50,7 @@ public:
     static void InitLongHistory(CommandHistory& history) noexcept
     {
         history.Empty();
-        history.Flags |= CLE_ALLOCATED;
+        history.Flags |= CommandHistory::CLE_ALLOCATED;
         VERIFY_SUCCEEDED(history.Add(L"Because I could not stop for Death", false));
         VERIFY_SUCCEEDED(history.Add(L"He kindly stopped for me", false));
         VERIFY_SUCCEEDED(history.Add(L"The carriage held but just Ourselves", false));

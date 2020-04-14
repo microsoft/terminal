@@ -18,7 +18,7 @@ Viewport::Viewport(const Viewport& other) noexcept :
 
 Viewport Viewport::Empty() noexcept
 {
-    return Viewport({ 0, 0, -1, -1 });
+    return Viewport();
 }
 
 Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
@@ -138,6 +138,19 @@ COORD Viewport::Origin() const noexcept
 }
 
 // Method Description:
+// - For Accessibility, get a COORD representing the end of this viewport in exclusive terms.
+// - This is needed to represent an exclusive endpoint in UiaTextRange that includes the last
+//    COORD's text in the buffer at (RightInclusive(), BottomInclusive())
+// Arguments:
+// - <none>
+// Return Value:
+// - the coordinates of this viewport's end.
+COORD Viewport::EndExclusive() const noexcept
+{
+    return { Left(), BottomExclusive() };
+}
+
+// Method Description:
 // - Get a coord representing the dimensions of this viewport.
 // Arguments:
 // - <none>
@@ -166,10 +179,18 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 // - Determines if the given coordinate position lies within this viewport.
 // Arguments:
 // - pos - Coordinate position
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // - True if it lies inside the viewport. False otherwise.
-bool Viewport::IsInBounds(const COORD& pos) const noexcept
+bool Viewport::IsInBounds(const COORD& pos, bool allowEndExclusive) const noexcept
 {
+    if (allowEndExclusive && pos == EndExclusive())
+    {
+        return true;
+    }
+
     return pos.X >= Left() && pos.X < RightExclusive() &&
            pos.Y >= Top() && pos.Y < BottomExclusive();
 }
@@ -194,7 +215,7 @@ void Viewport::Clamp(COORD& pos) const
 // - other - Viewport to clamp to the inside of this viewport
 // Return Value:
 // - Clamped viewport
-Viewport Viewport::Clamp(const Viewport& other) const
+Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
     auto clampMe = other.ToInclusive();
 
@@ -255,11 +276,14 @@ bool Viewport::MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept
 // - Increments the given coordinate within the bounds of this viewport.
 // Arguments:
 // - pos - Coordinate position that will be incremented, if it can be.
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // - True if it could be incremented. False if it would move outside.
-bool Viewport::IncrementInBounds(COORD& pos) const noexcept
+bool Viewport::IncrementInBounds(COORD& pos, bool allowEndExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::LeftToRight, YWalk::TopToBottom });
+    return WalkInBounds(pos, { XWalk::LeftToRight, YWalk::TopToBottom }, allowEndExclusive);
 }
 
 // Method Description:
@@ -279,11 +303,14 @@ bool Viewport::IncrementInBoundsCircular(COORD& pos) const noexcept
 // - Decrements the given coordinate within the bounds of this viewport.
 // Arguments:
 // - pos - Coordinate position that will be incremented, if it can be.
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // - True if it could be incremented. False if it would move outside.
-bool Viewport::DecrementInBounds(COORD& pos) const noexcept
+bool Viewport::DecrementInBounds(COORD& pos, bool allowEndExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::RightToLeft, YWalk::BottomToTop });
+    return WalkInBounds(pos, { XWalk::RightToLeft, YWalk::BottomToTop }, allowEndExclusive);
 }
 
 // Method Description:
@@ -304,6 +331,9 @@ bool Viewport::DecrementInBoundsCircular(COORD& pos) const noexcept
 // Arguments:
 // - first- The first coordinate position
 // - second - The second coordinate position
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // -  Negative if First is to the left of the Second.
 // -  0 if First and Second are the same coordinate.
@@ -311,11 +341,11 @@ bool Viewport::DecrementInBoundsCircular(COORD& pos) const noexcept
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noexcept
+int Viewport::CompareInBounds(const COORD& first, const COORD& second, bool allowEndExclusive) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    FAIL_FAST_IF(!IsInBounds(first));
-    FAIL_FAST_IF(!IsInBounds(second));
+    FAIL_FAST_IF(!IsInBounds(first, allowEndExclusive));
+    FAIL_FAST_IF(!IsInBounds(second, allowEndExclusive));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -342,12 +372,15 @@ int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noe
 // Arguments:
 // - pos - Coordinate position that will be adjusted, if it can be.
 // - dir - Walking direction specifying which direction to go when reaching the end of a row/column
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // - True if it could be adjusted as specified and remain in bounds. False if it would move outside.
-bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir) const noexcept
+bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
 {
     auto copy = pos;
-    if (WalkInBoundsCircular(copy, dir))
+    if (WalkInBoundsCircular(copy, dir, allowEndExclusive))
     {
         pos = copy;
         return true;
@@ -365,25 +398,37 @@ bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir) const noexcept
 // Arguments:
 // - pos - Coordinate position that will be adjusted.
 // - dir - Walking direction specifying which direction to go when reaching the end of a row/column
+// - allowEndExclusive - if true, allow the EndExclusive COORD as a valid position.
+//                        Used in accessibility to signify that the exclusive end
+//                        includes the last COORD in a given viewport.
 // Return Value:
 // - True if it could be adjusted inside the viewport.
 // - False if it rolled over from the final corner back to the initial corner
 //   for the specified walk direction.
-bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcept
+bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
 {
     // Assert that the position given fits inside this viewport.
-    FAIL_FAST_IF(!IsInBounds(pos));
+    FAIL_FAST_IF(!IsInBounds(pos, allowEndExclusive));
 
     if (dir.x == XWalk::LeftToRight)
     {
-        if (pos.X == RightInclusive())
+        if (allowEndExclusive && pos.X == Left() && pos.Y == BottomExclusive())
+        {
+            pos.Y = Top();
+            return false;
+        }
+        else if (pos.X == RightInclusive())
         {
             pos.X = Left();
 
             if (dir.y == YWalk::TopToBottom)
             {
                 pos.Y++;
-                if (pos.Y > BottomInclusive())
+                if (allowEndExclusive && pos.Y == BottomExclusive())
+                {
+                    return true;
+                }
+                else if (pos.Y > BottomInclusive())
                 {
                     pos.Y = Top();
                     return false;
@@ -450,7 +495,7 @@ bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcep
 //   if using this same viewport with the `WalkInBounds` methods.
 COORD Viewport::GetWalkOrigin(const WalkDir dir) const noexcept
 {
-    COORD origin;
+    COORD origin{ 0 };
     origin.X = dir.x == XWalk::LeftToRight ? Left() : RightInclusive();
     origin.Y = dir.y == YWalk::TopToBottom ? Top() : BottomInclusive();
     return origin;
@@ -858,7 +903,7 @@ Viewport Viewport::ToOrigin() const noexcept
 //      The result will be the smallest area that fits within both rectangles.
 // Arguments:
 // - lhs: one of the viewports to intersect
-// - rhs: the other viepwort to intersect
+// - rhs: the other viewport to intersect
 // Return Value:
 // - a Viewport representing the intersection of the other two, or an empty viewport if there's no intersection.
 [[nodiscard]] Viewport Viewport::Intersect(const Viewport& lhs, const Viewport& rhs) noexcept
@@ -895,6 +940,7 @@ Viewport Viewport::ToOrigin() const noexcept
 //   that was covered by `main` before the regional area of `removeMe` was taken out.
 // - You must check that each viewport .IsValid() before using it.
 [[nodiscard]] SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& removeMe) noexcept
+try
 {
     SomeViewports result;
 
@@ -907,9 +953,10 @@ Viewport Viewport::ToOrigin() const noexcept
     if (!intersection.IsValid())
     {
         // Just put the original rectangle into the results and return early.
-        result.viewports.at(result.used++) = original;
+        result.push_back(original);
     }
-    else
+    // If the original rectangle matches the intersection, there is nothing to return.
+    else if (original != intersection)
     {
         // Generate our potential four viewports that represent the region of the original that falls outside of the remove area.
         // We will bias toward generating wide rectangles over tall rectangles (if possible) so that optimizations that apply
@@ -922,8 +969,8 @@ Viewport Viewport::ToOrigin() const noexcept
         // |                          |             |                          |
         // |                          |             |                          |
         // |                          |             |                          |
-        // |                          |    ======>  |        intersect         |  ======>  early return of 0x0 Viewport
-        // |                          |             |                          |           at Original's origin
+        // |                          |    ======>  |        intersect         |  ======>  early return of nothing
+        // |                          |             |                          |
         // |                          |             |                          |
         // |                          |             |                          |
         // |---------removeMe---------|             |--------------------------|
@@ -992,44 +1039,38 @@ Viewport Viewport::ToOrigin() const noexcept
         //         | removeMe      |
         //         |---------------|
 
-        if (original == intersection)
+        // We generate these rectangles by the original and intersection points, but some of them might be empty when the intersection
+        // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
+        // We will filter those out below when adding them to the result.
+        const auto top = Viewport({ original.Left(), original.Top(), original.RightInclusive(), intersection.Top() - 1 });
+        const auto bottom = Viewport({ original.Left(), intersection.BottomExclusive(), original.RightInclusive(), original.BottomInclusive() });
+        const auto left = Viewport({ original.Left(), intersection.Top(), intersection.Left() - 1, intersection.BottomInclusive() });
+        const auto right = Viewport({ intersection.RightExclusive(), intersection.Top(), original.RightInclusive(), intersection.BottomInclusive() });
+
+        if (top.IsValid())
         {
-            result.viewports.at(result.used++) = Viewport::FromDimensions(original.Origin(), { 0, 0 });
+            result.push_back(top);
         }
-        else
+
+        if (bottom.IsValid())
         {
-            // We generate these rectangles by the original and intersection points, but some of them might be empty when the intersection
-            // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
-            // We will filter those out below when adding them to the result.
-            const auto top = Viewport({ original.Left(), original.Top(), original.RightInclusive(), intersection.Top() - 1 });
-            const auto bottom = Viewport({ original.Left(), intersection.BottomExclusive(), original.RightInclusive(), original.BottomInclusive() });
-            const auto left = Viewport({ original.Left(), intersection.Top(), intersection.Left() - 1, intersection.BottomInclusive() });
-            const auto right = Viewport({ intersection.RightExclusive(), intersection.Top(), original.RightInclusive(), intersection.BottomInclusive() });
+            result.push_back(bottom);
+        }
 
-            if (top.IsValid())
-            {
-                result.viewports.at(result.used++) = top;
-            }
+        if (left.IsValid())
+        {
+            result.push_back(left);
+        }
 
-            if (bottom.IsValid())
-            {
-                result.viewports.at(result.used++) = bottom;
-            }
-
-            if (left.IsValid())
-            {
-                result.viewports.at(result.used++) = left;
-            }
-
-            if (right.IsValid())
-            {
-                result.viewports.at(result.used++) = right;
-            }
+        if (right.IsValid())
+        {
+            result.push_back(right);
         }
     }
 
     return result;
 }
+CATCH_FAIL_FAST()
 
 // Method Description:
 // - Returns true if the rectangle described by this Viewport has internal space

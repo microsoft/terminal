@@ -80,6 +80,9 @@
     <ClInclude Include="..\..\inc\Cluster.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\IRenderTarget.hpp">
+      <Filter>Header Files\inc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />

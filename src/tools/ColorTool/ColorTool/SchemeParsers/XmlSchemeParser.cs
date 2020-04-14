@@ -13,7 +13,7 @@ using static ColorTool.ConsoleAPI;
 
 namespace ColorTool.SchemeParsers
 {
-    class XmlSchemeParser : ISchemeParser
+    class XmlSchemeParser : SchemeParserBase
     {
         // In Windows Color Table order
         private static readonly string[] PListColorNames =
@@ -41,14 +41,15 @@ namespace ColorTool.SchemeParsers
         private const string RedKey = "Red Component";
         private const string GreenKey = "Green Component";
         private const string BlueKey = "Blue Component";
-        private const string FileExtension = ".itermcolors";
 
-        public string Name { get; } = "iTerm Parser";
+        protected override string FileExtension { get; } = ".itermcolors";
 
-        public bool CanParse(string schemeName) => 
+        public override string Name { get; } = "iTerm Parser";
+
+        public override bool CanParse(string schemeName) => 
             string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
+        public override ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             XmlDocument xmlDoc = LoadXmlScheme(schemeName); // Create an XML document object
             if (xmlDoc == null) return null;
@@ -85,7 +86,7 @@ namespace ColorTool.SchemeParsers
             }
 
             var consoleAttributes = new ConsoleAttributes(bgColor, fgColor, null, null);
-            return new ColorScheme(colorTable, consoleAttributes);
+            return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
         }
 
         private static bool ParseRgbFromXml(XmlNode components, ref uint rgb)
@@ -125,7 +126,7 @@ namespace ColorTool.SchemeParsers
             return true;
         }
 
-        private static XmlDocument LoadXmlScheme(string schemeName)
+        private XmlDocument LoadXmlScheme(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument(); // Create an XML document object
             foreach (string path in SchemeManager.GetSearchPaths(schemeName, FileExtension)

@@ -107,12 +107,12 @@ AddFaceNode(
     pNew = (PFACENODE)HeapAlloc(GetProcessHeap(),
                                 0,
                                 sizeof(FACENODE) + ((cch + 1) * sizeof(WCHAR)));
-    if (pNew == NULL)
+    if (pNew == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
-    pNew->pNext = NULL;
+    pNew->pNext = nullptr;
     pNew->dwFlag = 0;
     StringCchCopy(pNew->atch, cch + 1, ptsz);
     *ppTmp = pNew;
@@ -126,14 +126,14 @@ VOID
     PFACENODE pNext, pTmp;
 
     pTmp = gpFaceNames;
-    while (pTmp != NULL)
+    while (pTmp != nullptr)
     {
         pNext = pTmp->pNext;
         HeapFree(GetProcessHeap(), 0, pTmp);
         pTmp = pNext;
     }
 
-    gpFaceNames = NULL;
+    gpFaceNames = nullptr;
 }
 
 // TODO: Refactor into lib for use by both conhost and console.dll
@@ -188,7 +188,7 @@ void RecreateFontHandles(const HWND hWnd)
                 if (SUCCEEDED(StringCchCopy(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), FontInfo[iCurrFont].FaceName)))
                 {
                     HFONT hRescaledFont = CreateFontIndirect(&lf);
-                    if (hRescaledFont != NULL)
+                    if (hRescaledFont != nullptr)
                     {
                         // Only replace the existing font if we've got a replacement. The worst that can happen is that
                         // we fail to create our scaled font, so the user sees an incorrectly-scaled font preview.
@@ -281,7 +281,7 @@ CreateBoldFont:
     {
         COORD SizeShown;
 
-        if (FontInfo[nFont].hFont == NULL)
+        if (FontInfo[nFont].hFont == nullptr)
         {
             DBGFONTS(("!   Font %x has a NULL hFont\n", nFont));
             continue;
@@ -351,7 +351,7 @@ CreateBoldFont:
      */
     if (NumberOfFonts == FontInfoLength)
     {
-        PFONT_INFO Temp = NULL;
+        PFONT_INFO Temp = nullptr;
 
         FontInfoLength += FONT_INCREMENT;
         if (FontInfoLength < MAX_FONT_INFO_ALLOC)
@@ -362,7 +362,7 @@ CreateBoldFont:
                                            sizeof(FONT_INFO) * FontInfoLength);
         }
 
-        if (Temp == NULL)
+        if (Temp == nullptr)
         {
             FontInfoLength -= FONT_INCREMENT;
             return FE_ABANDONFONT; // no point enumerating more - no memory!
@@ -448,14 +448,14 @@ VOID
 {
     ULONG FontIndex;
 
-    if (FontInfo != NULL)
+    if (FontInfo != nullptr)
     {
         for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++)
         {
             DeleteObject(FontInfo[FontIndex].hFont);
         }
         HeapFree(GetProcessHeap(), 0, FontInfo);
-        FontInfo = NULL;
+        FontInfo = nullptr;
         NumberOfFonts = 0;
     }
 
@@ -542,7 +542,7 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nF
      * Add or find the facename
      */
     pFN = AddFaceNode(ptszFace);
-    if (pFN == NULL)
+    if (pFN == nullptr)
     {
         return FE_ABANDONFONT;
     }
@@ -652,7 +652,7 @@ int
     }
 
     /*
-     * reject TT fonts for whoom family is not modern, that is do not use
+     * reject TT fonts for whom family is not modern, that is do not use
      * FF_DONTCARE    // may be surprised unpleasantly
      * FF_DECORATIVE  // likely to be symbol fonts
      * FF_SCRIPT      // cursive, inappropriate for console
@@ -678,7 +678,7 @@ int
     }
 
     /*
-     * reject non-TT fonts that are virtical font
+     * reject non-TT fonts that are vertical font
      */
     if ((nFontType != TRUETYPE_FONTTYPE) &&
         (ptszFace[0] == TEXT('@')))
@@ -712,7 +712,7 @@ int
      * Add or find the facename
      */
     pFN = AddFaceNode(ptszFace);
-    if (pFN == NULL)
+    if (pFN == nullptr)
     {
         return FE_ABANDONFONT;
     }
@@ -791,14 +791,14 @@ BOOL DoFontEnum(
     LOGFONT LogFont;
 
     DBGFONTS(("DoFontEnum \"%ls\"\n", ptszFace));
-    if (hDC == NULL)
+    if (hDC == nullptr)
     {
-        hDC = CreateCompatibleDC(NULL);
+        hDC = CreateCompatibleDC(nullptr);
         bDeleteDC = TRUE;
     }
 
     fed.hDC = hDC;
-    fed.bFindFaces = (ptszFace == NULL);
+    fed.bFindFaces = (ptszFace == nullptr);
     fed.ulFE = 0;
     fed.pTTPoints = pTTPoints;
     fed.nTTPoints = nTTPoints;
@@ -851,7 +851,7 @@ VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
                       FontInfo[i].hFont,
                       bDeleted ? "" : "NOT "));
             bDeleted; // to fix x86 build complaining
-            FontInfo[i].hFont = NULL;
+            FontInfo[i].hFont = nullptr;
             nToRemove++;
         }
         else if (nToRemove > 0)
@@ -912,7 +912,7 @@ static bool IsCurrentFontSizeCustom()
 // font sizes)
 void CreateSizeForAllTTFonts(__in const SHORT sSize)
 {
-    HDC hDC = CreateCompatibleDC(NULL);
+    HDC hDC = CreateCompatibleDC(nullptr);
 
     // for each font face
     for (PFACENODE pFN = gpFaceNames; pFN; pFN = pFN->pNext)
@@ -939,7 +939,7 @@ EnumerateFonts(
 
     dwFontType = (EF_TTFONT | EF_OEMFONT | EF_DEFFACE) & Flags;
 
-    if (FontInfo == NULL)
+    if (FontInfo == nullptr)
     {
         //
         // allocate memory for the font array
@@ -947,7 +947,7 @@ EnumerateFonts(
         NumberOfFonts = 0;
 
         FontInfo = (PFONT_INFO)HeapAlloc(GetProcessHeap(), 0, sizeof(FONT_INFO) * INITIAL_FONTS);
-        if (FontInfo == NULL)
+        if (FontInfo == nullptr)
         {
             return STATUS_NO_MEMORY;
         }
@@ -955,7 +955,7 @@ EnumerateFonts(
         FontInfoLength = INITIAL_FONTS;
     }
 
-    hDC = CreateCompatibleDC(NULL);
+    hDC = CreateCompatibleDC(nullptr);
 
     if (Flags & EF_DEFFACE)
     {
@@ -976,7 +976,7 @@ EnumerateFonts(
 
         // Make sure we are going to enumerate the OEM face.
         pFN = AddFaceNode(DefaultFaceName);
-        if (pFN != NULL)
+        if (pFN != nullptr)
         {
             pFN->dwFlag |= EF_DEFFACE | EF_OEMFONT;
         }
@@ -999,7 +999,7 @@ EnumerateFonts(
         // All facenames found will be put in gpFaceNames with
         // the EF_NEW bit set.
         //
-        DoFontEnum(hDC, NULL, TTPoints, 1);
+        DoFontEnum(hDC, nullptr, TTPoints, 1);
         gbEnumerateFaces = FALSE;
     }
 
@@ -1037,7 +1037,7 @@ EnumerateFonts(
         }
         else
         {
-            DoFontEnum(hDC, pFN->atch, NULL, 0);
+            DoFontEnum(hDC, pFN->atch, nullptr, 0);
         }
         pFN->dwFlag |= EF_ENUMERATED;
     }

@@ -14,13 +14,13 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IConsoleWindow.hpp"
+#include "..\types\IConsoleWindow.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {
     class WindowUiaProvider;
 
-    class Window final : public IConsoleWindow
+    class Window final : public Microsoft::Console::Types::IConsoleWindow
     {
     public:
         [[nodiscard]] static NTSTATUS CreateInstance(_In_ Settings* const pSettings,
@@ -30,7 +30,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         ~Window();
 
-        RECT GetWindowRect() const;
+        RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
         SCREEN_INFORMATION& GetScreenInfo();
         const SCREEN_INFORMATION& GetScreenInfo() const;
@@ -132,7 +132,7 @@ namespace Microsoft::Console::Interactivity::Win32
                                                const WPARAM wParam,
                                                const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
-        WindowUiaProvider* _pUiaProvider = nullptr;
+        WRL::ComPtr<WindowUiaProvider> _pUiaProvider;
 
         // Dynamic Settings helpers
         [[nodiscard]] static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,

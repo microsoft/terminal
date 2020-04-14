@@ -9,7 +9,7 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\handle.h"
-#include "..\..\host\search.h"
+#include "..\buffer\out\search.h"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -23,6 +23,8 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
     static bool fFindSearchUp = true;
+    static std::wstring lastFindString;
+
     WCHAR szBuf[SEARCH_STRING_LENGTH + 1];
     switch (Message)
     {
@@ -30,6 +32,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         SetWindowLongPtrW(hWnd, DWLP_USER, lParam);
         SendDlgItemMessageW(hWnd, ID_CONSOLE_FINDSTR, EM_LIMITTEXT, ARRAYSIZE(szBuf) - 1, 0);
         CheckRadioButton(hWnd, ID_CONSOLE_FINDUP, ID_CONSOLE_FINDDOWN, (fFindSearchUp ? ID_CONSOLE_FINDUP : ID_CONSOLE_FINDDOWN));
+        SetDlgItemText(hWnd, ID_CONSOLE_FINDSTR, lastFindString.c_str());
         return TRUE;
     case WM_COMMAND:
     {
@@ -40,6 +43,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             USHORT const StringLength = (USHORT)GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, szBuf, ARRAYSIZE(szBuf));
             if (StringLength == 0)
             {
+                lastFindString.clear();
                 break;
             }
             bool const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
@@ -48,11 +52,11 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
             std::wstring wstr(szBuf, StringLength);
-
+            lastFindString = wstr;
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            Search search(ScreenInfo,
+            Search search(gci.renderData,
                           wstr,
                           Reverse ? Search::Direction::Backward : Search::Direction::Forward,
                           IgnoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive);
@@ -86,7 +90,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
 void DoFind()
 {
     Globals& g = ServiceLocator::LocateGlobals();
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
     UnlockConsole();
     if (pWindow != nullptr)

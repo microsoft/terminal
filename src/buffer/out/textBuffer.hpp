@@ -69,10 +69,8 @@ public:
                Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
-    ~TextBuffer() = default;
-
     // Used for duplicating properties to another text buffer
-    void CopyProperties(const TextBuffer& OtherBuffer);
+    void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
     // row manipulation
     const ROW& GetRowByOffset(const size_t index) const;
@@ -89,11 +87,12 @@ public:
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteLine(const OutputCellIterator givenIt,
                                  const COORD target,
-                                 const bool setWrap = false,
+                                 const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<size_t> limitRight = std::nullopt);
 
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
@@ -102,20 +101,20 @@ public:
     bool NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer();
+    bool IncrementCircularBuffer(const bool inVtMode = false);
 
-    COORD GetLastNonSpaceCharacter() const;
+    COORD GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
-    Cursor& GetCursor();
-    const Cursor& GetCursor() const;
+    Cursor& GetCursor() noexcept;
+    const Cursor& GetCursor() const noexcept;
 
-    const SHORT GetFirstRowIndex() const;
+    const SHORT GetFirstRowIndex() const noexcept;
 
     const Microsoft::Console::Types::Viewport GetSize() const;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
-    UINT TotalRowCount() const;
+    UINT TotalRowCount() const noexcept;
 
     [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
@@ -125,10 +124,22 @@ public:
 
     [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
-    const UnicodeStorage& GetUnicodeStorage() const;
-    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
+
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
+    bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
+
+    const til::point GetGlyphStart(const til::point pos) const;
+    const til::point GetGlyphEnd(const til::point pos) const;
+    bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+    bool MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
     class TextAndColor
     {
@@ -138,11 +149,33 @@ public:
         std::vector<std::vector<COLORREF>> BkAttr;
     };
 
-    const TextAndColor GetTextForClipboard(const bool lineSelection,
-                                           const bool trimTrailingWhitespace,
-                                           const std::vector<SMALL_RECT>& selectionRects,
-                                           std::function<COLORREF(TextAttribute&)> GetForegroundColor,
-                                           std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
+    const TextAndColor GetText(const bool lineSelection,
+                               const bool trimTrailingWhitespace,
+                               const std::vector<SMALL_RECT>& textRects,
+                               std::function<COLORREF(TextAttribute&)> GetForegroundColor = nullptr,
+                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor = nullptr) const;
+
+    static std::string GenHTML(const TextAndColor& rows,
+                               const int fontHeightPoints,
+                               const std::wstring_view fontFaceName,
+                               const COLORREF backgroundColor,
+                               const std::string& htmlTitle);
+
+    static std::string GenRTF(const TextAndColor& rows,
+                              const int fontHeightPoints,
+                              const std::wstring_view fontFaceName,
+                              const COLORREF backgroundColor);
+
+    struct PositionInformation
+    {
+        short mutableViewportTop{ 0 };
+        short visibleViewportTop{ 0 };
+    };
+
+    static HRESULT Reflow(TextBuffer& oldBuffer,
+                          TextBuffer& newBuffer,
+                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
+                          std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
     std::deque<ROW> _storage;
@@ -159,7 +192,7 @@ private:
 
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
-    void _SetFirstRowIndex(const SHORT FirstRowIndex);
+    void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
     COORD _GetPreviousFromCursor() const;
 
@@ -174,6 +207,14 @@ private:
 
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);
+
+    void _ExpandTextRow(SMALL_RECT& selectionRow) const;
+
+    const DelimiterClass _GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

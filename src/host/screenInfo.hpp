@@ -39,7 +39,6 @@ Revision History:
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
@@ -48,7 +47,16 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
+#include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
+
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
@@ -113,8 +121,6 @@ public:
     bool SendNotifyBeep() const;
     bool PostUpdateWindowSize() const;
 
-    bool InVTMode() const;
-
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
@@ -131,7 +137,8 @@ public:
     OutputCellIterator Write(const OutputCellIterator it);
 
     OutputCellIterator Write(const OutputCellIterator it,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteRect(const OutputCellIterator it,
                                  const Microsoft::Console::Types::Viewport viewport);
@@ -167,13 +174,6 @@ public:
     SCREEN_INFORMATION* Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
-    WCHAR LineChar[6];
-#define UPPER_LEFT_CORNER 0
-#define UPPER_RIGHT_CORNER 1
-#define HORIZONTAL_LINE 2
-#define VERTICAL_LINE 3
-#define BOTTOM_LEFT_CORNER 4
-#define BOTTOM_RIGHT_CORNER 5
 
     // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;
@@ -201,6 +201,7 @@ public:
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
     bool AreMarginsSet() const noexcept;
+    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
     Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
@@ -211,14 +212,6 @@ public:
 
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
-
-    void AddTabStop(const SHORT sColumn);
-    void ClearTabStops() noexcept;
-    void ClearTabStop(const SHORT sColumn) noexcept;
-    COORD GetForwardTab(const COORD cCurrCursorPos) const noexcept;
-    COORD GetReverseTab(const COORD cCurrCursorPos) const noexcept;
-    bool AreTabsSet() const noexcept;
-    void SetDefaultVtTabStops();
 
     TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
@@ -278,6 +271,7 @@ private:
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
+    bool _IsInVTMode() const;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
@@ -293,8 +287,6 @@ private:
     RECT _rcAltSavedClientNew;
     RECT _rcAltSavedClientOld;
     bool _fAltWindowChanged;
-
-    std::list<short> _tabStops;
 
     TextAttribute _PopupAttributes;
 
@@ -312,5 +304,7 @@ private:
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
     friend class CommonState;
+    friend class ConptyOutputTests;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

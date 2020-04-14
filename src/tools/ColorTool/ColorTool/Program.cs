@@ -18,6 +18,7 @@ namespace ColorTool
         private static bool setDefaults = false;
         private static bool setProperties = true;
         private static bool setUnixStyle = false;
+        private static bool setTerminalStyle = false;
 
         public static void Main(string[] args)
         {
@@ -31,45 +32,18 @@ namespace ColorTool
                 string arg = args[i];
                 switch (arg)
                 {
-                    case "-c":
-                    case "--current":
-                        ColorTable.PrintTable();
-                        return;
-                    case "-e":
-                    case "--errors":
-                        reportErrors = true;
-                        break;
-                    case "-q":
-                    case "--quiet":
-                        quietMode = true;
-                        break;
-                    case "-d":
-                    case "--defaults":
-                        setDefaults = true;
-                        setProperties = false;
-                        break;
-                    case "-b":
-                    case "--both":
-                        setDefaults = true;
-                        setProperties = true;
-                        break;
                     case "-?":
                     case "--help":
                         Usage();
                         return;
-                    case "-v":
-                    case "--version":
-                        Version();
+                    case "-c":
+                    case "--current":
+                        ColorTable.PrintTable();
                         return;
                     case "-l":
                     case "--location":
                         SchemeManager.PrintSchemesDirectory();
                         return;
-                    case "-x":
-                    case "--xterm":
-                        setUnixStyle = true;
-                        setProperties = true;
-                        break;
                     case "-o":
                     case "--output":
                         if (i + 1 < args.Length)
@@ -85,6 +59,38 @@ namespace ColorTool
                     case "--schemes":
                         SchemeManager.PrintSchemes();
                         return;
+                    case "-v":
+                    case "--version":
+                        Version();
+                        return;
+                    case "-e":
+                    case "--errors":
+                        reportErrors     = true;
+                        break;
+                    case "-q":
+                    case "--quiet":
+                        quietMode        = true;
+                        break;
+                    case "-d":
+                    case "--defaults":
+                        setDefaults      = true;
+                        setProperties    = false;
+                        break;
+                    case "-b":
+                    case "--both":
+                        setDefaults      = true;
+                        setProperties    = true;
+                        break;
+                    case "-x":
+                    case "--xterm":
+                        setUnixStyle     = true;
+                        setProperties    = true;
+                        break;
+                    case "-t":
+                    case "--terminal":
+                        setTerminalStyle = true;
+                        setProperties    = true;
+                        break;
                     default:
                         break;
                 }
@@ -121,7 +127,7 @@ namespace ColorTool
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
             var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
-            Console.WriteLine($"colortool v{info.FileVersion}");
+            Console.WriteLine($"ColorTool v{info.FileVersion}");
         }
 
         /// <summary>
@@ -139,6 +145,10 @@ namespace ColorTool
                 if (setUnixStyle)
                 {
                     yield return new VirtualTerminalConsoleTarget();
+                }
+                else if (setTerminalStyle)
+                {
+                    yield return new TerminalSchemeConsoleTarget();
                 }
                 else
                 {

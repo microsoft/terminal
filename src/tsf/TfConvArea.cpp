@@ -91,11 +91,11 @@ Notes:
     {
         if (CompCursorPos == 0)
         {
-            encodedAttrs[CompCursorPos] |= (BYTE)CONIME_CURSOR_LEFT; // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
+            encodedAttrs[CompCursorPos] |= CONIME_CURSOR_LEFT; // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
         }
         else if (CompCursorPos - 1 < DisplayAttributes.size())
         {
-            encodedAttrs[CompCursorPos - 1] |= (BYTE)CONIME_CURSOR_RIGHT; // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
+            encodedAttrs[CompCursorPos - 1] |= CONIME_CURSOR_RIGHT; // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
         }
     }
 

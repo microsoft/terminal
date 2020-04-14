@@ -35,7 +35,7 @@ VtIo::VtIo() :
 // Arguments:
 //  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
-//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid
+//  pIoMode: receives the VtIoMode that the string represents if it's a valid
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
@@ -73,6 +73,7 @@ VtIo::VtIo() :
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
+    _resizeQuirk = pArgs->IsResizeQuirkEnabled();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -192,6 +193,7 @@ VtIo::VtIo() :
             if (_pVtRenderEngine)
             {
                 _pVtRenderEngine->SetTerminalOwner(this);
+                _pVtRenderEngine->SetResizeQuirk(_resizeQuirk);
             }
         }
     }
@@ -374,7 +376,7 @@ void VtIo::CloseOutput()
 
 void VtIo::_ShutdownIfNeeded()
 {
-    // The callers should have both accquired the _shutdownLock at this point -
+    // The callers should have both acquired the _shutdownLock at this point -
     //      we dont want a race on who is actually responsible for closing it.
     if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
     {
@@ -396,4 +398,69 @@ void VtIo::_ShutdownIfNeeded()
         // Make sure we terminate.
         ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
+}
+
+// Method Description:
+// - Tell the vt renderer to begin a resize operation. During a resize
+//   operation, the vt renderer should _not_ request to be repainted during a
+//   text buffer circling event. Any callers of this method should make sure to
+//   call EndResize to make sure the renderer returns to normal behavior.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtIo::BeginResize()
+{
+    if (_pVtRenderEngine)
+    {
+        _pVtRenderEngine->BeginResizeRequest();
+    }
+}
+
+// Method Description:
+// - Tell the vt renderer to end a resize operation.
+//   See BeginResize for more details.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtIo::EndResize()
+{
+    if (_pVtRenderEngine)
+    {
+        _pVtRenderEngine->EndResizeRequest();
+    }
+}
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick VtIo into responding
+//   true to `IsUsingVt`, which will cause the console host to act in conpty
+//   mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtIo::EnableConptyModeForTests()
+{
+    _objectsCreated = true;
+}
+#endif
+
+// Method Description:
+// - Returns true if the Resize Quirk is enabled. This changes the behavior of
+//   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
+//   This is used by the Windows Terminal, because it is prepared to be
+//   connected to a conpty, and handles it's own buffer specifically for a
+//   conpty scenario.
+// - See also: GH#3490, #4354, #4741
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we were started with the `--resizeQuirk` flag enabled.
+bool VtIo::IsResizeQuirkEnabled() const
+{
+    return _resizeQuirk;
 }

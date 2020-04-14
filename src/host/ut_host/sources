@@ -36,6 +36,7 @@ SOURCES = \
     InputBufferTests.cpp \
     VtIoTests.cpp \
     VtRendererTests.cpp \
+    ConptyOutputTests.cpp \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \
@@ -43,6 +44,7 @@ SOURCES = \
     CommandNumberPopupTests.cpp \
     CopyFromCharPopupTests.cpp \
     CopyToCharPopupTests.cpp \
+    ObjectTests.cpp \
     DefaultResource.rc \
 
 

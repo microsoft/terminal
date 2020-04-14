@@ -40,8 +40,6 @@ Return Value:
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ PSHORT psScrollY);
 
-#define LOCAL_BUFFER_SIZE 100
-
 /*++
 Routine Description:
     This routine writes a string to the screen, processing any embedded
@@ -93,6 +91,6 @@ Note:
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
-                                      _In_ size_t* const pcbBuffer,
+                                      _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
                                       std::unique_ptr<WriteData>& waiter);

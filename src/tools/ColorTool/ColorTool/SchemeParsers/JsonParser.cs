@@ -13,9 +13,9 @@ using static ColorTool.ConsoleAPI;
 
 namespace ColorTool.SchemeParsers
 {
-    class JsonParser : ISchemeParser
+    class JsonParser : SchemeParserBase
     {
-        private const string FileExtension = ".json";
+        protected override string FileExtension { get; } = ".json";
         private static readonly IReadOnlyList<string> ConcfgColorNames = new[]
         {
             "black",        // Dark Black
@@ -36,12 +36,12 @@ namespace ColorTool.SchemeParsers
             "white"         // Bright White
         };
 
-        public string Name { get; } = "concfg Parser";
+        public override string Name { get; } = "concfg Parser";
 
-        public bool CanParse(string schemeName) => 
+        public override bool CanParse(string schemeName) => 
             string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
+        public override ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             XmlDocument xmlDoc = LoadJsonFile(schemeName);
             if (xmlDoc == null) return null;
@@ -98,7 +98,7 @@ namespace ColorTool.SchemeParsers
                 }
 
                 var consoleAttributes = new ConsoleAttributes(screenBackground, screenForeground, popupBackground, popupForeground);
-                return new ColorScheme(colorTable, consoleAttributes);
+                return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
             }
             catch (Exception /*e*/)
             {
@@ -117,7 +117,7 @@ namespace ColorTool.SchemeParsers
             return RGB(col.R, col.G, col.B);
         }
 
-        private static XmlDocument LoadJsonFile(string schemeName)
+        private XmlDocument LoadJsonFile(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument();
             foreach (string path in SchemeManager.GetSearchPaths(schemeName, FileExtension)
