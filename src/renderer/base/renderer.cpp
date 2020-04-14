@@ -78,8 +78,17 @@ Renderer::~Renderer()
             {
                 if (--tries == 0)
                 {
-                    FAIL_FAST_HR_MSG(E_UNEXPECTED, "A rendering engine required too many retries.");
+                    // Stop trying.
+                    _pThread->DisablePainting();
+                    if (_pfnRendererEnteredErrorState)
+                    {
+                        _pfnRendererEnteredErrorState();
+                    }
+                    return S_FALSE;
                 }
+                // Add a bit of backoff.
+                // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+                Sleep(150 * (maxRetriesForRenderEngine - tries));
                 continue;
             }
             LOG_IF_FAILED(hr);
@@ -1076,4 +1085,24 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
     _rgpEngines.push_back(pEngine);
+}
+
+// Method Description:
+// - Registers a callback that will be called when this renderer gives up.
+//   An application consuming a renderer can use this to display auxiliary Retry UI
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
+{
+    _pfnRendererEnteredErrorState = std::move(pfn);
+}
+
+// Method Description:
+// - Attempts to restart the renderer.
+void Renderer::ResetErrorStateAndResume()
+{
+    // because we're not stateful (we could be in the future), all we want to do is reenable painting.
+    EnablePainting();
 }

@@ -76,6 +76,9 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
+        void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
+        void ResetErrorStateAndResume();
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
@@ -127,6 +130,8 @@ namespace Microsoft::Console::Render
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
+
+        std::function<void()> _pfnRendererEnteredErrorState;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;
