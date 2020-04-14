@@ -598,10 +598,8 @@ namespace winrt::TerminalApp::implementation
             std::wstring guidWString = Utils::GuidToString(profileGuid);
 
             StringMap envMap{};
-            envMap.Insert(L"WT_DEFAULTS", _settings->GetDefaultSettingsPath().c_str());
-            envMap.Insert(L"WT_SETTINGS", _settings->GetSettingsPath().c_str());
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
-            envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_SETTINGS/p:WT_PROFILE_ID");
+            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 
             auto conhostConn = TerminalConnection::ConptyConnection(
                 settings.Commandline(),
