@@ -122,14 +122,14 @@
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
     <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the "defaultProfile" matches the GUID of one of your profiles.</value>
-    <comment>{Locked="defaultProfile"}</comment>
+    <comment>{Locked="\"defaultProfile\""}</comment>
   </data>
   <data name="DuplicateProfileText" xml:space="preserve">
     <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.</value>
   </data>
   <data name="UnknownColorSchemeText" xml:space="preserve">
     <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
-    <comment>{Locked="colorScheme"}{Locked="name"}{Locked="schemes"}</comment>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>No profiles were found in your settings.</value>
@@ -170,18 +170,18 @@
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
-    <comment>{Locked="backgroundImage"}</comment>
+    <comment>{Locked="\"backgroundImage\""}</comment>
   </data>
   <data name="InvalidIcon" xml:space="preserve">
     <value>Found a profile with an invalid "icon". Defaulting that profile to have no icon. Make sure that when setting an "icon", the value is a valid file path to an image.</value>
-    <comment>{Locked="icon"} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
     <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
-    <comment>{Locked="keys"}{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
@@ -219,7 +219,7 @@
   </data>
   <data name="CmdStartingDirArgDesc" xml:space="preserve">
     <value>Open in the given directory instead of the profile's set "startingDirectory"</value>
-    <comment>{Locked="startingDirectory"}</comment>
+    <comment>{Locked="\"startingDirectory\""}</comment>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
