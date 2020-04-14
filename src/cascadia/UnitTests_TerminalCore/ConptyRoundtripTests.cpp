@@ -2368,14 +2368,14 @@ void ConptyRoundtripTests::ExactWrapResize()
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:dx", L"{0, 1, 10}")
-        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5}")
+        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{1, 2, 4}")
     END_TEST_METHOD_PROPERTIES();
 
     constexpr int MoveCursorWithCUP = 0;
     constexpr int MoveCursorWithCR_LF = 1;
     constexpr int MoveCursorWithLF_CR = 2;
     constexpr int MoveCursorWithVPR_CR = 3;
-    constexpr int MoveCursorWithCUB_NL = 4;
+    constexpr int MoveCursorWithCUB_LF = 4;
     constexpr int MoveCursorWithCUD_CR = 5;
 
     INIT_TEST_PROPERTY(int, dx, L"Controls how much we increase the width by");
@@ -2435,12 +2435,13 @@ void ConptyRoundtripTests::ExactWrapResize()
     // about the \r\n case, because that's how apps usually move the cursor to
     // the next line, but these are all different ways an application could move
     // the cursor to the second line.
+    //
+    // Unlike BreakLinesOnCursorMovement, we're only testing the cases where a
+    // cursor movement actaully broke the line. This test would be much too
+    // complicated if we had to try and check the reflowed contents of wrapped
+    // lines.
 
     // Vim uses CUP to position the cursor on the first cell of each row, every row.
-    if (cursorMovementMode == MoveCursorWithCUP)
-    {
-        hostSm.ProcessString(L"\x1b[2;1H");
-    }
     // As an additional test, try breaking lines manually with \r\n
     else if (cursorMovementMode == MoveCursorWithCR_LF)
     {
@@ -2451,23 +2452,11 @@ void ConptyRoundtripTests::ExactWrapResize()
     {
         hostSm.ProcessString(L"\n\r");
     }
-    // As an additional test, move the cursor down with VPR, then to the start of the line with CR
-    else if (cursorMovementMode == MoveCursorWithVPR_CR)
-    {
-        hostSm.ProcessString(L"\x1b[1e");
-        hostSm.ProcessString(L"\r");
-    }
     // As an additional test, move the cursor back with CUB, then down with LF
-    else if (cursorMovementMode == MoveCursorWithCUB_NL)
+    else if (cursorMovementMode == MoveCursorWithCUB_LF)
     {
         hostSm.ProcessString(L"\x1b[80D");
         hostSm.ProcessString(L"\n");
-    }
-    // As an additional test, move the cursor down with CUD, then to the start of the line with CR
-    else if (cursorMovementMode == MoveCursorWithCUD_CR)
-    {
-        hostSm.ProcessString(L"\x1b[B");
-        hostSm.ProcessString(L"\r");
     }
 
     // Print a second line of 'Y's. This is important, GH#3088 won't repro if
