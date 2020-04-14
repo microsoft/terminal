@@ -273,7 +273,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
             _runs.reset(); // reset cached runs on any non-const method
 
-            til::at(_bits, _rc.index_of(pt)) = true;
+            _bits.set(_rc.index_of(pt));
 
             _dirty |= til::rectangle{ pt };
         }
@@ -283,9 +283,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
             _runs.reset(); // reset cached runs on any non-const method
 
-            for (const auto pt : rc)
+            for (auto row = rc.top(); row < rc.bottom(); ++row)
             {
-                til::at(_bits, _rc.index_of(pt)) = true;
+                _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
             }
 
             _dirty |= rc;
@@ -376,6 +376,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool all() const noexcept
         {
             return _dirty == _rc;
+        }
+
+        constexpr til::size size() const noexcept
+        {
+            return _sz;
         }
 
         std::wstring to_string() const

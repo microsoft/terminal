@@ -958,6 +958,7 @@ ggggggg
 gh
 github
 githubusercontent
+gitlab
 gle
 globals
 gmail
@@ -986,6 +987,7 @@ GWL
 GWLP
 gwsz
 HABCDEF
+hackathon
 halfwidth
 HALTCOND
 HANGEUL

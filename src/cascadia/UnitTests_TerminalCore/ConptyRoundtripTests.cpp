@@ -2194,7 +2194,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
 void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5}")
+        TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5, 6}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int MoveCursorWithCUP = 0;
     constexpr int MoveCursorWithCR_LF = 1;
@@ -2202,13 +2202,13 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     constexpr int MoveCursorWithVPR_CR = 3;
     constexpr int MoveCursorWithCUB_NL = 4;
     constexpr int MoveCursorWithCUD_CR = 5;
+    constexpr int MoveCursorWithNothing = 6;
     INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP, newline/carriage-return, or some other VT sequence");
 
     Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
-                 L" ends of blank lines, not EL. This test ensures that conhost"
-                 L" properly treats those lines as _not actually wrapped_,"
-                 L" because if we leave them \"wrapped\", conpty won't newline"
-                 L" in between them.");
+                 L" ends of blank lines, not EL. This test ensures we emit text"
+                 L" from conpty such that the terminal re-creates the state of"
+                 L" the host, which includes wrapped lines of lots of spaces.");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -2221,8 +2221,14 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
     _flushFirstFrame();
 
-    auto verifyBuffer = [](const TextBuffer& tb,
-                           const til::rectangle viewport) {
+    // Any of the cursor movements that use a LF will actaully hard break the
+    // line - everything else will leave it marked as wrapped.
+    const bool expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
+                                 (cursorMovementMode == MoveCursorWithCR_LF) ||
+                                 (cursorMovementMode == MoveCursorWithCUB_NL);
+
+    auto verifyBuffer = [&](const TextBuffer& tb,
+                            const til::rectangle viewport) {
         const auto lastRow = viewport.bottom<short>() - 1;
         const til::point expectedCursor{ 5, lastRow };
         VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
@@ -2230,7 +2236,10 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
         for (auto y = viewport.top<short>(); y < lastRow; y++)
         {
-            VERIFY_IS_FALSE(tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
+            // We're using CUP to move onto the status line _always_, so the
+            // second-last row will always be marked as wrapped.
+            const auto rowWrapped = (!expectHardBreak) || (y == lastRow - 1);
+            VERIFY_ARE_EQUAL(rowWrapped, tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
             TestUtils::VerifyExpectedString(tb, L"~    ", til::point{ 0, y });
         }
 
@@ -2321,6 +2330,12 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
                 hostSm.ProcessString(L"\x1b[B");
                 hostSm.ProcessString(L"\r");
             }
+        }
+        // Win32 vim.exe will simply do _nothing_ in this scenario. It'll just
+        // print the lines one after the other, without moving the cursor,
+        // relying on us auto moving to the following line.
+        else if (cursorMovementMode == MoveCursorWithNothing)
+        {
         }
 
         // IMPORTANT! The way vim writes these blank lines is as '~' followed by
