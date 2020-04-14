@@ -11,6 +11,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 static constexpr auto maxRetriesForRenderEngine = 3;
+// The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
+static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -88,7 +90,7 @@ Renderer::~Renderer()
                 }
                 // Add a bit of backoff.
                 // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-                Sleep(150 * (maxRetriesForRenderEngine - tries));
+                Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
                 continue;
             }
             LOG_IF_FAILED(hr);
