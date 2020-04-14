@@ -164,4 +164,10 @@
   <data name="SearchBox_Close.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close Search Box</value>
   </data>
+  <data name="TermControl_RendererFailedTextBlock.Text" xml:space="preserve">
+    <value>This terminal has encountered an issue with the graphics driver and it could not recover in time. It has been suspended.</value>
+  </data>
+  <data name="TermControl_RendererRetryButton.Content" xml:space="preserve">
+    <value>Resume</value>
+  </data>
 </root>
