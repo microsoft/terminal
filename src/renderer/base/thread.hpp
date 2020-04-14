@@ -30,6 +30,7 @@ namespace Microsoft::Console::Render
         void NotifyPaint() override;
 
         void EnablePainting() override;
+        void DisablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
     private:

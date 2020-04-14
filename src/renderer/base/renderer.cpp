@@ -11,6 +11,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 static constexpr auto maxRetriesForRenderEngine = 3;
+// The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
+static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -78,8 +80,20 @@ Renderer::~Renderer()
             {
                 if (--tries == 0)
                 {
-                    FAIL_FAST_HR_MSG(E_UNEXPECTED, "A rendering engine required too many retries.");
+                    // Stop trying.
+                    _pThread->DisablePainting();
+                    if (_pfnRendererEnteredErrorState)
+                    {
+                        _pfnRendererEnteredErrorState();
+                    }
+                    // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+                    // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+                    // abort applications that host us.
+                    return S_FALSE;
                 }
+                // Add a bit of backoff.
+                // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+                Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
                 continue;
             }
             LOG_IF_FAILED(hr);
@@ -1076,4 +1090,24 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
     _rgpEngines.push_back(pEngine);
+}
+
+// Method Description:
+// - Registers a callback that will be called when this renderer gives up.
+//   An application consuming a renderer can use this to display auxiliary Retry UI
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
+{
+    _pfnRendererEnteredErrorState = std::move(pfn);
+}
+
+// Method Description:
+// - Attempts to restart the renderer.
+void Renderer::ResetErrorStateAndResume()
+{
+    // because we're not stateful (we could be in the future), all we want to do is reenable painting.
+    EnablePainting();
 }

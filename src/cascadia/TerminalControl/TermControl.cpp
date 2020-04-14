@@ -534,6 +534,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
             ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
+            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+                if (auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_RendererEnteredErrorState();
+                }
+            });
+
             THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
             // Set up the DX Engine
@@ -2509,6 +2516,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsContentVisible(false);
         // Sets if the glyph is visible
         e.DragUIOverride().IsGlyphVisible(false);
+    }
+
+    // Method Description:
+    // - Produces the error dialog that notifies the user that rendering cannot proceed.
+    winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
+    {
+        auto strongThis{ get_strong() };
+        co_await Dispatcher(); // pop up onto the UI thread
+
+        if (auto loadedUiElement{ FindName(L"RendererFailedNotice") })
+        {
+            if (auto uiElement{ loadedUiElement.try_as<::winrt::Windows::UI::Xaml::UIElement>() })
+            {
+                uiElement.Visibility(Visibility::Visible);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Responds to the Click event on the button that will re-enable the renderer.
+    void TermControl::_RenderRetryButton_Click(IInspectable const& /*sender*/, IInspectable const& /*args*/)
+    {
+        // It's already loaded if we get here, so just hide it.
+        RendererFailedNotice().Visibility(Visibility::Collapsed);
+        _renderer->ResetErrorStateAndResume();
     }
 
     // -------------------------------- WinRT Events ---------------------------------
