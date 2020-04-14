@@ -86,6 +86,9 @@ Renderer::~Renderer()
                     {
                         _pfnRendererEnteredErrorState();
                     }
+                    // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+                    // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+                    // abort applications that host us.
                     return S_FALSE;
                 }
                 // Add a bit of backoff.
