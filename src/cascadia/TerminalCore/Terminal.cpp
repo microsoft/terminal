@@ -192,7 +192,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
     _buffer->GetCursor().StartDeferDrawing();
-    auto endDefer = wil::scope_exit([&] { _buffer->GetCursor().EndDeferDrawing(); });
+    auto endDefer = wil::scope_exit([&]() noexcept { _buffer->GetCursor().EndDeferDrawing(); });
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;

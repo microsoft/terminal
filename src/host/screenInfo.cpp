@@ -1405,7 +1405,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     newTextBuffer->GetCursor().StartDeferDrawing();
     _textBuffer->GetCursor().StartDeferDrawing();
-    auto endDefer = wil::scope_exit([&] { _textBuffer->GetCursor().EndDeferDrawing(); });
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
 
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
