@@ -323,7 +323,6 @@ codepage
 codepoint
 COINIT
 colo
-COLOREREF
 colorizing
 colororacle
 colorref
