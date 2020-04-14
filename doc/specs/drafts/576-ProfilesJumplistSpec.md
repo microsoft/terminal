@@ -24,7 +24,7 @@ The inspiration is to be able to quickly open the terminal with one of the confi
 ## Solution Design
 
 ### Overview
-The jumplist has to be created/modified during the lifecycle of the application. The following is an outline of the steps to be performed (more details below)
+The jumplist has to be created/modified during the life-cycle of the application. The following is an outline of the steps to be performed (more details below)
 1. Load settings / profiles
 2. Create the jumplist with the initial profiles
 3. Maintain sync between the jumplist and profiles throughout the life of the application
@@ -70,14 +70,14 @@ When specifying the icon to use in the `IShellLink` object, it does not appear t
 
 | Property Key (Format ID\Property ID)     | Description                                  | Example Value                                                      |
 | ---------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------ |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\28  | App User Model DestList Provided Description |                                                                    |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\27  | App User Model DestList Provided Title       | Windows PowerShell                                                 |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\30  | App User Model DestList Provided Group Name  | Profiles                                                           |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\29  | App User Model DestList Logo Uri             | ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\5   | App User Model ID                            | WindowsTerminalDev_8wekyb3d8bbwe!App                               |
-| 9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\20  | App User Model Activation Context            | {61c54bbd-c2c6-5271-96e7-009a87ff44bf}                             |
-| 436f2667-14e2-4feb-b30a-146c53b5b674\100 | Link Arguments                               | {61c54bbd-c2c6-5271-96e7-009a87ff44bf}                             |
-| f29f85e0-4ff9-1068-ab91-08002b27b3d9\2   | (Description not available)                  | Windows PowerShell                                                 |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\28  | App User Model DestList Provided Description |                                                                    |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\27  | App User Model DestList Provided Title       | Windows PowerShell                                                 |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\30  | App User Model DestList Provided Group Name  | Profiles                                                           |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\29  | App User Model DestList Logo Uri             | ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\5   | App User Model ID                            | WindowsTerminalDev_8wekyb3d8bbwe!App                               |
+| {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}\20  | App User Model Activation Context            | {61c54bbd-c2c6-5271-96e7-009a87ff44bf}                             |
+| {436F2667-14E2-4FEB-B30A-146C53B5B674}\100 | Link Arguments                               | {61c54bbd-c2c6-5271-96e7-009a87ff44bf}                             |
+| {F29F85E0-4FF9-1068-AB91-08002B27B3D9}\2   | (Description not available)                  | Windows PowerShell                                                 |
 
 If we look at the property key `9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\29`, it specifies the uri for the icon and supports the `ms-appx://` scheme. So for icon support we can add that property key when creating the `IShellLink`. Also note that with this approach, it needs the `file://` uri scheme in the path for custom icons.
 
