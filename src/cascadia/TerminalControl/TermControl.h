@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ResetFontSize();
 
         winrt::fire_and_forget SwapChainChanged();
+        winrt::fire_and_forget _RendererEnteredErrorState();
+        void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
 
         void CreateSearchBoxControl();
 
