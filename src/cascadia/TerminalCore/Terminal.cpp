@@ -220,10 +220,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         oldRows.visibleViewportTop = newVisibleTop;
 
         const std::optional<short> oldViewStart{ oldViewportTop };
-        const HRESULT reflowHR = TextBuffer::Reflow(*_buffer.get(),
-                                                    *newTextBuffer.get(),
-                                                    _mutableViewport,
-                                                    { oldRows });
+        RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
+                                            *newTextBuffer.get(),
+                                            _mutableViewport,
+                                            { oldRows }));
 
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
