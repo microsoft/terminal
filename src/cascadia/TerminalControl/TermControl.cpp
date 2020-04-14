@@ -599,6 +599,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 break;
             }
 
+            // GH#5098: Inform the engine of the opacity of the default text background.
+            if (_settings.UseAcrylic())
+            {
+                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            }
+
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
