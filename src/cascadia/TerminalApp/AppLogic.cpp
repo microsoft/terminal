@@ -339,12 +339,14 @@ namespace winrt::TerminalApp::implementation
         const auto errorLabel = GetLibraryResourceString(contentKey);
         errorRun.Text(errorLabel);
         warningsTextBlock.Inlines().Append(errorRun);
+        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
 
         if (FAILED(settingsLoadedResult))
         {
             if (!_settingsLoadExceptionText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
 
@@ -352,6 +354,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
         const auto usingDefaultsText = RS_(L"UsingDefaultSettingsText");
         usingDefaultsRun.Text(usingDefaultsText);
+        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
         warningsTextBlock.Inlines().Append(usingDefaultsRun);
 
         Controls::ContentDialog dialog;
@@ -388,6 +391,7 @@ namespace winrt::TerminalApp::implementation
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
 

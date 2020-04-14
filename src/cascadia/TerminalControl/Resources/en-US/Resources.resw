@@ -163,6 +163,7 @@
   </data>
   <data name="SearchBox_Close.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close Search Box</value>
+    <comment>The explanation of the search box close button used by Narrator and other screen readers.</comment>
   </data>
   <data name="TermControl_RendererFailedTextBlock.Text" xml:space="preserve">
     <value>This terminal has encountered an issue with the graphics driver and it could not recover in time. It has been suspended.</value>
