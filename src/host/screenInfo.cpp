@@ -1668,7 +1668,7 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     // wrapped when we print the last cell of the row, not the first cell of the
     // subsequent row (the row the first line wrapped onto).
     //
-    // Logically, we thought that manaully breaking lines when we move the
+    // Logically, we thought that manually breaking lines when we move the
     // cursor was a good idea. We however, did not have the time to fully
     // validate that this was the correct answer, and a simpler solution for the
     // bug on hand was found. Furthermore, we thought it would be a more

@@ -2198,7 +2198,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     constexpr int MoveCursorWithCR_LF = 1;
     constexpr int MoveCursorWithLF_CR = 2;
     constexpr int MoveCursorWithVPR_CR = 3;
-    constexpr int MoveCursorWithCUB_NL = 4;
+    constexpr int MoveCursorWithCUB_LF = 4;
     constexpr int MoveCursorWithCUD_CR = 5;
     constexpr int MoveCursorWithNothing = 6;
     INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP, newline/carriage-return, or some other VT sequence");
@@ -2219,11 +2219,11 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
     _flushFirstFrame();
 
-    // Any of the cursor movements that use a LF will actaully hard break the
+    // Any of the cursor movements that use a LF will actually hard break the
     // line - everything else will leave it marked as wrapped.
     const bool expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
                                  (cursorMovementMode == MoveCursorWithCR_LF) ||
-                                 (cursorMovementMode == MoveCursorWithCUB_NL);
+                                 (cursorMovementMode == MoveCursorWithCUB_LF);
 
     auto verifyBuffer = [&](const TextBuffer& tb,
                             const til::rectangle viewport) {
@@ -2310,7 +2310,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
             }
         }
         // As an additional test, move the cursor back with CUB, then down with LF
-        else if (cursorMovementMode == MoveCursorWithCUB_NL)
+        else if (cursorMovementMode == MoveCursorWithCUB_LF)
         {
             // Don't need to newline on the 0'th row
             if (y > 0)
