@@ -837,6 +837,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+fmtlib
 FOLDERID
 FONTCHANGE
 fontdlg
