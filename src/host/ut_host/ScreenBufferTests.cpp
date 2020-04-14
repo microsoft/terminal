@@ -210,6 +210,8 @@ class ScreenBufferTests
     TEST_METHOD(ScreenAlignmentPattern);
 
     TEST_METHOD(TestCursorIsOn);
+
+    TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -5869,4 +5871,51 @@ void ScreenBufferTests::TestCursorIsOn()
     VERIFY_IS_TRUE(cursor.IsOn());
     VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
     VERIFY_IS_FALSE(cursor.IsVisible());
+}
+
+void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    si.UpdateBottom();
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the initial cursor position on that virtual bottom line");
+    const auto initialCursorPos = COORD{ 0, initialVirtualBottom };
+    cursor.SetPosition(initialCursorPos);
+    VERIFY_ARE_EQUAL(initialCursorPos, cursor.GetPosition());
+
+    Log::Comment(L"Pan down so the initial viewport has the cursor in the middle");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Top() + si.GetViewport().Height() / 2 };
+    gci.SetTerminalScrolling(false);
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(false, initialOrigin, false));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Now write several lines of content using WriteCharsLegacy");
+    const auto content = L"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n";
+    auto numBytes = wcslen(content) * sizeof(wchar_t);
+    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, content, content, content, &numBytes, nullptr, 0, 0, nullptr));
+
+    Log::Comment(L"Confirm that the cursor position has moved down 10 lines");
+    const auto newCursorPos = COORD{ initialCursorPos.X, initialCursorPos.Y + 10 };
+    VERIFY_ARE_EQUAL(newCursorPos, cursor.GetPosition());
+
+    Log::Comment(L"Confirm that the virtual bottom matches that new cursor position");
+    const auto newVirtualBottom = newCursorPos.Y;
+    VERIFY_ARE_EQUAL(newVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"The viewport itself should not have changed at this point");
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"But after MoveToBottom, the viewport should align with the new virtual bottom");
+    si.MoveToBottom();
+    VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
 }
