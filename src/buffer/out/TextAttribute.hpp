@@ -107,8 +107,6 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    void SetFromLegacy(const WORD wLegacy) noexcept;
-
     void SetLegacyAttributes(const WORD attrs,
                              const bool setForeground,
                              const bool setBackground,
