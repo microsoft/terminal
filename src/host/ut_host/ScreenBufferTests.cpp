@@ -139,8 +139,8 @@ class ScreenBufferTests
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
 
     TEST_METHOD(TestAltBufferCursorState);
-
     TEST_METHOD(TestAltBufferVtDispatching);
+    TEST_METHOD(TestAltBufferRIS);
 
     TEST_METHOD(SetDefaultsIndividuallyBothDefault);
     TEST_METHOD(SetDefaultsTogether);
@@ -2144,6 +2144,27 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         const auto altAttrA = altAttrs[altCursor.GetPosition().X - 1];
         VERIFY_ARE_EQUAL(expectedRgb, altAttrA);
     }
+}
+
+void ScreenBufferTests::TestAltBufferRIS()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Initially in main buffer");
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+
+    Log::Comment(L"Switch to alt buffer");
+    stateMachine.ProcessString(L"\x1b[?1049h");
+    VERIFY_IS_TRUE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+
+    Log::Comment(L"RIS returns to main buffer");
+    stateMachine.ProcessString(L"\033c");
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
 }
 
 void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()

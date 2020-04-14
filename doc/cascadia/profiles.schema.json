@@ -131,10 +131,10 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "copy" },
-            "trimWhitespace": {
+            "singleLine": {
               "type": "boolean",
-              "default": true,
-              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
+              "default": false,
+              "description": "If true, newlines are removed and whitespace is maintained. If false, whitespace is removed and newlines are maintained."
             }
           }
         }
@@ -215,6 +215,10 @@
               "$ref": "#/definitions/SplitState",
               "default": "auto",
               "description": "The orientation to split the pane in, either vertical (think [|]), horizontal (think [-]), or auto (splits pane based on remaining space)"
+            },
+            "splitMode": {
+              "default": "duplicate",
+              "description": "Control how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
             }
           }
         }
@@ -273,6 +277,11 @@
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
           "type": "boolean"
         },
+        "copyFormatting": {
+          "default": false,
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
+          "type": "boolean"
+        },
         "defaultProfile": {
           "$ref": "#/definitions/ProfileGuid",
           "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value."
@@ -318,7 +327,7 @@
           },
           "type": "array"
         },
-        "requestedTheme": {
+        "theme": {
           "default": "system",
           "description": "Sets the theme of the application.",
           "enum": [
@@ -397,7 +406,7 @@
         },
         "backgroundImage": {
           "description": "Sets the file location of the Image to draw over the window background.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "backgroundImageAlignment": {
           "default": "center",
@@ -551,7 +560,7 @@
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
           "maximum": 100,
           "minimum": 25,
-          "type": "integer"
+          "type": ["integer","null"]
         },
         "cursorShape": {
           "default": "bar",
@@ -603,7 +612,7 @@
         },
         "icon": {
           "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
@@ -636,7 +645,7 @@
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
@@ -648,7 +657,7 @@
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "useAcrylic": {
           "default": false,
@@ -779,37 +788,15 @@
       "type": "array"
     }
   },
-  "oneOf": [
+  "allOf": [
+    { "$ref": "#/definitions/Globals" },
     {
-      "allOf": [
-        { "$ref": "#/definitions/Globals" },
-        {
-          "additionalItems": true,
-          "properties": {
-            "profiles": {
-              "oneOf": [
-              { "$ref": "#/definitions/ProfileList" },
-              { "$ref": "#/definitions/ProfilesObject" }
-              ]
-            },
-            "schemes": { "$ref": "#/definitions/SchemeList" }
-          },
-          "required": [
-            "profiles",
-            "schemes",
-            "defaultProfile"
-          ]
-        }
-      ]
-    },
-    {
-      "additionalItems": false,
+      "additionalItems": true,
       "properties": {
-        "globals": { "$ref": "#/definitions/Globals" },
         "profiles": {
           "oneOf": [
-          { "$ref": "#/definitions/ProfileList" },
-          { "$ref": "#/definitions/ProfilesObject" }
+            { "$ref": "#/definitions/ProfileList" },
+            { "$ref": "#/definitions/ProfilesObject" }
           ]
         },
         "schemes": { "$ref": "#/definitions/SchemeList" }
@@ -817,7 +804,7 @@
       "required": [
         "profiles",
         "schemes",
-        "globals"
+        "defaultProfile"
       ]
     }
   ]

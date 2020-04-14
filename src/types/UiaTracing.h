@@ -32,8 +32,8 @@ namespace Microsoft::Console::Types
         class TextRange final
         {
         public:
-            static void Constructor(const UiaTextRangeBase& result) noexcept;
-            static void Clone(const UiaTextRangeBase& base, const UiaTextRangeBase& result) noexcept;
+            static void Constructor(UiaTextRangeBase& result) noexcept;
+            static void Clone(const UiaTextRangeBase& base, UiaTextRangeBase& result) noexcept;
             static void Compare(const UiaTextRangeBase& base, const UiaTextRangeBase& other, bool result) noexcept;
             static void CompareEndpoints(const UiaTextRangeBase& base, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result) noexcept;
             static void ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& result) noexcept;
@@ -56,7 +56,7 @@ namespace Microsoft::Console::Types
         class TextProvider final
         {
         public:
-            static void Constructor(const ScreenInfoUiaProviderBase& result) noexcept;
+            static void Constructor(ScreenInfoUiaProviderBase& result) noexcept;
             static void get_ProviderOptions(const ScreenInfoUiaProviderBase& base, ProviderOptions options) noexcept;
             static void GetPatternProvider(const ScreenInfoUiaProviderBase& base, PATTERNID patternId) noexcept;
             static void GetPropertyValue(const ScreenInfoUiaProviderBase& base, PROPERTYID propertyId) noexcept;
@@ -100,5 +100,12 @@ namespace Microsoft::Console::Types
         static inline std::wstring _getValue(const UiaTextRangeBase& utr) noexcept;
         static inline std::wstring _getValue(const TextPatternRangeEndpoint endpoint) noexcept;
         static inline std::wstring _getValue(const TextUnit unit) noexcept;
+
+        // these are used to assign IDs to new UiaTextRanges and ScreenInfoUiaProviders respectively
+        static IdType _utrId;
+        static IdType _siupId;
+
+        static void _assignId(UiaTextRangeBase& utr) noexcept;
+        static void _assignId(ScreenInfoUiaProviderBase& siup) noexcept;
     };
 }

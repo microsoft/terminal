@@ -74,19 +74,21 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     {
         resultPtr->_ParseJsonString(fileData.value(), false);
     }
-    else
+
+    // Load profiles from dynamic profile generators. _userSettings should be
+    // created by now, because we're going to check in there for any generators
+    // that should be disabled (if the user had any settings.)
+    resultPtr->_LoadDynamicProfiles();
+
+    if (!fileHasData)
     {
         // We didn't find the user settings. We'll need to create a file
         // to use as the user defaults.
         // For now, just parse our user settings template as their user settings.
-        resultPtr->_ParseJsonString(UserSettingsJson, false);
+        auto userSettings{ resultPtr->_ApplyFirstRunChangesToSettingsTemplate(UserSettingsJson) };
+        resultPtr->_ParseJsonString(userSettings, false);
         needToWriteFile = true;
     }
-
-    // Load profiles from dynamic profile generators. _userSettings should be
-    // created by now, because we're going to check in there for any generators
-    // that should be disabled.
-    resultPtr->_LoadDynamicProfiles();
 
     // See microsoft/terminal#2325: find the defaultSettings from the user's
     // settings. Layer those settings upon all the existing profiles we have
@@ -608,7 +610,6 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
     // If `profiles` was an object, then look for the `defaults` object
     // underneath it for the default profile settings.
     auto defaultSettings{ Json::Value::null };
-
     if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
     {
         if (profiles.isObject())
@@ -617,6 +618,8 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         }
     }
 
+    // cache and apply default profile settings
+    // from user settings file
     if (defaultSettings)
     {
         _userDefaultProfileSettings = defaultSettings;
@@ -902,5 +905,9 @@ const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& j
 //   given object
 const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const Json::Value& json)
 {
+    if (!json)
+    {
+        return Json::Value::nullSingleton();
+    }
     return json[JsonKey(DisabledProfileSourcesKey)];
 }

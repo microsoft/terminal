@@ -1778,6 +1778,17 @@ public:
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
     }
 
+    TEST_METHOD(DeviceStatus_OperatingStatusTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify good operating condition.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
+
+        _testGetSet->ValidateInputEvent(L"\x1b[0n");
+    }
+
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
     {
         Log::Comment(L"Starting test...");

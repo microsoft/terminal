@@ -105,7 +105,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // by prepending a cursor off.
         if (_lastCursorIsVisible)
         {
-            _buffer.insert(0, "\x1b[25l");
+            _buffer.insert(0, "\x1b[?25l");
             _lastCursorIsVisible = false;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
@@ -214,7 +214,35 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // _nextCursorIsVisible will still be false (from when we set it during
     // StartPaint)
     _nextCursorIsVisible = true;
-    return VtEngine::PaintCursor(options);
+
+    // If we did a delayed EOL wrap because we actually wrapped the line here,
+    // then don't PaintCursor. When we're at the EOL because we've wrapped, our
+    // internal _lastText thinks the cursor is on the cell just past the right
+    // of the viewport (ex { 120, 0 }). However, conhost thinks the cursor is
+    // actually on the last cell of the row. So it'll tell us to paint the
+    // cursor at { 119, 0 }. If we do that movement, then we'll break line
+    // wrapping.
+    // See GH#5113, GH#1245, GH#357
+    const auto nextCursorPosition = options.coordCursor;
+    // Only skip this paint when we think the cursor is in the cell
+    // immediately off the edge of the terminal, and the actual cursor is in
+    // the last cell of the row. We're in a deferred wrap, but the host
+    // thinks the cursor is actually in-frame.
+    // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
+    const bool cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
+    // If all three of these conditions are true, then:
+    //   * cursorIsInDeferredWrap: The cursor is in a position where the line
+    //     filled the last cell of the row, but the host tried to paint it in
+    //     the last cell anyways
+    //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
+    //     the wrap of a line.
+    // If they're all true, DON'T manually paint the cursor this frame.
+    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
+    {
+        return VtEngine::PaintCursor(options);
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -232,9 +260,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
-
+    const auto originalPos = _lastText;
     _trace.TraceMoveCursor(_lastText, coord);
-
+    bool performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -260,6 +288,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             if (previousLineWrapped)
             {
+                performedSoftWrap = true;
                 _trace.TraceWrapped();
                 hr = S_OK;
             }
@@ -318,10 +347,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _lastText = coord;
         }
     }
-    if (_lastText.Y != _lastViewport.ToOrigin().BottomInclusive())
-    {
-        _newBottomLine = false;
-    }
+
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
@@ -345,6 +371,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
 try
 {
+    _trace.TraceScrollFrame(_scrollDelta);
+
     if (_scrollDelta.x() != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
@@ -356,41 +384,92 @@ try
         return S_OK;
     }
 
-    const short dy = _scrollDelta.y<SHORT>();
+    const short dy = _scrollDelta.y<short>();
     const short absDy = static_cast<short>(abs(dy));
 
-    HRESULT hr = S_OK;
+    // Save the old wrap state here. We're going to clear it so that
+    // _MoveCursor will definitely move us to the right position. We'll
+    // restore the state afterwards.
+    const auto oldWrappedRow = _wrappedRow;
+    const auto oldDelayedEolWrap = _delayedEolWrap;
+    _delayedEolWrap = false;
+    _wrappedRow = std::nullopt;
+
     if (dy < 0)
     {
-        // Instead of deleting the first line (causing everything to move up)
-        // move to the bottom of the buffer, and newline.
-        //      That will cause everything to move up, by moving the viewport down.
-        // This will let remote conhosts scroll up to see history like normal.
-        const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        hr = _MoveCursor({ 0, bottom });
-        if (SUCCEEDED(hr))
-        {
-            std::string seq = std::string(absDy, '\n');
-            hr = _Write(seq);
-            // Mark that the bottom line is new, so we won't spend time with an
-            // ECH on it.
-            _newBottomLine = true;
-        }
-        // We don't need to _MoveCursor the cursor again, because it's still
-        //      at the bottom of the viewport.
+        // TODO GH#5228 - We could optimize this by only doing this newline work
+        // when there's more invalid than just the bottom line. If only the
+        // bottom line is invalid, then the next thing the Renderer is going to
+        // tell us to do is print the new line at the bottom of the viewport,
+        // and _MoveCursor will automatically give us the newline we want.
+        // When that's implemented, we'll probably want to make sure to add a
+        //   _lastText.Y += dy;
+        // statement here.
+
+        // Move the cursor to the bottom of the current viewport
+        const short bottom = _lastViewport.BottomInclusive();
+        RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
+        // Emit some number of newlines to create space in the buffer.
+        RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
     }
     else if (dy > 0)
     {
-        // Move to the top of the buffer, and insert some lines of text, to
-        //      cause the viewport contents to shift down.
-        hr = _MoveCursor({ 0, 0 });
-        if (SUCCEEDED(hr))
-        {
-            hr = _InsertLine(absDy);
-        }
+        // If we've scrolled _down_, then move the cursor to the top of the
+        // buffer, and insert some newlines using the InsertLines VT sequence
+        RETURN_IF_FAILED(_MoveCursor({ 0, 0 }));
+        RETURN_IF_FAILED(_InsertLine(absDy));
     }
 
-    return hr;
+    // Restore our wrap state.
+    _wrappedRow = oldWrappedRow;
+    _delayedEolWrap = oldDelayedEolWrap;
+
+    // Shift our internal tracker of the last text position according to how
+    // much we've scrolled. If we manually scroll the buffer right now, by
+    // moving the cursor to the bottom row of the viewport and emitting a
+    // newline, we'll cause any wrapped lines to get broken.
+    //
+    // Instead, we'll just update our internal tracker of where the buffer
+    // contents are. On this frame, we'll then still move the cursor correctly
+    // relative to the new frame contents. To do this, we'll shift our
+    // coordinates we're tracking, like the row that we wrapped on and the
+    // position we think we left the cursor.
+    //
+    // See GH#5113
+    _trace.TraceLastText(_lastText);
+    if (_wrappedRow.has_value())
+    {
+        _wrappedRow.value() += dy;
+        _trace.TraceSetWrapped(_wrappedRow.value());
+    }
+
+    if (_delayedEolWrap && _wrappedRow.has_value())
+    {
+        // If we wrapped the last line, and we're in the middle of painting it,
+        // then the newline we did above just manually broke the line. What
+        // we're doing here is a hack: we're going to manually re-invalidate the
+        // last character of the wrapped row. When the PaintBufferLine calls
+        // come back through, we'll paint this last character again, causing us
+        // to get into the wrapped state once again. This is the only way to
+        // ensure that if a line was wrapped, and we painted the first line in
+        // one frame, and the second line in another frame that included other
+        // changes _above_ the wrapped line, that we maintain the wrap state in
+        // the Terminal.
+        const til::rectangle lastCellOfWrappedRow{
+            til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
+            til::size{ 1, 1 }
+        };
+        _trace.TraceInvalidate(lastCellOfWrappedRow);
+        _invalidMap.set(lastCellOfWrappedRow);
+    }
+
+    // If the entire viewport was invalidated this frame, don't mark the bottom
+    // line as new. There are cases where this can cause visual artifacts - see
+    // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
+    const bool allInvalidated = _invalidMap.all();
+    _newBottomLine = !allInvalidated;
+
+    return S_OK;
 }
 CATCH_RETURN();
 
