@@ -1153,17 +1153,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Only a left click release when copy on select is active should perform a copy.
             // Right clicks and middle clicks should not need to do anything when released.
-            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
+            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-                // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-                // macro directly with a VirtualKeyModifiers
-                const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-
-                if (_selectionNeedsToBeCopied)
-                {
-                    CopySelectionToClipboard(shiftEnabled);
-                }
+                CopySelectionToClipboard();
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)

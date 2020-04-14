@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool collapseText);
+        bool CopySelectionToClipboard(bool collapseText = false);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
