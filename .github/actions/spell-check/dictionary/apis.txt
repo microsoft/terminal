@@ -1,2 +1,4 @@
+ICustom
+IObject
 LCID
 rfind
