@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Initialize the request
             http_request terminalRequest(L"POST");
-            terminalRequest.set_request_uri(L"terminals/" + _terminalID + L"/size?cols=" + std::to_wstring(columns) + L"&rows=" + std::to_wstring(rows) + L"&version=2019-01-01");
+            terminalRequest.set_request_uri(fmt::format(L"terminals/{}/size?cols={}&rows={}&version=2019-01-01", _terminalID, columns, rows));
             terminalRequest.set_body(json::value::null());
 
             // Send the request (don't care about the response)
@@ -757,7 +757,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize the request
         http_request commonRequest(L"POST");
         commonRequest.set_request_uri(L"common/oauth2/devicecode");
-        const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource;
+        const auto body{ fmt::format(L"client_id={}&resource={}", AzureClientID, _wantedResource) };
         commonRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and receive the response as a json value
@@ -779,7 +779,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_client pollingClient(_loginUri);
 
         // Continuously send a poll request until the user authenticates
-        const auto body = L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
+        const auto body{ fmt::format(L"grant_type=device_code&resource={}&client_id={}&code={}", _wantedResource, AzureClientID, deviceCode) };
         const auto requestUri = L"common/oauth2/token";
 
         // use a steady clock here so it's not impacted by local time discontinuities
@@ -849,7 +849,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize the request
         http_request refreshRequest(L"POST");
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
-        const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
+        const auto body{ fmt::format(L"client_id={}&resource={}&grant_type=refresh_token&refresh_token={}", AzureClientID, _wantedResource, _refreshToken) };
         refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and return the response as a json value
@@ -909,7 +909,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Initialize the request
         http_request terminalRequest(L"POST");
-        terminalRequest.set_request_uri(L"terminals?cols=" + std::to_wstring(_initialCols) + L"&rows=" + std::to_wstring(_initialRows) + L"&version=2019-01-01&shell=" + shellType);
+        terminalRequest.set_request_uri(fmt::format(L"terminals?cols={}&rows={}&version=2019-01-01&shell={}", _initialCols, _initialRows, shellType));
         // LOAD-BEARING. the API returns "'content-type' should be 'application/json' or 'multipart/form-data'"
         terminalRequest.set_body(json::value::null());
 
