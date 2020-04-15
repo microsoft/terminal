@@ -125,4 +125,67 @@ This creates a new Windows Terminal window with one tab, and 3 panes:
   and will use `wsl.exe` as the commandline (instead of the default profile's
   `commandline`).
 
+
+### Using multiple commands from PowerShell
+
+The Windows Terminal uses the semicolon character `;` as a delimiter for
+separating subcommands in the `wt` commandline. Unfortunately, `powershell` also
+uses `;` as a command separator. To work around this you can use the following
+tricks to help run multiple wt sub commands from powershell. In all the
+following examples, we'll be creating a new Terminal window with three panes -
+one running `cmd`, one with `powershell`, and a last one running `wsl`.
+
+#### Single quoted parameters (if you aren't calculating anything):
+In this example, we'll wrap all the parameters to `wt` in single quotes (`'`),
+and run `wt` with the `Start-Process` command:
+
+```PowerShell
+start wt 'new-tab "cmd"; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe'
+```
+
+#### Escaped quotes (if you need variables):
+
+If you'd like to pass a value contained in a variable to the `wt` commandline,
+istead use the following syntax:
+
+```PowerShell
+$ThirdPane = "wsl.exe"
+start wt "new-tab cmd; split-pane -p `"Windows PowerShell`" ; split-pane -H $ThirdPane"
+```
+
+Note the usage of  `` ` `` to escape the double-quotes (`"`) around "Windows
+Powershell" in the `-p` parameter to the `split-pane` sub-command.
+
+#### Not using `start`
+
+The astute reader will note that all the obove examples used `start` to launch the Terminal.
+
+In the following examples, we're going to not use `start` to run the
+commandline. Instead, we'll try two other methods of escaping the commandline:
+* Only escaping the semicolons so that `powershell` will ignore them and pass
+  them straight to `wt`.
+* Using `--%`, so powershell will treat the rest of the commandline as arguments
+  to the application.
+
+```PowerShell
+wt new-tab "cmd" `; split-pane -p "Windows PowerShell" `; split-pane -H wsl.exe
+```
+
+```Powershell
+wt --% new-tab cmd ; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe
+```
+
+In both these examples, the newly created Windows Terminal window will create
+the window by correctly parsing all the provided commandline arguments.
+
+However, these method are _not_ recommended currently, as Powershell will wait
+for the newly-created Terminal window to be closed before returning control to
+Powershell. By default, Powershell will always wait for Windows Store
+applications (like the Windows Terminal) to close before returning to the
+prompt. Note that this is different than the behavior of `cmd`, who will return
+to the prompt immediately. See
+[Powershell/PowerShell#9970](https://github.com/PowerShell/PowerShell/issues/9970)
+for more details on this bug.
+
+
 [#4023]: https://github.com/microsoft/terminal/pull/4023
