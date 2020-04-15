@@ -1403,6 +1403,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
+    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
+    newTextBuffer->GetCursor().StartDeferDrawing();
+    _textBuffer->GetCursor().StartDeferDrawing();
+    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
+
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
@@ -1668,7 +1674,7 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     // wrapped when we print the last cell of the row, not the first cell of the
     // subsequent row (the row the first line wrapped onto).
     //
-    // Logically, we thought that manaully breaking lines when we move the
+    // Logically, we thought that manually breaking lines when we move the
     // cursor was a good idea. We however, did not have the time to fully
     // validate that this was the correct answer, and a simpler solution for the
     // bug on hand was found. Furthermore, we thought it would be a more
@@ -1677,6 +1683,12 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     // work.
 
     cursor.SetPosition(Position);
+
+    // If the cursor has moved below the virtual bottom, the bottom should be updated.
+    if (Position.Y > _virtualBottom)
+    {
+        _virtualBottom = Position.Y;
+    }
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)

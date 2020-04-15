@@ -47,7 +47,7 @@ static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying in
 
 static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
 {
-    return wil::str_printf<std::wstring>(L"\x1b[%um%.*s\x1b[m", colorCode, gsl::narrow_cast<size_t>(text.size()), text.data());
+    return fmt::format(L"\x1b[{0}m{1}\x1b[m", colorCode, text);
 }
 
 // Takes N resource names, loads the first one as a format string, and then
@@ -57,12 +57,12 @@ static inline std::wstring _colorize(const unsigned int colorCode, const std::ws
 template<typename... Args>
 static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstring_view resourceKey, Args&&... args)
 {
-    return wil::str_printf<std::wstring>(GetLibraryResourceString(resourceKey).data(), (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)).data())...);
+    return fmt::format(std::wstring_view{ GetLibraryResourceString(resourceKey) }, (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
 }
 
 static inline std::wstring _formatTenantLine(int tenantNumber, const std::wstring_view tenantName, const std::wstring_view tenantID)
 {
-    return wil::str_printf<std::wstring>(RS_(L"AzureIthTenant").data(), _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)).data(), _colorize(USER_INFO_COLOR, tenantName).data(), tenantID.data());
+    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") }, _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)), _colorize(USER_INFO_COLOR, tenantName), tenantID);
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation

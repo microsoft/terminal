@@ -321,9 +321,9 @@ Codeflow
 codeofconduct
 codepage
 codepoint
+codeproject
 COINIT
 colo
-COLOREREF
 colorizing
 colororacle
 colorref
@@ -838,6 +838,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+fmtlib
 FOLDERID
 FONTCHANGE
 fontdlg

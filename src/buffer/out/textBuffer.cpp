@@ -1967,11 +1967,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
                            std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
 {
-    Cursor& oldCursor = oldBuffer.GetCursor();
+    const Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
-    // skip any drawing updates that might occur as we manipulate the new buffer
-    oldCursor.StartDeferDrawing();
-    newCursor.StartDeferDrawing();
 
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
@@ -2196,9 +2193,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);
     }
-
-    newCursor.EndDeferDrawing();
-    oldCursor.EndDeferDrawing();
 
     return hr;
 }
