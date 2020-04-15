@@ -241,6 +241,8 @@ HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
 
     auto lock = _terminal->LockForWriting();
 
+    _terminal->ClearSelection();
+
     RETURN_IF_FAILED(_renderEngine->SetWindowSize(windowSize));
 
     // Invalidate everything
@@ -521,6 +523,10 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    auto lock = publicTerminal->_terminal->LockForWriting();
+    publicTerminal->_terminal->ClearSelection();
+    publicTerminal->_renderer->TriggerRedrawAll();
 
     return publicTerminal->_terminal->UserResize(dimensions);
 }
