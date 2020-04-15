@@ -147,7 +147,7 @@ start wt 'new-tab "cmd"; split-pane -p "Windows PowerShell" ; split-pane -H wsl.
 #### Escaped quotes (if you need variables):
 
 If you'd like to pass a value contained in a variable to the `wt` commandline,
-istead use the following syntax:
+instead use the following syntax:
 
 ```PowerShell
 $ThirdPane = "wsl.exe"
@@ -159,7 +159,7 @@ Powershell" in the `-p` parameter to the `split-pane` sub-command.
 
 #### Not using `start`
 
-The astute reader will note that all the obove examples used `start` to launch the Terminal.
+The astute reader will note that all the above examples used `start` to launch the Terminal.
 
 In the following examples, we're going to not use `start` to run the
 commandline. Instead, we'll try two other methods of escaping the commandline:
