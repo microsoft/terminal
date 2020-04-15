@@ -11,6 +11,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
@@ -147,7 +148,7 @@ public:
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
     bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
@@ -171,7 +172,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorOn(const bool isOn) noexcept;
+    void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection

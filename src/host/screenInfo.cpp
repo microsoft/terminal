@@ -1403,6 +1403,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
+    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
+    newTextBuffer->GetCursor().StartDeferDrawing();
+    _textBuffer->GetCursor().StartDeferDrawing();
+    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
+
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
