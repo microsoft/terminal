@@ -797,6 +797,79 @@ class RectangleTests
         }
     }
 
+    TEST_METHOD(ScaleUpSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Multiply by size to scale from cells to pixels");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
+            const auto actual = start.scale_up(scale);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Multiply by size with width way too big.");
+        {
+            const til::size scale{ std::numeric_limits<ptrdiff_t>().max(), static_cast<ptrdiff_t>(7) };
+
+            auto fn = [&]() {
+                const auto actual = start.scale_up(scale);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"3.) Multiply by size with height way too big.");
+        {
+            const til::size scale{ static_cast<ptrdiff_t>(3), std::numeric_limits<ptrdiff_t>().max() };
+
+            auto fn = [&]() {
+                const auto actual = start.scale_up(scale);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(ScaleDownSize)
+    {
+        const til::rectangle start{ 10, 20, 29, 40 };
+
+        Log::Comment(L"0.) Division by size to scale from pixels to cells");
+        {
+            const til::size scale{ 3, 7 };
+
+            // Division is special. The top and left round down.
+            // The bottom and right round up. This is to ensure that the cells
+            // the smaller rectangle represents fully cover all the pixels
+            // of the larger rectangle.
+            // L: 10 / 3 = 3.333 --> round down --> 3
+            // T: 20 / 7 = 2.857 --> round down --> 2
+            // R: 29 / 3 = 9.667 --> round up ----> 10
+            // B: 40 / 7 = 5.714 --> round up ----> 6
+            const til::rectangle expected{ 3, 2, 10, 6 };
+            const auto actual = start.scale_down(scale);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(ScaleByFloat)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        const float scale = 1.45f;
+
+        // This is not a test of the various TilMath rounding methods
+        // so we're only checking one here.
+        // Expected here is written based on the "ceiling" outcome.
+        const til::rectangle expected{ 15, 29, 44, 58 };
+
+        const auto actual = start.scale(til::math::ceiling, scale);
+
+        VERIFY_ARE_EQUAL(actual, expected);
+    }
+
     TEST_METHOD(Top)
     {
         const til::rectangle rc{ 5, 10, 15, 20 };
@@ -1361,4 +1434,101 @@ class RectangleTests
     }
 
 #pragma endregion
+
+    template<typename T>
+    struct RectangleTypeWithLowercase
+    {
+        T left, top, right, bottom;
+    };
+    template<typename T>
+    struct RectangleTypeWithCapitalization
+    {
+        T Left, Top, Right, Bottom;
+    };
+    TEST_METHOD(CastFromFloatWithMathTypes)
+    {
+        RectangleTypeWithLowercase<float> lowerFloatIntegral{ 1.f, 2.f, 3.f, 4.f };
+        RectangleTypeWithLowercase<float> lowerFloat{ 1.6f, 2.4f, 3.2f, 4.8f };
+        RectangleTypeWithCapitalization<double> capitalDoubleIntegral{ 3., 4., 5., 6. };
+        RectangleTypeWithCapitalization<double> capitalDouble{ 3.6, 4.4, 5.7, 6.3 };
+        Log::Comment(L"0.) Ceiling");
+        {
+            {
+                til::rectangle converted{ til::math::ceiling, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 2, 3, 4, 5 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::ceiling, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 4, 5, 6, 7 }), converted);
+            }
+        }
+
+        Log::Comment(L"1.) Flooring");
+        {
+            {
+                til::rectangle converted{ til::math::flooring, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::flooring, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"2.) Rounding");
+        {
+            {
+                til::rectangle converted{ til::math::rounding, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 2, 2, 3, 5 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::rounding, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 4, 4, 6, 6 }), converted);
+            }
+        }
+
+        Log::Comment(L"3.) Truncating");
+        {
+            {
+                til::rectangle converted{ til::math::truncating, lowerFloatIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, lowerFloat };
+                VERIFY_ARE_EQUAL((til::rectangle{ 1, 2, 3, 4 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, capitalDoubleIntegral };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+            {
+                til::rectangle converted{ til::math::truncating, capitalDouble };
+                VERIFY_ARE_EQUAL((til::rectangle{ 3, 4, 5, 6 }), converted);
+            }
+        }
+    }
 };

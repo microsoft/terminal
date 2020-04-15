@@ -844,6 +844,14 @@ class BitmapTests
         VERIFY_IS_FALSE(bitmap.all());
     }
 
+    TEST_METHOD(Size)
+    {
+        til::size sz{ 5, 10 };
+        til::bitmap map{ sz };
+
+        VERIFY_ARE_EQUAL(sz, map.size());
+    }
+
     TEST_METHOD(Runs)
     {
         // This map --> Those runs

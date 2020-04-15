@@ -163,6 +163,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
+        template<typename TilMath>
+        point scale(TilMath, const float scale) const
+        {
+            struct
+            {
+                float x, y;
+            } pt;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _x).AssignIfValid(&pt.x));
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _y).AssignIfValid(&pt.y));
+
+            return til::point(TilMath(), pt);
+        }
+
         point operator/(const point& other) const
         {
             ptrdiff_t x;

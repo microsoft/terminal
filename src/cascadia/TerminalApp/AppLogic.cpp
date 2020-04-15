@@ -342,12 +342,14 @@ namespace winrt::TerminalApp::implementation
         const auto errorLabel = GetLibraryResourceString(contentKey);
         errorRun.Text(errorLabel);
         warningsTextBlock.Inlines().Append(errorRun);
+        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
 
         if (FAILED(settingsLoadedResult))
         {
             if (!_settingsLoadExceptionText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
 
@@ -355,6 +357,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
         const auto usingDefaultsText = RS_(L"UsingDefaultSettingsText");
         usingDefaultsRun.Text(usingDefaultsText);
+        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
         warningsTextBlock.Inlines().Append(usingDefaultsRun);
 
         Controls::ContentDialog dialog;
@@ -391,6 +394,7 @@ namespace winrt::TerminalApp::implementation
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
 
@@ -946,6 +950,39 @@ namespace winrt::TerminalApp::implementation
             const auto version{ package.Id().Version() };
             winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
             return formatted;
+        }
+        CATCH_LOG();
+
+        // Try to get the version the old-fashioned way
+        try
+        {
+            struct LocalizationInfo
+            {
+                WORD language, codepage;
+            };
+            // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
+            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+            auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
+            THROW_LAST_ERROR_IF(size == 0);
+            auto versionBuffer{ std::make_unique<std::byte[]>(size) };
+            THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.c_str(), 0, size, versionBuffer.get()));
+
+            // Get the list of Version localizations
+            LocalizationInfo* pVarLocalization{ nullptr };
+            UINT varLen{ 0 };
+            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pVarLocalization), &varLen));
+            THROW_HR_IF(E_UNEXPECTED, varLen < sizeof(*pVarLocalization)); // there must be at least one translation
+
+            // Get the product version from the localized version compartment
+            // We're using String/ProductVersion here because our build pipeline puts more rich information in it (like the branch name)
+            // than in the unlocalized numeric version fields.
+            WCHAR* pProductVersion{ nullptr };
+            UINT versionLen{ 0 };
+            const auto localizedVersionName{ wil::str_printf<std::wstring>(L"\\StringFileInfo\\%04x%04x\\ProductVersion",
+                                                                           pVarLocalization->language ? pVarLocalization->language : 0x0409, // well-known en-US LCID
+                                                                           pVarLocalization->codepage) };
+            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), localizedVersionName.c_str(), reinterpret_cast<void**>(&pProductVersion), &versionLen));
+            return { pProductVersion };
         }
         CATCH_LOG();
 

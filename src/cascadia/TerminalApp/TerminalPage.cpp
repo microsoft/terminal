@@ -1310,18 +1310,21 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        // copy html to dataPack
-        const auto htmlData = copiedData.Html();
-        if (!htmlData.empty())
+        if (_settings->GlobalSettings().GetCopyFormatting())
         {
-            dataPack.SetHtmlFormat(htmlData);
-        }
+            // copy html to dataPack
+            const auto htmlData = copiedData.Html();
+            if (!htmlData.empty())
+            {
+                dataPack.SetHtmlFormat(htmlData);
+            }
 
-        // copy rtf data to dataPack
-        const auto rtfData = copiedData.Rtf();
-        if (!rtfData.empty())
-        {
-            dataPack.SetRtf(rtfData);
+            // copy rtf data to dataPack
+            const auto rtfData = copiedData.Rtf();
+            if (!rtfData.empty())
+            {
+                dataPack.SetRtf(rtfData);
+            }
         }
 
         try

@@ -86,6 +86,9 @@
 // Variable-size compressed-storage header-only bit flag storage library.
 #include <dynamic_bitset.hpp>
 
+// {fmt}, a C++20-compatible formatting library
+#include <fmt/format.h>
+
 // SAL
 #include <sal.h>
 

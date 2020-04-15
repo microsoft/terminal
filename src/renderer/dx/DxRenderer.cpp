@@ -65,9 +65,10 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _isInvalidUsed{ false },
-    _invalidRect{ 0 },
-    _invalidScroll{ 0 },
+    _invalidateFullRows{ true },
+    _invalidMap{},
+    _invalidScroll{},
+    _firstFrame{ true },
     _presentParams{ 0 },
     _presentReady{ false },
     _presentScroll{ 0 },
@@ -75,16 +76,16 @@ DxEngine::DxEngine() :
     _presentOffset{ 0 },
     _isEnabled{ false },
     _isPainting{ false },
-    _displaySizePixels{ 0 },
+    _displaySizePixels{},
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
-    _glyphCell{ 0 },
+    _glyphCell{},
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
-    _sizeTarget{ 0 },
+    _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
@@ -238,8 +239,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     // Setup the viewport.
     D3D11_VIEWPORT vp;
-    vp.Width = static_cast<FLOAT>(_displaySizePixels.cx);
-    vp.Height = static_cast<FLOAT>(_displaySizePixels.cy);
+    vp.Width = _displaySizePixels.width<float>();
+    vp.Height = _displaySizePixels.height<float>();
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = 0;
@@ -349,6 +350,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 // Return Value:
 // - Could be any DirectX/D3D/D2D/DXGI/DWrite error or memory issue.
 [[nodiscard]] HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
+try
 {
     if (_haveDeviceResources)
     {
@@ -420,75 +422,74 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
-        try
+        switch (_chainMode)
         {
-            switch (_chainMode)
+        case SwapChainMode::ForHwnd:
+        {
+            // use the HWND's dimensions for the swap chain dimensions.
+            RECT rect = { 0 };
+            RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+
+            SwapChainDesc.Width = rect.right - rect.left;
+            SwapChainDesc.Height = rect.bottom - rect.top;
+
+            // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                                     _hwndTarget,
+                                                                                     &SwapChainDesc,
+                                                                                     nullptr,
+                                                                                     nullptr,
+                                                                                     &_dxgiSwapChain);
+            if (FAILED(createSwapChainResult))
             {
-            case SwapChainMode::ForHwnd:
-            {
-                // use the HWND's dimensions for the swap chain dimensions.
-                RECT rect = { 0 };
-                RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
-
-                SwapChainDesc.Width = rect.right - rect.left;
-                SwapChainDesc.Height = rect.bottom - rect.top;
-
-                // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
-                SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-                const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                                         _hwndTarget,
-                                                                                         &SwapChainDesc,
-                                                                                         nullptr,
-                                                                                         nullptr,
-                                                                                         &_dxgiSwapChain);
-                if (FAILED(createSwapChainResult))
-                {
-                    SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-                    RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                           _hwndTarget,
-                                                                           &SwapChainDesc,
-                                                                           nullptr,
-                                                                           nullptr,
-                                                                           &_dxgiSwapChain));
-                }
-
-                break;
-            }
-            case SwapChainMode::ForComposition:
-            {
-                // Use the given target size for compositions.
-                SwapChainDesc.Width = _displaySizePixels.cx;
-                SwapChainDesc.Height = _displaySizePixels.cy;
-
-                // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
-                SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-                // It's 100% required to use scaling mode stretch for composition. There is no other choice.
                 SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-
-                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                              &SwapChainDesc,
-                                                                              nullptr,
-                                                                              &_dxgiSwapChain));
-                break;
-            }
-            default:
-                THROW_HR(E_NOTIMPL);
+                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                       _hwndTarget,
+                                                                       &SwapChainDesc,
+                                                                       nullptr,
+                                                                       nullptr,
+                                                                       &_dxgiSwapChain));
             }
 
-            if (_retroTerminalEffects)
+            break;
+        }
+        case SwapChainMode::ForComposition:
+        {
+            // Use the given target size for compositions.
+            SwapChainDesc.Width = _displaySizePixels.width<UINT>();
+            SwapChainDesc.Height = _displaySizePixels.height<UINT>();
+
+            // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            // It's 100% required to use scaling mode stretch for composition. There is no other choice.
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
+                                                                          &SwapChainDesc,
+                                                                          nullptr,
+                                                                          &_dxgiSwapChain));
+            break;
+        }
+        default:
+            THROW_HR(E_NOTIMPL);
+        }
+
+        if (_retroTerminalEffects)
+        {
+            const HRESULT hr = _SetupTerminalEffects();
+            if (FAILED(hr))
             {
-                const HRESULT hr = _SetupTerminalEffects();
-                if (FAILED(hr))
-                {
-                    _retroTerminalEffects = false;
-                    LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
-                }
+                _retroTerminalEffects = false;
+                LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
             }
         }
-        CATCH_RETURN();
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
+
+        // This is our first frame on this new target.
+        _firstFrame = true;
 
         RETURN_IF_FAILED(_PrepareRenderTarget());
     }
@@ -515,6 +516,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 
     return S_OK;
 }
+CATCH_RETURN();
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
@@ -569,7 +571,6 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 
             ::Microsoft::WRL::ComPtr<IDXGISwapChain2> sc2;
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
-
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
         }
         return S_OK;
@@ -629,14 +630,16 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     _In_reads_(stringLength) PCWCHAR string,
     _In_ size_t stringLength,
     _Out_ IDWriteTextLayout** ppTextLayout) noexcept
+try
 {
     return _dwriteFactory->CreateTextLayout(string,
                                             gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
-                                            gsl::narrow<float>(_displaySizePixels.cx),
-                                            _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>(_displaySizePixels.cy),
+                                            _displaySizePixels.width<float>(),
+                                            _glyphCell.height() != 0 ? _glyphCell.height<float>() : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Sets the target window handle for our display pipeline
@@ -653,13 +656,13 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 [[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+try
 {
     _sizeTarget = Pixels;
-
-    RETURN_IF_FAILED(InvalidateAll());
-
+    _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
+CATCH_RETURN();
 
 void DxEngine::SetCallback(std::function<void()> pfn)
 {
@@ -681,6 +684,18 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     return _dxgiSwapChain;
 }
 
+void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
+{
+    auto invalidate = rc;
+
+    if (_invalidateFullRows)
+    {
+        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
+    }
+
+    _invalidMap.set(invalidate);
+}
+
 // Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
@@ -688,12 +703,15 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _InvalidOr(*psrRegion);
+    _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Invalidates one specific character coordinate
@@ -702,12 +720,15 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    const SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
-    return Invalidate(&sr);
+    _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+
+    return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
@@ -716,13 +737,17 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
 
-    _InvalidOr(*prcDirtyClient);
+    // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
+    // to cells.
+    _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates a series of character rectangles
@@ -748,50 +773,22 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+try
 {
-    if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
+    RETURN_HR_IF(E_INVALIDARG, !pcoordDelta);
+
+    const til::point deltaCells{ *pcoordDelta };
+
+    if (deltaCells != til::point{ 0, 0 })
     {
-        try
-        {
-            POINT delta = { 0 };
-            delta.x = pcoordDelta->X * _glyphCell.cx;
-            delta.y = pcoordDelta->Y * _glyphCell.cy;
-
-            _InvalidOffset(delta);
-
-            _invalidScroll.cx += delta.x;
-            _invalidScroll.cy += delta.y;
-
-            // Add the revealed portion of the screen from the scroll to the invalid area.
-            const RECT display = _GetDisplayRect();
-            RECT reveal = display;
-
-            // X delta first
-            OffsetRect(&reveal, delta.x, 0);
-            IntersectRect(&reveal, &reveal, &display);
-            SubtractRect(&reveal, &display, &reveal);
-
-            if (!IsRectEmpty(&reveal))
-            {
-                _InvalidOr(reveal);
-            }
-
-            // Y delta second (subtract rect won't work if you move both)
-            reveal = display;
-            OffsetRect(&reveal, 0, delta.y);
-            IntersectRect(&reveal, &reveal, &display);
-            SubtractRect(&reveal, &display, &reveal);
-
-            if (!IsRectEmpty(&reveal))
-            {
-                _InvalidOr(reveal);
-            }
-        }
-        CATCH_RETURN();
+        // Shift the contents of the map and fill in revealed area.
+        _invalidMap.translate(deltaCells, true);
+        _invalidScroll += deltaCells;
     }
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates the entire window area
@@ -800,12 +797,12 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateAll() noexcept
+try
 {
-    const RECT screen = _GetDisplayRect();
-    _InvalidOr(screen);
-
+    _invalidMap.set_all();
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - This currently has no effect in this renderer.
@@ -827,7 +824,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - <none>
 // Return Value:
 // - X by Y area in pixels of the surface
-[[nodiscard]] SIZE DxEngine::_GetClientSize() const noexcept
+[[nodiscard]] til::size DxEngine::_GetClientSize() const
 {
     switch (_chainMode)
     {
@@ -836,18 +833,11 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
-        SIZE clientSize = { 0 };
-        clientSize.cx = clientRect.right - clientRect.left;
-        clientSize.cy = clientRect.bottom - clientRect.top;
-
-        return clientSize;
+        return til::rectangle{ clientRect }.size();
     }
     case SwapChainMode::ForComposition:
     {
-        SIZE size = _sizeTarget;
-        size.cx = static_cast<LONG>(size.cx * _scale);
-        size.cy = static_cast<LONG>(size.cy * _scale);
-        return size;
+        return _sizeTarget.scale(til::math::ceiling, _scale);
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
@@ -871,90 +861,6 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 }
 
 // Routine Description:
-// - Retrieves a rectangle representation of the pixel size of the
-//   surface we are drawing on
-// Arguments:
-// - <none>
-// Return Value;
-// - Origin-placed rectangle representing the pixel size of the surface
-[[nodiscard]] RECT DxEngine::_GetDisplayRect() const noexcept
-{
-    return { 0, 0, _displaySizePixels.cx, _displaySizePixels.cy };
-}
-
-// Routine Description:
-// - Helper to shift the existing dirty rectangle by a pixel offset
-//   and crop it to still be within the bounds of the display surface
-// Arguments:
-// - delta - Adjustment distance in pixels
-//         - -Y is up, Y is down, -X is left, X is right.
-// Return Value:
-// - <none>
-void DxEngine::_InvalidOffset(POINT delta)
-{
-    if (_isInvalidUsed)
-    {
-        // Copy the existing invalid rect
-        RECT invalidNew = _invalidRect;
-
-        // Offset it to the new position
-        THROW_IF_WIN32_BOOL_FALSE(OffsetRect(&invalidNew, delta.x, delta.y));
-
-        // Get the rect representing the display
-        const RECT rectScreen = _GetDisplayRect();
-
-        // Ensure that the new invalid rectangle is still on the display
-        IntersectRect(&invalidNew, &invalidNew, &rectScreen);
-
-        _invalidRect = invalidNew;
-    }
-}
-
-// Routine description:
-// - Adds the given character rectangle to the total dirty region
-// - Will scale internally to pixels based on the current font.
-// Arguments:
-// - sr - character rectangle
-// Return Value:
-// - <none>
-void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
-{
-    RECT region;
-    region.left = sr.Left;
-    region.top = sr.Top;
-    region.right = sr.Right;
-    region.bottom = sr.Bottom;
-    _ScaleByFont(region, _glyphCell);
-
-    region.right += _glyphCell.cx;
-    region.bottom += _glyphCell.cy;
-
-    _InvalidOr(region);
-}
-
-// Routine Description:
-// - Adds the given pixel rectangle to the total dirty region
-// Arguments:
-// - rc - Dirty pixel rectangle
-// Return Value:
-// - <none>
-void DxEngine::_InvalidOr(RECT rc) noexcept
-{
-    if (_isInvalidUsed)
-    {
-        UnionRect(&_invalidRect, &_invalidRect, &rc);
-
-        const RECT rcScreen = _GetDisplayRect();
-        IntersectRect(&_invalidRect, &_invalidRect, &rcScreen);
-    }
-    else
-    {
-        _invalidRect = rc;
-        _isInvalidUsed = true;
-    }
-}
-
-// Routine Description:
 // - This is unused by this renderer.
 // Arguments:
 // - pForcePaint - always filled with false.
@@ -975,67 +881,78 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Return Value:
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::StartPaint() noexcept
+try
 {
-    FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
+    // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
+    // Yes, this will further impact the performance of retro terminal effects.
+    // But we're talking about running the entire display pipeline through a shader for
+    // cosmetic effect, so performance isn't likely the top concern with this feature.
+    if (_retroTerminalEffects)
+    {
+        _invalidMap.set_all();
+    }
+
+    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
+    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
+    if (_scale != 1.0f)
+    {
+        _invalidMap.set_all();
+    }
+
+    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        const auto invalidatedStr = _invalidMap.to_string();
+        const auto invalidated = invalidatedStr.c_str();
+
 #pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
-    TraceLoggingWrite(g_hDxRenderProvider,
-                      "Invalid",
-                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
-                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
-                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
-                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
-                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
-                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
-                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
-                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
-                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
-                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
-                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
-                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
+        TraceLoggingWrite(g_hDxRenderProvider,
+                          "Invalid",
+                          TraceLoggingWideString(invalidated),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
 
     if (_isEnabled)
     {
-        try
+        const auto clientSize = _GetClientSize();
+        if (!_haveDeviceResources)
         {
-            const auto clientSize = _GetClientSize();
-            if (!_haveDeviceResources)
-            {
-                RETURN_IF_FAILED(_CreateDeviceResources(true));
-            }
-            else if (_displaySizePixels.cy != clientSize.cy ||
-                     _displaySizePixels.cx != clientSize.cx)
-            {
-                // OK, we're going to play a dangerous game here for the sake of optimizing resize
-                // First, set up a complete clear of all device resources if something goes terribly wrong.
-                auto resetDeviceResourcesOnFailure = wil::scope_exit([&]() noexcept {
-                    _ReleaseDeviceResources();
-                });
-
-                // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
-                _dxgiSurface.Reset();
-                _d2dRenderTarget.Reset();
-
-                // Change the buffer size and recreate the render target (and surface)
-                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
-                RETURN_IF_FAILED(_PrepareRenderTarget());
-
-                // OK we made it past the parts that can cause errors. We can release our failure handler.
-                resetDeviceResourcesOnFailure.release();
-
-                // And persist the new size.
-                _displaySizePixels = clientSize;
-            }
-
-            _d2dRenderTarget->BeginDraw();
-            _isPainting = true;
+            RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
-        CATCH_RETURN();
+        else if (_displaySizePixels != clientSize)
+        {
+            // OK, we're going to play a dangerous game here for the sake of optimizing resize
+            // First, set up a complete clear of all device resources if something goes terribly wrong.
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&]() noexcept {
+                _ReleaseDeviceResources();
+            });
+
+            // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
+            _dxgiSurface.Reset();
+            _d2dRenderTarget.Reset();
+
+            // Change the buffer size and recreate the render target (and surface)
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            RETURN_IF_FAILED(_PrepareRenderTarget());
+
+            // OK we made it past the parts that can cause errors. We can release our failure handler.
+            resetDeviceResourcesOnFailure.release();
+
+            // And persist the new size.
+            _displaySizePixels = clientSize;
+
+            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
+            _firstFrame = true;
+        }
+
+        _d2dRenderTarget->BeginDraw();
+        _isPainting = true;
     }
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Ends batch drawing and captures any state necessary for presentation
@@ -1044,6 +961,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Return Value:
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::EndPaint() noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
@@ -1057,21 +975,42 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
         if (SUCCEEDED(hr))
         {
-            if (_invalidScroll.cy != 0 || _invalidScroll.cx != 0)
+            if (_invalidScroll != til::point{ 0, 0 })
             {
-                _presentDirty = _invalidRect;
+                // Copy `til::rectangles` into RECT map.
+                _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
 
-                const RECT display = _GetDisplayRect();
-                SubtractRect(&_presentScroll, &display, &_presentDirty);
-                _presentOffset.x = _invalidScroll.cx;
-                _presentOffset.y = _invalidScroll.cy;
+                // Scale all dirty rectangles into pixels
+                std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
+                    return rc.scale_up(_glyphCell).scale(til::math::rounding, _scale);
+                });
 
-                _presentParams.DirtyRectsCount = 1;
-                _presentParams.pDirtyRects = &_presentDirty;
+                // Invalid scroll is in characters, convert it to pixels.
+                const auto scrollPixels = (_invalidScroll * _glyphCell).scale(til::math::rounding, _scale);
+
+                // The scroll rect is the entire field of cells, but in pixels.
+                til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
+
+                scrollArea = scrollArea.scale(til::math::ceiling, _scale);
+
+                // Reduce the size of the rectangle by the scroll.
+                scrollArea -= til::size{} - scrollPixels;
+
+                // Assign the area to the present storage
+                _presentScroll = scrollArea;
+
+                // Pass the offset.
+                _presentOffset = scrollPixels;
+
+                // Now fill up the parameters structure from the member variables.
+                _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
+                _presentParams.pDirtyRects = _presentDirty.data();
 
                 _presentParams.pScrollOffset = &_presentOffset;
                 _presentParams.pScrollRect = &_presentScroll;
 
+                // The scroll rect will be empty if we scrolled >= 1 full screen size.
+                // Present1 doesn't like that. So clear it out. Everything will be dirty anyway.
                 if (IsRectEmpty(&_presentScroll))
                 {
                     _presentParams.pScrollRect = nullptr;
@@ -1088,13 +1027,13 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         }
     }
 
-    _invalidRect = { 0 };
-    _isInvalidUsed = false;
+    _invalidMap.reset_all();
 
-    _invalidScroll = { 0 };
+    _invalidScroll = {};
 
     return hr;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Copies the front surface of the swap chain (the one being displayed)
@@ -1146,27 +1085,65 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         {
             HRESULT hr = S_OK;
 
-            hr = _dxgiSwapChain->Present(1, 0);
-            /*hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);*/
+            bool recreate = false;
 
+            // On anything but the first frame, try partial presentation.
+            // We'll do it first because if it fails, we'll try again with full presentation.
+            if (!_firstFrame)
+            {
+                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+
+                // These two error codes are indicated for destroy-and-recreate
+                // If we were told to destroy-and-recreate, we're going to skip straight into doing that
+                // and not try again with full presentation.
+                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+
+                // Log this as we actually don't expect it to happen, we just will try again
+                // below for robustness of our drawing.
+                if (FAILED(hr) && !recreate)
+                {
+                    LOG_HR(hr);
+                }
+            }
+
+            // If it's the first frame through, we cannot do partial presentation.
+            // Also if partial presentation failed above and we weren't told to skip straight to
+            // device recreation.
+            // In both of these circumstances, do a full presentation.
+            if (_firstFrame || (FAILED(hr) && !recreate))
+            {
+                hr = _dxgiSwapChain->Present(1, 0);
+                _firstFrame = false;
+
+                // These two error codes are indicated for destroy-and-recreate
+                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+            }
+
+            // Now check for failure cases from either presentation mode.
             if (FAILED(hr))
             {
-                // These two error codes are indicated for destroy-and-recreate
-                if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+                // If we were told to recreate the device surface, do that.
+                if (recreate)
                 {
                     // We don't need to end painting here, as the renderer has done it for us.
                     _ReleaseDeviceResources();
                     FAIL_FAST_IF_FAILED(InvalidateAll());
                     return E_PENDING; // Indicate a retry to the renderer.
                 }
-
-                FAIL_FAST_HR(hr);
+                // Otherwise, we don't know what to do with this error. Report it.
+                else
+                {
+                    FAIL_FAST_HR(hr);
+                }
             }
 
+            // Finally copy the front image (being presented now) onto the backing buffer
+            // (where we are about to draw the next frame) so we can draw only the differences
+            // next frame.
             RETURN_IF_FAILED(_CopyFrontToBack());
             _presentReady = false;
 
-            _presentDirty = { 0 };
+            _presentDirty.clear();
             _presentOffset = { 0 };
             _presentScroll = { 0 };
             _presentParams = { 0 };
@@ -1195,25 +1172,41 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
+try
 {
-    switch (_chainMode)
-    {
-    case SwapChainMode::ForHwnd:
-        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
-                                                    static_cast<float>(_invalidRect.top),
-                                                    static_cast<float>(_invalidRect.right),
-                                                    static_cast<float>(_invalidRect.bottom)),
-                                        _d2dBrushBackground.Get());
-        break;
-    case SwapChainMode::ForComposition:
-        D2D1_COLOR_F nothing = { 0 };
+    D2D1_COLOR_F nothing = { 0 };
 
+    // If the entire thing is invalid, just use one big clear operation.
+    // This will also hit the gutters outside the usual paintable area.
+    // Invalidating everything is supposed to happen with resizes of the
+    // entire canvas, changes of the font, and other such adjustments.
+    if (_invalidMap.all())
+    {
         _d2dRenderTarget->Clear(nothing);
-        break;
+    }
+    else
+    {
+        // Runs are counts of cells.
+        // Use a transform by the size of one cell to convert cells-to-pixels
+        // as we clear.
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
+        for (const auto rect : _invalidMap.runs())
+        {
+            // Use aliased.
+            // For graphics reasons, it'll look better because it will ensure that
+            // the edges are cut nice and sharp (not blended by anti-aliasing).
+            // For performance reasons, it takes a lot less work to not
+            // do anti-alias blending.
+            _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _d2dRenderTarget->Clear(nothing);
+            _d2dRenderTarget->PopAxisAlignedClip();
+        }
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
     }
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Places one line of text onto the screen at the given position
@@ -1227,42 +1220,38 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
+try
 {
-    try
-    {
-        // Calculate positioning of our origin.
-        D2D1_POINT_2F origin;
-        origin.x = static_cast<float>(coord.X * _glyphCell.cx);
-        origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
+    // Calculate positioning of our origin.
+    const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
-        // Create the text layout
-        CustomTextLayout layout(_dwriteFactory.Get(),
-                                _dwriteTextAnalyzer.Get(),
-                                _dwriteTextFormat.Get(),
-                                _dwriteFontFace.Get(),
-                                clusters,
-                                _glyphCell.cx);
+    // Create the text layout
+    CustomTextLayout layout(_dwriteFactory.Get(),
+                            _dwriteTextAnalyzer.Get(),
+                            _dwriteTextFormat.Get(),
+                            _dwriteFontFace.Get(),
+                            clusters,
+                            _glyphCell.width());
 
-        // Get the baseline for this font as that's where we draw from
-        DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+    // Get the baseline for this font as that's where we draw from
+    DWRITE_LINE_SPACING spacing;
+    RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
-        // Assemble the drawing context information
-        DrawingContext context(_d2dRenderTarget.Get(),
-                               _d2dBrushForeground.Get(),
-                               _d2dBrushBackground.Get(),
-                               _dwriteFactory.Get(),
-                               spacing,
-                               D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
-                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    // Assemble the drawing context information
+    DrawingContext context(_d2dRenderTarget.Get(),
+                           _d2dBrushForeground.Get(),
+                           _d2dBrushBackground.Get(),
+                           _dwriteFactory.Get(),
+                           spacing,
+                           _glyphCell,
+                           D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
-        // Layout then render the text
-        RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
-    }
-    CATCH_RETURN();
+    // Layout then render the text
+    RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paints lines around cells (draws in pieces of the grid)
@@ -1278,16 +1267,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                                      COLORREF const color,
                                                      size_t const cchLine,
                                                      COORD const coordTarget) noexcept
+try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const auto font = _GetFontSize();
-    D2D_POINT_2F target;
-    target.x = static_cast<float>(coordTarget.X) * font.X;
-    target.y = static_cast<float>(coordTarget.Y) * font.Y;
+    const auto font = _glyphCell;
+    D2D_POINT_2F target = til::point{ coordTarget } * font;
 
     D2D_POINT_2F start = { 0 };
     D2D_POINT_2F end = { 0 };
@@ -1300,7 +1288,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         if (lines & GridLines::Top)
         {
             end = start;
-            end.x += font.X;
+            end.x += font.width();
 
             _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
@@ -1308,7 +1296,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         if (lines & GridLines::Left)
         {
             end = start;
-            end.y += font.Y;
+            end.y += font.height();
 
             _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
@@ -1321,32 +1309,33 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
 
         // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
-        start = { target.x + 0.5f, target.y + font.Y - 0.5f };
+        start = { target.x + 0.5f, target.y + font.height() - 0.5f };
 
         if (lines & GridLines::Bottom)
         {
             end = start;
-            end.x += font.X - 1.f;
+            end.x += font.width() - 1.f;
 
             _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
-        start = { target.x + font.X - 0.5f, target.y + 0.5f };
+        start = { target.x + font.width() - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
             end = start;
-            end.y += font.Y - 1.f;
+            end.y += font.height() - 1.f;
 
             _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         // Move to the next character in this run.
-        target.x += font.X;
+        target.x += font.width();
     }
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paints an overlay highlight on a portion of the frame to represent selected text
@@ -1355,28 +1344,20 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
 
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    RECT pixels;
-    pixels.left = rect.Left * _glyphCell.cx;
-    pixels.top = rect.Top * _glyphCell.cy;
-    pixels.right = rect.Right * _glyphCell.cx;
-    pixels.bottom = rect.Bottom * _glyphCell.cy;
-
-    D2D1_RECT_F draw = { 0 };
-    draw.left = static_cast<float>(pixels.left);
-    draw.top = static_cast<float>(pixels.top);
-    draw.right = static_cast<float>(pixels.right);
-    draw.bottom = static_cast<float>(pixels.bottom);
+    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_glyphCell);
 
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Helper to choose which Direct2D method to use when drawing the cursor rectangle
 enum class CursorPaintType
@@ -1393,6 +1374,7 @@ enum class CursorPaintType
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+try
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
@@ -1400,16 +1382,12 @@ enum class CursorPaintType
         return S_FALSE;
     }
     // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = { 0 };
-    rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx);
-    rect.top = static_cast<float>(options.coordCursor.Y * _glyphCell.cy);
-    rect.right = static_cast<float>(rect.left + _glyphCell.cx);
-    rect.bottom = static_cast<float>(rect.top + _glyphCell.cy);
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(_glyphCell);
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)
     {
-        rect.right += _glyphCell.cx;
+        rect.right += _glyphCell.width();
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
@@ -1420,8 +1398,7 @@ enum class CursorPaintType
     {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
-
-        ulHeight = gsl::narrow<ULONG>((_glyphCell.cy * ulHeight) / 100);
+        ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
         rect.top = rect.bottom - ulHeight;
         break;
     }
@@ -1484,6 +1461,7 @@ enum class CursorPaintType
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Paint terminal effects.
@@ -1581,6 +1559,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+try
 {
     RETURN_IF_FAILED(_GetProposedFont(pfiFontInfoDesired,
                                       fiFontInfo,
@@ -1589,22 +1568,16 @@ CATCH_RETURN()
                                       _dwriteTextAnalyzer,
                                       _dwriteFontFace));
 
-    try
-    {
-        const auto size = fiFontInfo.GetSize();
-
-        _glyphCell.cx = size.X;
-        _glyphCell.cy = size.Y;
-    }
-    CATCH_RETURN();
+    _glyphCell = fiFontInfo.GetSize();
 
     return S_OK;
 }
+CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.cx);
-    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.width());
+    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.height());
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
@@ -1693,29 +1666,7 @@ float DxEngine::GetScaling() const noexcept
 // - Rectangle describing dirty area in characters.
 [[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
-    SMALL_RECT r;
-    r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
-    r.Left = gsl::narrow<SHORT>(floor(_invalidRect.left / _glyphCell.cx));
-    r.Bottom = gsl::narrow<SHORT>(floor(_invalidRect.bottom / _glyphCell.cy));
-    r.Right = gsl::narrow<SHORT>(floor(_invalidRect.right / _glyphCell.cx));
-
-    // Exclusive to inclusive
-    r.Bottom--;
-    r.Right--;
-
-    return { r };
-}
-
-// Routine Description:
-// - Gets COORD packed with shorts of each glyph (character) cell's
-//   height and width.
-// Arguments:
-// - <none>
-// Return Value:
-// - Nearest integer short x and y values for each cell.
-[[nodiscard]] COORD DxEngine::_GetFontSize() const noexcept
-{
-    return { gsl::narrow<SHORT>(_glyphCell.cx), gsl::narrow<SHORT>(_glyphCell.cy) };
+    return _invalidMap.runs();
 }
 
 // Routine Description:
@@ -1725,10 +1676,12 @@ float DxEngine::GetScaling() const noexcept
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+try
 {
-    *pFontSize = _GetFontSize();
+    *pFontSize = _glyphCell;
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Currently unused by this renderer.
@@ -1738,30 +1691,28 @@ float DxEngine::GetScaling() const noexcept
 // Return Value:
 // - S_OK or relevant DirectWrite error.
 [[nodiscard]] HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pResult);
 
-    try
-    {
-        const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+    const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-        // Create the text layout
-        CustomTextLayout layout(_dwriteFactory.Get(),
-                                _dwriteTextAnalyzer.Get(),
-                                _dwriteTextFormat.Get(),
-                                _dwriteFontFace.Get(),
-                                { &cluster, 1 },
-                                _glyphCell.cx);
+    // Create the text layout
+    CustomTextLayout layout(_dwriteFactory.Get(),
+                            _dwriteTextAnalyzer.Get(),
+                            _dwriteTextFormat.Get(),
+                            _dwriteFontFace.Get(),
+                            { &cluster, 1 },
+                            _glyphCell.width());
 
-        UINT32 columns = 0;
-        RETURN_IF_FAILED(layout.GetColumns(&columns));
+    UINT32 columns = 0;
+    RETURN_IF_FAILED(layout.GetColumns(&columns));
 
-        *pResult = columns != 1;
-    }
-    CATCH_RETURN();
+    *pResult = columns != 1;
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Method Description:
 // - Updates the window's title string.

@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
         SwapChainMode _chainMode;
 
         HWND _hwndTarget;
-        SIZE _sizeTarget;
+        til::size _sizeTarget;
         int _dpi;
         float _scale;
 
@@ -130,8 +130,8 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
-        SIZE _displaySizePixels;
-        SIZE _glyphCell;
+        til::size _displaySizePixels;
+        til::size _glyphCell;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -140,19 +140,13 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
-        [[nodiscard]] RECT _GetDisplayRect() const noexcept;
-
-        bool _isInvalidUsed;
-        RECT _invalidRect;
-        SIZE _invalidScroll;
-
-        void _InvalidOr(SMALL_RECT sr) noexcept;
-        void _InvalidOr(RECT rc) noexcept;
-
-        void _InvalidOffset(POINT pt);
+        bool _firstFrame;
+        bool _invalidateFullRows;
+        til::bitmap _invalidMap;
+        til::point _invalidScroll;
 
         bool _presentReady;
-        RECT _presentDirty;
+        std::vector<RECT> _presentDirty;
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
@@ -244,9 +238,9 @@ namespace Microsoft::Console::Render
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
-        [[nodiscard]] COORD _GetFontSize() const noexcept;
+        [[nodiscard]] til::size _GetClientSize() const;
 
-        [[nodiscard]] SIZE _GetClientSize() const noexcept;
+        void _InvalidateRectangle(const til::rectangle& rc);
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

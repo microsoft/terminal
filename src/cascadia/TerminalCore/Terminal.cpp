@@ -190,6 +190,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
 
+    // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
+    _buffer->GetCursor().StartDeferDrawing();
+    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _buffer->GetCursor().EndDeferDrawing(); });
+
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -198,6 +203,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      _buffer->GetCurrentAttributes(),
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
+
+        newTextBuffer->GetCursor().StartDeferDrawing();
 
         // Build a PositionInformation to track the position of both the top of
         // the mutable viewport and the top of the visible viewport in the new
@@ -780,7 +787,11 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
-        _buffer->GetRenderTarget().TriggerRedrawAll();
+        // We have to report the delta here because we might have circled the text buffer.
+        // That didn't change the viewport and therefore the TriggerScroll(void)
+        // method can't detect the delta on its own.
+        COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
+        _buffer->GetRenderTarget().TriggerScroll(&delta);
         _NotifyScrollEvent();
     }
 
@@ -789,13 +800,20 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
 void Terminal::UserScrollViewport(const int viewTop)
 {
+    // we're going to modify state here that the renderer could be reading.
+    auto lock = LockForWriting();
+
     const auto clampedNewTop = std::max(0, viewTop);
     const auto realTop = ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 
     _scrollOffset = std::max(0, newDelta);
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+
+    // We can use the void variant of TriggerScroll here because
+    // we adjusted the viewport so it can detect the difference
+    // from the previous frame drawn.
+    _buffer->GetRenderTarget().TriggerScroll();
 }
 
 int Terminal::GetScrollOffset() noexcept
@@ -875,8 +893,9 @@ CATCH_LOG()
 //   Visible, then it will immediately become visible.
 // Arguments:
 // - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
+void Terminal::SetCursorOn(const bool isOn)
 {
+    auto lock = LockForWriting();
     _buffer->GetCursor().SetIsOn(isOn);
 }
 

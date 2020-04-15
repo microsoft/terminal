@@ -534,6 +534,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
             ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
+            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+                if (auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_RendererEnteredErrorState();
+                }
+            });
+
             THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
             // Set up the DX Engine
@@ -938,6 +945,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                auto lock = _terminal->LockForWriting();
+
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -979,6 +988,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _lastMouseClickTimestamp = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
                 }
+
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
@@ -1037,6 +1047,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                auto lock = _terminal->LockForWriting();
+
                 const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
@@ -1141,17 +1153,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Only a left click release when copy on select is active should perform a copy.
             // Right clicks and middle clicks should not need to do anything when released.
-            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
+            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-                // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-                // macro directly with a VirtualKeyModifiers
-                const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-
-                if (_selectionNeedsToBeCopied)
-                {
-                    CopySelectionToClipboard(shiftEnabled);
-                }
+                CopySelectionToClipboard();
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1863,6 +1867,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        auto dispatcher{ Dispatcher() }; // cache a strong ref to this in case TermControl dies
         auto weakThis{ get_weak() };
 
         // Muffle 2: Muffle Harder
@@ -1874,7 +1879,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
         co_await winrt::resume_after(CursorUpdateQuiesceTime);
 
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await winrt::resume_foreground(dispatcher);
 
         if (auto control{ weakThis.get() })
         {
@@ -1969,6 +1974,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
+    // Method Description:
+    // - Asynchronously close our connection. The Connection will likely wait
+    //   until the attached process terminates before Close returns. If that's
+    //   the case, we don't want to block the UI thread waiting on that process
+    //   handle.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_AsyncCloseConnection()
+    {
+        if (auto localConnection{ std::exchange(_connection, nullptr) })
+        {
+            // Close the connection on the background thread.
+            co_await winrt::resume_background();
+            localConnection.Close();
+            // connection is destroyed.
+        }
+    }
+
     void TermControl::Close()
     {
         if (!_closing.exchange(true))
@@ -1980,11 +2005,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
 
-            if (auto localConnection{ std::exchange(_connection, nullptr) })
-            {
-                localConnection.Close();
-                // connection is destroyed.
-            }
+            // GH#1996 - Close the connection asynchronously on a background
+            // thread.
+            // Since TermControl::Close is only ever triggered by the UI, we
+            // don't really care to wait for the connection to be completely
+            // closed. We can just do it whenever.
+            _AsyncCloseConnection();
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
@@ -2482,6 +2508,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsContentVisible(false);
         // Sets if the glyph is visible
         e.DragUIOverride().IsGlyphVisible(false);
+    }
+
+    // Method Description:
+    // - Produces the error dialog that notifies the user that rendering cannot proceed.
+    winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
+    {
+        auto strongThis{ get_strong() };
+        co_await Dispatcher(); // pop up onto the UI thread
+
+        if (auto loadedUiElement{ FindName(L"RendererFailedNotice") })
+        {
+            if (auto uiElement{ loadedUiElement.try_as<::winrt::Windows::UI::Xaml::UIElement>() })
+            {
+                uiElement.Visibility(Visibility::Visible);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Responds to the Click event on the button that will re-enable the renderer.
+    void TermControl::_RenderRetryButton_Click(IInspectable const& /*sender*/, IInspectable const& /*args*/)
+    {
+        // It's already loaded if we get here, so just hide it.
+        RendererFailedNotice().Visibility(Visibility::Collapsed);
+        _renderer->ResetErrorStateAndResume();
     }
 
     // -------------------------------- WinRT Events ---------------------------------
