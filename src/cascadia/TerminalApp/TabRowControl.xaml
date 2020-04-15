@@ -27,6 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 VerticalAlignment="Stretch"
                 HorizontalAlignment="Left"
                 Content="&#xE710;"
+	        ToolTipService.ToolTip="New Tab"
                 UseLayoutRounding="true"
                 FontFamily="Segoe MDL2 Assets"
                 FontWeight="SemiLight"
