@@ -570,9 +570,9 @@ CATCH_RETURN();
             ::Microsoft::WRL::ComPtr<IDXGISwapChain2> sc2;
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
-
-            _prevScale = _scale;
         }
+
+        _prevScale = _scale;
         return S_OK;
     }
     CATCH_RETURN();
