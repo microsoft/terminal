@@ -135,6 +135,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="MinimizeButton"
             x:Uid="WindowMinimizeButton"
             Style="{StaticResource CaptionButton}"
+            ToolTipService.ToolTip="Minimize"
             Click="_MinimizeClick"
             AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
@@ -147,6 +148,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="MaximizeButton"
             x:Uid="WindowMaximizeButton"
             Style="{StaticResource CaptionButton}"
+            ToolTipService.ToolTip="Maximize"
             Click="_MaximizeClick"
             AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
@@ -160,6 +162,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="CloseButton"
             x:Uid="WindowCloseButton"
             Style="{StaticResource CaptionButton}"
+            ToolTipService.ToolTip="Close"
             Click="_CloseClick"
             AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
