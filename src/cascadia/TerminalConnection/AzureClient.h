@@ -34,6 +34,13 @@ namespace Microsoft::Terminal::Azure
         static constexpr std::wstring_view AuthorizationPending{ L"authorization_pending" };
         static constexpr std::wstring_view InvalidGrant{ L"invalid_grant" };
     }
+
+    struct Tenant
+    {
+        std::wstring ID;
+        std::optional<std::wstring> DisplayName;
+        std::optional<std::wstring> DefaultDomain;
+    };
 }
 
 #define THROW_IF_AZURE_ERROR(payload)                  \

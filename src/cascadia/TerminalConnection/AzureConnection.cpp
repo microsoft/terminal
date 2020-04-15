@@ -16,8 +16,6 @@
 
 #include "AzureConnection.g.cpp"
 
-#include "AzureClient.h"
-
 #include "winrt/Windows.System.UserProfile.h"
 #include "../../types/inc/Utils.hpp"
 
@@ -52,9 +50,12 @@ static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstr
     return fmt::format(std::wstring_view{ GetLibraryResourceString(resourceKey) }, (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
 }
 
-static inline std::wstring _formatTenantLine(int tenantNumber, const std::wstring_view tenantName, const std::wstring_view tenantID)
+static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 {
-    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") }, _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)), _colorize(USER_INFO_COLOR, tenantName), tenantID);
+    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") },
+                       _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
+                       _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
+                       tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -278,25 +279,45 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - tenant - the unparsed tenant
     // Return value:
     // - a tuple containing the ID and display name of the tenant.
-    static std::tuple<utility::string_t, utility::string_t> _crackTenant(const json::value& tenant)
+    static Tenant _crackTenant(const json::value& jsonTenant)
     {
-        auto tenantId{ tenant.at(L"tenantId").as_string() };
-        std::wstring displayName{};
-        if (tenant.has_string_field(L"displayName"))
+        Tenant tenant{};
+        if (jsonTenant.has_string_field(L"tenantID"))
         {
-            displayName = tenant.at(L"displayName").as_string();
+            // for compatibility with version 1 credentials
+            tenant.ID = jsonTenant.at(L"tenantID").as_string();
         }
         else
         {
-            displayName = std::wstring{ RS_(L"AzureUnknownTenantName") };
+            // This one comes in off the wire
+            tenant.ID = jsonTenant.at(L"tenantId").as_string();
         }
 
-        if (tenant.has_string_field(L"defaultDomain"))
+        if (jsonTenant.has_string_field(L"displayName"))
         {
-            auto defaultDomain{ tenant.at(L"defaultDomain").as_string() };
-            displayName = wil::str_printf<std::wstring>(L"%.*s, %.*s", displayName.size(), displayName.data(), defaultDomain.size(), defaultDomain.data());
+            tenant.DisplayName = jsonTenant.at(L"displayName").as_string();
         }
-        return { tenantId, displayName };
+
+        if (jsonTenant.has_string_field(L"defaultDomain"))
+        {
+            tenant.DefaultDomain = jsonTenant.at(L"defaultDomain").as_string();
+        }
+
+        return tenant;
+    }
+
+    static void _packTenant(json::value& jsonTenant, const Tenant& tenant)
+    {
+        jsonTenant[L"tenantId"] = json::value::string(tenant.ID);
+        if (tenant.DisplayName.has_value())
+        {
+            jsonTenant[L"displayName"] = json::value::string(*tenant.DisplayName);
+        }
+
+        if (tenant.DefaultDomain.has_value())
+        {
+            jsonTenant[L"defaultDomain"] = json::value::string(*tenant.DefaultDomain);
+        }
     }
 
     // Method description:
@@ -417,6 +438,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         int numTenants{ 0 };
+        _tenantList.clear();
         for (const auto& entry : credList)
         {
             auto nameJson = json::value::parse(entry.UserName().c_str());
@@ -434,7 +456,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 continue;
             }
 
-            _WriteStringWithNewline(_formatTenantLine(numTenants, nameJson.at(L"displayName").as_string(), nameJson.at(L"tenantID").as_string()));
+            auto newTenant{ _tenantList.emplace_back(_crackTenant(nameJson)) };
+
+            _WriteStringWithNewline(_formatTenant(numTenants, newTenant));
             numTenants++;
         }
 
@@ -501,10 +525,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // User wants to login with one of the saved connection settings
         auto desiredCredential = credList.GetAt(selectedTenant);
         desiredCredential.RetrievePassword();
-        auto nameJson = json::value::parse(desiredCredential.UserName().c_str());
         auto passWordJson = json::value::parse(desiredCredential.Password().c_str());
-        _displayName = nameJson.at(L"displayName").as_string();
-        _tenantID = nameJson.at(L"tenantID").as_string();
+        _currentTenant = _tenantList[selectedTenant]; // we already unpacked the name info, so we should just use it
         _accessToken = passWordJson.at(L"accessToken").as_string();
         _refreshToken = passWordJson.at(L"refreshToken").as_string();
         _expiry = std::stoi(passWordJson.at(L"expiry").as_string());
@@ -560,10 +582,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
 
         // Get the tenants and the required tenant id
-        const auto tenantsResponse = _GetTenants();
-        _tenantList = tenantsResponse.at(L"value");
-        const auto tenantListAsArray = _tenantList.as_array();
-        if (tenantListAsArray.size() == 0)
+        _PopulateTenantList();
+        if (_tenantList.size() == 0)
         {
             _WriteStringWithNewline(RS_(L"AzureNoTenants"));
             _transitionToState(ConnectionState::Failed);
@@ -571,8 +591,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (_tenantList.size() == 1)
         {
-            const auto& chosenTenant = tenantListAsArray.at(0);
-            std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
+            _currentTenant = til::at(_tenantList, 0);
 
             // We have to refresh now that we have the tenantID
             _RefreshTokens();
@@ -588,13 +607,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to list the user's tenants and let them decide which tenant they wish to connect to
     void AzureConnection::_RunTenantChoiceState()
     {
-        const auto tenantListAsArray = _tenantList.as_array();
-        auto numTenants = gsl::narrow<int>(tenantListAsArray.size());
+        auto numTenants = gsl::narrow<int>(_tenantList.size());
         for (int i = 0; i < numTenants; i++)
         {
-            const auto& tenant = tenantListAsArray.at(i);
-            const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
-            _WriteStringWithNewline(_formatTenantLine(i, tenantDisplayName, tenantId));
+            _WriteStringWithNewline(_formatTenant(i, _tenantList[i]));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
 
@@ -628,8 +644,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
         } while (true);
 
-        const auto& chosenTenant = tenantListAsArray.at(selectedTenant);
-        std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
+        _currentTenant = _tenantList[selectedTenant];
 
         // We have to refresh now that we have the tenantID
         _RefreshTokens();
@@ -824,7 +839,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to acquire the user's Azure tenants
     // Return value:
     // - the response which contains a list of the user's Azure tenants
-    json::value AzureConnection::_GetTenants()
+    void AzureConnection::_PopulateTenantList()
     {
         // Initialize the client
         http_client tenantClient(_resourceUri);
@@ -834,7 +849,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         tenantRequest.set_request_uri(L"tenants?api-version=2020-01-01");
 
         // Send the request and return the response as a json value
-        return _SendAuthenticatedRequestReturningJson(tenantClient, tenantRequest);
+        auto tenantResponse{ _SendAuthenticatedRequestReturningJson(tenantClient, tenantRequest) };
+        auto tenantList{ tenantResponse.at(L"value").as_array() };
+
+        _tenantList.clear();
+        std::transform(tenantList.begin(), tenantList.end(), std::back_inserter(_tenantList), _crackTenant);
     }
 
     // Method description:
@@ -848,7 +867,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Initialize the request
         http_request refreshRequest(L"POST");
-        refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
+        refreshRequest.set_request_uri(_currentTenant->ID + L"/oauth2/token");
         const auto body{ fmt::format(L"client_id={}&resource={}&grant_type=refresh_token&refresh_token={}", AzureClientID, _wantedResource, _refreshToken) };
         refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
@@ -928,8 +947,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         json::value userName;
         userName[U("ver")] = CurrentCredentialVersion;
-        userName[U("displayName")] = json::value::string(_displayName);
-        userName[U("tenantID")] = json::value::string(_tenantID);
+        _packTenant(userName, *_currentTenant);
         json::value passWord;
         passWord[U("accessToken")] = json::value::string(_accessToken);
         passWord[U("refreshToken")] = json::value::string(_refreshToken);

@@ -13,6 +13,7 @@
 
 #include "../cascadia/inc/cppwinrt_utils.h"
 #include "ConnectionStateHolder.h"
+#include "AzureClient.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -57,14 +58,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
         const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
         const int _expireLimit{ 2700 };
-        web::json::value _tenantList;
-        utility::string_t _displayName;
-        utility::string_t _tenantID;
         utility::string_t _accessToken;
         utility::string_t _refreshToken;
         int _expiry{ 0 };
         utility::string_t _cloudShellUri;
         utility::string_t _terminalID;
+
+        std::vector<::Microsoft::Terminal::Azure::Tenant> _tenantList;
+        std::optional<::Microsoft::Terminal::Azure::Tenant> _currentTenant;
 
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
@@ -72,7 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         web::json::value _SendAuthenticatedRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
         web::json::value _GetDeviceCode();
         web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
-        web::json::value _GetTenants();
+        void _PopulateTenantList();
         void _RefreshTokens();
         web::json::value _GetCloudShellUserSettings();
         utility::string_t _GetCloudShell();
