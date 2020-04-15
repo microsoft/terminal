@@ -41,17 +41,18 @@ same window.
 
 #### `split-pane`
 
-`split-pane [-H]|[-V] [terminal_parameters]`
+`split-pane [-H,--horizontal]|[-V,--vertical] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
 
 **Parameters**:
 
-* `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
-  "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
-  omitted, defaults to "auto", which splits the current pane in whatever the
-  larger dimension is. If both `-H` and `-V` are provided, defaults to vertical.
+* `-H,--horizontal`, `-V,--vertical`: Used to indicate which direction to split
+  the pane. `-V` is "vertically" (think `[|]`), and `-H` is "horizontally"
+  (think `[-]`). If omitted, defaults to "auto", which splits the current pane
+  in whatever the larger dimension is. If both `-H` and `-V` are provided,
+  defaults to vertical.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
 #### `focus-tab`
