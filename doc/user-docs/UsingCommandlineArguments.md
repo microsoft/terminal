@@ -179,11 +179,11 @@ wt --% new-tab cmd ; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe
 In both these examples, the newly created Windows Terminal window will create
 the window by correctly parsing all the provided commandline arguments.
 
-However, these method are _not_ recommended currently, as Powershell will wait
+However, these methods are _not_ recommended currently, as Powershell will wait
 for the newly-created Terminal window to be closed before returning control to
 Powershell. By default, Powershell will always wait for Windows Store
 applications (like the Windows Terminal) to close before returning to the
-prompt. Note that this is different than the behavior of `cmd`, who will return
+prompt. Note that this is different than the behavior of `cmd`, which will return
 to the prompt immediately. See
 [Powershell/PowerShell#9970](https://github.com/PowerShell/PowerShell/issues/9970)
 for more details on this bug.
