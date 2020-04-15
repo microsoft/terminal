@@ -780,7 +780,11 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
-        _buffer->GetRenderTarget().TriggerRedrawAll();
+        // We have to report the delta here because we might have circled the text buffer.
+        // That didn't change the viewport and therefore the TriggerScroll(void)
+        // method can't detect the delta on its own.
+        COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
+        _buffer->GetRenderTarget().TriggerScroll(&delta);
         _NotifyScrollEvent();
     }
 
@@ -789,13 +793,20 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
 void Terminal::UserScrollViewport(const int viewTop)
 {
+    // we're going to modify state here that the renderer could be reading.
+    auto lock = LockForWriting();
+
     const auto clampedNewTop = std::max(0, viewTop);
     const auto realTop = ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 
     _scrollOffset = std::max(0, newDelta);
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+
+    // We can use the void variant of TriggerScroll here because
+    // we adjusted the viewport so it can detect the difference
+    // from the previous frame drawn.
+    _buffer->GetRenderTarget().TriggerScroll();
 }
 
 int Terminal::GetScrollOffset() noexcept

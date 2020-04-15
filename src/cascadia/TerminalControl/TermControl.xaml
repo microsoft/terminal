@@ -77,6 +77,23 @@
                                CurrentCursorPosition="_CurrentCursorPositionHandler"
                                CurrentFontInfo="_FontInfoHandler" />
 
+        <Grid x:Name="RendererFailedNotice"
+              x:Load="False"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+            <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{ThemeResource SystemAccentColor}"
+                    Margin="8,8,8,8"
+                    Padding="8,8,8,8"
+                    BorderThickness="2,2,2,2"
+                    CornerRadius="{ThemeResource OverlayCornerRadius}">
+                <StackPanel>
+                    <TextBlock HorizontalAlignment="Center" x:Uid="TermControl_RendererFailedTextBlock" TextWrapping="WrapWholeWords"/>
+                    <Button Click="_RenderRetryButton_Click" x:Uid="TermControl_RendererRetryButton" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
     </Grid>
 
 </UserControl>
