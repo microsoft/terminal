@@ -75,6 +75,8 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
+    std::optional<til::point> _singleClickTouchdownPos;
+
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);

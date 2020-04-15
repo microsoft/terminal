@@ -38,6 +38,9 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
         case WM_LBUTTONDOWN:
             LOG_IF_FAILED(terminal->_StartSelection(lParam));
             return 0;
+        case WM_LBUTTONUP:
+            terminal->_singleClickTouchdownPos = std::nullopt;
+            break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
             {
@@ -351,23 +354,17 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 try
 {
-    const bool altPressed = GetKeyState(VK_MENU) < 0;
-    COORD cursorPosition{
+    const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
-    const auto fontSize = this->_actualFont.GetSize();
-
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
-
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
-
-    this->_terminal->SetSelectionAnchor(cursorPosition);
+    auto lock = _terminal->LockForWriting();
+    const bool altPressed = GetKeyState(VK_MENU) < 0;
     this->_terminal->SetBlockSelection(altPressed);
 
+    this->_terminal->ClearSelection();
+    _singleClickTouchdownPos = cursorPosition;
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -377,20 +374,29 @@ CATCH_RETURN();
 HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
 try
 {
-    COORD cursorPosition{
+    const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
-    const auto fontSize = this->_actualFont.GetSize();
+    auto lock = _terminal->LockForWriting();
+    const til::size fontSize{ this->_actualFont.GetSize() };
 
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
+    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
+    if (this->_singleClickTouchdownPos)
+    {
+        const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
+        auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
+        if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+        {
+            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
+            // stop tracking the touchdown point
+            _singleClickTouchdownPos = std::nullopt;
+        }
+    }
 
-    this->_terminal->SetSelectionEnd(cursorPosition);
+    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
     this->_renderer->TriggerSelection();
 
     return S_OK;
