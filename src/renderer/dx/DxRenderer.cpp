@@ -885,21 +885,26 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-    // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
-    // Yes, this will further impact the performance of retro terminal effects.
-    // But we're talking about running the entire display pipeline through a shader for
-    // cosmetic effect, so performance isn't likely the top concern with this feature.
-    if (_retroTerminalEffects)
-    {
-        _invalidMap.set_all();
-    }
+    //// If retro terminal effects are on, we must invalidate everything for them to draw correctly.
+    //// Yes, this will further impact the performance of retro terminal effects.
+    //// But we're talking about running the entire display pipeline through a shader for
+    //// cosmetic effect, so performance isn't likely the top concern with this feature.
+    //if (_retroTerminalEffects)
+    //{
+    //    _invalidMap.set_all();
+    //}
 
-    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
-    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
-    if (_scale != 1.0f)
-    {
-        _invalidMap.set_all();
-    }
+    //// If we're doing High DPI, we must invalidate everything for it to draw correctly.
+    //// TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
+    //if (_scale != 1.0f)
+    //{
+    //    _invalidMap.set_all();
+    //}
+
+    // TODO: GH: 778, 5345 - There are too many issues with incremental rendering for 1.0. This disables it by going back
+    // to redrawing everything.
+    // The above lines are left in and commented out for when we turn this back on post 1.0.
+    _invalidMap.set_all();
 
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
