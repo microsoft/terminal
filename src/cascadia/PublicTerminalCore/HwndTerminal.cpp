@@ -475,14 +475,16 @@ static ControlKeyStates getControlKeyState() noexcept
     return flags;
 }
 
-bool HwndTerminal::_CanSendVTMouseInput() const
+bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
     const bool shiftPressed = GetKeyState(VK_SHIFT) < 0;
     return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
 }
 
-bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
+try
+{
     const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
@@ -496,6 +498,11 @@ bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
 
     return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)

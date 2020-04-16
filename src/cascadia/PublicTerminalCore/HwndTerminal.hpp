@@ -77,7 +77,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
-    bool _focused;
+    bool _focused{ false };
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
@@ -105,8 +105,8 @@ private:
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
-    bool _CanSendVTMouseInput() const;
-    bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    bool _CanSendVTMouseInput() const noexcept;
+    bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
     // Inherited via IControlAccessibilityInfo
     COORD GetFontSize() const override;
