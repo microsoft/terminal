@@ -180,16 +180,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Convert text buffer cursor position to client coordinate position within the window
         const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const til::point clientCursorInDips{ clientCursorPos / scaleFactor };
+
         // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.x<double>());
-        Canvas().SetTop(TextBlock(), clientCursorPos.y<double>());
+        // Canvas().SetLeft(TextBlock(), clientCursorPos.x<double>());
+        // Canvas().SetTop(TextBlock(), clientCursorPos.y<double>());
+
+        // Canvas().SetLeft(TextBlock(), _currentTerminalCursorPos.x<double>());
+        // Canvas().SetTop(TextBlock(), _currentTerminalCursorPos.y<double>());
+
+        Canvas().SetLeft(TextBlock(), clientCursorInDips.x<double>());
+        Canvas().SetTop(TextBlock(), clientCursorInDips.y<double>());
 
         // calculate FontSize in pixels from DPIs
         const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
+        // const double fontSizePx = fontSize.height<double>();
+        // TextBlock().FontSize(fontSizePx);
+        TextBlock().FontSize(fontSizePx / scaleFactor);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorPos.x<double>();
+        const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorInDips.x<double>();
         // Make sure that we're setting the MaxWidth to a positive number - a
         // negative number here will crash us in mysterious ways with a useless
         // stack trace
@@ -209,8 +221,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const til::point frameOrigin{ windowOrigin + controlOrigin };
 
-        // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
         const til::point scaledFrameOrigin = frameOrigin * scaleFactor;
 
         // add the margin offsets if any
@@ -232,7 +242,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                screenCursorPos.y<float>(),
                                                0,
                                                fontSize.height<float>()),
-                                          scaleFactor);
+                                          1.0);
+        // scaleFactor);
     }
 
     // Method Description:
