@@ -1725,7 +1725,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto actualFontOldSize = _actualFont.GetSize();
 
             _renderer->TriggerFontChange(dpi, _desiredFont, _actualFont);
-            _renderer->TriggerRedrawAll();
 
             const auto actualFontNewSize = _actualFont.GetSize();
             if (actualFontNewSize != actualFontOldSize)
