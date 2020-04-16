@@ -44,6 +44,9 @@ public:
     bool SetCursorKeysMode(const bool applicationMode) noexcept override; // DECCKM
     bool SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
 
+    bool SoftReset() noexcept override; // DECSTR
+    bool HardReset() noexcept override; // RIS
+
     bool EnableVT200MouseMode(const bool enabled) noexcept override; // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override; // ?1005
     bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override; // ?1006

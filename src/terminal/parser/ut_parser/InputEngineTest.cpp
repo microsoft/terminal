@@ -58,7 +58,8 @@ bool ModifiersEquivalent(DWORD a, DWORD b)
     bool fShift = IsShiftPressed(a) == IsShiftPressed(b);
     bool fAlt = IsAltPressed(a) == IsAltPressed(b);
     bool fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
-    return fShift && fCtrl && fAlt;
+    bool fEnhanced = WI_IsFlagSet(a, ENHANCED_KEY) == WI_IsFlagSet(b, ENHANCED_KEY);
+    return fShift && fCtrl && fAlt && fEnhanced;
 }
 
 class TestState
@@ -251,6 +252,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
     TEST_METHOD(CSICursorBackTabTest);
+    TEST_METHOD(EnhancedKeysTest);
     TEST_METHOD(AltBackspaceTest);
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
@@ -259,6 +261,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(SGRMouseTest_Modifiers);
     TEST_METHOD(SGRMouseTest_Movement);
     TEST_METHOD(SGRMouseTest_Scroll);
+    TEST_METHOD(CtrlAltZCtrlAltXTest);
 
     friend class TestInteractDispatch;
 };
@@ -662,6 +665,7 @@ void InputEngineTest::WindowManipulationTest()
             L"Processing \"%s\"", seq.c_str()));
         _stateMachine->ProcessString(seq);
     }
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::NonAsciiTest()
@@ -715,6 +719,7 @@ void InputEngineTest::NonAsciiTest()
     test.Event.KeyEvent.bKeyDown = FALSE;
     testState.vExpectedInput.push_back(test);
     _stateMachine->ProcessString(utf8Input);
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::CursorPositioningTest()
@@ -758,6 +763,7 @@ void InputEngineTest::CursorPositioningTest()
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(seq);
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::CSICursorBackTabTest()
@@ -785,6 +791,57 @@ void InputEngineTest::CSICursorBackTabTest()
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(seq);
+    VerifyExpectedInputDrained();
+}
+
+void InputEngineTest::EnhancedKeysTest()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    // The following vkeys should be handled as enhanced keys
+    // Reference: https://docs.microsoft.com/en-us/windows/console/key-event-record-str
+    // clang-format off
+    const std::map<int, std::wstring> enhancedKeys{
+        { VK_PRIOR,  L"\x1b[5~"},
+        { VK_NEXT,   L"\x1b[6~"},
+        { VK_END,    L"\x1b[F"},
+        { VK_HOME,   L"\x1b[H"},
+        { VK_LEFT,   L"\x1b[D"},
+        { VK_UP,     L"\x1b[A"},
+        { VK_RIGHT,  L"\x1b[C"},
+        { VK_DOWN,   L"\x1b[B"},
+        { VK_INSERT, L"\x1b[2~"},
+        { VK_DELETE, L"\x1b[3~"}
+    };
+    // clang-format on
+
+    for (const auto& [vkey, seq] : enhancedKeys)
+    {
+        INPUT_RECORD inputRec;
+
+        const wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>(vkey);
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        Log::Comment(NoThrowString().Format(
+            L"Processing \"%s\"", seq.c_str()));
+        _stateMachine->ProcessString(seq);
+    }
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AltBackspaceTest()
@@ -1140,4 +1197,69 @@ void InputEngineTest::SGRMouseTest_Scroll()
     };
     // clang-format on
     VerifySGRMouseData(testData);
+}
+
+void InputEngineTest::CtrlAltZCtrlAltXTest()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    // This is a test for GH#4201. See that issue for more details.
+    Log::Comment(L"Test Ctrl+Alt+Z and Ctrl+Alt+X, which execute from anywhere "
+                 L"in the output engine, but should be Escape-Executed in the "
+                 L"input engine.");
+
+    DisableVerifyExceptions disable;
+
+    {
+        auto inputSeq = L"\x1b\x1a"; // ^[^Z
+
+        wchar_t expectedWch = L'Z';
+        short keyscan = VkKeyScanW(expectedWch);
+        short vkey = keyscan & 0xff;
+        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        INPUT_RECORD inputRec;
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = expectedWch - 0x40;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        _stateMachine->ProcessString(inputSeq);
+    }
+    {
+        auto inputSeq = L"\x1b\x18"; // ^[^X
+
+        wchar_t expectedWch = L'X';
+        short keyscan = VkKeyScanW(expectedWch);
+        short vkey = keyscan & 0xff;
+        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        INPUT_RECORD inputRec;
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = expectedWch - 0x40;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        _stateMachine->ProcessString(inputSeq);
+    }
+
+    VerifyExpectedInputDrained();
 }

@@ -456,7 +456,7 @@ void StateMachine::_ActionIgnore() noexcept
 // - wch - Character to collect.
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscParam(const wchar_t wch)
+void StateMachine::_ActionOscParam(const wchar_t wch) noexcept
 {
     _trace.TraceOnAction(L"OscParamCollect");
 
@@ -1002,7 +1002,7 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventOscParam(const wchar_t wch)
+void StateMachine::_EventOscParam(const wchar_t wch) noexcept
 {
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
@@ -1167,8 +1167,13 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     _trace.TraceCharInput(wch);
 
     // Process "from anywhere" events first.
-    if (wch == AsciiChars::CAN ||
-        wch == AsciiChars::SUB)
+    const bool isFromAnywhereChar = (wch == AsciiChars::CAN || wch == AsciiChars::SUB);
+
+    // GH#4201 - If this sequence was ^[^X or ^[^Z, then we should
+    // _ActionExecuteFromEscape, as to send a Ctrl+Alt+key key. We should only
+    // do this for the InputStateMachineEngine - the OutputEngine should execute
+    // these from any state.
+    if (isFromAnywhereChar && !(_state == VTStates::Escape && _engine->DispatchControlCharsFromEscape()))
     {
         _ActionExecute(wch);
         _EnterGround();
@@ -1411,20 +1416,21 @@ void StateMachine::ResetState() noexcept
 //   into the given size_t. All existing value is moved up by 10.
 // - For example, if your value had 437 and you put in the printable number 2,
 //   this function will update value to 4372.
-// - Clamps to size_t max if it gets too big.
+// - Clamps to 32767 if it gets too big.
 // Arguments:
 // - wch - Printable character to accumulate into the value (after conversion to number, of course)
 // - value - The value to update with the printable character. See example above.
 // Return Value:
 // - <none> - But really it's the update to the given value parameter.
-void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value)
+void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
 {
     const size_t digit = wch - L'0';
 
-    // If we overflow while multiplying and adding, the value is just size_t max.
-    if (FAILED(SizeTMult(value, 10, &value)) ||
-        FAILED(SizeTAdd(value, digit, &value)))
+    value = value * 10 + digit;
+
+    // Values larger than the maximum should be mapped to the largest supported value.
+    if (value > MAX_PARAMETER_VALUE)
     {
-        value = std::numeric_limits<size_t>().max();
+        value = MAX_PARAMETER_VALUE;
     }
 }

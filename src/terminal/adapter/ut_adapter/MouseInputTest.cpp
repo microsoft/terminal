@@ -593,4 +593,44 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
     }
+
+    TEST_METHOD(AlternateScrollModeTests)
+    {
+        Log::Comment(L"Starting test...");
+        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        const short noModifierKeys = 0;
+
+        Log::Comment(L"Enable alternate scroll mode in the alt screen buffer");
+        mouseInput->UseAlternateScreenBuffer();
+        mouseInput->EnableAlternateScroll(true);
+
+        Log::Comment(L"Test mouse wheel scrolling up");
+        s_pwszInputExpected = L"\x1B[A";
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, 1));
+
+        Log::Comment(L"Test mouse wheel scrolling down");
+        s_pwszInputExpected = L"\x1B[B";
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -1));
+
+        Log::Comment(L"Enable cursor keys mode");
+        mouseInput->ChangeCursorKeysMode(true);
+
+        Log::Comment(L"Test mouse wheel scrolling up");
+        s_pwszInputExpected = L"\x1BOA";
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, 1));
+
+        Log::Comment(L"Test mouse wheel scrolling down");
+        s_pwszInputExpected = L"\x1BOB";
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -1));
+
+        Log::Comment(L"Confirm no effect when scroll mode is disabled");
+        mouseInput->UseAlternateScreenBuffer();
+        mouseInput->EnableAlternateScroll(false);
+        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, 1));
+
+        Log::Comment(L"Confirm no effect when using the main buffer");
+        mouseInput->UseMainScreenBuffer();
+        mouseInput->EnableAlternateScroll(true);
+        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, 1));
+    }
 };

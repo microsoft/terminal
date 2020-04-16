@@ -336,7 +336,7 @@ using namespace Microsoft::Console::Interactivity;
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
 [[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
 {
-    hwnd = 0;
+    hwnd = nullptr;
     ApiLevel level;
     NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
     ;

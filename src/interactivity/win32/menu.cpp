@@ -45,22 +45,20 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
 [[nodiscard]] NTSTATUS Menu::CreateInstance(HWND hWnd)
 {
     NTSTATUS status = STATUS_SUCCESS;
-    HMENU hMenu = nullptr;
-    HMENU hHeirMenu = nullptr;
 
-    int ItemLength;
     WCHAR ItemString[32];
 
     // This gets the title bar menu.
-    hMenu = GetSystemMenu(hWnd, FALSE);
-    hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals().hInstance,
-                          MAKEINTRESOURCE(ID_CONSOLE_SYSTEMMENU));
+    HMENU hMenu = GetSystemMenu(hWnd, FALSE);
+    HMENU hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals().hInstance,
+                                MAKEINTRESOURCE(ID_CONSOLE_SYSTEMMENU));
 
     Menu* pNewMenu = new (std::nothrow) Menu(hMenu, hHeirMenu);
     status = NT_TESTNULL(pNewMenu);
 
     if (NT_SUCCESS(status))
     {
+        int ItemLength;
         // Load the submenu to the system menu.
         if (hHeirMenu)
         {
@@ -248,7 +246,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     UnlockConsole();
 
     // First try to find the console.dll next to the launched exe, else default to /windows/system32/console.dll
-    HANDLE hLibrary = LoadLibraryExW(gwszRelativePropertiesDll, 0, 0);
+    HANDLE hLibrary = LoadLibraryExW(gwszRelativePropertiesDll, nullptr, 0);
     bool fLoadedDll = hLibrary != nullptr;
     if (!fLoadedDll)
     {
@@ -260,7 +258,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
             {
                 wszFilePath[ARRAYSIZE(wszFilePath) - 1] = UNICODE_NULL;
 
-                hLibrary = LoadLibraryExW(wszFilePath, 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+                hLibrary = LoadLibraryExW(wszFilePath, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
                 fLoadedDll = hLibrary != nullptr;
             }
         }

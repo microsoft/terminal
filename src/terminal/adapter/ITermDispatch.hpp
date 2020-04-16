@@ -33,14 +33,14 @@ public:
     virtual bool CursorUp(const size_t distance) = 0; // CUU
     virtual bool CursorDown(const size_t distance) = 0; // CUD
     virtual bool CursorForward(const size_t distance) = 0; // CUF
-    virtual bool CursorBackward(const size_t distance) = 0; // CUB
+    virtual bool CursorBackward(const size_t distance) = 0; // CUB, BS
     virtual bool CursorNextLine(const size_t distance) = 0; // CNL
     virtual bool CursorPrevLine(const size_t distance) = 0; // CPL
-    virtual bool CursorHorizontalPositionAbsolute(const size_t column) = 0; // CHA
+    virtual bool CursorHorizontalPositionAbsolute(const size_t column) = 0; // HPA, CHA
     virtual bool VerticalLinePositionAbsolute(const size_t line) = 0; // VPA
     virtual bool HorizontalPositionRelative(const size_t distance) = 0; // HPR
     virtual bool VerticalPositionRelative(const size_t distance) = 0; // VPR
-    virtual bool CursorPosition(const size_t line, const size_t column) = 0; // CUP
+    virtual bool CursorPosition(const size_t line, const size_t column) = 0; // CUP, HVP
     virtual bool CursorSaveState() = 0; // DECSC
     virtual bool CursorRestoreState() = 0; // DECRC
     virtual bool CursorVisibility(const bool isVisible) = 0; // DECTCEM
@@ -50,23 +50,23 @@ public:
     virtual bool ScrollDown(const size_t distance) = 0; // SD
     virtual bool InsertLine(const size_t distance) = 0; // IL
     virtual bool DeleteLine(const size_t distance) = 0; // DL
-    virtual bool SetColumns(const size_t columns) = 0; // DECSCPP, DECCOLM
+    virtual bool SetColumns(const size_t columns) = 0; // DECCOLM
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
-    virtual bool SetScreenMode(const bool reverseMode) = 0; //DECSCNM
+    virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
     virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
     virtual bool SetTopBottomScrollingMargins(const size_t topMargin, const size_t bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR
-    virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL
+    virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
     virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
-    virtual bool ForwardTab(const size_t numTabs) = 0; // CHT
+    virtual bool ForwardTab(const size_t numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const size_t numTabs) = 0; // CBT
     virtual bool TabClear(const size_t clearType) = 0; // TBC
     virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
@@ -90,10 +90,10 @@ public:
 
     virtual bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECRST
 
-    virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR
-    virtual bool DeviceAttributes() = 0; // DA
+    virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
+    virtual bool DeviceAttributes() = 0; // DA1
 
-    virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // DesignateCharset
+    virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // SCS
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS

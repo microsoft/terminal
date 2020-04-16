@@ -331,8 +331,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            NULL, // features
-            NULL, // featureRangeLengths
+            nullptr, // features
+            nullptr, // featureRangeLengths
             0, // featureRanges
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
@@ -536,7 +536,7 @@ try
         // This means that we've represented one text with one glyph.
 
         // 2.
-        // U+0041 is A and U+0301 is a combinine acute accent ´.
+        // U+0041 is A and U+0301 is a combining acute accent ´.
         // That is a text length of two.
         // A given font might have two glyphs for this
         // which will be mapped into the _glyphIndices array.

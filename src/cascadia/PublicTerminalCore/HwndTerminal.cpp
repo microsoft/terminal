@@ -89,8 +89,8 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 }
 
 HwndTerminal::HwndTerminal(HWND parentHwnd) :
-    _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8 },
-    _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8, false },
+    _desiredFont{ L"Consolas", 0, 10, { 0, 14 }, CP_UTF8 },
+    _actualFont{ L"Consolas", 0, 10, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
     _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
@@ -289,7 +289,7 @@ HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void**
         parentHwnd,
         nullptr,
         nullptr,
-        0);
+        nullptr);
     auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
     RETURN_IF_FAILED(_terminal->Initialize());
 
@@ -427,10 +427,8 @@ const wchar_t* _stdcall TerminalGetSelection(void* terminal)
     return returnText.release();
 }
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
+static ControlKeyStates getControlKeyState() noexcept
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
     struct KeyModifier
     {
         int vkey;
@@ -458,10 +456,17 @@ void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
         }
     }
 
-    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
+    return flags;
 }
 
-void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    const auto flags = getControlKeyState();
+    publicTerminal->_terminal->SendKeyEvent(vkey, scanCode, flags);
+}
+
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
 {
     if (ch == '\t')
     {
@@ -469,7 +474,8 @@ void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
     }
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->SendCharEvent(ch);
+    const auto flags = getControlKeyState();
+    publicTerminal->_terminal->SendCharEvent(ch, scanCode, flags);
 }
 
 void _stdcall DestroyTerminal(void* terminal)

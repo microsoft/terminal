@@ -24,6 +24,7 @@ Author(s):
 #include "../buffer/out/textBuffer.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
+#include "IUiaTraceable.h"
 
 #include <UIAutomationCore.h>
 
@@ -35,15 +36,16 @@ namespace Microsoft::Console::Types
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
-        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>,
+        public IUiaTraceable
     {
     public:
         virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
-        ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
-        ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
-        ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = default;
-        ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = default;
+        ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = delete;
+        ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = delete;
+        ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = delete;
+        ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = delete;
         ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);

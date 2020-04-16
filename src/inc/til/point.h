@@ -39,17 +39,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        // This template will convert to size from anything that has an X and a Y field that appear convertable to an integer value
+        // This template will convert to size from anything that has an X and a Y field that appear convertible to an integer value
         template<typename TOther>
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
         {
         }
 
-        // This template will convert to size from anything that has a x and a y field that appear convertable to an integer value
+        // This template will convert to size from anything that has a x and a y field that appear convertible to an integer value
         template<typename TOther>
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().x)> && std::is_integral_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.x), static_cast<ptrdiff_t>(other.y))
+        {
+        }
+
+        // This template will convert to size from anything that has a X and a Y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
+        {
+        }
+
+        // This template will convert to size from anything that has a x and a y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().x)> && std::is_floating_point_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.x), TilMath::template cast<ptrdiff_t>(other.y))
         {
         }
 
@@ -62,11 +78,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator!=(const point& other) const noexcept
         {
             return !(*this == other);
-        }
-
-        operator bool() const noexcept
-        {
-            return _x != 0 || _y != 0;
         }
 
         constexpr bool operator<(const point& other) const noexcept
@@ -112,6 +123,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator+=(const point& other)
+        {
+            *this = *this + other;
+            return *this;
+        }
+
         point operator-(const point& other) const
         {
             ptrdiff_t x;
@@ -121,6 +138,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator-=(const point& other)
+        {
+            *this = *this - other;
+            return *this;
         }
 
         point operator*(const point& other) const
@@ -134,6 +157,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator*=(const point& other)
+        {
+            *this = *this * other;
+            return *this;
+        }
+
+        template<typename TilMath>
+        point scale(TilMath, const float scale) const
+        {
+            struct
+            {
+                float x, y;
+            } pt;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _x).AssignIfValid(&pt.x));
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _y).AssignIfValid(&pt.y));
+
+            return til::point(TilMath(), pt);
+        }
+
         point operator/(const point& other) const
         {
             ptrdiff_t x;
@@ -141,6 +183,38 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             ptrdiff_t y;
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point& operator/=(const point& other)
+        {
+            *this = *this / other;
+            return *this;
+        }
+
+        template<typename T>
+        point operator*(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        template<typename T>
+        point operator/(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
 
             return point{ x, y };
         }
@@ -198,6 +272,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Windows_Foundation_H
+        operator winrt::Windows::Foundation::Point() const
+        {
+            winrt::Windows::Foundation::Point ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
+            return ret;
+        }
+#endif
+
+        std::wstring to_string() const
+        {
+            return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
+        }
+
     protected:
         ptrdiff_t _x;
         ptrdiff_t _y;
@@ -217,7 +306,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::point& point)
         {
-            return WEX::Common::NoThrowString().Format(L"(X:%td, Y:%td)", point.x(), point.y());
+            return WEX::Common::NoThrowString(point.to_string().c_str());
         }
     };
 

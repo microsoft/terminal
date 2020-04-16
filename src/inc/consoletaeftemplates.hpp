@@ -17,6 +17,11 @@ Revision History:
 
 #pragma once
 
+// Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
+#define INIT_TEST_PROPERTY(type, identifer, description) \
+    type identifer;                                      \
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L#identifer, identifer), description);
+
 namespace WEX::TestExecution
 {
     template<>

@@ -360,7 +360,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR* const pwch)
             break;
         }
 
-        // Replace Unicode dashes with a standard hypen
+        // Replace Unicode dashes with a standard hyphen
         case UNICODE_EM_DASH:
         case UNICODE_EN_DASH:
         {

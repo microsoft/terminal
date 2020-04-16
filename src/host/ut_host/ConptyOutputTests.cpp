@@ -27,6 +27,15 @@ using namespace Microsoft::Console::Types;
 
 class ConptyOutputTests
 {
+    // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
+    // to be 80x32. If you change these, you'll probably inadvertently break a
+    // bunch of tests !!!
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+
+    // This test class is to write some things into the PTY and then check that
+    // the rendering that is coming out of the VT-sequence generator is exactly
+    // as we expect it to be.
     BEGIN_TEST_CLASS(ConptyOutputTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
     END_TEST_CLASS()
@@ -37,7 +46,7 @@ class ConptyOutputTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
 
         return true;
@@ -63,7 +72,7 @@ class ConptyOutputTests
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
-        m_state->PrepareNewTextBufferInfo(true);
+        m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
@@ -113,6 +122,7 @@ class ConptyOutputTests
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+    TEST_METHOD(InvalidateUntilOneBeforeEnd);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -124,10 +134,14 @@ private:
 
 bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
 {
+    // Since rendering happens on a background thread that doesn't have the exception handler on it
+    // we need to rely on VERIFY's return codes instead of exceptions.
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
     std::string actualString = std::string(pch, cch);
-    VERIFY_IS_GREATER_THAN(expectedOutput.size(),
-                           static_cast<size_t>(0),
-                           NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size()));
+    RETURN_BOOL_IF_FALSE(VERIFY_IS_GREATER_THAN(expectedOutput.size(),
+                                                static_cast<size_t>(0),
+                                                NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size())));
 
     std::string first = expectedOutput.front();
     expectedOutput.pop_front();
@@ -135,8 +149,8 @@ bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
     Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
 
-    VERIFY_ARE_EQUAL(first.length(), cch);
-    VERIFY_ARE_EQUAL(first, actualString);
+    RETURN_BOOL_IF_FALSE(VERIFY_ARE_EQUAL(first.length(), cch));
+    RETURN_BOOL_IF_FALSE(VERIFY_ARE_EQUAL(first, actualString));
 
     return true;
 }
@@ -301,16 +315,62 @@ void ConptyOutputTests::WriteAFewSimpleLines()
     expectedOutput.push_back("AAA");
     expectedOutput.push_back("\r\n");
     expectedOutput.push_back("BBB");
-    expectedOutput.push_back("\r\n");
-    // Here, we're going to emit 3 spaces. The region that got invalidated was a
-    // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
-    // region in between BBB and CCC as well, because it got included in the
-    // rectangle Or() operation.
-    // This behavior should not be seen as binding - if a future optimization
-    // breaks this test, it wouldn't be the worst.
-    expectedOutput.push_back("   ");
-    expectedOutput.push_back("\r\n");
+    // Jump down to the fourth line because emitting spaces didn't do anything
+    // and we will skip to emitting the CCC segment.
+    expectedOutput.push_back("\x1b[4;1H");
     expectedOutput.push_back("CCC");
+
+    // Cursor goes back on.
+    expectedOutput.push_back("\x1b[?25h");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Make sure we don't use EL and wipe out the last column of text"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+
+    _flushFirstFrame();
+
+    // Move the cursor to width-15, draw 15 characters
+    sm.ProcessString(L"\x1b[1;66H");
+    sm.ProcessString(L"ABCDEFGHIJKLMNO");
+
+    {
+        auto iter = tb.GetCellDataAt({ 78, 0 });
+        VERIFY_ARE_EQUAL(L"N", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"O", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("\x1b[65C");
+    expectedOutput.push_back("ABCDEFGHIJKLMNO");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // overstrike the first with X and the middle 8 with spaces
+    sm.ProcessString(L"\x1b[1;66H");
+    //                 ABCDEFGHIJKLMNO
+    sm.ProcessString(L"X             ");
+
+    {
+        auto iter = tb.GetCellDataAt({ 78, 0 });
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"O", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("\x1b[1;66H");
+    expectedOutput.push_back("X"); // sequence optimizer should choose ECH here
+    expectedOutput.push_back("\x1b[13X");
+    expectedOutput.push_back("\x1b[13C");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

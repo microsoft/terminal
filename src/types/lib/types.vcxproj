@@ -50,6 +50,7 @@
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
+    <ClInclude Include="..\IUiaTraceable.h" />
     <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\TermControlUiaTextRange.hpp" />
     <ClInclude Include="..\TermControlUiaProvider.hpp" />
@@ -58,6 +59,12 @@
     <ClInclude Include="..\UiaTextRangeBase.hpp" />
     <ClInclude Include="..\UiaTracing.h" />
     <ClInclude Include="..\WindowUiaProviderBase.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- subsume fmt, one of our dependencies, into contypes. -->
+    <ProjectReference Include="..\..\dep\fmt\fmt.vcxproj">
+      <Project>{6bae5851-50d5-4934-8d5e-30361a8a40f3}</Project>
+    </ProjectReference>
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

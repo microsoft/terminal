@@ -26,7 +26,7 @@ namespace Microsoft.Terminal.Wpf
         private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
@@ -35,7 +35,7 @@ namespace Microsoft.Terminal.Wpf
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
-            
+
             var blinkTime = NativeMethods.GetCaretBlinkTime();
 
             if (blinkTime != uint.MaxValue)
@@ -231,13 +231,15 @@ namespace Microsoft.Terminal.Wpf
                         NativeMethods.SetFocus(this.hwnd);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
+                        // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                         NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
-                        NativeMethods.TerminalSendKeyEvent(this.terminal, wParam);
+                        NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, Marshal.ReadByte(lParam, 2));
                         this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
-                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam);
+                        // WM_CHAR lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
+                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, Marshal.ReadByte(lParam, 2));
                         break;
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));

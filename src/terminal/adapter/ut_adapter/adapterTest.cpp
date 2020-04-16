@@ -445,49 +445,6 @@ public:
         return true;
     }
 
-    bool PrivateHorizontalTabSet() override
-    {
-        Log::Comment(L"PrivateHorizontalTabSet MOCK called...");
-        // We made it through the adapter, woo! Return true.
-        return TRUE;
-    }
-
-    bool PrivateForwardTab(const size_t numTabs) override
-    {
-        Log::Comment(L"PrivateForwardTab MOCK called...");
-        if (_privateForwardTabResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedNumTabs, numTabs);
-        }
-        return TRUE;
-    }
-
-    bool PrivateBackwardsTab(const size_t numTabs) override
-    {
-        Log::Comment(L"PrivateBackwardsTab MOCK called...");
-        if (_privateBackwardsTabResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedNumTabs, numTabs);
-        }
-        return TRUE;
-    }
-
-    bool PrivateTabClear(const bool clearAll) override
-    {
-        Log::Comment(L"PrivateTabClear MOCK called...");
-        if (_privateTabClearResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedClearAll, clearAll);
-        }
-        return TRUE;
-    }
-
-    bool PrivateSetDefaultTabStops() override
-    {
-        Log::Comment(L"PrivateSetDefaultTabStops MOCK called...");
-        return TRUE;
-    }
-
     bool PrivateEnableVT200MouseMode(const bool enabled) override
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
@@ -924,12 +881,6 @@ public:
 
     bool _setConsoleTitleWResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _privateHorizontalTabSetResult = false;
-    bool _privateForwardTabResult = false;
-    bool _privateBackwardsTabResult = false;
-    size_t _expectedNumTabs = 0;
-    bool _privateTabClearResult = false;
-    bool _expectedClearAll = false;
     bool _expectedMouseEnabled = false;
     bool _expectedAlternateScrollEnabled = false;
     bool _privateEnableVT200MouseModeResult = false;
@@ -1707,7 +1658,7 @@ public:
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1742,7 +1693,7 @@ public:
         VERIFY_IS_TRUE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1770,7 +1721,7 @@ public:
         VERIFY_IS_FALSE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1825,6 +1776,17 @@ public:
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
+    }
+
+    TEST_METHOD(DeviceStatus_OperatingStatusTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify good operating condition.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
+
+        _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
 
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
@@ -2049,29 +2011,6 @@ public:
         _testGetSet->_privateGetLineFeedModeResult = true;
         _testGetSet->_expectedLineFeedWithReturn = true;
         VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
-    }
-
-    TEST_METHOD(TabSetClearTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        _testGetSet->_privateHorizontalTabSetResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->HorizontalTabSet());
-
-        _testGetSet->_expectedNumTabs = 16;
-
-        _testGetSet->_privateForwardTabResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->ForwardTab(16));
-
-        _testGetSet->_privateBackwardsTabResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->BackwardsTab(16));
-
-        _testGetSet->_privateTabClearResult = TRUE;
-        _testGetSet->_expectedClearAll = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->TabClear(DispatchTypes::TabClearType::ClearAllColumns));
-
-        _testGetSet->_expectedClearAll = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->TabClear(DispatchTypes::TabClearType::ClearCurrentColumn));
     }
 
     TEST_METHOD(SetConsoleTitleTest)

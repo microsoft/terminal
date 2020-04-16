@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalControl
+{
+
+    // This interface is a hack for GH#979. Controls should implement this
+    // interface to be able to be notified of mousewheel events even on devices
+    // who's trackpads won't scroll inactive windows.
+
+    [uuid("65b8b8c5-988f-43ff-aba9-e89368da1598")]
+    interface IMouseWheelListener
+    {
+        Boolean OnMouseWheel(Windows.Foundation.Point coord, Int32 delta);
+    }
+}

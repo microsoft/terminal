@@ -35,6 +35,9 @@ namespace TerminalApp
 
         String Title { get; };
 
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();

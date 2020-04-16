@@ -1,0 +1,4 @@
+ICustom
+IObject
+LCID
+rfind
