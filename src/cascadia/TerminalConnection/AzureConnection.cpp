@@ -526,7 +526,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto desiredCredential = credList.GetAt(selectedTenant);
         desiredCredential.RetrievePassword();
         auto passWordJson = json::value::parse(desiredCredential.Password().c_str());
-        _currentTenant = _tenantList[selectedTenant]; // we already unpacked the name info, so we should just use it
+        _currentTenant = til::at(_tenantList, selectedTenant); // we already unpacked the name info, so we should just use it
         _accessToken = passWordJson.at(L"accessToken").as_string();
         _refreshToken = passWordJson.at(L"refreshToken").as_string();
         _expiry = std::stoi(passWordJson.at(L"expiry").as_string());
@@ -610,7 +610,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto numTenants = gsl::narrow<int>(_tenantList.size());
         for (int i = 0; i < numTenants; i++)
         {
-            _WriteStringWithNewline(_formatTenant(i, _tenantList[i]));
+            _WriteStringWithNewline(_formatTenant(i, til::at(_tenantList, i)));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
 
@@ -644,7 +644,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
         } while (true);
 
-        _currentTenant = _tenantList[selectedTenant];
+        _currentTenant = til::at(_tenantList, selectedTenant);
 
         // We have to refresh now that we have the tenantID
         _RefreshTokens();
