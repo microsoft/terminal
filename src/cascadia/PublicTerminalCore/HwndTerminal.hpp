@@ -105,6 +105,9 @@ private:
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
+    bool _CanSendVTMouseInput() const;
+    bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
     // Inherited via IControlAccessibilityInfo
     COORD GetFontSize() const override;
     RECT GetBounds() const noexcept override;
