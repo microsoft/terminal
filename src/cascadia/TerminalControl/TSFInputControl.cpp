@@ -175,24 +175,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
 
-        const auto fontWidth = fontArgs->FontSize().Width;
-        const auto fontHeight = fontArgs->FontSize().Height;
+        const til::size fontSize{ til::math::flooring, fontArgs->FontSize() };
 
         // Convert text buffer cursor position to client coordinate position within the window
-        COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<ptrdiff_t>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<ptrdiff_t>(fontHeight));
+        const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
         // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), clientCursorPos.Y);
+        Canvas().SetLeft(TextBlock(), clientCursorPos.x<double>());
+        Canvas().SetTop(TextBlock(), clientCursorPos.y<double>());
 
         // calculate FontSize in pixels from DPIs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
         TextBlock().FontSize(fontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = _currentCanvasWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorPos.x<double>();
         // Make sure that we're setting the MaxWidth to a positive number - a
         // negative number here will crash us in mysterious ways with a useless
         // stack trace
@@ -200,27 +197,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().MaxWidth(newMaxWidth);
 
         // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
+        const auto windowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
+        const til::point windowOrigin{ til::math::flooring, windowBounds };
 
         // Convert from client coordinate to screen coordinate by adding window position
-        COORD screenCursorPos;
-        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<short>(windowBounds.X));
-        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<short>(windowBounds.Y));
+        til::point screenCursorPos{ clientCursorPos + windowOrigin };
 
         // get any offset (margin + tabs, etc..) of the control within the window
-        const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
 
         // add the margin offsets if any
-        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
-        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
+        screenCursorPos += controlOrigin;
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontHeight;
-        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
+        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontSize.height<float>();
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.y()) + yOffset;
 
-        _currentTextBounds = ScaleRect(Rect(screenCursorPos.X, textBottom, 0, fontHeight), scaleFactor);
-        _currentControlBounds = ScaleRect(Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight), scaleFactor);
+        _currentTextBounds = ScaleRect(Rect(screenCursorPos.x<float>(),
+                                            textBottom,
+                                            0,
+                                            fontSize.height<float>()),
+                                       scaleFactor);
+
+        _currentControlBounds = ScaleRect(Rect(screenCursorPos.x<float>(),
+                                               screenCursorPos.y<float>(),
+                                               0,
+                                               fontSize.height<float>()),
+                                          scaleFactor);
     }
 
     // Method Description:
