@@ -25,6 +25,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             size(static_cast<ptrdiff_t>(width), static_cast<ptrdiff_t>(height))
         {
         }
+        constexpr size(ptrdiff_t width, int height) noexcept :
+            size(width, static_cast<ptrdiff_t>(height))
+        {
+        }
+        constexpr size(int width, ptrdiff_t height) noexcept :
+            size(static_cast<ptrdiff_t>(width), height)
+        {
+        }
 #endif
 
         size(size_t width, size_t height)

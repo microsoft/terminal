@@ -177,27 +177,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const til::size fontSize{ til::math::flooring, fontArgs->FontSize() };
 
-        // Convert text buffer cursor position to client coordinate position within the window
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
         const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
         const til::point clientCursorInDips{ clientCursorPos / scaleFactor };
 
-        // position textblock to cursor position
-        // Canvas().SetLeft(TextBlock(), clientCursorPos.x<double>());
-        // Canvas().SetTop(TextBlock(), clientCursorPos.y<double>());
-
-        // Canvas().SetLeft(TextBlock(), _currentTerminalCursorPos.x<double>());
-        // Canvas().SetTop(TextBlock(), _currentTerminalCursorPos.y<double>());
-
+        // Position our TextBlock at the cursor position
         Canvas().SetLeft(TextBlock(), clientCursorInDips.x<double>());
         Canvas().SetTop(TextBlock(), clientCursorInDips.y<double>());
 
-        // calculate FontSize in pixels from DPIs
+        // calculate FontSize in pixels from Points
         const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
-        // const double fontSizePx = fontSize.height<double>();
-        // TextBlock().FontSize(fontSizePx);
+
+        // Make sure to unscale the font size to correct for DPI! XAML needs
+        // things in DIPs, and the fontSize is in pixels.
         TextBlock().FontSize(fontSizePx / scaleFactor);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
@@ -208,42 +205,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
         TextBlock().MaxWidth(newMaxWidth);
 
-        // Get window in screen coordinates, this is the entire window including tabs
+        // Get window in screen coordinates, this is the entire window including
+        // tabs. THIS IS IN DIPs
         const auto windowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
         const til::point windowOrigin{ til::math::flooring, windowBounds };
 
-        // Convert from client coordinate to screen coordinate by adding window position
-        // til::point screenCursorPos{ clientCursorPos + windowOrigin };
-
-        // get any offset (margin + tabs, etc..) of the control within the window
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        // TODO: Test with a padding on the control. THIS IS IN DIPs
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
 
-        const til::point frameOrigin{ windowOrigin + controlOrigin };
+        // The controlAbsoluteOrigin is the origin of the control relative to
+        // the origin of the displays. THIS IS IN DIPs
+        const til::point controlAbsoluteOrigin{ windowOrigin + controlOrigin };
 
-        const til::point scaledFrameOrigin = frameOrigin * scaleFactor;
+        // Convert the control origin to pixels
+        const til::point scaledFrameOrigin = controlAbsoluteOrigin * scaleFactor;
 
-        // add the margin offsets if any
+        // Get the location of the cursor in the display, in pixels.
         til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
 
-        // const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontSize.height<float>();
-        // const auto yOffset = fontSize.height<float>();
-        const auto yOffset = 0;
-        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.y()) + yOffset;
+        // Get the bounds of the composition text, in pixels.
+        const til::rectangle textBounds{ til::point{ screenCursorPos.x() + fontSize.width(), screenCursorPos.y() },
+                                         til::size{ 0, fontSize.height() } };
 
-        til::rectangle textBounds{ til::point{ screenCursorPos.x() + fontSize.width(), textBottom },
-                                   til::size{ (ptrdiff_t)0, fontSize.height() } };
+        _currentTextBounds = textBounds;
 
-        auto r = Rect(textBounds.left<float>(), textBounds.top<float>(), textBounds.width<float>(), textBounds.height<float>());
-        // _currentTextBounds = ScaleRect(r, scaleFactor);
-        _currentTextBounds = ScaleRect(r, 1.0);
-
-        _currentControlBounds = ScaleRect(Rect(screenCursorPos.x<float>(),
-                                               screenCursorPos.y<float>(),
-                                               0,
-                                               fontSize.height<float>()),
-                                          1.0);
-        // scaleFactor);
+        _currentControlBounds = Rect(screenCursorPos.x<float>(),
+                                     screenCursorPos.y<float>(),
+                                     0,
+                                     fontSize.height<float>());
     }
 
     // Method Description:
