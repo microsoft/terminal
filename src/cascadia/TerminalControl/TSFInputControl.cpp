@@ -201,25 +201,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const til::point windowOrigin{ til::math::flooring, windowBounds };
 
         // Convert from client coordinate to screen coordinate by adding window position
-        til::point screenCursorPos{ clientCursorPos + windowOrigin };
+        // til::point screenCursorPos{ clientCursorPos + windowOrigin };
 
         // get any offset (margin + tabs, etc..) of the control within the window
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
 
-        // add the margin offsets if any
-        screenCursorPos += controlOrigin;
+        const til::point frameOrigin{ windowOrigin + controlOrigin };
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontSize.height<float>();
+        const til::point scaledFrameOrigin = frameOrigin * scaleFactor;
+
+        // add the margin offsets if any
+        til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
+
+        // const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontSize.height<float>();
+        // const auto yOffset = fontSize.height<float>();
+        const auto yOffset = 0;
         const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.y()) + yOffset;
 
-        _currentTextBounds = ScaleRect(Rect(screenCursorPos.x<float>(),
-                                            textBottom,
-                                            0,
-                                            fontSize.height<float>()),
-                                       scaleFactor);
+        til::rectangle textBounds{ til::point{ screenCursorPos.x() + fontSize.width(), textBottom },
+                                   til::size{ (ptrdiff_t)0, fontSize.height() } };
+
+        auto r = Rect(textBounds.left<float>(), textBounds.top<float>(), textBounds.width<float>(), textBounds.height<float>());
+        // _currentTextBounds = ScaleRect(r, scaleFactor);
+        _currentTextBounds = ScaleRect(r, 1.0);
 
         _currentControlBounds = ScaleRect(Rect(screenCursorPos.x<float>(),
                                                screenCursorPos.y<float>(),
