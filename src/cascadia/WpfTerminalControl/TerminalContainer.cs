@@ -256,7 +256,7 @@ namespace Microsoft.Terminal.Wpf
 
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
-                        var delta = ((int)wParam) >> 16;
+                        var delta = (short)(((long)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);
                         break;
                 }
