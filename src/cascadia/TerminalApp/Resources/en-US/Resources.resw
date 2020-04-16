@@ -118,37 +118,30 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="InitialJsonParseErrorText" xml:space="preserve">
-    <value>Settings could not be loaded from file. Check for syntax errors, including trailing commas.
-</value>
+    <value>Settings could not be loaded from file. Check for syntax errors, including trailing commas.</value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
-    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the defaultProfile matches the GUID of one of your profiles.
-</value>
+    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the "defaultProfile" matches the GUID of one of your profiles.</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
   </data>
   <data name="DuplicateProfileText" xml:space="preserve">
-    <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.
-</value>
+    <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.</value>
   </data>
   <data name="UnknownColorSchemeText" xml:space="preserve">
-    <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.
-</value>
+    <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
-    <value>No profiles were found in your settings.
-</value>
+    <value>No profiles were found in your settings.</value>
   </data>
   <data name="AllProfilesHiddenText" xml:space="preserve">
-    <value>All profiles were hidden in your settings. You must have at least one non-hidden profile.
-</value>
+    <value>All profiles were hidden in your settings. You must have at least one non-hidden profile.</value>
   </data>
   <data name="ReloadJsonParseErrorText" xml:space="preserve">
-    <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.
-</value>
+    <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.</value>
   </data>
   <data name="UsingDefaultSettingsText" xml:space="preserve">
-    <value>
-Temporarily using the Windows Terminal default settings.
-</value>
+    <value>Temporarily using the Windows Terminal default settings.</value>
   </data>
   <data name="InitialJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to load settings</value>
@@ -164,6 +157,7 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="FeedbackUriValue" xml:space="preserve">
     <value>https://go.microsoft.com/fwlink/?linkid=2125419</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
   </data>
   <data name="AboutMenuItem" xml:space="preserve">
     <value>About</value>
@@ -176,21 +170,22 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
   </data>
   <data name="InvalidIcon" xml:space="preserve">
     <value>Found a profile with an invalid "icon". Defaulting that profile to have no icon. Make sure that when setting an "icon", the value is a valid file path to an image.</value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
-    <value>Warnings were found while parsing your keybindings:
-  </value>
+    <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>    Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.
-  </value>
+    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
-    <value>    Found a keybinding that was missing a required parameter value. This keybinding will be ignored.
-  </value>
+    <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
+    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
@@ -211,7 +206,7 @@ Temporarily using the Windows Terminal default settings.
     <value>Create a new tab</value>
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
-    <value>Open with the given profile. Accepts either the name or guid of a profile</value>
+    <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Create a new split pane</value>
@@ -223,7 +218,8 @@ Temporarily using the Windows Terminal default settings.
     <value>Create the new pane as a vertical split (think [|])</value>
   </data>
   <data name="CmdStartingDirArgDesc" xml:space="preserve">
-    <value>Open in the given directory instead of the profile's set startingDirectory</value>
+    <value>Open in the given directory instead of the profile's set "startingDirectory"</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>

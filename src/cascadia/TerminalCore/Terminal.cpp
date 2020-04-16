@@ -190,6 +190,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
 
+    // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
+    _buffer->GetCursor().StartDeferDrawing();
+    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _buffer->GetCursor().EndDeferDrawing(); });
+
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -198,6 +203,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      _buffer->GetCurrentAttributes(),
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
+
+        newTextBuffer->GetCursor().StartDeferDrawing();
 
         // Build a PositionInformation to track the position of both the top of
         // the mutable viewport and the top of the visible viewport in the new
@@ -886,8 +893,9 @@ CATCH_LOG()
 //   Visible, then it will immediately become visible.
 // Arguments:
 // - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
+void Terminal::SetCursorOn(const bool isOn)
 {
+    auto lock = LockForWriting();
     _buffer->GetCursor().SetIsOn(isOn);
 }
 

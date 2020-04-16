@@ -33,6 +33,7 @@ namespace TerminalCoreUnitTests
         // This test ensures that Terminal::_WriteBuffer doesn't get stuck when
         // PrintString() is called with more code units than the buffer width.
         TEST_METHOD(PrintStringOfSurrogatePairs);
+        TEST_METHOD(CheckDoubleWidthCursor);
     };
 };
 
@@ -207,4 +208,46 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     VERIFY_IS_TRUE(cursor.IsOn());
     VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
     VERIFY_IS_FALSE(cursor.IsVisible());
+}
+
+void TerminalApiTest::CheckDoubleWidthCursor()
+{
+    DummyRenderTarget renderTarget;
+    Terminal term;
+    term.Create({ 100, 100 }, 0, renderTarget);
+
+    auto& tbi = *(term._buffer);
+    auto& stateMachine = *(term._stateMachine);
+    auto& cursor = tbi.GetCursor();
+
+    // Lets stuff the buffer with single width characters,
+    // but leave the last two columns empty for double width.
+    std::wstring singleWidthText;
+    singleWidthText.reserve(98);
+    for (size_t i = 0; i < 98; ++i)
+    {
+        singleWidthText.append(L"A");
+    }
+    stateMachine.ProcessString(singleWidthText);
+    VERIFY_IS_TRUE(cursor.GetPosition().X == 98);
+
+    // Stuff two double width characters.
+    std::wstring doubleWidthText{ L"我愛" };
+    stateMachine.ProcessString(doubleWidthText);
+
+    // The last 'A'
+    term.SetCursorPosition(97, 0);
+    VERIFY_IS_FALSE(term.IsCursorDoubleWidth());
+
+    // This and the next CursorPos are taken up by '我‘
+    term.SetCursorPosition(98, 0);
+    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
+    term.SetCursorPosition(99, 0);
+    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
+
+    // This and the next CursorPos are taken up by ’愛‘
+    term.SetCursorPosition(0, 1);
+    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
+    term.SetCursorPosition(1, 1);
+    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 }
