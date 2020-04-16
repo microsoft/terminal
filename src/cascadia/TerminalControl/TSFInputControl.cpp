@@ -211,7 +211,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const til::point windowOrigin{ til::math::flooring, windowBounds };
 
         // Get the offset (margin + tabs, etc..) of the control within the window
-        // TODO: Test with a padding on the control. THIS IS IN DIPs
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
 
