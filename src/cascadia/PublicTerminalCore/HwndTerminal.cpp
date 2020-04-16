@@ -163,6 +163,8 @@ HRESULT HwndTerminal::Initialize()
     _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
+    _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
+
     return S_OK;
 }
 
@@ -351,6 +353,22 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
     publicTerminal->_terminal->UserScrollViewport(viewTop);
 }
 
+const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp)
+{
+    // if click occurred at a different location or past the multiClickTimer...
+    auto delta{ timestamp - _lastMouseClickTimestamp };
+    if (point != _lastMouseClickPos || delta > _multiClickTime)
+    {
+        // exit early. This is a single click.
+        _multiClickCounter = 1;
+    }
+    else
+    {
+        _multiClickCounter++;
+    }
+    return _multiClickCounter;
+}
+
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 try
 {
@@ -361,10 +379,33 @@ try
 
     auto lock = _terminal->LockForWriting();
     const bool altPressed = GetKeyState(VK_MENU) < 0;
+    const til::size fontSize{ this->_actualFont.GetSize() };
+
     this->_terminal->SetBlockSelection(altPressed);
 
-    this->_terminal->ClearSelection();
-    _singleClickTouchdownPos = cursorPosition;
+    auto clickCount = _NumberOfClicks(cursorPosition, std::chrono::steady_clock::now());
+
+    // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
+    // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
+    const unsigned int MAX_CLICK_COUNT = 3;
+    const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+
+    if (multiClickMapper == 3)
+    {
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Line);
+    }
+    else if (multiClickMapper == 2)
+    {
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Word);
+    }
+    else
+    {
+        this->_terminal->ClearSelection();
+        _singleClickTouchdownPos = cursorPosition;
+
+        _lastMouseClickTimestamp = std::chrono::steady_clock::now();
+        _lastMouseClickPos = cursorPosition;
+    }
     this->_renderer->TriggerSelection();
 
     return S_OK;
