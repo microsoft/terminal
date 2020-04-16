@@ -542,6 +542,18 @@ void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
     publicTerminal->_terminal->SetCursorOn(visible);
 }
 
+void __stdcall TerminalSetFocus(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_focused = true;
+}
+
+void __stdcall TerminalKillFocus(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_focused = false;
+}
+
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
