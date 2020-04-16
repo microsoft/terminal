@@ -1687,6 +1687,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _DoResize(foundationSize.Width, foundationSize.Height);
     }
 
+    // Method Description:
+    // - Triggered when the swapchain changes DPI. When this happens, we're
+    //   going to recieve 3 events:
+    //   - 1. First, a CompositionScaleChanged _for the original scale_. I don't
+    //     know why this event happens first.
+    //   - 2. Then, a SizeChanged. During that SizeChanged, the scale will still
+    //     be the original DPI. Again, I have no idea why the size & DPI is
+    //     updated in this order.
+    //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
+    //   - 4. We'll usually get another SizeChanged some time after this last
+    //     ScaleChanged. This usually seems to happen after something triggeres
+    //     the UI to re-layout, like hovering over the scrollbar. This event
+    //     doesn't reliably happen immediately after a scale change, so we can't
+    //     depend on it (despite the fact that both the scale and size state is
+    //     definitely correct in it)
+    // - In the 3rd event, we're going to update our font size for te new DPI.
+    //   At that point, we know how big the font should be for the new DPI, and
+    //   how big the SwapChainPanel will be. If these sizes are different, we'll
+    //   need to resize the buffer to fit in the new window.
+    // - TODO: Right now we'll _also_ resize in response to event 2. Is there a
+    //   way for us to skip that resize, as an optimization?
+    // Arguments:
+    // - sender: The SwapChainPanel who's DPI changed. This is our _swapchainPanel.
+    // - args: This param is unused in the CompositionScaleChanged event.
     void TermControl::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
                                              Windows::Foundation::IInspectable const& /*args*/)
     {
