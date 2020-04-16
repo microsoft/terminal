@@ -97,7 +97,8 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _uiaProvider{ nullptr },
     _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
-    _pfnWriteCallback{ nullptr }
+    _pfnWriteCallback{ nullptr },
+    _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
 {
     HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
@@ -353,10 +354,10 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
     publicTerminal->_terminal->UserScrollViewport(viewTop);
 }
 
-const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp)
+const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp) noexcept
 {
     // if click occurred at a different location or past the multiClickTimer...
-    auto delta{ timestamp - _lastMouseClickTimestamp };
+    const auto delta{ timestamp - _lastMouseClickTimestamp };
     if (point != _lastMouseClickPos || delta > _multiClickTime)
     {
         // exit early. This is a single click.
@@ -383,7 +384,7 @@ try
 
     this->_terminal->SetBlockSelection(altPressed);
 
-    auto clickCount = _NumberOfClicks(cursorPosition, std::chrono::steady_clock::now());
+    const auto clickCount{ _NumberOfClicks(cursorPosition, std::chrono::steady_clock::now()) };
 
     // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
     // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
@@ -428,7 +429,7 @@ try
     if (this->_singleClickTouchdownPos)
     {
         const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
-        auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
+        const auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
         if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
         {
             _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
