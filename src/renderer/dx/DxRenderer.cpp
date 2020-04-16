@@ -1567,8 +1567,11 @@ CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.width());
-    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.height());
+    // const auto scaledGlyphSize = _glyphCell.scale(til::math::ceiling, _scale);
+    // const auto scaledGlyphSize = _glyphCell.scale(til::math::ceiling, (1.0f / _scale));
+    const auto scaledGlyphSize = _glyphCell;
+    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / scaledGlyphSize.width());
+    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / scaledGlyphSize.height());
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }

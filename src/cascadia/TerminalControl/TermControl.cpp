@@ -514,8 +514,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 return false;
             }
 
-            const auto windowWidth = SwapChainPanel().ActualWidth() * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
-            const auto windowHeight = SwapChainPanel().ActualHeight() * SwapChainPanel().CompositionScaleY();
+            const auto actualWidth = SwapChainPanel().ActualWidth();
+            const auto actualHeight = SwapChainPanel().ActualHeight();
+
+            const auto windowWidth = actualWidth * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
+            const auto windowHeight = actualHeight * SwapChainPanel().CompositionScaleY();
 
             if (windowWidth == 0 || windowHeight == 0)
             {
@@ -1648,12 +1651,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Refresh our font with the renderer
             _UpdateFont();
 
-            auto lock = _terminal->LockForWriting();
             // Resize the terminal's BUFFER to match the new font size. This does
             // NOT change the size of the window, because that can lead to more
             // problems (like what happens when you change the font size while the
             // window is maximized?)
-            _DoResize(SwapChainPanel().ActualWidth(), SwapChainPanel().ActualHeight());
+            _RefreshSize();
         }
         CATCH_LOG();
     }
@@ -1673,7 +1675,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        auto foundationSize = e.NewSize();
+        auto newSize = e.NewSize();
+        auto currentScaleX = SwapChainPanel().CompositionScaleX();
+        currentScaleX;
+        auto currentScaleY = SwapChainPanel().CompositionScaleY();
+        currentScaleY;
+        auto foundationSize = newSize;
         foundationSize.Width *= SwapChainPanel().CompositionScaleX();
         foundationSize.Height *= SwapChainPanel().CompositionScaleY();
 
@@ -1685,10 +1692,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_renderEngine)
         {
-            const auto scale = sender.CompositionScaleX();
-            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+            const auto scaleX = sender.CompositionScaleX();
+            const auto scaleY = sender.CompositionScaleY();
+            const auto dpi = (int)(scaleX * USER_DEFAULT_SCREEN_DPI);
+            const auto currentEngineScale = _renderEngine->GetScaling();
+            currentEngineScale;
+
+            const auto actualFontOldSize = _actualFont.GetSize();
 
             _renderer->TriggerFontChange(dpi, _desiredFont, _actualFont);
+            _renderer->TriggerRedrawAll();
+
+            const auto actualFontNewSize = _actualFont.GetSize();
+            if (actualFontNewSize != actualFontOldSize)
+            {
+                _RefreshSize();
+            }
         }
     }
 
@@ -1728,6 +1747,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Perform a resize for the current size of the swapchainpanel. If the
+    //   font size changed, we'll need to resize the buffer to fit the existing
+    //   swapchain size. This helper will call _DoResize with the current size
+    //   of the swapchain, accounting for scaling due to DPI.
+    // - Note that a DPI change will also trigger a font size change, and will call into here.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_RefreshSize()
+    {
+        const auto currentScaleX = SwapChainPanel().CompositionScaleX();
+        const auto currentScaleY = SwapChainPanel().CompositionScaleY();
+        const auto actualWidth = SwapChainPanel().ActualWidth();
+        const auto actualHeight = SwapChainPanel().ActualHeight();
+
+        const auto widthInPixels = actualWidth * currentScaleX;
+        const auto heightInPixels = actualHeight * currentScaleY;
+
+        // Grab the lock, because we might be changing the buffer size here.
+        auto lock = _terminal->LockForWriting();
+        _DoResize(widthInPixels, heightInPixels);
+    }
+
+    // Method Description:
     // - Process a resize event that was initiated by the user. This can either
     //   be due to the user resizing the window (causing the swapchain to
     //   resize) or due to the DPI changing (causing us to need to resize the
@@ -1762,11 +1806,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
-        //      actually change size. No need to notify the connection of this
-        //      no-op.
-        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-        // I believe we'll need support for CSI 2J, and additionally I think
-        //      we're resetting the viewport to the top
+        // actually change size. No need to notify the connection of this no-op.
         const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
