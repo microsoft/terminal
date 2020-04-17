@@ -16,6 +16,14 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+static constexpr bool _IsMouseMessage(UINT uMsg)
+{
+    return uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_LBUTTONDBLCLK ||
+           uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP || uMsg == WM_MBUTTONDBLCLK ||
+           uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_RBUTTONDBLCLK ||
+           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL;
+}
+
 LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     HWND hwnd,
     UINT uMsg,
@@ -27,6 +35,14 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
 
     if (terminal)
     {
+        if (_IsMouseMessage(uMsg) && terminal->_CanSendVTMouseInput())
+        {
+            if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            {
+                return 0;
+            }
+        }
+
         switch (uMsg)
         {
         case WM_GETOBJECT:
@@ -509,6 +525,36 @@ static ControlKeyStates getControlKeyState() noexcept
     return flags;
 }
 
+bool HwndTerminal::_CanSendVTMouseInput() const noexcept
+{
+    // Only allow the transit of mouse events if shift isn't pressed.
+    const bool shiftPressed = GetKeyState(VK_SHIFT) < 0;
+    return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
+}
+
+bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
+try
+{
+    const til::point cursorPosition{
+        GET_X_LPARAM(lParam),
+        GET_Y_LPARAM(lParam),
+    };
+
+    const til::size fontSize{ this->_actualFont.GetSize() };
+    short wheelDelta{ 0 };
+    if (uMsg == WM_MOUSEWHEEL)
+    {
+        wheelDelta = HIWORD(wParam);
+    }
+
+    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
+
 void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
@@ -594,6 +640,18 @@ void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SetCursorOn(visible);
+}
+
+void __stdcall TerminalSetFocus(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_focused = true;
+}
+
+void __stdcall TerminalKillFocus(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_focused = false;
 }
 
 // Routine Description:

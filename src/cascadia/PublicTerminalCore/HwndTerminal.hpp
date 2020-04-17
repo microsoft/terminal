@@ -38,6 +38,8 @@ __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vk
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode);
 __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
+__declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
+__declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -75,6 +77,8 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
+    bool _focused{ false };
+
     std::chrono::milliseconds _multiClickTime;
     unsigned int _multiClickCounter{};
     std::chrono::steady_clock::time_point _lastMouseClickTimestamp{};
@@ -93,6 +97,8 @@ private:
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
+    friend void _stdcall TerminalSetFocus(void* terminal);
+    friend void _stdcall TerminalKillFocus(void* terminal);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring& text) noexcept;
@@ -105,6 +111,9 @@ private:
     HRESULT _StartSelection(LPARAM lParam) noexcept;
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
+
+    bool _CanSendVTMouseInput() const noexcept;
+    bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
     // Inherited via IControlAccessibilityInfo
     COORD GetFontSize() const override;

@@ -220,9 +220,11 @@ namespace Microsoft.Terminal.Wpf
                 switch ((NativeMethods.WindowMessage)msg)
                 {
                     case NativeMethods.WindowMessage.WM_SETFOCUS:
+                        NativeMethods.TerminalSetFocus(this.terminal);
                         this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_KILLFOCUS:
+                        NativeMethods.TerminalKillFocus(this.terminal);
                         this.blinkTimer?.Stop();
                         NativeMethods.TerminalSetCursorVisible(this.terminal, false);
                         break;
