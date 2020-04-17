@@ -16,31 +16,21 @@
 
 #include "AzureConnection.g.cpp"
 
+#include "winrt/Windows.System.UserProfile.h"
 #include "../../types/inc/Utils.hpp"
 
 using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Azure;
 
-using namespace utility;
 using namespace web;
-using namespace web::json;
 using namespace web::http;
 using namespace web::http::client;
 using namespace web::websockets::client;
-using namespace concurrency::streams;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr int CurrentCredentialVersion = 1;
 static constexpr auto PasswordVaultResourceName = L"Terminal";
 static constexpr auto HttpUserAgent = L"Terminal/0.0";
-
-#define FAILOUT_IF_OPTIONAL_EMPTY(optional) \
-    do                                      \
-    {                                       \
-        if (!((optional).has_value()))      \
-        {                                   \
-            return E_FAIL;                  \
-        }                                   \
-    } while (0, 0)
 
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
@@ -60,9 +50,12 @@ static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstr
     return fmt::format(std::wstring_view{ GetLibraryResourceString(resourceKey) }, (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
 }
 
-static inline std::wstring _formatTenantLine(int tenantNumber, const std::wstring_view tenantName, const std::wstring_view tenantID)
+static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 {
-    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") }, _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)), _colorize(USER_INFO_COLOR, tenantName), tenantID);
+    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") },
+                       _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
+                       _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
+                       tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -92,18 +85,47 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
+    // - helper that prints exception information to the output stream.
+    // Arguments:
+    // - [IMPLICIT] the current exception context
+    void AzureConnection::_WriteCaughtExceptionRecord()
+    {
+        try
+        {
+            throw;
+        }
+        catch (const std::exception& runtimeException)
+        {
+            // This also catches the AzureException, which has a .what()
+            _TerminalOutputHandlers(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+    }
+
+    // Method description:
     // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
     void AzureConnection::Start()
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          StaticOutputThreadProc,
-                                          this,
-                                          0,
-                                          nullptr));
+        _hOutputThread.reset(CreateThread(
+            nullptr,
+            0,
+            [](LPVOID lpParameter) noexcept {
+                AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
+                if (pInstance)
+                {
+                    return pInstance->_OutputThread();
+                }
+                return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+            },
+            this,
+            0,
+            nullptr));
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
@@ -121,7 +143,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        _TerminalOutputHandlers(L"\x1b[92m"); // Make prompted user input green
+        _TerminalOutputHandlers(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
@@ -200,6 +222,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Arguments:
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
+    try
     {
         if (!_isConnected())
         {
@@ -213,14 +236,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Initialize the request
             http_request terminalRequest(L"POST");
-            terminalRequest.set_request_uri(L"terminals/" + _terminalID + L"/size?cols=" + std::to_wstring(columns) + L"&rows=" + std::to_wstring(rows) + L"&version=2019-01-01");
-            _HeaderHelper(terminalRequest);
-            terminalRequest.set_body(json::value(L""));
+            terminalRequest.set_request_uri(fmt::format(L"terminals/{}/size?cols={}&rows={}&version=2019-01-01", _terminalID, columns, rows));
+            terminalRequest.set_body(json::value::null());
 
-            // Send the request
-            const auto response = _RequestHelper(terminalClient, terminalRequest);
+            // Send the request (don't care about the response)
+            (void)_SendAuthenticatedRequestReturningJson(terminalClient, terminalRequest);
         }
     }
+    CATCH_LOG();
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
@@ -256,27 +279,45 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - tenant - the unparsed tenant
     // Return value:
     // - a tuple containing the ID and display name of the tenant.
-    static std::tuple<utility::string_t, utility::string_t> _crackTenant(const json::value& tenant)
+    static Tenant _crackTenant(const json::value& jsonTenant)
     {
-        auto tenantId{ tenant.at(L"tenantId").as_string() };
-        std::wstring displayName{ tenant.has_string_field(L"displayName") ? tenant.at(L"displayName").as_string() : static_cast<std::wstring>(RS_(L"AzureUnknownTenantName")) };
-        return { tenantId, displayName };
+        Tenant tenant{};
+        if (jsonTenant.has_string_field(L"tenantID"))
+        {
+            // for compatibility with version 1 credentials
+            tenant.ID = jsonTenant.at(L"tenantID").as_string();
+        }
+        else
+        {
+            // This one comes in off the wire
+            tenant.ID = jsonTenant.at(L"tenantId").as_string();
+        }
+
+        if (jsonTenant.has_string_field(L"displayName"))
+        {
+            tenant.DisplayName = jsonTenant.at(L"displayName").as_string();
+        }
+
+        if (jsonTenant.has_string_field(L"defaultDomain"))
+        {
+            tenant.DefaultDomain = jsonTenant.at(L"defaultDomain").as_string();
+        }
+
+        return tenant;
     }
 
-    // Method description:
-    // - this method bridges the thread to the Azure connection instance
-    // Arguments:
-    // - lpParameter: the Azure connection parameter
-    // Return value:
-    // - the exit code of the thread
-    DWORD WINAPI AzureConnection::StaticOutputThreadProc(LPVOID lpParameter)
+    static void _packTenant(json::value& jsonTenant, const Tenant& tenant)
     {
-        AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
-        if (pInstance)
+        jsonTenant[L"tenantId"] = json::value::string(tenant.ID);
+        if (tenant.DisplayName.has_value())
         {
-            return pInstance->_OutputThread();
+            jsonTenant[L"displayName"] = json::value::string(*tenant.DisplayName);
         }
-        return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+
+        if (tenant.DefaultDomain.has_value())
+        {
+            jsonTenant[L"defaultDomain"] = json::value::string(*tenant.DefaultDomain);
+        }
     }
 
     // Method description:
@@ -302,32 +343,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // or allow them to login with a different account or allow them to remove the saved settings
                 case AzureState::AccessStored:
                 {
-                    RETURN_IF_FAILED(_AccessHelper());
+                    _RunAccessState();
                     break;
                 }
                 // User has no saved connection settings or has opted to login with a different account
                 // Azure authentication happens here
                 case AzureState::DeviceFlow:
                 {
-                    RETURN_IF_FAILED(_DeviceFlowHelper());
+                    _RunDeviceFlowState();
                     break;
                 }
                 // User has multiple tenants in their Azure account, they need to choose which one to connect to
                 case AzureState::TenantChoice:
                 {
-                    RETURN_IF_FAILED(_TenantChoiceHelper());
+                    _RunTenantChoiceState();
                     break;
                 }
                 // Ask the user if they want to save these connection settings for future logins
                 case AzureState::StoreTokens:
                 {
-                    RETURN_IF_FAILED(_StoreHelper());
+                    _RunStoreState();
                     break;
                 }
                 // Connect to Azure, we only get here once we have everything we need (tenantID, accessToken, refreshToken)
                 case AzureState::TermConnecting:
                 {
-                    RETURN_IF_FAILED(_ConnectHelper());
+                    _RunConnectState();
                     break;
                 }
                 // We are connected, continuously read from the websocket until its closed
@@ -366,28 +407,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     }
                     return S_OK;
                 }
-                case AzureState::NoConnect:
-                {
-                    _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-                    _transitionToState(ConnectionState::Failed);
-                    return E_FAIL;
-                }
                 }
             }
             catch (...)
             {
-                _state = AzureState::NoConnect;
+                _WriteCaughtExceptionRecord();
+                _transitionToState(ConnectionState::Failed);
+                return E_FAIL;
             }
         }
     }
 
     // Method description:
     // - helper function to get the stored credentials (if any) and let the user choose what to do next
-    // Return value:
-    // - S_FALSE if there are no stored credentials
-    // - S_OK if the user opts to login with a stored set of credentials or login with a different account
-    // - E_FAIL if the user closes the tab
-    HRESULT AzureConnection::_AccessHelper()
+    void AzureConnection::_RunAccessState()
     {
         bool oldVersionEncountered = false;
         auto vault = PasswordVault();
@@ -401,10 +434,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             // No credentials are stored, so start the device flow
             _state = AzureState::DeviceFlow;
-            return S_FALSE;
+            return;
         }
 
         int numTenants{ 0 };
+        _tenantList.clear();
         for (const auto& entry : credList)
         {
             auto nameJson = json::value::parse(entry.UserName().c_str());
@@ -422,7 +456,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 continue;
             }
 
-            _WriteStringWithNewline(_formatTenantLine(numTenants, nameJson.at(L"displayName").as_string(), nameJson.at(L"tenantID").as_string()));
+            auto newTenant{ _tenantList.emplace_back(_crackTenant(nameJson)) };
+
+            _WriteStringWithNewline(_formatTenant(numTenants, newTenant));
             numTenants++;
         }
 
@@ -434,7 +470,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             // No valid up-to-date credentials were found, so start the device flow
             _state = AzureState::DeviceFlow;
-            return S_FALSE;
+            return;
         }
 
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
@@ -445,7 +481,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         do
         {
             auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-            FAILOUT_IF_OPTIONAL_EMPTY(maybeTenantSelection);
+            if (!maybeTenantSelection.has_value())
+            {
+                return;
+            }
 
             const auto& tenantSelection = maybeTenantSelection.value();
             if (tenantSelection == RS_(L"AzureUserEntry_RemoveStored"))
@@ -453,13 +492,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // User wants to remove the stored settings
                 _RemoveCredentials();
                 _state = AzureState::DeviceFlow;
-                return S_OK;
+                return;
             }
             else if (tenantSelection == RS_(L"AzureUserEntry_NewLogin"))
             {
                 // User wants to login with a different account
                 _state = AzureState::DeviceFlow;
-                return S_OK;
+                return;
             }
             else
             {
@@ -486,10 +525,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // User wants to login with one of the saved connection settings
         auto desiredCredential = credList.GetAt(selectedTenant);
         desiredCredential.RetrievePassword();
-        auto nameJson = json::value::parse(desiredCredential.UserName().c_str());
         auto passWordJson = json::value::parse(desiredCredential.Password().c_str());
-        _displayName = nameJson.at(L"displayName").as_string();
-        _tenantID = nameJson.at(L"tenantID").as_string();
+        _currentTenant = til::at(_tenantList, selectedTenant); // we already unpacked the name info, so we should just use it
         _accessToken = passWordJson.at(L"accessToken").as_string();
         _refreshToken = passWordJson.at(L"refreshToken").as_string();
         _expiry = std::stoi(passWordJson.at(L"expiry").as_string());
@@ -500,25 +537,33 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Check if the token is close to expiring and refresh if so
         if (timeNow + _expireLimit > _expiry)
         {
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-            // Store the updated tokens under the same username
-            _StoreCredential();
+            try
+            {
+                _RefreshTokens();
+                // Store the updated tokens under the same username
+                _StoreCredential();
+            }
+            catch (const AzureException& e)
+            {
+                if (e.GetCode() == ErrorCodes::InvalidGrant)
+                {
+                    _WriteCaughtExceptionRecord();
+                    vault.Remove(desiredCredential);
+                    // Delete this credential and try again.
+                    _state = AzureState::AccessStored;
+                    return;
+                }
+                throw; // rethrow. we couldn't handle this error.
+            }
         }
 
         // We have everything we need, so go ahead and connect
         _state = AzureState::TermConnecting;
-        return S_OK;
     }
 
     // Method description:
     // - helper function to start the device code flow (required for authentication to Azure)
-    // Return value:
-    // - E_FAIL if the user closes the tab, does not authenticate in time or has no tenants in their Azure account
-    // - S_OK otherwise
-    HRESULT AzureConnection::_DeviceFlowHelper()
+    void AzureConnection::_RunDeviceFlowState()
     {
         // Initiate device code flow
         const auto deviceCodeResponse = _GetDeviceCode();
@@ -532,124 +577,93 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto expiresIn = std::stoi(deviceCodeResponse.at(L"expires_in").as_string());
 
         // Wait for user authentication and obtain the access/refresh tokens
-        json::value authenticatedResponse;
-        try
-        {
-            authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
-        }
-        catch (...)
-        {
-            _WriteStringWithNewline(RS_(L"AzureExitStr"));
-            return E_FAIL;
-        }
-
+        json::value authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
         _accessToken = authenticatedResponse.at(L"access_token").as_string();
         _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
 
         // Get the tenants and the required tenant id
-        const auto tenantsResponse = _GetTenants();
-        _tenantList = tenantsResponse.at(L"value");
-        const auto tenantListAsArray = _tenantList.as_array();
-        if (tenantListAsArray.size() == 0)
+        _PopulateTenantList();
+        if (_tenantList.size() == 0)
         {
             _WriteStringWithNewline(RS_(L"AzureNoTenants"));
             _transitionToState(ConnectionState::Failed);
-            return E_FAIL;
+            return;
         }
         else if (_tenantList.size() == 1)
         {
-            const auto& chosenTenant = tenantListAsArray.at(0);
-            std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
+            _currentTenant = til::at(_tenantList, 0);
 
             // We have to refresh now that we have the tenantID
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-
+            _RefreshTokens();
             _state = AzureState::StoreTokens;
         }
         else
         {
             _state = AzureState::TenantChoice;
         }
-        return S_OK;
     }
 
     // Method description:
     // - helper function to list the user's tenants and let them decide which tenant they wish to connect to
-    // Return value:
-    // - E_FAIL if the user closes the tab
-    // - S_OK otherwise
-    HRESULT AzureConnection::_TenantChoiceHelper()
+    void AzureConnection::_RunTenantChoiceState()
     {
-        try
+        auto numTenants = gsl::narrow<int>(_tenantList.size());
+        for (int i = 0; i < numTenants; i++)
         {
-            const auto tenantListAsArray = _tenantList.as_array();
-            auto numTenants = gsl::narrow<int>(tenantListAsArray.size());
-            for (int i = 0; i < numTenants; i++)
-            {
-                const auto& tenant = tenantListAsArray.at(i);
-                const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
-                _WriteStringWithNewline(_formatTenantLine(i, tenantDisplayName, tenantId));
-            }
-            _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
-
-            int selectedTenant{ -1 };
-            do
-            {
-                auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
-                FAILOUT_IF_OPTIONAL_EMPTY(maybeTenantSelection);
-
-                const auto& tenantSelection = maybeTenantSelection.value();
-                try
-                {
-                    selectedTenant = std::stoi(tenantSelection);
-
-                    if (selectedTenant < 0 || selectedTenant >= numTenants)
-                    {
-                        _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
-                        continue;
-                    }
-                    break;
-                }
-                catch (...)
-                {
-                    // suppress exceptions in conversion
-                }
-
-                // if we got here, we didn't break out of the loop early and need to go 'round again
-                _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
-            } while (true);
-
-            const auto& chosenTenant = tenantListAsArray.at(selectedTenant);
-            std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
-
-            // We have to refresh now that we have the tenantID
-            const auto refreshResponse = _RefreshTokens();
-            _accessToken = refreshResponse.at(L"access_token").as_string();
-            _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-            _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
-
-            _state = AzureState::StoreTokens;
-            return S_OK;
+            _WriteStringWithNewline(_formatTenant(i, til::at(_tenantList, i)));
         }
-        CATCH_RETURN();
+        _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
+
+        int selectedTenant{ -1 };
+        do
+        {
+            auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
+            if (!maybeTenantSelection.has_value())
+            {
+                return;
+            }
+
+            const auto& tenantSelection = maybeTenantSelection.value();
+            try
+            {
+                selectedTenant = std::stoi(tenantSelection);
+
+                if (selectedTenant < 0 || selectedTenant >= numTenants)
+                {
+                    _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
+                    continue;
+                }
+                break;
+            }
+            catch (...)
+            {
+                // suppress exceptions in conversion
+            }
+
+            // if we got here, we didn't break out of the loop early and need to go 'round again
+            _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
+        } while (true);
+
+        _currentTenant = til::at(_tenantList, selectedTenant);
+
+        // We have to refresh now that we have the tenantID
+        _RefreshTokens();
+        _state = AzureState::StoreTokens;
     }
 
     // Method description:
     // - helper function to ask the user if they wish to store their credentials
-    // Return value:
-    // - E_FAIL if the user closes the tab
-    // - S_OK otherwise
-    HRESULT AzureConnection::_StoreHelper()
+    void AzureConnection::_RunStoreState()
     {
         _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureStorePrompt"), USES_RESOURCE(L"AzureUserEntry_Yes"), USES_RESOURCE(L"AzureUserEntry_No")));
         // Wait for user input
         do
         {
             auto maybeStoreCredentials = _ReadUserInput(InputMode::Line);
-            FAILOUT_IF_OPTIONAL_EMPTY(maybeStoreCredentials);
+            if (!maybeStoreCredentials.has_value())
+            {
+                return;
+            }
 
             const auto& storeCredentials = maybeStoreCredentials.value();
             if (storeCredentials == RS_(L"AzureUserEntry_Yes"))
@@ -668,15 +682,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         } while (true);
 
         _state = AzureState::TermConnecting;
-        return S_OK;
     }
 
     // Method description:
     // - helper function to connect the user to the Azure cloud shell
-    // Return value:
-    // - E_FAIL if the user has not set up their cloud shell yet
-    // - S_OK after successful connection
-    HRESULT AzureConnection::_ConnectHelper()
+    void AzureConnection::_RunConnectState()
     {
         // Get user's cloud shell settings
         const auto settingsResponse = _GetCloudShellUserSettings();
@@ -684,7 +694,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _WriteStringWithNewline(RS_(L"AzureNoCloudAccount"));
             _transitionToState(ConnectionState::Failed);
-            return E_FAIL;
+            return;
         }
 
         // Request for a cloud shell
@@ -710,34 +720,44 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             WriteInput(static_cast<winrt::hstring>(queuedUserInput)); // send the user's queued up input back through
         }
-
-        return S_OK;
     }
 
     // Method description:
-    // - helper function to send requests and extract responses as json values
+    // - helper function to send requests with default headers and extract responses as json values
     // Arguments:
     // - a http_client
     // - a http_request for the client to send
     // Return value:
     // - the response from the server as a json value
-    json::value AzureConnection::_RequestHelper(http_client theClient, http_request theRequest)
+    json::value AzureConnection::_SendRequestReturningJson(http_client& theClient, http_request theRequest)
     {
+        auto& headers{ theRequest.headers() };
+        headers.add(L"User-Agent", HttpUserAgent);
+        headers.add(L"Accept", L"application/json");
+
         json::value jsonResult;
-        try
-        {
-            const auto responseTask = theClient.request(theRequest);
-            responseTask.wait();
-            const auto response = responseTask.get();
-            const auto responseJsonTask = response.extract_json();
-            responseJsonTask.wait();
-            jsonResult = responseJsonTask.get();
-        }
-        catch (...)
-        {
-            _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-        }
+        const auto responseTask = theClient.request(theRequest);
+        responseTask.wait();
+        const auto response = responseTask.get();
+        const auto responseJsonTask = response.extract_json();
+        responseJsonTask.wait();
+        jsonResult = responseJsonTask.get();
+
+        THROW_IF_AZURE_ERROR(jsonResult);
         return jsonResult;
+    }
+
+    // Method description:
+    // - helper function to send _authenticated_ requests with json bodies whose responses are expected
+    //   to be json. builds on _SendRequestReturningJson.
+    // Arguments:
+    // - the http_request
+    json::value AzureConnection::_SendAuthenticatedRequestReturningJson(http_client& theClient, http_request theRequest)
+    {
+        auto& headers{ theRequest.headers() };
+        headers.add(L"Authorization", L"Bearer " + _accessToken);
+
+        return _SendRequestReturningJson(theClient, std::move(theRequest));
     }
 
     // Method description:
@@ -752,11 +772,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize the request
         http_request commonRequest(L"POST");
         commonRequest.set_request_uri(L"common/oauth2/devicecode");
-        const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource;
+        const auto body{ fmt::format(L"client_id={}&resource={}", AzureClientID, _wantedResource) };
         commonRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and receive the response as a json value
-        return _RequestHelper(loginClient, commonRequest);
+        return _SendRequestReturningJson(loginClient, commonRequest);
     }
 
     // Method description:
@@ -774,76 +794,88 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_client pollingClient(_loginUri);
 
         // Continuously send a poll request until the user authenticates
-        const auto body = hstring() + L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
+        const auto body{ fmt::format(L"grant_type=device_code&resource={}&client_id={}&code={}", _wantedResource, AzureClientID, deviceCode) };
         const auto requestUri = L"common/oauth2/token";
-        json::value responseJson;
-        for (int count = 0; count < expiresIn / pollInterval; count++)
+
+        // use a steady clock here so it's not impacted by local time discontinuities
+        const auto tokenExpiry{ std::chrono::steady_clock::now() + std::chrono::seconds(expiresIn) };
+        while (std::chrono::steady_clock::now() < tokenExpiry)
         {
+            std::this_thread::sleep_for(std::chrono::seconds(pollInterval));
+
             // User might close the tab while we wait for them to authenticate, this case handles that
             if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
-                throw "Tab closed.";
+                // We're going down, there's no valid user for us to return
+                break;
             }
+
             http_request pollRequest(L"POST");
             pollRequest.set_request_uri(requestUri);
             pollRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
-            responseJson = _RequestHelper(pollingClient, pollRequest);
-
-            if (responseJson.has_field(L"error"))
+            try
             {
-                Sleep(pollInterval * 1000); // Sleep takes arguments in milliseconds
-                continue; // Still waiting for authentication
-            }
-            else
-            {
+                auto response{ _SendRequestReturningJson(pollingClient, pollRequest) };
                 _WriteStringWithNewline(RS_(L"AzureSuccessfullyAuthenticated"));
-                break; // Authentication is done, break from loop
+                // Got a valid response: we're done
+                return response;
             }
+            catch (const AzureException& e)
+            {
+                if (e.GetCode() == ErrorCodes::AuthorizationPending)
+                {
+                    // Handle the "auth pending" exception by retrying.
+                    continue;
+                }
+                throw;
+            } // uncaught exceptions bubble up to the caller
         }
-        if (responseJson.has_field(L"error"))
-        {
-            throw "Time out.";
-        }
-        return responseJson;
+
+        return json::value::null();
     }
 
     // Method description:
     // - helper function to acquire the user's Azure tenants
     // Return value:
     // - the response which contains a list of the user's Azure tenants
-    json::value AzureConnection::_GetTenants()
+    void AzureConnection::_PopulateTenantList()
     {
         // Initialize the client
         http_client tenantClient(_resourceUri);
 
         // Initialize the request
         http_request tenantRequest(L"GET");
-        tenantRequest.set_request_uri(L"tenants?api-version=2018-01-01");
-        _HeaderHelper(tenantRequest);
+        tenantRequest.set_request_uri(L"tenants?api-version=2020-01-01");
 
         // Send the request and return the response as a json value
-        return _RequestHelper(tenantClient, tenantRequest);
+        auto tenantResponse{ _SendAuthenticatedRequestReturningJson(tenantClient, tenantRequest) };
+        auto tenantList{ tenantResponse.at(L"value").as_array() };
+
+        _tenantList.clear();
+        std::transform(tenantList.begin(), tenantList.end(), std::back_inserter(_tenantList), _crackTenant);
     }
 
     // Method description:
     // - helper function to refresh the access/refresh tokens
     // Return value:
     // - the response with the new tokens
-    json::value AzureConnection::_RefreshTokens()
+    void AzureConnection::_RefreshTokens()
     {
         // Initialize the client
         http_client refreshClient(_loginUri);
 
         // Initialize the request
         http_request refreshRequest(L"POST");
-        refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
-        const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
+        refreshRequest.set_request_uri(_currentTenant->ID + L"/oauth2/token");
+        const auto body{ fmt::format(L"client_id={}&resource={}&grant_type=refresh_token&refresh_token={}", AzureClientID, _wantedResource, _refreshToken) };
         refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
-        refreshRequest.headers().add(L"User-Agent", HttpUserAgent);
 
         // Send the request and return the response as a json value
-        return _RequestHelper(refreshClient, refreshRequest);
+        auto refreshResponse{ _SendRequestReturningJson(refreshClient, refreshRequest) };
+        _accessToken = refreshResponse.at(L"access_token").as_string();
+        _refreshToken = refreshResponse.at(L"refresh_token").as_string();
+        _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
     }
 
     // Method description:
@@ -858,9 +890,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize request
         http_request settingsRequest(L"GET");
         settingsRequest.set_request_uri(L"providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2018-10-01");
-        _HeaderHelper(settingsRequest);
 
-        return _RequestHelper(settingsClient, settingsRequest);
+        return _SendAuthenticatedRequestReturningJson(settingsClient, settingsRequest);
     }
 
     // Method description:
@@ -875,13 +906,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Initialize request
         http_request shellRequest(L"PUT");
         shellRequest.set_request_uri(L"providers/Microsoft.Portal/consoles/default?api-version=2018-10-01");
-        _HeaderHelper(shellRequest);
         // { "properties": { "osType": "linux" } }
         auto body = json::value::object({ { U("properties"), json::value::object({ { U("osType"), json::value::string(U("linux")) } }) } });
         shellRequest.set_body(body);
 
         // Send the request and get the response as a json value
-        const auto cloudShell = _RequestHelper(cloudShellClient, shellRequest);
+        const auto cloudShell = _SendAuthenticatedRequestReturningJson(cloudShellClient, shellRequest);
 
         // Return the uri
         return cloudShell.at(L"properties").at(L"uri").as_string() + L"/";
@@ -898,11 +928,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Initialize the request
         http_request terminalRequest(L"POST");
-        terminalRequest.set_request_uri(L"terminals?cols=" + std::to_wstring(_initialCols) + L"&rows=" + std::to_wstring(_initialRows) + L"&version=2019-01-01&shell=" + shellType);
-        _HeaderHelper(terminalRequest);
+        terminalRequest.set_request_uri(fmt::format(L"terminals?cols={}&rows={}&version=2019-01-01&shell={}", _initialCols, _initialRows, shellType));
+        // LOAD-BEARING. the API returns "'content-type' should be 'application/json' or 'multipart/form-data'"
+        terminalRequest.set_body(json::value::null());
 
         // Send the request and get the response as a json value
-        const auto terminalResponse = _RequestHelper(terminalClient, terminalRequest);
+        const auto terminalResponse = _SendAuthenticatedRequestReturningJson(terminalClient, terminalRequest);
         _terminalID = terminalResponse.at(L"id").as_string();
 
         // Return the uri
@@ -910,32 +941,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
-    // - helper function to set the headers of a http_request
-    // Arguments:
-    // - the http_request
-    void AzureConnection::_HeaderHelper(http_request theRequest)
-    {
-        theRequest.headers().add(L"Accept", L"application/json");
-        theRequest.headers().add(L"Content-Type", L"application/json");
-        theRequest.headers().add(L"Authorization", L"Bearer " + _accessToken);
-        theRequest.headers().add(L"User-Agent", HttpUserAgent);
-    }
-
-    // Method description:
     // - helper function to store the credentials
     // - we store the display name, tenant ID, access/refresh tokens, and token expiry
     void AzureConnection::_StoreCredential()
     {
-        auto vault = PasswordVault();
         json::value userName;
         userName[U("ver")] = CurrentCredentialVersion;
-        userName[U("displayName")] = json::value::string(_displayName);
-        userName[U("tenantID")] = json::value::string(_tenantID);
+        _packTenant(userName, *_currentTenant);
         json::value passWord;
         passWord[U("accessToken")] = json::value::string(_accessToken);
         passWord[U("refreshToken")] = json::value::string(_refreshToken);
         passWord[U("expiry")] = json::value::string(std::to_wstring(_expiry));
-        auto newCredential = PasswordCredential(PasswordVaultResourceName, userName.serialize(), passWord.serialize());
+
+        PasswordVault vault;
+        PasswordCredential newCredential{ PasswordVaultResourceName, userName.serialize(), passWord.serialize() };
         vault.Add(newCredential);
     }
 
@@ -943,7 +962,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to remove all stored credentials
     void AzureConnection::_RemoveCredentials()
     {
-        auto vault = PasswordVault();
+        PasswordVault vault;
         winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
         try
