@@ -555,23 +555,49 @@ catch (...)
     return false;
 }
 
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode) noexcept
+try
+{
+    const auto flags = getControlKeyState();
+    _terminal->SendKeyEvent(vkey, scanCode, flags);
+}
+CATCH_LOG();
+
+void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode) noexcept
+try
+{
+    if (_terminal->IsSelectionActive())
+    {
+        _terminal->ClearSelection();
+        if (ch == UNICODE_ESC)
+        {
+            // ESC should clear any selection before it triggers input.
+            // Other characters pass through.
+            return;
+        }
+    }
+
+    if (ch == UNICODE_TAB)
+    {
+        // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
+        return;
+    }
+
+    const auto flags = getControlKeyState();
+    _terminal->SendCharEvent(ch, scanCode, flags);
+}
+CATCH_LOG();
+
 void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto flags = getControlKeyState();
-    publicTerminal->_terminal->SendKeyEvent(vkey, scanCode, flags);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_SendKeyEvent(vkey, scanCode);
 }
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
 {
-    if (ch == '\t')
-    {
-        return;
-    }
-
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto flags = getControlKeyState();
-    publicTerminal->_terminal->SendCharEvent(ch, scanCode, flags);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_SendCharEvent(ch, scanCode);
 }
 
 void _stdcall DestroyTerminal(void* terminal)

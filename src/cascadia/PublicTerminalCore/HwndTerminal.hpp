@@ -115,6 +115,9 @@ private:
     bool _CanSendVTMouseInput() const noexcept;
     bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
+    void _SendKeyEvent(WORD vkey, WORD scanCode) noexcept;
+    void _SendCharEvent(wchar_t ch, WORD scanCode) noexcept;
+
     // Inherited via IControlAccessibilityInfo
     COORD GetFontSize() const override;
     RECT GetBounds() const noexcept override;
