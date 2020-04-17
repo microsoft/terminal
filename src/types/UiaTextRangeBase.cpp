@@ -227,8 +227,17 @@ try
     // get the values of our endpoint
     const auto mine = GetEndpoint(endpoint);
 
+    // TODO GH#XXXX: associate UTRs with TextBuffers
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     // compare them
-    *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other, true);
+    *pRetVal = bufferSize.CompareInBounds(mine, other, true);
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
@@ -652,6 +661,17 @@ try
         return E_INVALIDARG;
     }
 
+    // TODO GH#XXXX: associate UTRs with TextBuffers
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto mine = GetEndpoint(endpoint);
+    const auto other = range->GetEndpoint(targetEndpoint);
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
     UiaTracing::TextRange::MoveEndpointByRange(endpoint, *range, targetEndpoint, *this);
@@ -768,9 +788,6 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
-
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
 
     // we don't have any children
