@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
 
             // Ensure every connection has the unique identifier in the environment.
-            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());            
+            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
             if (_environment)
             {
@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     auto key = item.Key();
                     auto value = item.Value();
 
-                    // avoid clobbering WSLENV 
+                    // avoid clobbering WSLENV
                     if (std::wstring_view{ key } == L"WSLENV")
                     {
                         auto current = environment[L"WSLENV"];
