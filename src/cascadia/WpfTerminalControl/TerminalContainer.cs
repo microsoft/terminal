@@ -235,7 +235,6 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                         NativeMethods.TerminalSetCursorVisible(this.terminal, true);
-                        NativeMethods.TerminalClearSelection(this.terminal);
                         NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)((uint)lParam >> 16));
                         this.blinkTimer?.Start();
                         break;
