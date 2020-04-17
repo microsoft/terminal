@@ -234,12 +234,12 @@ namespace Microsoft.Terminal.Wpf
                         // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                         NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
-                        NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, Marshal.ReadByte(lParam, 2));
+                        NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)((uint)lParam >> 16));
                         this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
                         // WM_CHAR lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
-                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, Marshal.ReadByte(lParam, 2));
+                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, (ushort)((uint)lParam >> 16));
                         break;
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
@@ -256,7 +256,7 @@ namespace Microsoft.Terminal.Wpf
 
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
-                        var delta = ((int)wParam) >> 16;
+                        var delta = (short)(((long)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);
                         break;
                 }
