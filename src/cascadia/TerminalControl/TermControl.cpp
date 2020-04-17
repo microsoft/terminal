@@ -1680,9 +1680,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         currentScaleX;
         auto currentScaleY = SwapChainPanel().CompositionScaleY();
         currentScaleY;
+
+        const auto currentEngineScale = _renderEngine->GetScaling();
+
         auto foundationSize = newSize;
-        foundationSize.Width *= SwapChainPanel().CompositionScaleX();
-        foundationSize.Height *= SwapChainPanel().CompositionScaleY();
+
+        // foundationSize.Width *= SwapChainPanel().CompositionScaleX();
+        // foundationSize.Height *= SwapChainPanel().CompositionScaleY();
+        foundationSize.Width *= currentEngineScale;
+        foundationSize.Height *= currentEngineScale;
 
         // If we're in the middle of a DPI change, we're going to get a
         // ScaleChanged, a SizeChanged, then a final ScaleChanged. In that
@@ -1690,7 +1696,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // ScaleChanged. Right now, we don't know what the font size will be at
         // the new DPI, so we're going to have to resize again anyways. Might
         // was well just skip this one.
-        if (!_inDpiResize)
+        // if (!_inDpiResize)
         {
             _DoResize(foundationSize.Width, foundationSize.Height);
         }
@@ -1738,7 +1744,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (currentEngineScale == dpi)
             {
                 _inDpiResize = true;
-                return;
+                // return;
             }
 
             const auto actualFontOldSize = _actualFont.GetSize();
