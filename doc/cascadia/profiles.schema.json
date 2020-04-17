@@ -19,7 +19,7 @@
       "type": "string"
     },
     "ProfileGuid": {
-      "default": "{00000000-0000-0000-0000-000000000000}",
+      "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
     },
@@ -284,7 +284,7 @@
         },
         "defaultProfile": {
           "$ref": "#/definitions/ProfileGuid",
-          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The guid of the desired default profile is used as the value."
+          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The \"guid\" of the desired default profile is used as the value."
         },
         "initialCols": {
           "default": 120,
