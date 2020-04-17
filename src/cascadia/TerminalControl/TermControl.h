@@ -172,6 +172,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        bool _inDpiResize{ false };
+
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);

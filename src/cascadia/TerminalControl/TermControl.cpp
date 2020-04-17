@@ -1684,7 +1684,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         foundationSize.Width *= SwapChainPanel().CompositionScaleX();
         foundationSize.Height *= SwapChainPanel().CompositionScaleY();
 
-        _DoResize(foundationSize.Width, foundationSize.Height);
+        // If we're in the middle of a DPI change, we're going to get a
+        // ScaleChanged, a SizeChanged, then a final ScaleChanged. In that
+        // scenario, we don't need to resize here. We'll resize in the following
+        // ScaleChanged. Right now, we don't know what the font size will be at
+        // the new DPI, so we're going to have to resize again anyways. Might
+        // was well just skip this one.
+        if (!_inDpiResize)
+        {
+            _DoResize(foundationSize.Width, foundationSize.Height);
+        }
+        _inDpiResize = false;
     }
 
     // Method Description:
@@ -1718,13 +1728,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto scaleX = sender.CompositionScaleX();
             const auto scaleY = sender.CompositionScaleY();
-            const auto dpi = (int)(scaleX * USER_DEFAULT_SCREEN_DPI);
+            const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
             const auto currentEngineScale = _renderEngine->GetScaling();
-            currentEngineScale;
+
+            // If we're getting a notification to change to the DPI we already
+            // have, then we're probably just beginning the DPI change. Since
+            // we'll get _another_ event with the real DPI, do nothing here for
+            // now. We'll also skip the next resize in _SwapChainSizeChanged.
+            if (currentEngineScale == dpi)
+            {
+                _inDpiResize = true;
+                return;
+            }
 
             const auto actualFontOldSize = _actualFont.GetSize();
 
-            _renderer->TriggerFontChange(dpi, _desiredFont, _actualFont);
+            _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi), _desiredFont, _actualFont);
 
             const auto actualFontNewSize = _actualFont.GetSize();
             if (actualFontNewSize != actualFontOldSize)
