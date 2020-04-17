@@ -403,7 +403,7 @@ CodepointWidth CodepointWidthDetector::_lookupGlyphWidth(const std::wstring_view
         return CodepointWidth::Invalid;
     }
 
-    const auto codepoint = _extractCodepoint(glyph);
+    const auto codepoint = ExtractCodepoint(glyph);
     const auto it = std::lower_bound(s_wideAndAmbiguousTable.begin(), s_wideAndAmbiguousTable.end(), codepoint);
 
     // For characters that are not _in_ the table, lower_bound will return the nearest item that is.
@@ -485,7 +485,7 @@ bool CodepointWidthDetector::_checkFallbackViaCache(const std::wstring_view glyp
 // - glyph - the utf16 encoded codepoint convert
 // Return Value:
 // - the codepoint being stored
-unsigned int CodepointWidthDetector::_extractCodepoint(const std::wstring_view glyph) noexcept
+unsigned int CodepointWidthDetector::ExtractCodepoint(const std::wstring_view glyph) noexcept
 {
     if (glyph.size() == 1)
     {

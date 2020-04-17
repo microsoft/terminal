@@ -14,10 +14,12 @@
 // - behavior - Describes where to retrieve color/format data. From this view? From defaults? etc.
 OutputCellView::OutputCellView(const std::wstring_view view,
                                const DbcsAttribute dbcsAttr,
+                               const UnicodeAttribute unicodeAttr,
                                const TextAttribute textAttr,
                                const TextAttributeBehavior behavior) noexcept :
     _view(view),
     _dbcsAttr(dbcsAttr),
+    _unicodeAttr(unicodeAttr)
     _textAttr(textAttr),
     _behavior(behavior)
 {
@@ -63,6 +65,15 @@ size_t OutputCellView::Columns() const noexcept
 DbcsAttribute OutputCellView::DbcsAttr() const noexcept
 {
     return _dbcsAttr;
+}
+
+// Routine Description:
+// - Retrieves character cell unicode information
+// Return Value:
+// - DbcsAttribute data
+UnicodeAttribute OutputCellView::UnicodeAttr() const noexcept
+{
+    return _unicodeAttr;
 }
 
 // Routine Description:

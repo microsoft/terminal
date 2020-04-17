@@ -58,6 +58,7 @@
     <ClInclude Include="..\CharRowCellReference.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\UnicodeStorage.hpp" />
+    <ClInclude Include="..\UnicodeAttribute.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

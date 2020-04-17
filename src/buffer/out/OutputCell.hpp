@@ -18,6 +18,7 @@ Author:
 
 #include "DbcsAttribute.hpp"
 #include "TextAttribute.hpp"
+#include "UnicodeAttribute.hpp"
 #include "OutputCellView.hpp"
 
 #include <exception>
@@ -36,12 +37,15 @@ class OutputCell final
 public:
     OutputCell() noexcept;
 
+
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
+               const UnicodeAttribute unicodeAttribute,
                const TextAttributeBehavior behavior);
 
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
+               const UnicodeAttribute unicodeAttribute,
                const TextAttribute textAttribute);
 
     OutputCell(const CHAR_INFO& charInfo);
@@ -59,7 +63,13 @@ public:
     void SetChars(const std::wstring_view chars);
 
     DbcsAttribute& DbcsAttr() noexcept;
+    UnicodeAttribute& UnicodeAttr() noexcept;
     TextAttribute& TextAttr();
+
+    constexpr const UnicodeAttribute& UnicodeAttr() const
+    {
+        return _unicodeAttribute;
+    }
 
     constexpr const DbcsAttribute& DbcsAttr() const
     {
@@ -83,6 +93,7 @@ private:
     std::wstring _text;
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
+    UnicodeAttribute _unicodeAttribute;
     TextAttributeBehavior _behavior;
 
     void _setFromBehavior(const TextAttributeBehavior behavior);

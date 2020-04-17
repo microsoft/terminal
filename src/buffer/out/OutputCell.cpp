@@ -14,6 +14,7 @@ static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLO
 OutputCell::OutputCell() noexcept :
     _text{},
     _dbcsAttribute{},
+    _unicodeAttribute{},
     _textAttribute{ InvalidTextAttribute },
     _behavior{ TextAttributeBehavior::Stored }
 {
@@ -21,6 +22,7 @@ OutputCell::OutputCell() noexcept :
 
 OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
+                       const UnicodeAttribute unicodeAttribute,
                        const TextAttributeBehavior behavior) :
     _text{ UNICODE_INVALID },
     _dbcsAttribute{ dbcsAttribute },
@@ -34,9 +36,11 @@ OutputCell::OutputCell(const std::wstring_view charData,
 
 OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
+                       const UnicodeAttribute unicodeAttribute,
                        const TextAttribute textAttribute) :
     _text{ UNICODE_INVALID },
     _dbcsAttribute{ dbcsAttribute },
+    _unicodeAttribute { unicodeAttribute },
     _textAttribute{ textAttribute },
     _behavior{ TextAttributeBehavior::Stored }
 {

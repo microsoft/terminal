@@ -36,6 +36,8 @@ public:
     void SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback);
     void NotifyFontChanged() const noexcept;
 
+    static unsigned int ExtractCodepoint(const std::wstring_view glyph) noexcept;
+
 #ifdef UNIT_TESTING
     friend class CodepointWidthDetectorTests;
 #endif
@@ -44,7 +46,6 @@ private:
     CodepointWidth _lookupGlyphWidth(const std::wstring_view glyph) const;
     CodepointWidth _lookupGlyphWidthWithCache(const std::wstring_view glyph) const noexcept;
     bool _checkFallbackViaCache(const std::wstring_view glyph) const;
-    static unsigned int _extractCodepoint(const std::wstring_view glyph) noexcept;
 
     mutable std::map<std::wstring, bool> _fallbackCache;
     std::function<bool(std::wstring_view)> _pfnFallbackMethod;

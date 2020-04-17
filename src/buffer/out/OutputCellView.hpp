@@ -20,6 +20,7 @@ Revision History:
 #pragma once
 
 #include "DbcsAttribute.hpp"
+#include "UnicodeAttribute.hpp"
 #include "TextAttribute.hpp"
 
 class OutputCellView
@@ -27,6 +28,7 @@ class OutputCellView
 public:
     OutputCellView(const std::wstring_view view,
                    const DbcsAttribute dbcsAttr,
+                   const UnicodeAttribute unicodeAttr,
                    const TextAttribute textAttr,
                    const TextAttributeBehavior behavior) noexcept;
 
@@ -34,6 +36,7 @@ public:
     size_t Columns() const noexcept;
     DbcsAttribute DbcsAttr() const noexcept;
     TextAttribute TextAttr() const noexcept;
+    UnicodeAttribute UnicodeAttr() const noexcept;
     TextAttributeBehavior TextAttrBehavior() const noexcept;
 
     bool operator==(const OutputCellView& view) const noexcept;
@@ -42,6 +45,7 @@ public:
 private:
     std::wstring_view _view;
     DbcsAttribute _dbcsAttr;
+    UnicodeAttribute _unicodeAttr;
     TextAttribute _textAttr;
     TextAttributeBehavior _behavior;
 };

@@ -255,8 +255,11 @@ OutputCellIterator& OutputCellIterator::operator++()
                 auto dbcsAttr = _currentView.DbcsAttr();
                 dbcsAttr.SetLeading();
 
+                auto unicodeAttr = _currentView.UnicodeAttr();
+
                 _currentView = OutputCellView(_currentView.Chars(),
                                               dbcsAttr,
+                                              unicodeAttr,
                                               _currentView.TextAttr(),
                                               _currentView.TextAttrBehavior());
             }
@@ -353,6 +356,7 @@ bool OutputCellIterator::_TryMoveTrailing() noexcept
 
         _currentView = OutputCellView(_currentView.Chars(),
                                       dbcsAttr,
+                                      _currentView.UnicodeAttr(),
                                       _currentView.TextAttr(),
                                       _currentView.TextAttrBehavior());
         return true;
@@ -415,7 +419,10 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
         dbcsAttr.SetLeading();
     }
 
-    return OutputCellView(glyph, dbcsAttr, attr, behavior);
+    UnicodeAttribute unicodeAttr;
+    unicodeAttr.SetGlyph(glyph);
+
+    return OutputCellView(glyph, dbcsAttr, unicodeAttr, attr, behavior);
 }
 
 // Routine Description:
@@ -437,7 +444,10 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch) noexcept
         dbcsAttr.SetLeading();
     }
 
-    return OutputCellView(glyph, dbcsAttr, InvalidTextAttribute, TextAttributeBehavior::Current);
+    UnicodeAttribute unicodeAttr;
+    unicodeAttr.SetGlyph(wch);
+
+    return OutputCellView(glyph, dbcsAttr, unicodeAttr, InvalidTextAttribute, TextAttributeBehavior::Current);
 }
 
 // Routine Description:
@@ -451,7 +461,8 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch) noexcept
 // - Object representing the view into this cell
 OutputCellView OutputCellIterator::s_GenerateView(const TextAttribute& attr) noexcept
 {
-    return OutputCellView({}, {}, attr, TextAttributeBehavior::StoredOnly);
+    return OutputCellView(
+        {}, {}, {} , attr, TextAttributeBehavior::StoredOnly);
 }
 
 // Routine Description:
@@ -474,7 +485,10 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
         dbcsAttr.SetLeading();
     }
 
-    return OutputCellView(glyph, dbcsAttr, attr, TextAttributeBehavior::Stored);
+    UnicodeAttribute unicodeAttr;
+    unicodeAttr.SetGlyph(wch);
+
+    return OutputCellView(glyph, dbcsAttr, unicodeAttr, attr, TextAttributeBehavior::Stored);
 }
 
 // Routine Description:
@@ -518,11 +532,14 @@ OutputCellView OutputCellIterator::s_GenerateView(const CHAR_INFO& charInfo) noe
         dbcsAttr.SetTrailing();
     }
 
+    UnicodeAttribute unicodeAttr;
+    unicodeAttr.SetGlyph(glyph);
+
     TextAttribute textAttr;
     textAttr.SetFromLegacy(charInfo.Attributes);
 
     const auto behavior = TextAttributeBehavior::Stored;
-    return OutputCellView(glyph, dbcsAttr, textAttr, behavior);
+    return OutputCellView(glyph, dbcsAttr, unicodeAttr, textAttr, behavior);
 }
 
 // Routine Description:
@@ -535,7 +552,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const CHAR_INFO& charInfo) noe
 // - Object representing the view into this cell
 OutputCellView OutputCellIterator::s_GenerateView(const OutputCell& cell)
 {
-    return OutputCellView(cell.Chars(), cell.DbcsAttr(), cell.TextAttr(), cell.TextAttrBehavior());
+    return OutputCellView(cell.Chars(), cell.DbcsAttr(), cell.UnicodeAttr(), cell.TextAttr(), cell.TextAttrBehavior());
 }
 
 // Routine Description:
