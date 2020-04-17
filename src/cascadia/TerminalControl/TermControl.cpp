@@ -1060,9 +1060,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     auto& touchdownPoint{ *_singleClickTouchdownPos };
                     auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
                     const til::size fontSize{ _actualFont.GetSize() };
-                    // const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
-                    // if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
-                    if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+
+                    const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
+                    if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                     {
                         _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
                         // stop tracking the touchdown point
@@ -1102,19 +1102,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
             const auto anchor = _touchAnchor.value();
 
-            // Get the difference between the point we've dragged to and the start of the touch.
-            const float fontHeight = float(_actualFont.GetSize().Y);
+            // Our _actualFont's size is in pixels, convert to DIPs, which the
+            // rest of the Points here are in.
+            const til::size fontSize{ _actualFont.GetSize() };
+            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
 
+            // Get the difference between the point we've dragged to and the start of the touch.
             const float dy = newTouchPoint.Y - anchor.Y;
 
             // Start viewport scroll after we've moved more than a half row of text
-            if (std::abs(dy) > (fontHeight / 2.0f))
+            if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
             {
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
                 // so we'll need a negative scroll amount (and the inverse for
                 // panning down)
-                const float numRows = -1.0f * (dy / fontHeight);
+                const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
 
                 const auto currentOffset = ::base::ClampedNumeric<double>(ScrollBar().Value());
                 const auto newValue = numRows + currentOffset;
