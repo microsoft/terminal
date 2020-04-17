@@ -108,20 +108,31 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
 
             // Ensure every connection has the unique identifier in the environment.
-            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
+            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());            
 
             if (_environment)
             {
                 // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
                 for (auto item : _environment)
                 {
-                    environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
+                    auto key = item.Key();
+                    auto value = item.Value();
+
+                    // avoid clobbering WSLENV 
+                    if (std::wstring_view{ key } == L"WSLENV")
+                    {
+                        auto current = environment[L"WSLENV"];
+                        value = current + L":" + value;
+                    }
+
+                    environment.insert_or_assign(key.c_str(), value.c_str());
                 }
             }
 
-            auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+
+            auto wslEnv = environment[L"WSLENV"];
             wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
             environment.insert_or_assign(L"WSLENV", wslEnv);
         }
