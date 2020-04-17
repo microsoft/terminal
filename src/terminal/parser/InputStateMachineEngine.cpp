@@ -73,7 +73,13 @@ struct Ss3ToVkey
     short vkey;
 };
 
-static constexpr std::array<Ss3ToVkey, 4> s_ss3Map = {
+static constexpr std::array<Ss3ToVkey, 10> s_ss3Map = {
+    Ss3ToVkey{ Ss3ActionCodes::ArrowUp, VK_UP },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowDown, VK_DOWN },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowRight, VK_RIGHT },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowLeft, VK_LEFT },
+    Ss3ToVkey{ Ss3ActionCodes::End, VK_END },
+    Ss3ToVkey{ Ss3ActionCodes::Home, VK_HOME },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F1, VK_F1 },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F2, VK_F2 },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F3, VK_F3 },
