@@ -1059,8 +1059,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
                     auto& touchdownPoint{ *_singleClickTouchdownPos };
                     auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
-                    const auto fontSize{ _actualFont.GetSize() };
-                    if (distance >= (std::min(fontSize.X, fontSize.Y) / 4.f))
+                    const til::size fontSize{ _actualFont.GetSize() };
+                    // const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
+                    // if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
+                    if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
                     {
                         _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
                         // stop tracking the touchdown point
@@ -1690,15 +1692,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         foundationSize.Width *= currentEngineScale;
         foundationSize.Height *= currentEngineScale;
 
+        const bool dpiHasAlreadyBeenUpdated = currentEngineScale == currentScaleX;
         // If we're in the middle of a DPI change, we're going to get a
         // ScaleChanged, a SizeChanged, then a final ScaleChanged. In that
         // scenario, we don't need to resize here. We'll resize in the following
         // ScaleChanged. Right now, we don't know what the font size will be at
         // the new DPI, so we're going to have to resize again anyways. Might
         // was well just skip this one.
-        // if (!_inDpiResize)
+        if (!_inDpiResize && (dpiHasAlreadyBeenUpdated))
         {
             _DoResize(foundationSize.Width, foundationSize.Height);
+        }
+        else
+        {
+            auto a = 0;
+            a++;
+            a;
         }
         _inDpiResize = false;
     }
@@ -1741,10 +1750,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // have, then we're probably just beginning the DPI change. Since
             // we'll get _another_ event with the real DPI, do nothing here for
             // now. We'll also skip the next resize in _SwapChainSizeChanged.
-            if (currentEngineScale == dpi)
+            const bool dpiWasUnchanged = currentEngineScale == scaleX;
+            if (dpiWasUnchanged)
             {
                 _inDpiResize = true;
-                // return;
+                return;
+            }
+            else
+            {
+                auto b = 0;
+                b++;
+                b;
             }
 
             const auto actualFontOldSize = _actualFont.GetSize();
@@ -2390,25 +2406,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - the corresponding viewport terminal position for the given Point parameter
     const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
-        // compensate for DPI scenarios.
-        cursorPosition.X *= SwapChainPanel().CompositionScaleX();
-        cursorPosition.Y *= SwapChainPanel().CompositionScaleY();
+        // cursorPosition is DIPs, relative to SwapChainPanel origin
+        const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
+        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
 
-        // Exclude padding from cursor position calculation
-        COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - SwapChainPanel().Margin().Left),
-            static_cast<SHORT>(cursorPosition.Y - SwapChainPanel().Margin().Top)
-        };
+        // This point is the location of the cursor within the actual grid of characters, in DIPs
+        const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
-        const auto fontSize = _actualFont.GetSize();
-        FAIL_FAST_IF(fontSize.X == 0);
-        FAIL_FAST_IF(fontSize.Y == 0);
+        // Convert it to pixels
+        const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
 
-        // Normalize to terminal coordinates by using font size
-        terminalPosition.X /= fontSize.X;
-        terminalPosition.Y /= fontSize.Y;
+        // Get the size of the font, which is in pixels
+        const til::size fontSize{ _actualFont.GetSize() };
 
-        return terminalPosition;
+        // Convert the location in pixels to characters within the current viewport.
+        return til::point{ relativeToMarginInPixels / fontSize };
     }
 
     // Method Description:
