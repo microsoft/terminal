@@ -761,6 +761,8 @@ try
     FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
     FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
+    Unlock.reset();
+
     _ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
