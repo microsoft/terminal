@@ -192,6 +192,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ScrollWithMargins);
 
+    TEST_METHOD(TestCursorInDeferredEOLPositionOnNewLineWithSpaces);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2358,4 +2360,58 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     Log::Comment(L"========== Checking the terminal buffer state ==========");
 
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    const auto termView = term->GetViewport();
+
+    _flushFirstFrame();
+    _checkConptyOutput = false;
+
+    // newline down to the bottom
+    hostSm.ProcessString(std::wstring(gsl::narrow_cast<size_t>(TerminalViewHeight), L'\n'));
+    // fill width-1 with "A", then add one space and another character..
+    hostSm.ProcessString(std::wstring(gsl::narrow_cast<size_t>(TerminalViewWidth) - 1, L'A') + L" B");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, SHORT bottomRow) {
+        // Buffer contents should look like the following: (80 wide)
+        // (w) means we hard wrapped the line
+        // (b) means the line is _not_ wrapped (it's broken, the default state.)
+        // cursor is on the '_'
+        //
+        // | ^ ^ ^ ^ ^ ^ ^ | ( ) (entire buffer above us; contents do not matter)
+        // |               | ( ) (entire buffer above us; contents do not matter)
+        // |AAAAAAAA...AAA | (w) (79 'A's, one space)
+        // |B_      ...    | (b) (There's only one 'B' on this line)
+
+        til::point cursorPos{ tb.GetCursor().GetPosition() };
+        // The cursor should be on the second char of the last line
+        VERIFY_ARE_EQUAL((til::point{ 1, bottomRow }), cursorPos);
+
+        const auto& secondToLastRow = tb.GetRowByOffset(bottomRow - 1);
+        const auto& lastRow = tb.GetRowByOffset(bottomRow);
+        VERIFY_IS_TRUE(secondToLastRow.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(lastRow.GetCharRow().WasWrapForced());
+
+        auto expectedStringSecondToLastRow{ std::wstring(gsl::narrow_cast<size_t>(tb.GetSize().Width()) - 1, L'A') + L" " };
+        TestUtils::VerifyExpectedString(tb, expectedStringSecondToLastRow, { 0, bottomRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"B", { 0, bottomRow });
+    };
+
+    const auto hostView = si.GetViewport();
+    verifyBuffer(hostTb, hostView.BottomInclusive());
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    const auto newTermView = term->GetViewport();
+    verifyBuffer(termTb, newTermView.BottomInclusive());
 }
