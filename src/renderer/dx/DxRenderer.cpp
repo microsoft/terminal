@@ -800,6 +800,7 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+    _firstFrame = true;
     return S_OK;
 }
 CATCH_RETURN();
