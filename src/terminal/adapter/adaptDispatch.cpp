@@ -1056,11 +1056,8 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1078,11 +1075,8 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
     bool success = true;
     success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1878,11 +1872,8 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableVT200MouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1902,11 +1893,8 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1926,11 +1914,8 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1949,11 +1934,8 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1973,11 +1955,8 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1997,11 +1976,8 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAlternateScroll(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
