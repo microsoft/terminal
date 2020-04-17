@@ -1680,38 +1680,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        auto newSize = e.NewSize();
-        auto currentScaleX = SwapChainPanel().CompositionScaleX();
-        currentScaleX;
-        auto currentScaleY = SwapChainPanel().CompositionScaleY();
-        currentScaleY;
-
+        const auto newSize = e.NewSize();
+        const auto currentScaleX = SwapChainPanel().CompositionScaleX();
         const auto currentEngineScale = _renderEngine->GetScaling();
-
         auto foundationSize = newSize;
 
-        // foundationSize.Width *= SwapChainPanel().CompositionScaleX();
-        // foundationSize.Height *= SwapChainPanel().CompositionScaleY();
+        // A strange thing can happen here. If you have two tabs open, and drag
+        // across a DPI boundary, then switch to the other tab, that tab will
+        // receive two events: First, a SizeChanged, then a ScaleChanged. In the
+        // SizeChanged event handler, the SwapChainPanel's CompositionScale will
+        // _already_ be the new scaling, but the engine won't have that value
+        // yet. If we scale by the CompositionScale here, we'll end up in a
+        // weird torn state. I'm not totally sure why.
+        //
+        // Fortunately we will be getting that following ScaleChanged event, and
+        // we'll end up resizing again, so we don't terribly need to worry about
+        // this.
         foundationSize.Width *= currentEngineScale;
         foundationSize.Height *= currentEngineScale;
 
         const bool dpiHasAlreadyBeenUpdated = currentEngineScale == currentScaleX;
-        // If we're in the middle of a DPI change, we're going to get a
+        dpiHasAlreadyBeenUpdated;
+        // If we're in the middle of a DPI change, we MIGHT get a
         // ScaleChanged, a SizeChanged, then a final ScaleChanged. In that
         // scenario, we don't need to resize here. We'll resize in the following
         // ScaleChanged. Right now, we don't know what the font size will be at
         // the new DPI, so we're going to have to resize again anyways. Might
         // was well just skip this one.
-        if (!_inDpiResize && (dpiHasAlreadyBeenUpdated))
+        //
+        // However, we don't always get that first ScaleChanged, and if we
+        // don't, then we can't optimize this first resize out unfortunately.
+        // TODO: Can we skip this if !dpiHasAlreadyBeenUpdated? Originally I had
+        //     if (!_inDpiResize && (dpiHasAlreadyBeenUpdated))
+        // Which _felt_ right, but I deleted it for some reason
+        if (!_inDpiResize)
         {
             _DoResize(foundationSize.Width, foundationSize.Height);
         }
-        else
-        {
-            auto a = 0;
-            a++;
-            a;
-        }
+
         _inDpiResize = false;
     }
 
@@ -1719,10 +1725,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Triggered when the swapchain changes DPI. When this happens, we're
     //   going to recieve 3 events:
     //   - 1. First, a CompositionScaleChanged _for the original scale_. I don't
-    //     know why this event happens first.
-    //   - 2. Then, a SizeChanged. During that SizeChanged, the scale will still
-    //     be the original DPI. Again, I have no idea why the size & DPI is
-    //     updated in this order.
+    //     know why this event happens first. It also doesn't always happen.
+    //     However, when it does happen, it doesn't give us any useful
+    //     information.
+    //   - 2. Then, a SizeChanged. During that SizeChanged, either:
+    //      - the CompositionScale will still be the original DPI. This happens
+    //        when the control is visible as the DPI changes.
+    //      - The CompositionScale will be the new DPI. This happens when the
+    //        control wasn't focused as the window's DPI changed, so it only got
+    //        these messages after XAML updated it's scaling.
     //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
     //   - 4. We'll usually get another SizeChanged some time after this last
     //     ScaleChanged. This usually seems to happen after something triggeres
@@ -1758,12 +1769,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _inDpiResize = true;
                 return;
-            }
-            else
-            {
-                auto b = 0;
-                b++;
-                b;
             }
 
             const auto actualFontOldSize = _actualFont.GetSize();
