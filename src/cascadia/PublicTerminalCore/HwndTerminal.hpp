@@ -75,6 +75,12 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
+    std::chrono::milliseconds _multiClickTime;
+    unsigned int _multiClickCounter{};
+    std::chrono::steady_clock::time_point _lastMouseClickTimestamp{};
+    std::optional<til::point> _lastMouseClickPos;
+    std::optional<til::point> _singleClickTouchdownPos;
+
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
@@ -95,6 +101,7 @@ private:
     void _PasteTextFromClipboard() noexcept;
     void _StringPaste(const wchar_t* const pData) noexcept;
 
+    const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
     HRESULT _StartSelection(LPARAM lParam) noexcept;
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;

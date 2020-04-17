@@ -38,6 +38,9 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
         case WM_LBUTTONDOWN:
             LOG_IF_FAILED(terminal->_StartSelection(lParam));
             return 0;
+        case WM_LBUTTONUP:
+            terminal->_singleClickTouchdownPos = std::nullopt;
+            break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
             {
@@ -94,7 +97,8 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _uiaProvider{ nullptr },
     _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
-    _pfnWriteCallback{ nullptr }
+    _pfnWriteCallback{ nullptr },
+    _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
 {
     HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
@@ -159,6 +163,8 @@ HRESULT HwndTerminal::Initialize()
     _terminal->SetDefaultForeground(RGB(255, 255, 255));
     _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
+
+    _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
 
     return S_OK;
 }
@@ -240,6 +246,8 @@ HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
     auto lock = _terminal->LockForWriting();
+
+    _terminal->ClearSelection();
 
     RETURN_IF_FAILED(_renderEngine->SetWindowSize(windowSize));
 
@@ -346,26 +354,59 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
     publicTerminal->_terminal->UserScrollViewport(viewTop);
 }
 
+const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp) noexcept
+{
+    // if click occurred at a different location or past the multiClickTimer...
+    const auto delta{ timestamp - _lastMouseClickTimestamp };
+    if (point != _lastMouseClickPos || delta > _multiClickTime)
+    {
+        // exit early. This is a single click.
+        _multiClickCounter = 1;
+    }
+    else
+    {
+        _multiClickCounter++;
+    }
+    return _multiClickCounter;
+}
+
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 try
 {
-    const bool altPressed = GetKeyState(VK_MENU) < 0;
-    COORD cursorPosition{
+    const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
-    const auto fontSize = this->_actualFont.GetSize();
+    auto lock = _terminal->LockForWriting();
+    const bool altPressed = GetKeyState(VK_MENU) < 0;
+    const til::size fontSize{ this->_actualFont.GetSize() };
 
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
-
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
-
-    this->_terminal->SetSelectionAnchor(cursorPosition);
     this->_terminal->SetBlockSelection(altPressed);
 
+    const auto clickCount{ _NumberOfClicks(cursorPosition, std::chrono::steady_clock::now()) };
+
+    // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
+    // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
+    const unsigned int MAX_CLICK_COUNT = 3;
+    const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+
+    if (multiClickMapper == 3)
+    {
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Line);
+    }
+    else if (multiClickMapper == 2)
+    {
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Word);
+    }
+    else
+    {
+        this->_terminal->ClearSelection();
+        _singleClickTouchdownPos = cursorPosition;
+
+        _lastMouseClickTimestamp = std::chrono::steady_clock::now();
+        _lastMouseClickPos = cursorPosition;
+    }
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -375,20 +416,29 @@ CATCH_RETURN();
 HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
 try
 {
-    COORD cursorPosition{
+    const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
-    const auto fontSize = this->_actualFont.GetSize();
+    auto lock = _terminal->LockForWriting();
+    const til::size fontSize{ this->_actualFont.GetSize() };
 
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
+    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
+    if (this->_singleClickTouchdownPos)
+    {
+        const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
+        const auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
+        if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+        {
+            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
+            // stop tracking the touchdown point
+            _singleClickTouchdownPos = std::nullopt;
+        }
+    }
 
-    this->_terminal->SetSelectionEnd(cursorPosition);
+    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -521,6 +571,10 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    auto lock = publicTerminal->_terminal->LockForWriting();
+    publicTerminal->_terminal->ClearSelection();
+    publicTerminal->_renderer->TriggerRedrawAll();
 
     return publicTerminal->_terminal->UserResize(dimensions);
 }
