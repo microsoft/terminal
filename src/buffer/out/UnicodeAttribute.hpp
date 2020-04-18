@@ -79,24 +79,40 @@ public:
             _category = Category::MarkUnspacing;
             _backwordAdhesive = true;
         }
+        else if (codepoint >= 0x1100 && codepoint <= 0x115f)
+        {
+            // HANGUL CHOSEONG KIYEOK..HANGUL CHOSEONG FILLER
+            _category = Category::LetterOther;
+        }
+        else if (codepoint >= 0x1160 && codepoint <= 0x11ff)
+        {
+            // HANGUL JUNGSEONG FILLER..HANGUL JONGSEONG SSANGNIEUN
+            _category = Category::LetterOther;
+        }
+        else if (codepoint == 0x200b)
+        {
+            // ZERO WIDTH SPACE
+            _category = Category::OtherFormat;
+            _zeroWidth = true;
+        }
         else if (codepoint == 0x200c)
         {
             // ZERO WIDTH NON-JOINER
             _category = Category::OtherFormat;
             _zeroWidth = true;
         }
-        else if (codepoint == 0x2060)
+        else if (codepoint == 0x200d)
         {
-            // WORD JOINER
+            // ZERO WIDTH JOINER
             _category = Category::OtherFormat;
             _zeroWidth = true;
             _isJoiner = true;
             _backwordAdhesive = true;
             _forwardAdhesive = true;
         }
-        else if (codepoint == 0x200d)
+        else if (codepoint == 0x2060)
         {
-            // ZERO WIDTH JOINER
+            // WORD JOINER
             _category = Category::OtherFormat;
             _zeroWidth = true;
             _isJoiner = true;
