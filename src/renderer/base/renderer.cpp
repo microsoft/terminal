@@ -773,11 +773,20 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         currentCharCols += nextCell->Columns();
                         if (!inJoiner)
                         {
-                            currentDisplayCols += nextCell->UnicodeAttr().IsZeroWidth() ? 0 : nextCell->Columns();
+                            if (nextCell->UnicodeAttr().IsExpandWidth())
+                            {
+                                currentDisplayCols = 2;
+                            }
+                            else if (!nextCell->UnicodeAttr().IsZeroWidth())
+                            {
+                                currentDisplayCols += nextCell->Columns();
+                            }
                         }
 
                         nextCell += nextCell->Columns();
                         expanded = true;
+
+                        inJoiner = nextCell->UnicodeAttr().IsJoiner();
 
                         if (nextCell && nextCell->UnicodeAttr().IsForwardAdhesive())
                         {
@@ -785,7 +794,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                             currentCharCols += nextCell->Columns();
                             if (!inJoiner)
                             {
-                                currentDisplayCols += nextCell->UnicodeAttr().IsZeroWidth() ? 0 : nextCell->Columns();
+                                if (nextCell->UnicodeAttr().IsExpandWidth())
+                                {
+                                    currentDisplayCols = 2;
+                                }
+                                else if (!nextCell->UnicodeAttr().IsZeroWidth())
+                                {
+                                    currentDisplayCols += nextCell->Columns();
+                                }
                             }
 
                             nextCell += nextCell->Columns();

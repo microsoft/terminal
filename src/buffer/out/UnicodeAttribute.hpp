@@ -33,6 +33,8 @@ public:
     UnicodeAttribute() noexcept :
         _category{ Category::Letter },
         _zeroWidth{ false },
+        _expandWidth{ false },
+        _isJoiner { false },
         _backwordAdhesive{ false },
         _forwardAdhesive{ false }
     {
@@ -41,6 +43,11 @@ public:
     constexpr bool IsZeroWidth() const noexcept
     {
         return _category == Category::MarkUnspacing || _zeroWidth;
+    }
+
+    constexpr bool IsExpandWidth() const noexcept
+    {
+        return _expandWidth;
     }
 
     constexpr bool IsJoiner() const noexcept
@@ -108,6 +115,13 @@ public:
             // VARIATION SELECTOR-1..VARIATION SELECTOR-16
             _category = Category::MarkUnspacing;
             _backwordAdhesive = true;
+
+            // VARIATION SELECTOR-16
+            // EMOJI
+            if (codepoint == 0xfe0f)
+            {
+                _expandWidth = true;
+            }
         }
         else if (codepoint == 0xfeff)
         {
@@ -133,6 +147,7 @@ public:
 private:
     Category _category;
     bool _zeroWidth;
+    bool _expandWidth;
     bool _isJoiner;
     bool _backwordAdhesive;
     bool _forwardAdhesive;
