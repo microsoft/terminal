@@ -106,5 +106,6 @@ OutputCellView RowCellIterator::s_GenerateView(const ROW& row,
     const auto textAttr = row.GetAttrRow().GetAttrByColumn(pos);
     const auto behavior = TextAttributeBehavior::Stored;
 
-    return OutputCellView(glyph, dbcsAttr, textAttr, behavior);
+    return OutputCellView(
+        glyph, dbcsAttr, {}, textAttr, behavior);
 }

@@ -26,6 +26,7 @@ OutputCell::OutputCell(const std::wstring_view charData,
                        const TextAttributeBehavior behavior) :
     _text{ UNICODE_INVALID },
     _dbcsAttribute{ dbcsAttribute },
+    _unicodeAttribute{ unicodeAttribute },
     _textAttribute{ InvalidTextAttribute },
     _behavior{ behavior }
 {

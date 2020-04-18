@@ -260,6 +260,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // right down the middle of the character.
         // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
         DbcsAttribute dbcsAttr;
+        UnicodeAttribute unicodeAttr;
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
@@ -272,7 +273,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
             }
 
             dbcsAttr.SetLeading();
-            cells.emplace_back(glyph, dbcsAttr, leftHalfAttr);
+            cells.emplace_back(glyph, dbcsAttr, unicodeAttr, leftHalfAttr);
             dbcsAttr.SetTrailing();
 
             // If we need a left vertical, don't apply it to the right side of the character
@@ -281,7 +282,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
                 drawingAttr.SetLeftVerticalDisplayed(false);
             }
         }
-        cells.emplace_back(glyph, dbcsAttr, drawingAttr);
+        cells.emplace_back(glyph, dbcsAttr, unicodeAttr, drawingAttr);
     }
 
     return cells;

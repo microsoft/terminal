@@ -37,7 +37,7 @@ public:
 
     constexpr bool IsZeroWidth() const noexcept
     {
-        return _zeroWidth || _category == Category::MarkUnspacing;
+        return _category == Category::MarkUnspacing || _zeroWidth;
     }
 
     void SetGlyph(wchar_t wch) noexcept
@@ -52,6 +52,12 @@ public:
         {
             // COMBINING GRAVE ACCENT..COMBINING LATIN SMALL LETTER X
             _category = Category::MarkUnspacing;
+        }
+        else if (codepoint == 0x200c)
+        {
+            // ZERO WIDTH NON-JOINER
+            _category = Category::OtherFormat;
+            _zeroWidth = true;
         }
         else if (codepoint == 0x200d)
         {

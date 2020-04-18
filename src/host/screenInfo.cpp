@@ -2239,7 +2239,7 @@ OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
     THROW_HR_IF(E_INVALIDARG, !GetBufferSize().IsInBounds(viewport));
 
     OutputCellRect result(viewport.Height(), viewport.Width());
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, GetAttributes() };
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, {}, GetAttributes() };
     for (size_t rowIndex = 0; rowIndex < gsl::narrow<size_t>(viewport.Height()); ++rowIndex)
     {
         COORD location = viewport.Origin();

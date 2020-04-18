@@ -681,7 +681,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
         // Retrieve the iterator for one line of information.
         std::vector<Cluster> clusters;
-        size_t cols = 0;
+        size_t charCols = 0;
+        size_t displayCols = 0;
 
         // Retrieve the first color.
         auto color = it->TextAttr();
@@ -702,8 +703,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
-            screenPoint.X += gsl::narrow<SHORT>(cols);
-            cols = 0;
+            screenPoint.X += gsl::narrow<SHORT>(displayCols);
+            charCols = 0;
+            displayCols = 0;
 
             // Ensure that our cluster vector is clear.
             clusters.clear();
@@ -729,6 +731,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     }
                 }
 
+                auto currentDisplayCols = it->UnicodeAttr().IsZeroWidth() ? 0 : it->Columns();
                 // Walk through the text data and turn it into rendering clusters.
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
@@ -755,14 +758,15 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    clusters.emplace_back(it->Chars(), it->Columns());
+                    clusters.emplace_back(it->Chars(), currentDisplayCols);
                 }
 
                 // Advance the cluster and column counts.
-                const auto columnCount = clusters.back().GetColumns();
+                const auto columnCount = it->Columns();
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
-                cols += columnCount;
+                charCols += columnCount;
 
+                displayCols += currentDisplayCols;
             } while (it);
 
             // Do the painting.
@@ -772,7 +776,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             if (_pData->IsGridLineDrawingAllowed())
             {
                 // We're only allowed to draw the grid lines under certain circumstances.
-                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, displayCols, screenPoint);
             }
         }
     }

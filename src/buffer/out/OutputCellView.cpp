@@ -19,7 +19,7 @@ OutputCellView::OutputCellView(const std::wstring_view view,
                                const TextAttributeBehavior behavior) noexcept :
     _view(view),
     _dbcsAttr(dbcsAttr),
-    _unicodeAttr(unicodeAttr)
+    _unicodeAttr(unicodeAttr),
     _textAttr(textAttr),
     _behavior(behavior)
 {

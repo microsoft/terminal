@@ -36,7 +36,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
     _pRow(s_GetRow(buffer, pos)),
     _bounds(limits),
     _exceeded(false),
-    _view({}, {}, {}, TextAttributeBehavior::Stored),
+    _view({}, {}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
@@ -238,8 +238,11 @@ const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const COOR
 // - Updates the internal view. Call after updating row, attribute, or positions.
 void TextBufferCellIterator::_GenerateView()
 {
+    UnicodeAttribute unicodeAttr;
+    unicodeAttr.SetGlyph(_pRow->GetCharRow().GlyphAt(_pos.X));
     _view = OutputCellView(_pRow->GetCharRow().GlyphAt(_pos.X),
                            _pRow->GetCharRow().DbcsAttrAt(_pos.X),
+                           unicodeAttr,
                            *_attrIter,
                            TextAttributeBehavior::Stored);
 }
