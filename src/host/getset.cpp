@@ -992,14 +992,7 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 {
     auto& buffer = screenInfo.GetActiveBuffer();
     auto attrs = buffer.GetAttributes();
-    if (bolded)
-    {
-        attrs.Embolden();
-    }
-    else
-    {
-        attrs.Debolden();
-    }
+    attrs.SetBold(bolded);
     buffer.SetAttributes(attrs);
 }
 
