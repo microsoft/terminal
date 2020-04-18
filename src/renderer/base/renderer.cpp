@@ -731,7 +731,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     }
                 }
 
-                auto currentDisplayCols = it->UnicodeAttr().IsZeroWidth() ? 0 : it->Columns();
+                auto currentCharCols = it->Columns();
+                auto currentDisplayCols = it->UnicodeAttr().IsZeroWidth() ? 0 : currentCharCols;
+
                 // Walk through the text data and turn it into rendering clusters.
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
@@ -758,13 +760,57 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    clusters.emplace_back(it->Chars(), currentDisplayCols);
+                    TextBufferCellIterator nextCell = it + static_cast<ptrdiff_t>(std::max<size_t>(1, currentCharCols));
+                    bool expanded = false;
+                    bool inJoiner = nextCell->UnicodeAttr().IsJoiner();
+                    bool moveForward = nextCell && (nextCell->UnicodeAttr().IsBackwordAdhesive());
+
+                    std::wstring* currentText = new std::wstring(it->Chars());
+
+                    while (moveForward)
+                    {
+                        (*currentText) += std::wstring(nextCell->Chars());
+                        currentCharCols += nextCell->Columns();
+                        if (!inJoiner)
+                        {
+                            currentDisplayCols += nextCell->UnicodeAttr().IsZeroWidth() ? 0 : nextCell->Columns();
+                        }
+
+                        nextCell += nextCell->Columns();
+                        expanded = true;
+
+                        if (nextCell && nextCell->UnicodeAttr().IsForwardAdhesive())
+                        {
+                            (*currentText) += std::wstring(nextCell->Chars());
+                            currentCharCols += nextCell->Columns();
+                            if (!inJoiner)
+                            {
+                                currentDisplayCols += nextCell->UnicodeAttr().IsZeroWidth() ? 0 : nextCell->Columns();
+                            }
+
+                            nextCell += nextCell->Columns();
+                            moveForward = true;
+                        }
+                        else
+                        {
+                            moveForward = nextCell && (nextCell->UnicodeAttr().IsBackwordAdhesive());
+                        }
+                    }
+
+                    if (expanded)
+                    {
+                        Cluster cluster(currentText, currentDisplayCols);
+                        clusters.emplace_back(cluster);
+                    }
+                    else
+                    {
+                        clusters.emplace_back(it->Chars(), currentDisplayCols);
+                    }
                 }
 
                 // Advance the cluster and column counts.
-                const auto columnCount = it->Columns();
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
-                charCols += columnCount;
+                it += currentCharCols > 0 ? currentCharCols : 1; // prevent infinite loop for no visible columns
+                charCols += currentCharCols;
 
                 displayCols += currentDisplayCols;
             } while (it);

@@ -26,18 +26,36 @@ public:
         Letter = 0x01,
         LetterOther = 0x04,
         MarkUnspacing = 0x07,
-        OtherFormat = 0x08
+        SymbolModifier = 0x08,
+        OtherFormat = 0x09
     };
     
     UnicodeAttribute() noexcept :
         _category{ Category::Letter },
-        _zeroWidth{ false }
+        _zeroWidth{ false },
+        _backwordAdhesive{ false },
+        _forwardAdhesive{ false }
     {
     }
 
     constexpr bool IsZeroWidth() const noexcept
     {
         return _category == Category::MarkUnspacing || _zeroWidth;
+    }
+
+    constexpr bool IsJoiner() const noexcept
+    {
+        return _isJoiner;
+    }
+
+    constexpr bool IsBackwordAdhesive() const noexcept
+    {
+        return _backwordAdhesive;
+    }
+
+    constexpr bool IsForwardAdhesive() const noexcept
+    {
+        return _forwardAdhesive;
     }
 
     void SetGlyph(wchar_t wch) noexcept
@@ -52,6 +70,7 @@ public:
         {
             // COMBINING GRAVE ACCENT..COMBINING LATIN SMALL LETTER X
             _category = Category::MarkUnspacing;
+            _backwordAdhesive = true;
         }
         else if (codepoint == 0x200c)
         {
@@ -59,22 +78,36 @@ public:
             _category = Category::OtherFormat;
             _zeroWidth = true;
         }
+        else if (codepoint == 0x2060)
+        {
+            // WORD JOINER
+            _category = Category::OtherFormat;
+            _zeroWidth = true;
+            _isJoiner = true;
+            _backwordAdhesive = true;
+            _forwardAdhesive = true;
+        }
         else if (codepoint == 0x200d)
         {
             // ZERO WIDTH JOINER
             _category = Category::OtherFormat;
             _zeroWidth = true;
+            _isJoiner = true;
+            _backwordAdhesive = true;
+            _forwardAdhesive = true;
         }
         else if (codepoint >= 0x3099 && codepoint <= 0x309a)
         {
             // COMBINING KATAKANA-HIRAGANA VOICED SOUND MARK...
             // COMBINING KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
             _category = Category::MarkUnspacing;
+            _backwordAdhesive = true;
         }
         else if (codepoint >= 0xfe00 && codepoint <= 0xfe0f)
         {
             // VARIATION SELECTOR-1..VARIATION SELECTOR-16
             _category = Category::MarkUnspacing;
+            _backwordAdhesive = true;
         }
         else if (codepoint == 0xfeff)
         {
@@ -82,14 +115,25 @@ public:
             _category = Category::OtherFormat;
             _zeroWidth = true;
         }
+        else if (codepoint >= 0x1f3fb && codepoint <= 0x1f3ff)
+        {
+            // EMOJI MODIFIER FITZPATRICK TYPE-1-2..EMOJI MODIFIER FITZPATRICK TYPE-6
+            _category = Category::SymbolModifier;
+            _zeroWidth = true;
+            _backwordAdhesive = true;
+        }
         if (codepoint >= 0xe0100 && codepoint <= 0xe01ef)
         {
             // VARIATION SELECTOR-17..VARIATION SELECTOR-256
             _category = Category::MarkUnspacing;
+            _backwordAdhesive = true;
         }
     }
 
 private:
     Category _category;
     bool _zeroWidth;
+    bool _isJoiner;
+    bool _backwordAdhesive;
+    bool _forwardAdhesive;
 };

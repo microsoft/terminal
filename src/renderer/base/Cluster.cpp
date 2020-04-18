@@ -14,6 +14,18 @@ using namespace Microsoft::Console::Render;
 // Arguments:
 // - text - This is a view of the text that forms this cluster (one or more wchar_t*s)
 // - columns - This is the number of columns in the grid that the cluster should consume when drawn
+Cluster::Cluster(const std::wstring* text, const size_t columns) :
+    _innerText(text),
+    _text(std::wstring_view(*text)),
+    _columns(columns)
+{
+}
+
+// Routine Description:
+// - Instantiates a new cluster structure
+// Arguments:
+// - text - This is a view of the text that forms this cluster (one or more wchar_t*s)
+// - columns - This is the number of columns in the grid that the cluster should consume when drawn
 Cluster::Cluster(const std::wstring_view text, const size_t columns) :
     _text(text),
     _columns(columns)

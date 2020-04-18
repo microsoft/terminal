@@ -21,6 +21,8 @@ namespace Microsoft::Console::Render
     class Cluster
     {
     public:
+        Cluster(const std::wstring* text, const size_t columns);
+
         Cluster(const std::wstring_view text, const size_t columns);
 
         const wchar_t GetTextAsSingle() const noexcept;
@@ -32,6 +34,9 @@ namespace Microsoft::Console::Render
     private:
         // This is the UTF-16 string of characters that form a particular drawing cluster
         const std::wstring_view _text;
+
+        // This is needed when string should be copied into the cluster.
+        const std::wstring* _innerText;
 
         // This is how many columns we're expecting this cluster to take in the display grid
         const size_t _columns;
