@@ -173,18 +173,16 @@ GdiEngine::~GdiEngine()
 // Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
-// - colorForeground - Foreground Color
-// - colorBackground - Background colo
-// - legacyColorAttribute - <unused>
-// - extendedAttrs - <unused>
+// - colorForeground - Foreground color
+// - colorBackground - Background color
+// - textAttributes - <unused>
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                       const COLORREF colorBackground,
-                                                      const WORD /*legacyColorAttribute*/,
-                                                      const ExtendedAttributes /*extendedAttrs*/,
+                                                      const TextAttribute& /*textAttributes*/,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());

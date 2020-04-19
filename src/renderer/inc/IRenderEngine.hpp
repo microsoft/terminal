@@ -14,6 +14,7 @@ Author(s):
 
 #pragma once
 
+#include "../../buffer/out/TextAttribute.hpp"
 #include "CursorOptions.h"
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
@@ -84,8 +85,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+                                                           const TextAttribute& textAttributes,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;

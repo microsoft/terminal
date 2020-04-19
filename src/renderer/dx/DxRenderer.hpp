@@ -95,8 +95,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                                    COLORREF const colorBackground,
-                                                   const WORD legacyColorAttribute,
-                                                   const ExtendedAttributes extendedAttrs,
+                                                   const TextAttribute& textAttributes,
                                                    bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;

@@ -32,18 +32,17 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                    const COLORREF colorBackground,
-                                                   const WORD legacyColorAttribute,
-                                                   const ExtendedAttributes extendedAttrs,
+                                                   const TextAttribute& textAttributes,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
 
     private:
-        [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
+        [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
 
         // We're only using Italics, Blinking, Invisible and Crossed Out for now
         // See GH#2916 for adding a more complete implementation.
-        ExtendedAttributes _lastExtendedAttrsState;
+        TextAttribute _lastTextAttributes;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

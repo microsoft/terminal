@@ -1090,14 +1090,10 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
     const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
-    const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
-    const auto extendedAttrs = textAttributes.GetExtendedAttributes();
 
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, extendedAttrs, isSettingDefaultBrushes));
-
-    return S_OK;
+    return pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, textAttributes, isSettingDefaultBrushes);
 }
 
 // Routine Description:

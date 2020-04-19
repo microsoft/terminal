@@ -363,15 +363,13 @@ CATCH_RETURN();
 // Arguments:
 // - colorForeground - <unused>
 // - colorBackground - <unused>
-// - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - textAttributes - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const COLORREF /*colorForeground*/,
                                                       const COLORREF /*colorBackground*/,
-                                                      const WORD /*legacyColorAttribute*/,
-                                                      const ExtendedAttributes /*extendedAttrs*/,
+                                                      const TextAttribute& /*textAttributes*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;

@@ -137,13 +137,13 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Routine Description:
 // - Write a VT sequence to either start or stop underlining text.
 // Arguments:
-// - legacyColorAttribute: A console attributes bit field containing information
-//      about the underlining state of the text.
+// - textAttributes: text attributes containing information about the
+//      underlining state of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
+[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const TextAttribute& textAttributes) noexcept
 {
-    bool textUnderlined = WI_IsFlagSet(legacyColorAttribute, COMMON_LVB_UNDERSCORE);
+    bool textUnderlined = textAttributes.IsUnderlined();
     if (textUnderlined != _usingUnderLine)
     {
         if (textUnderlined)
@@ -165,17 +165,14 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
+// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                         const COLORREF colorBackground,
-                                                        const WORD legacyColorAttribute,
-                                                        const ExtendedAttributes extendedAttrs,
+                                                        const TextAttribute& textAttributes,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -185,11 +182,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     //      we'll have already painted the text by the time PaintBufferGridLines
     //      is called.
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
+    RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
                                                   colorBackground,
-                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
+                                                  textAttributes.IsBold(),
                                                   _colorTable);
 }
 

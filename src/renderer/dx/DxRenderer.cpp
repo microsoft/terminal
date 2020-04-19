@@ -1521,15 +1521,13 @@ CATCH_RETURN()
 // Arguments:
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
-// - legacyColorAttribute - <unused>
-// - extendedAttrs - <unused>
+// - textAttributes - <unused>
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                                      COLORREF const colorBackground,
-                                                     const WORD /*legacyColorAttribute*/,
-                                                     const ExtendedAttributes /*extendedAttrs*/,
+                                                     const TextAttribute& /*textAttributes*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render

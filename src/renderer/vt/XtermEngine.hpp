@@ -42,8 +42,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+                                                           const TextAttribute& textAttributes,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               const COORD coord,
@@ -65,7 +64,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]] HRESULT _UpdateUnderline(const WORD wLegacyAttrs) noexcept;
+        [[nodiscard]] HRESULT _UpdateUnderline(const TextAttribute& textAttributes) noexcept;
 
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 

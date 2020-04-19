@@ -12,8 +12,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                const IDefaultColorProvider& colorProvider,
                                const Viewport initialViewport,
                                const std::basic_string_view<COLORREF> colorTable) :
-    XtermEngine(std::move(hPipe), colorProvider, initialViewport, colorTable, false),
-    _lastExtendedAttrsState{ ExtendedAttributes::Normal }
+    XtermEngine(std::move(hPipe), colorProvider, initialViewport, colorTable, false)
 {
 }
 
@@ -23,17 +22,14 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
+// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+                                                           const TextAttribute& textAttributes,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -43,34 +39,32 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     //      we'll have already painted the text by the time PaintBufferGridLines
     //      is called.
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
+    RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
 
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
-    RETURN_IF_FAILED(_UpdateExtendedAttrs(extendedAttrs));
+    RETURN_IF_FAILED(_UpdateExtendedAttrs(textAttributes));
 
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,
-                                              WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
+                                              textAttributes.IsBold(),
                                               _colorTable);
 }
 
 // Routine Description:
 // - Write a VT sequence to either start or stop underlining text.
 // Arguments:
-// - legacyColorAttribute: A console attributes bit field containing information
-//      about the underlining state of the text.
+// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept
+[[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept
 {
     // Helper lambda to check if a state (attr) has changed since it's last
     // value (lastState), and appropriately start/end that state with the given
     // begin/end functions.
-    auto updateFlagAndState = [extendedAttrs, this](const ExtendedAttributes attr,
-                                                    std::function<HRESULT(Xterm256Engine*)> beginFn,
-                                                    std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
-        const bool flagSet = WI_AreAllFlagsSet(extendedAttrs, attr);
-        const bool lastState = WI_AreAllFlagsSet(_lastExtendedAttrsState, attr);
+    auto updateFlagAndState = [this](const bool flagSet,
+                                     const bool lastState,
+                                     std::function<HRESULT(Xterm256Engine*)> beginFn,
+                                     std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
         if (flagSet != lastState)
         {
             if (flagSet)
@@ -81,31 +75,35 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
             {
                 RETURN_IF_FAILED(endFn(this));
             }
-            WI_ToggleAllFlags(_lastExtendedAttrsState, attr);
         }
         return S_OK;
     };
 
-    auto hr = updateFlagAndState(ExtendedAttributes::Italics,
+    auto hr = updateFlagAndState(textAttributes.IsItalic(),
+                                 _lastTextAttributes.IsItalic(),
                                  &Xterm256Engine::_BeginItalics,
                                  &Xterm256Engine::_EndItalics);
     RETURN_IF_FAILED(hr);
 
-    hr = updateFlagAndState(ExtendedAttributes::Blinking,
+    hr = updateFlagAndState(textAttributes.IsBlinking(),
+                            _lastTextAttributes.IsBlinking(),
                             &Xterm256Engine::_BeginBlink,
                             &Xterm256Engine::_EndBlink);
     RETURN_IF_FAILED(hr);
 
-    hr = updateFlagAndState(ExtendedAttributes::Invisible,
+    hr = updateFlagAndState(textAttributes.IsInvisible(),
+                            _lastTextAttributes.IsInvisible(),
                             &Xterm256Engine::_BeginInvisible,
                             &Xterm256Engine::_EndInvisible);
     RETURN_IF_FAILED(hr);
 
-    hr = updateFlagAndState(ExtendedAttributes::CrossedOut,
+    hr = updateFlagAndState(textAttributes.IsCrossedOut(),
+                            _lastTextAttributes.IsCrossedOut(),
                             &Xterm256Engine::_BeginCrossedOut,
                             &Xterm256Engine::_EndCrossedOut);
     RETURN_IF_FAILED(hr);
 
+    _lastTextAttributes = textAttributes;
     return S_OK;
 }
 
