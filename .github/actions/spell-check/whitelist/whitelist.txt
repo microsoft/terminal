@@ -1,6 +1,3 @@
-aaaaa
-aaaaaa
-aaaaaaaaaaaaaaaaaaa
 AAAAAABBBBBBCCC
 AAAAABBBBBBBCCC
 AAD
@@ -77,7 +74,6 @@ applet
 appletname
 applicationmodel
 APPLMODAL
-APPLOGIC
 appmodel
 apps
 APPWINDOW
@@ -136,15 +132,13 @@ azzle
 baac
 backend
 backgrounded
-backgrounder
+Backgrounder
 backgrounding
 backport
 backstory
 Batang
 baz
 Bazz
-BBBB
-BBBBBBBBBBBBBBBBBBBBBBBBBB
 BBBBCCCCC
 bbc
 bbd
@@ -238,7 +232,6 @@ CBoolean
 cbt
 cbuffer
 CCCBB
-CCCC
 ccf
 cch
 CCHAR
@@ -318,7 +311,6 @@ cnt
 CNTRL
 codebase
 Codeflow
-codeofconduct
 codepage
 codepoint
 codeproject
@@ -400,7 +392,6 @@ constness
 contentfiles
 conterm
 CONTEXTMENU
-controlkeystates
 contsf
 contypes
 convarea
@@ -472,9 +463,7 @@ CURRENTPAGE
 CURSORCOLOR
 CURSORSIZE
 CURSORTYPE
-customframe
 CUU
-cvd
 cw
 Cwa
 cwch
@@ -507,8 +496,6 @@ CYVSCROLL
 dahall
 dai
 DATABLOCK
-dataprotection
-dataprotectionprovider
 DATAVIEW
 DATAW
 dba
@@ -536,7 +523,6 @@ dcommon
 DCompile
 dcompiler
 ddb
-DDDD
 dde
 DDESHARE
 DDevice
@@ -632,7 +618,7 @@ dialogbox
 diffing
 DINLINE
 directio
-directx
+DIRECTX
 Dirs
 DISABLENOSCROLL
 DISPLAYATTRIBUTE
@@ -713,7 +699,6 @@ edputil
 edu
 eeb
 eee
-EEEE
 Efast
 EHsc
 EJO
@@ -778,7 +763,6 @@ FACENODE
 FACESIZE
 failfast
 FAILIFTHERE
-FAILOUT
 fallthrough
 FARPROC
 fba
@@ -804,7 +788,6 @@ fesb
 ffc
 FFDE
 FFF
-ffff
 FFrom
 FGCOLOR
 fgetc
@@ -827,7 +810,6 @@ finalizer
 FINDCASE
 FINDDLG
 FINDDOWN
-findlocalename
 FINDSTR
 FINDSTRINGEXACT
 FINDUP
@@ -900,7 +882,6 @@ GETALIASESLENGTH
 GETALIASEXES
 GETALIASEXESLENGTH
 GETAUTOHIDEBAREX
-getboundingrectangles
 GETCARETWIDTH
 getch
 getchar
@@ -919,7 +900,6 @@ GETDLGCODE
 GETDPISCALEDSIZE
 GETFONTINFO
 GETFONTSIZE
-getglyphs
 GETHARDWARESTATE
 GETHUNGAPPTIMEOUT
 GETICON
@@ -929,8 +909,6 @@ GETKEYSTATE
 GETLARGESTWINDOWSIZE
 GETLBTEXT
 getline
-getlocalename
-getlocalenamelength
 GETMINMAXINFO
 GETMOUSEINFO
 GETNUMBEROFFONTS
@@ -940,8 +918,6 @@ GETPOS
 GETSELECTIONINFO
 getset
 GETSTATE
-getstring
-getstringlength
 GETTEXT
 GETTEXTLEN
 GETTITLE
@@ -953,9 +929,6 @@ GETWHEELSCROLLLINES
 getwriter
 Gfun
 gfx
-ggggg
-gggggg
-ggggggg
 gh
 github
 githubusercontent
@@ -988,7 +961,7 @@ GWL
 GWLP
 gwsz
 HABCDEF
-hackathon
+Hackathon
 halfwidth
 HALTCOND
 HANGEUL
@@ -1018,7 +991,6 @@ hhx
 HIBYTE
 HICON
 HIDEWINDOW
-hidpi
 HIGHLIGHTTEXT
 hinst
 HINSTANCE
@@ -1109,9 +1081,6 @@ idllib
 IDOK
 IDR
 idth
-idwritefontcollection
-idwritelocalizedstrings
-idwritetextanalyzer
 idx
 IDXGI
 IDynamic
@@ -1139,7 +1108,6 @@ ime
 Imm
 IMouse
 impl
-implementingtextandtextrange
 inbox
 inclusivity
 INCONTEXT
@@ -1160,7 +1128,6 @@ inout
 INPATHROOT
 Inplace
 inproc
-inputdev
 Inputkeyinfo
 INPUTPROCESSORPROFILE
 inputrc
@@ -1211,14 +1178,11 @@ iterm
 itermcolors
 ITerminal
 IText
-itextprovider
-itextrangeprovider
 itf
 Ith
 itoa
 IUI
 IUia
-iuiautomationtextrange
 IUnknown
 ivalid
 IVector
@@ -1311,7 +1275,6 @@ listptr
 listptrsize
 lk
 lld
-LLLLLLLL
 llvm
 llx
 LMENU
@@ -1526,7 +1489,6 @@ nbsp
 Nc
 NCCALCSIZE
 NCCREATE
-nchittest
 NCHITTEST'ed
 NCLBUTTONDOWN
 NCLBUTTONUP
@@ -1555,13 +1517,10 @@ NEWTEXTMETRIC
 NEWTEXTMETRICEX
 Newtonsoft
 NEXTLINE
-nf
 nfe
 nlength
 Nls
 NLSMODE
-nn
-nnn
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1784,7 +1743,6 @@ PFONT
 PFONTENUMDATA
 PFS
 pgdn
-pgp
 pguid
 pgup
 PHANDLE
@@ -1817,9 +1775,7 @@ pntm
 PNTSTATUS
 POBJECT
 Podcast
-pointerpoint
 POINTSLIST
-polytextoutw
 POLYTEXTW
 popclip
 popd
@@ -1936,7 +1892,6 @@ pythonw
 qi
 QJ
 qo
-QQQQ
 qsort
 queryable
 QUESTIONMARK
@@ -2058,7 +2013,6 @@ robomac
 roundtrip
 ROWSTOSCROLL
 RRF
-RRRRRRR
 rtcore
 RTEXT
 rtf
@@ -2226,7 +2180,6 @@ SOURCESDIRECTORY
 SPACEBAR
 spammy
 spand
-Spc
 splashscreen
 sprintf
 sqlproj
@@ -2315,7 +2268,6 @@ syscalls
 SYSCHAR
 SYSCOMMAND
 SYSDEADCHAR
-sysinfo
 Sysinternals
 SYSKEYDOWN
 SYSKEYUP
@@ -2428,7 +2380,6 @@ TOPLEFT
 TOPRIGHT
 tosign
 touchpad
-tounicodeex
 towlower
 towupper
 Tpp
@@ -2490,8 +2441,6 @@ uget
 uia
 UIACCESS
 uiacore
-uiauto
-uiautomationclient
 uiautomationcore
 Uid
 uielem
@@ -2512,7 +2461,6 @@ Unfocus
 unfocuses
 unhighlighting
 unicode
-unicodechar
 UNICODESTRING
 UNICODETEXT
 UNICRT
@@ -2579,7 +2527,6 @@ uxtheme
 Vals
 Vanara
 vararg
-varenum
 vbproj
 vclib
 Vcount
@@ -2616,7 +2563,6 @@ VProc
 VRaw
 VREDRAW
 vsc
-vsconfig
 vscprintf
 VSCROLL
 vsinfo
@@ -2694,7 +2640,6 @@ wikipedia
 wil
 WImpl
 WINAPI
-winauto
 winbase
 winbasep
 wincon
@@ -2725,10 +2670,8 @@ WINDOWPOSCHANGING
 windowproc
 windowrect
 windowsapp
-windowsinsiderpreview
 windowsinternalstring
 WINDOWSIZE
-windowsterminal
 windowsx
 WINDOWTEXT
 windowtheme
@@ -2783,7 +2726,6 @@ WPresent
 wprintf
 wprp
 wprpi
-wpt
 wregex
 WResult
 writeback
@@ -2840,7 +2782,6 @@ xca
 XCast
 xce
 XCENTER
-XChars
 XColors
 xcopy
 XCount
@@ -2872,13 +2813,11 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
-xxxx
 xy
 yact
 YAML
 YCast
 YCENTER
-YChars
 YCount
 YDPI
 yml
