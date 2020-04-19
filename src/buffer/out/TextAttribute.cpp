@@ -60,12 +60,6 @@ COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> color
     return _background.GetColor(colorTable, defaultColor, false);
 }
 
-void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
-{
-    WI_UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
-    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-}
-
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
@@ -74,27 +68,6 @@ void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 {
     _background = TextColor(rgbBackground);
-}
-
-void TextAttribute::SetLegacyAttributes(const WORD attrs,
-                                        const bool setForeground,
-                                        const bool setBackground,
-                                        const bool setMeta) noexcept
-{
-    if (setForeground)
-    {
-        const BYTE fgIndex = gsl::narrow_cast<BYTE>(attrs & FG_ATTRS);
-        _foreground = TextColor(fgIndex);
-    }
-    if (setBackground)
-    {
-        const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
-        _background = TextColor(bgIndex);
-    }
-    if (setMeta)
-    {
-        SetMetaAttributes(attrs);
-    }
 }
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
@@ -234,11 +207,6 @@ void TextAttribute::SetReverseVideo(bool isReversed) noexcept
 ExtendedAttributes TextAttribute::GetExtendedAttributes() const noexcept
 {
     return _extendedAttrs;
-}
-
-void TextAttribute::SetExtendedAttributes(const ExtendedAttributes attrs) noexcept
-{
-    _extendedAttrs = attrs;
 }
 
 // Routine Description:

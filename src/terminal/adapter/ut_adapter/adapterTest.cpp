@@ -200,51 +200,9 @@ public:
         return _privateAllowCursorBlinkingResult;
     }
 
-    bool SetConsoleTextAttribute(const WORD /*attr*/) override
-    {
-        Log::Comment(L"SetConsoleTextAttribute MOCK called...");
-        return _setConsoleTextAttributeResult;
-    }
-
     bool PrivateIsVtInputEnabled() const override
     {
         return false;
-    }
-
-    bool PrivateSetLegacyAttributes(const WORD /*attr*/, const bool /*foreground*/, const bool /*background*/, const bool /*meta*/) override
-    {
-        Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
-        return _privateSetLegacyAttributesResult;
-    }
-
-    bool SetConsoleXtermTextAttribute(const int /*xtermTableEntry*/, const bool /*isForeground*/) override
-    {
-        Log::Comment(L"SetConsoleXtermTextAttribute MOCK called...");
-        return _setConsoleXtermTextAttributeResult;
-    }
-
-    bool SetConsoleRGBTextAttribute(const COLORREF /*rgbColor*/, const bool /*isForeground*/) override
-    {
-        Log::Comment(L"SetConsoleRGBTextAttribute MOCK called...");
-        return _setConsoleRGBTextAttributeResult;
-    }
-
-    bool PrivateBoldText(const bool /*isBold*/) override
-    {
-        Log::Comment(L"PrivateBoldText MOCK called...");
-        return !!_privateBoldTextResult;
-    }
-
-    bool PrivateGetExtendedTextAttributes(ExtendedAttributes& /*attrs*/)
-    {
-        Log::Comment(L"PrivateGetExtendedTextAttributes MOCK called...");
-        return true;
-    }
-
-    bool PrivateSetExtendedTextAttributes(const ExtendedAttributes /*attrs*/)
-    {
-        Log::Comment(L"PrivateSetExtendedTextAttributes MOCK called...");
-        return true;
     }
 
     bool PrivateGetTextAttributes(TextAttribute& attrs) const
@@ -477,12 +435,6 @@ public:
         return _setCursorColorResult;
     }
 
-    bool PrivateGetConsoleScreenBufferAttributes(WORD& /*attributes*/) override
-    {
-        Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
-        return _privateGetConsoleScreenBufferAttributesResult;
-    }
-
     bool PrivateRefreshWindow() override
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
@@ -523,13 +475,6 @@ public:
     {
         Log::Comment(L"InsertLines MOCK called...");
         return TRUE;
-    }
-
-    bool PrivateSetDefaultAttributes(const bool /*foreground*/,
-                                     const bool /*background*/) override
-    {
-        Log::Comment(L"PrivateSetDefaultAttributes MOCK called...");
-        return _privateSetDefaultAttributesResult;
     }
 
     bool MoveToBottom() const override
@@ -640,14 +585,12 @@ public:
         _getConsoleScreenBufferInfoExResult = TRUE;
         _getConsoleCursorInfoResult = TRUE;
         _setConsoleCursorInfoResult = TRUE;
-        _setConsoleTextAttributeResult = TRUE;
         _privateGetTextAttributesResult = TRUE;
         _privateSetTextAttributesResult = TRUE;
         _privateWriteConsoleInputWResult = TRUE;
         _privatePrependConsoleInputResult = TRUE;
         _privateWriteConsoleControlInputResult = TRUE;
         _setConsoleWindowInfoResult = TRUE;
-        _privateGetConsoleScreenBufferAttributesResult = TRUE;
         _moveToBottomResult = true;
 
         _bufferSize.X = 100;
@@ -776,7 +719,6 @@ public:
     TextAttribute _expectedAttribute = {};
     unsigned int _expectedOutputCP = 0;
     bool _isPty = false;
-    bool _privateBoldTextResult = false;
 
     bool _privateShowCursorResult = false;
     bool _expectedShowCursor = false;
@@ -785,7 +727,6 @@ public:
     bool _setConsoleCursorPositionResult = false;
     bool _getConsoleCursorInfoResult = false;
     bool _setConsoleCursorInfoResult = false;
-    bool _setConsoleTextAttributeResult = false;
     bool _privateGetTextAttributesResult = false;
     bool _privateSetTextAttributesResult = false;
     bool _privateWriteConsoleInputWResult = false;
@@ -821,16 +762,11 @@ public:
     bool _privateEnableButtonEventMouseModeResult = false;
     bool _privateEnableAnyEventMouseModeResult = false;
     bool _privateEnableAlternateScrollResult = false;
-    bool _setConsoleXtermTextAttributeResult = false;
-    bool _setConsoleRGBTextAttributeResult = false;
-    bool _privateSetLegacyAttributesResult = false;
-    bool _privateGetConsoleScreenBufferAttributesResult = false;
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
     bool _getConsoleOutputCPResult = false;
-    bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
     bool _privateGetColorTableEntryResult = false;

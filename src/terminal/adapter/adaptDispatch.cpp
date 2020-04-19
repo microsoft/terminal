@@ -1755,8 +1755,12 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
         // Reset the meta/extended attributes (but leave the colors unchanged).
-        success = success && _pConApi->PrivateSetLegacyAttributes(0, false, false, true);
-        success = success && _pConApi->PrivateSetExtendedTextAttributes(ExtendedAttributes::Normal);
+        TextAttribute attr;
+        if (_pConApi->PrivateGetTextAttributes(attr))
+        {
+            attr.SetStandardErase();
+            success = success && _pConApi->PrivateSetTextAttributes(attr);
+        }
         // Reset the origin mode to absolute.
         success = success && SetOriginMode(false);
         // Clear the scrolling margins.

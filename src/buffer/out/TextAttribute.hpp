@@ -107,13 +107,6 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    void SetLegacyAttributes(const WORD attrs,
-                             const bool setForeground,
-                             const bool setBackground,
-                             const bool setMeta) noexcept;
-
-    void SetMetaAttributes(const WORD wMeta) noexcept;
-
     void Invert() noexcept;
 
     friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
@@ -141,7 +134,6 @@ public:
     void SetReverseVideo(bool isReversed) noexcept;
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
-    void SetExtendedAttributes(const ExtendedAttributes attrs) noexcept;
 
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
