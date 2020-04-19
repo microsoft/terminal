@@ -734,6 +734,19 @@ bool ConhostInternalGetSet::MoveToBottom() const
 }
 
 // Method Description:
+// - Connects the PrivateGetColorTableEntry call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - true if successful (see DoSrvPrivateGetColorTableEntry). false otherwise.
+bool ConhostInternalGetSet::PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept
+{
+    return SUCCEEDED(DoSrvPrivateGetColorTableEntry(index, value));
+}
+
+// Method Description:
 // - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
 //      call inside Conhost.exe
 // Arguments:
@@ -741,7 +754,7 @@ bool ConhostInternalGetSet::MoveToBottom() const
 // - value: the new RGB value to use for that index in the color table.
 // Return Value:
 // - true if successful (see DoSrvPrivateSetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept
+bool ConhostInternalGetSet::PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
 }

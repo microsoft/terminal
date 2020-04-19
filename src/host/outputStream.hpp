@@ -144,7 +144,8 @@ public:
 
     bool MoveToBottom() const override;
 
-    bool PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override;
+    bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override;
+    bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override;
 
     bool PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
 

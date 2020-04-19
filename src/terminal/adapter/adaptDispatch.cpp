@@ -2078,12 +2078,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    bool success = tableIndex < 256;
-    if (success)
-    {
-        const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
-        success = _pConApi->PrivateSetColorTableEntry(realIndex, dwColor);
-    }
+    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

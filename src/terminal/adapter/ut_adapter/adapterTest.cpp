@@ -613,7 +613,13 @@ public:
         return _moveToBottomResult;
     }
 
-    bool PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override
+    bool PrivateGetColorTableEntry(const size_t /*index*/, COLORREF& /*value*/) const noexcept override
+    {
+        Log::Comment(L"PrivateGetColorTableEntry MOCK called...");
+        return _privateGetColorTableEntryResult;
+    }
+
+    bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override
     {
         Log::Comment(L"PrivateSetColorTableEntry MOCK called...");
         if (_privateSetColorTableEntryResult)
@@ -901,8 +907,9 @@ public:
     bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
+    bool _privateGetColorTableEntryResult = false;
     bool _privateSetColorTableEntryResult = false;
-    short _expectedColorTableIndex = -1;
+    size_t _expectedColorTableIndex = SIZE_MAX;
     COLORREF _expectedColorValue = INVALID_COLOR;
 
     bool _privateSetDefaultForegroundResult = false;
@@ -2148,55 +2155,7 @@ public:
         const auto testColor = RGB(1, 2, 3);
         _testGetSet->_expectedColorValue = testColor;
 
-        _testGetSet->_expectedColorTableIndex = 0; // Windows DARK_BLACK
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(0, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 4; // Windows DARK_RED
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(1, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 2; // Windows DARK_GREEN
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(2, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 6; // Windows DARK_YELLOW
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(3, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 1; // Windows DARK_BLUE
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(4, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 5; // Windows DARK_MAGENTA
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(5, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 3; // Windows DARK_CYAN
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(6, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 7; // Windows DARK_WHITE
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(7, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 8; // Windows BRIGHT_BLACK
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(8, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 12; // Windows BRIGHT_RED
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(9, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 10; // Windows BRIGHT_GREEN
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(10, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 14; // Windows BRIGHT_YELLOW
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(11, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 9; // Windows BRIGHT_BLUE
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(12, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 13; // Windows BRIGHT_MAGENTA
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(13, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 11; // Windows BRIGHT_CYAN
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(14, testColor));
-
-        _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
-        VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(15, testColor));
-
-        for (short i = 16; i < 256; i++)
+        for (size_t i = 0; i < 256; i++)
         {
             _testGetSet->_expectedColorTableIndex = i;
             VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(i, testColor));

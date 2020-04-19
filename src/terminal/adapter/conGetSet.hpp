@@ -100,7 +100,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool MoveToBottom() const = 0;
 
-        virtual bool PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
+        virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;
+        virtual bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const = 0;
         virtual bool PrivateSetDefaultForeground(const COLORREF value) const = 0;
         virtual bool PrivateSetDefaultBackground(const COLORREF value) const = 0;
 

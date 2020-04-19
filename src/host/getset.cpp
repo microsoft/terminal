@@ -2101,6 +2101,28 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 }
 
 // Method Description:
+// - Retrieve the color table value at the specified index.
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept
+{
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Method Description:
 // - Sets the color table value in index to the color specified in value.
 //      Can be used to set the 256-color table as well as the 16-color table.
 // Arguments:
@@ -2111,7 +2133,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Notes:
 //  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
@@ -2119,7 +2141,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(index, value);
+        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.
