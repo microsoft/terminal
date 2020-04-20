@@ -224,9 +224,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the location of the cursor in the display, in pixels.
         til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
 
+        // GH #5007 - make sure to account for wrapping the IME composition at
+        // the right side of the viewport.
+        const ptrdiff_t textBlockHeight = ::base::ClampMul(_currentTextBlockHeight, scaleFactor);
+
         // Get the bounds of the composition text, in pixels.
-        const til::rectangle textBounds{ til::point{ screenCursorPos.x() + fontSize.width(), screenCursorPos.y() },
-                                         til::size{ 0, fontSize.height() } };
+        const til::rectangle textBounds{ til::point{ screenCursorPos.x(), screenCursorPos.y() },
+                                         til::size{ 0, textBlockHeight } };
 
         _currentTextBounds = textBounds;
 
