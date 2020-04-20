@@ -1178,7 +1178,12 @@ try
     D2D1_COLOR_F nothing = { 0 };
 
     // If the entire thing is invalid, just use one big clear operation.
-    if (_invalidMap.all())
+    // Don't use _invalidMap.all() here. That method checks if the union of the
+    // invalid areas of the map is the entire frame. However, there's a good
+    // chance that _not_ all the cells of the frame are actually invalid. If we
+    // used all() here, we'd clear the entire frame, but not actually paint all
+    // the cells again.
+    if (_firstFrame)
     {
         _d2dRenderTarget->Clear(nothing);
     }
