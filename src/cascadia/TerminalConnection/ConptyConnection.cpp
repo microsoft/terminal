@@ -13,7 +13,7 @@
 
 #include "ConptyConnection.g.cpp"
 
-#include "../../types/inc/Utils.hpp"
+#include "../../types/inc/utils.hpp"
 #include "../../types/inc/Environment.hpp"
 #include "LibraryResources.h"
 
@@ -110,9 +110,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
-            auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
+            if (_environment)
+            {
+                // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
+                for (auto item : _environment)
+                {
+                    auto key = item.Key();
+                    auto value = item.Value();
+
+                    // avoid clobbering WSLENV
+                    if (std::wstring_view{ key } == L"WSLENV")
+                    {
+                        auto current = environment[L"WSLENV"];
+                        value = current + L":" + value;
+                    }
+
+                    environment.insert_or_assign(key.c_str(), value.c_str());
+                }
+            }
+
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+
+            auto wslEnv = environment[L"WSLENV"];
             wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
             environment.insert_or_assign(L"WSLENV", wslEnv);
         }
@@ -173,6 +193,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
+                                       const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                        const uint32_t initialRows,
                                        const uint32_t initialCols,
                                        const guid& initialGuid) :
@@ -181,6 +202,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
+        _environment{ environment },
         _guid{ initialGuid },
         _u8State{},
         _u16Str{},

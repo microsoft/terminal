@@ -388,7 +388,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
-        const auto viewportOrigin = viewport.Origin();
+        const til::point viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
@@ -426,7 +426,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
             for (const auto& rect : textRects)
             {
-                _getBoundingRect(rect, coords);
+                til::rectangle r{ rect };
+                r -= viewportOrigin;
+                _getBoundingRect(r, coords);
             }
         }
 
@@ -758,6 +760,8 @@ try
     FAIL_FAST_IF(!(newViewport.Top >= topRow));
     FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
     FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
+
+    Unlock.reset();
 
     _ChangeViewport(newViewport);
 
