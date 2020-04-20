@@ -27,6 +27,13 @@ class PointTests
         VERIFY_ARE_EQUAL(10, pt._y);
     }
 
+    TEST_METHOD(RawFloatingConstruct)
+    {
+        const til::point pt{ til::math::rounding, 3.2f, 7.6f };
+        VERIFY_ARE_EQUAL(3, pt._x);
+        VERIFY_ARE_EQUAL(8, pt._y);
+    }
+
     TEST_METHOD(UnsignedConstruct)
     {
         Log::Comment(L"0.) Normal unsigned construct.");
