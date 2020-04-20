@@ -1699,7 +1699,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Triggered when the swapchain changes DPI. When this happens, we're
-    //   going to recieve 3 events:
+    //   going to receive 3 events:
     //   - 1. First, a CompositionScaleChanged _for the original scale_. I don't
     //     know why this event happens first. **It also doesn't always happen.**
     //     However, when it does happen, it doesn't give us any useful
@@ -1712,7 +1712,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //        these messages after XAML updated it's scaling.
     //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
     //   - 4. We'll usually get another SizeChanged some time after this last
-    //     ScaleChanged. This usually seems to happen after something triggeres
+    //     ScaleChanged. This usually seems to happen after something triggers
     //     the UI to re-layout, like hovering over the scrollbar. This event
     //     doesn't reliably happen immediately after a scale change, so we can't
     //     depend on it (despite the fact that both the scale and size state is
