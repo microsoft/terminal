@@ -225,17 +225,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->UpdateSettings(_settings);
 
             // Refresh our font with the renderer
+            const auto actualFontOldSize = _actualFont.GetSize();
             _UpdateFont();
-
-            const auto width = SwapChainPanel().ActualWidth();
-            const auto height = SwapChainPanel().ActualHeight();
-            if (width != 0 && height != 0)
+            const auto actualFontNewSize = _actualFont.GetSize();
+            if (actualFontNewSize != actualFontOldSize)
             {
-                // If the font size changed, or the _swapchainPanel's size changed
-                // for any reason, we'll need to make sure to also resize the
-                // buffer. _DoResize will invalidate everything for us.
-                auto lock = _terminal->LockForWriting();
-                _DoResize(width, height);
+                _RefreshSize();
             }
         }
     }
