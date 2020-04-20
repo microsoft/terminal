@@ -839,7 +839,11 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
 {
     if (_pfnCursorPositionChanged)
     {
-        _pfnCursorPositionChanged();
+        try
+        {
+            _pfnCursorPositionChanged();
+        }
+        CATCH_LOG();
     }
 }
 
