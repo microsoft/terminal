@@ -227,7 +227,7 @@ try
     // get the values of our endpoint
     const auto mine = GetEndpoint(endpoint);
 
-    // TODO GH#XXXX: associate UTRs with TextBuffers
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
     //   Ensure both endpoints fit in the current buffer.
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
@@ -661,7 +661,7 @@ try
         return E_INVALIDARG;
     }
 
-    // TODO GH#XXXX: associate UTRs with TextBuffers
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
     //   Ensure both endpoints fit in the current buffer.
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
