@@ -49,9 +49,23 @@ namespace winrt {
                 FLOAT Width;
                 FLOAT Height;
             };
+
+            struct Point
+            {
+                FLOAT X;
+                FLOAT Y;
+            };
+
+            struct Size
+            {
+                FLOAT Width;
+                FLOAT Height;
+            };
         } /* Foundation */
     } /* Windows */
 } /* winrt */
+
+
 
 // Include TIL after Wex to get test comparators.
 #include "til.h"
