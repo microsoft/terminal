@@ -1699,33 +1699,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         foundationSize.Width *= currentEngineScale;
         foundationSize.Height *= currentEngineScale;
 
-        const bool dpiHasAlreadyBeenUpdated = currentEngineScale == currentScaleX;
-        dpiHasAlreadyBeenUpdated;
-        // If we're in the middle of a DPI change, we MIGHT get a
-        // ScaleChanged, a SizeChanged, then a final ScaleChanged. In that
-        // scenario, we don't need to resize here. We'll resize in the following
-        // ScaleChanged. Right now, we don't know what the font size will be at
-        // the new DPI, so we're going to have to resize again anyways. Might
-        // was well just skip this one.
-        //
-        // However, we don't always get that first ScaleChanged, and if we
-        // don't, then we can't optimize this first resize out unfortunately.
-        // TODO: Can we skip this if !dpiHasAlreadyBeenUpdated? Originally I had
-        //     if (!_inDpiResize && (dpiHasAlreadyBeenUpdated))
-        // Which _felt_ right, but I deleted it for some reason
-        if (!_inDpiResize)
-        {
-            _DoResize(foundationSize.Width, foundationSize.Height);
-        }
-
-        _inDpiResize = false;
+        _DoResize(foundationSize.Width, foundationSize.Height);
     }
 
     // Method Description:
     // - Triggered when the swapchain changes DPI. When this happens, we're
     //   going to recieve 3 events:
     //   - 1. First, a CompositionScaleChanged _for the original scale_. I don't
-    //     know why this event happens first. It also doesn't always happen.
+    //     know why this event happens first. **It also doesn't always happen.**
     //     However, when it does happen, it doesn't give us any useful
     //     information.
     //   - 2. Then, a SizeChanged. During that SizeChanged, either:
@@ -1745,8 +1726,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   At that point, we know how big the font should be for the new DPI, and
     //   how big the SwapChainPanel will be. If these sizes are different, we'll
     //   need to resize the buffer to fit in the new window.
-    // - TODO: Right now we'll _also_ resize in response to event 2. Is there a
-    //   way for us to skip that resize, as an optimization?
     // Arguments:
     // - sender: The SwapChainPanel who's DPI changed. This is our _swapchainPanel.
     // - args: This param is unused in the CompositionScaleChanged event.
@@ -1767,7 +1746,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const bool dpiWasUnchanged = currentEngineScale == scaleX;
             if (dpiWasUnchanged)
             {
-                _inDpiResize = true;
                 return;
             }
 
