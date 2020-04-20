@@ -1349,7 +1349,7 @@ class RectangleTests
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
-    
+
     TEST_METHOD(CastToWindowsFoundationRect)
     {
         Log::Comment(L"0.) Typical situation.");
