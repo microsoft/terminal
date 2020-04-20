@@ -467,10 +467,6 @@
           "description": "Executable used in the profile.",
           "type": "string"
         },
-        "connectionType": {
-          "$ref": "#/definitions/ProfileGuid",
-          "description": "A GUID reference to a connection type."
-        },
         "cursorColor": {
           "oneOf": [
             { "$ref": "#/definitions/Color" },
