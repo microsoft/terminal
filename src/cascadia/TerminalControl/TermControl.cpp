@@ -1717,7 +1717,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     doesn't reliably happen immediately after a scale change, so we can't
     //     depend on it (despite the fact that both the scale and size state is
     //     definitely correct in it)
-    // - In the 3rd event, we're going to update our font size for te new DPI.
+    // - In the 3rd event, we're going to update our font size for the new DPI.
     //   At that point, we know how big the font should be for the new DPI, and
     //   how big the SwapChainPanel will be. If these sizes are different, we'll
     //   need to resize the buffer to fit in the new window.
