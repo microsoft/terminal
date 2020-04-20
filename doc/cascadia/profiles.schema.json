@@ -278,7 +278,7 @@
           "type": "boolean"
         },
         "copyFormatting": {
-          "default": false,
+          "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
           "type": "boolean"
         },

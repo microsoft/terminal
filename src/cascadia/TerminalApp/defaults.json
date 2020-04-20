@@ -9,7 +9,7 @@
 
     // Selection
     "copyOnSelect": false,
-    "copyFormatting": false,
+    "copyFormatting": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
