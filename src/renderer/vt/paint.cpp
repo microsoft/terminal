@@ -443,15 +443,23 @@ using namespace Microsoft::Console::Types;
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
+    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
     // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
     // line we're trying to print right now _actually is the bottom line_
-    const bool removeSpaces = useEraseChar ||
-                              _clearedAllThisFrame ||
-                              (_newBottomLine && coord.Y == _lastViewport.BottomInclusive());
+    //
+    // GH#5291: DON'T remove spaces when the row wrapped. We might need those
+    // spaces to preserve the wrap state of this line, or the cursor position.
+    // For example, vim.exe uses "~    "... to clear the line, and then leaves
+    // the lines _wrapped_. It doesn't care to manually break the lines, but if
+    // we trimmed the spaces off here, we'd print all the "~"s one after another
+    // on the same line.
+    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+                                               _clearedAllThisFrame ||
+                                               (_newBottomLine && printingBottomLine));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -547,7 +555,7 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_EraseLine());
         }
     }
-    else if (_newBottomLine && coord.Y == _lastViewport.BottomInclusive())
+    else if (_newBottomLine && printingBottomLine)
     {
         // If we're on a new line, then we don't need to erase the line. The
         //      line is already empty.
@@ -566,7 +574,7 @@ using namespace Microsoft::Console::Types;
 
     // If we printed to the bottom line, and we previously thought that this was
     // a new bottom line, it certainly isn't new any longer.
-    if (coord.Y == _lastViewport.BottomInclusive())
+    if (printingBottomLine)
     {
         _newBottomLine = false;
     }

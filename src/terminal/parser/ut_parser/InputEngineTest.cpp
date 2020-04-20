@@ -253,6 +253,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(CursorPositioningTest);
     TEST_METHOD(CSICursorBackTabTest);
     TEST_METHOD(EnhancedKeysTest);
+    TEST_METHOD(SS3CursorKeyTest);
     TEST_METHOD(AltBackspaceTest);
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
@@ -830,6 +831,50 @@ void InputEngineTest::EnhancedKeysTest()
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
         inputRec.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>(vkey);
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        Log::Comment(NoThrowString().Format(
+            L"Processing \"%s\"", seq.c_str()));
+        _stateMachine->ProcessString(seq);
+    }
+    VerifyExpectedInputDrained();
+}
+
+void InputEngineTest::SS3CursorKeyTest()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    // clang-format off
+    const std::map<int, std::wstring> cursorKeys{
+        { VK_UP,    L"\x1bOA" },
+        { VK_DOWN,  L"\x1bOB" },
+        { VK_RIGHT, L"\x1bOC" },
+        { VK_LEFT,  L"\x1bOD" },
+        { VK_HOME,  L"\x1bOH" },
+        { VK_END,   L"\x1bOF" },
+    };
+    // clang-format on
+
+    for (const auto& [vkey, seq] : cursorKeys)
+    {
+        INPUT_RECORD inputRec;
+
+        const wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = 0;
         inputRec.Event.KeyEvent.wRepeatCount = 1;
         inputRec.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>(vkey);
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;

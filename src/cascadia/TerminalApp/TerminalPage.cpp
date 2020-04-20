@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 
 using namespace winrt;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
@@ -572,7 +573,13 @@ namespace winrt::TerminalApp::implementation
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(), L".", L"Azure", settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
+                                                              L".",
+                                                              L"Azure",
+                                                              nullptr,
+                                                              settings.InitialRows(),
+                                                              settings.InitialCols(),
+                                                              winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&
@@ -583,12 +590,21 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
-                                                                    settings.StartingDirectory(),
-                                                                    settings.StartingTitle(),
-                                                                    settings.InitialRows(),
-                                                                    settings.InitialCols(),
-                                                                    winrt::guid());
+            std::wstring guidWString = Utils::GuidToString(profileGuid);
+
+            StringMap envMap{};
+            envMap.Insert(L"WT_PROFILE_ID", guidWString);
+            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+
+            auto conhostConn = TerminalConnection::ConptyConnection(
+                settings.Commandline(),
+                settings.StartingDirectory(),
+                settings.StartingTitle(),
+                envMap.GetView(),
+                settings.InitialRows(),
+                settings.InitialCols(),
+                winrt::guid());
+
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;
         }
