@@ -341,7 +341,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        bool one() const
+        constexpr bool one() const noexcept
         {
             return _bits.count() == 1;
         }
