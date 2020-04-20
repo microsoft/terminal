@@ -38,7 +38,7 @@ COORD RenderData::GetTextBufferEndPosition() const noexcept
     // text
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto mutableViewport = gci.GetActiveOutputBuffer().GetVirtualViewport();
-    COORD endPosition{ mutableViewport.Width() - 1, gsl::narrow<short>(mutableViewport.BottomInclusive()) };
+    COORD endPosition{ mutableViewport.Width() - 1, mutableViewport.BottomInclusive() };
     return endPosition;
 }
 
