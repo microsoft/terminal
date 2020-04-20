@@ -46,9 +46,9 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WriteCtrlC()
 {
-    KeyEvent keyUp = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    KeyEvent keyDown = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    return _pConApi->PrivateWriteConsoleControlInput(keyUp) && _pConApi->PrivateWriteConsoleControlInput(keyDown);
+    KeyEvent keyDown = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    KeyEvent keyUp = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    return _pConApi->PrivateWriteConsoleControlInput(keyDown) && _pConApi->PrivateWriteConsoleControlInput(keyUp);
 }
 
 // Method Description:
