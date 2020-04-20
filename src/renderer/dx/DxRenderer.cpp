@@ -800,6 +800,16 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+
+    // Since everything is invalidated here, mark this as a "first frame", so
+    // that we won't use incremental drawing on it. The caller of this intended
+    // for _everything_ to get redrawn, so setting _firstFrame will force us to
+    // redraw the entire frame. This will make sure that things like the gutters
+    // get cleared correctly.
+    //
+    // Invalidating everything is supposed to happen with resizes of the
+    // entire canvas, changes of the font, and other such adjustments.
+    _firstFrame = true;
     return S_OK;
 }
 CATCH_RETURN();
@@ -1168,9 +1178,6 @@ try
     D2D1_COLOR_F nothing = { 0 };
 
     // If the entire thing is invalid, just use one big clear operation.
-    // This will also hit the gutters outside the usual paintable area.
-    // Invalidating everything is supposed to happen with resizes of the
-    // entire canvas, changes of the font, and other such adjustments.
     if (_invalidMap.all())
     {
         _d2dRenderTarget->Clear(nothing);
