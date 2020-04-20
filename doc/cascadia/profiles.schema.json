@@ -134,7 +134,7 @@
             "singleLine": {
               "type": "boolean",
               "default": false,
-              "description": "If true, the copied content will be copied as a single line. If false, newlines persist from the selected text."
+              "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
             }
           }
         }
@@ -288,7 +288,7 @@
         },
         "initialCols": {
           "default": 120,
-          "description": "The number of text buffer columns in the viewport on first load.",
+          "description": "The number of columns displayed in the window upon first load.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
@@ -299,7 +299,7 @@
         },
         "initialRows": {
           "default": 30,
-          "description": "The number of text buffer rows in the viewport on first load.",
+          "description": "The number of rows displayed in the window upon first load.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
