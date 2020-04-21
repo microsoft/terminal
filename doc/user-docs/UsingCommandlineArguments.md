@@ -41,17 +41,18 @@ same window. <sup>[[1](#footnote-1)]</sup>
 
 #### `split-pane`
 
-`split-pane [-H]|[-V] [terminal_parameters]`
+`split-pane [-H,--horizontal|-V,--vertical] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally. <sup>[[1](#footnote-1)]</sup>
 
 **Parameters**:
 
-* `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
-  "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
-  omitted, defaults to "auto", which splits the current pane in whatever the
-  larger dimension is. If both `-H` and `-V` are provided, defaults to vertical.
+* `-H,--horizontal`, `-V,--vertical`: Used to indicate which direction to split
+  the pane. `-V` is "vertically" (think `[|]`), and `-H` is "horizontally"
+  (think `[-]`). If omitted, defaults to "auto", which splits the current pane
+  in whatever the larger dimension is. If both `-H` and `-V` are provided,
+  defaults to vertical.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
 #### `focus-tab`
@@ -128,6 +129,73 @@ This creates a new Windows Terminal window with one tab, and 3 panes:
   from the "Windows PowerShell" pane. It will be running the default profile,
   and will use `wsl.exe` as the commandline (instead of the default profile's
   `commandline`).
+
+
+### Using multiple commands from PowerShell
+
+The Windows Terminal uses the semicolon character `;` as a delimiter for
+separating subcommands in the `wt` commandline. Unfortunately, `powershell` also
+uses `;` as a command separator. To work around this you can use the following
+tricks to help run multiple wt sub commands from powershell. In all the
+following examples, we'll be creating a new Terminal window with three panes -
+one running `cmd`, one with `powershell`, and a last one running `wsl`.
+
+In each of the following examples, we're using the `Start-Process` command to
+run `wt`. For more information on why we're using `Start-Process`, see ["Using
+`start`"](#using-start) below.
+
+#### Single quoted parameters (if you aren't calculating anything):
+
+In this example, we'll wrap all the parameters to `wt` in single quotes (`'`)
+
+```PowerShell
+start wt 'new-tab "cmd"; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe'
+```
+
+#### Escaped quotes (if you need variables):
+
+If you'd like to pass a value contained in a variable to the `wt` commandline,
+instead use the following syntax:
+
+```PowerShell
+$ThirdPane = "wsl.exe"
+start wt "new-tab cmd; split-pane -p `"Windows PowerShell`" ; split-pane -H $ThirdPane"
+```
+
+Note the usage of  `` ` `` to escape the double-quotes (`"`) around "Windows
+Powershell" in the `-p` parameter to the `split-pane` sub-command.
+
+#### Using `start`
+
+All the above examples explicitly used `start` to launch the Terminal.
+
+In the following examples, we're going to not use `start` to run the
+commandline. Instead, we'll try two other methods of escaping the commandline:
+* Only escaping the semicolons so that `powershell` will ignore them and pass
+  them straight to `wt`.
+* Using `--%`, so powershell will treat the rest of the commandline as arguments
+  to the application.
+
+```PowerShell
+wt new-tab "cmd" `; split-pane -p "Windows PowerShell" `; split-pane -H wsl.exe
+```
+
+```Powershell
+wt --% new-tab cmd ; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe
+```
+
+In both these examples, the newly created Windows Terminal window will create
+the window by correctly parsing all the provided commandline arguments.
+
+However, these methods are _not_ recommended currently, as Powershell will wait
+for the newly-created Terminal window to be closed before returning control to
+Powershell. By default, Powershell will always wait for Windows Store
+applications (like the Windows Terminal) to close before returning to the
+prompt. Note that this is different than the behavior of `cmd`, which will return
+to the prompt immediately. See
+[Powershell/PowerShell#9970](https://github.com/PowerShell/PowerShell/issues/9970)
+for more details on this bug.
+
 
 [#4023]: https://github.com/microsoft/terminal/pull/4023
 [#4472]: https://github.com/microsoft/terminal/issues/4472
