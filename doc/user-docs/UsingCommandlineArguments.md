@@ -136,9 +136,13 @@ tricks to help run multiple wt sub commands from powershell. In all the
 following examples, we'll be creating a new Terminal window with three panes -
 one running `cmd`, one with `powershell`, and a last one running `wsl`.
 
+In each of the following examples, we're using the `Start-Process` command to
+run `wt`. For more information on why we're using `Start-Process`, see ["Using
+`start`"](#using-start) below.
+
 #### Single quoted parameters (if you aren't calculating anything):
-In this example, we'll wrap all the parameters to `wt` in single quotes (`'`),
-and run `wt` with the `Start-Process` command:
+
+In this example, we'll wrap all the parameters to `wt` in single quotes (`'`)
 
 ```PowerShell
 start wt 'new-tab "cmd"; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe'
@@ -157,9 +161,9 @@ start wt "new-tab cmd; split-pane -p `"Windows PowerShell`" ; split-pane -H $Thi
 Note the usage of  `` ` `` to escape the double-quotes (`"`) around "Windows
 Powershell" in the `-p` parameter to the `split-pane` sub-command.
 
-#### Not using `start`
+#### Using `start`
 
-The astute reader will note that all the above examples used `start` to launch the Terminal.
+All the above examples explicitly used `start` to launch the Terminal.
 
 In the following examples, we're going to not use `start` to run the
 commandline. Instead, we'll try two other methods of escaping the commandline:
