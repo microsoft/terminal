@@ -194,7 +194,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(TestCursorInDeferredEOLPositionOnNewLineWithSpaces);
 
-    TEST_METHOD(VimExeResizeBug);
+    TEST_METHOD(ResizeRepaintVimExeBuffer);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -2418,9 +2418,11 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
     verifyBuffer(termTb, newTermView.BottomInclusive());
 }
 
-void ConptyRoundtripTests::VimExeResizeBug()
+void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 {
-    Log::Comment(L"TODO");
+    // See https://github.com/microsoft/terminal/issues/5428
+    Log::Comment(L"This test emulates what happens when you decrease the width "
+                 L"of the window while running vim.exe.");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -2436,11 +2438,16 @@ void ConptyRoundtripTests::VimExeResizeBug()
     _checkConptyOutput = false;
     _logConpty = true;
 
+    // This is a helper that will recreate the way that vim redraws the buffer.
     auto drawVim = [&sm, &si]() {
         const auto hostView = si.GetViewport();
         const auto width = hostView.Width();
-        sm.ProcessString(L"\x1b[H");
 
+        // Write:
+        // * AAA to the first line
+        // * BBB to the second line
+        // * a bunch of lines with a "~" followed by spaces (just the way vim.exe likes to render)
+        // * A status line with a bunch of "X"s and _a single space in the last cell_.
         sm.ProcessString(L"AAA");
         sm.ProcessString(L"\r\n");
         sm.ProcessString(L"BBB");
@@ -2451,13 +2458,15 @@ void ConptyRoundtripTests::VimExeResizeBug()
         {
             // IMPORTANT! The way vim writes these blank lines is as '~' followed by
             // enough spaces to fill the line.
-            // This bug (GH#5291 won't repro if you don't have the spaces).
             std::wstring line{ L"~" };
             line += std::wstring(width - 1, L' ');
             sm.ProcessString(line);
         }
         sm.ProcessString(std::wstring(width - 1, L'X'));
         sm.ProcessString(L" ");
+
+        // Move the cursor back home, as if it's on the first "A". The bug won't
+        // repro without this!
         sm.ProcessString(L"\x1b[H");
     };
 
@@ -2467,9 +2476,7 @@ void ConptyRoundtripTests::VimExeResizeBug()
     const auto spacesLength = 3;
     const auto secondTextLength = 1;
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool beforeResize = true) {
-        beforeResize;
-
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
         const auto firstRow = viewport.top<short>();
         const auto width = viewport.width<short>();
 
@@ -2485,6 +2492,7 @@ void ConptyRoundtripTests::VimExeResizeBug()
         TestUtils::VerifySpanOfText(L"B", iter1, 0, 3);
         TestUtils::VerifySpanOfText(L" ", iter1, 0, width - 3);
 
+        // "~" rows
         for (short row = firstRow + 2; row < viewport.bottom<short>() - 1; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
@@ -2506,13 +2514,13 @@ void ConptyRoundtripTests::VimExeResizeBug()
     };
 
     Log::Comment(L"========== Checking the host buffer state (before) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 
     Log::Comment(L"========== Resize the Terminal and conpty here ==========");
     const COORD newViewportSize{
@@ -2531,15 +2539,16 @@ void ConptyRoundtripTests::VimExeResizeBug()
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
+    Log::Comment(L"Re-painting vim");
+    // vim will redraw itself when it notices the buffer size change.
     drawVim();
 
-    Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
 
     Log::Comment(L"Painting the frame");
-    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    Log::Comment(L"========== Checking the terminal buffer state ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
