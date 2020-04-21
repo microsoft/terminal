@@ -1656,6 +1656,7 @@ osfhandle
 OSG
 OSGENG
 osign
+oss
 ostream
 ostringstream
 Ou
