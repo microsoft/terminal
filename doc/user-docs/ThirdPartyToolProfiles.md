@@ -116,6 +116,29 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
 }
 ````
 
+## Node.js command prompt
+
+Assuming that you've installed Node.js into `C:\Program Files\nodejs`:
+
+```json
+{
+    "name" : "Node.js command prompt",
+    "commandline" : "cmd.exe /k \"C:\\Program Files\\nodejs\\nodevars.bat\"",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
+## Node.js
+
+Assuming that you've installed Node.js into `C:\Program Files\nodejs`:
+
+```json
+{
+    "name" : "Node.js",
+    "commandline" : "C:/Program Files/nodejs/node.exe"
+}
+```
+
 ## Developer Command Prompt for Visual Studio
 
 Assuming that you've installed VS 2019 Professional:
