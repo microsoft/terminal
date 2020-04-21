@@ -41,7 +41,7 @@ same window.
 
 #### `split-pane`
 
-`split-pane [-H,--horizontal]|[-V,--vertical] [terminal_parameters]`
+`split-pane [-H,--horizontal|-V,--vertical] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
