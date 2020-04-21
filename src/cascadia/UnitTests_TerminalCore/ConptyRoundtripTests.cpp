@@ -2433,8 +2433,6 @@ void ConptyRoundtripTests::VimExeResizeBug()
 
     _flushFirstFrame();
 
-    // First, fill the buffer with contents, so conpty starts circling
-
     _checkConptyOutput = false;
     _logConpty = true;
 
@@ -2487,18 +2485,21 @@ void ConptyRoundtripTests::VimExeResizeBug()
         TestUtils::VerifySpanOfText(L"B", iter1, 0, 3);
         TestUtils::VerifySpanOfText(L" ", iter1, 0, width - 3);
 
-        for (short row = 2; row < viewport.bottom<short>() - 1; row++)
+        for (short row = firstRow + 2; row < viewport.bottom<short>() - 1; row++)
         {
-            VERIFY_IS_TRUE(tb.GetRowByOffset(firstRow + row).GetCharRow().WasWrapForced());
-            auto iter = tb.GetCellDataAt({ 0, firstRow + row });
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_TRUE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, row });
             TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
             TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
         }
 
         // Last row
         {
-            VERIFY_IS_TRUE(tb.GetRowByOffset(viewport.bottom<short>() - 1).GetCharRow().WasWrapForced());
-            auto iter = tb.GetCellDataAt({ 0, viewport.bottom<short>() - 1 });
+            short row = viewport.bottom<short>() - 1;
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_TRUE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, row });
             TestUtils::VerifySpanOfText(L"X", iter, 0, width - 1);
             TestUtils::VerifySpanOfText(L" ", iter, 0, 1);
         }
@@ -2527,8 +2528,8 @@ void ConptyRoundtripTests::VimExeResizeBug()
     hostTb = &si.GetTextBuffer();
     termTb = term->_buffer.get();
 
-    // Log::Comment(L"Painting the frame");
-    // VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     drawVim();
 
@@ -2536,6 +2537,7 @@ void ConptyRoundtripTests::VimExeResizeBug()
     verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
 
     Log::Comment(L"Painting the frame");
+    // DebugBreak();
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
