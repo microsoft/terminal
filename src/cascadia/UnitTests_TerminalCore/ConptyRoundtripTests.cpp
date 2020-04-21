@@ -194,6 +194,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(TestCursorInDeferredEOLPositionOnNewLineWithSpaces);
 
+    TEST_METHOD(VimExeResizeBug);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2414,4 +2416,128 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
 
     const auto newTermView = term->GetViewport();
     verifyBuffer(termTb, newTermView.BottomInclusive());
+}
+
+void ConptyRoundtripTests::VimExeResizeBug()
+{
+    Log::Comment(L"TODO");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    // First, fill the buffer with contents, so conpty starts circling
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    auto drawVim = [&sm, &si]() {
+        const auto hostView = si.GetViewport();
+        const auto width = hostView.Width();
+        sm.ProcessString(L"\x1b[H");
+
+        sm.ProcessString(L"AAA");
+        sm.ProcessString(L"\r\n");
+        sm.ProcessString(L"BBB");
+        sm.ProcessString(L"\r\n");
+
+        const auto end = 2 * hostView.Height();
+        for (auto i = 2; i < hostView.BottomInclusive(); i++)
+        {
+            // IMPORTANT! The way vim writes these blank lines is as '~' followed by
+            // enough spaces to fill the line.
+            // This bug (GH#5291 won't repro if you don't have the spaces).
+            std::wstring line{ L"~" };
+            line += std::wstring(width - 1, L' ');
+            sm.ProcessString(line);
+        }
+        sm.ProcessString(std::wstring(width - 1, L'X'));
+        sm.ProcessString(L" ");
+        sm.ProcessString(L"\x1b[H");
+    };
+
+    drawVim();
+
+    const auto firstTextLength = TerminalViewWidth - 2;
+    const auto spacesLength = 3;
+    const auto secondTextLength = 1;
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool beforeResize = true) {
+        beforeResize;
+
+        const auto firstRow = viewport.top<short>();
+        const auto width = viewport.width<short>();
+
+        // First row
+        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow).GetCharRow().WasWrapForced());
+        auto iter0 = tb.GetCellDataAt({ 0, firstRow });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, 3);
+        TestUtils::VerifySpanOfText(L" ", iter0, 0, width - 3);
+
+        // Second row
+        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow + 1).GetCharRow().WasWrapForced());
+        auto iter1 = tb.GetCellDataAt({ 0, firstRow + 1 });
+        TestUtils::VerifySpanOfText(L"B", iter1, 0, 3);
+        TestUtils::VerifySpanOfText(L" ", iter1, 0, width - 3);
+
+        for (short row = 2; row < viewport.bottom<short>() - 1; row++)
+        {
+            VERIFY_IS_TRUE(tb.GetRowByOffset(firstRow + row).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, firstRow + row });
+            TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
+            TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
+        }
+
+        // Last row
+        {
+            VERIFY_IS_TRUE(tb.GetRowByOffset(viewport.bottom<short>() - 1).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, viewport.bottom<short>() - 1 });
+            TestUtils::VerifySpanOfText(L"X", iter, 0, width - 1);
+            TestUtils::VerifySpanOfText(L" ", iter, 0, 1);
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
+
+    Log::Comment(L"========== Resize the Terminal and conpty here ==========");
+    const COORD newViewportSize{
+        ::base::saturated_cast<short>(TerminalViewWidth - 1),
+        ::base::saturated_cast<short>(TerminalViewHeight)
+    };
+
+    auto resizeResult = term->UserResize(newViewportSize);
+    VERIFY_SUCCEEDED(resizeResult);
+    _resizeConpty(newViewportSize.X, newViewportSize.Y);
+
+    // After we resize, make sure to get the new textBuffers
+    hostTb = &si.GetTextBuffer();
+    termTb = term->_buffer.get();
+
+    // Log::Comment(L"Painting the frame");
+    // VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    drawVim();
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
 }
