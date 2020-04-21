@@ -52,6 +52,7 @@ SUMS$
 \.yml$
 \.zip$
 ^dep/
+^oss/
 ^doc/reference/UTF8-torture-test\.txt$
 ^src/interactivity/onecore/BgfxEngine\.
 ^src/renderer/wddmcon/WddmConRenderer\.
