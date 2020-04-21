@@ -40,9 +40,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const TextAttribute& textAttributes,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               const COORD coord,

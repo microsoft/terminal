@@ -1088,12 +1088,9 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 [[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
 {
-    const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
-    const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
-
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    return pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, textAttributes, isSettingDefaultBrushes);
+    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, isSettingDefaultBrushes);
 }
 
 // Routine Description:

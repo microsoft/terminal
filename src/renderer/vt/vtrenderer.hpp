@@ -75,9 +75,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const TextAttribute& textAttributes,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
@@ -212,13 +211,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
-        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                       const COLORREF colorBackground,
-                                                       const bool isBold,
+        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const IRenderData* pData,
                                                        const std::basic_string_view<COLORREF> colorTable) noexcept;
-        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const bool isBold,
+        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const IRenderData* pData,
                                                            const std::basic_string_view<COLORREF> colorTable) noexcept;
 
         bool _WillWriteSingleChar() const;

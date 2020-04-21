@@ -20,16 +20,14 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
-// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
+// - textAttributes - Text attributes to use for the colors and character rendition
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const TextAttribute& textAttributes,
+[[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -44,10 +42,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
     RETURN_IF_FAILED(_UpdateExtendedAttrs(textAttributes));
 
-    return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
-                                              colorBackground,
-                                              textAttributes.IsBold(),
-                                              _colorTable);
+    return VtEngine::_RgbUpdateDrawingBrushes(textAttributes, pData, _colorTable);
 }
 
 // Routine Description:

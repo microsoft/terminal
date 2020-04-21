@@ -185,19 +185,21 @@ using namespace Microsoft::Console::Types;
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
+// - textAttributes: Text attributes to use for the colors.
+// - pData: The interface to console data structures required for rendering.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                         const COLORREF colorBackground,
-                                                         const bool isBold,
+[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                         const IRenderData* pData,
                                                          const std::basic_string_view<COLORREF> colorTable) noexcept
 {
+    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
+    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
     const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+    const bool isBold = textAttributes.IsBold();
 
     // If both the FG and BG should be the defaults, emit a SGR reset.
     if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
@@ -268,21 +270,23 @@ using namespace Microsoft::Console::Types;
 //      find the colors in the color table that are nearest to the input colors,
 //       and write those indices to the pipe.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
+// - textAttributes: Text attributes to use for the colors.
+// - pData: The interface to console data structures required for rendering.
 // - ColorTable: An array of colors to find the closest match to.
 // - cColorTable: size of the color table.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                             const COLORREF colorBackground,
-                                                             const bool isBold,
+[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                             const IRenderData* pData,
                                                              const std::basic_string_view<COLORREF> colorTable) noexcept
 {
+    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
+    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
     const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+    const bool isBold = textAttributes.IsBold();
 
     // If both the FG and BG should be the defaults, emit a SGR reset.
     if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)

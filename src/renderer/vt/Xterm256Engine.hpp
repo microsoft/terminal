@@ -30,9 +30,8 @@ namespace Microsoft::Console::Render
 
         virtual ~Xterm256Engine() override = default;
 
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                   const COLORREF colorBackground,
-                                                   const TextAttribute& textAttributes,
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
