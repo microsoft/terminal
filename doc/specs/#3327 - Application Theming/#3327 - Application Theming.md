@@ -326,11 +326,21 @@ has selected would prefer a differnent theme for the window.
 <!-- This is slightly confusing currently if you ask me. More discussion below
 in "Potential Issues" -->
 
+#TODO: We changed the "requestedTheme" property to "theme" in 1.0
+[TODO]: # TODO
+
+The discussion we had at the time, which lasted just about 4 seconds, involved
+us creating default themes "light" and "dark" that would only set the XAML
+theme. The user could then extend those themes with the normal settings layering
+mechanism, or they could just set "theme" to whatever theme they wanted.
+
+The rest of this spec need to be updated to reflect this!!!
+
 ## UI/UX Design
 
 [comment]: # What will this fix/feature look like? How will it affect the end user?
 
-
+[TODO]: # TODO: We should include some mockups here. That would be nice.
 
 ## Capabilities
 
@@ -386,6 +396,8 @@ looking up the theme to see if it's the name of a theme that's installed in the
 user's settings, and if it's not, fall back to trying it as one of the original
 enum values?
 
+[TODO]: # TODO: this section too! we're just using `theme`!
+
 ## Future considerations
 
 #### Theming v2 Properties
@@ -402,3 +414,5 @@ enum values?
 [comment]: # Be sure to add links to references, resources, footnotes, etc.
 
 [iTerm2-Color-Schemes]: https://github.com/mbadolato/iTerm2-Color-Schemes
+
+[TODO]: # TODO: There's a commit in MUX where they add support for the bottom-rounding on tabs, and in that discussion someone had a sample with square corners. Include that!
