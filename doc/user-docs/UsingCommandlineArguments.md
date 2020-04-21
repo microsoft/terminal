@@ -33,7 +33,7 @@ Display the help message.
 
 Opens a new tab with the given customizations. On its _first_ invocation, also
 opens a new window. Subsequent `new-tab` commands will all open new tabs in the
-same window.
+same window. <sup>[[1](#footnote-1)]</sup>
 
 **Parameters**:
 
@@ -44,7 +44,7 @@ same window.
 `split-pane [-H]|[-V] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
-vertically or horizontally.
+vertically or horizontally. <sup>[[1](#footnote-1)]</sup>
 
 **Parameters**:
 
@@ -89,6 +89,10 @@ following:
   selected profile. If the user wants to use a `;` in this commandline, it
   should be escaped as `\;`.
 
+### Notes
+
+* <span id="footnote-1"></span> [1]: If you try to run a `wt` commandline while running in a Windows Terminal window, the commandline will _always_ create a new window by default. Being able to run `wt` commandlines in the _current_ window is planned in the future - for more information, refer to [#4472].
+
 ## Examples
 
 ### Open Windows Terminal in the current directory
@@ -126,3 +130,4 @@ This creates a new Windows Terminal window with one tab, and 3 panes:
   `commandline`).
 
 [#4023]: https://github.com/microsoft/terminal/pull/4023
+[#4472]: https://github.com/microsoft/terminal/issues/4472
