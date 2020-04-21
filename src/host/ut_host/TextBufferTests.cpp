@@ -148,6 +148,7 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
     TEST_METHOD(GetText);
@@ -2150,6 +2151,59 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::GetGlyphBoundaries()
+{
+    struct ExpectedResult
+    {
+        std::wstring name;
+        til::point start;
+        til::point wideGlyphEnd;
+        til::point normalEnd;
+    };
+
+    // clang-format off
+    const std::vector<ExpectedResult> expected = {
+        { L"Buffer Start", { 0, 0 },   { 2,  0 },   { 1,  0 } },
+        { L"Line Start",   { 0, 1 },   { 2,  1 },   { 1,  1 } },
+        { L"General Case", { 1, 1 },   { 3,  1 },   { 2,  1 } },
+        { L"Line End",     { 9, 1 },   { 0,  2 },   { 0,  2 } },
+        { L"Buffer End",   { 9, 9 },   { 0, 10 },   { 0, 10 } },
+    };
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:wideGlyph", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool wideGlyph;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"wideGlyph", wideGlyph), L"Get wide glyph variant");
+
+    COORD bufferSize{ 10, 10 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = L"\xD83C\xDF2F";
+    const wchar_t* const output = wideGlyph ? burrito : L"X";
+
+    const OutputCellIterator iter{ output };
+
+    for (const auto& test : expected)
+    {
+        Log::Comment(test.name.c_str());
+        auto target = test.start;
+        _buffer->Write(iter, target);
+
+        auto start = _buffer->GetGlyphStart(target);
+        auto end = _buffer->GetGlyphEnd(target);
+
+        VERIFY_ARE_EQUAL(test.start, start);
+        VERIFY_ARE_EQUAL(wideGlyph ? test.wideGlyphEnd : test.normalEnd, end);
     }
 }
 

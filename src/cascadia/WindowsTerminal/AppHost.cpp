@@ -51,7 +51,7 @@ AppHost::AppHost() noexcept :
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
-
+    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->MakeWindow();
 }
 
@@ -337,4 +337,49 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::TerminalApp::ToggleFullscreenEventArgs&)
 {
     _window->ToggleFullscreen();
+}
+
+// Method Description:
+// - Called when the IslandWindow has received a WM_MOUSEWHEEL message. This can
+//   happen on some laptops, where their trackpads won't scroll inactive windows
+//   _ever_.
+// - We're going to take that message and manually plumb it through to our
+//   TermControl's, or anything else that implements IMouseWheelListener.
+// - See GH#979 for more details.
+// Arguments:
+// - coord: The Window-relative, logical coordinates location of the mouse during this event.
+// - delta: the wheel delta that triggered this event.
+// Return Value:
+// - <none>
+void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
+{
+    if (_logic)
+    {
+        // Find all the elements that are underneath the mouse
+        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
+        for (const auto& e : elems)
+        {
+            // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
+            {
+                try
+                {
+                    // Translate the event to the coordinate space of the control
+                    // we're attempting to dispatch it to
+                    const auto transform = e.TransformToVisual(nullptr);
+                    const til::point controlOrigin{ til::math::flooring, transform.TransformPoint(til::point{ 0, 0 }) };
+
+                    const til::point offsetPoint = coord - controlOrigin;
+
+                    if (control.OnMouseWheel(offsetPoint, delta))
+                    {
+                        // If the element handled the mouse wheel event, don't
+                        // continue to iterate over the remaining controls.
+                        break;
+                    }
+                }
+                CATCH_LOG();
+            }
+        }
+    }
 }

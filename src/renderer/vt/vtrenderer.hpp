@@ -124,9 +124,8 @@ namespace Microsoft::Console::Render
 
         til::bitmap _invalidMap;
 
-        COORD _lastRealCursor;
         COORD _lastText;
-        COORD _scrollDelta;
+        til::point _scrollDelta;
 
         bool _quickReturn;
         bool _clearedAllThisFrame;

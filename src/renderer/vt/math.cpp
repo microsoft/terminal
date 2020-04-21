@@ -23,7 +23,7 @@ std::vector<til::rectangle> VtEngine::GetDirtyArea()
 }
 
 // Routine Description:
-// - Uses the currently selected font to determine how wide the given character will be when renderered.
+// - Uses the currently selected font to determine how wide the given character will be when rendered.
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - glyph - utf16 encoded codepoint to check
@@ -63,8 +63,8 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT
 // - true iff only the next character is invalid
 bool VtEngine::_WillWriteSingleChar() const
 {
-    // If there is scroll delta, return false.
-    if (til::point{ 0, 0 } != til::point{ _scrollDelta })
+    // If there is no scroll delta, return false.
+    if (til::point{ 0, 0 } != _scrollDelta)
     {
         return false;
     }

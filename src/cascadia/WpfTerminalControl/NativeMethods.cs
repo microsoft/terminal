@@ -38,7 +38,7 @@ namespace Microsoft.Terminal.Wpf
             WM_MOUSEACTIVATE = 0x0021,
 
             WM_GETOBJECT = 0x003D,
-            
+
             /// <summary>
             /// The WM_WINDOWPOSCHANGED message is sent to a window whose size, position, or place in the Z order has changed as a result of a call to the SetWindowPos function or another window-management function.
             /// </summary>
@@ -207,10 +207,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendKeyEvent(IntPtr terminal, IntPtr wParam);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch);
+        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
@@ -220,6 +220,12 @@ namespace Microsoft.Terminal.Wpf
 
         [DllImport("PublicTerminalCore.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSetCursorVisible(IntPtr terminal, bool visible);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void TerminalSetFocus(IntPtr terminal);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void TerminalKillFocus(IntPtr terminal);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);

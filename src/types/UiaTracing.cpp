@@ -15,6 +15,44 @@ TRACELOGGING_DEFINE_PROVIDER(g_UiaProviderTraceProvider,
 
 using namespace Microsoft::Console::Types;
 
+// The first valid ID is 1 for each of our traced UIA object types
+// ID assignment is handled between UiaTracing and IUiaTraceable to...
+//  - prevent multiple objects with the same ID
+//  - only assign IDs if UiaTracing is enabled
+//  - ensure objects are only assigned an ID once
+IdType UiaTracing::_utrId = 1;
+IdType UiaTracing::_siupId = 1;
+
+// Routine Description:
+// - assign an ID to the UiaTextRange, if it doesn't have one already
+// Arguments:
+// - utr - the UiaTextRange we are assigning an ID to
+// Return Value:
+// - N/A
+void UiaTracing::_assignId(UiaTextRangeBase& utr) noexcept
+{
+    auto temp = utr.AssignId(_utrId);
+    if (temp)
+    {
+        ++_utrId;
+    }
+}
+
+// Routine Description:
+// - assign an ID to the ScreenInfoUiaProvider, if it doesn't have one already
+// Arguments:
+// - siup - the ScreenInfoUiaProvider we are assigning an ID to
+// Return Value:
+// - N/A
+void UiaTracing::_assignId(ScreenInfoUiaProviderBase& siup) noexcept
+{
+    auto temp = siup.AssignId(_siupId);
+    if (temp)
+    {
+        ++_siupId;
+    }
+}
+
 UiaTracing::UiaTracing() noexcept
 {
     TraceLoggingRegister(g_UiaProviderTraceProvider);
@@ -25,9 +63,11 @@ UiaTracing::~UiaTracing() noexcept
     TraceLoggingUnregister(g_UiaProviderTraceProvider);
 }
 
-inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
+inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& siup) noexcept
 {
-    return L" NO IDENTIFYING DATA";
+    std::wstringstream stream;
+    stream << "_id: " << siup.GetId();
+    return stream.str();
 }
 
 inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
@@ -86,11 +126,12 @@ inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
     }
 }
 
-void UiaTracing::TextRange::Constructor(const UiaTextRangeBase& result) noexcept
+void UiaTracing::TextRange::Constructor(UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Constructor",
@@ -99,11 +140,12 @@ void UiaTracing::TextRange::Constructor(const UiaTextRangeBase& result) noexcept
     }
 }
 
-void UiaTracing::TextRange::Clone(const UiaTextRangeBase& utr, const UiaTextRangeBase& result) noexcept
+void UiaTracing::TextRange::Clone(const UiaTextRangeBase& utr, UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Clone",
@@ -115,9 +157,9 @@ void UiaTracing::TextRange::Clone(const UiaTextRangeBase& utr, const UiaTextRang
 
 void UiaTracing::TextRange::Compare(const UiaTextRangeBase& utr, const UiaTextRangeBase& other, bool result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Compare",
@@ -130,9 +172,9 @@ void UiaTracing::TextRange::Compare(const UiaTextRangeBase& utr, const UiaTextRa
 
 void UiaTracing::TextRange::CompareEndpoints(const UiaTextRangeBase& utr, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::CompareEndpoints",
@@ -147,9 +189,9 @@ void UiaTracing::TextRange::CompareEndpoints(const UiaTextRangeBase& utr, const 
 
 void UiaTracing::TextRange::ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& utr) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::ExpandToEnclosingUnit",
@@ -161,9 +203,9 @@ void UiaTracing::TextRange::ExpandToEnclosingUnit(TextUnit unit, const UiaTextRa
 
 void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::FindAttribute (UNSUPPORTED)",
@@ -174,9 +216,9 @@ void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr) noexcept
 
 void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::FindText",
@@ -191,9 +233,9 @@ void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring 
 
 void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetAttributeValue",
@@ -206,9 +248,9 @@ void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXT
 
 void UiaTracing::TextRange::GetBoundingRectangles(const UiaTextRangeBase& utr) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetBoundingRectangles",
@@ -219,9 +261,9 @@ void UiaTracing::TextRange::GetBoundingRectangles(const UiaTextRangeBase& utr) n
 
 void UiaTracing::TextRange::GetEnclosingElement(const UiaTextRangeBase& utr) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetEnclosingElement",
@@ -232,9 +274,9 @@ void UiaTracing::TextRange::GetEnclosingElement(const UiaTextRangeBase& utr) noe
 
 void UiaTracing::TextRange::GetText(const UiaTextRangeBase& utr, int maxLength, std::wstring result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetText",
@@ -247,9 +289,9 @@ void UiaTracing::TextRange::GetText(const UiaTextRangeBase& utr, int maxLength, 
 
 void UiaTracing::TextRange::Move(TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Move",
@@ -263,9 +305,9 @@ void UiaTracing::TextRange::Move(TextUnit unit, int count, int resultCount, cons
 
 void UiaTracing::TextRange::MoveEndpointByUnit(TextPatternRangeEndpoint endpoint, TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::MoveEndpointByUnit",
@@ -280,9 +322,9 @@ void UiaTracing::TextRange::MoveEndpointByUnit(TextPatternRangeEndpoint endpoint
 
 void UiaTracing::TextRange::MoveEndpointByRange(TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::MoveEndpointByRange",
@@ -296,9 +338,9 @@ void UiaTracing::TextRange::MoveEndpointByRange(TextPatternRangeEndpoint endpoin
 
 void UiaTracing::TextRange::Select(const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::Select",
@@ -309,9 +351,9 @@ void UiaTracing::TextRange::Select(const UiaTextRangeBase& result) noexcept
 
 void UiaTracing::TextRange::AddToSelection(const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::AddToSelection (UNSUPPORTED)",
@@ -322,9 +364,9 @@ void UiaTracing::TextRange::AddToSelection(const UiaTextRangeBase& result) noexc
 
 void UiaTracing::TextRange::RemoveFromSelection(const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::RemoveFromSelection (UNSUPPORTED)",
@@ -335,9 +377,9 @@ void UiaTracing::TextRange::RemoveFromSelection(const UiaTextRangeBase& result) 
 
 void UiaTracing::TextRange::ScrollIntoView(bool alignToTop, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::ScrollIntoView",
@@ -349,9 +391,9 @@ void UiaTracing::TextRange::ScrollIntoView(bool alignToTop, const UiaTextRangeBa
 
 void UiaTracing::TextRange::GetChildren(const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "UiaTextRange::AddToSelection (UNSUPPORTED)",
@@ -360,11 +402,12 @@ void UiaTracing::TextRange::GetChildren(const UiaTextRangeBase& result) noexcept
     }
 }
 
-void UiaTracing::TextProvider::Constructor(const ScreenInfoUiaProviderBase& result) noexcept
+void UiaTracing::TextProvider::Constructor(ScreenInfoUiaProviderBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
+        _assignId(result);
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::Constructor",
@@ -375,6 +418,7 @@ void UiaTracing::TextProvider::Constructor(const ScreenInfoUiaProviderBase& resu
 
 void UiaTracing::TextProvider::get_ProviderOptions(const ScreenInfoUiaProviderBase& siup, ProviderOptions options) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         auto getOptions = [options]() {
@@ -387,7 +431,6 @@ void UiaTracing::TextProvider::get_ProviderOptions(const ScreenInfoUiaProviderBa
             }
         };
 
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_ProviderOptions",
@@ -399,6 +442,7 @@ void UiaTracing::TextProvider::get_ProviderOptions(const ScreenInfoUiaProviderBa
 
 void UiaTracing::TextProvider::GetPatternProvider(const ScreenInfoUiaProviderBase& siup, PATTERNID patternId) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         auto getPattern = [patternId]() {
@@ -411,7 +455,6 @@ void UiaTracing::TextProvider::GetPatternProvider(const ScreenInfoUiaProviderBas
             }
         };
 
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_ProviderOptions",
@@ -423,6 +466,7 @@ void UiaTracing::TextProvider::GetPatternProvider(const ScreenInfoUiaProviderBas
 
 void UiaTracing::TextProvider::GetPropertyValue(const ScreenInfoUiaProviderBase& siup, PROPERTYID propertyId) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         auto getProperty = [propertyId]() {
@@ -451,7 +495,6 @@ void UiaTracing::TextProvider::GetPropertyValue(const ScreenInfoUiaProviderBase&
             }
         };
 
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetPropertyValue",
@@ -463,9 +506,9 @@ void UiaTracing::TextProvider::GetPropertyValue(const ScreenInfoUiaProviderBase&
 
 void UiaTracing::TextProvider::get_HostRawElementProvider(const ScreenInfoUiaProviderBase& siup) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_HostRawElementProvider (UNSUPPORTED)",
@@ -476,9 +519,9 @@ void UiaTracing::TextProvider::get_HostRawElementProvider(const ScreenInfoUiaPro
 
 void UiaTracing::TextProvider::GetRuntimeId(const ScreenInfoUiaProviderBase& siup) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetRuntimeId",
@@ -489,9 +532,9 @@ void UiaTracing::TextProvider::GetRuntimeId(const ScreenInfoUiaProviderBase& siu
 
 void UiaTracing::TextProvider::GetEmbeddedFragmentRoots(const ScreenInfoUiaProviderBase& siup) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetEmbeddedFragmentRoots (UNSUPPORTED)",
@@ -502,9 +545,9 @@ void UiaTracing::TextProvider::GetEmbeddedFragmentRoots(const ScreenInfoUiaProvi
 
 void UiaTracing::TextProvider::SetFocus(const ScreenInfoUiaProviderBase& siup) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::SetFocus",
@@ -515,9 +558,9 @@ void UiaTracing::TextProvider::SetFocus(const ScreenInfoUiaProviderBase& siup) n
 
 void UiaTracing::TextProvider::GetSelection(const ScreenInfoUiaProviderBase& siup, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetSelection",
@@ -529,9 +572,9 @@ void UiaTracing::TextProvider::GetSelection(const ScreenInfoUiaProviderBase& siu
 
 void UiaTracing::TextProvider::GetVisibleRanges(const ScreenInfoUiaProviderBase& siup, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetVisibleRanges",
@@ -543,9 +586,9 @@ void UiaTracing::TextProvider::GetVisibleRanges(const ScreenInfoUiaProviderBase&
 
 void UiaTracing::TextProvider::RangeFromChild(const ScreenInfoUiaProviderBase& siup, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetVisibleRanges",
@@ -557,6 +600,7 @@ void UiaTracing::TextProvider::RangeFromChild(const ScreenInfoUiaProviderBase& s
 
 void UiaTracing::TextProvider::RangeFromPoint(const ScreenInfoUiaProviderBase& siup, UiaPoint point, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         auto getPoint = [point]() {
@@ -565,7 +609,6 @@ void UiaTracing::TextProvider::RangeFromPoint(const ScreenInfoUiaProviderBase& s
             return stream.str();
         };
 
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::RangeFromPoint",
@@ -578,9 +621,9 @@ void UiaTracing::TextProvider::RangeFromPoint(const ScreenInfoUiaProviderBase& s
 
 void UiaTracing::TextProvider::get_DocumentRange(const ScreenInfoUiaProviderBase& siup, const UiaTextRangeBase& result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetVisibleRanges",
@@ -592,6 +635,7 @@ void UiaTracing::TextProvider::get_DocumentRange(const ScreenInfoUiaProviderBase
 
 void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaProviderBase& siup, SupportedTextSelection result) noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         auto getResult = [result]() {
@@ -604,7 +648,6 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
             }
         };
 
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_SupportedTextSelection",

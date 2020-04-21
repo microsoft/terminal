@@ -213,14 +213,6 @@ public:
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
-    void AddTabStop(const SHORT sColumn);
-    void ClearTabStops() noexcept;
-    void ClearTabStop(const SHORT sColumn) noexcept;
-    COORD GetForwardTab(const COORD cCurrCursorPos) const noexcept;
-    COORD GetReverseTab(const COORD cCurrCursorPos) const noexcept;
-    bool AreTabsSet() const noexcept;
-    void SetDefaultVtTabStops();
-
     TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
 
@@ -295,8 +287,6 @@ private:
     RECT _rcAltSavedClientNew;
     RECT _rcAltSavedClientOld;
     bool _fAltWindowChanged;
-
-    std::list<short> _tabStops;
 
     TextAttribute _PopupAttributes;
 

@@ -73,7 +73,13 @@ struct Ss3ToVkey
     short vkey;
 };
 
-static constexpr std::array<Ss3ToVkey, 4> s_ss3Map = {
+static constexpr std::array<Ss3ToVkey, 10> s_ss3Map = {
+    Ss3ToVkey{ Ss3ActionCodes::ArrowUp, VK_UP },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowDown, VK_DOWN },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowRight, VK_RIGHT },
+    Ss3ToVkey{ Ss3ActionCodes::ArrowLeft, VK_LEFT },
+    Ss3ToVkey{ Ss3ActionCodes::End, VK_END },
+    Ss3ToVkey{ Ss3ActionCodes::Home, VK_HOME },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F1, VK_F1 },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F2, VK_F2 },
     Ss3ToVkey{ Ss3ActionCodes::SS3_F3, VK_F3 },
@@ -210,6 +216,11 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 {
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
+
     return _DoControlCharacter(wch, true);
 }
 
@@ -400,8 +411,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     case CsiActionCodes::CSI_F1:
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
-        modifierState = _GetCursorKeysModifierState(parameters);
         success = _GetCursorKeysVkey(wch, vkey);
+        modifierState = _GetCursorKeysModifierState(parameters, static_cast<CsiActionCodes>(wch));
         break;
     case CsiActionCodes::CursorBackTab:
         modifierState = SHIFT_PRESSED;
@@ -602,7 +613,10 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         input.push_back(next);
     }
 
-    _GetSingleKeypress(wch, vkey, currentModifiers, input);
+    // Use modifierState instead of currentModifiers here.
+    // This allows other modifiers like ENHANCED_KEY to get
+    //    through on the KeyPress.
+    _GetSingleKeypress(wch, vkey, modifierState, input);
 
     if (ctrl)
     {
@@ -741,22 +755,37 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - Retrieves the modifier state from a set of parameters for a cursor keys
 //      sequence. This is for Arrow keys, Home, End, etc.
 // Arguments:
-// - rgusParams - the set of parameters to get the modifier state from.
-// - cParams - the number of elements in rgusParams
+// - parameters - the set of parameters to get the modifier state from.
+// - actionCode - the actionCode for the sequence we're operating on.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept
 {
-    // Both Cursor keys and generic keys keep their modifiers in the same index.
-    return _GetGenericKeysModifierState(parameters);
+    DWORD modifiers = 0;
+    if (_IsModified(parameters.size()) && parameters.size() >= 2)
+    {
+        modifiers = _GetModifier(parameters.at(1));
+    }
+
+    // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
+    //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
+    //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
+    //   of the keypad; and the divide (/) and ENTER keys in the keypad.
+    // This snippet detects the direction keys + HOME + END
+    // actionCode should be one of the above, so just make sure it's not a CSI_F# code
+    if (actionCode < CsiActionCodes::CSI_F1 || actionCode > CsiActionCodes::CSI_F4)
+    {
+        WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
+    return modifiers;
 }
 
 // Method Description:
 // - Retrieves the modifier state from a set of parameters for a "Generic"
 //      keypress - one who's sequence is terminated with a '~'.
 // Arguments:
-// - rgusParams - the set of parameters to get the modifier state from.
-// - cParams - the number of elements in rgusParams
+// - parameters - the set of parameters to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
@@ -766,6 +795,18 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
     {
         modifiers = _GetModifier(parameters.at(1));
     }
+
+    // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
+    //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
+    //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
+    //   of the keypad; and the divide (/) and ENTER keys in the keypad.
+    // This snippet detects the non-direction keys
+    const auto identifier = static_cast<GenericKeyIdentifiers>(til::at(parameters, 0));
+    if (identifier <= GenericKeyIdentifiers::Next)
+    {
+        modifiers = WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
     return modifiers;
 }
 
@@ -1184,7 +1225,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for an SGR Mouse sequence from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:

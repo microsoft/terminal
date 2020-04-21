@@ -53,6 +53,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to size from anything that has a X and a Y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
+        {
+        }
+
+        // This template will convert to size from anything that has a x and a y field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().x)> && std::is_floating_point_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(other.x), TilMath::template cast<ptrdiff_t>(other.y))
+        {
+        }
+
         constexpr bool operator==(const point& other) const noexcept
         {
             return _x == other._x &&
@@ -107,6 +123,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator+=(const point& other)
+        {
+            *this = *this + other;
+            return *this;
+        }
+
         point operator-(const point& other) const
         {
             ptrdiff_t x;
@@ -116,6 +138,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator-=(const point& other)
+        {
+            *this = *this - other;
+            return *this;
         }
 
         point operator*(const point& other) const
@@ -129,6 +157,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator*=(const point& other)
+        {
+            *this = *this * other;
+            return *this;
+        }
+
+        template<typename TilMath>
+        point scale(TilMath, const float scale) const
+        {
+            struct
+            {
+                float x, y;
+            } pt;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _x).AssignIfValid(&pt.x));
+            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _y).AssignIfValid(&pt.y));
+
+            return til::point(TilMath(), pt);
+        }
+
         point operator/(const point& other) const
         {
             ptrdiff_t x;
@@ -136,6 +183,38 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             ptrdiff_t y;
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point& operator/=(const point& other)
+        {
+            *this = *this / other;
+            return *this;
+        }
+
+        template<typename T>
+        point operator*(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        template<typename T>
+        point operator/(const T& scale) const
+        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
 
             return point{ x, y };
         }
@@ -190,6 +269,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr operator D2D1_POINT_2F() const noexcept
         {
             return D2D1_POINT_2F{ gsl::narrow_cast<float>(_x), gsl::narrow_cast<float>(_y) };
+        }
+#endif
+
+#ifdef WINRT_Windows_Foundation_H
+        operator winrt::Windows::Foundation::Point() const
+        {
+            winrt::Windows::Foundation::Point ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
+            return ret;
         }
 #endif
 

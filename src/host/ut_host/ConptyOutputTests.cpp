@@ -27,6 +27,15 @@ using namespace Microsoft::Console::Types;
 
 class ConptyOutputTests
 {
+    // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
+    // to be 80x32. If you change these, you'll probably inadvertently break a
+    // bunch of tests !!!
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+
+    // This test class is to write some things into the PTY and then check that
+    // the rendering that is coming out of the VT-sequence generator is exactly
+    // as we expect it to be.
     BEGIN_TEST_CLASS(ConptyOutputTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
     END_TEST_CLASS()
@@ -37,7 +46,7 @@ class ConptyOutputTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
 
         return true;
@@ -63,7 +72,7 @@ class ConptyOutputTests
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
-        m_state->PrepareNewTextBufferInfo(true);
+        m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
@@ -344,7 +353,6 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
 
     expectedOutput.push_back("\x1b[65C");
     expectedOutput.push_back("ABCDEFGHIJKLMNO");
-    expectedOutput.push_back("\x1b[1;80H"); // we move the cursor to the end of the line after paint
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
@@ -363,8 +371,6 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
     expectedOutput.push_back("X"); // sequence optimizer should choose ECH here
     expectedOutput.push_back("\x1b[13X");
     expectedOutput.push_back("\x1b[13C");
-
-    expectedOutput.push_back("\x1b[?25h"); // we turn the cursor back on for good measure
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

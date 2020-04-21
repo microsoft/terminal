@@ -176,6 +176,9 @@
     <ClInclude Include="..\UiaTracing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\IUiaTraceable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />

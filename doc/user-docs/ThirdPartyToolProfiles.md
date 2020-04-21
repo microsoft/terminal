@@ -2,7 +2,7 @@
 
 This doc will hopefully provide a useful guide for adding profiles for common
 third-party tools to your
-[profiles.json](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md)
+[settings.json](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md)
 file.
 
 All of these profiles are provided _without_ their `guid` set. If you'd like to
@@ -30,6 +30,7 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
 {
     "commandline" : "cmd.exe /k \"%CMDER_ROOT%\\vendor\\init.bat\"",
     "name" : "cmder",
+    "icon" : "%CMDER_ROOT%/icons/cmder.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
 ```
@@ -71,11 +72,24 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
 ```json
 {
     "name" : "Git Bash",
-    "commandline" : "C:/Program Files/Git/bin/bash.exe",
+    "commandline" : "C:/Program Files/Git/bin/bash.exe -li",
     "icon" : "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
 ````
+
+## Git Bash (WOW64)
+
+Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
+
+```json
+{
+    "name" : "Git Bash",
+    "commandline" : "%ProgramFiles(x86)%/Git/bin/bash.exe -li",
+    "icon" : "%ProgramFiles(x86)%/Git/mingw32/share/git/git-for-windows.ico",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
 
 ## MSYS2
 
@@ -89,5 +103,17 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
     "startingDirectory" : "C:/msys64/home/user"
 }
 ````
+
+## Developer Command Prompt for Visual Studio
+
+Assuming that you've installed VS 2019 Professional:
+
+```json
+{
+    "name" : "Developer Command Prompt for VS 2019",
+    "commandline" : "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
 
 <!-- Adding a tool here? Make sure to add it in alphabetical order! -->

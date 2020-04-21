@@ -9,8 +9,6 @@
 
 using namespace Microsoft::Console::Types;
 
-IdType UiaTextRangeBase::id = 1;
-
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
@@ -25,9 +23,6 @@ try
     _end = pData->GetViewport().Origin();
     _blockRange = false;
     _wordDelimiters = wordDelimiters;
-
-    _id = id;
-    ++id;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
@@ -123,18 +118,10 @@ try
     _pData = a._pData;
     _wordDelimiters = a._wordDelimiters;
 
-    _id = id;
-    ++id;
-
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
-
-const IdType UiaTextRangeBase::GetId() const noexcept
-{
-    return _id;
-}
 
 const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept
 {
@@ -240,8 +227,17 @@ try
     // get the values of our endpoint
     const auto mine = GetEndpoint(endpoint);
 
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     // compare them
-    *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other, true);
+    *pRetVal = bufferSize.CompareInBounds(mine, other, true);
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
@@ -263,8 +259,8 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 
         if (unit == TextUnit_Character)
         {
-            _end = _start;
-            bufferSize.IncrementInBounds(_end, true);
+            _start = buffer.GetGlyphStart(_start);
+            _end = buffer.GetGlyphEnd(_start);
         }
         else if (unit <= TextUnit_Word)
         {
@@ -401,7 +397,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
-        const auto viewportOrigin = viewport.Origin();
+        const til::point viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
@@ -439,7 +435,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
             for (const auto& rect : textRects)
             {
-                _getBoundingRect(rect, coords);
+                til::rectangle r{ rect };
+                r -= viewportOrigin;
+                _getBoundingRect(r, coords);
             }
         }
 
@@ -526,7 +524,7 @@ try
         const auto bufferSize = buffer.GetSize();
 
         // convert _end to be inclusive
-        auto inclusiveEnd{ _end };
+        auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
@@ -665,6 +663,17 @@ try
         return E_INVALIDARG;
     }
 
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto mine = GetEndpoint(endpoint);
+    const auto other = range->GetEndpoint(targetEndpoint);
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
     UiaTracing::TextRange::MoveEndpointByRange(endpoint, *range, targetEndpoint, *this);
@@ -687,9 +696,9 @@ try
     }
     else
     {
-        auto temp = _end;
-        _pData->GetTextBuffer().GetSize().DecrementInBounds(temp);
-        _pData->SelectNewRegion(_start, temp);
+        auto inclusiveEnd = _end;
+        _pData->GetTextBuffer().GetSize().DecrementInBounds(inclusiveEnd);
+        _pData->SelectNewRegion(_start, inclusiveEnd);
     }
 
     UiaTracing::TextRange::Select(*this);
@@ -772,6 +781,8 @@ try
     FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
     FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
+    Unlock.reset();
+
     _ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
@@ -781,9 +792,6 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
-
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
 
     // we don't have any children
@@ -897,7 +905,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ s
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd) noexcept
+                                                    _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 
@@ -908,23 +916,23 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto& buffer = _pData->GetTextBuffer();
 
     bool success = true;
-    auto target = GetEndpoint(endpoint);
+    til::point target = GetEndpoint(endpoint);
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
         case MovementDirection::Forward:
-            success = bufferSize.IncrementInBounds(target, allowBottomExclusive);
+            success = buffer.MoveToNextGlyph(target, allowBottomExclusive);
             if (success)
             {
                 (*pAmountMoved)++;
             }
             break;
         case MovementDirection::Backward:
-            success = bufferSize.DecrementInBounds(target, allowBottomExclusive);
+            success = buffer.MoveToPreviousGlyph(target, allowBottomExclusive);
             if (success)
             {
                 (*pAmountMoved)--;

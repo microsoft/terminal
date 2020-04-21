@@ -580,7 +580,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     {
         const bool eraseScrollbackResult = _EraseScrollback();
         // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
-        // make the state machine propogate this ED sequence to the connected
+        // make the state machine propagate this ED sequence to the connected
         // terminal application. While we're in conpty mode, we don't really
         // have a scrollback, but the attached terminal might.
         const bool isPty = _pConApi->IsConsolePty();
@@ -685,6 +685,9 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statu
 
     switch (statusType)
     {
+    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+        success = _OperatingStatus();
+        break;
     case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
         success = _CursorPositionReport();
         break;
@@ -704,6 +707,18 @@ bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
     return _WriteResponse(L"\x1b[?1;0c");
+}
+
+// Routine Description:
+// - DSR-OS - Reports the operating status back to the input channel
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_OperatingStatus() const
+{
+    // We always report a good operating condition.
+    return _WriteResponse(L"\x1b[0n");
 }
 
 // Routine Description:
@@ -1041,11 +1056,8 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1063,11 +1075,8 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
     bool success = true;
     success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1362,7 +1371,18 @@ bool AdaptDispatch::UseMainScreenBuffer()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HorizontalTabSet()
 {
-    return _pConApi->PrivateHorizontalTabSet();
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto column = csbiex.dwCursorPosition.X;
+
+        _InitTabStopsForWidth(width);
+        _tabStopColumns.at(column) = true;
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1376,7 +1396,29 @@ bool AdaptDispatch::HorizontalTabSet()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::ForwardTab(const size_t numTabs)
 {
-    return _pConApi->PrivateForwardTab(numTabs);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto row = csbiex.dwCursorPosition.Y;
+        auto column = csbiex.dwCursorPosition.X;
+        auto tabsPerformed = 0u;
+
+        _InitTabStopsForWidth(width);
+        while (column + 1 < width && tabsPerformed < numTabs)
+        {
+            column++;
+            if (til::at(_tabStopColumns, column))
+            {
+                tabsPerformed++;
+            }
+        }
+
+        success = _pConApi->SetConsoleCursorPosition({ column, row });
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1388,7 +1430,29 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 {
-    return _pConApi->PrivateBackwardsTab(numTabs);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto row = csbiex.dwCursorPosition.Y;
+        auto column = csbiex.dwCursorPosition.X;
+        auto tabsPerformed = 0u;
+
+        _InitTabStopsForWidth(width);
+        while (column > 0 && tabsPerformed < numTabs)
+        {
+            column--;
+            if (til::at(_tabStopColumns, column))
+            {
+                tabsPerformed++;
+            }
+        }
+
+        success = _pConApi->SetConsoleCursorPosition({ column, row });
+    }
+    return success;
 }
 
 //Routine Description:
@@ -1405,13 +1469,89 @@ bool AdaptDispatch::TabClear(const size_t clearType)
     switch (clearType)
     {
     case DispatchTypes::TabClearType::ClearCurrentColumn:
-        success = _pConApi->PrivateTabClear(false);
+        success = _ClearSingleTabStop();
         break;
     case DispatchTypes::TabClearType::ClearAllColumns:
-        success = _pConApi->PrivateTabClear(true);
+        success = _ClearAllTabStops();
         break;
     }
     return success;
+}
+
+// Routine Description:
+// - Clears the tab stop in the cursor's current column, if there is one.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_ClearSingleTabStop()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    if (success)
+    {
+        const auto width = csbiex.dwSize.X;
+        const auto column = csbiex.dwCursorPosition.X;
+
+        _InitTabStopsForWidth(width);
+        _tabStopColumns.at(column) = false;
+    }
+    return success;
+}
+
+// Routine Description:
+// - Clears all tab stops and resets the _initDefaultTabStops flag to indicate
+//    that they shouldn't be reinitialized at the default positions.
+// Arguments:
+// - <none>
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_ClearAllTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = false;
+    return true;
+}
+
+// Routine Description:
+// - Clears all tab stops and sets the _initDefaultTabStops flag to indicate
+//    that the default positions should be reinitialized when needed.
+// Arguments:
+// - <none>
+// Return value:
+// - <none>
+void AdaptDispatch::_ResetTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = true;
+}
+
+// Routine Description:
+// - Resizes the _tabStopColumns table so it's large enough to support the
+//    current screen width, initializing tab stops every 8 columns in the
+//    newly allocated space, iff the _initDefaultTabStops flag is set.
+// Arguments:
+// - width - the width of the screen buffer that we need to accomodate
+// Return value:
+// - <none>
+void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
+{
+    const auto initialWidth = _tabStopColumns.size();
+    if (width > initialWidth)
+    {
+        _tabStopColumns.resize(width);
+        if (_initDefaultTabStops)
+        {
+            for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
+            {
+                if (column >= initialWidth)
+                {
+                    til::at(_tabStopColumns, column) = true;
+                }
+            }
+        }
+    }
 }
 
 //Routine Description:
@@ -1514,6 +1654,8 @@ bool AdaptDispatch::SoftReset()
 //Routine Description:
 // Full Reset - Perform a hard reset of the terminal. http://vt100.net/docs/vt220-rm/chapter4.html
 //  RIS performs the following actions: (Items with sub-bullets are supported)
+//   - Switches to the main screen buffer if in the alt buffer.
+//      * This matches the XTerm behaviour, which is the de facto standard for the alt buffer.
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
@@ -1532,9 +1674,21 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
+    bool success = true;
+
+    // If in the alt buffer, switch back to main before doing anything else.
+    if (_usingAltBuffer)
+    {
+        success = _pConApi->PrivateUseMainScreenBuffer();
+        _usingAltBuffer = !success;
+    }
+
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
-    bool success = SoftReset();
+    if (success)
+    {
+        success = SoftReset();
+    }
 
     // Clears the screen - Needs to be done in two operations.
     if (success)
@@ -1559,10 +1713,10 @@ bool AdaptDispatch::HardReset()
     }
 
     // delete all current tab stops and reapply
-    _pConApi->PrivateSetDefaultTabStops();
+    _ResetTabStops();
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
-    // make the state machine propogate this RIS sequence to the connected
+    // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
     // might need to do more.
     if (_pConApi->IsConsolePty())
@@ -1718,11 +1872,8 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableVT200MouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1742,11 +1893,8 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1766,11 +1914,8 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1789,11 +1934,8 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1813,11 +1955,8 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1837,11 +1976,8 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAlternateScroll(enabled);
 
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input. Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911
-    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }

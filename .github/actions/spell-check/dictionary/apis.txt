@@ -1,0 +1,5 @@
+IMap
+ICustom
+IObject
+LCID
+rfind

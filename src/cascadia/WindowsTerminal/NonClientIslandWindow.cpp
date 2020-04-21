@@ -5,7 +5,6 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
-#include "../types/inc/ThemeUtils.h"
 #include "../types/inc/utils.hpp"
 #include "TerminalThemeHelpers.h"
 
@@ -367,7 +366,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // GH#1438 - Attempt to detect if there's an autohide taskbar, and if there
     // is, reduce our size a bit on the side with the taskbar, so the user can
     // still mouse-over the taskbar to reveal it.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONULL);
+    // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
+    // still find the right monitor even when we're restoring from minimized.
+    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
@@ -404,7 +405,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
             // reveal the taskbar from fullscreen mode. This includes Edge,
-            // Firefox, Chrome, Sublime Text, Powerpoint - none seemed to
+            // Firefox, Chrome, Sublime Text, PowerPoint - none seemed to
             // support this.
             //
             // This does however work fine for maximized.
@@ -568,9 +569,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    case WM_ACTIVATE:
-        // If we do this every time we're activated, it should be close enough to correct.
-        TerminalTrySetDarkTheme(_window.get());
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -688,7 +686,7 @@ void NonClientIslandWindow::_UpdateFrameTheme() const
         break;
     }
 
-    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), isDarkMode));
 }
 
 // Method Description:

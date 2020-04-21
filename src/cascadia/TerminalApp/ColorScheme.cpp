@@ -14,7 +14,6 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view TableKey{ "colors" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
@@ -175,22 +174,6 @@ void ColorScheme::LayerJson(const Json::Value& json)
     {
         const auto color = Utils::ColorFromHexString(sbString.asString());
         _cursorColor = color;
-    }
-
-    // Legacy Deserialization. Leave in place to allow forward compatibility
-    if (auto table{ json[JsonKey(TableKey)] })
-    {
-        int i = 0;
-
-        for (const auto& tableEntry : table)
-        {
-            if (tableEntry.isString())
-            {
-                auto color = Utils::ColorFromHexString(tableEntry.asString());
-                _table.at(i) = color;
-            }
-            i++;
-        }
     }
 
     int i = 0;

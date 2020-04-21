@@ -61,7 +61,7 @@ class ColorTests
     {
         til::color rgb{ 0xf0, 0x0d, 0xca, 0xfe };
 
-        VERIFY_ARE_EQUAL(0x00CA0DF0u, static_cast<COLORREF>(rgb)); // alpha is dropped, COLOREREF is 0BGR
+        VERIFY_ARE_EQUAL(0x00CA0DF0u, static_cast<COLORREF>(rgb)); // alpha is dropped, COLORREF is 0BGR
     }
 
     template<typename T>

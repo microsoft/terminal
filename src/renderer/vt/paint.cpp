@@ -27,12 +27,17 @@ using namespace Microsoft::Console::Types;
 
     // If there's nothing to do, quick return
     bool somethingToDo = _invalidMap.any() ||
-                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+                         _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
 
     _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn, _invalidMap, _lastViewport.ToInclusive(), _scrollDelta, _cursorMoved);
+    _trace.TraceStartPaint(_quickReturn,
+                           _invalidMap,
+                           _lastViewport.ToInclusive(),
+                           _scrollDelta,
+                           _cursorMoved,
+                           _wrappedRow);
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -52,7 +57,7 @@ using namespace Microsoft::Console::Types;
 
     _invalidMap.reset_all();
 
-    _scrollDelta = { 0 };
+    _scrollDelta = { 0, 0 };
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
@@ -438,10 +443,23 @@ using namespace Microsoft::Console::Types;
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
+    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // If we're not using erase char, but we did erase all at the start of the
-    //      frame, don't add spaces at the end.
-    const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
+    // frame, don't add spaces at the end.
+    //
+    // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
+    // line we're trying to print right now _actually is the bottom line_
+    //
+    // GH#5291: DON'T remove spaces when the row wrapped. We might need those
+    // spaces to preserve the wrap state of this line, or the cursor position.
+    // For example, vim.exe uses "~    "... to clear the line, and then leaves
+    // the lines _wrapped_. It doesn't care to manually break the lines, but if
+    // we trimmed the spaces off here, we'd print all the "~"s one after another
+    // on the same line.
+    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+                                               _clearedAllThisFrame ||
+                                               (_newBottomLine && printingBottomLine));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -458,6 +476,7 @@ using namespace Microsoft::Console::Types;
         // the cursor is still waiting on that character for the next character
         // to follow it.
         _wrappedRow = std::nullopt;
+        _trace.TraceClearWrapped();
     }
 
     // Move the cursor to the start of this run.
@@ -467,18 +486,16 @@ using namespace Microsoft::Console::Types;
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
-    // If we've written text to the last column of the viewport, then mark
+    // GH#4415, GH#5181
+    // If the renderer told us that this was a wrapped line, then mark
     // that we've wrapped this line. The next time we attempt to move the
     // cursor, if we're trying to move it to the start of the next line,
     // we'll remember that this line was wrapped, and not manually break the
     // line.
-    // Don't do this if the last character we're writing is a space - The last
-    // char will always be a space, but if we see that, we shouldn't wrap.
-    const short lastWrittenChar = base::ClampAdd(_lastText.X, base::ClampSub(totalWidth, numSpaces));
-    if (lineWrapped &&
-        lastWrittenChar > _lastViewport.RightInclusive())
+    if (lineWrapped)
     {
         _wrappedRow = coord.Y;
+        _trace.TraceSetWrapped(coord.Y);
     }
 
     // Update our internal tracker of the cursor's position.
@@ -538,7 +555,7 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_EraseLine());
         }
     }
-    else if (_newBottomLine)
+    else if (_newBottomLine && printingBottomLine)
     {
         // If we're on a new line, then we don't need to erase the line. The
         //      line is already empty.
@@ -546,8 +563,9 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
@@ -555,9 +573,12 @@ using namespace Microsoft::Console::Types;
         }
     }
 
-    // If we previously though that this was a new bottom line, it certainly
-    //      isn't new any longer.
-    _newBottomLine = false;
+    // If we printed to the bottom line, and we previously thought that this was
+    // a new bottom line, it certainly isn't new any longer.
+    if (printingBottomLine)
+    {
+        _newBottomLine = false;
+    }
 
     return S_OK;
 }

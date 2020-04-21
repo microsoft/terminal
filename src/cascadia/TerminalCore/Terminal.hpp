@@ -11,6 +11,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
@@ -115,7 +116,7 @@ public:
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
-    bool SendCharEvent(const wchar_t ch) override;
+    bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
@@ -147,7 +148,7 @@ public:
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
     bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
@@ -168,9 +169,10 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorOn(const bool isOn) noexcept;
+    void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
@@ -181,7 +183,6 @@ public:
         Word,
         Line
     };
-    const bool IsCopyOnSelectActive() const noexcept;
     void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
@@ -195,6 +196,7 @@ private:
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
+    std::function<void()> _pfnCursorPositionChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -222,8 +224,6 @@ private:
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
-    bool _allowSingleCharSelection;
-    bool _copyOnSelect;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -240,7 +240,7 @@ private:
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;
     // TODO this might not be the value we want to store.
-    // We might want to store the height in the scrollback that's currenty visible.
+    // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
     // For example: While looking at the scrollback, we probably want the visible region to "stick"
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
@@ -252,8 +252,21 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
 
+    // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
+    struct KeyEventCodes
+    {
+        WORD VirtualKey;
+        WORD ScanCode;
+    };
+    std::optional<KeyEventCodes> _lastKeyEventCodes;
+
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
+    static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
+    static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
+
+    void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
+    WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
     int _VisibleStartIndex() const noexcept;
     int _VisibleEndIndex() const noexcept;
@@ -269,13 +282,14 @@ private:
 
     void _NotifyScrollEvent() noexcept;
 
+    void _NotifyTerminalCursorPositionChanged() noexcept;
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 
 #ifdef UNIT_TESTING

@@ -30,7 +30,7 @@ Conhost already has a module for search. It implements case sensitive or insensi
 
 We will create a `SearchBoxControl` Xaml `UserControl` element. When a search process begins, a `SearchBoxControl` object will be created and attached to `TermControl` root grid. In other words, one SearchBox is added for each `TermControl`. The reasons for this design is:
 
-1. Each `TermControl` object is a Terminal Window and has a individual text buffer. In phase 1 we are going to search witin the current terminal text buffer. 
+1. Each `TermControl` object is a Terminal Window and has a individual text buffer. In phase 1 we are going to search within the current terminal text buffer. 
 2. If we put the search box under TerminalApp, then the search can only happen on the current focused Terminal. 
 3. If the community does not like the current design, we can lift SearchBox to a higher level. 
 

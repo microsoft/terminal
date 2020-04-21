@@ -4,8 +4,9 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-      "type": "string"
+      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "type": "string",
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
     },
     "Color": {
       "default": "#",
@@ -24,29 +25,15 @@
     },
     "ShortcutActionName": {
       "enum": [
+        "adjustFontSize",
         "closePane",
         "closeTab",
         "closeWindow",
         "copy",
-        "copyTextWithoutNewlines",
         "decreaseFontSize",
         "duplicateTab",
-        "increaseFontSize",
         "moveFocus",
-        "moveFocusDown",
-        "moveFocusLeft",
-        "moveFocusRight",
-        "moveFocusUp",
         "newTab",
-        "newTabProfile0",
-        "newTabProfile1",
-        "newTabProfile2",
-        "newTabProfile3",
-        "newTabProfile4",
-        "newTabProfile5",
-        "newTabProfile6",
-        "newTabProfile7",
-        "newTabProfile8",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
@@ -54,29 +41,15 @@
         "prevTab",
         "resetFontSize",
         "resizePane",
-        "resizePaneDown",
-        "resizePaneLeft",
-        "resizePaneRight",
-        "resizePaneUp",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
-        "splitHorizontal",
-        "splitVertical",
         "splitPane",
         "switchToTab",
-        "switchToTab0",
-        "switchToTab1",
-        "switchToTab2",
-        "switchToTab3",
-        "switchToTab4",
-        "switchToTab5",
-        "switchToTab6",
-        "switchToTab7",
-        "switchToTab8",
         "toggleFullscreen",
-        "find"
+        "find",
+        "unbound"
       ],
       "type": "string"
     },
@@ -134,6 +107,23 @@
       ],
       "type": "object"
     },
+    "AdjustFontSizeAction": {
+      "description": "Arguments corresponding to an Adjust Font Size Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "adjustFontSize" },
+            "delta": {
+              "type": "integer",
+              "default": 0,
+              "description": "How much to change the current font point size"
+            }
+          }
+        }
+      ],
+      "required": [ "delta" ]
+    },
     "CopyAction": {
       "description": "Arguments corresponding to a Copy Text Action",
       "allOf": [
@@ -141,10 +131,10 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "copy" },
-            "trimWhitespace": {
+            "singleLine": {
               "type": "boolean",
-              "default": true,
-              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
+              "default": false,
+              "description": "If true, newlines are removed and whitespace is maintained. If false, whitespace is removed and newlines are maintained."
             }
           }
         }
@@ -225,11 +215,14 @@
               "$ref": "#/definitions/SplitState",
               "default": "auto",
               "description": "The orientation to split the pane in, either vertical (think [|]), horizontal (think [-]), or auto (splits pane based on remaining space)"
+            },
+            "splitMode": {
+              "default": "duplicate",
+              "description": "Control how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
             }
           }
         }
-      ],
-      "required": [ "split" ]
+      ]
     },
     "Keybinding": {
       "additionalProperties": false,
@@ -237,13 +230,15 @@
         "command": {
           "description": "The action executed when the associated key bindings are pressed.",
             "oneOf": [
+              { "$ref": "#/definitions/AdjustFontSizeAction" },
               { "$ref": "#/definitions/CopyAction" },
               { "$ref": "#/definitions/ShortcutActionName" },
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
-              { "$ref": "#/definitions/SplitPaneAction" }
+              { "$ref": "#/definitions/SplitPaneAction" },
+              { "type": "null" }
             ]
         },
         "keys": {
@@ -280,6 +275,11 @@
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
+          "type": "boolean"
+        },
+        "copyFormatting": {
+          "default": true,
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
           "type": "boolean"
         },
         "defaultProfile": {
@@ -327,7 +327,7 @@
           },
           "type": "array"
         },
-        "requestedTheme": {
+        "theme": {
           "default": "system",
           "description": "Sets the theme of the application.",
           "enum": [
@@ -406,7 +406,7 @@
         },
         "backgroundImage": {
           "description": "Sets the file location of the Image to draw over the window background.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "backgroundImageAlignment": {
           "default": "center",
@@ -560,7 +560,7 @@
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
           "maximum": 100,
           "minimum": 25,
-          "type": "integer"
+          "type": ["integer","null"]
         },
         "cursorShape": {
           "default": "bar",
@@ -579,7 +579,7 @@
           "type": "boolean"
         },
         "fontFace": {
-          "default": "Consolas",
+          "default": "Cascadia Code",
           "description": "Name of the font face used in the profile.",
           "type": "string"
         },
@@ -612,7 +612,7 @@
         },
         "icon": {
           "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
@@ -645,7 +645,7 @@
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
@@ -657,7 +657,7 @@
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
-          "type": "string"
+          "type": ["string", "null"]
         },
         "useAcrylic": {
           "default": false,
@@ -788,37 +788,15 @@
       "type": "array"
     }
   },
-  "oneOf": [
+  "allOf": [
+    { "$ref": "#/definitions/Globals" },
     {
-      "allOf": [
-        { "$ref": "#/definitions/Globals" },
-        {
-          "additionalItems": true,
-          "properties": {
-            "profiles": {
-              "oneOf": [
-              { "$ref": "#/definitions/ProfileList" },
-              { "$ref": "#/definitions/ProfilesObject" }
-              ]
-            },
-            "schemes": { "$ref": "#/definitions/SchemeList" }
-          },
-          "required": [
-            "profiles",
-            "schemes",
-            "defaultProfile"
-          ]
-        }
-      ]
-    },
-    {
-      "additionalItems": false,
+      "additionalItems": true,
       "properties": {
-        "globals": { "$ref": "#/definitions/Globals" },
         "profiles": {
           "oneOf": [
-          { "$ref": "#/definitions/ProfileList" },
-          { "$ref": "#/definitions/ProfilesObject" }
+            { "$ref": "#/definitions/ProfileList" },
+            { "$ref": "#/definitions/ProfilesObject" }
           ]
         },
         "schemes": { "$ref": "#/definitions/SchemeList" }
@@ -826,7 +804,7 @@
       "required": [
         "profiles",
         "schemes",
-        "globals"
+        "defaultProfile"
       ]
     }
   ]
