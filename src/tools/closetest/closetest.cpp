@@ -33,7 +33,7 @@ Run the test:
     - Run with no arguments to see the order in which processes are signaled.
     - Run `closetest.exe -d alternate --gap -n 4` to require multiple Close
       button clicks.
- - Observe the "closetest: child nnn: attached to console" messages in DbgView
+ - Observe the "closetest: child ###: attached to console" messages in DbgView
  - Click the console's Close button.
  - Observe the `CTRL_CLOSE_EVENT` messages in DbgView.
 DETAILS:

@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
     // Function Description:
     // - Get the AppLogic for the current active Xaml application, or null if there isn't one.
     // Return value:
-    // - A pointer (bare) to the applogic, or nullptr. The app logic outlives all other objects,
+    // - A pointer (bare) to the AppLogic, or nullptr. The app logic outlives all other objects,
     //   unless the application is in a terrible way, so this is "safe."
     AppLogic* AppLogic::Current() noexcept
     try
