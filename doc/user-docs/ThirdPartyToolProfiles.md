@@ -128,7 +128,7 @@ Assuming that you've installed Node.js into `C:\Program Files\nodejs`:
 }
 ```
 
-## Node.js
+## Node.js (Console)
 
 Assuming that you've installed Node.js into `C:\Program Files\nodejs`:
 
@@ -136,6 +136,17 @@ Assuming that you've installed Node.js into `C:\Program Files\nodejs`:
 {
     "name" : "Node.js",
     "commandline" : "C:/Program Files/nodejs/node.exe"
+}
+```
+
+## Python 3.8 (Console)
+
+Assuming that you've installed Python 3.8 from the Microsoft Store:
+
+```json
+{
+    "name" : "Python 3.8",
+    "commandline": "python3.8.exe"
 }
 ```
 
