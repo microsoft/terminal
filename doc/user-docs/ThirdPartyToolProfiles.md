@@ -91,6 +91,18 @@ Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
 }
 ```
 
+## Git CMD
+
+Assuming that you've installed Git CMD into `C:/Program Files/Git`:
+
+```json
+{
+    "name" : "Git CMD",
+    "commandline" : "C:/Program Files/Git/git-cmd.exe --cd-to-home",
+    "icon" : "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico"
+}
+```
+
 ## MSYS2
 
 Assuming that you've installed MSYS2 into `C:/msys64`:
