@@ -563,8 +563,9 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (numSpaces > 0)
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
