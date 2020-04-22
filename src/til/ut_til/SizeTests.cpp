@@ -27,6 +27,13 @@ class SizeTests
         VERIFY_ARE_EQUAL(10, sz._height);
     }
 
+    TEST_METHOD(RawFloatingConstruct)
+    {
+        const til::size sz{ til::math::rounding, 3.2f, 7.8f };
+        VERIFY_ARE_EQUAL(3, sz._width);
+        VERIFY_ARE_EQUAL(8, sz._height);
+    }
+
     TEST_METHOD(UnsignedConstruct)
     {
         Log::Comment(L"0.) Normal unsigned construct.");
@@ -72,6 +79,26 @@ class SizeTests
         const til::size sz{ width, height };
         VERIFY_ARE_EQUAL(width, sz._width);
         VERIFY_ARE_EQUAL(height, sz._height);
+    }
+
+    TEST_METHOD(MixedRawTypeConstruct)
+    {
+        const ptrdiff_t a = -5;
+        const int b = -10;
+
+        Log::Comment(L"Case 1: ptrdiff_t/int");
+        {
+            const til::size sz{ a, b };
+            VERIFY_ARE_EQUAL(a, sz._width);
+            VERIFY_ARE_EQUAL(b, sz._height);
+        }
+
+        Log::Comment(L"Case 2: int/ptrdiff_t");
+        {
+            const til::size sz{ b, a };
+            VERIFY_ARE_EQUAL(b, sz._width);
+            VERIFY_ARE_EQUAL(a, sz._height);
+        }
     }
 
     TEST_METHOD(CoordConstruct)

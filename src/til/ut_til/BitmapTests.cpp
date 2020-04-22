@@ -22,25 +22,6 @@ class BitmapTests
     void _checkBits(const std::vector<til::rectangle>& bitsOn,
                     const til::bitmap& map)
     {
-        Log::Comment(L"Check dirty rectangles.");
-
-        // Union up all the dirty rectangles into one big one.
-        if (bitsOn.empty())
-        {
-            VERIFY_ARE_EQUAL(til::rectangle{}, map._dirty);
-        }
-        else
-        {
-            auto dirtyExpected = bitsOn.front();
-            for (auto it = bitsOn.cbegin() + 1; it < bitsOn.cend(); ++it)
-            {
-                dirtyExpected |= *it;
-            }
-
-            // Check if it matches.
-            VERIFY_ARE_EQUAL(dirtyExpected, map._dirty);
-        }
-
         Log::Comment(L"Check all bits in map.");
         // For every point in the map...
         for (const auto pt : map._rc)
@@ -71,7 +52,6 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(0u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -86,7 +66,6 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(50u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -112,12 +91,10 @@ class BitmapTests
         if (!fill)
         {
             VERIFY_IS_TRUE(bitmap._bits.none());
-            VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
         }
         else
         {
             VERIFY_IS_TRUE(bitmap._bits.all());
-            VERIFY_ARE_EQUAL(expectedRect, bitmap._dirty);
         }
     }
 

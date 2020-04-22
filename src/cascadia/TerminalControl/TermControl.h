@@ -198,6 +198,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
+        void _RefreshSize();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         winrt::fire_and_forget _TerminalCursorPositionChanged();
