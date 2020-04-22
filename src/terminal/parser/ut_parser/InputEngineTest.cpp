@@ -337,9 +337,11 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
 bool TestInteractDispatch::WriteCtrlC()
 {
     VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
-    KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    KeyEvent keyDown = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    KeyEvent keyUp = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-    inputEvents.push_back(std::make_unique<KeyEvent>(key));
+    inputEvents.push_back(std::make_unique<KeyEvent>(keyDown));
+    inputEvents.push_back(std::make_unique<KeyEvent>(keyUp));
     return WriteInput(inputEvents);
 }
 
