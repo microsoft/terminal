@@ -195,7 +195,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
 {
-    const std::string fmt = isBold ? "\x1b[1m" : "\x1b[22m";
+    const std::string_view fmt = isBold ? "\x1b[1m" : "\x1b[22m";
     return _Write(fmt);
 }
 
@@ -275,7 +275,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
+    const std::string_view fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
 
     return _Write(fmt);
 }
