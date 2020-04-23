@@ -649,7 +649,6 @@ DPICHANGE
 DPICHANGED
 dpix
 dpiy
-draggable
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -1026,7 +1025,6 @@ HPROPSHEETPAGE
 HREDRAW
 HREF
 hresult
-hrgn
 HRSRC
 hscroll
 hsl
@@ -1108,6 +1106,7 @@ ime
 Imm
 IMouse
 impl
+implementingtextandtextrange
 inbox
 inclusivity
 INCONTEXT
@@ -2816,6 +2815,7 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xy
+xxxx
 yact
 YAML
 YCast
