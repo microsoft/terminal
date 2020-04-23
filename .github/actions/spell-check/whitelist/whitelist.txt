@@ -780,7 +780,6 @@ fdc
 fdd
 fde
 fdopen
-fdpi
 fdw
 fea
 fesb
@@ -1487,7 +1486,6 @@ nbsp
 Nc
 NCCALCSIZE
 NCCREATE
-NCHITTEST'ed
 NCLBUTTONDOWN
 NCLBUTTONUP
 NCMBUTTONDOWN
