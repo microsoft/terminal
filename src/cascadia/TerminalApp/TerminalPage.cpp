@@ -258,7 +258,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPage::ThirdPartyNoticesLink()
     {
-        winrt::hstring link{ fmt::format(std::wstring_view{ L"https://github.com/microsoft/terminal/blob/{}/NOTICE.md" }, CurrentCommitHash) };
+        winrt::hstring link{ fmt::format(L"https://github.com/microsoft/terminal/blob/{}/NOTICE.md", CurrentCommitHash) };
         return link;
     }
 
