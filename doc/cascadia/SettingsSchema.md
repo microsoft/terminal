@@ -42,7 +42,7 @@ Properties listed below are specific to each unique profile.
 | `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | Optional | String | `Cascadia Code` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
+| `fontFace` | Optional | String | `Cascadia Mono` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
