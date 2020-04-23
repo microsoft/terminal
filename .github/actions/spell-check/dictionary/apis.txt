@@ -1,6 +1,0 @@
-IMap
-ICustom
-IObject
-LCID
-NCHITTEST
-rfind
