@@ -88,6 +88,7 @@ DxEngine::DxEngine() :
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
+    _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
@@ -562,9 +563,6 @@ CATCH_RETURN();
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
         {
-            const auto fdpi = static_cast<float>(_dpi);
-            _d2dRenderTarget->SetDpi(fdpi, fdpi);
-
             DXGI_MATRIX_3X2_F inverseScale = { 0 };
             inverseScale._11 = 1.0f / _scale;
             inverseScale._22 = inverseScale._11;
@@ -573,6 +571,8 @@ CATCH_RETURN();
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
         }
+
+        _prevScale = _scale;
         return S_OK;
     }
     CATCH_RETURN();
@@ -800,6 +800,16 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+
+    // Since everything is invalidated here, mark this as a "first frame", so
+    // that we won't use incremental drawing on it. The caller of this intended
+    // for _everything_ to get redrawn, so setting _firstFrame will force us to
+    // redraw the entire frame. This will make sure that things like the gutters
+    // get cleared correctly.
+    //
+    // Invalidating everything is supposed to happen with resizes of the
+    // entire canvas, changes of the font, and other such adjustments.
+    _firstFrame = true;
     return S_OK;
 }
 CATCH_RETURN();
@@ -837,7 +847,7 @@ CATCH_RETURN();
     }
     case SwapChainMode::ForComposition:
     {
-        return _sizeTarget.scale(til::math::ceiling, _scale);
+        return _sizeTarget;
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
@@ -894,13 +904,6 @@ try
         _invalidMap.set_all();
     }
 
-    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
-    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
-    if (_scale != 1.0f)
-    {
-        _invalidMap.set_all();
-    }
-
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         const auto invalidatedStr = _invalidMap.to_string();
@@ -920,7 +923,7 @@ try
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
-        else if (_displaySizePixels != clientSize)
+        else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
             // OK, we're going to play a dangerous game here for the sake of optimizing resize
             // First, set up a complete clear of all device resources if something goes terribly wrong.
@@ -982,16 +985,14 @@ try
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
-                    return rc.scale_up(_glyphCell).scale(til::math::rounding, _scale);
+                    return rc.scale_up(_glyphCell);
                 });
 
                 // Invalid scroll is in characters, convert it to pixels.
-                const auto scrollPixels = (_invalidScroll * _glyphCell).scale(til::math::rounding, _scale);
+                const auto scrollPixels = (_invalidScroll * _glyphCell);
 
                 // The scroll rect is the entire field of cells, but in pixels.
                 til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
-
-                scrollArea = scrollArea.scale(til::math::ceiling, _scale);
 
                 // Reduce the size of the rectangle by the scroll.
                 scrollArea -= til::size{} - scrollPixels;
@@ -1177,9 +1178,6 @@ try
     D2D1_COLOR_F nothing = { 0 };
 
     // If the entire thing is invalid, just use one big clear operation.
-    // This will also hit the gutters outside the usual paintable area.
-    // Invalidating everything is supposed to happen with resizes of the
-    // entire canvas, changes of the font, and other such adjustments.
     if (_invalidMap.all())
     {
         _d2dRenderTarget->Clear(nothing);
@@ -1971,12 +1969,8 @@ CATCH_RETURN();
         // The advance is the number of pixels left-to-right (X dimension) for the given font.
         // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
 
-        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-        // For composition swap chains, we scale by the DPI later during drawing and presentation.
-        if (_chainMode == SwapChainMode::ForHwnd)
-        {
-            heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
-        }
+        // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
+        heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
 
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 

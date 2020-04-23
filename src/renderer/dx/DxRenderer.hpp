@@ -124,6 +124,7 @@ namespace Microsoft::Console::Render
         til::size _sizeTarget;
         int _dpi;
         float _scale;
+        float _prevScale;
 
         std::function<void()> _pfn;
 

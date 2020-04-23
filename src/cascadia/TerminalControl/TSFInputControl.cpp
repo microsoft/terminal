@@ -175,52 +175,69 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
 
-        const auto fontWidth = fontArgs->FontSize().Width;
-        const auto fontHeight = fontArgs->FontSize().Height;
+        const til::size fontSize{ til::math::flooring, fontArgs->FontSize() };
 
-        // Convert text buffer cursor position to client coordinate position within the window
-        COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.x(), ::base::ClampedNumeric<ptrdiff_t>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.y(), ::base::ClampedNumeric<ptrdiff_t>(fontHeight));
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), clientCursorPos.Y);
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        // calculate FontSize in pixels from DPIs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
+        const til::point clientCursorInDips{ clientCursorPos / scaleFactor };
+
+        // Position our TextBlock at the cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorInDips.x<double>());
+        Canvas().SetTop(TextBlock(), clientCursorInDips.y<double>());
+
+        // calculate FontSize in pixels from Points
+        const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
+
+        // Make sure to unscale the font size to correct for DPI! XAML needs
+        // things in DIPs, and the fontSize is in pixels.
+        TextBlock().FontSize(fontSizePx / scaleFactor);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = _currentCanvasWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorInDips.x<double>();
         // Make sure that we're setting the MaxWidth to a positive number - a
         // negative number here will crash us in mysterious ways with a useless
         // stack trace
         const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
         TextBlock().MaxWidth(newMaxWidth);
 
-        // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
+        // Get window in screen coordinates, this is the entire window including
+        // tabs. THIS IS IN DIPs
+        const auto windowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
+        const til::point windowOrigin{ til::math::flooring, windowBounds };
 
-        // Convert from client coordinate to screen coordinate by adding window position
-        COORD screenCursorPos;
-        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<short>(windowBounds.X));
-        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<short>(windowBounds.Y));
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
 
-        // get any offset (margin + tabs, etc..) of the control within the window
-        const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
+        // The controlAbsoluteOrigin is the origin of the control relative to
+        // the origin of the displays. THIS IS IN DIPs
+        const til::point controlAbsoluteOrigin{ windowOrigin + controlOrigin };
 
-        // add the margin offsets if any
-        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
-        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
+        // Convert the control origin to pixels
+        const til::point scaledFrameOrigin = controlAbsoluteOrigin * scaleFactor;
 
-        // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontHeight;
-        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
+        // Get the location of the cursor in the display, in pixels.
+        til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
 
-        _currentTextBounds = ScaleRect(Rect(screenCursorPos.X, textBottom, 0, fontHeight), scaleFactor);
-        _currentControlBounds = ScaleRect(Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight), scaleFactor);
+        // GH #5007 - make sure to account for wrapping the IME composition at
+        // the right side of the viewport.
+        const ptrdiff_t textBlockHeight = ::base::ClampMul(_currentTextBlockHeight, scaleFactor);
+
+        // Get the bounds of the composition text, in pixels.
+        const til::rectangle textBounds{ til::point{ screenCursorPos.x(), screenCursorPos.y() },
+                                         til::size{ 0, textBlockHeight } };
+
+        _currentTextBounds = textBounds;
+
+        _currentControlBounds = Rect(screenCursorPos.x<float>(),
+                                     screenCursorPos.y<float>(),
+                                     0,
+                                     fontSize.height<float>());
     }
 
     // Method Description:
