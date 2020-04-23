@@ -45,6 +45,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
+        winrt::hstring ThirdPartyNoticesLink();
+
         void CloseWindow();
 
         int32_t SetStartupCommandline(winrt::array_view<const hstring> args);

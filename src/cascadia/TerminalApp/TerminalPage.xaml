@@ -43,6 +43,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <HyperlinkButton
                     x:Uid="AboutDialog_PrivacyPolicyLink"
                     NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
+                <HyperlinkButton
+                    x:Uid="AboutDialog_ThirdPartyNoticesLink"
+                    NavigateUri="{x:Bind ThirdPartyNoticesLink}" />
             </StackPanel>
         </ContentDialog>
 
