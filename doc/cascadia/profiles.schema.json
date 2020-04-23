@@ -579,7 +579,7 @@
           "type": "boolean"
         },
         "fontFace": {
-          "default": "Cascadia Code",
+          "default": "Cascadia Mono",
           "description": "Name of the font face used in the profile.",
           "type": "string"
         },
