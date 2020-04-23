@@ -2,3 +2,5 @@ EXPORTS
     CreatePseudoConsole = ConptyCreatePseudoConsole
     ResizePseudoConsole = ConptyResizePseudoConsole
     ClosePseudoConsole = ConptyClosePseudoConsole
+    ConptyCreateStartupInfo
+    ConptyDestroyStartupInfo

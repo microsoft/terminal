@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "WpfTerminalTestNetCore": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\",
+      "remoteDebugEnabled": true,
+      "remoteDebugMachine": "VM81",
+      "nativeDebugging": true
+    }
+  }
+}

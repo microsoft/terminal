@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "winconpty.h"
+#include "../server/winbasep.h"
 
 #ifdef __INSIDE_WINDOWS
 #include <strsafe.h>
@@ -189,6 +190,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                                                  L"\\Reference",
                                                  FALSE));
 
+    pPty->hPtyServer = serverHandle.release();
+
     pPty->hSignal = signalPipeOurSide.release();
 
     return S_OK;
@@ -265,6 +268,12 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
         {
             CloseHandle(pPty->hPtyReference);
             pPty->hPtyReference = nullptr;
+        }
+
+        if (_HandleIsValid(pPty->hPtyServer))
+        {
+            CloseHandle(pPty->hPtyServer);
+            pPty->hPtyServer = nullptr;
         }
     }
 }
@@ -386,4 +395,153 @@ extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
     }
 }
 
+extern "C" HRESULT WINAPI ConptyCreateStartupInfo(_In_ HPCON hPC, LPSTARTUPINFOEXW pSiExW)
+{
+    PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    auto& siExW{ *pSiExW };
+
+    siExW = {};
+    siExW.StartupInfo.cb = sizeof(STARTUPINFOEX);
+    siExW.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+
+    SIZE_T AttributeListSize;
+    InitializeProcThreadAttributeList(nullptr,
+                                      1,
+                                      0,
+                                      &AttributeListSize);
+
+    // Alloc space
+    auto AttributeList{ wil::make_unique_cotaskmem<BYTE[]>(AttributeListSize) };
+    RETURN_IF_NULL_ALLOC(AttributeList);
+
+    siExW.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
+
+    // Call second time to actually initialize space.
+    RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siExW.lpAttributeList,
+                                                                 1, // This represents the length of the list. We will call UpdateProcThreadAttribute twice so this is 2.
+                                                                 0,
+                                                                 &AttributeListSize));
+    // Set cleanup data for ProcThreadAttributeList if we fail.
+    auto CleanupProcThreadAttribute = wil::scope_exit([&] {
+        DeleteProcThreadAttributeList(siExW.lpAttributeList);
+    });
+
+    RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siExW.lpAttributeList,
+                                                         0,
+                                                         PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE,
+                                                         &pPty->hPtyReference,
+                                                         sizeof(HANDLE),
+                                                         NULL,
+                                                         NULL));
+
+    AttributeList.release();
+    CleanupProcThreadAttribute.release();
+    return S_OK;
+#if 0
+    PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    auto& siExW{ *pSiExW };
+
+    wil::unique_handle ClientHandle[3];
+
+    // Input
+    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(ClientHandle[0].addressof(),
+                                                 pPty->hPtyReference,
+                                                 L"\\Input",
+                                                 TRUE));
+
+    // Output
+    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(ClientHandle[1].addressof(),
+                                                 pPty->hPtyReference,
+                                                 L"\\Output",
+                                                 TRUE));
+
+    // Error is a copy of Output
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                               ClientHandle[1].get(),
+                                               GetCurrentProcess(),
+                                               ClientHandle[2].addressof(),
+                                               0,
+                                               TRUE,
+                                               DUPLICATE_SAME_ACCESS));
+
+    // Create the child process. We will temporarily overwrite the values in the
+    // PEB to force them to be inherited.
+
+    siExW = {};
+    siExW.StartupInfo.cb = sizeof(STARTUPINFOEX);
+    siExW.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    siExW.StartupInfo.hStdInput = ClientHandle[0].get();
+    siExW.StartupInfo.hStdOutput = ClientHandle[1].get();
+    siExW.StartupInfo.hStdError = ClientHandle[2].get();
+
+    // Create the extended attributes list that will pass the console server information into the child process.
+
+    // Call first time to find size
+    SIZE_T AttributeListSize;
+    InitializeProcThreadAttributeList(nullptr,
+                                      2,
+                                      0,
+                                      &AttributeListSize);
+
+    // Alloc space
+    auto AttributeList{ wil::make_unique_cotaskmem<BYTE[]>(AttributeListSize) };
+    RETURN_IF_NULL_ALLOC(AttributeList);
+
+    siExW.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
+
+    // Call second time to actually initialize space.
+    RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siExW.lpAttributeList,
+                                                                 2, // This represents the length of the list. We will call UpdateProcThreadAttribute twice so this is 2.
+                                                                 0,
+                                                                 &AttributeListSize));
+    // Set cleanup data for ProcThreadAttributeList if we fail.
+    auto CleanupProcThreadAttribute = wil::scope_exit([&] {
+        DeleteProcThreadAttributeList(siExW.lpAttributeList);
+    });
+
+    RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siExW.lpAttributeList,
+                                                         0,
+                                                         PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE,
+                                                         &pPty->hPtyReference,
+                                                         sizeof(HANDLE),
+                                                         NULL,
+                                                         NULL));
+
+    // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures,
+    // so set it up for its use.
+    HANDLE HandleList[4];
+    HandleList[0] = siExW.StartupInfo.hStdInput;
+    HandleList[1] = siExW.StartupInfo.hStdOutput;
+    HandleList[2] = siExW.StartupInfo.hStdError;
+    HandleList[3] = pPty->hPtyReference;
+
+    RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siExW.lpAttributeList,
+                                                         0,
+                                                         PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                                         &HandleList[0],
+                                                         sizeof HandleList,
+                                                         NULL,
+                                                         NULL));
+
+    for (auto& h : ClientHandle)
+    {
+        h.release();
+    }
+    AttributeList.release();
+    CleanupProcThreadAttribute.release();
+    return S_OK;
+#endif
+}
+
+extern "C" HRESULT WINAPI ConptyDestroyStartupInfo(LPSTARTUPINFOEXW pSiExW)
+{
+    DeleteProcThreadAttributeList(pSiExW->lpAttributeList);
+    CoTaskMemFree(pSiExW->lpAttributeList);
+    //CloseHandle(pSiExW->StartupInfo.hStdInput);
+    //CloseHandle(pSiExW->StartupInfo.hStdOutput);
+    //CloseHandle(pSiExW->StartupInfo.hStdError);
+    return S_OK;
+}
+
 #pragma warning(pop)
+

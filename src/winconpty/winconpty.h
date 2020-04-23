@@ -12,6 +12,7 @@ typedef struct _PseudoConsole
     HANDLE hSignal;
     HANDLE hPtyReference;
     HANDLE hConPtyProcess;
+    HANDLE hPtyServer;
 } PseudoConsole;
 
 // Signals
