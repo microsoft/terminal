@@ -81,7 +81,7 @@ table, and the default foreground and background colors. These are properties
 that only apply to the contents of the terminal itself, and not necessarily the
 entire application. Individual terminal control instances can have different
 color schemes. Furthermore, these schemes are largely in-line with schemes
-available on other platform's terminals. These schemes were hevily inspired by
+available on other platform's terminals. These schemes were heavily inspired by
 the great work done at [iTerm2-Color-Schemes].
 
 Alternatively, **Themes** are sets of properties that apply primarily to the
@@ -98,7 +98,7 @@ can chose to apply a scheme from the list of schemes. We'll add a list of
 `themes`, and globally, the user will be able to specify one of these themes to
 apply.
 
-Take for example the following settings exerpt:
+Take for example the following settings excerpt:
 
 ```json
 {
@@ -122,7 +122,7 @@ Take for example the following settings exerpt:
             "tabRowBackground": "#ffffffff",
             "tabHeight": 8,
             "requestedTheme": "light",
-            "colorSheme": "Solarized Light",
+            "colorScheme": "Solarized Light",
             "tabIcon": "hidden",
             "tabCloseButton": "hover"
         }
@@ -173,10 +173,10 @@ control the UI.
   for accepted colors.
 * `tabRow.background`: Control the color of the background of the tab row items.
   See below for accepted colors.
-* `pane.borderColor`: Control the color of the border used to seperate panes.
+* `pane.borderColor`: Control the color of the border used to separate panes.
   This is the color of the inactive border between panes.
 * `pane.activeBorderColor`: Control the color of the border of the active pane
-* `pane.borderWidth`: Control the width of the borders used to seperate panes.
+* `pane.borderWidth`: Control the width of the borders used to separate panes.
 * `window.requestedTheme`: If set, will override the `requestedTheme` property
   (currently in the globals), to manually control the `RequestedTheme` of the
   application window. This controls whether WinUI displays elements in the
@@ -207,7 +207,7 @@ backgrounds could certainly lead to some odd behavior. The intention of the
 setting is to provide a way for the tab/titlebar to "seamlessly" connect to the
 terminal content. However, two panes side-by-side could have different
 background colors, which might have an unexpected appearance. Since the user
-must have opted in to theis behavior, they'll need to decide personally if
+must have opted in to this behavior, they'll need to decide personally if
 that's something that bothers them aesthetically. It's entirely possible that a
 user doesn't use panes, and this wouldn't even be a problem for them.
 
@@ -251,7 +251,7 @@ properties: `PaneBorderWidth`: To control the width of pane borders
 `ActivePaneBorderBrush`: To control the appearance of _active_ pane borders
 
 In order to respond to the live-updating of the `TermControl`'s background
-color, we'l need to add some more specific logic beyond simply updating a XAML
+color, we'll need to add some more specific logic beyond simply updating a XAML
 resource when settings change. Whenever a `TermControl`'s background color
 changes, or the active pane in a tab changes:
 * If `tab.background == "terminalBackground"`:
@@ -278,7 +278,7 @@ changes, or the active pane in a tab changes:
 The `tab.cornerRadius` might be a bit trickier to implement. Currently, there's
 not a XAML resource that controls this, nor is this something that's exposed by
 the TabView control. Fortunately, this is something that's exposed to us
-programattically. We'll need to manually set that value on each `TabViewItem` as
+programmatically. We'll need to manually set that value on each `TabViewItem` as
 we create new tabs. When we reload settings, we'll need to make sure to come
 through and update those values manually.
 
@@ -321,7 +321,7 @@ be overridden by the color picker, instead of the tab background color.
 controls whether the application is in `light`, `dark` or the `system` theme. If
 a theme specifies the `window.requestedTheme` property, this value from the
 theme should override the setting from the globals, because the theme the user
-has selected would prefer a differnent theme for the window.
+has selected would prefer a different theme for the window.
 
 <!-- This is slightly confusing currently if you ask me. More discussion below
 in "Potential Issues" -->
@@ -356,7 +356,7 @@ The rest of this spec need to be updated to reflect this!!!
 
 ### Reliability
 
-[comment]: # Will the proposed change improve reliabilty? If not, why make the change?
+[comment]: # Will the proposed change improve reliability? If not, why make the change?
 
 ### Compatibility
 
@@ -371,7 +371,7 @@ bad. This is absolutely a "beauty in the eye of the beholder" situation - not
 everyone is going to like the appearance of every theme. The goal of the
 Terminal is to provide a basic theme that's appropriate for anyone, but empower
 users to customize the terminal however they see fit. If the user chooses a
-theme that's not particularily appealing, they can always change it back.
+theme that's not particularly appealing, they can always change it back.
 
 ### Branding
 
