@@ -19,6 +19,22 @@ AppCommandlineArgs::AppCommandlineArgs()
 }
 
 // Method Description:
+// - Set the application name and version string for the application. If the
+//   user calls `wt --version`, we'll display these strings by setting the exit
+//   message (the string returned by GetExitMessage).
+// Arguments:
+// - applicationName: a hstring containing the application name
+// - versionString: a hstring containing the version string
+// Return Value:
+// - <none>
+void AppCommandlineArgs::SetVersionString(const winrt::hstring& applicationName,
+                                          const winrt::hstring& versionString)
+{
+    _applicationName = winrt::to_string(applicationName);
+    _versionString = winrt::to_string(versionString);
+}
+
+// Method Description:
 // - Attempt to parse a given command as a single commandline. If the command
 //   doesn't have a subcommand, we'll try parsing the commandline again, as a
 //   new-tab command.
@@ -140,6 +156,11 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
     {
         _exitMessage = err.str();
     }
+
+    // We're displaying an error message - we should always exit instead of
+    // actually starting the Terminal.
+    _shouldExitEarly = true;
+
     return result;
 }
 
@@ -151,6 +172,18 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    auto versionCallback = [this](int64_t /*count*/) {
+        // Set our message to display the application name and the current verison.
+        _exitMessage = _applicationName + "\n" + _versionString;
+
+        // Theoretically, we don't need to exit now, since this isn't really an
+        // error case. However, in practice, it feels weird to have `wt -v` open
+        // a new tab, and makes enough sense that `wt -v ; split-pane` (or
+        // whatever) just displays the version and exits.
+        _shouldExitEarly = true;
+    };
+    _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
+
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
@@ -388,6 +421,8 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
+
+    // _requestedVersion = false;
 }
 
 // Function Description:
@@ -538,6 +573,19 @@ std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupAct
 const std::string& AppCommandlineArgs::GetExitMessage()
 {
     return _exitMessage;
+}
+
+// Method Description:
+// - Returns true if we should exit the application before even starting the
+//   window. We might want to do this if we're displaying an error message or
+//   the version string, or if we want to open the settings file.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we should exit the application before even starting the window
+bool AppCommandlineArgs::ShouldExitEarly() const noexcept
+{
+    return _shouldExitEarly;
 }
 
 // Method Description:

@@ -48,7 +48,8 @@ namespace winrt::TerminalApp::implementation
         void CloseWindow();
 
         int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
-        winrt::hstring EarlyExitMessage();
+        winrt::hstring ParseCommandlineMessage();
+        bool ShouldExitEarly();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);

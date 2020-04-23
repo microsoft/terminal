@@ -1631,6 +1631,8 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalPage::_ParseArgs)
     int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
     {
+        _appArgs.SetVersionString(ApplicationDisplayName(), ApplicationVersion());
+
         return _ParseArgs(args);
     }
 
@@ -1732,14 +1734,29 @@ namespace winrt::TerminalApp::implementation
     //   message. If there were no errors, this message will be blank.
     // - If the user requested help on any command (using --help), this will
     //   contain the help message.
+    // - If the user requested the version number (using --version), this will
+    //   contain the version string.
     // Arguments:
     // - <none>
     // Return Value:
     // - the help text or error message for the provided commandline, if one
     //   exists, otherwise the empty string.
-    winrt::hstring TerminalPage::EarlyExitMessage()
+    winrt::hstring TerminalPage::ParseCommandlineMessage()
     {
         return winrt::to_hstring(_appArgs.GetExitMessage());
+    }
+
+    // Method Description:
+    // - Returns true if we should exit the application before even starting the
+    //   window. We might want to do this if we're displaying an error message or
+    //   the version string, or if we want to open the settings file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff we should exit the application before even starting the window
+    bool TerminalPage::ShouldExitEarly()
+    {
+        return _appArgs.ShouldExitEarly();
     }
 
     // Method Description:
