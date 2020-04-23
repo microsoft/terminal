@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
 #include <LibraryResources.h>
@@ -16,22 +17,6 @@ AppCommandlineArgs::AppCommandlineArgs()
 {
     _buildParser();
     _resetStateToDefault();
-}
-
-// Method Description:
-// - Set the application name and version string for the application. If the
-//   user calls `wt --version`, we'll display these strings by setting the exit
-//   message (the string returned by GetExitMessage).
-// Arguments:
-// - applicationName: a hstring containing the application name
-// - versionString: a hstring containing the version string
-// Return Value:
-// - <none>
-void AppCommandlineArgs::SetVersionString(const winrt::hstring& applicationName,
-                                          const winrt::hstring& versionString)
-{
-    _applicationName = winrt::to_string(applicationName);
-    _versionString = winrt::to_string(versionString);
 }
 
 // Method Description:
@@ -173,14 +158,18 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 void AppCommandlineArgs::_buildParser()
 {
     auto versionCallback = [this](int64_t /*count*/) {
-        // Set our message to display the application name and the current version.
-        _exitMessage = _applicationName + "\n" + _versionString;
-
-        // Theoretically, we don't need to exit now, since this isn't really an
-        // error case. However, in practice, it feels weird to have `wt -v` open
-        // a new tab, and makes enough sense that `wt -v ; split-pane` (or
-        // whatever) just displays the version and exits.
-        _shouldExitEarly = true;
+        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+        {
+            // Set our message to display the application name and the current version.
+            _exitMessage = fmt::format("{0}\n{1}",
+                                       til::u16u8(appLogic->ApplicationDisplayName()),
+                                       til::u16u8(appLogic->ApplicationVersion()));
+            // Theoretically, we don't need to exit now, since this isn't really
+            // an error case. However, in practice, it feels weird to have `wt
+            // -v` open a new tab, and makes enough sense that `wt -v ;
+            // split-pane` (or whatever) just displays the version and exits.
+            _shouldExitEarly = true;
+        }
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 

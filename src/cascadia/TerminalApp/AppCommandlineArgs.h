@@ -38,8 +38,6 @@ public:
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
-    void SetVersionString(const winrt::hstring& applicationName, const winrt::hstring& versionString);
-
 private:
     static const std::wregex _commandDelimiterRegex;
 
@@ -83,8 +81,6 @@ private:
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
-    std::string _applicationName{ "" };
-    std::string _versionString{ "" };
 
     winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);

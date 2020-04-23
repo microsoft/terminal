@@ -1631,8 +1631,6 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalPage::_ParseArgs)
     int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
     {
-        _appArgs.SetVersionString(ApplicationDisplayName(), ApplicationVersion());
-
         return _ParseArgs(args);
     }
 
