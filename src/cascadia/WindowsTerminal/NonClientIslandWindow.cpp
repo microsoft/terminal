@@ -31,6 +31,26 @@ NonClientIslandWindow::~NonClientIslandWindow()
 }
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
+
+[[nodiscard]] LRESULT __stdcall NonClientIslandWindow::_StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+{
+    WINRT_ASSERT(window);
+
+    if (WM_NCCREATE == message)
+    {
+        auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
+        auto nonClientIslandWindow{ reinterpret_cast<NonClientIslandWindow*>(cs->lpCreateParams) };
+        SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(nonClientIslandWindow));
+        // fall through to default window procedure
+    }
+    else if (auto nonClientIslandWindow{ reinterpret_cast<NonClientIslandWindow*>(GetWindowLongPtr(window, GWLP_USERDATA)) })
+    {
+        return nonClientIslandWindow->_InputSinkMessageHandler(message, wparam, lparam);
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
+}
+
 void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
@@ -42,7 +62,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
         wcEx.lpszClassName = dragBarClassName;
         wcEx.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
         wcEx.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcEx.lpfnWndProc = _DragWindowWndProc;
+        wcEx.lpfnWndProc = &NonClientIslandWindow::_StaticInputSinkWndProc;
         wcEx.hInstance = wil::GetModuleInstanceHandle();
         wcEx.cbWndExtra = sizeof(NonClientIslandWindow*);
         return RegisterClassEx(&wcEx);
@@ -63,13 +83,13 @@ void NonClientIslandWindow::MakeWindow() noexcept
                                          GetWindowHandle(),
                                          nullptr,
                                          wil::GetModuleInstanceHandle(),
-                                         0));
+                                         this));
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
 // Function Description:
 // - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
-LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+LRESULT __stdcall NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     std::optional<UINT> nonClientMessage{ std::nullopt };
 
@@ -98,13 +118,12 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
 
     if (nonClientMessage.has_value())
     {
-        POINT clientPt = { GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+        POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
 
         POINT screenPt = clientPt;
-        if (ClientToScreen(window, &screenPt))
+        if (ClientToScreen(_dragBarWindow.get(), &screenPt))
         {
-            const auto parentWindow{ GetAncestor(window, GA_PARENT) };
-            THROW_HR_IF_NULL(E_UNEXPECTED, parentWindow);
+            auto parentWindow{ _window.get() };
 
             // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
             // then pass that click through as an NC click in that location.
@@ -115,7 +134,7 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
         }
     }
 
-    return DefWindowProc(window, message, wparam, lparam);
+    return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
 }
 
 // Method Description:

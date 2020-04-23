@@ -62,7 +62,8 @@ private:
 
     bool _isMaximized;
 
-    [[nodiscard]] static LRESULT __stdcall _DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
     void _ResizeDragBarWindow() noexcept;
 
