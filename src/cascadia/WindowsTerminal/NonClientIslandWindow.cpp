@@ -36,16 +36,16 @@ void NonClientIslandWindow::MakeWindow() noexcept
     IslandWindow::MakeWindow();
 
     static ATOM dragBarWindowClass{ []() {
-        WNDCLASSEX wcex{};
-        wcex.cbSize = sizeof(wcex);
-        wcex.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-        wcex.lpszClassName = dragBarClassName;
-        wcex.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcex.lpfnWndProc = _DragWindowWndProc;
-        wcex.hInstance = wil::GetModuleInstanceHandle();
-        wcex.cbWndExtra = sizeof(NonClientIslandWindow*);
-        return RegisterClassEx(&wcex);
+        WNDCLASSEX wcEx{};
+        wcEx.cbSize = sizeof(wcEx);
+        wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+        wcEx.lpszClassName = dragBarClassName;
+        wcEx.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+        wcEx.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wcEx.lpfnWndProc = _DragWindowWndProc;
+        wcEx.hInstance = wil::GetModuleInstanceHandle();
+        wcEx.cbWndExtra = sizeof(NonClientIslandWindow*);
+        return RegisterClassEx(&wcEx);
     }() };
 
     // The drag bar window is a child window of the top level window that is put
