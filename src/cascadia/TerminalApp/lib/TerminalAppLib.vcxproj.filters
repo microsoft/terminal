@@ -4,7 +4,7 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="..\Resources\*\Resources.resw" />
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
@@ -59,9 +59,6 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
-    <ClCompile Include="../AppCommandlineArgs.cpp" />
-    <ClCompile Include="../Commandline.cpp" />
-    <ClCompile Include="../DebugTapConnection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -110,9 +107,6 @@
       <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="../TelnetGenerator.h" />
-    <ClInclude Include="../AppCommandlineArgs.h" />
-    <ClInclude Include="../Commandline.h" />
-    <ClInclude Include="../DebugTapConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
@@ -130,7 +124,6 @@
     <Midl Include="../Tab.idl">
       <Filter>tab</Filter>
     </Midl>
-    <Midl Include="../IF7Listener.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages.config" />

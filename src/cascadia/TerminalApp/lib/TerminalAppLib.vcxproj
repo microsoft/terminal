@@ -212,13 +212,11 @@
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="../Tab.idl" />
+    <Midl Include="../Tab.idl"/>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="..\Resources\*\Resources.resw">
-      <SubType>Designer</SubType>
-    </PRIResource>
+    <PRIResource Include="..\Resources\*\Resources.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
