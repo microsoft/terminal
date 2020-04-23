@@ -1,7 +1,7 @@
 ---
-author: <first-name> <last-name> <github-id>/<email>
-created on: <yyyy-mm-dd>
-last updated: <yyyy-mm-dd>
+author: Mike Griese @zadjii-msft
+created on: 2019-12-13
+last updated: 2020-04-23
 issue id: #3327
 ---
 
@@ -29,14 +29,14 @@ window.
 The following is a long list of ideas of elements of the window that the user
 should be able to customize:
 
-* [ ] Pane Border colors (both the background, and the "focused" color) (#3061)
-* [ ] Pane border width (#3062)
-* [ ] Tab _Row_ and _Item_ Background color (#702/#1337/#2994/#3774/#1963)
+* [ ] Pane Border colors (both the background, and the "focused" color) ([#3061])
+* [ ] Pane border width ([#3062])
+* [ ] Tab _Row_ and _Item_ Background color ([#702]/[#1337]/[#2994]/[#3774]/[#1963])
     - Some users want to set these to the accent color
     - Some users want to set these to a specific custom color
     - Some users want this to use the color straight from the active Terminal,
       allowing the tab or titlebar to "blend into" the terminal
-* [ ] Feature Request: Setting to hide/remove close ("x") button from tabs (#3335)
+* [ ] Feature Request: Setting to hide/remove close ("x") button from tabs ([#3335])
 * [ ] Various different tab sizing modes
     - the current sizing, which is `SizeToContent`
     - Setting a min/max width on tabs
@@ -55,7 +55,7 @@ Other lower-priority ideas:
 * [ ] Enable/disable a shadow underneath the tab row, between tabs and content
 * [ ] Enable/disable a shadow cast by terminals on pane borders or a shadow cast
   by pane borders on Terminal panes
-* [ ] Similarly to the tabs, styling the Status Bar (#3459)
+* [ ] Similarly to the tabs, styling the Status Bar ([#3459])
     - Maybe enable it to have the same color as the active TermControl, causing
       the same "seamless" effect (see [this
       comment](https://github.com/microsoft/terminal/issues/3459#issuecomment-550501577))
@@ -102,11 +102,11 @@ Take for example the following settings excerpt:
 
 ```json
 {
-    "applicationTheme": "My Boxy Theme",
+    "theme": "My Boxy Theme",
     "themes": [
         {
             "name": "My Boxy Theme",
-            "requestedTheme": "dark",
+            "window.applicationTheme": "dark",
             "tab.radius": 0,
             "tab.padding": 5,
             "tab.background": "terminalBackground",
@@ -121,7 +121,7 @@ Take for example the following settings excerpt:
             "tabBackground": "#80ff0000",
             "tabRowBackground": "#ffffffff",
             "tabHeight": 8,
-            "requestedTheme": "light",
+            "applicationTheme": "light",
             "colorScheme": "Solarized Light",
             "tabIcon": "hidden",
             "tabCloseButton": "hover"
@@ -130,14 +130,15 @@ Take for example the following settings excerpt:
 }
 ```
 
-> **FOR DISCUSSION**: I've given both a `tab.<property>` and a `tab<Property>`
-> style here, for comparison. At the time of writing, I'm unsure of which is
-> better. I'll be using `<element>.<property>` for the remainder of the doc.
+> **TODO FOR DISCUSSION**: I've given both a `tab.<property>` and a
+> `tab<Property>` style here, for comparison. At the time of writing, I'm unsure
+> of which is better. I'll be using `<element>.<property>` for the remainder of
+> the doc.
 
 In the above settings snippet, we see the following things:
 1. A list of `themes` that the user can pick from. Each theme has a `name`
    property used to identify the theme, and a group of properties for the theme.
-2. The user has set the `applicationTheme` to `"My Boxy Theme"`, the first theme
+2. The user has set the `theme` to `"My Boxy Theme"`, the first theme
    in the list of themes. If the user wanted to switch to the other installed
    theme, `"My small light theme"`, they'd simply need to change this property.
 
@@ -177,11 +178,10 @@ control the UI.
   This is the color of the inactive border between panes.
 * `pane.activeBorderColor`: Control the color of the border of the active pane
 * `pane.borderWidth`: Control the width of the borders used to separate panes.
-* `window.requestedTheme`: If set, will override the `requestedTheme` property
-  (currently in the globals), to manually control the `RequestedTheme` of the
-  application window. This controls whether WinUI displays elements in the
-  `light`, `dark` or `system` theme.
-    - DISCUSSION: Naming for this property?
+* `window.applicationTheme`: If set, will set the XAML `RequestedTheme`
+  property. This can be one of `light`, `dark` or `system`. This controls how
+  XAML fundamentally styles UI elements. If not provided, will use the default
+  value "system", which will use whatever the system's default theme is.
 
 #### Theme Colors
 
@@ -195,9 +195,11 @@ be one of:
   terminal instance.
 * `key:SomeXamlKey` to try and look `SomeXamlKey` up from our resources as a
   `Color`, and use that color for the value.
-    - DISCUSSION: Does anyone want this?
+    - TODO DISCUSSION: Does anyone want this?
     - is `accent` just `key:SystemAccentColor`? If it is, is it a reasonable
       alias that we'd want to provide anyways?
+    - TODO DISCUSSION: PR[#5280] suggested `{ "key": "SomeResourceKey" }` for
+      string resources, should we use that format for colors like this as well?
 
 This will enable users to not only provide custom colors, but also use the
 dynamic color of the active terminal instance as well.
@@ -282,6 +284,9 @@ programmatically. We'll need to manually set that value on each `TabViewItem` as
 we create new tabs. When we reload settings, we'll need to make sure to come
 through and update those values manually.
 
+> NOTE: [microsoft-ui-xaml#2201] suggested that this will be possible with a
+> future MUX version and changing the `OverlayCornerRadius`.
+
 ### Tab Background Color, Overline Color, and the Tab Color Picker
 
 Concurrently with the writing of this spec, work is being done to add a "color
@@ -315,52 +320,92 @@ color picker to be able to change the overline color, not the background color
 of the tab. Then, when the user uses the color picker, the overline color will
 be overridden by the color picker, instead of the tab background color.
 
-### `requestedTheme`
+### Default Themes
 
-`requestedTheme` is a setting which is currently a global property. This
-controls whether the application is in `light`, `dark` or the `system` theme. If
-a theme specifies the `window.requestedTheme` property, this value from the
-theme should override the setting from the globals, because the theme the user
-has selected would prefer a different theme for the window.
+Late in 1.0, we renamed the old property `requestedTheme` to just `theme`.
+Currently, the user can use that property to simply set the XAML
+`RequestedTheme` property, which controls the theming of all the XAML UI
+elements. Currently, they can set that value to one of `light`, `dark` or
+`system`.
 
-<!-- This is slightly confusing currently if you ask me. More discussion below
-in "Potential Issues" -->
+To maintain backwards compatibility with that setting, we'll introduce _three_
+themes to `defaults.json`:
 
-#TODO: We changed the "requestedTheme" property to "theme" in 1.0
-[TODO]: # TODO
+```json
+    "themes": [
+        {
+            "name": "light",
+            "window.applicationTheme": "light"
+        },
+        {
+            "name": "dark",
+            "window.applicationTheme": "dark"
+        },
+        {
+            "name": "system",
+            "window.applicationTheme": "system"
+        }
+    ]
+```
 
-The discussion we had at the time, which lasted just about 4 seconds, involved
-us creating default themes "light" and "dark" that would only set the XAML
-theme. The user could then extend those themes with the normal settings layering
-mechanism, or they could just set "theme" to whatever theme they wanted.
+Each of these themes will only define one property by default: the
+`window.applicationTheme` property, which is now responsible for setting the
+XAML `RequestedTheme` property. With these default themes, the user will still
+be able to use the old names seemlessly to get the same behavior.
 
-The rest of this spec need to be updated to reflect this!!!
+Additionally, the user will be able to override individual properties of these
+themes, like they are able to override any layer-able object currently. So, if
+the user wanted to change the light theme to also use the terminal background
+color, all they'd have to do is specify the following in their `settings.json`:
+
+```json
+    "themes": [
+        {
+            "name": "light",
+            "tab.background": "terminalBackground",
+        }
+    ]
+```
+
+If the user wanted to be especially tricky, they could of course override the
+`window.applicationTheme` property of these themes as well. That would likely be
+confusing, but they have that freedom.
 
 ## UI/UX Design
-
-[comment]: # What will this fix/feature look like? How will it affect the end user?
 
 [TODO]: # TODO: We should include some mockups here. That would be nice.
 
 ## Capabilities
 
-[comment]: # Discuss how the proposed fixes/features impact the following key considerations:
-
 ### Accessibility
 
-[comment]: # How will the proposed change impact accessibility for users of screen readers, assistive input devices, etc.
+For people using the default theming, there should not be any particular
+regressions. However, this change does open up the Terminal to changes that
+might make the Terminal less accessible with certain theme configurations. As
+these themes would all be user-defined and controlled by the user, we're not
+concerned that this will be much of an issue. If a user finds one of their
+themes is less accessible, they can always change the theme to be more
+appropriate for them, or even switch to aother theme.
+
+Furthermore, this might _help_ certain accessibility stories. Users could pick
+themes with _even more_ contrast than the Terminal provides by default, or
+larger font sizes, which might help make parts of the Terminal _more_ visible
+than the default UI.
 
 ### Security
 
-[comment]: # How will the proposed change impact security?
+This should not introduce any _new_ security concerns. We're relying on the
+security of jsoncpp for parsing json. Adding new keys to the settings file
+will rely on jsoncpp's ability to securely parse those json values.
 
 ### Reliability
 
-[comment]: # Will the proposed change improve reliability? If not, why make the change?
+This change should not have any particular reliability concerns.
 
 ### Compatibility
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+The biggest compatibility concern is regarding the existing values for the
+`theme` property, which is addressed above.
 
 ### Performance, Power, and Efficiency
 
@@ -382,37 +427,36 @@ Windows Terminal". Is this something we're really all that concerned about
 though? If this is something users want (it is), then shouldn't that be what
 matters?
 
-### `requestedTheme` - Confusing?
-
-Is the `requestedTheme` property now confusing with the addition of the
-`applicationTheme` setting? This is a concern that was similarly raised in the
-"Default Profile Settings" feature. How do we make it apparent that one of these
-properties is the theme from the list of themes, and the other is one of
-[`light`, `dark`, `system`]? Should we deprecate the `requestedTheme` property
-entirely?
-
-Alternatively, could we re-use the `requestedTheme` property? We could first try
-looking up the theme to see if it's the name of a theme that's installed in the
-user's settings, and if it's not, fall back to trying it as one of the original
-enum values?
-
-[TODO]: # TODO: this section too! we're just using `theme`!
-
 ## Future considerations
 
 #### Theming v2 Properties
 
-* `tab.padding`:
-* `tab.textColor`:
-* `tabRow.shadows`:
-* `tabRow.height`:
-* `tabRow.underlineHeight`: Controls the height of a border placed between the tab row and the Terminal panes beneath it. This border doesn't exist currently.
+* `tab.padding`: Control the padding _within_ a tab between the text and the
+  "sides" of the tab
+* `tab.textColor`: Change the color of the text on a tab
+* `tabRow.shadows`: Enable/disable the tab "shadows"
+  - note that they're enabled by default and already nearly impossible to see in
+    dark mode.
+* `tabRow.height`: Change the height of the tab row.
+* `tabRow.underlineHeight`: Controls the height of a border placed between the
+  tab row and the Terminal panes beneath it. This border doesn't exist
+  currently.
 * `tabRow.underlineColor`: Controls the color of the aforementioned underline
 
-## Resources
 
-[comment]: # Be sure to add links to references, resources, footnotes, etc.
+<!-- Footnotes -->
 
 [iTerm2-Color-Schemes]: https://github.com/mbadolato/iTerm2-Color-Schemes
+[#3061]: https://github.com/microsoft/terminal/issues/3061
+[#3062]: https://github.com/microsoft/terminal/issues/3062
+[#702]: https://github.com/microsoft/terminal/issues/702
+[#1337]: https://github.com/microsoft/terminal/issues/1337
+[#2994]: https://github.com/microsoft/terminal/issues/2994
+[#3774]: https://github.com/microsoft/terminal/issues/3774
+[#1963]: https://github.com/microsoft/terminal/issues/1963
+[#3335]: https://github.com/microsoft/terminal/issues/3335
+[#3459]: https://github.com/microsoft/terminal/issues/3459
 
-[TODO]: # TODO: There's a commit in MUX where they add support for the bottom-rounding on tabs, and in that discussion someone had a sample with square corners. Include that!
+[#5280]: https://github.com/microsoft/terminal/pull/5280
+
+[microsoft-ui-xaml#2201]: https://github.com/microsoft/microsoft-ui-xaml/pull/2201#issuecomment-606888293
