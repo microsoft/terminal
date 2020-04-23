@@ -8,8 +8,6 @@
 #include "../types/inc/utils.hpp"
 #include "TerminalThemeHelpers.h"
 
-extern "C" IMAGE_DOS_HEADER __ImageBase;
-
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -19,8 +17,6 @@ using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
-
-ATOM NonClientIslandWindow::_dragBarWindowClass = 0;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
@@ -34,6 +30,45 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
+static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
+void NonClientIslandWindow::MakeWindow() noexcept
+{
+    IslandWindow::MakeWindow();
+
+    static ATOM dragBarWindowClass{ []() {
+        WNDCLASSEX wcex{};
+        wcex.cbSize = sizeof(wcex);
+        wcex.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+        wcex.lpszClassName = dragBarClassName;
+        wcex.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wcex.lpfnWndProc = _DragWindowWndProc;
+        wcex.hInstance = wil::GetModuleInstanceHandle();
+        wcex.cbWndExtra = sizeof(NonClientIslandWindow*);
+        return RegisterClassEx(&wcex);
+    }() };
+
+    // The drag bar window is a child window of the top level window that is put
+    // right on top of the drag bar. The XAML island window "steals" our mouse
+    // messages which makes it hard to implement a custom drag area. By putting
+    // a window on top of it, we prevent it from "stealing" the mouse messages.
+    _dragBarWindow.reset(CreateWindowExW(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+                                         dragBarClassName,
+                                         L"",
+                                         WS_CHILD,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         GetWindowHandle(),
+                                         nullptr,
+                                         wil::GetModuleInstanceHandle(),
+                                         0));
+    THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
+}
+
+// Function Description:
+// - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
 LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     std::optional<UINT> nonClientMessage{ std::nullopt };
@@ -42,22 +77,22 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
     switch (message)
     {
     case WM_LBUTTONDOWN:
-        nonClientMessage = { WM_NCLBUTTONDOWN };
+        nonClientMessage = WM_NCLBUTTONDOWN;
         break;
     case WM_LBUTTONDBLCLK:
-        nonClientMessage = { WM_NCLBUTTONDBLCLK };
+        nonClientMessage = WM_NCLBUTTONDBLCLK;
         break;
     case WM_LBUTTONUP:
-        nonClientMessage = { WM_NCLBUTTONUP };
+        nonClientMessage = WM_NCLBUTTONUP;
         break;
     case WM_RBUTTONDOWN:
-        nonClientMessage = { WM_NCRBUTTONDOWN };
+        nonClientMessage = WM_NCRBUTTONDOWN;
         break;
     case WM_RBUTTONDBLCLK:
-        nonClientMessage = { WM_NCRBUTTONDBLCLK };
+        nonClientMessage = WM_NCRBUTTONDBLCLK;
         break;
     case WM_RBUTTONUP:
-        nonClientMessage = { WM_NCRBUTTONUP };
+        nonClientMessage = WM_NCRBUTTONUP;
         break;
     }
 
@@ -68,11 +103,12 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
         POINT screenPt = clientPt;
         if (ClientToScreen(window, &screenPt))
         {
-            const auto parentWindow = GetAncestor(window, GA_PARENT);
-            WINRT_ASSERT(parentWindow != NULL);
+            const auto parentWindow{ GetAncestor(window, GA_PARENT) };
+            THROW_HR_IF_NULL(E_UNEXPECTED, parentWindow);
 
-            LRESULT hitTest = SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
-
+            // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
+            // then pass that click through as an NC click in that location.
+            LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
             SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
 
             return 0;
@@ -83,61 +119,25 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
 }
 
 // Method Description:
-// - Create/re-creates the drag bar window.
-// - The drag bar window is a child window of the top level window that is put
-//   right on top of the drag bar. The XAML island window "steals" our mouse
-//   messages which makes it hard to implement a custom drag area. By putting
-//   a window on top of it, we prevent it from "stealing" the mouse messages.
-// - We have to recreate it, we can't just move it. Otherwise for some reason
-//   it doesn't get any window message on the new resized area.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_RecreateDragBarWindow() noexcept
+// - Resizes and shows/hides the drag bar input sink window.
+//   This window is used to capture clicks on the non-client area.
+void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
-    constexpr const wchar_t* className = L"DRAG_BAR_WINDOW_CLASS";
-
-    if (_dragBarWindowClass == 0)
+    const til::rectangle rect{ _GetDragAreaRect() };
+    if (_IsTitlebarVisible() && rect.size().area() > 0)
     {
-        WNDCLASS wc{};
-        wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-        wc.lpszClassName = className;
-        wc.style = CS_DBLCLKS;
-        wc.lpfnWndProc = _DragWindowWndProc;
-        _dragBarWindowClass = RegisterClass(&wc);
-        WINRT_ASSERT(_dragBarWindowClass != 0);
+        SetWindowPos(_dragBarWindow.get(),
+                     HWND_TOP,
+                     rect.left<int>(),
+                     rect.top<int>() + _GetTopBorderHeight(),
+                     rect.width<int>(),
+                     rect.height<int>(),
+                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
     }
-
-    const auto dragBarRect = _GetDragAreaRect();
-
-    // delete previous window
-    _dragBarWindow = nullptr;
-
-    if (dragBarRect.right - dragBarRect.left > 0 &&
-        dragBarRect.bottom - dragBarRect.top > 0)
+    else
     {
-        // WS_EX_LAYERED is required. If it is not present, then for
-        // some reason, the window will not receive any mouse input.
-        const auto ret = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
-                                        className,
-                                        L"",
-                                        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
-                                        dragBarRect.left,
-                                        dragBarRect.top + _GetTopBorderHeight(),
-                                        dragBarRect.right - dragBarRect.left,
-                                        dragBarRect.bottom - dragBarRect.top,
-                                        GetWindowHandle(),
-                                        nullptr,
-                                        reinterpret_cast<HINSTANCE>(&__ImageBase),
-                                        0);
-        WINRT_ASSERT(ret != NULL);
-
-        _dragBarWindow = wil::unique_hwnd(ret);
-
-        // bring it on top of the XAML Islands window
-        WINRT_ASSERT(SetWindowPos(_dragBarWindow.get(), HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOREDRAW));
+        SetWindowPos(_dragBarWindow.get(), HWND_BOTTOM, 0, 0, 0, 0, SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE);
     }
 }
 
@@ -152,7 +152,7 @@ void NonClientIslandWindow::_RecreateDragBarWindow() noexcept
 void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
                                                   winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
-    _RecreateDragBarWindow();
+    _ResizeDragBarWindow();
 }
 
 void NonClientIslandWindow::OnAppInitialized()
@@ -356,7 +356,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
         // NonClientIslandWindow::OnDragBarSizeChanged method because this
         // method is only called when the position of the drag bar changes
         // **inside** the island which is not the case here.
-        _RecreateDragBarWindow();
+        _ResizeDragBarWindow();
 
         _oldIslandPos = { newIslandPos };
     }
@@ -532,6 +532,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     return HTCAPTION;
 }
 
+// Method Description:
+// - Sets the cursor to the sizing cursor when we hit-test the top sizing border.
+//   We need to do this because we've covered it up with a child window.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept
 {
     if (LOWORD(lParam) == HTCLIENT)
@@ -659,7 +662,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     case WM_DISPLAYCHANGE:
         // GH#4166: When the DPI of the monitor changes out from underneath us,
         // resize our drag bar, to reflect its newly scaled size.
-        _RecreateDragBarWindow();
+        _ResizeDragBarWindow();
         return 0;
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
@@ -820,7 +823,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
-    _RecreateDragBarWindow();
+    _ResizeDragBarWindow();
 }
 
 // Method Description:

@@ -32,6 +32,7 @@ public:
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
+    void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -46,8 +47,6 @@ public:
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
-    static ATOM _dragBarWindowClass;
-
     std::optional<COORD> _oldIslandPos;
 
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
@@ -65,7 +64,7 @@ private:
 
     [[nodiscard]] static LRESULT __stdcall _DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
-    void _RecreateDragBarWindow() noexcept;
+    void _ResizeDragBarWindow() noexcept;
 
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;

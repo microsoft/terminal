@@ -1106,7 +1106,6 @@ ime
 Imm
 IMouse
 impl
-implementingtextandtextrange
 inbox
 inclusivity
 INCONTEXT
@@ -2815,7 +2814,6 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xy
-xxxx
 yact
 YAML
 YCast
