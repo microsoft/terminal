@@ -173,7 +173,7 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 void AppCommandlineArgs::_buildParser()
 {
     auto versionCallback = [this](int64_t /*count*/) {
-        // Set our message to display the application name and the current verison.
+        // Set our message to display the application name and the current version.
         _exitMessage = _applicationName + "\n" + _versionString;
 
         // Theoretically, we don't need to exit now, since this isn't really an
@@ -421,8 +421,6 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
-
-    // _requestedVersion = false;
 }
 
 // Function Description:
