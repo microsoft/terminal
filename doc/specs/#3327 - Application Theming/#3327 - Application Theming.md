@@ -351,7 +351,7 @@ themes to `defaults.json`:
 Each of these themes will only define one property by default: the
 `window.applicationTheme` property, which is now responsible for setting the
 XAML `RequestedTheme` property. With these default themes, the user will still
-be able to use the old names seemlessly to get the same behavior.
+be able to use the old names seamlessly to get the same behavior.
 
 Additionally, the user will be able to override individual properties of these
 themes, like they are able to override any layer-able object currently. So, if
@@ -385,7 +385,7 @@ might make the Terminal less accessible with certain theme configurations. As
 these themes would all be user-defined and controlled by the user, we're not
 concerned that this will be much of an issue. If a user finds one of their
 themes is less accessible, they can always change the theme to be more
-appropriate for them, or even switch to aother theme.
+appropriate for them, or even switch to another theme.
 
 Furthermore, this might _help_ certain accessibility stories. Users could pick
 themes with _even more_ contrast than the Terminal provides by default, or
