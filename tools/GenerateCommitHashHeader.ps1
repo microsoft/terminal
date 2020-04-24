@@ -3,11 +3,11 @@
 # not being able to find the current branch on remote, not being able to figure out what branch you're on,
 # we'll just return the latest commit hash of remote master.
 
-Write-Output "constexpr std::wstring_view CurrentCommitHash{ L`"" | Out-File -FilePath "test.txt" -Encoding ASCII -NoNewline
+Write-Output "constexpr std::wstring_view CurrentCommitHash{ L`"" | Out-File -FilePath "Generated Files\CurrentCommitHash.h" -Encoding ASCII -NoNewline
 
 $latestMasterHash = (git ls-remote https://github.com/microsoft/terminal.git --heads master).Split()[0]
 
-$hash = "temp"
+$hash = "nonsense"
 $branchName = git branch --show-current
 if ($LASTEXITCODE -or $branchName -eq "")
 {
@@ -31,5 +31,5 @@ else
     }
 }
 
-$hash | Out-File -FilePath "test.txt" -Encoding ASCII -Append -NoNewline
-Write-Output "`" };" | Out-File -FilePath "test.txt" -Encoding ASCII -Append -NoNewline
+$hash | Out-File -FilePath "Generated Files\CurrentCommitHash.h" -Encoding ASCII -Append -NoNewline
+Write-Output "`" };" | Out-File -FilePath "Generated Files\CurrentCommitHash.h" -Encoding ASCII -Append -NoNewline
