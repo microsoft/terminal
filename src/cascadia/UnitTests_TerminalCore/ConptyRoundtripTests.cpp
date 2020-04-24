@@ -2597,7 +2597,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
     const size_t width = static_cast<size_t>(TerminalViewWidth);
 
-    // We're going to print 4 more rows than the entire height of the iewport,
+    // We're going to print 4 more rows than the entire height of the viewport,
     // causing the buffer to circle 4 times. This is 2 extra iterations of the
     // two lines we're printing per iteration.
     const auto circledRows = 4;
