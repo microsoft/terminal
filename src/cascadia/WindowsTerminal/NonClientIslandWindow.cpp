@@ -89,7 +89,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
 
 // Function Description:
 // - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
-LRESULT __stdcall NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     std::optional<UINT> nonClientMessage{ std::nullopt };
 
