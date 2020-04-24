@@ -5,9 +5,7 @@
 
 Write-Output "constexpr std::wstring_view CurrentCommitHash{ L`"" | Out-File -FilePath "Generated Files\CurrentCommitHash.h" -Encoding ASCII -NoNewline
 
-$latestMasterHash = (git ls-remote https://github.com/microsoft/terminal.git --heads master).Split()[0]
-
-$hash = $latestMasterHash
+$hash = "master"
 $branchName = git branch --show-current
 if (-not $LASTEXITCODE -and $branchName -ne $null)
 {
