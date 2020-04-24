@@ -1,4 +1,4 @@
-# Profiles.json Documentation
+# Settings.json Documentation
 
 ## Globals
 Properties listed below affect the entire window, regardless of the profile settings.
