@@ -49,42 +49,6 @@ namespace TerminalCoreUnitTests
 };
 using namespace TerminalCoreUnitTests;
 
-template<class... T>
-bool _ValidateLineContains(const TextBuffer& tb, COORD position, T&&... expectedContent)
-{
-    auto actual = tb.GetCellLineDataAt(position);
-    auto expected = OutputCellIterator{ std::forward<T>(expectedContent)... };
-    WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
-    auto charsProcessed = 0;
-
-    while (actual && expected)
-    {
-        auto actualChars = actual->Chars();
-        auto expectedChars = expected->Chars();
-        auto actualAttrs = actual->TextAttr();
-        auto expectedAttrs = expected->TextAttr();
-
-        auto mismatched = (actualChars != expectedChars || actualAttrs != expectedAttrs);
-        if (mismatched)
-        {
-            Log::Comment(NoThrowString().Format(
-                L"Character or attribute at index %d was mismatched", charsProcessed));
-        }
-
-        VERIFY_ARE_EQUAL(expectedChars, actualChars);
-        VERIFY_ARE_EQUAL(expectedAttrs, actualAttrs);
-        if (mismatched)
-        {
-            // DebugBreak();
-            return false;
-        }
-        ++actual;
-        ++expected;
-        ++charsProcessed;
-    }
-    return true;
-};
-
 class TerminalCoreUnitTests::ConptyRoundtripTests final
 {
     // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
@@ -2593,6 +2557,12 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
 void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(bool, paintEachNewline, L"If true, call PaintFrame after each pair of lines.");
+
     // See https://github.com/microsoft/terminal/issues/5502
     Log::Comment(L"TODO");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
@@ -2610,39 +2580,30 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     _checkConptyOutput = false;
     _logConpty = true;
 
-    // auto defaultAttrs = TextAttribute();
     auto defaultAttrs = si.GetAttributes();
     auto conhostBlueAttrs = defaultAttrs;
-    conhostBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(FOREGROUND_GREEN) }, { static_cast<BYTE>(FOREGROUND_BLUE) });
+
+    // Conhost and Terminal store attributes in different bits.
+    conhostBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(FOREGROUND_GREEN) },
+                                          { static_cast<BYTE>(FOREGROUND_BLUE) });
     auto terminalBlueAttrs = TextAttribute();
-    terminalBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(XTERM_GREEN_ATTR) }, { static_cast<BYTE>(XTERM_BLUE_ATTR) });
+    terminalBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(XTERM_GREEN_ATTR) },
+                                           { static_cast<BYTE>(XTERM_BLUE_ATTR) });
     const size_t width = static_cast<size_t>(TerminalViewWidth);
     const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
-        const short firstRow = ::base::saturated_cast<short>((i * 2));
-        const short secondRow = firstRow + 1;
-        if (i < TerminalViewHeight / 2)
-        {
-            // WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
-
-            Log::Comment(NoThrowString().Format(L"Checking row %d", firstRow));
-            VERIFY_IS_TRUE(_ValidateLineContains(*hostTb, { 0, firstRow }, L' ', defaultAttrs, width));
-            VERIFY_IS_TRUE(_ValidateLineContains(*hostTb, { 0, secondRow }, L' ', defaultAttrs, width));
-        }
-
         // We're printing pairs of lines: ('_' is a space character)
         //
-        // __________________ (break)
-        // DDDDDDDDDDDDDDDDDD (all default attrs)
-        //
-        // ____#_________#___ (break)
-        // BBBBBBBBBBBBBBDDDD (First 14 are blue BG, then default attrs)
+        // Line 1 chars: __________________ (break)
+        // Line 1 attrs: DDDDDDDDDDDDDDDDDD (all default attrs)
+        // Line 1 chars: ____#_________#___ (break)
+        // Line 1 attrs: BBBBBBBBBBBBBBDDDD (First 14 are blue BG, then default attrs)
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
         }
-
+        // echo -e "\e[m\r\n\e[44;32m    #         \e[m#"
         sm.ProcessString(L"\x1b[m");
         sm.ProcessString(L"\r");
         sm.ProcessString(L"\n");
@@ -2652,60 +2613,46 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         sm.ProcessString(L"\x1b[m");
         sm.ProcessString(L"#");
 
-        if (i < TerminalViewHeight / 2)
+        if (paintEachNewline)
         {
-            // WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
-
-            Log::Comment(NoThrowString().Format(L"Checking row %d", firstRow));
-            VERIFY_IS_TRUE(_ValidateLineContains(*hostTb, { 0, firstRow }, L' ', defaultAttrs, width));
-            VERIFY_IS_TRUE(_ValidateLineContains(*hostTb, { 0, secondRow }, L' ', conhostBlueAttrs, 4u));
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
-
-        // TODO: not painting every time crashes?
-        VERIFY_SUCCEEDED(renderer.PaintFrame());
     }
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
-        // const auto firstRow = viewport.top<short>();
         const auto width = viewport.width<short>();
-
         const auto isTerminal = viewport.top() != 0;
+
+        // Conhost and Terminal store attributes in different bits.
         const auto blueAttrs = isTerminal ? terminalBlueAttrs : conhostBlueAttrs;
+
         for (short row = 0; row < viewport.bottom<short>() - 2; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
             VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
 
-            auto charIter = tb.GetCellDataAt({ 0, row });
-            // auto attrIter = charIter;
-
-            // const auto isBlank = (row % 2) == (isTerminal ? 0 : 1);
             const auto isBlank = (row % 2) == 0;
             const auto rowCircled = row > (viewport.bottom<short>() - 1 - circledRows);
+            // When the buffer circles, new lines will be initialized using the
+            // current text attributes. Those will be the default-on-default
+            // attributes. All of the Terminal's buffer will use
+            // default-on-default.
             const auto actualDefaultAttrs = rowCircled || isTerminal ? TextAttribute() : defaultAttrs;
             Log::Comment(NoThrowString().Format(L"isBlank=%d, rowCircled=%d", isBlank, rowCircled));
 
             if (isBlank)
             {
-                // TestUtils::VerifySpanOfText(L" ", charIter, 0, width);
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.width<size_t>()));
+                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.width<size_t>());
             }
             else
             {
-                // TestUtils::VerifySpanOfText(L" ", iter, 0, 4);
-                // TestUtils::VerifySpanOfText(L"#", iter, 0, 1);
-                // TestUtils::VerifySpanOfText(L" ", iter, 0, 9);
-                // TestUtils::VerifySpanOfText(L"#", iter, 0, 1);
-                // TestUtils::VerifySpanOfText(L" ", iter, 0, width - 15);
-                // DebugBreak();
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 0, row }, L' ', blueAttrs, 4u));
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 4, row }, L'#', blueAttrs, 1u));
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 5, row }, L' ', blueAttrs, 9u));
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 14, row }, L'#', TextAttribute(), 1u));
-                VERIFY_IS_TRUE(_ValidateLineContains(tb, { 15, row }, L' ', actualDefaultAttrs, static_cast<size_t>(width - 15)));
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L' ', blueAttrs, 4u);
+                TestUtils::VerifyLineContains(iter, L'#', blueAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', blueAttrs, 9u);
+                TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
+                TestUtils::VerifyLineContains(iter, L' ', actualDefaultAttrs, static_cast<size_t>(width - 15));
             }
         }
-        // VERIFY_IS_TRUE(_ValidateLineContains(tb, { 0, viewport.bottom<short>() - 1 }, L' ', defaultAttrs, viewport.width<size_t>()));
     };
 
     Log::Comment(L"========== Checking the host buffer state ==========");
