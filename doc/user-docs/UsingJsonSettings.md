@@ -48,7 +48,7 @@ Example settings include
 }
 ```
 
-These global properties can exist in the root json object.
+These global properties should exist in the root json object.
 
 ## Key Bindings
 
