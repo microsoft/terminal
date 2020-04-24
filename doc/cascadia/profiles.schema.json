@@ -421,10 +421,11 @@
             "topLeft",
             "topRight"
           ],
+          "description": "Sets how the background image aligns to the boundaries of the window. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
         "backgroundImageOpacity": {
-          "description": "(Not in SettingsSchema.md)",
+          "description": "Sets the transparency of the background image. Accepts floating point values from 0-1.",
           "maximum": 1,
           "minimum": 0,
           "type": "number"
