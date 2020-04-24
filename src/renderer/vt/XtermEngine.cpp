@@ -468,6 +468,10 @@ try
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
     const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
+    if (_newBottomLine)
+    {
+        _newBottomLineBG = _LastBG;
+    }
 
     return S_OK;
 }

@@ -153,6 +153,7 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
+        std::optional<COLORREF> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;

@@ -445,6 +445,9 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
     const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
+    const bool newBottomLineBgMatched = (printingBottomLine && bgMatched);
+
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
@@ -459,7 +462,7 @@ using namespace Microsoft::Console::Types;
     // on the same line.
     const bool removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine));
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -578,6 +581,7 @@ using namespace Microsoft::Console::Types;
     if (printingBottomLine)
     {
         _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
     }
 
     return S_OK;

@@ -2658,6 +2658,16 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
 
+    // the problem we're having is that on the new lines, we're _not_ ECH'ing, when we should be.
+    // I'm guessing the
+    //     if (printingBottomLine)
+    //     {
+    //         _newBottomLine = false;
+    //     }
+    // Branch isn't getting hit with the first "    #" run, so we're not unmarking _newBottomLine
+
+    // DebugBreak();
+
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
