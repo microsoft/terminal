@@ -38,16 +38,17 @@ not affect a particular terminal instance.
 Example settings include
 
 ```json
+{
     "defaultProfile" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "initialCols" : 120,
     "initialRows" : 50,
     "requestedTheme" : "system",
     "keybindings" : []
     ...
+}
 ```
 
-These global properties can exist either in the root json object, or in an
-object under a root property `"globals"`.
+These global properties should exist in the root json object.
 
 ## Key Bindings
 

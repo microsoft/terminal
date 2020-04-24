@@ -672,7 +672,7 @@ namespace winrt::TerminalApp::implementation
                        wil::FolderChangeEvents::All,
                        [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
                            // We want file modifications, AND when files are renamed to be
-                           // profiles.json. This second case will oftentimes happen with text
+                           // settings.json. This second case will oftentimes happen with text
                            // editors, who will write a temp file, then rename it to be the
                            // actual file you wrote. So listen for that too.
                            if (!(event == wil::FolderChangeEvent::Modified ||
