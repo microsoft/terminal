@@ -1,4 +1,7 @@
 # This script gets the current git commit hash and places it in a header file stamped to a wstring_view
+# If literally anything goes wrong in this script with regards to git, like not being in a git repo,
+# not being able to find the current branch on remote, not being able to figure out what branch you're on,
+# we'll just return the latest commit hash of remote master.
 
 Write-Output "constexpr std::wstring_view CurrentCommitHash{ L`"" | Out-File -FilePath "test.txt" -Encoding ASCII -NoNewline
 

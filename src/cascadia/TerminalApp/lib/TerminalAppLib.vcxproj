@@ -331,8 +331,7 @@
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
   <!-- Get the hash of the current git commit this build is on.-->
-  <Target Name="_GenerateCurrentCommitHashH" Inputs="NOTICE.md" Outputs="Generated Files\CurrentCommitHash.h" BeforeTargets="BeforeClCompile">
-    <Message Text="DOINGIT" Importance="high" />
+  <Target Name="_GenerateCurrentCommitHashH" Inputs="..\..\..\..\NOTICE.md" Outputs="Generated Files\CurrentCommitHash.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile -ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateCommitHashHeader.ps1" />
   </Target>
 </Project>
