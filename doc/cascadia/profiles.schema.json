@@ -18,6 +18,14 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "DynamicProfileSource": {
+      "enum": [
+        "Windows.Terminal.Wsl",
+        "Windows.Terminal.Azure",
+        "Windows.Terminal.PowershellCore"
+      ],
+      "type": "string"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -285,6 +293,13 @@
         "defaultProfile": {
           "$ref": "#/definitions/ProfileGuid",
           "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value."
+        },
+        "disabledProfileSources": {
+          "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
+          "items": {
+            "$ref": "#/definitions/DynamicProfileSource"
+          },
+          "type": "array"
         },
         "initialCols": {
           "default": 120,
