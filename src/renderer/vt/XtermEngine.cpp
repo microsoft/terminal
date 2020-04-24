@@ -468,6 +468,12 @@ try
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
     const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
+
+    // GH#5502 - keep track of the BG color we had when we emitted this new
+    // bottom line. If the color changes by the time we get to printing that
+    // line, we'll need to make sure that we don't do any optimizations like
+    // _removing spaces_, because the background color of the spaces will be
+    // important information to send to the connected Terminal.
     if (_newBottomLine)
     {
         _newBottomLineBG = _LastBG;

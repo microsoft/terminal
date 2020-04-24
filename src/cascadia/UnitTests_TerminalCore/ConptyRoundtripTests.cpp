@@ -2559,12 +2559,17 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:spacesToPrint", L"{1, 7, 8, 9, 32}")
     END_TEST_METHOD_PROPERTIES();
 
     INIT_TEST_PROPERTY(bool, paintEachNewline, L"If true, call PaintFrame after each pair of lines.");
+    INIT_TEST_PROPERTY(int, spacesToPrint, L"Controls the number of spaces printed after the first '#'");
 
     // See https://github.com/microsoft/terminal/issues/5502
-    Log::Comment(L"TODO");
+    Log::Comment(L"Attempts to emit text to a new bottom line with spaces with "
+                 L"a colored background. When that happens, we should make "
+                 L"sure to still print the spaces, because the information "
+                 L"about their background color is important.");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -2589,7 +2594,12 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     auto terminalBlueAttrs = TextAttribute();
     terminalBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(XTERM_GREEN_ATTR) },
                                            { static_cast<BYTE>(XTERM_BLUE_ATTR) });
+
     const size_t width = static_cast<size_t>(TerminalViewWidth);
+
+    // We're going to print 4 more rows than the entire height of the iewport,
+    // causing the buffer to circle 4 times. This is 2 extra iterations of the
+    // two lines we're printing per iteration.
     const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
@@ -2597,19 +2607,24 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         //
         // Line 1 chars: __________________ (break)
         // Line 1 attrs: DDDDDDDDDDDDDDDDDD (all default attrs)
-        // Line 1 chars: ____#_________#___ (break)
-        // Line 1 attrs: BBBBBBBBBBBBBBDDDD (First 14 are blue BG, then default attrs)
+        // Line 2 chars: ____#_________#___ (break)
+        // Line 2 attrs: BBBBBBBBBBBBBBDDDD (First spacesToPrint+5 are blue BG, then default attrs)
+        //                    [<----->]
+        //                      This number of spaces controled by spacesToPrint
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
         }
+
+        // In WSL:
         // echo -e "\e[m\r\n\e[44;32m    #         \e[m#"
+
         sm.ProcessString(L"\x1b[m");
         sm.ProcessString(L"\r");
         sm.ProcessString(L"\n");
         sm.ProcessString(L"\x1b[44;32m");
         sm.ProcessString(L"    #");
-        sm.ProcessString(L"         ");
+        sm.ProcessString(std::wstring(spacesToPrint, L' '));
         sm.ProcessString(L"\x1b[m");
         sm.ProcessString(L"#");
 
@@ -2648,7 +2663,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
             {
                 auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L' ', blueAttrs, 4u);
                 TestUtils::VerifyLineContains(iter, L'#', blueAttrs, 1u);
-                TestUtils::VerifyLineContains(iter, L' ', blueAttrs, 9u);
+                TestUtils::VerifyLineContains(iter, L' ', blueAttrs, static_cast<size_t>(spacesToPrint));
                 TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
                 TestUtils::VerifyLineContains(iter, L' ', actualDefaultAttrs, static_cast<size_t>(width - 15));
             }
@@ -2657,16 +2672,6 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
-
-    // the problem we're having is that on the new lines, we're _not_ ECH'ing, when we should be.
-    // I'm guessing the
-    //     if (printingBottomLine)
-    //     {
-    //         _newBottomLine = false;
-    //     }
-    // Branch isn't getting hit with the first "    #" run, so we're not unmarking _newBottomLine
-
-    // DebugBreak();
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());

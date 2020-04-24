@@ -445,8 +445,11 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
     const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
     const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
-    const bool newBottomLineBgMatched = (printingBottomLine && bgMatched);
 
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
