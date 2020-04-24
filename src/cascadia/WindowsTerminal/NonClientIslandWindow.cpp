@@ -118,16 +118,15 @@ LRESULT __stdcall NonClientIslandWindow::_InputSinkMessageHandler(UINT const mes
 
     if (nonClientMessage.has_value())
     {
-        POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-
-        POINT screenPt = clientPt;
+        const POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+        POINT screenPt{ clientPt };
         if (ClientToScreen(_dragBarWindow.get(), &screenPt))
         {
-            auto parentWindow{ _window.get() };
+            auto parentWindow{ GetWindowHandle() };
 
             // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
             // then pass that click through as an NC click in that location.
-            LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
+            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
             SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
 
             return 0;
@@ -564,10 +563,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // we still want to get the cursor position that was associated
         // with that message at the time it was sent to handle the message
         // correctly.
-        const auto screenPtDword = GetMessagePos();
-        POINT screenPt = { GET_X_LPARAM(screenPtDword), GET_Y_LPARAM(screenPtDword) };
-
-        LRESULT hitTest = SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
+        const auto screenPtLparam{ GetMessagePos() };
+        const LRESULT hitTest{ SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, screenPtLparam) };
         if (hitTest == HTTOP)
         {
             // We have to set the vertical resize cursor manually on
