@@ -139,7 +139,7 @@ For commands with arguments:
 ### Accepted Modifiers and Keys
 
 #### Modifiers
-`Ctrl+`, `Shift+`, `Alt+`
+`ctrl+`, `shift+`, `alt+`
 
 #### Keys
 | Type | Keys |
