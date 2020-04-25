@@ -22,6 +22,19 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 }
 ```
 
+## Anaconda (PowerShell)
+
+Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
+
+```json
+{
+    "commandline" : "powershell.exe -ExecutionPolicy ByPass -NoExit -Command \"& '%USERPROFILE%\\Anaconda3\\shell\\condabin\\conda-hook.ps1' ; conda activate '%USERPROFILE%\\Anaconda3' \"",
+    "icon" : "%USERPROFILE%/Anaconda3/Menu/anaconda-navigator.ico",
+    "name" : "Anaconda3",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
 ## cmder
 
 Assuming that you've installed cmder into `%CMDER_ROOT%`:
