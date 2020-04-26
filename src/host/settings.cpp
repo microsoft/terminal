@@ -792,7 +792,7 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
     // If the attributes have any RGB components, we need to match that RGB
     //      color to a color table value.
-    if (attributes.IsRgb())
+    if (attributes.IsHighColor())
     {
         // If the attribute doesn't have a "default" colored *ground, look up
         //  the nearest color table value for its *ground.
