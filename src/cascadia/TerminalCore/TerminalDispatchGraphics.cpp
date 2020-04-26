@@ -121,8 +121,8 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
             {
                 const auto tableIndex = til::at(options, 2);
                 success = isForeground ?
-                              _terminalApi.SetTextForegroundIndex(gsl::narrow_cast<BYTE>(tableIndex)) :
-                              _terminalApi.SetTextBackgroundIndex(gsl::narrow_cast<BYTE>(tableIndex));
+                              _terminalApi.SetTextForegroundIndex256(gsl::narrow_cast<BYTE>(tableIndex)) :
+                              _terminalApi.SetTextBackgroundIndex256(gsl::narrow_cast<BYTE>(tableIndex));
             }
         }
     }
