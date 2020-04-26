@@ -146,21 +146,6 @@ WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry) noexcept
                                   static_cast<WORD>(xtermTableEntry);
 }
 
-// Function Description:
-// - Converts the value of a pair of xterm color table indices to the legacy attr equivalent.
-// Arguments:
-// - xtermForeground: the xterm color table foreground index
-// - xtermBackground: the xterm color table background index
-// Return Value:
-// - The legacy windows attribute equivalent.
-WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground)
-{
-    const WORD fgAttr = XtermToWindowsIndex(xtermForeground);
-    const WORD bgAttr = XtermToWindowsIndex(xtermBackground);
-
-    return (bgAttr << 4) | fgAttr;
-}
-
 //Routine Description:
 // Returns the exact entry from the color table, if it's in there.
 //Arguments:
