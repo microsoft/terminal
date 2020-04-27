@@ -102,4 +102,10 @@ protected:
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
+
+private:
+    // This minimum size allows for...
+    //  - width: the tabs fit
+    //  - height: the about menu fits
+    static constexpr til::size minimumSize{ 460, 380 };
 };

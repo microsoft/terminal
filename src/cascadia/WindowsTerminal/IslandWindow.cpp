@@ -179,24 +179,17 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // If this fails, we'll use the default of 96.
     GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-    // The minimum client width that you can resize to.
-    // This lets the tabs fit.
-    const auto minClientWidth = 460;
+    // X and Y are always the same DPI
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
-    const long minClientWidthScaled = base::ClampMul(minClientWidth, widthScale);
-
-    // The minimum client height that you can resize to.
-    // This lets the about menu fit.
-    const auto minClientHeight = 380;
-    const auto heightScale = base::ClampedNumeric<float>(dpiy) / USER_DEFAULT_SCREEN_DPI;
-    const long minClientHeightScaled = base::ClampMul(minClientHeight, heightScale);
+    const auto minSizeScaled = minimumSize.scale(til::math::ceiling, widthScale);
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
+    
     auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
-    clientWidth = clientWidth < minClientWidthScaled ? minClientWidthScaled : clientWidth;
+    clientWidth = std::max(minSizeScaled.width<LONG>(), clientWidth);
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
-    clientHeight = clientHeight < minClientHeightScaled ? minClientHeightScaled : clientHeight;
+    clientHeight = std::max(minSizeScaled.height<LONG>(), clientHeight);
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
