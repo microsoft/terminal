@@ -104,8 +104,6 @@ protected:
     void _ApplyWindowSize();
 
 private:
-    // This minimum size allows for...
-    //  - width: the tabs fit
-    //  - height: the about menu fits
-    static constexpr til::size minimumSize{ 460, 380 };
+    // This minimum width allows for width the tabs fit
+    static constexpr long minimumWidth = 460L;
 };

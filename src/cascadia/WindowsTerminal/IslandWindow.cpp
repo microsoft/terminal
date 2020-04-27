@@ -179,17 +179,15 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // If this fails, we'll use the default of 96.
     GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-    // X and Y are always the same DPI
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
-    const auto minSizeScaled = minimumSize.scale(til::math::ceiling, widthScale);
+    const long minWidthScaled = minimumWidth * widthScale;
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
-    
+
     auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
-    clientWidth = std::max(minSizeScaled.width<LONG>(), clientWidth);
+    clientWidth = std::max(minWidthScaled, clientWidth);
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
-    clientHeight = std::max(minSizeScaled.height<LONG>(), clientHeight);
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
