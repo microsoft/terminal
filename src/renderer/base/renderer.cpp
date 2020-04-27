@@ -730,7 +730,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
+                // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
                 size_t columnCount = 0;
+
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
