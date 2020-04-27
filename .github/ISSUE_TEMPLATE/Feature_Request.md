@@ -1,5 +1,5 @@
 ---
-name: "Feature Request/Idea 🚀"
+name: "Feature Request/Idea \U0001F680"
 about: Suggest a new feature or improvement (this does not mean you have to implement
   it)
 title: ''

@@ -1,5 +1,5 @@
 ---
-name: "Documentation Issue 📚"
+name: "Documentation Issue \U0001F4DA"
 about: Report issues in our documentation
 title: ''
 labels: Issue-Docs
