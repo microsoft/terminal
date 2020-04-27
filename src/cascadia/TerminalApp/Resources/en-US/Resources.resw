@@ -192,7 +192,7 @@
     <comment>{Locked="\"globals\""} </comment>
   </data>
   <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
-    <value>https://go.microsoft.com/fwlink/?linkid=TODO:GENERATE_ME</value>
+    <value>https://go.microsoft.com/fwlink/?linkid=2128258</value>
     <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
   </data>
   <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
