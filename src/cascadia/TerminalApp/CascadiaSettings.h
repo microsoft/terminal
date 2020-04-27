@@ -119,6 +119,7 @@ private:
     void _ValidateAllSchemesExist();
     void _ValidateMediaResources();
     void _ValidateKeybindings();
+    void _ValidateNoGlobalsKey();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
