@@ -277,7 +277,10 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
             const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Windows Console Host");
+            // GH#5347 - Don't provide a title for the generated HTML, as many
+            // web applications will paste the title first, followed by the HTML
+            // content, which is unexpected.
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "");
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
             std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
