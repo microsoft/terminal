@@ -426,8 +426,7 @@ try
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd:
-        {
+        case SwapChainMode::ForHwnd: {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -456,8 +455,7 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition:
-        {
+        case SwapChainMode::ForComposition: {
             // Use the given target size for compositions.
             SwapChainDesc.Width = _displaySizePixels.width<UINT>();
             SwapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -839,15 +837,13 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         return _sizeTarget;
     }
     default:
@@ -1419,34 +1415,29 @@ try
 
     switch (options.cursorType)
     {
-    case CursorType::Legacy:
-    {
+    case CursorType::Legacy: {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
         ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
         rect.top = rect.bottom - ulHeight;
         break;
     }
-    case CursorType::VerticalBar:
-    {
+    case CursorType::VerticalBar: {
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
-    case CursorType::Underscore:
-    {
+    case CursorType::Underscore: {
         rect.top = rect.bottom - 1;
         break;
     }
-    case CursorType::EmptyBox:
-    {
+    case CursorType::EmptyBox: {
         paintType = CursorPaintType::Outline;
         break;
     }
-    case CursorType::FullBox:
-    {
+    case CursorType::FullBox: {
         break;
     }
     default:
@@ -1463,13 +1454,11 @@ try
 
     switch (paintType)
     {
-    case CursorPaintType::Fill:
-    {
+    case CursorPaintType::Fill: {
         _d2dRenderTarget->FillRectangle(rect, brush.Get());
         break;
     }
-    case CursorPaintType::Outline:
-    {
+    case CursorPaintType::Outline: {
         // DrawRectangle in straddles physical pixels in an attempt to draw a line
         // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
@@ -1990,6 +1979,19 @@ CATCH_RETURN();
         INT32 advanceInDesignUnits;
         THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
 
+        DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
+        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
+
+        const UINT32 cp = L'\x2588';
+        UINT16 gi;
+        THROW_IF_FAILED(face->GetGlyphIndicesW(&cp, 1, &gi));
+
+        INT32 adv;
+        THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &gi, &adv));
+
+        DWRITE_GLYPH_METRICS boxMetrics = { 0 };
+        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&gi, 1, &boxMetrics));
+
         // The math here is actually:
         // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
         // - DPI = dots per inch
@@ -2029,6 +2031,10 @@ CATCH_RETURN();
         const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
         const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
+        // Get the gap.
+        const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
+        const float halfGap = gap / 2;
+
         // We're going to build a line spacing object here to track all of this data in our format.
         DWRITE_LINE_SPACING lineSpacing = {};
         lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
@@ -2041,18 +2047,40 @@ CATCH_RETURN();
         // and set the baseline to the full round pixel ascent value.
         //
         // For reference, for the letters "ag":
-        // aaaaaa   ggggggg     <===================================
-        //      a   g    g            |                            |
-        //  aaaaa   ggggg             |<-ascent                    |
-        // a    a   g                 |                            |---- height
-        // aaaaa a  gggggg      <-------------------baseline       |
-        //          g     g           |<-descent                   |
-        //          gggggg      <===================================
+        // ...
+        //          gggggg      bottom of previous line
+        // 
+        // -----------------    <===========================================|
+        //                         | topSideBearing       |  1/2 lineGap    | 
+        // aaaaaa   ggggggg     <-------------------------|-------------|   |
+        //      a   g    g                                |             |   |
+        //  aaaaa   ggggg                                 |<-ascent     |   |
+        // a    a   g                                     |             |   |---- lineHeight
+        // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
+        //          g     g                               |<-descent    |   |
+        //          gggggg      <-------------------------|-------------|   |
+        //                         | bottomSideBearing    | 1/2 lineGap     |
+        // -----------------    <===========================================|
         //
-        const auto fullPixelAscent = ceil(ascent);
-        const auto fullPixelDescent = ceil(descent);
+        // aaaaaa   ggggggg     top of next line
+        // ...
+        //
+        // Also note...
+        // We're going to add half the line gap to the ascent and half the line gap to the descent
+        // to ensure that the spacing is balanced vertically.
+        // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
+        // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
+        // box than would be desired for proper alignment of things like line and box characters
+        // which will try to sit centered in the area and touch perfectly with their neighbors.
+
+        const auto fullPixelAscent = ceil(ascent + halfGap);
+        const auto fullPixelDescent = ceil(descent + halfGap);
         lineSpacing.height = fullPixelAscent + fullPixelDescent;
         lineSpacing.baseline = fullPixelAscent;
+
+        // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
+        // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
+        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED; 
 
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
@@ -2118,12 +2146,10 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
@@ -2147,6 +2173,8 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
                                         0.5f);
+
+    _selectionBackground = D2D1::ColorF(D2D1::ColorF::Red);
 }
 
 // Routine Description:
