@@ -188,7 +188,7 @@
     <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>The "globals" property is deprecated - your settings might need updating. For more info, see: </value>
+    <value>The "globals" property is deprecated - your settings might need updating. </value>
     <comment>{Locked="\"globals\""} </comment>
   </data>
   <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
@@ -196,7 +196,7 @@
     <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
   </data>
   <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>this web page</value>
+    <value>For more info, see this web page.</value>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
