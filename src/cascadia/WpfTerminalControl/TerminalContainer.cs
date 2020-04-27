@@ -65,13 +65,16 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Gets the character rows available to the terminal.
         /// </summary>
-        internal int Rows { get; private set; }
+        public int Rows { get; private set; }
 
         /// <summary>
         /// Gets the character columns available to the terminal.
         /// </summary>
-        internal int Columns { get; private set; }
+        public int Columns { get; private set; }
 
+        /// <summary>
+        /// Gets the hwnd for the terminal renderer.
+        /// </summary>
         internal IntPtr Hwnd => this.hwnd;
 
         /// <summary>
