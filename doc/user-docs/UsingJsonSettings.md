@@ -42,7 +42,7 @@ Example settings include
     "defaultProfile" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "initialCols" : 120,
     "initialRows" : 50,
-    "requestedTheme" : "system",
+    "theme" : "system",
     "keybindings" : []
     ...
 }
