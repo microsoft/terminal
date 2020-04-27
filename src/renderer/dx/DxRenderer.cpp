@@ -1221,6 +1221,13 @@ CATCH_RETURN()
                                                 const bool /*lineWrapped*/) noexcept
 try
 {
+    if (nullptr == _dwriteTextAnalyzer.Get() ||
+        nullptr == _dwriteTextFormat.Get() ||
+        nullptr == _dwriteFontFace.Get())
+    {
+        return S_OK;
+    }
+
     // Calculate positioning of our origin.
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
