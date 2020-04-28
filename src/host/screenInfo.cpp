@@ -1229,6 +1229,20 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     _viewport = newViewport;
     UpdateBottom();
     Tracing::s_TraceWindowViewport(_viewport);
+
+    // In Conpty mode, call TriggerScroll here without params. By not providing
+    // params, the renderer will make sure to update the VtEngine with the
+    // updated viewport size. If we don't do this, the engine can get into a
+    // torn state on this frame.
+    //
+    // Without this statement, the engine won't be told about the new view size
+    // till the start of the next frame. If any other text gets output before
+    // that frame starts, there's a very real chance that it'll cause errors as
+    // the engine tries to invalidate those regions.
+    if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
+    {
+        ServiceLocator::LocateGlobals().pRender->TriggerScroll();
+    }
 }
 
 // Routine Description:

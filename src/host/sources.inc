@@ -242,3 +242,7 @@ DELAYLOAD = \
     ext-ms-win-uxtheme-themes-l1.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase
+
+# Add /d2:-notypeopt to disable optimization bug caused by LKG9. Bug #25439646
+USER_C_FLAGS=/d2notypeopt $(USER_C_FLAGS)
+LINKER_FLAGS=/d2:-notypeopt $(LINKER_FLAGS)

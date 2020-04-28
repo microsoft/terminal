@@ -59,8 +59,8 @@ const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noe
 {
     const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
     // We only care about alpha for the default BG (which enables acrylic)
-    // If the bg isn't the default bg color, then make it fully opaque.
-    if (!attr.BackgroundIsDefault())
+    // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
+    if (!attr.BackgroundIsDefault() || WI_IsFlagSet(attr.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO))
     {
         return 0xff000000 | bgColor;
     }

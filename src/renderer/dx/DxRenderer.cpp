@@ -84,10 +84,12 @@ DxEngine::DxEngine() :
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
+    _defaultTextBackgroundOpacity{ 1.0f },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
+    _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
@@ -562,9 +564,6 @@ CATCH_RETURN();
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
         {
-            const auto fdpi = static_cast<float>(_dpi);
-            _d2dRenderTarget->SetDpi(fdpi, fdpi);
-
             DXGI_MATRIX_3X2_F inverseScale = { 0 };
             inverseScale._11 = 1.0f / _scale;
             inverseScale._22 = inverseScale._11;
@@ -573,6 +572,8 @@ CATCH_RETURN();
             RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
         }
+
+        _prevScale = _scale;
         return S_OK;
     }
     CATCH_RETURN();
@@ -800,6 +801,16 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+
+    // Since everything is invalidated here, mark this as a "first frame", so
+    // that we won't use incremental drawing on it. The caller of this intended
+    // for _everything_ to get redrawn, so setting _firstFrame will force us to
+    // redraw the entire frame. This will make sure that things like the gutters
+    // get cleared correctly.
+    //
+    // Invalidating everything is supposed to happen with resizes of the
+    // entire canvas, changes of the font, and other such adjustments.
+    _firstFrame = true;
     return S_OK;
 }
 CATCH_RETURN();
@@ -837,7 +848,7 @@ CATCH_RETURN();
     }
     case SwapChainMode::ForComposition:
     {
-        return _sizeTarget.scale(til::math::ceiling, _scale);
+        return _sizeTarget;
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
@@ -894,13 +905,6 @@ try
         _invalidMap.set_all();
     }
 
-    // If we're doing High DPI, we must invalidate everything for it to draw correctly.
-    // TODO: GH: 5320 - Remove implicit DPI scaling in D2D target to enable pixel perfect High DPI
-    if (_scale != 1.0f)
-    {
-        _invalidMap.set_all();
-    }
-
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
         const auto invalidatedStr = _invalidMap.to_string();
@@ -920,7 +924,7 @@ try
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
-        else if (_displaySizePixels != clientSize)
+        else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
             // OK, we're going to play a dangerous game here for the sake of optimizing resize
             // First, set up a complete clear of all device resources if something goes terribly wrong.
@@ -982,16 +986,14 @@ try
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
-                    return rc.scale_up(_glyphCell).scale(til::math::rounding, _scale);
+                    return rc.scale_up(_glyphCell);
                 });
 
                 // Invalid scroll is in characters, convert it to pixels.
-                const auto scrollPixels = (_invalidScroll * _glyphCell).scale(til::math::rounding, _scale);
+                const auto scrollPixels = (_invalidScroll * _glyphCell);
 
                 // The scroll rect is the entire field of cells, but in pixels.
                 til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
-
-                scrollArea = scrollArea.scale(til::math::ceiling, _scale);
 
                 // Reduce the size of the rectangle by the scroll.
                 scrollArea -= til::size{} - scrollPixels;
@@ -1177,9 +1179,6 @@ try
     D2D1_COLOR_F nothing = { 0 };
 
     // If the entire thing is invalid, just use one big clear operation.
-    // This will also hit the gutters outside the usual paintable area.
-    // Invalidating everything is supposed to happen with resizes of the
-    // entire canvas, changes of the font, and other such adjustments.
     if (_invalidMap.all())
     {
         _d2dRenderTarget->Clear(nothing);
@@ -1237,10 +1236,36 @@ try
     DWRITE_LINE_SPACING spacing;
     RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
+    // GH#5098: If we're rendering with cleartype text, we need to always
+    // render onto an opaque background. If our background's opacity is
+    // 1.0f, that's great, we can use that. Otherwise, we need to force the
+    // text renderer to render this text in grayscale. In
+    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
+    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
+    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
+    //
+    // Currently, only text with the default background color uses an alpha
+    // of 0, every other background uses 1.0
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing)
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    // Another way of naming "bgIsDefault" is "bgHasTransparency"
+    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                             (_backgroundColor.b == _defaultBackgroundColor.b);
+    const bool forceGrayscaleAA = usingCleartype &&
+                                  usingTransparency &&
+                                  bgIsDefault;
+
     // Assemble the drawing context information
     DrawingContext context(_d2dRenderTarget.Get(),
                            _d2dBrushForeground.Get(),
                            _d2dBrushBackground.Get(),
+                           forceGrayscaleAA,
                            _dwriteFactory.Get(),
                            spacing,
                            _glyphCell,
@@ -1527,8 +1552,19 @@ CATCH_RETURN()
                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
-    _foregroundColor = _ColorFFromColorRef(colorForeground);
-    _backgroundColor = _ColorFFromColorRef(colorBackground);
+    // GH#5098: If we're rendering with cleartype text, we need to always render
+    // onto an opaque background. If our background's opacity is 1.0f, that's
+    // great, we can actually use cleartype in that case. In that scenario
+    // (cleartype && opacity == 1.0), we'll force the opacity bits of the
+    // COLORREF to 0xff so we draw as cleartype. In any other case, leave the
+    // opacity bits unchanged. PaintBufferLine will later do some logic to
+    // determine if we should paint the text as grayscale or not.
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
+    _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
+    _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
@@ -1971,12 +2007,8 @@ CATCH_RETURN();
         // The advance is the number of pixels left-to-right (X dimension) for the given font.
         // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
 
-        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-        // For composition swap chains, we scale by the DPI later during drawing and presentation.
-        if (_chainMode == SwapChainMode::ForHwnd)
-        {
-            heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
-        }
+        // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
+        heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
 
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 
@@ -2129,4 +2161,24 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
     _antialiasingMode = antialiasingMode;
+}
+
+// Method Description:
+// - Update our tracker of the opacity of our background. We can only
+//   effectively render cleartype text onto fully-opaque backgrounds. If we're
+//   rendering onto a transparent surface (like acrylic), then cleartype won't
+//   work correctly, and will actually just additively blend with the
+//   background. This is here to support GH#5098.
+// Arguments:
+// - opacity: the new opacity of our background, on [0.0f, 1.0f]
+// Return Value:
+// - <none>
+void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+{
+    _defaultTextBackgroundOpacity = opacity;
+
+    // Make sure we redraw all the cells, to update whether they're actually
+    // drawn with cleartype or not.
+    // We don't terribly care if this fails.
+    LOG_IF_FAILED(InvalidateAll());
 }

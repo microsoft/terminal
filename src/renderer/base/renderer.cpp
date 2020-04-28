@@ -730,6 +730,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
+                // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+                size_t columnCount = 0;
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
@@ -743,7 +745,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         // And tell the next function to trim off the left half of it.
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
-                        clusters.emplace_back(it->Chars(), it->Columns() + 1);
+                        columnCount = it->Columns() + 1;
+                        clusters.emplace_back(it->Chars(), columnCount);
                     }
                     else
                     {
@@ -755,11 +758,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    clusters.emplace_back(it->Chars(), it->Columns());
+                    columnCount = it->Columns();
+                    clusters.emplace_back(it->Chars(), columnCount);
                 }
 
                 // Advance the cluster and column counts.
-                const auto columnCount = clusters.back().GetColumns();
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
                 cols += columnCount;
 

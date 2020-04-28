@@ -9,6 +9,7 @@
 
     // Selection
     "copyOnSelect": false,
+    "copyFormatting": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -30,11 +31,11 @@
             "name": "Windows PowerShell",
             "commandline": "powershell.exe",
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
-            "colorScheme": "Campbell Powershell",
+            "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
             "closeOnExit": "graceful",
             "cursorShape": "bar",
-            "fontFace": "Cascadia Code",
+            "fontFace": "Cascadia Mono",
             "fontSize": 12,
             "hidden": false,
             "historySize": 9001,
@@ -52,7 +53,7 @@
             "antialiasingMode": "grayscale",
             "closeOnExit": "graceful",
             "cursorShape": "bar",
-            "fontFace": "Cascadia Code",
+            "fontFace": "Cascadia Mono",
             "fontSize": 12,
             "hidden": false,
             "historySize": 9001,
@@ -224,7 +225,7 @@
         },
         {
             "name": "Tango Dark",
-            "foreground": "#FFFFFF",
+            "foreground": "#D3D7CF",
             "background": "#000000",
             "cursorColor": "#FFFFFF",
             "black": "#000000",
@@ -246,7 +247,7 @@
         },
         {
             "name": "Tango Light",
-            "foreground": "#000000",
+            "foreground": "#555753",
             "background": "#FFFFFF",
             "cursorColor": "#000000",
             "black": "#000000",

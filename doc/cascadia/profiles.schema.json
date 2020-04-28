@@ -18,6 +18,14 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "DynamicProfileSource": {
+      "enum": [
+        "Windows.Terminal.Wsl",
+        "Windows.Terminal.Azure",
+        "Windows.Terminal.PowershellCore"
+      ],
+      "type": "string"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -278,13 +286,20 @@
           "type": "boolean"
         },
         "copyFormatting": {
-          "default": false,
+          "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
           "type": "boolean"
         },
         "defaultProfile": {
           "$ref": "#/definitions/ProfileGuid",
           "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The \"guid\" of the desired default profile is used as the value."
+        },
+        "disabledProfileSources": {
+          "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
+          "items": {
+            "$ref": "#/definitions/DynamicProfileSource"
+          },
+          "type": "array"
         },
         "initialCols": {
           "default": 120,
@@ -421,11 +436,12 @@
             "topLeft",
             "topRight"
           ],
+          "description": "Sets how the background image aligns to the boundaries of the window. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
         "backgroundImageOpacity": {
           "default": 1.0,
-          "description": "Sets the transparency of the background image.",
+          "description": "Sets the transparency of the background image. Accepts floating point values from 0-1.",
           "maximum": 1.0,
           "minimum": 0.0,
           "type": "number"
@@ -498,7 +514,7 @@
           "type": "boolean"
         },
         "fontFace": {
-          "default": "Cascadia Code",
+          "default": "Cascadia Mono",
           "description": "Name of the font face used in the profile.",
           "type": "string"
         },

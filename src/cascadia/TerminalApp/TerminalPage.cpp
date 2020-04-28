@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
             // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
             // but that process is running at a different IL than us.
             // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
         }
         CATCH_LOG();
 
