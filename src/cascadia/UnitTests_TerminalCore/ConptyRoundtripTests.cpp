@@ -197,7 +197,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ResizeRepaintVimExeBuffer);
 
-    TEST_METHOD(ClsFromCmd);
+    TEST_METHOD(ClsAndClearHostClearsScrollbackTest);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -2547,9 +2547,17 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
 
-void ConptyRoundtripTests::ClsFromCmd()
+void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
 {
-    // See https://github.com/microsoft/terminal/issues/5428
+    // See https://github.com/microsoft/terminal/issues/3126#issuecomment-620677742
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1}")
+    END_TEST_METHOD_PROPERTIES();
+    constexpr int ClearLikeCls = 0;
+    constexpr int ClearLikeClearHost = 1;
+    INIT_TEST_PROPERTY(int, clearBufferMethod, L"TODO");
+
     Log::Comment(L"TODO");
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -2608,15 +2616,13 @@ void ConptyRoundtripTests::ClsFromCmd()
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 
+    if (clearBufferMethod == ClearLikeCls)
     {
         // Execute the cls, EXACTLY LIKE CMD.
 
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
         _apiRoutines.GetConsoleScreenBufferInfoExImpl(si, csbiex);
-        // CMD calls GetConsoleScreenBufferInfo, which actaully returns the inclusve rect
-        csbiex.srWindow.Right -= 1;
-        csbiex.srWindow.Bottom -= 1;
 
         SMALL_RECT src{ 0 };
         src.Top = 0;
@@ -2631,6 +2637,25 @@ void ConptyRoundtripTests::ClsFromCmd()
                                                                      std::nullopt, // no clip provided,
                                                                      L' ',
                                                                      csbiex.wAttributes));
+    }
+    else if (clearBufferMethod == ClearLikeClearHost)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        _apiRoutines.GetConsoleScreenBufferInfoExImpl(si, csbiex);
+
+        const auto totalCellsInBuffer = csbiex.dwSize.X * csbiex.dwSize.Y;
+        size_t cellsWritten = 0;
+        VERIFY_SUCCEEDED(_apiRoutines.FillConsoleOutputCharacterWImpl(si,
+                                                                      L' ',
+                                                                      totalCellsInBuffer,
+                                                                      { 0, 0 },
+                                                                      cellsWritten));
+        VERIFY_SUCCEEDED(_apiRoutines.FillConsoleOutputAttributeImpl(si,
+                                                                     csbiex.wAttributes,
+                                                                     totalCellsInBuffer,
+                                                                     { 0, 0 },
+                                                                     cellsWritten));
     }
 
     Log::Comment(L"Painting the frame");
