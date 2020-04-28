@@ -1,18 +1,16 @@
 # This script gets the current git commit hash and places it in a header file stamped to a wstring_view
-# If literally anything goes wrong in this script with regards to git, like not being in a git repo,
-# not being able to find the current branch on remote, not being able to figure out what branch you're on,
-# we'll just return the latest commit hash of remote master.
+# If anything goes wrong attempting to retrieve the hash, we'll just return the hardcoded string "master" instead.
 
 Write-Output "constexpr std::wstring_view CurrentCommitHash{ L`"" | Out-File -FilePath "Generated Files\CurrentCommitHash.h" -Encoding ASCII -NoNewline
 
-$hash = "master"
-$branchName = git branch --show-current
-if (-not $LASTEXITCODE -and $branchName -ne $null)
+# Let's see if we're on a build agent that can give us the commit hash.
+$hash = $env:Build.SourceVersion
+if ($null -eq $hash)
 {
-    $currentBranchHash = git ls-remote https://github.com/microsoft/terminal.git --heads $branchName
-    if (-not $LASTEXITCODE -and $currentBranchHash -ne $null)
+    $hash = git rev-parse HEAD
+    if ($LASTEXITCODE -or $null -eq $hash)
     {
-        $hash = $currentBranchHash.Split()[0]
+        $hash = "master"
     }
 }
 
