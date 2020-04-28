@@ -196,6 +196,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ResizeRepaintVimExeBuffer);
 
+    TEST_METHOD(TestResizeWithCookedRead);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2551,4 +2553,72 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::TestResizeWithCookedRead()
+{
+    // see https://github.com/microsoft/terminal/issues/1856
+    Log::Comment(L"This test checks a crash in conpty where resizing the "
+                 L"window with any data in a cooked read (like thhe input line "
+                 L"in cmd.exe) would cause the conpty to crash.");
+
+    // Resizing with a COKKED_READ used to cause a crash in
+    // `Selection::s_GetInputLineBoundaries` north of
+    // `Selection::GetValidAreaBoundaries`.
+    //
+    // If this test completes successfully, then we know that we didn't crash.
+
+    // The specific cases that repro the original crash are:
+    // * (0, -10)
+    // * (0, -1)
+    // * (0, 0)
+    // the rest of the cases are added here for completeness.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Setup the cooked read data
+    m_state->PrepareReadHandle();
+    m_state->PrepareCookedReadData({ "This is some cooked read data\0" });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize the Terminal and conpty here ==========");
+    const COORD newViewportSize{
+        ::base::saturated_cast<short>(TerminalViewWidth + dx),
+        ::base::saturated_cast<short>(TerminalViewHeight + dy)
+    };
+
+    auto resizeResult = term->UserResize(newViewportSize);
+    VERIFY_SUCCEEDED(resizeResult);
+    _resizeConpty(newViewportSize.X, newViewportSize.Y);
+
+    // After we resize, make sure to get the new textBuffers
+    hostTb = &si.GetTextBuffer();
+    termTb = term->_buffer.get();
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // By simply reaching the
 }

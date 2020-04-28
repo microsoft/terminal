@@ -124,7 +124,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData()
+    void PrepareCookedReadData(const std::string_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -135,7 +135,7 @@ public:
                                               0,
                                               nullptr,
                                               L"",
-                                              {});
+                                              initialData);
         gci.SetCookedReadData(readData);
     }
 
