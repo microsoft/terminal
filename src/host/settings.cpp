@@ -221,7 +221,10 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _bHistoryNoDup = pStateInfo->HistoryNoDup;
     _uHistoryBufferSize = pStateInfo->HistoryBufferSize;
     _uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
-    memmove(_ColorTable, pStateInfo->ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
+    {
+        SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+    }
     _uCodePage = pStateInfo->CodePage;
     _bWrapText = !!pStateInfo->fWrapText;
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
@@ -263,7 +266,10 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.HistoryNoDup = _bHistoryNoDup;
     csi.HistoryBufferSize = _uHistoryBufferSize;
     csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
-    memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(csi.ColorTable); i++)
+    {
+        csi.ColorTable[i] = GetColorTableEntry(i);
+    }
     csi.CodePage = _uCodePage;
     csi.fWrapText = !!_bWrapText;
     csi.fFilterOnPaste = _fFilterOnPaste;
@@ -721,12 +727,7 @@ const COLORREF* const Settings::GetColorTable() const
 {
     return _ColorTable;
 }
-void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
-{
-    size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
-    memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
-}
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
     if (index < ARRAYSIZE(_ColorTable))

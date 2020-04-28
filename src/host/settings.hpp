@@ -161,7 +161,6 @@ public:
 
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
-    void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize);
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
 
