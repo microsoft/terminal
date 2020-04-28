@@ -202,9 +202,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().FontSize(unscaledFontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        // TextBlock's dimensions before it's ever used ever used is 0w x 0h, causing
-        // any IME _not_ brought up as a result of text being typed (like Win+. for the emoji picker),
-        // to be placed approx. unscaledFontSizePx pixels higher than intended.
+        // TextBlock's actual dimensions right after initialization is 0w x 0h. So,
+        // if an IME is displayed before TextBlock has text (like showing the emoji picker
+        // using Win+.), it'll be placed higher than intended.
         TextBlock().MinWidth(unscaledFontSizePx);
         TextBlock().MinHeight(unscaledFontSizePx);
         _currentTextBlockHeight = std::max(unscaledFontSizePx, _currentTextBlockHeight);
@@ -444,13 +444,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TextBlock().Text(L"");
 
-        // It turns out that setting the TextBlock's text to "" doesn't immediately
-        // update its ActualHeight. So, when a user just finishes a composition that
-        // involved text wrapping on the right edge of the terminal, the TextBlock's
-        // ActualHeight stays as tall as the TextBlock needed to be for the amount of
-        // wrapping that occurred. The next time a user brings up the Emoji IME with
-        // "Win+.", it'll show up at bottom pos of the previous text-wrapped TextBlock.
-        // So, let's force TextBlock to update when we reset it after a composition is completed.
+        // After we reset the TextBlock to empty string, we want to make sure
+        // ActualHeight reflects the respective height. It seems that ActualHeight
+        // isn't updated until there's new text in the TextBlock, so the next time a user
+        // invokes "Win+." for the emoji picker IME, it would end up
+        // using the pre-reset TextBlock().ActualHeight().
         TextBlock().UpdateLayout();
 
         // hide the controls until text input starts again
