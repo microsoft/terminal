@@ -440,7 +440,7 @@ void VtIo::EndResize()
 //   true to `IsUsingVt`, which will cause the console host to act in conpty
 //   mode.
 // Arguments:
-// - <none>
+// - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
 void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
@@ -466,6 +466,16 @@ bool VtIo::IsResizeQuirkEnabled() const
     return _resizeQuirk;
 }
 
+// Method Description:
+// - Manually tell the renderer that it should emit a "Erase Scrollback"
+//   sequence to the connected terminal. We need to do this in certain cases
+//   that we've identified where we believe the client wanted the entire
+//   terminal buffer cleared, not just the viewport. For more information, see
+//   GH#3126.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
 [[nodiscard]] HRESULT VtIo::ManuallyClearScrollback() const noexcept
 {
     if (_pVtRenderEngine)
