@@ -443,9 +443,10 @@ void VtIo::EndResize()
 // - <none>
 // Return Value:
 // - <none>
-void VtIo::EnableConptyModeForTests()
+void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
     _objectsCreated = true;
+    _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif
 
@@ -463,4 +464,13 @@ void VtIo::EnableConptyModeForTests()
 bool VtIo::IsResizeQuirkEnabled() const
 {
     return _resizeQuirk;
+}
+
+[[nodiscard]] HRESULT VtIo::ManuallyClearScrollback() const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->ManuallyClearScrollback();
+    }
+    return S_OK;
 }

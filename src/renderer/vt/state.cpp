@@ -492,3 +492,8 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
 }
+
+[[nodiscard]] HRESULT VtEngine::ManuallyClearScrollback() noexcept
+{
+    return S_OK;
+}

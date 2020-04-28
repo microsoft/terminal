@@ -26,9 +26,9 @@ bool Globals::IsHeadless() const
 // - <none>
 // Return Value:
 // - <none>
-void Globals::EnableConptyModeForTests()
+void Globals::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
     launchArgs.EnableConptyModeForTests();
-    getConsoleInformation().GetVtIo()->EnableConptyModeForTests();
+    getConsoleInformation().GetVtIo()->EnableConptyModeForTests(std::move(vtRenderEngine));
 }
 #endif

@@ -845,7 +845,29 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         TextAttribute useThisAttr(fillAttribute);
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
-        return S_OK;
+        HRESULT hr = S_OK;
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.IsInVtIoMode())
+        {
+            const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
+            const bool sourceIsWholeBuffer = (source.Top == 0) &&
+                                             (source.Left == 0) &&
+                                             (source.Right == currentBufferDimensions.X) &&
+                                             (source.Bottom == currentBufferDimensions.Y);
+            const bool targetIsNegativeBufferHeight = (target.X == 0) &&
+                                                      (target.Y == -currentBufferDimensions.Y);
+            const bool noClipProvided = clip == std::nullopt;
+            const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
+                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+
+            if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
+            {
+                hr = gci.GetVtIo()->ManuallyClearScrollback();
+            }
+        }
+
+        return hr;
     }
     CATCH_RETURN();
 }

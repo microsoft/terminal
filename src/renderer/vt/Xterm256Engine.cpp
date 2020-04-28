@@ -110,3 +110,8 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 
     return S_OK;
 }
+
+[[nodiscard]] HRESULT Xterm256Engine::ManuallyClearScrollback() noexcept
+{
+    return _ClearScrollback();
+}
