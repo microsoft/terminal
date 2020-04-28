@@ -25,7 +25,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _currentCanvasWidth{ 0.0 },
         _currentTextBlockHeight{ 0.0 },
         _currentTextBounds{ 0, 0, 0, 0 },
-        _currentControlBounds{ 0, 0, 0, 0 }
+        _currentControlBounds{ 0, 0, 0, 0 },
+        _currentWindowBounds{ 0, 0, 0, 0 }
     {
         InitializeComponent();
 
@@ -144,13 +145,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
         const til::point cursorPos{ gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().Y) };
 
-        const double actualCanvasWidth = Canvas().ActualWidth();
-
-        const double actualTextBlockHeight = TextBlock().ActualHeight();
+        const double actualCanvasWidth{ Canvas().ActualWidth() };
+        const double actualTextBlockHeight{ TextBlock().ActualHeight() };
+        const auto actualWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
 
         if (_currentTerminalCursorPos == cursorPos &&
             _currentCanvasWidth == actualCanvasWidth &&
-            _currentTextBlockHeight == actualTextBlockHeight)
+            _currentTextBlockHeight == actualTextBlockHeight &&
+            _currentWindowBounds == actualWindowBounds)
         {
             return;
         }
@@ -158,6 +160,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _currentTerminalCursorPos = cursorPos;
         _currentCanvasWidth = actualCanvasWidth;
         _currentTextBlockHeight = actualTextBlockHeight;
+        _currentWindowBounds = actualWindowBounds;
 
         _RedrawCanvas();
     }
@@ -192,11 +195,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // calculate FontSize in pixels from Points
         const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
+        const double unscaledFontSizePx = fontSizePx / scaleFactor;
 
         // Make sure to unscale the font size to correct for DPI! XAML needs
         // things in DIPs, and the fontSize is in pixels.
-        TextBlock().FontSize(fontSizePx / scaleFactor);
+        TextBlock().FontSize(unscaledFontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        // TextBlock's dimensions before it gets a layout pass is 0w x 0h, causing
+        // any IME _not_ brought up as a result of text being typed (like Win+. for the emoji picker),
+        // to be placed higher than intended. So, let's set the min width & height for this case.
+        TextBlock().MinWidth(unscaledFontSizePx);
+        TextBlock().MinHeight(unscaledFontSizePx);
+        _currentTextBlockHeight = std::max(fontSize.height<double>(), _currentTextBlockHeight);
 
         const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorInDips.x<double>();
         // Make sure that we're setting the MaxWidth to a positive number - a
@@ -207,8 +218,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Get window in screen coordinates, this is the entire window including
         // tabs. THIS IS IN DIPs
-        const auto windowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
-        const til::point windowOrigin{ til::math::flooring, windowBounds };
+        const til::point windowOrigin{ til::math::flooring, _currentWindowBounds };
 
         // Get the offset (margin + tabs, etc..) of the control within the window
         const til::point controlOrigin{ til::math::flooring,
@@ -433,6 +443,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _activeTextStart = _inputBuffer.length();
 
         TextBlock().Text(L"");
+
+        // It turns out that setting the TextBlock's text to "" doesn't immediately
+        // update its ActualHeight. So, when a user just finishes a composition that
+        // involved text wrapping on the right edge of the terminal, the TextBlock's
+        // ActualHeight stays as tall as the TextBlock needed to be for the amount of
+        // wrapping that occurred. The next time a user brings up the Emoji IME with
+        // "Win+.", it'll show up at bottom pos of the previous text-wrapped TextBlock.
+        // So, let's force TextBlock to update when we reset it after a composition is completed.
+        TextBlock().UpdateLayout();
 
         // hide the controls until text input starts again
         Canvas().Visibility(Visibility::Collapsed);
