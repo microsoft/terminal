@@ -202,12 +202,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().FontSize(unscaledFontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        // TextBlock's dimensions before it gets a layout pass is 0w x 0h, causing
+        // TextBlock's dimensions before it's ever used ever used is 0w x 0h, causing
         // any IME _not_ brought up as a result of text being typed (like Win+. for the emoji picker),
-        // to be placed higher than intended. So, let's set the min width & height for this case.
+        // to be placed approx. unscaledFontSizePx pixels higher than intended.
         TextBlock().MinWidth(unscaledFontSizePx);
         TextBlock().MinHeight(unscaledFontSizePx);
-        _currentTextBlockHeight = std::max(fontSize.height<double>(), _currentTextBlockHeight);
+        _currentTextBlockHeight = std::max(unscaledFontSizePx, _currentTextBlockHeight);
 
         const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorInDips.x<double>();
         // Make sure that we're setting the MaxWidth to a positive number - a
