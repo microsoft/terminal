@@ -127,7 +127,13 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
                                                              &data.dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
-        // Callers of this function expect to receive an exclusive rect, not an inclusive one.
+
+        // Callers of this function expect to receive an exclusive rect, not an
+        // inclusive one. The driver will mangle this value for us
+        // - For GetConsoleScreenBufferInfoEx, it will re-decrement these values
+        //   to return an inclusive rect.
+        // - For GetConsoleScreenBufferInfo, it will leave these values
+        //   untouched, returning an exclusive rect.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
     }

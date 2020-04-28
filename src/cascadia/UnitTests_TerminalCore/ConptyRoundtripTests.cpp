@@ -196,6 +196,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ResizeRepaintVimExeBuffer);
 
+    TEST_METHOD(ClsFromCmd);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -211,6 +213,8 @@ private:
 
     DummyRenderTarget emptyRT;
     std::unique_ptr<Terminal> term;
+
+    ApiRoutines _apiRoutines;
 };
 
 bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
@@ -2551,4 +2555,104 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::ClsFromCmd()
+{
+    // See https://github.com/microsoft/terminal/issues/5428
+    Log::Comment(L"TODO");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        if (i > 0)
+        {
+            sm.ProcessString(L"\r\n");
+        }
+
+        sm.ProcessString(L"~");
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
+        const auto firstRow = viewport.top<short>();
+        const auto width = viewport.width<short>();
+
+        // "~" rows
+        for (short row = 0; row < viewport.bottom<short>(); row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, row });
+            if (afterClear)
+            {
+                TestUtils::VerifySpanOfText(L" ", iter, 0, width);
+            }
+            else
+            {
+                TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
+                TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+
+    {
+        // Execute the cls, EXACTLY LIKE CMD.
+
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        _apiRoutines.GetConsoleScreenBufferInfoExImpl(si, csbiex);
+        // CMD calls GetConsoleScreenBufferInfo, which actaully returns the inclusve rect
+        csbiex.srWindow.Right -= 1;
+        csbiex.srWindow.Bottom -= 1;
+
+        SMALL_RECT src{ 0 };
+        src.Top = 0;
+        src.Left = 0;
+        src.Right = csbiex.dwSize.X;
+        src.Bottom = csbiex.dwSize.Y;
+
+        COORD tgt{ 0, -csbiex.dwSize.Y };
+        VERIFY_SUCCEEDED(_apiRoutines.ScrollConsoleScreenBufferWImpl(si,
+                                                                     src,
+                                                                     tgt,
+                                                                     std::nullopt, // no clip provided,
+                                                                     L' ',
+                                                                     csbiex.wAttributes));
+    }
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
 }
