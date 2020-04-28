@@ -758,7 +758,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     bool notifyScroll = false;
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
-    const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (newRows > 0)
     {
         for (auto dy = 0; dy < newRows; dy++)
