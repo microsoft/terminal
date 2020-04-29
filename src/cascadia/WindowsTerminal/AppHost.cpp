@@ -235,31 +235,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
         // If this fails, we'll use the default of 96.
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-        // We need to check if the top left point of the titlebar of the window is within any screen
-        RECT offScreenTestRect;
-        offScreenTestRect.left = proposedRect.left;
-        offScreenTestRect.top = proposedRect.top;
-        offScreenTestRect.right = offScreenTestRect.left + 1;
-        offScreenTestRect.bottom = offScreenTestRect.top + 1;
-
-        bool isTitlebarIntersectWithMonitors = false;
-        EnumDisplayMonitors(
-            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
-                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
-                *intersectWithMonitor = true;
-                // Continue the enumeration
-                return FALSE;
-            },
-            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
-
-        if (!isTitlebarIntersectWithMonitors)
-        {
-            // If the title bar is out-of-screen, we set the initial position to
-            // the top left corner of the nearest monitor
-            proposedRect.left = monitorInfo.rcWork.left;
-            proposedRect.top = monitorInfo.rcWork.top;
-        }
-
         auto initialSize = _logic.GetLaunchDimensions(dpix);
 
         const short islandWidth = Utils::ClampToShortMax(
@@ -272,6 +247,60 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
         const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
         adjustedWidth = islandWidth + nonClientSize.cx;
         adjustedHeight = islandHeight + nonClientSize.cy;
+
+        const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                            gsl::narrow<short>(proposedRect.top) };
+        const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                                Utils::ClampToShortMax(adjustedHeight, 1) };
+
+        const auto adjustedPos = Viewport::FromDimensions(origin, dimensions);
+
+        // We need to check if all corners of the window is within any screen
+        const std::vector<COORD> pos{
+            { adjustedPos.Left(), adjustedPos.Top() },
+            { adjustedPos.Left(), adjustedPos.BottomInclusive() - 1 },
+            { adjustedPos.RightInclusive() - 1, adjustedPos.Top() },
+            { adjustedPos.RightInclusive() - 1, adjustedPos.BottomInclusive() - 1 }
+        };
+        int numberOfCornersVisible = 0;
+        for (const auto& p : pos)
+        {
+            RECT offScreenTestRect;
+            offScreenTestRect.left = p.X;
+            offScreenTestRect.top = p.Y;
+            offScreenTestRect.right = offScreenTestRect.left + 1;
+            offScreenTestRect.bottom = offScreenTestRect.top + 1;
+
+            EnumDisplayMonitors(
+                nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+                    auto intersectWithMonitor = reinterpret_cast<int*>(lParam);
+                    (*intersectWithMonitor)++;
+                    // Continue the enumeration
+                    return TRUE;
+                },
+                reinterpret_cast<LPARAM>(&numberOfCornersVisible));
+        }
+
+        if (numberOfCornersVisible < pos.size())
+        {
+            // If any of the corner is out-of-screen, we set the initial position
+            // to the top left corner of the nearest monitor
+            proposedRect.left = monitorInfo.rcWork.left;
+            proposedRect.top = monitorInfo.rcWork.top;
+        }
+        else if ((LONG)adjustedPos.Width() <= monitorInfo.rcWork.right - monitorInfo.rcWork.left &&
+                 (LONG)adjustedPos.Height() <= monitorInfo.rcWork.bottom - monitorInfo.rcWork.top)
+        {
+            // If the whole window fits the screen but is partially out of the work
+            // area rectangle of the display monitor, we set the initial position to
+            // the top left corner of the screen
+            if (adjustedPos.Top() < monitorInfo.rcWork.top || adjustedPos.Left() < monitorInfo.rcWork.left ||
+                adjustedPos.BottomInclusive() > monitorInfo.rcWork.bottom || adjustedPos.RightInclusive() > monitorInfo.rcWork.right)
+            {
+                proposedRect.left = monitorInfo.rcWork.left;
+                proposedRect.top = monitorInfo.rcWork.top;
+            }
+        }
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
