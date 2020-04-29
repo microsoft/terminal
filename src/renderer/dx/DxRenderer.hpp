@@ -106,6 +106,7 @@ namespace Microsoft::Console::Render
 
         void SetSelectionBackground(const COLORREF color) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
+        void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -189,6 +190,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
+
+        float _defaultTextBackgroundOpacity;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct

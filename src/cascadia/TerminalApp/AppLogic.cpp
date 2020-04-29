@@ -35,7 +35,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"InvalidIcon"),
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),
-    USES_RESOURCE(L"MissingRequiredParameter")
+    USES_RESOURCE(L"MissingRequiredParameter"),
+    USES_RESOURCE(L"LegacyGlobalsProperty")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -391,6 +392,27 @@ namespace winrt::TerminalApp::implementation
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+
+                // The "LegacyGlobalsProperty" warning is special - it has a URL
+                // that goes with it. So we need to manually construct a
+                // Hyperlink and insert it along with the warning text.
+                if (warning == SettingsLoadWarnings::LegacyGlobalsProperty)
+                {
+                    // Add the URL here too
+                    const auto legacyGlobalsLinkLabel = RS_(L"LegacyGlobalsPropertyHrefLabel");
+                    const auto legacyGlobalsLinkUriValue = RS_(L"LegacyGlobalsPropertyHrefUrl");
+
+                    winrt::Windows::UI::Xaml::Documents::Run legacyGlobalsLinkText;
+                    winrt::Windows::UI::Xaml::Documents::Hyperlink legacyGlobalsLink;
+                    winrt::Windows::Foundation::Uri legacyGlobalsLinkUri{ legacyGlobalsLinkUriValue };
+
+                    legacyGlobalsLinkText.Text(legacyGlobalsLinkLabel);
+                    legacyGlobalsLink.NavigateUri(legacyGlobalsLinkUri);
+                    legacyGlobalsLink.Inlines().Append(legacyGlobalsLinkText);
+
+                    warningsTextBlock.Inlines().Append(legacyGlobalsLink);
+                }
+
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
@@ -672,7 +694,7 @@ namespace winrt::TerminalApp::implementation
                        wil::FolderChangeEvents::All,
                        [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
                            // We want file modifications, AND when files are renamed to be
-                           // profiles.json. This second case will oftentimes happen with text
+                           // settings.json. This second case will oftentimes happen with text
                            // editors, who will write a temp file, then rename it to be the
                            // actual file you wrote. So listen for that too.
                            if (!(event == wil::FolderChangeEvent::Modified ||

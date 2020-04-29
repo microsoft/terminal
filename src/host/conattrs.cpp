@@ -22,7 +22,7 @@ struct _HSL
     double h, s, l;
 
     // constructs an HSL color from a RGB Color.
-    _HSL(const COLORREF rgb)
+    explicit _HSL(const COLORREF rgb)
     {
         const double r = (double)GetRValue(rgb);
         const double g = (double)GetGValue(rgb);

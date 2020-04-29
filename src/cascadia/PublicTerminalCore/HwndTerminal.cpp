@@ -727,7 +727,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
             const COLORREF bgColor = _terminal->GetBackgroundColor(_terminal->GetDefaultBrushColors());
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Hwnd Console Host");
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
             std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);

@@ -589,7 +589,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (NewSize.X != context.GetViewport().Width() ||
             NewSize.Y != context.GetViewport().Height())
         {
+            // GH#1856 - make sure to hide the commandline _before_ we execute
+            // the resize, and the re-display it after the resize. If we leave
+            // it displayed, we'll crash during the resize when we try to figure
+            // out if the bounds of the old commandline fit within the new
+            // window (it might not).
+            CommandLine& commandLine = CommandLine::Instance();
+            commandLine.Hide(FALSE);
             context.SetViewportSize(&NewSize);
+            commandLine.Show();
 
             IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)

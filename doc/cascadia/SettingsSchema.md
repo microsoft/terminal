@@ -1,4 +1,4 @@
-# Profiles.json Documentation
+# Settings.json Documentation
 
 ## Globals
 Properties listed below affect the entire window, regardless of the profile settings.
@@ -21,6 +21,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
+| `disabledProfileSources` | Optional | Array[String] | `[]` | Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup. This array can contain any combination of `Windows.Terminal.Wsl`, `Windows.Terminal.Azure`, or `Windows.Terminal.PowershellCore`. For more information, see [UsingJsonSettings.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#dynamic-profiles) |
 
 ## Profiles
 Properties listed below are specific to each unique profile.
@@ -42,7 +43,7 @@ Properties listed below are specific to each unique profile.
 | `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | Optional | String | `Cascadia Code` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
+| `fontFace` | Optional | String | `Cascadia Mono` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
@@ -92,7 +93,7 @@ Properties listed below are specific to each custom key binding.
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
-| `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `keys` | _Required_ | Array[String] or String | Defines the key combinations used to call the command. |
 | `action` | Optional | String | Adds additional functionality to certain commands. |
 
 ### Implemented Commands and Actions
@@ -139,7 +140,7 @@ For commands with arguments:
 ### Accepted Modifiers and Keys
 
 #### Modifiers
-`Ctrl+`, `Shift+`, `Alt+`
+`ctrl+`, `shift+`, `alt+`
 
 #### Keys
 | Type | Keys |

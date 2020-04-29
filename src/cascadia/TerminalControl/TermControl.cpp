@@ -345,11 +345,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 RootGrid().Background(acrylic);
             }
+
+            // GH#5098: Inform the engine of the new opacity of the default text background.
+            if (_renderEngine)
+            {
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            }
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             RootGrid().Background(solidColor);
+
+            // GH#5098: Inform the engine of the new opacity of the default text background.
+            if (_renderEngine)
+            {
+                _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
+            }
         }
 
         if (!_settings.BackgroundImage().empty())
@@ -590,6 +602,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             default:
                 dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
                 break;
+            }
+
+            // GH#5098: Inform the engine of the opacity of the default text background.
+            if (_settings.UseAcrylic())
+            {
+                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
             }
 
             THROW_IF_FAILED(dxEngine->Enable());
@@ -1280,13 +1298,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             try
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                acrylicBrush.TintOpacity(_settings.TintOpacity());
+
                 if (acrylicBrush.TintOpacity() == 1.0)
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
                     uint32_t bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
+                }
+                else
+                {
+                    // GH#5098: Inform the engine of the new opacity of the default text background.
+                    if (_renderEngine)
+                    {
+                        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                    }
                 }
             }
             CATCH_LOG();
@@ -1358,6 +1386,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (_terminal->IsSelectionActive() && isLeftButtonPressed)
         {
+            // Have to take the lock or we could change the endpoints out from under the renderer actively rendering.
+            auto lock = _terminal->LockForWriting();
+
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
             _SetEndSelectionPointAtCursor(point);
@@ -1489,6 +1520,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (_autoScrollingPointerPoint.has_value())
                 {
+                    // Have to take the lock because the renderer will not draw correctly if you move its endpoints while it is generating a frame.
+                    auto lock = _terminal->LockForWriting();
+
                     _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint.value().Position());
                 }
             }
@@ -1514,17 +1548,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         InputPane::GetForCurrentView().TryShow();
 
+        // GH#5421: Enable the UiaEngine before checking for the SearchBox
+        // That way, new selections are notified to automation clients.
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Enable());
+        }
+
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
         // terminal's cursor to start blinking. So, we'll just return quickly here.
         if (_searchBox && _searchBox->ContainsFocus())
         {
             return;
-        }
-
-        if (_uiaEngine.get())
-        {
-            THROW_IF_FAILED(_uiaEngine->Enable());
         }
 
         if (TSFInputControl() != nullptr)
@@ -2020,11 +2056,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // convert text to HTML format
+        // GH#5347 - Don't provide a title for the generated HTML, as many
+        // web applications will paste the title first, followed by the HTML
+        // content, which is unexpected.
         const auto htmlData = TextBuffer::GenHTML(bufferData,
                                                   _actualFont.GetUnscaledSize().Y,
                                                   _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground(),
-                                                  "Windows Terminal");
+                                                  _settings.DefaultBackground());
 
         // convert to RTF format
         const auto rtfData = TextBuffer::GenRTF(bufferData,
