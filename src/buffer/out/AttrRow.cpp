@@ -306,6 +306,20 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                         return S_OK;
                     }
 
+                    // If the current run has length of exactly one, we can simply change the attribute
+                    // of the current run.
+                    // e.g.
+                    // AAAAABCCCCCCCC
+                    //      ^
+                    // AAAAADCCCCCCCC
+                    //
+                    // Here 'D' is the new color.
+                    if (curr->GetLength() == 1)
+                    {
+                        curr->SetAttributes(NewAttr);
+                        return S_OK;
+                    }
+
                     // If the insertion happens at current run's lower boundary...
                     if (iStart == lowerBound)
                     {
@@ -324,6 +338,32 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                             curr->DecrementLength();
 
                             // If we just reduced the right half to zero, just erase it out of the list.
+                            if (curr->GetLength() == 0)
+                            {
+                                _list.erase(curr);
+                            }
+
+                            return S_OK;
+                        }
+                    }
+
+                    // If the insertion happens at current run's upper boundary...
+                    if (iStart == upperBound - 1 && i + 1 < _list.size())
+                    {
+                        // ...then let's try our luck with the next run if possible. This is basically the opposite
+                        // of what we did with the previous run.
+                        // e.g.
+                        // AAAAAABBBBBBCCC
+                        //      ^
+                        // AAAAABBBBBBBCCC
+                        //
+                        // Here 'B' is the new color.
+                        const auto next = std::next(curr, 1);
+                        if (NewAttr == next->GetAttributes())
+                        {
+                            curr->DecrementLength();
+                            next->IncrementLength();
+
                             if (curr->GetLength() == 0)
                             {
                                 _list.erase(curr);
