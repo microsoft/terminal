@@ -309,9 +309,9 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                     // If the current run has length of exactly one, we can simply change the attribute
                     // of the current run.
                     // e.g.
-                    // AAAAABCCCCCCCC
+                    // AAAAABCCCCCCCCC
                     //      ^
-                    // AAAAADCCCCCCCC
+                    // AAAAADCCCCCCCCC
                     //
                     // Here 'D' is the new color.
                     if (curr->GetLength() == 1)
