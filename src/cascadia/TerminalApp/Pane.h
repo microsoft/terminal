@@ -202,7 +202,7 @@ private:
         std::unique_ptr<LayoutSizeNode> nextFirstChild;
         std::unique_ptr<LayoutSizeNode> nextSecondChild;
 
-        LayoutSizeNode(const float minSize);
+        explicit LayoutSizeNode(const float minSize);
         LayoutSizeNode(const LayoutSizeNode& other);
 
         LayoutSizeNode& operator=(const LayoutSizeNode& other);

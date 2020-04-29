@@ -48,7 +48,7 @@ class TerminalApp::Profile final
 {
 public:
     Profile();
-    Profile(const std::optional<GUID>& guid);
+    explicit Profile(const std::optional<GUID>& guid);
 
     ~Profile();
 

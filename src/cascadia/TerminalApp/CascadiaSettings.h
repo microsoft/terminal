@@ -46,7 +46,7 @@ class TerminalApp::CascadiaSettings final
 {
 public:
     CascadiaSettings();
-    CascadiaSettings(const bool addDynamicProfiles);
+    explicit CascadiaSettings(const bool addDynamicProfiles);
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
