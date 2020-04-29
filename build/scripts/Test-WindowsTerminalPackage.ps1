@@ -68,6 +68,21 @@ Try {
         }
     }
 
+    $dependencies = $Manifest.Package.Dependencies.PackageDependency.Name
+    $depsHasVclibsDesktop = ("Microsoft.VCLibs.140.00.UWPDesktop" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug.UWPDesktop" -in $dependencies)
+    $depsHasVcLibsAppX = ("Microsoft.VCLibs.140.00" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug" -in $dependencies)
+    $filesHasVclibsDesktop = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d.dll" -EA:Ignore))
+    $filesHasVclibsAppX = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140_app.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d_app.dll" -EA:Ignore))
+
+    If ($depsHasVclibsDesktop -and $filesHasVclibsDesktop) {
+	    Throw "Package has Dependency *and* integrated Desktop VCLibs"
+    }
+
+    If ($depsHasVclibsAppx -and $filesHasVclibsAppx) {
+	    # We've shipped like this forever, so downgrade to warning.
+	    Write-Warning "Package has Dependency *and* integrated AppX VCLibs"
+    }
+
     ### Check that we have an App.xbf (which is a proxy for our resources having been merged)
     $resourceXpath = '/PriInfo/ResourceMap/ResourceMapSubtree[@name="Files"]/NamedResource[@name="App.xbf"]'
     $AppXbf = $PRIFile.SelectSingleNode($resourceXpath)
