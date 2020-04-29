@@ -1581,10 +1581,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 // - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
-// - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows,
+                                const int fontHeightPoints,
+                                const std::wstring_view fontFaceName,
+                                const COLORREF backgroundColor)
 {
     try
     {
@@ -1594,7 +1596,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         // HTML boiler plate required for CF_HTML
         // as part of the HTML Clipboard format
         const std::string htmlHeader =
-            "<!DOCTYPE><HTML><HEAD><TITLE>" + htmlTitle + "</TITLE></HEAD><BODY>";
+            "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
         htmlBuilder << htmlHeader;
 
         htmlBuilder << "<!--StartFragment -->";

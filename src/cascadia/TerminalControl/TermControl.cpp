@@ -2056,11 +2056,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // convert text to HTML format
+        // GH#5347 - Don't provide a title for the generated HTML, as many
+        // web applications will paste the title first, followed by the HTML
+        // content, which is unexpected.
         const auto htmlData = TextBuffer::GenHTML(bufferData,
                                                   _actualFont.GetUnscaledSize().Y,
                                                   _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground(),
-                                                  "Windows Terminal");
+                                                  _settings.DefaultBackground());
 
         // convert to RTF format
         const auto rtfData = TextBuffer::GenRTF(bufferData,
