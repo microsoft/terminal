@@ -242,13 +242,17 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - lengthToWrite - the number of elements to write
 // - startingCoordinate - Screen buffer coordinate to begin writing to.
 // - cellsModified - the number of elements written
+// - enablePowershellShim - true iff the client process that's calling this
+//   method is "powershell.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
 [[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                    const wchar_t character,
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
-                                                                   size_t& cellsModified) noexcept
+                                                                   size_t& cellsModified,
+                                                                   const bool enablePowershellShim) noexcept
 {
     // Set modified cells to 0 from the beginning.
     cellsModified = 0;
@@ -292,7 +296,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         // then let's manually emit a ^[[3J to the connected terminal, so that
         // their entire buffer will be cleared as well.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (gci.IsInVtIoMode())
+        if (enablePowershellShim && gci.IsInVtIoMode())
         {
             const til::size currentBufferDimensions{ screenInfo.GetBufferSize().Dimensions() };
 

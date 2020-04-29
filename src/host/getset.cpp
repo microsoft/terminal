@@ -826,6 +826,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
 // - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// - enableCmdShim - true iff the client process that's calling this
+//   method is "cmd.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
@@ -833,7 +836,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                                   const COORD target,
                                                                   std::optional<SMALL_RECT> clip,
                                                                   const wchar_t fillCharacter,
-                                                                  const WORD fillAttribute) noexcept
+                                                                  const WORD fillAttribute,
+                                                                  const bool enableCmdShim) noexcept
 {
     try
     {
@@ -855,7 +859,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // let's manually emit a ^[[3J to the connected terminal, so that their
         // entire buffer will be cleared as well.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (gci.IsInVtIoMode())
+        if (enableCmdShim && gci.IsInVtIoMode())
         {
             const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
             const bool sourceIsWholeBuffer = (source.Top == 0) &&

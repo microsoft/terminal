@@ -2556,9 +2556,12 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     END_TEST_METHOD_PROPERTIES();
     constexpr int ClearLikeCls = 0;
     constexpr int ClearLikeClearHost = 1;
-    INIT_TEST_PROPERTY(int, clearBufferMethod, L"TODO");
+    INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
 
-    Log::Comment(L"TODO");
+    Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
+                 L"Their build in commands for clearing the console buffer "
+                 L"should work to clear the terminal buffer, not just the "
+                 L"terminal viewport.");
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -2636,7 +2639,8 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
                                                                      tgt,
                                                                      std::nullopt, // no clip provided,
                                                                      L' ',
-                                                                     csbiex.wAttributes));
+                                                                     csbiex.wAttributes,
+                                                                     true));
     }
     else if (clearBufferMethod == ClearLikeClearHost)
     {
@@ -2650,7 +2654,8 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
                                                                       L' ',
                                                                       totalCellsInBuffer,
                                                                       { 0, 0 },
-                                                                      cellsWritten));
+                                                                      cellsWritten,
+                                                                      true));
         VERIFY_SUCCEEDED(_apiRoutines.FillConsoleOutputAttributeImpl(si,
                                                                      csbiex.wAttributes,
                                                                      totalCellsInBuffer,
