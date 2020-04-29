@@ -759,7 +759,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
-    // GH#5540 - Make sure this is a postitive number. We can't create a
+    // GH#5540 - Make sure this is a positive number. We can't create a
     // negative number of new rows.
     const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (newRows > 0)

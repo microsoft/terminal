@@ -98,10 +98,10 @@ void TerminalAndRendererTests::TestNotifyScrolling()
 {
     // See https://github.com/microsoft/terminal/pull/5630
     //
-    // This is a test for GH#5540, in the most bizzarre way. The origin of that
+    // This is a test for GH#5540, in the most bizarre way. The origin of that
     // bug was that as newlines were emitted, we'd accumulate an enormous scroll
     // delta into a selection region, to the point of overflowing a SHORT. When
-    // the overflow occured, the Terminal would fail to send a NotifyScroll() to
+    // the overflow occurred, the Terminal would fail to send a NotifyScroll() to
     // the TermControl hosting it.
     //
     // For this bug to repro, we need to:
