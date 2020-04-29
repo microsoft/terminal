@@ -196,10 +196,15 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ResizeRepaintVimExeBuffer);
 
+    TEST_METHOD(TestResizeWithCookedRead);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
     void _resizeConpty(const unsigned short sx, const unsigned short sy);
+
+    [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size& newSize);
+
     std::deque<std::string> expectedOutput;
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<CommonState> m_state;
@@ -269,6 +274,19 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
         // VtIo::SuppressResizeRepaint
         VERIFY_SUCCEEDED(_pVtRenderEngine->SuppressResizeRepaint());
     }
+}
+
+[[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size& newSize)
+{
+    Log::Comment(L"========== Resize the Terminal and conpty ==========");
+
+    auto resizeResult = term->UserResize(newSize);
+    VERIFY_SUCCEEDED(resizeResult);
+    _resizeConpty(newSize.width<unsigned short>(), newSize.height<unsigned short>());
+
+    // After we resize, make sure to get the new textBuffers
+    return { &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer(),
+             term->_buffer.get() };
 }
 
 void ConptyRoundtripTests::ConptyOutputTestCanary()
@@ -844,24 +862,15 @@ void ConptyRoundtripTests::TestResizeHeight()
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
 
-    const COORD newViewportSize{
-        ::base::saturated_cast<short>(TerminalViewWidth + dx),
-        ::base::saturated_cast<short>(TerminalViewHeight + dy)
-    };
-
-    Log::Comment(NoThrowString().Format(L"Resize the Terminal and conpty here"));
-    auto resizeResult = term->UserResize(newViewportSize);
-    VERIFY_SUCCEEDED(resizeResult);
-    _resizeConpty(newViewportSize.X, newViewportSize.Y);
-
+    const til::size newViewportSize{ TerminalViewWidth + dx,
+                                     TerminalViewHeight + dy };
     // After we resize, make sure to get the new textBuffers
-    hostTb = &si.GetTextBuffer();
-    termTb = term->_buffer.get();
+    std::tie(hostTb, termTb) = _performResize(newViewportSize);
 
     // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
     const auto thirdHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, thirdHostView.Top());
-    VERIFY_ARE_EQUAL(newViewportSize.Y, thirdHostView.BottomExclusive());
+    VERIFY_ARE_EQUAL(newViewportSize.height(), thirdHostView.BottomExclusive());
 
     // The Terminal should be stuck to the top of the viewport, unless dy<0,
     // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
@@ -889,7 +898,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
     const auto fourthHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, fourthHostView.Top());
-    VERIFY_ARE_EQUAL(newViewportSize.Y, fourthHostView.BottomExclusive());
+    VERIFY_ARE_EQUAL(newViewportSize.height(), fourthHostView.BottomExclusive());
 
     // The Terminal should be stuck to the top of the viewport, unless dy<0,
     // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
@@ -2522,19 +2531,9 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 
-    Log::Comment(L"========== Resize the Terminal and conpty here ==========");
-    const COORD newViewportSize{
-        ::base::saturated_cast<short>(TerminalViewWidth - 1),
-        ::base::saturated_cast<short>(TerminalViewHeight)
-    };
-
-    auto resizeResult = term->UserResize(newViewportSize);
-    VERIFY_SUCCEEDED(resizeResult);
-    _resizeConpty(newViewportSize.X, newViewportSize.Y);
-
     // After we resize, make sure to get the new textBuffers
-    hostTb = &si.GetTextBuffer();
-    termTb = term->_buffer.get();
+    std::tie(hostTb, termTb) = _performResize({ TerminalViewWidth - 1,
+                                                TerminalViewHeight });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -2551,4 +2550,65 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::TestResizeWithCookedRead()
+{
+    // see https://github.com/microsoft/terminal/issues/1856
+    Log::Comment(L"This test checks a crash in conpty where resizing the "
+                 L"window with any data in a cooked read (like the input line "
+                 L"in cmd.exe) would cause the conpty to crash.");
+
+    // Resizing with a COOKED_READ used to cause a crash in
+    // `Selection::s_GetInputLineBoundaries` north of
+    // `Selection::GetValidAreaBoundaries`.
+    //
+    // If this test completes successfully, then we know that we didn't crash.
+
+    // The specific cases that repro the original crash are:
+    // * (0, -10)
+    // * (0, -1)
+    // * (0, 0)
+    // the rest of the cases are added here for completeness.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Setup the cooked read data
+    m_state->PrepareReadHandle();
+    // TODO GH#5618: This string will get mangled, but we don't really care
+    // about the buffer contents in this test, so it doesn't really matter.
+    const std::string_view cookedReadContents{ "This is some cooked read data" };
+    m_state->PrepareCookedReadData(cookedReadContents);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // After we resize, make sure to get the new textBuffers
+    std::tie(hostTb, termTb) = _performResize({ TerminalViewWidth + dx,
+                                                TerminalViewHeight + dy });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // By simply reaching the end of this test, we know that we didn't crash. Hooray!
 }
