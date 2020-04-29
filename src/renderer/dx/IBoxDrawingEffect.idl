@@ -1,0 +1,11 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid("C164926F-1A4D-470D-BB8A-3D2CC4B035E4")
+]
+interface IBoxDrawingEffect : IUnknown
+{
+
+};

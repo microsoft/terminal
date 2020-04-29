@@ -9,6 +9,8 @@
 #include <wrl/client.h>
 #include <VersionHelpers.h>
 
+#include "BoxDrawingEffect.h"
+
 using namespace Microsoft::Console::Render;
 
 // Routine Description:
@@ -151,6 +153,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
+
+        // Perform our box drawing analyzer no matter what.
+        RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, textLength));
 
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
@@ -766,7 +771,7 @@ CATCH_RETURN();
                                                     DWRITE_MEASURING_MODE_NATURAL,
                                                     &glyphRun,
                                                     &glyphRunDescription,
-                                                    nullptr));
+                                                    run.drawingEffect.Get()));
 
             // Either way, we should be at this point by the end of writing this sequence,
             // whether it was LTR or RTL.
@@ -1110,6 +1115,7 @@ CATCH_RETURN();
 // - textLength - the length of the substring operation
 // - font - the font that applies to the substring range
 // - scale - the scale of the font to apply
+// Return Value:
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
                                                                          UINT32 textLength,
@@ -1146,6 +1152,116 @@ CATCH_RETURN();
 
     return S_OK;
 }
+#pragma endregion
+
+#pragma region internal methods for mimicking text analyzer to identify and split box drawing regions
+
+// Routine Description:
+// - Helper method to detect if something is a box drawing character.
+// Arguments:
+// - wch - Specific character.
+// Return Value:
+// - True if box drawing. False otherwise.
+bool _IsBoxDrawingCharacter(const wchar_t wch)
+{
+    if (wch >= 0x2500 && wch <= 0x259F)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+// Routine Description:
+// - An analyzer to walk through the source text and search for runs of box drawing characters.
+//   It will segment the text into runs of those characters and mark them for special drawing, if necessary.
+// Arguments:
+// - source - a text analysis source to retrieve substrings of the text to be analyzed
+// - textPosition - the index to start the substring operation
+// - textLength - the length of the substring operation
+// Result:
+// - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(IDWriteTextAnalysisSource* const source,
+                                                                             UINT32 textPosition,
+                                                                             UINT32 textLength)
+try
+{
+    // Walk through and analyze the entire string
+    while (textLength > 0)
+    {
+        // Get the substring of text remaining to analyze.
+        const WCHAR* text;
+        UINT32 length;
+        RETURN_IF_FAILED(source->GetTextAtPosition(textPosition, &text, &length));
+
+        // Put it into a view for iterator convenience.
+        const std::wstring_view str(text, length);
+
+        // Find the first box drawing character in the string from the front.
+        const auto firstBox = std::find_if(str.cbegin(), str.cend(), _IsBoxDrawingCharacter);
+
+        // If we found no box drawing characters, move on with life.
+        if (firstBox == str.cend())
+        {
+            return S_OK;
+        }
+        // If we found one, keep looking forward until we find NOT a box drawing character.
+        else
+        {
+            // Find the last box drawing character.
+            const auto lastBox = std::find_if(firstBox, str.cend(), [](wchar_t wch) { return !_IsBoxDrawingCharacter(wch); });
+
+            // Skip distance is how far we had to move forward to find a box.
+            const auto firstBoxDistance = std::distance(str.cbegin(), firstBox);
+            UINT32 skipDistance;
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(firstBoxDistance).AssignIfValid(&skipDistance));
+
+            // Move the position/length of the outside counters up to the part where boxes start.
+            textPosition += skipDistance;
+            textLength -= skipDistance;
+
+            // Run distance is how many box characters in a row there are.
+            const auto runDistance = std::distance(firstBox, lastBox);
+            UINT32 mappedLength;
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(runDistance).AssignIfValid(&mappedLength));
+
+            // Split the run and set the box effect on this segment of the run
+            RETURN_IF_FAILED(_SetBoxEffect(textPosition, mappedLength));
+
+            // Move us forward for the outer loop to continue scanning after this point.
+            textPosition += mappedLength;
+            textLength -= mappedLength;
+        }
+    }
+
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Routine Description:
+// - A callback to split a run and apply box drawing characteristics to just that sub-run.
+// Arguments:
+// - textPosition - the index to start the substring operation
+// - textLength - the length of the substring operation
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetBoxEffect(UINT32 textPosition,
+                                                                        UINT32 textLength)
+try
+{
+    _SetCurrentRun(textPosition);
+    _SplitCurrentRun(textPosition);
+    while (textLength > 0)
+    {
+        auto& run = _FetchNextRun(textLength);
+
+        // store data in the run
+        run.drawingEffect = WRL::Make<BoxDrawingEffect>();
+    }
+
+    return S_OK;
+}
+CATCH_RETURN();
 
 #pragma endregion
 

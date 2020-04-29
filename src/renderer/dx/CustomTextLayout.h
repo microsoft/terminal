@@ -78,7 +78,8 @@ namespace Microsoft::Console::Render
                 isNumberSubstituted(),
                 isSideways(),
                 fontFace{ nullptr },
-                fontScale{ 1.0 }
+                fontScale{ 1.0 },
+                drawingEffect{ nullptr }
             {
             }
 
@@ -92,6 +93,7 @@ namespace Microsoft::Console::Render
             bool isSideways;
             ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
+            ::Microsoft::WRL::ComPtr<IUnknown> drawingEffect;
 
             inline bool ContainsTextPosition(UINT32 desiredTextPosition) const noexcept
             {
@@ -124,6 +126,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
+
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
 
         [[nodiscard]] HRESULT _AnalyzeRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRuns() noexcept;

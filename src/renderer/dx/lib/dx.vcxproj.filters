@@ -17,4 +17,7 @@
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\IBoxDrawingEffect.idl" />
+  </ItemGroup>
 </Project>

@@ -245,7 +245,7 @@ using namespace Microsoft::Console::Render;
     DWRITE_MEASURING_MODE measuringMode,
     const DWRITE_GLYPH_RUN* glyphRun,
     const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-    IUnknown* /*clientDrawingEffect*/)
+    IUnknown* clientDrawingEffect)
 {
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
@@ -367,7 +367,8 @@ using namespace Microsoft::Console::Render;
                                                 measuringMode,
                                                 glyphRun,
                                                 glyphRunDescription,
-                                                drawingContext->foregroundBrush));
+                                                drawingContext->foregroundBrush,
+                                                clientDrawingEffect));
         }
         else
         {
@@ -394,8 +395,7 @@ using namespace Microsoft::Console::Render;
                 case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8: {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawColorBitmapGlyphRun(colorRun->glyphImageFormat,
                                                          currentBaselineOrigin,
@@ -404,8 +404,7 @@ using namespace Microsoft::Console::Render;
                 }
                 break;
 
-                case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_SVG: {
                     // This run is SVG glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,
@@ -452,7 +451,8 @@ using namespace Microsoft::Console::Render;
                                                         measuringMode,
                                                         &colorRun->glyphRun,
                                                         colorRun->glyphRunDescription,
-                                                        layerBrush));
+                                                        layerBrush,
+                                                        clientDrawingEffect));
                 }
                 break;
                 }
@@ -468,7 +468,8 @@ using namespace Microsoft::Console::Render;
                                             measuringMode,
                                             glyphRun,
                                             glyphRunDescription,
-                                            drawingContext->foregroundBrush));
+                                            drawingContext->foregroundBrush,
+                                            clientDrawingEffect));
     }
     return S_OK;
 }
@@ -479,7 +480,8 @@ using namespace Microsoft::Console::Render;
                                                              DWRITE_MEASURING_MODE measuringMode,
                                                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                              _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                                             ID2D1Brush* brush)
+                                                             ID2D1Brush* brush,
+                                                             _In_opt_ IUnknown* clientDrawingEffect)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
@@ -488,26 +490,37 @@ using namespace Microsoft::Console::Render;
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
+    // If a special drawing effect was specified, see if we know how to deal with it.
+    if (clientDrawingEffect)
+    {
+        IBoxDrawingEffect* boxEffect = nullptr;
+        if (SUCCEEDED(clientDrawingEffect->QueryInterface<IBoxDrawingEffect>(&boxEffect)))
+        {
+            return _DrawBoxRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription, boxEffect);
+        }
+
+        //_DrawBasicGlyphRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
+        //_DrawGlowGlyphRun(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
+    }
+
+    // If we get down here, there either was no special effect or we don't know what to do with it. Use the standard GlyphRun drawing.
+
     // Using the context is the easiest/default way of drawing.
     d2dContext->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
-
-    // However, we could probably add options here and switch out to one of these other drawing methods (making it
-    // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:
-
-    //_DrawBasicGlyphRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
-    //_DrawGlowGlyphRun(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
 
     return S_OK;
 }
 
-[[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
-                                                                     D2D1_POINT_2F baselineOrigin,
-                                                                     DWRITE_MEASURING_MODE /*measuringMode*/,
-                                                                     _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                                     _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
+[[nodiscard]] HRESULT CustomTextRenderer::_DrawBoxRunManually(DrawingContext* clientDrawingContext,
+                                                              D2D1_POINT_2F baselineOrigin,
+                                                              DWRITE_MEASURING_MODE /*measuringMode*/,
+                                                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                              _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/,
+                                                              _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
+    RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingEffect);
 
     // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
@@ -531,13 +544,19 @@ using namespace Microsoft::Console::Render;
 
     geometrySink->Close();
 
-    D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+    /*const D2D1::Matrix3x2F matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+    const D2D1::Matrix3x2F matrixScale = D2D1::Matrix3x2F::Scale(1.0f, 1.0f);*/
+
+    const auto matrixTransformation = D2D1::Matrix3x2F::Matrix3x2F(1.0f, 0, 0, 1.2f, baselineOrigin.x, baselineOrigin.y);
+    /*const auto matrixTransformation = matrixAlign * matrixScale;*/
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
-                                          &matrixAlign,
+                                          &matrixTransformation,
                                           transformedGeometry.GetAddressOf());
 
+    // Draw the outline then fill it in.
+    clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
     clientDrawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
 
     return S_OK;
