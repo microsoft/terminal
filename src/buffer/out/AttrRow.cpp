@@ -280,7 +280,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         }
         // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
         // it's possible that we just walk left-to-right through the row and find a quick exit.
-        else if (iStart > 0 && iStart == iEnd)
+        else if (iStart >= 0 && iStart == iEnd)
         {
             // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
             // where we are currently at.
@@ -321,7 +321,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                     }
 
                     // If the insertion happens at current run's lower boundary...
-                    if (iStart == lowerBound)
+                    if (iStart == lowerBound && i > 0)
                     {
                         const auto prev = std::prev(curr, 1);
                         // ... and the previous run has the same color as the new one, we can
