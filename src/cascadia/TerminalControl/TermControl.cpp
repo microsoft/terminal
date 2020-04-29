@@ -1840,7 +1840,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   swapchain size. This helper will call _DoResize with the current size
     //   of the swapchain, accounting for scaling due to DPI.
     // - Note that a DPI change will also trigger a font size change, and will call into here.
-    // - The write lock should be held when calling this method. We might be changing the buffer size here.
+    // - The write lock should be held when calling this method, we might be changing the buffer size in _DoResize.
     // Arguments:
     // - <none>
     // Return Value:
