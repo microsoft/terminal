@@ -43,11 +43,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <HyperlinkButton
                     x:Uid="AboutDialog_ThirdPartyNoticesLink"
                     NavigateUri="{x:Bind ThirdPartyNoticesLink}" />
-                <HyperlinkButton
-                    x:Uid="AboutDialog_FeedbackLink"
-                    x:Name="FeedbackHyperlinkButton"
-                    Content="[[REPLACED AT RUNTIME]]"
-                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125419" />
             </StackPanel>
         </ContentDialog>
 

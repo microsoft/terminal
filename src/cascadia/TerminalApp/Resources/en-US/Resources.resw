@@ -155,6 +155,10 @@
   <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to reload settings</value>
   </data>
+  <data name="FeedbackUriValue" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2125419</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
   <data name="AboutMenuItem" xml:space="preserve">
     <value>About</value>
   </data>

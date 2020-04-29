@@ -233,14 +233,7 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        // GH#5655: I'm reusing the FeedbackMenuItem resource here so that we
-        // don't have to change its key and make the localization team re-localize it.
-        // When 1.0 is released, we can promote the HyperlinkButton to use only x:Uid
-        // and delete its x:Name. [LOC_HACK]
-        auto aboutDialog{ FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>() };
-        auto feedbackButton{ aboutDialog.FindName(L"FeedbackHyperlinkButton").try_as<WUX::Controls::HyperlinkButton>() };
-        feedbackButton.Content(winrt::box_value(RS_(L"FeedbackMenuItem")));
-        _showDialogHandlers(*this, aboutDialog);
+        _showDialogHandlers(*this, FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -388,6 +381,18 @@ namespace winrt::TerminalApp::implementation
                 {
                     _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
                 }
+
+                // Create the feedback button.
+                auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
+                feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
+
+                WUX::Controls::FontIcon feedbackIcon{};
+                feedbackIcon.Glyph(L"\xE939");
+                feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                feedbackFlyout.Icon(feedbackIcon);
+
+                feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
+                newTabFlyout.Items().Append(feedbackFlyout);
             }
 
             // Create the about button.
@@ -642,6 +647,18 @@ namespace winrt::TerminalApp::implementation
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         _LaunchSettings(altPressed);
+    }
+
+    // Method Description:
+    // - Called when the feedback button is clicked. Launches github in your
+    //   default browser, navigated to the "issues" page of the Terminal repo.
+    void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
+                                              const RoutedEventArgs&)
+    {
+        const auto feedbackUriValue = RS_(L"FeedbackUriValue");
+        winrt::Windows::Foundation::Uri feedbackUri{ feedbackUriValue };
+
+        winrt::Windows::System::Launcher::LaunchUriAsync(feedbackUri);
     }
 
     // Method Description:
