@@ -395,7 +395,8 @@ using namespace Microsoft::Console::Render;
                 case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8: {
+                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
+                {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawColorBitmapGlyphRun(colorRun->glyphImageFormat,
                                                          currentBaselineOrigin,
@@ -404,7 +405,8 @@ using namespace Microsoft::Console::Render;
                 }
                 break;
 
-                case DWRITE_GLYPH_IMAGE_FORMATS_SVG: {
+                case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
+                {
                     // This run is SVG glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,

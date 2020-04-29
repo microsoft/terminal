@@ -103,11 +103,11 @@ namespace Microsoft::Console::Render
                                                  _In_opt_ IUnknown* clientDrawingEffect);
 
         [[nodiscard]] HRESULT _DrawBoxRunManually(DrawingContext* clientDrawingContext,
-                                                           D2D1_POINT_2F baselineOrigin,
-                                                           DWRITE_MEASURING_MODE measuringMode,
-                                                           _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                           _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                                           _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept;
+                                                  D2D1_POINT_2F baselineOrigin,
+                                                  DWRITE_MEASURING_MODE measuringMode,
+                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                  _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                  _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept;
 
         [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                 D2D1_POINT_2F baselineOrigin,

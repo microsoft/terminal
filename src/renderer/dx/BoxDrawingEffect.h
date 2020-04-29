@@ -14,11 +14,8 @@ namespace Microsoft::Console::Render
     class BoxDrawingEffect : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IBoxDrawingEffect>
     {
     public:
-
     protected:
-        
     private:
-
 #ifdef UNIT_TESTING
     public:
         BoxDrawingEffect() = default;

@@ -426,7 +426,8 @@ try
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd: {
+        case SwapChainMode::ForHwnd:
+        {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -455,7 +456,8 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition: {
+        case SwapChainMode::ForComposition:
+        {
             // Use the given target size for compositions.
             SwapChainDesc.Width = _displaySizePixels.width<UINT>();
             SwapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -837,13 +839,15 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         return _sizeTarget;
     }
     default:
@@ -1415,29 +1419,34 @@ try
 
     switch (options.cursorType)
     {
-    case CursorType::Legacy: {
+    case CursorType::Legacy:
+    {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
         ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
         rect.top = rect.bottom - ulHeight;
         break;
     }
-    case CursorType::VerticalBar: {
+    case CursorType::VerticalBar:
+    {
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
-    case CursorType::Underscore: {
+    case CursorType::Underscore:
+    {
         rect.top = rect.bottom - 1;
         break;
     }
-    case CursorType::EmptyBox: {
+    case CursorType::EmptyBox:
+    {
         paintType = CursorPaintType::Outline;
         break;
     }
-    case CursorType::FullBox: {
+    case CursorType::FullBox:
+    {
         break;
     }
     default:
@@ -1454,11 +1463,13 @@ try
 
     switch (paintType)
     {
-    case CursorPaintType::Fill: {
+    case CursorPaintType::Fill:
+    {
         _d2dRenderTarget->FillRectangle(rect, brush.Get());
         break;
     }
-    case CursorPaintType::Outline: {
+    case CursorPaintType::Outline:
+    {
         // DrawRectangle in straddles physical pixels in an attempt to draw a line
         // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
@@ -2049,9 +2060,9 @@ CATCH_RETURN();
         // For reference, for the letters "ag":
         // ...
         //          gggggg      bottom of previous line
-        // 
+        //
         // -----------------    <===========================================|
-        //                         | topSideBearing       |  1/2 lineGap    | 
+        //                         | topSideBearing       |  1/2 lineGap    |
         // aaaaaa   ggggggg     <-------------------------|-------------|   |
         //      a   g    g                                |             |   |
         //  aaaaa   ggggg                                 |<-ascent     |   |
@@ -2080,7 +2091,7 @@ CATCH_RETURN();
 
         // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
         // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
-        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED; 
+        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
 
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
@@ -2146,10 +2157,12 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
