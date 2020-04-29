@@ -32,9 +32,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
                 <HyperlinkButton
-                    x:Uid="AboutDialog_GettingStartedLink"
-                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125715" />
-                <HyperlinkButton
                     x:Uid="AboutDialog_DocumentationLink"
                     NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
                 <HyperlinkButton
@@ -46,6 +43,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <HyperlinkButton
                     x:Uid="AboutDialog_ThirdPartyNoticesLink"
                     NavigateUri="{x:Bind ThirdPartyNoticesLink}" />
+                <HyperlinkButton
+                    x:Uid="AboutDialog_FeedbackLink"
+                    x:Name="FeedbackHyperlinkButton"
+                    Content="[[REPLACED AT RUNTIME]]"
+                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125419" />
             </StackPanel>
         </ContentDialog>
 
