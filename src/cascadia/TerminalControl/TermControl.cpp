@@ -2060,8 +2060,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto htmlData = TextBuffer::GenHTML(bufferData,
                                                   _actualFont.GetUnscaledSize().Y,
                                                   _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground(),
-                                                  "");
+                                                  _settings.DefaultBackground());
 
         // convert to RTF format
         const auto rtfData = TextBuffer::GenRTF(bufferData,
