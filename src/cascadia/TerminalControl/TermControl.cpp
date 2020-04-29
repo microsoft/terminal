@@ -224,6 +224,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
+            auto lock = _terminal->LockForWriting();
+
             // Refresh our font with the renderer
             const auto actualFontOldSize = _actualFont.GetSize();
             _UpdateFont();
@@ -1655,6 +1657,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      font change. This method will *not* change the buffer/viewport size
     //      to account for the new glyph dimensions. Callers should make sure to
     //      appropriately call _DoResize after this method is called.
+    // - The write lock should be held when calling this method.
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
@@ -1683,6 +1686,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto fontFace = _settings.FontFace();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
+
+            auto lock = _terminal->LockForWriting();
 
             // Refresh our font with the renderer
             _UpdateFont();
@@ -1782,6 +1787,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             const auto actualFontOldSize = _actualFont.GetSize();
 
+            auto lock = _terminal->LockForWriting();
+
             _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi), _desiredFont, _actualFont);
 
             const auto actualFontNewSize = _actualFont.GetSize();
@@ -1833,6 +1840,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   swapchain size. This helper will call _DoResize with the current size
     //   of the swapchain, accounting for scaling due to DPI.
     // - Note that a DPI change will also trigger a font size change, and will call into here.
+    // - The write lock should be held when calling this method. We might be changing the buffer size here.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1847,8 +1855,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto widthInPixels = actualWidth * currentScaleX;
         const auto heightInPixels = actualHeight * currentScaleY;
 
-        // Grab the lock, because we might be changing the buffer size here.
-        auto lock = _terminal->LockForWriting();
         _DoResize(widthInPixels, heightInPixels);
     }
 
