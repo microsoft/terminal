@@ -83,6 +83,14 @@ Try {
         Write-Warning "Package has Dependency *and* integrated AppX VCLibs"
     }
 
+    If (-not $depsHasVclibsDesktop -and -not $filesHasVclibsDesktop) {
+        Throw "Package doesn't contain a dependency or integrated Desktop VCLibs"
+    }
+
+    If (-not $depsHasVclibsAppx -and -not $filesHasVclibsAppx) {
+        Throw "Package doesn't contain a dependency or integrated AppX VCLibs"
+    }
+
     ### Check that we have an App.xbf (which is a proxy for our resources having been merged)
     $resourceXpath = '/PriInfo/ResourceMap/ResourceMapSubtree[@name="Files"]/NamedResource[@name="App.xbf"]'
     $AppXbf = $PRIFile.SelectSingleNode($resourceXpath)
