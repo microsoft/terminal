@@ -18,6 +18,8 @@
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 
+#include "CurrentCommitHash.h" // For the about dialog's ThirdPartyNotices link
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -252,6 +254,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         return RS_(L"ApplicationVersionUnknown");
+    }
+
+    winrt::hstring TerminalPage::ThirdPartyNoticesLink()
+    {
+        winrt::hstring link{ fmt::format(L"https://github.com/microsoft/terminal/blob/{}/NOTICE.md", CurrentCommitHash) };
+        return link;
     }
 
     // Method Description:

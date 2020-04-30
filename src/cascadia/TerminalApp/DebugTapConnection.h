@@ -12,7 +12,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     class DebugTapConnection : public winrt::implements<DebugTapConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
     {
     public:
-        DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
+        explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
         ~DebugTapConnection();
         void Start();
         void WriteInput(hstring const& data);

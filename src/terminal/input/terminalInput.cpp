@@ -498,16 +498,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         if (ch == UNICODE_NULL)
         {
             // For Alt+Ctrl+Key messages GetCharData() returns 0.
+            // The values of the ASCII characters and virtual key codes
+            // of <Space>, A-Z (as used below) are numerically identical.
             // -> Get the char from the virtual key.
-            ch = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            ch = keyEvent.GetVirtualKeyCode();
         }
-        if (ch == UNICODE_SPACE)
-        {
-            // Ctrl+@ and Ctrl+Space are supposed to send null bytes.
-            // -> Change Ctrl+Space to Ctrl+@ for compatibility reasons.
-            ch = 0x40;
-        }
-        if (ch >= 0x40 && ch < 0x7F)
+        // Alt+Ctrl acts as a substitute for AltGr on Windows.
+        // For instance using a German keyboard both AltGr+< and Alt+Ctrl+< produce a | (pipe) character.
+        // The below condition primitively ensures that we allow all common Alt+Ctrl combinations
+        // while preserving most of the functionality of Alt+Ctrl as a substitute for AltGr.
+        if (ch == UNICODE_SPACE || (ch > 0x40 && ch <= 0x5A))
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
@@ -530,7 +530,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     // This section is similar to the Alt modifier section above,
     // but handles cases without Ctrl modifiers.
-    if (keyEvent.IsAltPressed() && keyEvent.GetCharData() != 0)
+    if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
     {
         _SendEscapedInputSequence(keyEvent.GetCharData());
         return true;
@@ -544,7 +544,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // -> Send a "null input sequence" in that case.
     // We don't need to handle other kinds of Ctrl combinations,
     // as we rely on the caller to pretranslate those to characters for us.
-    if (keyEvent.IsCtrlPressed())
+    if (!keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
     {
         const auto ch = keyEvent.GetCharData();
         const auto vkey = keyEvent.GetVirtualKeyCode();
