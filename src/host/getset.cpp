@@ -1641,9 +1641,14 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 //  The ScreenBuffer to perform the erase on.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
+[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
-    return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
+    RETURN_IF_FAILED(screenInfo.GetActiveBuffer().VtEraseAll());
+    if (ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode())
+    {
+        RETURN_IF_FAILED(ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->ManuallyClearViewport());
+    }
+    return S_OK;
 }
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,

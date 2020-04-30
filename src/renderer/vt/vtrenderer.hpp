@@ -109,6 +109,7 @@ namespace Microsoft::Console::Render
         void SetResizeQuirk(const bool resizeQuirk);
 
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
+        [[nodiscard]] HRESULT ManuallyClearViewport() noexcept;
 
     protected:
         wil::unique_hfile _hFile;

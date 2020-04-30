@@ -166,6 +166,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(PassthroughClearScrollback);
 
+    TEST_METHOD(PassthroughClearAll);
+
     TEST_METHOD(PassthroughHardReset);
 
     TEST_METHOD(PassthroughCursorShapeImmediately);
@@ -1027,6 +1029,85 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
+}
+
+void ConptyRoundtripTests::PassthroughClearAll()
+{
+    // see github/TODO
+    Log::Comment(L"TODO");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    auto& sm = si.GetStateMachine();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        if (i > 0)
+        {
+            sm.ProcessString(L"\r\n");
+        }
+
+        sm.ProcessString(L"~");
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
+        const auto firstRow = viewport.top<short>();
+        const auto width = viewport.width<short>();
+
+        // "~" rows
+        for (short row = 0; row < viewport.bottom<short>(); row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, row });
+            if (afterClear && row >= viewport.top<short>())
+            {
+                TestUtils::VerifySpanOfText(L" ", iter, 0, width);
+            }
+            else
+            {
+                TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
+                TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+
+    sm.ProcessString(L"\x1b[2J");
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    const til::rectangle newTerminalView{ term->_mutableViewport.ToInclusive() };
+    VERIFY_ARE_EQUAL(end, newTerminalView.top<short>());
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, newTerminalView, true);
 }
 
 void ConptyRoundtripTests::PassthroughHardReset()
@@ -2551,10 +2632,11 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     // See https://github.com/microsoft/terminal/issues/3126#issuecomment-620677742
 
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int ClearLikeCls = 0;
     constexpr int ClearLikeClearHost = 1;
+    constexpr int ClearWithVT = 2;
     INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
 
     Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
@@ -2661,6 +2743,11 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
                                                                      totalCellsInBuffer,
                                                                      { 0, 0 },
                                                                      cellsWritten));
+    }
+    else if (clearBufferMethod == ClearWithVT)
+    {
+        sm.ProcessString(L"\x1b[2J");
+        sm.ProcessString(L"\x1b[3J");
     }
 
     Log::Comment(L"Painting the frame");

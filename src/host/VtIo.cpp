@@ -484,3 +484,20 @@ bool VtIo::IsResizeQuirkEnabled() const
     }
     return S_OK;
 }
+
+// Method Description:
+// - Manually tell the renderer that it should emit a "Erase All"
+//   sequence to the connected terminal.
+// TODO TODO TODO TODO TODO TODO
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT VtIo::ManuallyClearViewport() const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->ManuallyClearViewport();
+    }
+    return S_OK;
+}
