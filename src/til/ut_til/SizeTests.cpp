@@ -460,6 +460,26 @@ class SizeTests
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
         }
     }
+    TEST_METHOD(AreaCast)
+    {
+        Log::Comment(L"0.) Area of two things that should be in bounds.");
+        {
+            const til::size sz{ 5, 10 };
+            VERIFY_ARE_EQUAL(static_cast<SHORT>(sz.area()), sz.area<SHORT>());
+        }
+
+        Log::Comment(L"1.) Area is out of bounds on multiplication.");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<SHORT>().max();
+            const til::size sz{ bigSize, bigSize };
+
+            auto fn = [&]() {
+                sz.area<SHORT>();
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
 
     TEST_METHOD(CastToCoord)
     {

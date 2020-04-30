@@ -127,7 +127,13 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
                                                              &data.dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
-        // Callers of this function expect to receive an exclusive rect, not an inclusive one.
+
+        // Callers of this function expect to receive an exclusive rect, not an
+        // inclusive one. The driver will mangle this value for us
+        // - For GetConsoleScreenBufferInfoEx, it will re-decrement these values
+        //   to return an inclusive rect.
+        // - For GetConsoleScreenBufferInfo, it will leave these values
+        //   untouched, returning an exclusive rect.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
     }
@@ -828,6 +834,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
 // - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// - enableCmdShim - true iff the client process that's calling this
+//   method is "cmd.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
@@ -835,7 +844,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                                   const COORD target,
                                                                   std::optional<SMALL_RECT> clip,
                                                                   const wchar_t fillCharacter,
-                                                                  const WORD fillAttribute) noexcept
+                                                                  const WORD fillAttribute,
+                                                                  const bool enableCmdShim) noexcept
 {
     try
     {
@@ -847,7 +857,36 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         TextAttribute useThisAttr(fillAttribute);
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
-        return S_OK;
+        HRESULT hr = S_OK;
+
+        // GH#3126 - This is a shim for cmd's `cls` function. In the
+        // legacy console, `cls` is supposed to clear the entire buffer. In
+        // conpty however, there's no difference between the viewport and the
+        // entirety of the buffer. We're going to see if this API call exactly
+        // matched the way we expect cmd to call it. If it does, then
+        // let's manually emit a ^[[3J to the connected terminal, so that their
+        // entire buffer will be cleared as well.
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (enableCmdShim && gci.IsInVtIoMode())
+        {
+            const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
+            const bool sourceIsWholeBuffer = (source.Top == 0) &&
+                                             (source.Left == 0) &&
+                                             (source.Right == currentBufferDimensions.X) &&
+                                             (source.Bottom == currentBufferDimensions.Y);
+            const bool targetIsNegativeBufferHeight = (target.X == 0) &&
+                                                      (target.Y == -currentBufferDimensions.Y);
+            const bool noClipProvided = clip == std::nullopt;
+            const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
+                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+
+            if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
+            {
+                hr = gci.GetVtIo()->ManuallyClearScrollback();
+            }
+        }
+
+        return hr;
     }
     CATCH_RETURN();
 }
