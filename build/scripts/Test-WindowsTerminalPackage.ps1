@@ -68,6 +68,27 @@ Try {
         }
     }
 
+    $dependencies = $Manifest.Package.Dependencies.PackageDependency.Name
+    $depsHasVclibsDesktop = ("Microsoft.VCLibs.140.00.UWPDesktop" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug.UWPDesktop" -in $dependencies)
+    $depsHasVcLibsAppX = ("Microsoft.VCLibs.140.00" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug" -in $dependencies)
+    $filesHasVclibsDesktop = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d.dll" -EA:Ignore))
+    $filesHasVclibsAppX = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140_app.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d_app.dll" -EA:Ignore))
+
+    If ($depsHasVclibsDesktop -Eq $filesHasVclibsDesktop) {
+        $eitherBoth = if ($depsHasVclibsDesktop) { "both" } else { "neither" }
+        $neitherNor = if ($depsHasVclibsDesktop) { "and" } else { "nor" }
+        Throw "Package has $eitherBoth Dependency $neitherNor Integrated Desktop VCLibs"
+    }
+
+    If ($depsHasVclibsAppx -Eq $filesHasVclibsAppx) {
+        if ($depsHasVclibsAppx) {
+            # We've shipped like this forever, so downgrade to warning.
+            Write-Warning "Package has both Dependency and Integrated AppX VCLibs"
+        } else {
+            Throw "Package has neither Dependency nor Integrated AppX VCLibs"
+        }
+    }
+
     ### Check that we have an App.xbf (which is a proxy for our resources having been merged)
     $resourceXpath = '/PriInfo/ResourceMap/ResourceMapSubtree[@name="Files"]/NamedResource[@name="App.xbf"]'
     $AppXbf = $PRIFile.SelectSingleNode($resourceXpath)
