@@ -74,21 +74,19 @@ Try {
     $filesHasVclibsDesktop = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d.dll" -EA:Ignore))
     $filesHasVclibsAppX = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140_app.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d_app.dll" -EA:Ignore))
 
-    If ($depsHasVclibsDesktop -and $filesHasVclibsDesktop) {
-        Throw "Package has Dependency *and* integrated Desktop VCLibs"
+    If ($depsHasVclibsDesktop -Eq $filesHasVclibsDesktop) {
+        $eitherBoth = if ($depsHasVclibsDesktop) { "both" } else { "neither" }
+        $neitherNor = if ($depsHasVclibsDesktop) { "and" } else { "nor" }
+        Throw "Package has $eitherBoth Dependency $neitherNor Integrated Desktop VCLibs"
     }
 
-    If ($depsHasVclibsAppx -and $filesHasVclibsAppx) {
-        # We've shipped like this forever, so downgrade to warning.
-        Write-Warning "Package has Dependency *and* integrated AppX VCLibs"
-    }
-
-    If (-not $depsHasVclibsDesktop -and -not $filesHasVclibsDesktop) {
-        Throw "Package doesn't contain a dependency or integrated Desktop VCLibs"
-    }
-
-    If (-not $depsHasVclibsAppx -and -not $filesHasVclibsAppx) {
-        Throw "Package doesn't contain a dependency or integrated AppX VCLibs"
+    If ($depsHasVclibsAppx -Eq $filesHasVclibsAppx) {
+        if ($depsHasVclibsAppx) {
+            # We've shipped like this forever, so downgrade to warning.
+            Write-Warning "Package has both Dependency and Integrated AppX VCLibs"
+        } else {
+            Throw "Package has neither Dependency nor Integrated AppX VCLibs"
+        }
     }
 
     ### Check that we have an App.xbf (which is a proxy for our resources having been merged)
