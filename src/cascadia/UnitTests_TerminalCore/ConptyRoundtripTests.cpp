@@ -135,7 +135,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         // Manually set the console into conpty mode. We're not actually going
         // to set up the pipes for conpty, but we want the console to behave
         // like it would in conpty mode.
-        // _pVtRenderEngine = vtRenderEngine.get();
         g.EnableConptyModeForTests(std::move(vtRenderEngine));
 
         expectedOutput.clear();
@@ -277,10 +276,6 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
         VERIFY_SUCCEEDED(gci.GetVtIo()->SuppressResizeRepaint());
-        // // Instead of going through the VtIo to suppress the resize repaint,
-        // // just call the method directly on the renderer. This is implemented in
-        // // VtIo::SuppressResizeRepaint
-        // VERIFY_SUCCEEDED(_pVtRenderEngine->SuppressResizeRepaint());
     }
 }
 
