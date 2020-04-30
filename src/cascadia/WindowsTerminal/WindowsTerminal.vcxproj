@@ -156,6 +156,7 @@
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
       <!-- (part of the VC LIBS HACK above) -->
       <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
+        <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
       </PackagingOutputs>
     </ItemGroup>
