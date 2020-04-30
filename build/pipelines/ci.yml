@@ -47,7 +47,7 @@ stages:
   - stage: Build_x86
     displayName: Build x86
     dependsOn: []
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    condition: succeeded()
     jobs:
       - template: ./templates/build-console-ci.yml
         parameters:
@@ -55,7 +55,7 @@ stages:
   - stage: Build_ARM64
     displayName: Build ARM64
     dependsOn: []
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    condition: succeeded()
     jobs:
       - template: ./templates/build-console-ci.yml
         parameters:

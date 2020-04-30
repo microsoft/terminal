@@ -9,6 +9,7 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
+    WindowsTerminalReleaseBuild: true
   pool: { vmImage: windows-2019 }
 
   steps:
