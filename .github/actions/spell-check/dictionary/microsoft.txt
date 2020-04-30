@@ -5,4 +5,5 @@ microsoftonline
 osgvsowi
 powershell
 tdbuildteamid
+vcruntime
 visualstudio

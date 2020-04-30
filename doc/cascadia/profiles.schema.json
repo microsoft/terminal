@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Microsoft's Windows Terminal Settings Profile Schema'",
+  "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
       "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
@@ -98,7 +98,7 @@
         },
         "index": {
           "type": "integer",
-          "description": "The index of the profile in the new tab dropdown to open"
+          "description": "The index of the profile in the new tab dropdown (starting at 0)"
         }
       },
       "type": "object"
@@ -142,7 +142,7 @@
             "singleLine": {
               "type": "boolean",
               "default": false,
-              "description": "If true, newlines are removed and whitespace is maintained. If false, whitespace is removed and newlines are maintained."
+              "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
             }
           }
         }
@@ -222,11 +222,11 @@
             "split": {
               "$ref": "#/definitions/SplitState",
               "default": "auto",
-              "description": "The orientation to split the pane in, either vertical (think [|]), horizontal (think [-]), or auto (splits pane based on remaining space)"
+              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])"
             },
             "splitMode": {
               "default": "duplicate",
-              "description": "Control how the pane splits. Only accepts `duplicate` which will duplicate the focused pane's profile into a new pane."
+              "description": "Control how the pane splits. Only accepts \"duplicate\" which will duplicate the focused pane's profile into a new pane."
             }
           }
         }
@@ -250,7 +250,7 @@
             ]
         },
         "keys": {
-          "description": "Defines the key combinations used to call the command.",
+          "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
           "oneOf": [
             {
               "$ref": "#/definitions/KeyChordSegment"
@@ -277,7 +277,7 @@
       "properties": {
         "alwaysShowTabs": {
           "default": true,
-          "description": "When set to true, tabs are always displayed. When set to false and showTabsInTitlebar is set to false, tabs only appear after opening a new tab.",
+          "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
         "copyOnSelect": {
@@ -292,7 +292,7 @@
         },
         "defaultProfile": {
           "$ref": "#/definitions/ProfileGuid",
-          "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value."
+          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The \"guid\" of the desired default profile is used as the value."
         },
         "disabledProfileSources": {
           "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
@@ -310,7 +310,7 @@
         },
         "initialPosition": {
           "$ref": "#/definitions/Coordinates",
-          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If launchMode is set to maximized, the window will be maximized on the monitor specified by those coordinates."
+          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to maximized, the window will be maximized on the monitor specified by those coordinates."
         },
         "initialRows": {
           "default": 30,
@@ -330,7 +330,7 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or 'system'.",
+          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
           "maximum": 999,
           "minimum": 0,
           "type": ["integer", "string"]
@@ -344,7 +344,7 @@
         },
         "theme": {
           "default": "system",
-          "description": "Sets the theme of the application.",
+          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
           "enum": [
             "light",
             "dark",
@@ -359,17 +359,17 @@
         },
         "showTerminalTitleInTitlebar": {
           "default": true,
-          "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays 'Windows Terminal'.",
+          "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays \"Windows Terminal\".",
           "type": "boolean"
         },
         "snapToGridOnResize": {
           "default": false,
-          "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize 'smoothly'",
+          "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize smoothly",
           "type": "boolean"
         },
         "tabWidthMode": {
           "default": "equal",
-          "description": "Sets the width of the tabs.",
+          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title",
           "enum": [
             "equal",
             "titleLength"
@@ -383,7 +383,7 @@
         },
         "confirmCloseAllTabs": {
           "default": true,
-          "description": " When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation.",
+          "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type":"boolean"
         }
       },
@@ -416,11 +416,11 @@
         "background": {
           "$ref": "#/definitions/Color",
           "default": "#0c0c0c",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
+          "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "backgroundImage": {
-          "description": "Sets the file location of the Image to draw over the window background.",
+          "description": "Sets the file location of the image to draw over the window background.",
           "type": ["string", "null"]
         },
         "backgroundImageAlignment": {
@@ -440,9 +440,10 @@
           "type": "string"
         },
         "backgroundImageOpacity": {
+          "default": 1.0,
           "description": "Sets the transparency of the background image. Accepts floating point values from 0-1.",
-          "maximum": 1,
-          "minimum": 0,
+          "maximum": 1.0,
+          "minimum": 0.0,
           "type": "number"
         },
         "backgroundImageStretchMode": {
@@ -458,7 +459,7 @@
         },
         "closeOnExit": {
           "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
@@ -478,109 +479,27 @@
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
           "type": "string"
         },
-        "colorTable": {
-          "description": "Array of colors used in the profile if colorscheme is not set. Colors use hex color format: \"#rrggbb\". Ordering is as follows: [black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]",
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "background": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the background color of the color table."
-              },
-              "black": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI black."
-              },
-              "blue": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI blue."
-              },
-              "brightBlack": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright black."
-              },
-              "brightBlue": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright blue."
-              },
-              "brightCyan": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright cyan."
-              },
-              "brightGreen": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright green."
-              },
-              "brightPurple": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright purple."
-              },
-              "brightRed": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright red."
-              },
-              "brightWhite": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright white."
-              },
-              "brightYellow": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI bright yellow."
-              },
-              "cyan": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI cyan."
-              },
-              "foreground": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the foreground color of the color table."
-              },
-              "green": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI green."
-              },
-              "purple": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI purple."
-              },
-              "red": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI red."
-              },
-              "white": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI white."
-              },
-              "yellow": {
-                "$ref": "#/definitions/Color",
-                "description": "Sets the color used as ANSI yellow."
-              }
-            },
-            "type": "object"
-          },
-          "type": "array"
-        },
         "commandline": {
           "description": "Executable used in the profile.",
           "type": "string"
         },
-        "connectionType": {
-          "$ref": "#/definitions/ProfileGuid",
-          "description": "A GUID reference to a connection type. Currently undocumented as of 0.3, this is used for Azure Cloud Shell"
-        },
         "cursorColor": {
-          "$ref": "#/definitions/Color",
-          "description": "Sets the cursor color of the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
+          "oneOf": [
+            { "$ref": "#/definitions/Color" },
+            {"type": "null"}
+          ],
+          "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
           "maximum": 100,
           "minimum": 25,
-          "type": ["integer","null"]
+          "type": ["integer","null"],
+          "default": 25
         },
         "cursorShape": {
           "default": "bar",
-          "description": "Sets the cursor shape for the profile. Possible values: \"vintage\" ( ▃ ), \"bar\" ( ┃, default ), \"underscore\" ( ▁ ), \"filledBox\" ( █ ), \"emptyBox\" ( ▯ )",
+          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
           "enum": [
             "bar",
             "emptyBox",
@@ -601,14 +520,14 @@
         },
         "fontSize": {
           "default": 12,
-          "description": "Sets the font size.",
+          "description": "Size of the font in points.",
           "minimum": 1,
           "type": "integer"
         },
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#cccccc",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
+          "description": "Sets the text color. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {
@@ -637,7 +556,7 @@
         },
         "padding": {
           "default": "8, 8, 8, 8",
-          "description": "Sets the padding around the text within the window. Can have three different formats: \"#\" sets the same padding for all sides, \"#, #\" sets the same padding for left-right and top-bottom, and \"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
+          "description": "Sets the padding around the text within the window. Can have three different formats:\n -\"#\" sets the same padding for all sides \n -\"#, #\" sets the same padding for left-right and top-bottom\n -\"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
           "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
           "type": "string"
         },
@@ -651,8 +570,11 @@
           "type": "string"
         },
         "selectionBackground": {
-          "$ref": "#/definitions/Color",
-          "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
+          "oneOf": [
+            {"$ref": "#/definitions/Color"},
+            { "type": "null" }
+          ],
+          "description": "Sets the background color of selected text. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "snapOnInput": {
           "default": true,
@@ -669,7 +591,8 @@
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
