@@ -198,6 +198,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(TestResizeWithCookedRead);
 
+    TEST_METHOD(NewLinesAtBottomWithBackground);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2571,7 +2573,9 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     // * (0, 0)
     // the rest of the cases are added here for completeness.
 
+    // Don't let the cooked read pollute other tests
     BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
     END_TEST_METHOD_PROPERTIES()
@@ -2611,4 +2615,129 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     // By simply reaching the end of this test, we know that we didn't crash. Hooray!
+}
+
+void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:spacesToPrint", L"{1, 7, 8, 9, 32}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(bool, paintEachNewline, L"If true, call PaintFrame after each pair of lines.");
+    INIT_TEST_PROPERTY(int, spacesToPrint, L"Controls the number of spaces printed after the first '#'");
+
+    // See https://github.com/microsoft/terminal/issues/5502
+    Log::Comment(L"Attempts to emit text to a new bottom line with spaces with "
+                 L"a colored background. When that happens, we should make "
+                 L"sure to still print the spaces, because the information "
+                 L"about their background color is important.");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    auto defaultAttrs = si.GetAttributes();
+    auto conhostBlueAttrs = defaultAttrs;
+
+    // Conhost and Terminal store attributes in different bits.
+    conhostBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(FOREGROUND_GREEN) },
+                                          { static_cast<BYTE>(FOREGROUND_BLUE) });
+    auto terminalBlueAttrs = TextAttribute();
+    terminalBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(XTERM_GREEN_ATTR) },
+                                           { static_cast<BYTE>(XTERM_BLUE_ATTR) });
+
+    const size_t width = static_cast<size_t>(TerminalViewWidth);
+
+    // We're going to print 4 more rows than the entire height of the viewport,
+    // causing the buffer to circle 4 times. This is 2 extra iterations of the
+    // two lines we're printing per iteration.
+    const auto circledRows = 4;
+    for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
+    {
+        // We're printing pairs of lines: ('_' is a space character)
+        //
+        // Line 1 chars: __________________ (break)
+        // Line 1 attrs: DDDDDDDDDDDDDDDDDD (all default attrs)
+        // Line 2 chars: ____#_________#___ (break)
+        // Line 2 attrs: BBBBBBBBBBBBBBDDDD (First spacesToPrint+5 are blue BG, then default attrs)
+        //                    [<----->]
+        //                      This number of spaces controled by spacesToPrint
+        if (i > 0)
+        {
+            sm.ProcessString(L"\r\n");
+        }
+
+        // In WSL:
+        // echo -e "\e[m\r\n\e[44;32m    #         \e[m#"
+
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(L"\r");
+        sm.ProcessString(L"\n");
+        sm.ProcessString(L"\x1b[44;32m");
+        sm.ProcessString(L"    #");
+        sm.ProcessString(std::wstring(spacesToPrint, L' '));
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(L"#");
+
+        if (paintEachNewline)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
+        const auto width = viewport.width<short>();
+        const auto isTerminal = viewport.top() != 0;
+
+        // Conhost and Terminal store attributes in different bits.
+        const auto blueAttrs = isTerminal ? terminalBlueAttrs : conhostBlueAttrs;
+
+        for (short row = 0; row < viewport.bottom<short>() - 2; row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+
+            const auto isBlank = (row % 2) == 0;
+            const auto rowCircled = row > (viewport.bottom<short>() - 1 - circledRows);
+            // When the buffer circles, new lines will be initialized using the
+            // current text attributes. Those will be the default-on-default
+            // attributes. All of the Terminal's buffer will use
+            // default-on-default.
+            const auto actualDefaultAttrs = rowCircled || isTerminal ? TextAttribute() : defaultAttrs;
+            Log::Comment(NoThrowString().Format(L"isBlank=%d, rowCircled=%d", isBlank, rowCircled));
+
+            if (isBlank)
+            {
+                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.width<size_t>());
+            }
+            else
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L' ', blueAttrs, 4u);
+                TestUtils::VerifyLineContains(iter, L'#', blueAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', blueAttrs, static_cast<size_t>(spacesToPrint));
+                TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
+                TestUtils::VerifyLineContains(iter, L' ', actualDefaultAttrs, static_cast<size_t>(width - 15));
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
