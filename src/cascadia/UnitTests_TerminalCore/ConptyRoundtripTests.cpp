@@ -205,11 +205,6 @@ private:
     void _resizeConpty(const unsigned short sx, const unsigned short sy);
     std::deque<std::string> expectedOutput;
 
-    // // DIRTY: VtIo actually owns the render engine, but for the sake of the
-    // // tests, we're keeping a non-ownership pointer here so that we don't have
-    // // to go digging through all the classes when we want to access it.
-    // Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
-
     std::unique_ptr<CommonState> m_state;
     std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
 
