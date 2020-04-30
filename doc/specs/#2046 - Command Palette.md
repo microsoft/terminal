@@ -195,7 +195,28 @@ inclusion in an initial Command Palette implementation.
 
 ### Commandline Mode
 
-TODO
+One of our more highly requested features is the ability to run a `wt.exe`
+commandline in the current WT window (see [#4472]). Typically, users want the
+ability to do this straight from whatever shell they're currently running.
+However, we don't really have an effective way currently to know if WT is itself
+being called from another WT instance, and passing those arguments to the
+hosting WT. Furthermore, in the long term, we see that feature as needing the
+ability to not only run commands in the current WT window, but an _arbitrary_ WT
+window.
+
+The Command Palette seems like a natural fit for a stopgap measure while we
+design the correct way to have a `wt` commandline apply to the window it's
+running in.
+
+In Commandline Mode, the user can simply type a `wt.exe` commandline, and when
+they hit enter, we'll parse the commandline and dispatch it _to the current
+window_. So if the user wants to open a new tab, they could type `new-tab` in
+Commandline Mode, and it would open a new tab in the current window. They're
+also free to chain multiple commands like they can with `wt` from a shell - by
+entering something like `split-pane -p "Windows PowerShell" ; split-pane -H
+wsl.exe`, the terminal would execute two `SplitPane` actions in the currently
+focused pane, creating one with the "Windows PowerShell" profile and another
+with the default profile running `wsl` in it.
 
 ## UI/UX Design
 
@@ -272,10 +293,10 @@ name, to show how their input correlates to the results on screen.
 ### Commandline Mode
 
 Commandline mode is much simpler. In this mode, we'll simply display a text input,
-similar to the search box that's rendererd for Action Mode. In this box, the
+similar to the search box that's rendered for Action Mode. In this box, the
 user will be able to type a `wt.exe` style commandline. The user does not need
 to start this commandline with `wt` (or `wtd`, etc) - since we're already
-runnning in WT, the user shouldn't really need to repeat themselves.
+running in WT, the user shouldn't really need to repeat themselves.
 
 When the user hits <kbd>enter</kbd>, we'll attempt to parse the commandline. If
 we're successful in parsing the commandline, we can close the palette and
@@ -483,6 +504,17 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
   in commandline mode before we try to auto-parse their commandline, to check
   for errors. Might be useful to help sanity check users. We can always parse
   their `wt` commandlines safely without having to execute them.
+* It would be cool if the commands the user typed in Commandline Mode could be
+  saved to a history of some sort, so they could easily be re-entered.
+  - It would be especially cool if it could do this across launches.
+    - We don't really have any way of storing transient data like that in the
+      Terminal, so that would need to be figured out first.
+  - Typically the Command Palette is at the top of the view, with the
+    suggestions below it, so navigating through the history would be _backwards_
+    relative to a normal shell.
+* Perhaps users will want the ability to configure which side of the window the
+  palette appears on?
+  - This might fit in better with [#3327].
 
 ### Nested Commands
 
@@ -637,3 +669,5 @@ Spec: Introduce a mini-specification for localized resource use from JSON [#5280
 [#1571]: https://github.com/microsoft/terminal/issues/1571
 [#3879]: https://github.com/microsoft/terminal/issues/3879
 [#5280]: https://github.com/microsoft/terminal/pull/5280
+[#4472]: https://github.com/microsoft/terminal/issues/4472
+[#3327]: https://github.com/microsoft/terminal/issues/3327
