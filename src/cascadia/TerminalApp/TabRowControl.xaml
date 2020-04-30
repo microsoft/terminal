@@ -30,7 +30,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 UseLayoutRounding="true"
                 FontFamily="Segoe MDL2 Assets"
                 FontWeight="SemiLight"
-                FontSize="12"
+                FontSize="11"
                 AutomationProperties.AccessibilityView="Control">
                 <!-- U+E710 is the fancy plus icon. -->
                 <mux:SplitButton.Resources>
