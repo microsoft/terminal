@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2020-04-13
+last updated: 2020-04-30
 issue id: 2046
 ---
 
@@ -27,12 +27,25 @@ in [#2046]. That was authored during the annual Microsoft Hackathon, where I
 proceeded to prototype the solution. This spec is influenced by things I learned
 prototyping.
 
+Initially, the command palette was designed simply as a method for executing
+certain actions that the user pre-defined. With the addition of [commandline
+arguments](https://github.com/microsoft/terminal/issues/4632) to the Windows
+Terminal in v0.9, we also considered what it might mean to be able to have the
+command palette work as an effective UI not only for dispatching pre-defined
+commands, but also `wt.exe` commandlines to the current terminal instance.
+
 ## Solution Design
 
-First off, for the sake of clarity, we'll rename the `command` of a keybinding
-to `action`. This will help keep the mental model between commands and actions
-clearer. When deserializing keybindings, we'll include a check for the old
-`command` key to migrate it.
+Fundamentally, we need to address two different modes of using the command palette:
+* In the first mode, the command palette can be used to quickly look up
+  pre-defined actions and dispatch them. We'll refer to this as "Action Mode".
+* The second mode allows the user to run `wt` commandline commands and have them
+  apply immediately to the current Terminal window. We'll refer to this as
+  "commandline mode".
+
+Both these options will be discussed in detail below.
+
+### Action Mode
 
 We'll introduce a new top-level array to the user settings, under the key
 `commands`. `commands` will contain an array of commands, each with the
@@ -40,8 +53,8 @@ following schema:
 
 ```js
 {
-    "name": string,
-    "action": string,
+    "name": string|object,
+    "action": string|object,
     "icon": string
     "args": object?,
 }
@@ -77,19 +90,19 @@ corresponding to that `ShortcutAction`. `AppKeyBindings` already does a great
 job of dispatching `ShortcutActions` (and their associated arguments), so we'll
 re-use that. We'll pull the basic parts of dispatching `ActionAndArgs`
 callbacks into another class, `ShortcutActionDispatch`, with a single
-`PerformAction(ActionAndArgs)` method (and events for each action).
+`DoAction(ActionAndArgs)` method (and events for each action).
 `AppKeyBindings` will be initialized with a reference to the
-`ShortcutActionDispatch` object, so that it can call `PerformAction` on it.
+`ShortcutActionDispatch` object, so that it can call `DoAction` on it.
 Additionally, by having a singular `ShortcutActionDispatch` instance, we won't
 need to re-hook up the ShortcutAction keybindings each time we re-load the
 settings.
 
-In `App`, when someone clicks on an item in the list, we'll get the
-`ActionAndArgs` associated with that list element, and call PerformAction on
+In `TerminalPage`, when someone clicks on an item in the list, we'll get the
+`ActionAndArgs` associated with that list element, and call `DoAction` on
 the app's `ShortcutActionDispatch`. This will trigger the event handler just the
 same as pressing the keybinding.
 
-### Commands for each profile?
+#### Commands for each profile?
 
 [#3879] Is a request for being able to launch a profile directly, via the
 command palette. Essentially, the user will type the name of a profile, and hit
@@ -180,24 +193,32 @@ pre-expansion could just stash the json for the action, then expand it later?
 This implementation detail is why this particular feature is not slated for
 inclusion in an initial Command Palette implementation.
 
+### Commandline Mode
+
+TODO
+
 ## UI/UX Design
 
 We'll add another action that can be used to toggle the visibility of the
-command palette. Pressing that keybinding will bring up the command palette.
+command palette. Pressing that keybinding will bring up the command palette. We
+should make sure to add a argument to this action that specifies whether the
+palette should be opened directly in Action Mode or Commandline Mode.
 
 When the command palette appears, we'll want it to appear as a single overlay
 over all of the panes of the Terminal. The drop-down will be centered
 horizontally, dropping down from the top (from the tab row). When commands are
 entered, it will be implied that they are delivered to the focused terminal
 pane. This will help avoid two problematic scenarios that could arise from
-having the command palette attache to a single pane:
+having the command palette attached to a single pane:
   * When attached to a single pane, it might be very easy for the UI to quickly
     become cluttered, especially at smaller pane sizes.
   * This avoids the "find the overlay problem" which is common in editors like
     VS where the dialog appears attached to the active editor pane.
 
-The palette will consist of two main UI elements: a text box for searching for
-commands, and a list of commands.
+The palette will consist of two main UI elements: a text box for
+entering/searching for commands, and in action mode, a list of commands.
+
+### Action Mode
 
 The list of commands will be populated with all the commands by default. Each
 command will appear like a `MenuFlyoutItem`, with an icon at the left (if it has
@@ -247,6 +268,77 @@ For example, consider the following list of commands:
 
 As the user types, we should **bold** each matching character in the command
 name, to show how their input correlates to the results on screen.
+
+### Commandline Mode
+
+Commandline mode is much simpler. In this mode, we'll simply display a text input,
+similar to the search box that's rendererd for Action Mode. In this box, the
+user will be able to type a `wt.exe` style commandline. The user does not need
+to start this commandline with `wt` (or `wtd`, etc) - since we're already
+runnning in WT, the user shouldn't really need to repeat themselves.
+
+When the user hits <kbd>enter</kbd>, we'll attempt to parse the commandline. If
+we're successful in parsing the commandline, we can close the palette and
+dispatch the commandline. If the commandline had errors, we should reveal a text
+box with an error message below the text input. We'll leave the palette open
+with their entered command, so they can edit the commandline and try again. We
+should _probably_ leave the message up for a few seconds once they've begun
+editing the commandline, but eventually hide the message (ideally with a motion
+animation).
+
+### Switching Between Modes
+
+**TODO**: This is a topic for _discussion_.
+
+How do we differentiate Action Mode from Commandline Mode?
+
+I think there should be a character that the user types that switches the mode.
+This is reminiscent of how the command palette works in applications like VsCode
+and Sublime Text. The same UI is used for a number of functions. In the case of
+VsCode, when the user opens the palette, it's initially in a "navigate to file"
+mode. When the user types the prefix character `@`, the menu seamlessly switches
+to a "navigate to symbol mode". Similarly, users can use `:` for "go to line"
+and `>` enters an "editor command" mode.
+
+I believe we should use a similarly implemented UI. The UI would be in one of
+the two modes by default, and typing the prefix character would enter the other
+mode. If the user deletes the prefix character, then we'd switch back into the
+default mode.
+
+When the user is in Action Mode vs Commandline mode, if the input is empty
+(besides potentially the prefix character), we should probably have some sort of
+placeholder text visible to indicate which mode the user is in. Something like
+_"Enter a command name..."_ for action mode, or _"Type a wt commandline..."_ for
+commandline mode.
+
+Initially, I favored having the palette in Action Mode by default, and typing a
+`:` prefix to enter Commandline Mode. This is fairly similar to how tmux's
+internal command prompt works, which is bound to `<prefix>-:` by default.
+
+If we wanted to remain _similar_ to VsCode, we'd have no prefix character be the
+Commandline Mode, and `>` would enter the Action mode. I'd think that might
+actually be _backwards_ from what I'd expect, with `>` being the default
+character for the end of the default `cmd` `%PROMPT%`.
+
+As always, I'm also on board with the "this should be configurable by the user"
+route, so they can change what mode the command palette is in by default, and
+what the prefixes for differen modes are, but I'm not sure how we'd define that
+cleanly in the settings.
+
+```json
+{
+  "commandPaletteActionModePrefix": "", // or null, for no prefix
+  "commandPaletteCommandlineModePrefix": ">"
+}
+```
+
+We'd need to have validation on that though, what if both of them were set to
+`null`? One of them would _need_ to be `null`, so if both have a character, do
+we just assume one is the default?
+
+This counts as a future-considerations topic, and not something I'm seriously
+considering for Terminal 2.0.
+
 
 ## Capabilities
 
@@ -343,7 +435,6 @@ platform.
 The `{ "key": "resourceName" }` solution proposed here was also touched on in
 [#5280].
 
-
 ## Future considerations
 
 * Commands will provide an easy point for allowing an extension to add its
@@ -378,19 +469,6 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
   the initial character of words in the command.
   - For example: `ot` would give more weight to "**O**pen **T**ab" than
     "**O**pen Se**t**tings").
-* Another idea for a future spec is the concept of "nested commands", where a
-  single command has many sub-commands. This would hide the children commands
-  from the entire list of commands, allowing for much more succinct top-level
-  list of commands, and allowing related commands to be grouped together.
-  - For example, I have a text editor plugin that enables rendering markdown to
-    a number of different styles. To use that command in my text editor, first I
-    hit enter on the "Render Markdown..." command, then I select which style I
-    want to render to, in another list of options. This way, I don't need to
-    have three options for "Render Markdown to github", "Render Markdown to
-    gitlab", all in the top-level list.
-  - We probably also want to allow a nested command set to be evaluated at
-    runtime somehow. Like if we had a "Open New Tab..." command that then had a
-    nested menu with the list of profiles.
 * We may want to add a button to the New Tab Button's dropdown to "Show Command
   Palette". I'm hesitant to keep adding new buttons to that UI, but the command
   palette is otherwise not highly discoverable.
@@ -401,6 +479,140 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
 * [#1571] is a request for customizing the "new tab dropdown" menu. When we get
   to discussing that design, we should consider also enabling users to add
   commands from their list of commands to that menu as well.
+* I think it would be cool if there was a small timeout as the user was typing
+  in commandline mode before we try to auto-parse their commandline, to check
+  for errors. Might be useful to help sanity check users. We can always parse
+  their `wt` commandlines safely without having to execute them.
+
+### Nested Commands
+
+Another idea for a future spec is the concept of "nested commands", where a
+single command has many sub-commands. This would hide the children commands from
+the entire list of commands, allowing for much more succinct top-level list of
+commands, and allowing related commands to be grouped together.
+- For example, I have a text editor plugin that enables rendering markdown to a
+  number of different styles. To use that command in my text editor, first I hit
+  enter on the "Render Markdown..." command, then I select which style I want to
+  render to, in another list of options. This way, I don't need to have three
+  options for "Render Markdown to github", "Render Markdown to gitlab", all in
+  the top-level list.
+- We probably also want to allow a nested command set to be evaluated at runtime
+  somehow. Like if we had a "Open New Tab..." command that then had a nested
+  menu with the list of profiles.
+
+The above might be able to be expressed through some JSON like the following:
+```json
+"commands": [
+  {
+    "icon": "...",
+    "name": { "key": "NewTabWithProfileRootCommandName" },
+    "commands": [
+      {
+        "iterateOn": "profiles",
+        "icon": "${profile.icon}",
+        "name": { "key": "NewTabWithProfileCommandName" },
+        "command": { "action": "newTab", "profile": "${profile.name}" }
+      }
+    ]
+  },
+  {
+    "icon": "...",
+    "name": "Connect to ssh...",
+    "commands": [
+      {
+        "icon": "...",
+        "name": "first.com",
+        "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+      },
+      {
+        "icon": "...",
+        "name": "second.com",
+        "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+      }
+    ]
+  }
+  {
+    "icon": "...",
+    "name": { "key": "SplitPaneWithProfileRootCommandName" },
+    "commands": [
+      {
+        "iterateOn": "profiles",
+        "icon": "${profile.icon}",
+        "name": { "key": "SplitPaneWithProfileCommandName" },
+        "commands": [
+          {
+            "icon": "...",
+            "name": { "key": "SplitPaneName" },
+            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "automatic" }
+          },
+          {
+            "icon": "...",
+            "name": { "key": "SplitPaneVerticalName" },
+            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+          },
+          {
+            "icon": "...",
+            "name": { "key": "SplitPaneHorizontalName" },
+            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+This would define three commands, each with a number of nested commands underneath it:
+* For the first command:
+  - It uses the XAML resource `NewTabWithProfileRootCommandName` as it's name.
+  - Activating this command would cause us to remove all the other commands from
+    the command palette, and only show the nested commands.
+  - It contains nested commands, one for each profile.
+    - Each nested command would use the XAML resource
+      `NewTabWithProfileCommandName`, which then would also contain the string
+      `${profile.name}`, to be filled with the profile's name in the command's
+      name.
+    - It would also use the profile's icon as the command icon.
+    - Activating any of the nested commands would dispatch an action to create a
+      new tab with that profile
+* The second command:
+  - It uses the string literal `"Connect to ssh..."` as it's name
+  - It contains two nested commands:
+    - Each nested command has it's own literal name
+    - Activating these commands would cause us to open a new tab with the
+      provided `commandline` instead of the default profile's `commandline`
+* The third command:
+  - It uses the XAML resource `NewTabWithProfileRootCommandName` as it's name.
+  - It contains nested commands, one for each profile.
+    - Each one of these sub-commands each contains 3 subcommands - one that will
+      create a new split pane automatically, one vertically, and one
+      horizontally, each using the given profile.
+
+So, you could imagine the entire tree as follows:
+
+```
+<Command Palette>
+├─ New Tab With Profile...
+│  ├─ Profile 1
+│  ├─ Profile 2
+│  └─ Profile 3
+├─ Connect to ssh...
+│  ├─ first.com
+│  └─ second.com
+└─ New Pane...
+   ├─ Profile 1...
+   |  ├─ Split Automatically
+   |  ├─ Split Vertically
+   |  └─ Split Horizontally
+   ├─ Profile 2...
+   |  ├─ Split Automatically
+   |  ├─ Split Vertically
+   |  └─ Split Horizontally
+   └─ Profile 3...
+      ├─ Split Automatically
+      ├─ Split Vertically
+      └─ Split Horizontally
+```
 
 ## Resources
 Initial post that inspired this spec: #[2046](https://github.com/microsoft/terminal/issues/2046)
