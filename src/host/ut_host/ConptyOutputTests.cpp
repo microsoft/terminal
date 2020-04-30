@@ -91,10 +91,10 @@ class ConptyOutputTests
                                                                gci.GetColorTable(),
                                                                static_cast<WORD>(gci.GetColorTableSize()));
         auto pfn = std::bind(&ConptyOutputTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
-        _pVtRenderEngine->SetTestCallback(pfn);
+        vtRenderEngine->SetTestCallback(pfn);
 
-        g.pRender->AddRenderEngine(_pVtRenderEngine.get());
-        gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+        g.pRender->AddRenderEngine(vtRenderEngine.get());
+        gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
 
         expectedOutput.clear();
 
