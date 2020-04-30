@@ -1033,8 +1033,12 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
 
 void ConptyRoundtripTests::PassthroughClearAll()
 {
-    // see github/TODO
-    Log::Comment(L"TODO");
+    // see https://github.com/microsoft/terminal/issues/2832
+    Log::Comment(L"This is a test to make sure that when the client emits a "
+                 L"^[[2J, we actually forward the 2J to the terminal, to move "
+                 L"the viewport. 2J importantly moves the viewport, so that "
+                 L"all the _current_ buffer contents are moved to scrollback. "
+                 L"We shouldn't just paint over the current viewport with spaces.");
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -1093,13 +1097,20 @@ void ConptyRoundtripTests::PassthroughClearAll()
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 
+    const til::rectangle originalTerminalView{ term->_mutableViewport.ToInclusive() };
+
+    // Here, we'll emit the 2J to EraseAll, and move the viewport contents into
+    // the scrollback.
     sm.ProcessString(L"\x1b[2J");
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
+    // Make sure that the terminal's new viewport is actually just lower than it
+    // used to be.
     const til::rectangle newTerminalView{ term->_mutableViewport.ToInclusive() };
     VERIFY_ARE_EQUAL(end, newTerminalView.top<short>());
+    VERIFY_IS_GREATER_THAN(newTerminalView.top(), originalTerminalView.top());
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
     verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);

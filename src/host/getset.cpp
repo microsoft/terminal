@@ -1644,6 +1644,10 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
     RETURN_IF_FAILED(screenInfo.GetActiveBuffer().VtEraseAll());
+
+    // When the client requests a Erase All operation, we need to manually tell
+    // the connected terminal to do the same thing, so that the terminal will
+    // move it's own buffer contents into the scrollback.
     if (ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode())
     {
         RETURN_IF_FAILED(ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->ManuallyClearViewport());
