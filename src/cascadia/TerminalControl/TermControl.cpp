@@ -224,13 +224,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
+            auto lock = _terminal->LockForWriting();
+
             // Refresh our font with the renderer
             const auto actualFontOldSize = _actualFont.GetSize();
             _UpdateFont();
             const auto actualFontNewSize = _actualFont.GetSize();
             if (actualFontNewSize != actualFontOldSize)
             {
-                _RefreshSize();
+                _RefreshSizeUnderLock();
             }
         }
     }
@@ -1654,7 +1656,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
     //      to account for the new glyph dimensions. Callers should make sure to
-    //      appropriately call _DoResize after this method is called.
+    //      appropriately call _DoResizeUnderLock after this method is called.
+    // - The write lock should be held when calling this method.
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
@@ -1684,6 +1687,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
+            auto lock = _terminal->LockForWriting();
+
             // Refresh our font with the renderer
             _UpdateFont();
 
@@ -1691,7 +1696,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // NOT change the size of the window, because that can lead to more
             // problems (like what happens when you change the font size while the
             // window is maximized?)
-            _RefreshSize();
+            _RefreshSizeUnderLock();
         }
         CATCH_LOG();
     }
@@ -1730,7 +1735,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         foundationSize.Width *= currentEngineScale;
         foundationSize.Height *= currentEngineScale;
 
-        _DoResize(foundationSize.Width, foundationSize.Height);
+        _DoResizeUnderLock(foundationSize.Width, foundationSize.Height);
     }
 
     // Method Description:
@@ -1782,12 +1787,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             const auto actualFontOldSize = _actualFont.GetSize();
 
+            auto lock = _terminal->LockForWriting();
+
             _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi), _desiredFont, _actualFont);
 
             const auto actualFontNewSize = _actualFont.GetSize();
             if (actualFontNewSize != actualFontOldSize)
             {
-                _RefreshSize();
+                _RefreshSizeUnderLock();
             }
         }
     }
@@ -1830,14 +1837,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Perform a resize for the current size of the swapchainpanel. If the
     //   font size changed, we'll need to resize the buffer to fit the existing
-    //   swapchain size. This helper will call _DoResize with the current size
+    //   swapchain size. This helper will call _DoResizeUnderLock with the current size
     //   of the swapchain, accounting for scaling due to DPI.
     // - Note that a DPI change will also trigger a font size change, and will call into here.
+    // - The write lock should be held when calling this method, we might be changing the buffer size in _DoResizeUnderLock.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TermControl::_RefreshSize()
+    void TermControl::_RefreshSizeUnderLock()
     {
         const auto currentScaleX = SwapChainPanel().CompositionScaleX();
         const auto currentScaleY = SwapChainPanel().CompositionScaleY();
@@ -1847,9 +1855,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto widthInPixels = actualWidth * currentScaleX;
         const auto heightInPixels = actualHeight * currentScaleY;
 
-        // Grab the lock, because we might be changing the buffer size here.
-        auto lock = _terminal->LockForWriting();
-        _DoResize(widthInPixels, heightInPixels);
+        _DoResizeUnderLock(widthInPixels, heightInPixels);
     }
 
     // Method Description:
@@ -1860,7 +1866,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
-    void TermControl::_DoResize(const double newWidth, const double newHeight)
+    void TermControl::_DoResizeUnderLock(const double newWidth, const double newHeight)
     {
         SIZE size;
         size.cx = static_cast<long>(newWidth);
