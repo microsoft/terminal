@@ -2743,7 +2743,6 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
                  L"a colored background. When that happens, we should make "
                  L"sure to still print the spaces, because the information "
                  L"about their background color is important.");
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
