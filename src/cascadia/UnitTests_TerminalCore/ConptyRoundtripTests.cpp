@@ -2573,7 +2573,9 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     // * (0, 0)
     // the rest of the cases are added here for completeness.
 
+    // Don't let the cooked read pollute other tests
     BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
     END_TEST_METHOD_PROPERTIES()
