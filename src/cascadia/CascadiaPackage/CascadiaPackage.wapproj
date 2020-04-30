@@ -112,20 +112,8 @@
     For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
     It's very difficult for users who do not have access to the store to get our dependency packages, and we want to be robust
     and deployable everywhere. Since these libraries can be redistributed, it's easiest if we simply redistribute them.
+    See also the "VC LIBS HACK" section in WindowsTerminal.vcxproj.
   -->
-  <PropertyGroup>
-    <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
-    <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
-    <!-- Add all the CRT libs as content -->
-    <Content Include="$(VCToolsRedistDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
-      <DeploymentContent>true</DeploymentContent>
-      <Link>%(Filename)%(Extension)</Link>
-    </Content>
-  </ItemGroup>
-
   <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
        This is part of the generic machinery that applies to every AppX. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
