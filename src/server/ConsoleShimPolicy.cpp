@@ -6,19 +6,13 @@
 #include "ConsoleShimPolicy.h"
 
 // Routine Description:
-// - Constructs a new instance of the process policy class.
+// - Constructs a new instance of the shim policy class.
 // Arguments:
 // - All arguments specify a true/false status to a policy that could be applied to a console client app.
 ConsoleShimPolicy::ConsoleShimPolicy(const bool isCmd,
                                      const bool isPowershell) :
     _isCmd{ isCmd },
     _isPowershell{ isPowershell }
-{
-}
-
-// Routine Description:
-// - Destructs an instance of the shim policy class.
-ConsoleShimPolicy::~ConsoleShimPolicy()
 {
 }
 
@@ -44,8 +38,18 @@ ConsoleShimPolicy ConsoleShimPolicy::s_CreateInstance(const HANDLE hProcess)
         // For whatever reason, wil::GetModuleFileNameExW leaves trailing nulls, so get rid of them.
         clientName.erase(std::find(clientName.begin(), clientName.end(), '\0'), clientName.end());
 
+        // Convert to lower case, just in case
+        std::transform(clientName.begin(), clientName.end(), clientName.begin(), std::towlower);
+
         isCmd = clientName.compare(L"cmd.exe") == 0;
-        isPowershell = clientName.compare(L"powershell.exe") == 0;
+
+        // For powershell, we need both Windows PowersShell (powershell.exe) and
+        // PowerShell Core (pwsh.exe). If PowerShell Core is ever updated to use
+        // ^[[3J for Clear-Host, then it won't ever hit the shim code path, but
+        // we're keeping this for the long tail of pwsh versions that still
+        // _don't_ use that sequence.
+        isPowershell = (clientName.compare(L"powershell.exe") == 0) ||
+                       (clientName.compare(L"pwsh.exe") == 0);
     }
     CATCH_LOG();
 
@@ -65,12 +69,13 @@ bool ConsoleShimPolicy::IsCmdExe() const noexcept
 }
 
 // Method Description:
-// - Returns true if the connected client application is literally "powershell.exe". If
-//   it is, we'll need to enable certain compatibility shims.
+// - Returns true if the connected client application is literally
+//   "powershell.exe" or "pwsh.exe". If it is, we'll need to enable certain
+//   compatibility shims.
 // Arguments:
 // - <none>
 // Return Value:
-// - rue iff the process is "powershell.exe"
+// - rue iff the process is "powershell.exe" or "pwsh.exe"
 bool ConsoleShimPolicy::IsPowershellExe() const noexcept
 {
     return _isPowershell;

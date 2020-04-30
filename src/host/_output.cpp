@@ -289,7 +289,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
 
         // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
-        // the legacy console, `Clear-Host` is supposed to clear the entire
+        // the vintage console, `Clear-Host` is supposed to clear the entire
         // buffer. In conpty however, there's no difference between the viewport
         // and the entirety of the buffer. We're going to see if this API call
         // exactly matched the way we expect powershell to call it. If it does,

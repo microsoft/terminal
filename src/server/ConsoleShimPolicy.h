@@ -21,8 +21,6 @@ Author:
 class ConsoleShimPolicy
 {
 public:
-    ~ConsoleShimPolicy();
-
     static ConsoleShimPolicy s_CreateInstance(const HANDLE hProcess);
 
     bool IsCmdExe() const noexcept;
