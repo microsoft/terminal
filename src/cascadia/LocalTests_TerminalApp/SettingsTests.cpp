@@ -870,7 +870,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
 
         settings._ParseJsonString(settings0String, false);
         settings.LayerJson(settings._userSettings);
@@ -971,7 +971,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
 
         settings._ParseJsonString(settings0String, false);
         settings.LayerJson(settings._userSettings);
@@ -982,7 +982,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(settings._profiles.at(2)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(3)._name);
 
@@ -993,7 +993,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(0)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
@@ -1032,7 +1032,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
@@ -1046,7 +1046,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
         VERIFY_IS_FALSE(settings._profiles.at(4)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotLayer", settings._profiles.at(3)._name);
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings._profiles.at(4)._name);
@@ -1085,7 +1085,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
@@ -1099,7 +1099,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
         VERIFY_IS_FALSE(settings._profiles.at(4)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings._profiles.at(3)._name);
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings._profiles.at(4)._name);
@@ -1132,7 +1132,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(settings2._profiles.at(3)._guid.has_value());
             VERIFY_IS_FALSE(settings2._profiles.at(4)._guid.has_value());
             VERIFY_ARE_EQUAL(L"Windows PowerShell", settings2._profiles.at(0)._name);
-            VERIFY_ARE_EQUAL(L"cmd", settings2._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(L"Command Prompt", settings2._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings2._profiles.at(2)._name);
             VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings2._profiles.at(3)._name);
             VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings2._profiles.at(4)._name);
@@ -1152,7 +1152,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
-        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(4)._name);
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(4)._name);
     }
 
     void SettingsTests::TestHideAllProfiles()
