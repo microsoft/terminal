@@ -78,6 +78,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(ValidateLegacyGlobalsWarning);
 
+        TEST_METHOD(ValidateProfileNamesArentCaseSensitive);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2233,7 +2235,7 @@ namespace TerminalAppLocalTests
         const std::string badSettings{ R"(
         {
             "globals": {},
-            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "defaultProfile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
             "profiles": [
                 {
                     "name" : "profile0",
@@ -2262,5 +2264,63 @@ namespace TerminalAppLocalTests
         settings._ValidateNoGlobalsKey();
         VERIFY_ARE_EQUAL(1u, settings._warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty, settings._warnings.at(0));
+    }
+
+    void SettingsTests::ValidateProfileNamesArentCaseSensitive()
+    {
+        const std::string userSettings{ R"(
+        {
+            "defaultProfile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+            "profiles": [
+                {
+                    "name" : "profile 0"
+                },
+                {
+                    "name" : "Profile 0"
+                },
+                {
+                    "name" : "PROFILE 0"
+                }
+            ],
+            "keybindings": []
+        })" };
+
+        auto name0{ L"profile 0" };
+        auto name1{ L"Profile 0" };
+        auto name2{ L"PROFILE 0" };
+        auto name3{ L"pRoFiLe 0" };
+
+        // Create the default settings
+        CascadiaSettings settings;
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
+
+        settings._ValidateNoGlobalsKey();
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+
+        // Now layer on the user's settings
+        settings._ParseJsonString(userSettings, false);
+        settings.LayerJson(settings._userSettings);
+
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(5u, settings._profiles.size());
+        auto profile0Guid = settings._profiles.at(0).GetGuid();
+        auto profile1Guid = settings._profiles.at(1).GetGuid();
+        auto profile2Guid = settings._profiles.at(2).GetGuid();
+
+        VERIFY_ARE_NOT_EQUAL(profile0Guid, profile1Guid);
+        VERIFY_ARE_NOT_EQUAL(profile1Guid, profile2Guid);
+
+        // Since FindGuid does a case-insensitive lookup, looking up any of
+        // these names will return the first one in the list.
+        VERIFY_ARE_EQUAL(profile0Guid, settings.FindGuid(name0));
+        VERIFY_ARE_EQUAL(profile0Guid, settings.FindGuid(name1));
+        VERIFY_ARE_EQUAL(profile0Guid, settings.FindGuid(name2));
+
+        // Including even a variant that wasn't in the original list of profiles
+        VERIFY_ARE_EQUAL(profile0Guid, settings.FindGuid(name3));
     }
 }

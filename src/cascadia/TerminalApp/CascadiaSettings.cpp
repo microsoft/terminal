@@ -74,9 +74,20 @@ std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring_view profileNa
 {
     std::optional<GUID> profileGuid{};
 
+    std::wstring needle{ profileName };
+    std::transform(needle.begin(),
+                   needle.end(),
+                   needle.begin(),
+                   std::towlower);
     for (const auto& profile : _profiles)
     {
-        if (profileName == profile.GetName())
+        std::wstring thisProfilesName{ profile.GetName() };
+        std::transform(thisProfilesName.begin(),
+                       thisProfilesName.end(),
+                       thisProfilesName.begin(),
+                       std::towlower);
+
+        if (needle == thisProfilesName)
         {
             try
             {
