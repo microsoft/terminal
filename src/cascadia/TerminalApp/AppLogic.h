@@ -15,17 +15,23 @@ namespace winrt::TerminalApp::implementation
     struct AppLogic : AppLogicT<AppLogic>
     {
     public:
+        static AppLogic* Current() noexcept;
+
         AppLogic();
         ~AppLogic() = default;
 
         void Create();
         bool IsUwp() const noexcept;
         void RunAsUwp();
+        bool IsElevated() const noexcept;
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         winrt::hstring EarlyExitMessage();
+
+        winrt::hstring ApplicationDisplayName() const;
+        winrt::hstring ApplicationVersion() const;
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
@@ -47,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _isUwp{ false };
+        bool _isElevated{ false };
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to

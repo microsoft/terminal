@@ -42,11 +42,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
 
-[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet();
-[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs);
-[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs);
-void DoSrvPrivateTabClear(const bool fClearAll);
-
 void DoSrvPrivateEnableVT200MouseMode(const bool fEnable);
 void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable);
 void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable);
@@ -84,7 +79,6 @@ void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 
 void DoSrvIsConsolePty(bool& isPty);
 
-void DoSrvPrivateSetDefaultTabStops();
 void DoSrvPrivateDeleteLines(const size_t count);
 void DoSrvPrivateInsertLines(const size_t count);
 

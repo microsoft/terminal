@@ -26,6 +26,7 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -75,6 +76,7 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="IMouseWheelListener.idl" />
     <Midl Include="TSFInputControl.idl">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </Midl>
@@ -84,7 +86,7 @@
     <None Include="TerminalControl.def" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources/Resources.language-en.resw" />
+    <PRIResource Include="Resources\*\Resources.resw" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

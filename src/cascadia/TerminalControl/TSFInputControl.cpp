@@ -19,7 +19,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _activeTextStart{ 0 }
+        _activeTextStart{ 0 },
+        _focused{ false },
+        _currentTerminalCursorPos{ 0, 0 },
+        _currentCanvasWidth{ 0.0 },
+        _currentTextBlockHeight{ 0.0 },
+        _currentTextBounds{ 0, 0, 0, 0 },
+        _currentControlBounds{ 0, 0, 0, 0 },
+        _currentWindowBounds{ 0, 0, 0, 0 }
     {
         InitializeComponent();
 
@@ -27,9 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the
-        // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO GitHub #3639: Should Input Pane display policy be Automatic
+        // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -60,7 +65,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
         // See GH#4159 for more info.
+        // Also disconnect compositionCompleted and textUpdating explicitly. It seems to occasionally cause problems if
+        // a composition is active during application teardown.
         _layoutRequestedRevoker.revoke();
+        _compositionCompletedRevoker.revoke();
+        _textUpdatingRevoker.revoke();
     }
 
     // Method Description:
@@ -75,6 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusEnter();
+            _focused = true;
         }
     }
 
@@ -90,6 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusLeave();
+            _focused = false;
         }
     }
 
@@ -116,6 +127,130 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Redraw the canvas if certain dimensions have changed since the last
+    //   redraw. This includes the Terminal cursor position, the Canvas width, and the TextBlock height.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::TryRedrawCanvas()
+    {
+        if (!_focused)
+        {
+            return;
+        }
+
+        // Get the cursor position in text buffer position
+        auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
+        _CurrentCursorPositionHandlers(*this, *cursorArgs);
+        const til::point cursorPos{ gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<ptrdiff_t>(cursorArgs->CurrentPosition().Y) };
+
+        const double actualCanvasWidth{ Canvas().ActualWidth() };
+        const double actualTextBlockHeight{ TextBlock().ActualHeight() };
+        const auto actualWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
+
+        if (_currentTerminalCursorPos == cursorPos &&
+            _currentCanvasWidth == actualCanvasWidth &&
+            _currentTextBlockHeight == actualTextBlockHeight &&
+            _currentWindowBounds == actualWindowBounds)
+        {
+            return;
+        }
+
+        _currentTerminalCursorPos = cursorPos;
+        _currentCanvasWidth = actualCanvasWidth;
+        _currentTextBlockHeight = actualTextBlockHeight;
+        _currentWindowBounds = actualWindowBounds;
+
+        _RedrawCanvas();
+    }
+
+    // Method Description:
+    // - Redraw the Canvas and update the current Text Bounds and Control Bounds for
+    //   the CoreTextEditContext.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_RedrawCanvas()
+    {
+        // Get Font Info as we use this is the pixel size for characters in the display
+        auto fontArgs = winrt::make_self<FontInfoEventArgs>();
+        _CurrentFontInfoHandlers(*this, *fontArgs);
+
+        const til::size fontSize{ til::math::flooring, fontArgs->FontSize() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
+
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+        const til::point clientCursorInDips{ clientCursorPos / scaleFactor };
+
+        // Position our TextBlock at the cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorInDips.x<double>());
+        Canvas().SetTop(TextBlock(), clientCursorInDips.y<double>());
+
+        // calculate FontSize in pixels from Points
+        const double fontSizePx = (fontSize.height<double>() * 72) / USER_DEFAULT_SCREEN_DPI;
+        const double unscaledFontSizePx = fontSizePx / scaleFactor;
+
+        // Make sure to unscale the font size to correct for DPI! XAML needs
+        // things in DIPs, and the fontSize is in pixels.
+        TextBlock().FontSize(unscaledFontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        // TextBlock's actual dimensions right after initialization is 0w x 0h. So,
+        // if an IME is displayed before TextBlock has text (like showing the emoji picker
+        // using Win+.), it'll be placed higher than intended.
+        TextBlock().MinWidth(unscaledFontSizePx);
+        TextBlock().MinHeight(unscaledFontSizePx);
+        _currentTextBlockHeight = std::max(unscaledFontSizePx, _currentTextBlockHeight);
+
+        const auto widthToTerminalEnd = _currentCanvasWidth - clientCursorInDips.x<double>();
+        // Make sure that we're setting the MaxWidth to a positive number - a
+        // negative number here will crash us in mysterious ways with a useless
+        // stack trace
+        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
+        TextBlock().MaxWidth(newMaxWidth);
+
+        // Get window in screen coordinates, this is the entire window including
+        // tabs. THIS IS IN DIPs
+        const til::point windowOrigin{ til::math::flooring, _currentWindowBounds };
+
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Point(0, 0)) };
+
+        // The controlAbsoluteOrigin is the origin of the control relative to
+        // the origin of the displays. THIS IS IN DIPs
+        const til::point controlAbsoluteOrigin{ windowOrigin + controlOrigin };
+
+        // Convert the control origin to pixels
+        const til::point scaledFrameOrigin = controlAbsoluteOrigin * scaleFactor;
+
+        // Get the location of the cursor in the display, in pixels.
+        til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
+
+        // GH #5007 - make sure to account for wrapping the IME composition at
+        // the right side of the viewport.
+        const ptrdiff_t textBlockHeight = ::base::ClampMul(_currentTextBlockHeight, scaleFactor);
+
+        // Get the bounds of the composition text, in pixels.
+        const til::rectangle textBounds{ til::point{ screenCursorPos.x(), screenCursorPos.y() },
+                                         til::size{ 0, textBlockHeight } };
+
+        _currentTextBounds = textBounds;
+
+        _currentControlBounds = Rect(screenCursorPos.x<float>(),
+                                     screenCursorPos.y<float>(),
+                                     0,
+                                     fontSize.height<float>());
+    }
+
+    // Method Description:
     // - Handler for LayoutRequested event by CoreEditContext responsible
     //   for returning the current position the IME should be placed
     //   in screen coordinates on the screen.  TSFInputControls internal
@@ -130,59 +265,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto request = args.Request();
 
-        // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
+        TryRedrawCanvas();
 
-        // Get the cursor position in text buffer position
-        auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
-        _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
-
-        // Get Font Info as we use this is the pixel size for characters in the display
-        auto fontArgs = winrt::make_self<FontInfoEventArgs>();
-        _CurrentFontInfoHandlers(*this, *fontArgs);
-
-        const auto fontWidth = fontArgs->FontSize().Width;
-        const auto fontHeight = fontArgs->FontSize().Height;
-
-        // Convert text buffer cursor position to client coordinate position within the window
-        COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(cursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
-
-        // Convert from client coordinate to screen coordinate by adding window position
-        COORD screenCursorPos;
-        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<short>(windowBounds.X));
-        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<short>(windowBounds.Y));
-
-        // get any offset (margin + tabs, etc..) of the control within the window
-        const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
-
-        // add the margin offsets if any
-        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
-        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
-
-        // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-
-        // Set the selection layout bounds
-        Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
-        request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
+        // Set the text block bounds
+        request.LayoutBounds().TextBounds(_currentTextBounds);
 
         // Set the control bounds of the whole control
-        Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
-        request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
-
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
-
-        TextBlock().Height(fontHeight);
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+        request.LayoutBounds().ControlBounds(_currentControlBounds);
     }
 
     // Method Description:
@@ -299,6 +388,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
+            // When a user deletes the last character in their current composition, some machines
+            // will fire a CompositionCompleted before firing a TextUpdating event that deletes the last character.
+            // The TextUpdating will have a lower StartCaretPosition, so in this scenario, _activeTextStart
+            // needs to update to be the StartCaretPosition.
+            // A known issue related to this behavior is that the last character that's deleted from a composition
+            // will get sent to the terminal before we receive the TextUpdate to delete the character.
+            // See GH #5054.
+            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
+
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
@@ -345,6 +443,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _activeTextStart = _inputBuffer.length();
 
         TextBlock().Text(L"");
+
+        // After we reset the TextBlock to empty string, we want to make sure
+        // ActualHeight reflects the respective height. It seems that ActualHeight
+        // isn't updated until there's new text in the TextBlock, so the next time a user
+        // invokes "Win+." for the emoji picker IME, it would end up
+        // using the pre-reset TextBlock().ActualHeight().
+        TextBlock().UpdateLayout();
 
         // hide the controls until text input starts again
         Canvas().Visibility(Visibility::Collapsed);

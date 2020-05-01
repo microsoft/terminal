@@ -22,7 +22,7 @@ Write-Output "// THIS IS AN AUTO-GENERATED FILE" | Out-File -FilePath $OutPath -
 Write-Output "// Generated from " | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
 $fullPath = Resolve-Path -Path $JsonFile
 Write-Output $fullPath.Path | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "constexpr std::string_view $($VariableName){ R`"(" | Out-File -FilePath $OutPath -Encoding ASCII -Append
+Write-Output "constexpr std::string_view $($VariableName){ R`"(" | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
 Write-Output $jsonData | Out-File -FilePath $OutPath -Encoding ASCII -Append
 Write-Output ")`" };" | Out-File -FilePath $OutPath -Encoding ASCII -Append
 

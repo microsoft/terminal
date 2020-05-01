@@ -42,6 +42,7 @@ namespace Microsoft::Console::Interactivity::Win32
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        _In_ const COORD start,
                                        _In_ const COORD end,
+                                       _In_ bool blockRange = false,
                                        _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // range from a UiaPoint

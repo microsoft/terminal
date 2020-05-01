@@ -5,16 +5,20 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Profile.h"
+#include "../TerminalApp/CascadiaSettings.h"
+#include "../LocalTests_TerminalApp/JsonTestClass.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace TerminalAppUnitTests
 {
-    class JsonTests
+    class JsonTests : public JsonTestClass
     {
         BEGIN_TEST_CLASS(JsonTests)
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
@@ -26,10 +30,11 @@ namespace TerminalAppUnitTests
         TEST_METHOD(DiffProfile);
         TEST_METHOD(DiffProfileWithNull);
 
+        TEST_METHOD(TestWrongValueType);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
-            reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
-
+            InitializeJsonReader();
             // Use 4 spaces to indent instead of \t
             _builder.settings_["indentation"] = "    ";
             return true;
@@ -39,7 +44,6 @@ namespace TerminalAppUnitTests
         void VerifyParseFailed(std::string content);
 
     private:
-        std::unique_ptr<Json::CharReader> reader;
         Json::StreamWriterBuilder _builder;
     };
 
@@ -47,7 +51,7 @@ namespace TerminalAppUnitTests
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     }
@@ -55,7 +59,7 @@ namespace TerminalAppUnitTests
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
         VERIFY_IS_FALSE(parseResult);
     }
 
@@ -79,6 +83,7 @@ namespace TerminalAppUnitTests
                                           "\"brightRed\" : \"#E74856\","
                                           "\"brightWhite\" : \"#F2F2F2\","
                                           "\"brightYellow\" : \"#F9F1A5\","
+                                          "\"cursorColor\" : \"#FFFFFF\","
                                           "\"cyan\" : \"#3A96DD\","
                                           "\"foreground\" : \"#F2F2F2\","
                                           "\"green\" : \"#13A10E\","
@@ -96,6 +101,7 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(ARGB(0, 0xf2, 0xf2, 0xf2), scheme.GetForeground());
         VERIFY_ARE_EQUAL(ARGB(0, 0x0c, 0x0c, 0x0c), scheme.GetBackground());
         VERIFY_ARE_EQUAL(ARGB(0, 0x13, 0x13, 0x13), scheme.GetSelectionBackground());
+        VERIFY_ARE_EQUAL(ARGB(0, 0xFF, 0xFF, 0xFF), scheme.GetCursorColor());
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
@@ -217,6 +223,59 @@ namespace TerminalAppUnitTests
         VERIFY_IS_TRUE(diff.isMember("icon"));
         VERIFY_IS_TRUE(diff["icon"].isString());
         VERIFY_IS_TRUE("bar" == diff["icon"].asString());
+    }
+
+    void JsonTests::TestWrongValueType()
+    {
+        // This json blob has a whole bunch of settings with the wrong value
+        // types - strings for int values, ints for strings, floats for ints,
+        // etc. When we encounter data that's the wrong data type, we should
+        // gracefully ignore it, as opposed to throwing an exception, causing us
+        // to fail to load the settings at all.
+
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile" : "{00000000-1111-0000-0000-000000000000}",
+            "profiles": [
+                {
+                    "guid" : "{00000000-1111-0000-0000-000000000000}",
+                    "acrylicOpacity" : "0.5",
+                    "closeOnExit" : "true",
+                    "fontSize" : "10",
+                    "historySize" : 1234.5678,
+                    "padding" : 20,
+                    "snapOnInput" : "false",
+                    "icon" : 4,
+                    "backgroundImageOpacity": false,
+                    "useAcrylic" : 14
+                }
+            ]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+
+        settings._ParseJsonString(settings0String, false);
+        // We should not throw an exception trying to parse the settings here.
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(1u, settings._profiles.size());
+        auto& profile = settings._profiles.at(0);
+        Profile defaults{};
+
+        VERIFY_ARE_EQUAL(defaults._acrylicTransparency, profile._acrylicTransparency);
+        VERIFY_ARE_EQUAL(defaults._closeOnExitMode, profile._closeOnExitMode);
+        VERIFY_ARE_EQUAL(defaults._fontSize, profile._fontSize);
+        VERIFY_ARE_EQUAL(defaults._historySize, profile._historySize);
+        // A 20 as an int can still be treated as a json string
+        VERIFY_ARE_EQUAL(L"20", profile._padding);
+        VERIFY_ARE_EQUAL(defaults._snapOnInput, profile._snapOnInput);
+        // 4 is a valid string value
+        VERIFY_ARE_EQUAL(L"4", profile._icon);
+        // false is not a valid optional<double>
+        VERIFY_IS_FALSE(profile._backgroundImageOpacity.has_value());
+        VERIFY_ARE_EQUAL(defaults._useAcrylic, profile._useAcrylic);
     }
 
 }

@@ -51,6 +51,8 @@ MSC_WARNING_LEVEL       = /W4 /WX
 
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
+CONSOLE_SRC_PATH        = $(PROJECT_ROOT)\core\console\open\src
+
 # -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------
@@ -61,7 +63,11 @@ SOURCES = \
     VTCommandFuzzer.cpp \
 
 INCLUDES = \
-    ..\..\..\inc \
+    ..\..\..\inc; \
+    $(CONSOLE_SRC_PATH)\..\oss\dynamic_bitset; \
+    $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
+    $(CONSOLE_SRC_PATH)\..\oss\chromium; \
+    $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(INCLUDES) \
 
 TARGETLIBS = \

@@ -20,7 +20,7 @@ Author:
 class CopyFromCharPopup final : public Popup
 {
 public:
-    CopyFromCharPopup(SCREEN_INFORMATION& screenInfo);
+    explicit CopyFromCharPopup(SCREEN_INFORMATION& screenInfo);
 
     [[nodiscard]] NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
 

@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-  <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" />
   <PropertyGroup Label="Globals">
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
@@ -86,7 +86,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\chromium;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;$(OpenConsoleDir)\dep\wil\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;$(OpenConsoleDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile>
       <!-- Manually include the generated TerminalCore header's path, because
@@ -123,7 +123,7 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\Resources.language-en.resw" />
+    <PRIResource Include="Resources\*\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
     <PRIResource Include="Resources\Resources.devicefamily-core.resw" />
   </ItemGroup>
@@ -147,6 +147,9 @@
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
@@ -156,15 +159,17 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+    <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
     <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>

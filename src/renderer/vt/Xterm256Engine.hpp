@@ -37,6 +37,8 @@ namespace Microsoft::Console::Render
                                                    const ExtendedAttributes extendedAttrs,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
+        [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
+
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
 

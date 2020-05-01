@@ -88,6 +88,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
+    // If Terminal is spawned by a shortcut that requests that it run in a new process group
+    // while attached to a console session, that request is nonsense. That request will, however,
+    // cause WT to start with Ctrl-C disabled. This wouldn't matter, because it's a Windows-subsystem
+    // application. Unfortunately, that state is heritable. In short, if you start WT using cmd in
+    // a weird way, ^C stops working _inside_ the terminal. Mad.
+    SetConsoleCtrlHandler(NULL, FALSE);
+
     // Block the user from starting if they launched the incorrect architecture version of the project.
     // This should only be applicable to developer versions. The package installation process
     // should choose and install the correct one from the bundle.

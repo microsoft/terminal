@@ -116,14 +116,12 @@ namespace Microsoft::Console::VirtualTerminal
 
     enum class Ss3ActionCodes : wchar_t
     {
-        // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
-        //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
-        // ArrowUp = L'A',
-        // ArrowDown = L'B',
-        // ArrowRight = L'C',
-        // ArrowLeft = L'D',
-        // Home = L'H',
-        // End = L'F',
+        ArrowUp = L'A',
+        ArrowDown = L'B',
+        ArrowRight = L'C',
+        ArrowLeft = L'D',
+        Home = L'H',
+        End = L'F',
         SS3_F1 = L'P',
         SS3_F2 = L'Q',
         SS3_F3 = L'R',
@@ -168,19 +166,21 @@ namespace Microsoft::Console::VirtualTerminal
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
 
+        void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
+
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
+        std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
-        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept;
         DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
         DWORD _GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
         bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
-        DWORD _GetSGRModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
                                         const std::basic_string_view<size_t> parameters,

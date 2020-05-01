@@ -18,7 +18,7 @@ Abstract:
 class ConsoleInputReader
 {
 public:
-    ConsoleInputReader(HANDLE handle);
+    explicit ConsoleInputReader(HANDLE handle);
     void SetWindowSizeChangedCallback(std::function<void()> callback);
     std::optional<std::wstring_view> Read();
 

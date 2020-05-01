@@ -48,7 +48,7 @@ class TerminalApp::Profile final
 {
 public:
     Profile();
-    Profile(const std::optional<GUID>& guid);
+    explicit Profile(const std::optional<GUID>& guid);
 
     ~Profile();
 
@@ -79,7 +79,7 @@ public:
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
     void SetStartingDirectory(std::wstring startingDirectory) noexcept;
-    void SetName(std::wstring name) noexcept;
+    void SetName(const std::wstring_view name) noexcept;
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
@@ -142,12 +142,11 @@ private:
     std::optional<uint32_t> _defaultForeground;
     std::optional<uint32_t> _defaultBackground;
     std::optional<uint32_t> _selectionBackground;
-    std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
+    std::optional<uint32_t> _cursorColor;
     std::optional<std::wstring> _tabTitle;
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
-    uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 
