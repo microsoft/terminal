@@ -550,6 +550,7 @@ std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMo
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
+    std::transform(name.begin(), name.end(), name.begin(), std::towlower);
     _colorSchemes[name] = std::move(scheme);
 }
 

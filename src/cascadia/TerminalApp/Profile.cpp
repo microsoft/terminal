@@ -201,7 +201,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (_schemeName)
     {
-        const auto found = schemes.find(_schemeName.value());
+        // TODO: I don't love that the Profile need to know that this is a map
+        // of (lowercase names)->Schemes
+        auto ourSchemeName{ _schemeName.value() };
+        std::transform(ourSchemeName.begin(), ourSchemeName.end(), ourSchemeName.begin(), std::towlower);
+
+        const auto found = schemes.find(ourSchemeName);
         if (found != schemes.end())
         {
             found->second.ApplyScheme(terminalSettings);

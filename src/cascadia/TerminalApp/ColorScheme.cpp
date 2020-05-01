@@ -133,8 +133,13 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 {
     if (const auto name{ json[JsonKey(NameKey)] })
     {
-        const auto nameFromJson = GetWstringFromJson(name);
-        return nameFromJson == _schemeName;
+        auto nameFromJson = GetWstringFromJson(name);
+        std::transform(nameFromJson.begin(), nameFromJson.end(), nameFromJson.begin(), std::towlower);
+
+        auto ourName{ _schemeName };
+        std::transform(ourName.begin(), ourName.end(), ourName.begin(), std::towlower);
+
+        return nameFromJson == ourName;
     }
     return false;
 }

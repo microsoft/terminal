@@ -79,6 +79,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateLegacyGlobalsWarning);
 
         TEST_METHOD(ValidateProfileNamesArentCaseSensitive);
+        TEST_METHOD(TestCaseInsensitiveSchemeName);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -2305,7 +2306,6 @@ namespace TerminalAppLocalTests
 
         settings._ValidateSettings();
 
-        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
         auto profile0Guid = settings._profiles.at(0).GetGuid();
         auto profile1Guid = settings._profiles.at(1).GetGuid();
@@ -2323,4 +2323,153 @@ namespace TerminalAppLocalTests
         // Including even a variant that wasn't in the original list of profiles
         VERIFY_ARE_EQUAL(profile0Guid, settings.FindGuid(name3));
     }
+
+    void SettingsTests::TestCaseInsensitiveSchemeName()
+    {
+        Log::Comment(L"TODO");
+
+        const std::string settings0String{ R"(
+        {
+            "schemes": [
+                {
+                    "name": "schemeZero",
+                    "foreground": "#010101"
+                },
+                {
+                    "name": "schemeONE",
+                    "foreground": "#020202"
+                }
+            ]
+        })" };
+        const std::string settings1String{ R"(
+        {
+            "schemes": [
+                {
+                    "name": "schemeone",
+                    "foreground": "#030303"
+                },
+                {
+                    "name": "SchemeZero",
+                    "foreground": "#040404"
+                }
+            ]
+        })" };
+        const std::string settings2String{ R"(
+        {
+            "schemes": [
+                {
+                    "name": "schemeone",
+                    "foreground": "#050505"
+                },
+                {
+                    "name": "sChEmEtWo",
+                    "foreground": "#060606"
+                }
+            ]
+        })" };
+
+        const std::wstring scheme0NameLowerCase{ L"schemezero" };
+        const std::wstring scheme0NameUpperCase{ L"SCHEMEZERO" };
+        const std::wstring scheme0NameCamelCase{ L"SchemeZero" };
+        const std::wstring scheme0NameSpongebobCase{ L"sChEmEzErO" };
+
+        const std::wstring scheme1NameLowerCase{ L"schemeone" };
+        const std::wstring scheme1NameUpperCase{ L"SCHEMEONE" };
+        const std::wstring scheme1NameCamelCase{ L"SchemeOne" };
+        const std::wstring scheme1NameSpongebobCase{ L"sChEmEoNe" };
+
+        const std::wstring scheme2NameLowerCase{ L"schemetwo" };
+        const std::wstring scheme2NameUpperCase{ L"SCHEMETWO" };
+        const std::wstring scheme2NameCamelCase{ L"SchemeTwo" };
+        const std::wstring scheme2NameSpongebobCase{ L"sChEmEtWo" };
+
+        CascadiaSettings settings;
+
+        auto verifySchemesExist = [&](auto currentNumberOfSchemes) {
+            VERIFY_ARE_EQUAL(currentNumberOfSchemes, settings._globals.GetColorSchemes().size());
+
+            if (currentNumberOfSchemes == 0)
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameLowerCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameUpperCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameCamelCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameSpongebobCase));
+            }
+            else
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameLowerCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameUpperCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameCamelCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameSpongebobCase));
+            }
+
+            if (currentNumberOfSchemes >= 2)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameLowerCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameUpperCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameCamelCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameSpongebobCase));
+            }
+            else
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameLowerCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameUpperCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameCamelCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameSpongebobCase));
+            }
+
+            if (currentNumberOfSchemes >= 3)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2NameLowerCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2NameUpperCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2NameCamelCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2NameSpongebobCase));
+            }
+            else
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2NameLowerCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2NameUpperCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2NameCamelCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2NameSpongebobCase));
+            }
+        };
+
+        verifySchemesExist(0);
+
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        {
+            verifySchemesExist(2);
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+        }
+
+        settings._ParseJsonString(settings1String, false);
+        settings.LayerJson(settings._userSettings);
+
+        {
+            verifySchemesExist(2);
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultForeground);
+        }
+
+        settings._ParseJsonString(settings2String, false);
+        settings.LayerJson(settings._userSettings);
+
+        {
+            verifySchemesExist(3);
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+            auto scheme2 = settings._globals._colorSchemes.find(scheme2NameLowerCase)->second;
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2._defaultForeground);
+        }
+    }
+
 }

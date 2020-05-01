@@ -425,10 +425,13 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     bool foundInvalidScheme = false;
     for (auto& profile : _profiles)
     {
-        auto schemeName = profile.GetSchemeName();
-        if (schemeName.has_value())
+        auto maybeSchemeName = profile.GetSchemeName();
+        if (maybeSchemeName.has_value())
         {
-            const auto found = _globals.GetColorSchemes().find(schemeName.value());
+            auto schemeName{ maybeSchemeName.value() };
+            std::transform(schemeName.begin(), schemeName.end(), schemeName.begin(), std::towlower);
+
+            const auto found = _globals.GetColorSchemes().find(schemeName);
             if (found == _globals.GetColorSchemes().end())
             {
                 profile.SetColorScheme({ L"Campbell" });

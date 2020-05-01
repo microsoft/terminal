@@ -36,6 +36,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(LayerColorSchemeProperties);
         TEST_METHOD(LayerColorSchemesOnArray);
 
+        TEST_METHOD(NameIsCaseInsensitive);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -278,6 +280,248 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
             VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
             VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2._defaultBackground);
+        }
+    }
+
+    void ColorSchemeTests::NameIsCaseInsensitive()
+    {
+        const std::string scheme0String{ R"({
+            "name": "scheme0",
+            "foreground": "#000000",
+            "background": "#010101"
+        })" };
+        const std::string scheme1String{ R"({
+            "name": "sChEmE1",
+            "foreground": "#020202",
+            "background": "#030303"
+        })" };
+        const std::string scheme2String{ R"({
+            "name": "SCHEME0",
+            "foreground": "#040404",
+            "background": "#050505"
+        })" };
+        const std::string scheme3String{ R"({
+            // by not providing a name, the scheme will have the name ""
+            "foreground": "#060606",
+            "background": "#070707"
+        })" };
+        const std::string scheme4String{ R"({
+            "name": "scheme1",
+            "foreground": "#080808",
+            "background": "#090909"
+        })" };
+
+        const auto scheme0Json = VerifyParseSucceeded(scheme0String);
+        const auto scheme1Json = VerifyParseSucceeded(scheme1String);
+        const auto scheme2Json = VerifyParseSucceeded(scheme2String);
+        const auto scheme3Json = VerifyParseSucceeded(scheme3String);
+        const auto scheme4Json = VerifyParseSucceeded(scheme4String);
+
+        const std::wstring scheme0NameLowerCase{ L"scheme0" };
+        const std::wstring scheme0NameUpperCase{ L"SCHEME0" };
+        const std::wstring scheme0NameCamelCase{ L"Scheme0" };
+        const std::wstring scheme0NameSpongebobCase{ L"sChEmE0" };
+
+        const std::wstring scheme1NameLowerCase{ L"scheme1" };
+        const std::wstring scheme1NameUpperCase{ L"SCHEME1" };
+        const std::wstring scheme1NameCamelCase{ L"Scheme1" };
+        const std::wstring scheme1NameSpongebobCase{ L"sChEmE1" };
+
+        CascadiaSettings settings;
+
+        auto verifySchemesExist = [&](auto currentNumberOfSchemes) {
+            VERIFY_ARE_EQUAL(currentNumberOfSchemes, settings._globals.GetColorSchemes().size());
+
+            if (currentNumberOfSchemes == 0u)
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme4Json));
+            }
+            else if (currentNumberOfSchemes == 1u)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme4Json));
+            }
+            else if (currentNumberOfSchemes == 2u)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme4Json));
+            }
+            else if (currentNumberOfSchemes == 3u)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme4Json));
+            }
+            if (currentNumberOfSchemes == 0)
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameLowerCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameUpperCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameCamelCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0NameSpongebobCase));
+            }
+            else
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameLowerCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameUpperCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameCamelCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0NameSpongebobCase));
+            }
+
+            if (currentNumberOfSchemes >= 2)
+            {
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameLowerCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameUpperCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameCamelCase));
+                VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1NameSpongebobCase));
+            }
+            else
+            {
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameLowerCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameUpperCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameCamelCase));
+                VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1NameSpongebobCase));
+            }
+        };
+
+        verifySchemesExist(0);
+
+        settings._LayerOrCreateColorScheme(scheme0Json);
+        {
+            VERIFY_ARE_EQUAL(1u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+
+            verifySchemesExist(1);
+
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
+        }
+
+        settings._LayerOrCreateColorScheme(scheme1Json);
+        {
+            VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+
+            verifySchemesExist(2);
+
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+        }
+
+        settings._LayerOrCreateColorScheme(scheme2Json);
+        {
+            VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+
+            verifySchemesExist(2);
+
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+        }
+
+        settings._LayerOrCreateColorScheme(scheme3Json);
+        {
+            VERIFY_ARE_EQUAL(3u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"") != settings._globals._colorSchemes.end());
+
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+            auto scheme2 = settings._globals._colorSchemes.find(L"")->second;
+
+            verifySchemesExist(3);
+
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2._defaultBackground);
+        }
+
+        settings._LayerOrCreateColorScheme(scheme4Json);
+        {
+            VERIFY_ARE_EQUAL(3u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme0NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameLowerCase) != settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameUpperCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameCamelCase) == settings._globals._colorSchemes.end());
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(scheme1NameSpongebobCase) == settings._globals._colorSchemes.end());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"") != settings._globals._colorSchemes.end());
+
+            auto scheme0 = settings._globals._colorSchemes.find(scheme0NameLowerCase)->second;
+            auto scheme1 = settings._globals._colorSchemes.find(scheme1NameLowerCase)->second;
+            auto scheme2 = settings._globals._colorSchemes.find(L"")->second;
+
+            verifySchemesExist(3);
+
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 8, 8, 8), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 9, 9, 9), scheme1._defaultBackground);
             VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2._defaultForeground);
             VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2._defaultBackground);
         }

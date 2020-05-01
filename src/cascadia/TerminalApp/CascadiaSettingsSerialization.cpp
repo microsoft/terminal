@@ -670,18 +670,27 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 //   color scheme exists.
 ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
-    if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
+    if (auto maybeSchemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
-        auto& schemes = _globals.GetColorSchemes();
-        auto iterator = schemes.find(*schemeName);
-        if (iterator != schemes.end())
-        {
-            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
-            // maybe not the _safest_ thing, but we have a mind to make Profile
-            // and ColorScheme winrt types in the future, so this will be safer
-            // then.
-            return &iterator->second;
-        }
+        return _FindMatchingColorScheme(maybeSchemeName.value());
+    }
+    return nullptr;
+}
+
+ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const std::wstring& originalSchemeName)
+{
+    auto schemeName{ originalSchemeName };
+    std::transform(schemeName.begin(), schemeName.end(), schemeName.begin(), std::towlower);
+
+    auto& schemes = _globals.GetColorSchemes();
+    auto iterator = schemes.find(schemeName);
+    if (iterator != schemes.end())
+    {
+        // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+        // maybe not the _safest_ thing, but we have a mind to make Profile
+        // and ColorScheme winrt types in the future, so this will be safer
+        // then.
+        return &iterator->second;
     }
     return nullptr;
 }
