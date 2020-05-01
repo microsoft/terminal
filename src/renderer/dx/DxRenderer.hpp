@@ -134,6 +134,7 @@ namespace Microsoft::Console::Render
 
         til::size _displaySizePixels;
         til::size _glyphCell;
+        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;

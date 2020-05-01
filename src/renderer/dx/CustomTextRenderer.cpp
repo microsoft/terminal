@@ -524,7 +524,6 @@ using namespace Microsoft::Console::Render;
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingEffect);
 
-    // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
     clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
 
@@ -546,11 +545,12 @@ using namespace Microsoft::Console::Render;
 
     geometrySink->Close();
 
-    /*const D2D1::Matrix3x2F matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
-    const D2D1::Matrix3x2F matrixScale = D2D1::Matrix3x2F::Scale(1.0f, 1.0f);*/
+    // Dig out the box drawing effect parameters.
+    BoxScale scale;
+    RETURN_IF_FAILED(clientDrawingEffect->GetScale(&scale));
 
-    const auto matrixTransformation = D2D1::Matrix3x2F::Matrix3x2F(1.0f, 0, 0, 1.2f, baselineOrigin.x, baselineOrigin.y);
-    /*const auto matrixTransformation = matrixAlign * matrixScale;*/
+    // Assign to matrix transformation.
+    const auto matrixTransformation = D2D1::Matrix3x2F::Matrix3x2F(scale.HorizontalScale, 0, 0, scale.VerticalScale, baselineOrigin.x + scale.HorizontalTranslation, baselineOrigin.y + scale.VerticalTranslation);
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),

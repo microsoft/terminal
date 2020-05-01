@@ -10,6 +10,7 @@
 #include <wrl/client.h>
 #include <wrl/implements.h>
 
+#include "BoxDrawingEffect.h"
 #include "../inc/Cluster.hpp"
 
 namespace Microsoft::Console::Render
@@ -63,6 +64,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
                                                                       UINT32 textLength,
                                                                       _In_ IDWriteNumberSubstitution* numberSubstitution) override;
+
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect) noexcept;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
@@ -152,6 +155,9 @@ namespace Microsoft::Console::Render
 
         // DirectWrite font face
         const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
+
+        // Box drwaing effect
+        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;

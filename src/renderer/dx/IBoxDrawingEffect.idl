@@ -1,11 +1,19 @@
 import "oaidl.idl";
 import "ocidl.idl";
 
+typedef struct BoxScale
+{
+    float VerticalScale;
+    float VerticalTranslation;
+	float HorizontalScale;
+    float HorizontalTranslation;
+} BoxScale;
+
 [
 	object,
 	uuid("C164926F-1A4D-470D-BB8A-3D2CC4B035E4")
 ]
 interface IBoxDrawingEffect : IUnknown
 {
-
+    HRESULT GetScale([out] BoxScale* scale);
 };

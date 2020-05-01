@@ -81,6 +81,7 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _selectionBackground{},
     _glyphCell{},
+    _boxDrawingEffect {},
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
@@ -1993,16 +1994,6 @@ CATCH_RETURN();
         DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
         THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
 
-        const UINT32 cp = L'\x2588';
-        UINT16 gi;
-        THROW_IF_FAILED(face->GetGlyphIndicesW(&cp, 1, &gi));
-
-        INT32 adv;
-        THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &gi, &adv));
-
-        DWRITE_GLYPH_METRICS boxMetrics = { 0 };
-        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&gi, 1, &boxMetrics));
-
         // The math here is actually:
         // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
         // - DPI = dots per inch
@@ -2089,6 +2080,9 @@ CATCH_RETURN();
         lineSpacing.height = fullPixelAscent + fullPixelDescent;
         lineSpacing.baseline = fullPixelAscent;
 
+        lineSpacing.height = ascent + descent;
+        lineSpacing.baseline = ascent;
+
         // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
         // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
         lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
@@ -2123,7 +2117,7 @@ CATCH_RETURN();
         // of hit testing math and other such multiplication/division.
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
+        coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
 
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding

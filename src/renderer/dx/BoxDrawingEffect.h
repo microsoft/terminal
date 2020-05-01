@@ -14,8 +14,13 @@ namespace Microsoft::Console::Render
     class BoxDrawingEffect : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IBoxDrawingEffect>
     {
     public:
+        BoxDrawingEffect() = default;
+        HRESULT RuntimeClassInitialize(float verticalScale, float verticalTranslate, float horizontalScale, float horizontalTranslate) noexcept;
+
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetScale(BoxScale* scale) noexcept override;
     protected:
     private:
+        BoxScale _scale;
 #ifdef UNIT_TESTING
     public:
         BoxDrawingEffect() = default;

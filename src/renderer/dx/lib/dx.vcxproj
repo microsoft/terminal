@@ -15,6 +15,7 @@
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\BoxDrawingEffect.cpp" />
     <ClCompile Include="..\CustomTextLayout.cpp" />
     <ClCompile Include="..\CustomTextRenderer.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -23,6 +24,7 @@
     <ClCompile Include="..\DxRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\BoxDrawingEffect.h" />
     <ClInclude Include="..\CustomTextLayout.h" />
     <ClInclude Include="..\CustomTextRenderer.h" />
     <ClInclude Include="..\precomp.h" />

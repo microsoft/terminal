@@ -44,6 +44,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
+    // Calculate out the box drawing effect for this font.
+    THROW_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _font.Get(), &_boxDrawingEffect));
+
     for (const auto& cluster : clusters)
     {
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
@@ -154,9 +157,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
 
-        // Perform our box drawing analyzer no matter what.
-        RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, textLength));
-
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
         {
@@ -165,6 +165,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                 run.fontFace = _font;
             }
         }
+
+        // Perform our box drawing analyzer no matter what.
+        RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, textLength));
 
         // Resequence the resulting runs in order before returning to caller.
         _OrderRuns();
@@ -1251,12 +1254,19 @@ try
 {
     _SetCurrentRun(textPosition);
     _SplitCurrentRun(textPosition);
+
     while (textLength > 0)
     {
         auto& run = _FetchNextRun(textLength);
 
-        // store data in the run
-        run.drawingEffect = WRL::Make<BoxDrawingEffect>();
+        //::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
+
+        //RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), run.fontFace.Get(), &eff));
+
+        //// store data in the run
+        //run.drawingEffect = eff;
+
+        run.drawingEffect = _boxDrawingEffect;
     }
 
     return S_OK;
@@ -1495,3 +1505,96 @@ void CustomTextLayout::_OrderRuns()
 }
 
 #pragma endregion
+
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect) noexcept
+{
+    const auto fontSize = format->GetFontSize();
+    DWRITE_LINE_SPACING_METHOD spacingMethod;
+    float lineSpacing;
+    float baseline;
+    RETURN_IF_FAILED(format->GetLineSpacing(&spacingMethod, &lineSpacing, &baseline));
+
+    const float fullPixelAscent = baseline;
+    const float fullPixelDescent = lineSpacing - baseline;
+
+    DWRITE_FONT_METRICS1 fontMetrics;
+    face->GetMetrics(&fontMetrics);
+
+    const UINT32 cp = L'\x2588';
+    UINT16 gi;
+    RETURN_IF_FAILED(face->GetGlyphIndicesW(&cp, 1, &gi));
+
+    INT32 adv;
+    RETURN_IF_FAILED(face->GetDesignGlyphAdvances(1, &gi, &adv));
+
+    DWRITE_GLYPH_METRICS boxMetrics = { 0 };
+    RETURN_IF_FAILED(face->GetDesignGlyphMetrics(&gi, 1, &boxMetrics));
+
+    float boxVerticalScaleFactor = 1.0f;
+    float boxVerticalTranslation = 0.0f;
+    {
+        const auto boxAscentDesignUnits = boxMetrics.verticalOriginY - boxMetrics.topSideBearing;
+        const auto boxDescentDesignUnits = boxMetrics.advanceHeight - boxMetrics.verticalOriginY - boxMetrics.bottomSideBearing;
+        const auto boxHeightDesignUnits = boxAscentDesignUnits + boxDescentDesignUnits;
+
+        const auto cellAscentDesignUnits = fullPixelAscent * fontMetrics.designUnitsPerEm / fontSize;
+        const auto cellDescentDesignUnits = fullPixelDescent * fontMetrics.designUnitsPerEm / fontSize;
+        const auto cellHeightDesignUnits = cellAscentDesignUnits + cellDescentDesignUnits;
+
+        const auto boxTouchesCellTop = boxAscentDesignUnits >= cellAscentDesignUnits;
+        const auto boxTouchesCellBottom = boxDescentDesignUnits >= cellDescentDesignUnits;
+        const auto boxIsTallEnoughForCell = boxHeightDesignUnits >= cellHeightDesignUnits;
+
+        if (!(boxTouchesCellTop && boxTouchesCellBottom && boxIsTallEnoughForCell))
+        {
+            {
+                boxVerticalScaleFactor = cellHeightDesignUnits / boxHeightDesignUnits;
+            }
+            {
+                const auto extraAscent = boxAscentDesignUnits - cellAscentDesignUnits;
+                const auto extraDescent = boxDescentDesignUnits - cellDescentDesignUnits;
+
+                const auto boxVerticalTranslationDesignUnits = (extraAscent - extraDescent) / 2;
+
+                boxVerticalTranslation = boxVerticalTranslationDesignUnits * fontSize / fontMetrics.designUnitsPerEm;
+            }
+        }
+    }
+
+    float boxHorizontalScaleFactor = 1.0f;
+    float boxHorizontalTranslation = 0.0f;
+    {
+        const auto boxCenter = boxMetrics.advanceWidth / 2.0f;
+
+        const auto boxLeftDesignUnits = boxCenter - boxMetrics.leftSideBearing;
+        const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenter;
+        const auto boxWidthDesignUnits = boxLeftDesignUnits + boxRightDesignUnits;
+
+        const auto cellLeftDesignUnits = boxCenter;
+        const auto cellRightDesignUnits = boxCenter;
+        const auto cellWidthDesignUnits = cellLeftDesignUnits + cellRightDesignUnits;
+
+        const auto boxTouchesCellLeft = boxLeftDesignUnits >= cellLeftDesignUnits;
+        const auto boxTouchesCellRight = boxRightDesignUnits >= cellRightDesignUnits;
+        const auto boxIsWideEnoughForCell = boxWidthDesignUnits >= cellWidthDesignUnits;
+
+        if (!(boxTouchesCellLeft && boxTouchesCellRight && boxIsWideEnoughForCell))
+        {
+            {
+                boxHorizontalScaleFactor = cellWidthDesignUnits / boxWidthDesignUnits;
+            }
+            {
+                const auto extraLeft = boxLeftDesignUnits - cellLeftDesignUnits;
+                const auto extraRight = boxRightDesignUnits - cellRightDesignUnits;
+
+                const auto boxHorizontalTranslationDesignUnits = (extraLeft - extraRight) / 2;
+
+                boxHorizontalTranslation = boxHorizontalTranslationDesignUnits * fontSize / fontMetrics.designUnitsPerEm;
+            }
+        }
+    }
+
+    RETURN_IF_FAILED(WRL::MakeAndInitialize<BoxDrawingEffect>(effect, boxVerticalScaleFactor, boxVerticalTranslation, boxHorizontalScaleFactor, boxHorizontalTranslation));
+
+    return S_OK;
+}
