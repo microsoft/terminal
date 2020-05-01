@@ -682,6 +682,15 @@ const ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value&
     return nullptr;
 }
 
+// Method Description:
+// - Finds a color scheme from our list of color schemes that matches the given
+//   name.
+// - Returns nullptr if no such match exists.
+// Arguments:
+// - originalSchemeName: The "name" property to use to lookup the scheme by
+// Return Value:
+// - a ColorScheme that can be layered with the given json object, iff such a
+//   color scheme exists.
 const ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const std::wstring& originalSchemeName)
 {
     return _globals.LookupColorScheme(originalSchemeName);

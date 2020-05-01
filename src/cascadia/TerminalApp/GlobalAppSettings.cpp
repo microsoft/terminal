@@ -549,6 +549,8 @@ std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMo
 // - <none>
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
+    // GH#5690 use the towlower verision of the scheme's name as the key in the
+    // map. Schemes will match it they have the same CASE-INSENSITIVE name.
     std::wstring name{ scheme.GetName() };
     std::transform(name.begin(), name.end(), name.begin(), std::towlower);
     _colorSchemes[name] = std::move(scheme);
@@ -568,6 +570,16 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
+// Method Description:
+// - Finds a color scheme from our list of color schemes that matches the given
+//   name. THe match is done with a _case insensitive_ search. We'll use the
+//   `towlower` version of the provided string to lookup the matching scheme.
+// - Returns nullptr if no such match exists.
+// Arguments:
+// - originalSchemeName: The "name" property to use to lookup the scheme by
+// Return Value:
+// - a ColorScheme with a (case insensitive) matching name, iff such a color
+//   scheme exists.
 const ColorScheme* GlobalAppSettings::LookupColorScheme(const std::wstring& originalSchemeName) const
 {
     auto schemeName{ originalSchemeName };

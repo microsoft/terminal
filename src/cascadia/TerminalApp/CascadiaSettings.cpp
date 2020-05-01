@@ -74,6 +74,7 @@ std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring_view profileNa
 {
     std::optional<GUID> profileGuid{};
 
+    // GH#5690 - perform a CASE-INSENSITIVE lookup of the profile by name.
     std::wstring needle{ profileName };
     std::transform(needle.begin(),
                    needle.end(),
