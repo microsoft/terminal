@@ -18,9 +18,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        btnOk().Content(winrt::box_value(RS_(L"Ok")));
-        btnCustomColor().Content(winrt::box_value(RS_(L"TabColorCustomButton/Content")));
-        btnClearColor().Content(winrt::box_value(RS_(L"TabColorClearButton/Content")));
+        OkButton().Content(winrt::box_value(RS_(L"Ok")));
+        CustomColorButton().Content(winrt::box_value(RS_(L"TabColorCustomButton/Content")));
+        ClearColorButton().Content(winrt::box_value(RS_(L"TabColorClearButton/Content")));
     }
 
     // Method Description:
@@ -33,8 +33,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void ColorPickupFlyout::ColorButton_Click(IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&)
     {
-        auto btn{ sender.as<Windows::UI::Xaml::Controls::Button>() };
-        auto rectangle{ btn.Content().as<Windows::UI::Xaml::Shapes::Rectangle>() };
+        auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
+        auto rectangle{ button.Content().as<Windows::UI::Xaml::Shapes::Rectangle>() };
         auto rectClr{ rectangle.Fill().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
         _ColorSelectedHandlers(rectClr.Color());
         Hide();

@@ -114,11 +114,11 @@
                 </StackPanel.Resources>
                 <Button Padding="5"
                     Click="ClearColorButton_Click"
-                    x:Name="btnClearColor" x:Uid="TabColorClearButton" Content="Reset">
+                    x:Name="ClearColorButton" x:Uid="TabColorClearButton" Content="Reset">
                 </Button>
                 <Button Padding="5"
                     Click="ShowColorPickerButton_Click"
-                    x:Name="btnCustomColor" x:Uid="TabColorCustomButton" Content="Custom...">
+                    x:Name="CustomColorButton" x:Uid="TabColorCustomButton" Content="Custom...">
                 </Button>
             </StackPanel>
         </StackPanel>
@@ -127,7 +127,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ColorPicker x:Name="customColorPicker" 
+            <ColorPicker x:Name="customColorPicker"
                      IsMoreButtonVisible="True"
                      IsColorSliderVisible="False"
                      IsColorChannelTextInputVisible="True"
@@ -140,7 +140,7 @@
                      ColorChanged="ColorPicker_ColorChanged"
                      >
             </ColorPicker>
-            <Button x:Name="btnOk" Click="CustomColorButton_Click" Grid.Row="1" HorizontalAlignment="Center" MinWidth="130" MinHeight="12" Margin="0, 5, 0, 0" x:Uid="OkButton" Content="**OK**"/>
+            <Button x:Name="OkButton" Click="CustomColorButton_Click" Grid.Row="1" HorizontalAlignment="Center" MinWidth="130" MinHeight="12" Margin="0, 5, 0, 0" x:Uid="OkButton" Content="**OK**"/>
         </Grid>
     </StackPanel>
 </Flyout>

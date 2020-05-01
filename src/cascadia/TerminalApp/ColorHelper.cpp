@@ -3,7 +3,6 @@
 #include <limits>
 
 using namespace winrt::TerminalApp;
-namespace WUI = ::winrt::Windows::UI;
 
 // Method Description:
 // Determines whether or not a given color is light
@@ -14,7 +13,7 @@ namespace WUI = ::winrt::Windows::UI;
 // - true of light, false if dark
 bool ColorHelper::IsBrightColor(const winrt::Windows::UI::Color& color)
 {
-    //http://www.w3.org/TR/AERT#color-contrast
+    // http://www.w3.org/TR/AERT#color-contrast
     auto brightness = (color.R * 299 + color.G * 587 + color.B * 114) / 1000.f;
     return brightness > 128.f;
 }
@@ -134,7 +133,7 @@ float ColorHelper::HueToRgb(float p, float q, float t)
 // - amount: the lighten amount (0-100)
 // Return Value:
 // - the lightened color in RGB format
-WUI::Color ColorHelper::Lighten(const WUI::Color& color, float amount /* = 10.f*/)
+winrt::Windows::UI::Color ColorHelper::Lighten(const winrt::Windows::UI::Color& color, float amount /* = 10.f*/)
 {
     auto hsl = RgbToHsl(color);
     hsl.L += amount / 100;
@@ -149,7 +148,7 @@ WUI::Color ColorHelper::Lighten(const WUI::Color& color, float amount /* = 10.f*
 // - amount: the darken amount (0-100)
 // Return Value:
 // - the darkened color in RGB format
-WUI::Color ColorHelper::Darken(const WUI::Color& color, float amount /* = 10.f*/)
+winrt::Windows::UI::Color ColorHelper::Darken(const winrt::Windows::UI::Color& color, float amount /* = 10.f*/)
 {
     auto hsl = RgbToHsl(color);
     hsl.L -= amount / 100;
@@ -166,7 +165,7 @@ WUI::Color ColorHelper::Darken(const WUI::Color& color, float amount /* = 10.f*/
 // - color: the color for which we need an accent
 // Return Value:
 // - the accemt color in RGB format
-WUI::Color ColorHelper::GetAccentColor(const WUI::Color& color)
+winrt::Windows::UI::Color ColorHelper::GetAccentColor(const winrt::Windows::UI::Color& color)
 {
     auto accentColor = RgbToHsl(color);
 
@@ -218,7 +217,7 @@ float ColorHelper::GetReadability(const HSL& first, const HSL& second)
 // - secondColor: the second color for the readability check (rgb)
 // Return Value:
 // - the readability of the colors according to  (WCAG Version 2)
-float ColorHelper::GetReadability(const WUI::Color& first, const WUI::Color& second)
+float ColorHelper::GetReadability(const winrt::Windows::UI::Color& first, const winrt::Windows::UI::Color& second)
 {
     auto l1 = GetLuminance(first);
     auto l2 = GetLuminance(second);
@@ -233,7 +232,7 @@ float ColorHelper::GetReadability(const WUI::Color& first, const WUI::Color& sec
 // - color: its luminance is going to be calculated
 // Return Value:
 // - the luminance of the color
-float ColorHelper::GetLuminance(const WUI::Color& color)
+float ColorHelper::GetLuminance(const winrt::Windows::UI::Color& color)
 {
     auto epsilon = std::numeric_limits<float>::epsilon();
     float R, G, B;
