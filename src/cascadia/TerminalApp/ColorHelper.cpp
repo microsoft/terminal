@@ -19,7 +19,7 @@ bool ColorHelper::IsBrightColor(const winrt::Windows::UI::Color& color)
 }
 
 // Method Description:
-// Converts a rgb color to hsl one
+// Converts a rgb color to an hsl one
 // Arguments:
 // - color: the rgb color, which is going to be converted
 // Return Value:
@@ -164,7 +164,7 @@ winrt::Windows::UI::Color ColorHelper::Darken(const winrt::Windows::UI::Color& c
 // Arguments:
 // - color: the color for which we need an accent
 // Return Value:
-// - the accemt color in RGB format
+// - the accent color in RGB format
 winrt::Windows::UI::Color ColorHelper::GetAccentColor(const winrt::Windows::UI::Color& color)
 {
     auto accentColor = RgbToHsl(color);
@@ -184,7 +184,7 @@ winrt::Windows::UI::Color ColorHelper::GetAccentColor(const winrt::Windows::UI::
         shades.insert(std::make_pair(contrast, shade));
     }
 
-    // 3f is quite nice of the whole non-client area is painted
+    // 3f is quite nice if the whole non-client area is painted
     constexpr auto readability = 1.75f;
     for (auto shade : shades)
     {
@@ -203,7 +203,7 @@ winrt::Windows::UI::Color ColorHelper::GetAccentColor(const winrt::Windows::UI::
 // - firstColor: the first color for the readability check (hsl)
 // - secondColor: the second color for the readability check (hsl)
 // Return Value:
-// - the readability of the colors according to  (WCAG Version 2)
+// - the readability of the colors according to (WCAG Version 2)
 float ColorHelper::GetReadability(const HSL& first, const HSL& second)
 {
     return GetReadability(HslToRgb(first), HslToRgb(second));
@@ -216,7 +216,7 @@ float ColorHelper::GetReadability(const HSL& first, const HSL& second)
 // - firstColor: the first color for the readability check (rgb)
 // - secondColor: the second color for the readability check (rgb)
 // Return Value:
-// - the readability of the colors according to  (WCAG Version 2)
+// - the readability of the colors according to (WCAG Version 2)
 float ColorHelper::GetReadability(const winrt::Windows::UI::Color& first, const winrt::Windows::UI::Color& second)
 {
     auto l1 = GetLuminance(first);
