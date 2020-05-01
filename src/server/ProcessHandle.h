@@ -20,6 +20,7 @@ Revision History:
 #include "ObjectHandle.h"
 #include "WaitQueue.h"
 #include "ProcessPolicy.h"
+#include "ConsoleShimPolicy.h"
 
 #include <memory>
 #include <wil\resource.h>
@@ -37,6 +38,7 @@ public:
     DWORD const dwThreadId;
 
     const ConsoleProcessPolicy GetPolicy() const;
+    const ConsoleShimPolicy GetShimPolicy() const;
 
     CD_CONNECTION_INFORMATION GetConnectionInformation() const;
 
@@ -55,6 +57,7 @@ private:
     wil::unique_handle const _hProcess;
 
     const ConsoleProcessPolicy _policy;
+    const ConsoleShimPolicy _shimPolicy;
 
     friend class ConsoleProcessList; // ensure List manages lifetimes and not other classes.
 };

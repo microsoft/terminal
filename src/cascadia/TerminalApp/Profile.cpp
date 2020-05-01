@@ -889,7 +889,7 @@ bool Profile::IsHidden() const noexcept
 // Method Description:
 // - Helper function for expanding any environment variables in a user-supplied starting directory and validating the resulting path
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The directory string with any environment variables expanded. If the resulting path is invalid,
 // - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
@@ -920,7 +920,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 // Method Description:
 // - Helper function for converting a user-specified closeOnExit value to its corresponding enum
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
 CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
@@ -974,7 +974,7 @@ std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeO
 // Method Description:
 // - Helper function for converting a user-specified scrollbar state to its corresponding enum
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
 ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
@@ -997,7 +997,7 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - Helper function for converting a user-specified image stretch mode
 //   to the appropriate enum value
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
 Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
@@ -1047,7 +1047,7 @@ std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageSt
 // - Helper function for converting a user-specified image horizontal and vertical
 //   alignment to the appropriate enum values tuple
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The corresponding enum values tuple which maps to the string provided by the user
 std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)

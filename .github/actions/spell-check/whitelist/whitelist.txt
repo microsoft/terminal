@@ -1,5 +1,7 @@
 AAAAAABBBBBBCCC
 AAAAABBBBBBBCCC
+AAAAABCCCCCCCCC
+AAAAADCCCCCCCCC
 AAD
 ABANDONFONT
 ABCDEFGHIJKLMNO
@@ -594,6 +596,7 @@ Delt
 demoable
 depersist
 deprioritized
+deps
 deque
 deref
 deserialization
@@ -649,7 +652,6 @@ DPICHANGE
 DPICHANGED
 dpix
 dpiy
-draggable
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -781,7 +783,6 @@ fdc
 fdd
 fde
 fdopen
-fdpi
 fdw
 fea
 fesb
@@ -1026,7 +1027,6 @@ HPROPSHEETPAGE
 HREDRAW
 HREF
 hresult
-hrgn
 HRSRC
 hscroll
 hsl
@@ -1489,7 +1489,6 @@ nbsp
 Nc
 NCCALCSIZE
 NCCREATE
-NCHITTEST'ed
 NCLBUTTONDOWN
 NCLBUTTONUP
 NCMBUTTONDOWN

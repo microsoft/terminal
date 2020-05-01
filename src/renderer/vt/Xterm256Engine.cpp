@@ -110,3 +110,17 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 
     return S_OK;
 }
+
+// Method Description:
+// - Manually emit a "Erase Scrollback" sequence to the connected terminal. We
+//   need to do this in certain cases that we've identified where we believe the
+//   client wanted the entire terminal buffer cleared, not just the viewport.
+//   For more information, see GH#3126.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT Xterm256Engine::ManuallyClearScrollback() noexcept
+{
+    return _ClearScrollback();
+}

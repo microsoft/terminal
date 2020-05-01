@@ -76,6 +76,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(ValidateKeybindingsWarnings);
 
+        TEST_METHOD(ValidateLegacyGlobalsWarning);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2224,5 +2226,41 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.at(1));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
+    }
+
+    void SettingsTests::ValidateLegacyGlobalsWarning()
+    {
+        const std::string badSettings{ R"(
+        {
+            "globals": {},
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": []
+        })" };
+
+        // Create the default settings
+        CascadiaSettings settings;
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
+
+        settings._ValidateNoGlobalsKey();
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        // Now layer on the user's settings
+        settings._ParseJsonString(badSettings, false);
+        settings.LayerJson(settings._userSettings);
+
+        settings._ValidateNoGlobalsKey();
+        VERIFY_ARE_EQUAL(1u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty, settings._warnings.at(0));
     }
 }
