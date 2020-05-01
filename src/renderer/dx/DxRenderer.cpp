@@ -2080,9 +2080,6 @@ CATCH_RETURN();
         lineSpacing.height = fullPixelAscent + fullPixelDescent;
         lineSpacing.baseline = fullPixelAscent;
 
-        lineSpacing.height = ascent + descent;
-        lineSpacing.baseline = ascent;
-
         // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
         // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
         lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
