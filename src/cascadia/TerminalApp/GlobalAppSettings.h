@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
+#include "IColorSchemeProvider.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -29,7 +30,7 @@ namespace TerminalApp
     class GlobalAppSettings;
 };
 
-class TerminalApp::GlobalAppSettings final
+class TerminalApp::GlobalAppSettings final : public TerminalApp::IColorSchemeProvider
 {
 public:
     GlobalAppSettings();
@@ -38,6 +39,8 @@ public:
     std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
     const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
     void AddColorScheme(ColorScheme scheme);
+
+    const ColorScheme* LookupColorScheme(const std::wstring& schemeName) const override;
 
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;

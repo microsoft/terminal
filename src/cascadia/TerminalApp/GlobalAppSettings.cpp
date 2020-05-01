@@ -567,3 +567,20 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
 {
     return _keybindingsWarnings;
 }
+
+const ColorScheme* GlobalAppSettings::LookupColorScheme(const std::wstring& originalSchemeName) const
+{
+    auto schemeName{ originalSchemeName };
+    std::transform(schemeName.begin(), schemeName.end(), schemeName.begin(), std::towlower);
+
+    auto iterator = _colorSchemes.find(schemeName);
+    if (iterator != _colorSchemes.end())
+    {
+        // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+        // maybe not the _safest_ thing, but we have a mind to make Profile
+        // and ColorScheme winrt types in the future, so this will be safer
+        // then.
+        return &iterator->second;
+    }
+    return nullptr;
+}

@@ -15,6 +15,7 @@ Author(s):
 --*/
 #pragma once
 #include "ColorScheme.h"
+#include "IColorSchemeProvider.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -52,7 +53,7 @@ public:
 
     ~Profile();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const ::TerminalApp::IColorSchemeProvider& schemeProvider) const;
 
     Json::Value ToJson() const;
     Json::Value DiffToJson(const Profile& other) const;

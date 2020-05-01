@@ -160,10 +160,10 @@ void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
 // - Create a TerminalSettings from this object. Apply our settings, as well as
 //      any colors from our color scheme, if we have one.
 // Arguments:
-// - schemes: a list of schemes to look for our color scheme in, if we have one.
+// - TODO
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const ::TerminalApp::IColorSchemeProvider& schemeProvider) const
 {
     TerminalSettings terminalSettings{};
 
@@ -201,15 +201,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (_schemeName)
     {
-        // TODO: I don't love that the Profile need to know that this is a map
-        // of (lowercase names)->Schemes
-        auto ourSchemeName{ _schemeName.value() };
-        std::transform(ourSchemeName.begin(), ourSchemeName.end(), ourSchemeName.begin(), std::towlower);
-
-        const auto found = schemes.find(ourSchemeName);
-        if (found != schemes.end())
+        const auto found = schemeProvider.LookupColorScheme(_schemeName.value());
+        if (found != nullptr)
         {
-            found->second.ApplyScheme(terminalSettings);
+            found->ApplyScheme(terminalSettings);
         }
     }
     if (_defaultForeground)

@@ -646,10 +646,15 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 {
     // Layer the json on top of an existing profile, if we have one:
-    auto pScheme = _FindMatchingColorScheme(schemeJson);
+    const auto* pScheme = _FindMatchingColorScheme(schemeJson);
     if (pScheme)
     {
-        pScheme->LayerJson(schemeJson);
+        // Usually, _FindMatchingColorScheme is only ever used in a const
+        // context, but in this particular case, we're still in the process of
+        // building our objects, so we're not worried about stripping the const
+        // off here. Plus, this will make more sense when these classes are
+        // refactored in GH#3998
+        const_cast<ColorScheme*>(pScheme)->LayerJson(schemeJson);
     }
     else
     {
@@ -668,7 +673,7 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 // Return Value:
 // - a ColorScheme that can be layered with the given json object, iff such a
 //   color scheme exists.
-ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
+const ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
     if (auto maybeSchemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
@@ -677,22 +682,9 @@ ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schem
     return nullptr;
 }
 
-ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const std::wstring& originalSchemeName)
+const ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const std::wstring& originalSchemeName)
 {
-    auto schemeName{ originalSchemeName };
-    std::transform(schemeName.begin(), schemeName.end(), schemeName.begin(), std::towlower);
-
-    auto& schemes = _globals.GetColorSchemes();
-    auto iterator = schemes.find(schemeName);
-    if (iterator != schemes.end())
-    {
-        // HERE BE DRAGONS: Returning a pointer to a type in the vector is
-        // maybe not the _safest_ thing, but we have a mind to make Profile
-        // and ColorScheme winrt types in the future, so this will be safer
-        // then.
-        return &iterator->second;
-    }
-    return nullptr;
+    return _globals.LookupColorScheme(originalSchemeName);
 }
 
 // Function Description:

@@ -557,7 +557,7 @@ TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
     const Profile* const profile = FindProfile(profileGuid);
     THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
-    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
+    TerminalSettings result = profile->CreateTerminalSettings(_globals);
 
     // Place our appropriate global settings into the Terminal Settings
     _globals.ApplyToSettings(result);

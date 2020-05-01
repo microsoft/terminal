@@ -1381,7 +1381,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(settings._profiles.empty());
 
         GlobalAppSettings globalSettings{};
-        auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings.GetColorSchemes());
+        auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings);
         VERIFY_ARE_EQUAL(expectedPath, terminalSettings.BackgroundImage());
     }
     void SettingsTests::TestCloseOnExitParsing()
@@ -2175,12 +2175,12 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(6u, settings._profiles.size());
         VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
 
-        auto terminalSettings0 = settings._profiles[0].CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings1 = settings._profiles[1].CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings2 = settings._profiles[2].CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings3 = settings._profiles[3].CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings4 = settings._profiles[4].CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings5 = settings._profiles[5].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings0 = settings._profiles[0].CreateTerminalSettings(settings._globals);
+        auto terminalSettings1 = settings._profiles[1].CreateTerminalSettings(settings._globals);
+        auto terminalSettings2 = settings._profiles[2].CreateTerminalSettings(settings._globals);
+        auto terminalSettings3 = settings._profiles[3].CreateTerminalSettings(settings._globals);
+        auto terminalSettings4 = settings._profiles[4].CreateTerminalSettings(settings._globals);
+        auto terminalSettings5 = settings._profiles[5].CreateTerminalSettings(settings._globals);
 
         VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0.CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1.CursorColor()); // default
