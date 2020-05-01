@@ -2048,6 +2048,9 @@ sbold
 scancode
 scanline
 schemename
+schemeone
+schemetwo
+schemezero
 SCL
 scm
 scprintf
@@ -2182,6 +2185,7 @@ SPACEBAR
 spammy
 spand
 splashscreen
+Spongebob
 sprintf
 sqlproj
 srand
