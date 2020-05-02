@@ -1551,8 +1551,8 @@ void CustomTextLayout::_OrderRuns()
                 boxVerticalScaleFactor = cellHeightDesignUnits / boxHeightDesignUnits;
             }
             {
-                const auto extraAscent = boxAscentDesignUnits - cellAscentDesignUnits;
-                const auto extraDescent = boxDescentDesignUnits - cellDescentDesignUnits;
+                const auto extraAscent = boxAscentDesignUnits * boxVerticalScaleFactor - cellAscentDesignUnits;
+                const auto extraDescent = boxDescentDesignUnits * boxVerticalScaleFactor - cellDescentDesignUnits;
 
                 const auto boxVerticalTranslationDesignUnits = (extraAscent - extraDescent) / 2;
 
@@ -1584,8 +1584,8 @@ void CustomTextLayout::_OrderRuns()
                 boxHorizontalScaleFactor = cellWidthDesignUnits / boxWidthDesignUnits;
             }
             {
-                const auto extraLeft = boxLeftDesignUnits - cellLeftDesignUnits;
-                const auto extraRight = boxRightDesignUnits - cellRightDesignUnits;
+                const auto extraLeft = boxLeftDesignUnits * boxHorizontalScaleFactor - cellLeftDesignUnits;
+                const auto extraRight = boxRightDesignUnits * boxHorizontalScaleFactor - cellRightDesignUnits;
 
                 const auto boxHorizontalTranslationDesignUnits = (extraLeft - extraRight) / 2;
 

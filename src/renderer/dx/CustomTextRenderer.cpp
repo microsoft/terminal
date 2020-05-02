@@ -543,19 +543,33 @@ using namespace Microsoft::Console::Render;
         glyphRun->bidiLevel % 2,
         geometrySink.Get());
 
+    
     geometrySink->Close();
+
+    // Can be used to see the dimensions of what is written.
+    /*D2D1_RECT_F bounds;
+    pathGeometry->GetBounds(D2D1::IdentityMatrix(), &bounds);*/
 
     // Dig out the box drawing effect parameters.
     BoxScale scale;
     RETURN_IF_FAILED(clientDrawingEffect->GetScale(&scale));
 
     // Assign to matrix transformation.
-    const auto matrixTransformation = D2D1::Matrix3x2F::Matrix3x2F(scale.HorizontalScale, 0, 0, scale.VerticalScale, baselineOrigin.x + scale.HorizontalTranslation, baselineOrigin.y + scale.VerticalTranslation);
+    const auto scaleTransform = D2D1::Matrix3x2F::Scale(scale.HorizontalScale, scale.VerticalScale);
+    const auto baselineTransform = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+    const auto offsetTransform = D2D1::Matrix3x2F::Translation(scale.HorizontalTranslation, scale.VerticalTranslation);
+
+    // The order is important here. Scale it first, then slide it into place.
+    const auto matrixTransformation = scaleTransform * baselineTransform * offsetTransform;
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
                                           &matrixTransformation,
                                           transformedGeometry.GetAddressOf());
+
+    // Can be used to see the dimensions after translation.
+    /*D2D1_RECT_F boundsAfter;
+    transformedGeometry->GetBounds(D2D1::IdentityMatrix(), &boundsAfter);*/
 
     // Draw the outline then fill it in.
     clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
