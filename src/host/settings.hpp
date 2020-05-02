@@ -256,5 +256,4 @@ private:
 
 public:
     WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
-    WORD FindNearestTableIndex(const COLORREF Color) const;
 };

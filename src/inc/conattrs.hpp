@@ -36,14 +36,6 @@ WORD XtermToWindowsIndex(const size_t index) noexcept;
 WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
 WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
 
-COLORREF ForegroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable);
-
-COLORREF BackgroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable);
-
 const WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
 const WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;
 const WORD WINDOWS_BLUE_ATTR = FOREGROUND_BLUE;

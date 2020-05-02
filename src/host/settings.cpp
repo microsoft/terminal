@@ -797,15 +797,17 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     {
         // If the attribute doesn't have a "default" colored *ground, look up
         //  the nearest color table value for its *ground.
-        const COLORREF rgbForeground = LookupForegroundColor(attributes);
-        fgIndex = attributes.ForegroundIsDefault() ?
-                      fgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
+        if (!attributes.ForegroundIsDefault())
+        {
+            const COLORREF rgbForeground = LookupForegroundColor(attributes);
+            fgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbForeground, _ColorTable, ARRAYSIZE(_ColorTable)));
+        }
 
-        const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-        bgIndex = attributes.BackgroundIsDefault() ?
-                      bgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
+        if (!attributes.BackgroundIsDefault())
+        {
+            const COLORREF rgbBackground = LookupBackgroundColor(attributes);
+            bgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbBackground, _ColorTable, ARRAYSIZE(_ColorTable)));
+        }
     }
 
     // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
@@ -814,19 +816,6 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     //      use should it not already have one.
     const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
     return wCompleteAttr;
-}
-
-//Routine Description:
-// For a given RGB color Color, finds the nearest color from the array ColorTable, and returns the index of that match.
-//Arguments:
-// - Color - The RGB color to fine the nearest color to.
-// - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
-// Return value:
-// The index in ColorTable of the nearest match to Color.
-WORD Settings::FindNearestTableIndex(const COLORREF Color) const
-{
-    return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }
 
 COLORREF Settings::GetCursorColor() const noexcept
@@ -925,7 +914,7 @@ bool Settings::GetUseDx() const noexcept
 COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(_wFillAttribute) & FG_ATTRS);
 }
 
 // Method Description:
@@ -940,7 +929,7 @@ COLORREF Settings::CalculateDefaultForeground() const noexcept
 COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(_wFillAttribute) & BG_ATTRS) >> 4);
 }
 
 // Method Description:
