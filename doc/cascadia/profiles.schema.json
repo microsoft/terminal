@@ -278,8 +278,8 @@
           "type": "boolean"
         },
         "defaultProfile": {
-          "$ref": "#/definitions/ProfileGuid",
-          "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value."
+          "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value.",
+          "type": "string"
         },
         "initialCols": {
           "default": 120,

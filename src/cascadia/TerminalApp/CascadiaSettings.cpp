@@ -163,6 +163,9 @@ void CascadiaSettings::_ValidateSettings()
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
     _ValidateNoDuplicateProfiles();
+
+    // Resolve the default profile before we validate that it exists.
+    _ResolveDefaultProfile();
     _ValidateDefaultProfileExists();
 
     // Ensure that all the profile's color scheme names are
@@ -213,6 +216,17 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
     {
         profile.GenerateGuidIfNecessary();
     }
+}
+
+// Method Description:
+// - Resolves the "defaultProfile", which can be a profile name, to a GUID
+//   and stores it back to the globals.
+void CascadiaSettings::_ResolveDefaultProfile()
+{
+    const auto unparsedDefaultProfile{ GlobalSettings().GetUnparsedDefaultProfile() };
+    auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
+    auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
+    GlobalSettings().SetDefaultProfile(defaultProfileGuid);
 }
 
 // Method Description:
@@ -583,10 +597,11 @@ try
         // Here, we were unable to use the profile string as a GUID to
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
-        const auto profileIterator{ _profiles.find_if(_profiles.begin(), _profiles.end(), [&](const auto&& profile) {
+        const auto profileIterator{ std::find_if(_profiles.cbegin(), _profiles.cend(), [&](auto&& profile) {
             return profile.GetName().compare(name) == 0;
         }) };
-        if (profileIterator != _profiles.end())
+
+        if (profileIterator != _profiles.cend())
         {
             return profileIterator->GetGuid();
         }

@@ -114,6 +114,7 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
+    void _ResolveDefaultProfile();
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
