@@ -81,13 +81,12 @@ static double _FindDifference(const _HSL* const phslColorA, const COLORREF rgbCo
 //Arguments:
 // - Color - The RGB color to fine the nearest color to.
 // - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, const WORD cColorTable)
+WORD FindNearestTableIndex(const COLORREF Color, const std::basic_string_view<COLORREF> ColorTable)
 {
     // Quick check for an exact match in the color table:
-    for (WORD i = 0; i < cColorTable; i++)
+    for (WORD i = 0; i < ColorTable.size(); i++)
     {
         if (Color == ColorTable[i])
         {
@@ -100,7 +99,7 @@ WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const C
     const _HSL hslColor = _HSL(Color);
     WORD closest = 0;
     double minDiff = _FindDifference(&hslColor, ColorTable[0]);
-    for (WORD i = 1; i < cColorTable; i++)
+    for (WORD i = 1; i < ColorTable.size(); i++)
     {
         double diff = _FindDifference(&hslColor, ColorTable[i]);
         if (diff < minDiff)
@@ -151,16 +150,14 @@ WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry) noexcept
 //Arguments:
 // - Color - The RGB color to fine the nearest color to.
 // - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
 bool FindTableIndex(const COLORREF Color,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable,
+                    const std::basic_string_view<COLORREF> ColorTable,
                     _Out_ WORD* const pFoundIndex)
 {
     *pFoundIndex = 0;
-    for (WORD i = 0; i < cColorTable; i++)
+    for (WORD i = 0; i < ColorTable.size(); i++)
     {
         if (ColorTable[i] == Color)
         {

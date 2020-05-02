@@ -192,8 +192,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                                          const COLORREF colorBackground,
                                                          const bool isBold,
-                                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                         const WORD cColorTable) noexcept
+                                                         const std::basic_string_view<COLORREF> colorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -232,7 +231,7 @@ using namespace Microsoft::Console::Types;
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
             }
-            else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorForeground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
             }
@@ -249,7 +248,7 @@ using namespace Microsoft::Console::Types;
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
             }
-            else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorBackground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
             }
@@ -278,8 +277,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                              const COLORREF colorBackground,
                                                              const bool isBold,
-                                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                             const WORD cColorTable) noexcept
+                                                             const std::basic_string_view<COLORREF> colorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -312,7 +310,7 @@ using namespace Microsoft::Console::Types;
 
         if (fgChanged)
         {
-            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
 
             _LastFG = colorForeground;
@@ -320,7 +318,7 @@ using namespace Microsoft::Console::Types;
 
         if (bgChanged)
         {
-            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
 
             _LastBG = colorBackground;

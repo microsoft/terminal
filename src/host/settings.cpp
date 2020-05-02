@@ -81,9 +81,8 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
-    ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
+    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
 
@@ -123,7 +122,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
@@ -723,21 +722,19 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-const COLORREF* const Settings::GetColorTable() const
+std::basic_string_view<COLORREF> Settings::Get16ColorTable() const
 {
-    return _ColorTable;
+    return Get256ColorTable().substr(0, 16);
+}
+
+std::basic_string_view<COLORREF> Settings::Get256ColorTable() const
+{
+    return { _colorTable.data(), _colorTable.size() };
 }
 
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        _ColorTable[index] = ColorValue;
-    }
-    else
-    {
-        _XtermColorTable[index] = ColorValue;
-    }
+    _colorTable.at(index) = ColorValue;
 }
 
 bool Settings::IsStartupTitleIsLinkNameSet() const
@@ -755,21 +752,9 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
-const size_t Settings::GetColorTableSize() const
-{
-    return ARRAYSIZE(_ColorTable);
-}
-
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        return _ColorTable[index];
-    }
-    else
-    {
-        return _XtermColorTable[index];
-    }
+    return _colorTable.at(index);
 }
 
 // Routine Description:
@@ -800,13 +785,13 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
         if (!attributes.ForegroundIsDefault())
         {
             const COLORREF rgbForeground = LookupForegroundColor(attributes);
-            fgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbForeground, _ColorTable, ARRAYSIZE(_ColorTable)));
+            fgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbForeground, Get16ColorTable()));
         }
 
         if (!attributes.BackgroundIsDefault())
         {
             const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-            bgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbBackground, _ColorTable, ARRAYSIZE(_ColorTable)));
+            bgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbBackground, Get16ColorTable()));
         }
     }
 
@@ -941,7 +926,7 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 // - The color value of the attribute's foreground TextColor.
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    const auto tableView = Get256ColorTable();
     if (_fScreenReversed)
     {
         return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
@@ -961,7 +946,7 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 // - The color value of the attribute's background TextColor.
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    const auto tableView = Get256ColorTable();
     if (_fScreenReversed)
     {
         return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());

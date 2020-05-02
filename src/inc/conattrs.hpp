@@ -24,12 +24,10 @@ enum class ExtendedAttributes : BYTE
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
 
 WORD FindNearestTableIndex(const COLORREF Color,
-                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                           const WORD cColorTable);
+                           const std::basic_string_view<COLORREF> ColorTable);
 
 bool FindTableIndex(const COLORREF Color,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable,
+                    const std::basic_string_view<COLORREF> ColorTable,
                     _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(const size_t index) noexcept;
