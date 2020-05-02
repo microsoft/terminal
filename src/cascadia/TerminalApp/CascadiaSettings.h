@@ -69,7 +69,6 @@ public:
     static std::filesystem::path GetSettingsPath();
     static std::filesystem::path GetDefaultSettingsPath();
 
-    std::optional<GUID> FindGuid(const std::wstring_view profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
@@ -106,8 +105,8 @@ private:
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    std::optional<GUID> _GetProfileByName(const std::wstring_view) const;
-    std::optional<GUID> _GetProfileByIndex(std::optional<int> index) const;
+    std::optional<GUID> _GetProfileGuidByName(const std::wstring_view) const;
+    std::optional<GUID> _GetProfileGuidByIndex(std::optional<int> index) const;
     GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();

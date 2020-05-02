@@ -1316,11 +1316,11 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(settings0String, false);
         settings.LayerJson(settings._userSettings);
 
-        VERIFY_ARE_EQUAL(guid0, settings.FindGuid(name0));
-        VERIFY_ARE_EQUAL(guid1, settings.FindGuid(name1));
-        VERIFY_ARE_EQUAL(guid2, settings.FindGuid(name2));
-        VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(name3));
-        VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(badName));
+        VERIFY_ARE_EQUAL(guid0, settings._GetProfileGuidByName(name0));
+        VERIFY_ARE_EQUAL(guid1, settings._GetProfileGuidByName(name1));
+        VERIFY_ARE_EQUAL(guid2, settings._GetProfileGuidByName(name2));
+        VERIFY_ARE_EQUAL(badGuid, settings._GetProfileGuidByName(name3));
+        VERIFY_ARE_EQUAL(badGuid, settings._GetProfileGuidByName(badName));
 
         auto prof0{ settings.FindProfile(guid0) };
         auto prof1{ settings.FindProfile(guid1) };
