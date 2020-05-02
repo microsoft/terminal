@@ -1896,32 +1896,28 @@ public:
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
-        _testGetSet->_expectedAttribute.SetForeground(2);
-        _testGetSet->_expectedColorTableIndex = 2;
+        _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(2));
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
-        _testGetSet->_expectedAttribute.SetBackground(9);
-        _testGetSet->_expectedColorTableIndex = 9;
+        _testGetSet->_expectedAttribute.SetIndexedBackground256((BYTE)::XtermToWindowsIndex(9));
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
-        _testGetSet->_expectedColorTableIndex = 42;
-        _testGetSet->_expectedAttribute.SetForeground(42);
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(42);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
-        _testGetSet->_expectedColorTableIndex = 142;
-        _testGetSet->_expectedAttribute.SetBackground(142);
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(142);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
@@ -1931,8 +1927,7 @@ public:
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
-        _testGetSet->_expectedAttribute.SetForeground(9);
-        _testGetSet->_expectedColorTableIndex = 9;
+        _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(9));
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
