@@ -1,4 +1,4 @@
-# Profiles.json Documentation
+# Settings.json Documentation
 
 ## Globals
 Properties listed below affect the entire window, regardless of the profile settings.
@@ -7,6 +7,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | -------- | --------- | ---- | ------- | ----------- |
 | `alwaysShowTabs` | _Required_ | Boolean | `true` | When set to `true`, tabs are always displayed. When set to `false` and `showTabsInTitlebar` is set to `false`, tabs only appear after typing <kbd>Ctrl</kbd> + <kbd>T</kbd>. |
 | `copyOnSelect` | Optional | Boolean | `false` | When set to `true`, a selection is immediately copied to your clipboard upon creation. When set to `false`, the selection persists and awaits further action. |
+| `copyFormatting` | Optional | Boolean | `false` | When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. |
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
 | `initialPosition` | Optional | String | `","` | The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If `launchMode` is set to `"maximized"`, the window will be maximized on the monitor specified by those coordinates. |
@@ -20,6 +21,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
+| `disabledProfileSources` | Optional | Array[String] | `[]` | Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup. This array can contain any combination of `Windows.Terminal.Wsl`, `Windows.Terminal.Azure`, or `Windows.Terminal.PowershellCore`. For more information, see [UsingJsonSettings.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#dynamic-profiles) |
 
 ## Profiles
 Properties listed below are specific to each unique profile.
@@ -37,24 +39,23 @@ Properties listed below are specific to each unique profile.
 | `backgroundImageStretchMode` | Optional | String | `uniformToFill` | Sets how the background image is resized to fill the window. Possible values: `"none"`, `"fill"`, `"uniform"`, `"uniformToFill"` |
 | `closeOnExit` | Optional | String | `graceful` | Sets how the profile reacts to termination or failure to launch. Possible values: `"graceful"` (close when `exit` is typed or the process exits normally), `"always"` (always close) and `"never"` (never close). `true` and `false` are accepted as synonyms for `"graceful"` and `"never"` respectively. |
 | `colorScheme` | Optional | String | `Campbell` | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
-| `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Array follows the format defined in `schemes`. |
 | `commandline` | Optional | String | | Executable used in the profile. |
 | `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | Optional | String | `Cascadia Code` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
+| `fontFace` | Optional | String | `Cascadia Mono` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
 | `historySize` | Optional | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `padding` | Optional | String | `8, 8, 8, 8` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
-| `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
+| `scrollbarState` | Optional | String | `"visible"` | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
 | `selectionBackground` | Optional | String | | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `snapOnInput` | Optional | Boolean | `true` | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `source` | Optional | String | | Stores the name of the profile generator that originated this profile. _There are no discoverable values for this field._ |
 | `startingDirectory` | Optional | String | `%USERPROFILE%` | The directory the shell starts in when it is loaded. |
-| `suppressApplicationTitle` | Optional | Boolean | | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
+| `suppressApplicationTitle` | Optional | Boolean | `false` | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. The transparency only applies to focused windows due to OS limitation. |
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
@@ -92,7 +93,7 @@ Properties listed below are specific to each custom key binding.
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
-| `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `keys` | _Required_ | Array[String] or String | Defines the key combinations used to call the command. |
 | `action` | Optional | String | Adds additional functionality to certain commands. |
 
 ### Implemented Commands and Actions
@@ -139,7 +140,7 @@ For commands with arguments:
 ### Accepted Modifiers and Keys
 
 #### Modifiers
-`Ctrl+`, `Shift+`, `Alt+`
+`ctrl+`, `shift+`, `alt+`
 
 #### Keys
 | Type | Keys |

@@ -12,6 +12,7 @@ namespace Microsoft::Console::Render
         DrawingContext(ID2D1RenderTarget* renderTarget,
                        ID2D1Brush* foregroundBrush,
                        ID2D1Brush* backgroundBrush,
+                       bool forceGrayscaleAA,
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
@@ -20,6 +21,7 @@ namespace Microsoft::Console::Render
             this->renderTarget = renderTarget;
             this->foregroundBrush = foregroundBrush;
             this->backgroundBrush = backgroundBrush;
+            this->forceGrayscaleAA = forceGrayscaleAA;
             this->dwriteFactory = dwriteFactory;
             this->spacing = spacing;
             this->cellSize = cellSize;
@@ -29,6 +31,7 @@ namespace Microsoft::Console::Render
         ID2D1RenderTarget* renderTarget;
         ID2D1Brush* foregroundBrush;
         ID2D1Brush* backgroundBrush;
+        bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;

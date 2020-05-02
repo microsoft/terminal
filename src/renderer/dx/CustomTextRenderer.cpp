@@ -286,6 +286,43 @@ using namespace Microsoft::Console::Render;
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
+    // GH#5098: If we're rendering with cleartype text, we need to always render
+    // onto an opaque background. If our background _isn't_ opaque, then we need
+    // to use grayscale AA for this run of text.
+    //
+    // We can force grayscale AA for just this run of text by pushing a new
+    // layer onto the d2d context. We'll only need to do this for cleartype
+    // text, when our eventual background isn't actually opaque. See
+    // DxEngine::PaintBufferLine and DxEngine::UpdateDrawingBrushes for more
+    // details.
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing).
+
+    // First, create the scope_exit to pop the layer. If we don't need the
+    // layer, we'll just gracefully release it.
+    auto popLayer = wil::scope_exit([&d2dContext]() noexcept {
+        d2dContext->PopLayer();
+    });
+
+    if (drawingContext->forceGrayscaleAA)
+    {
+        // Mysteriously, D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE actually
+        // gets us the behavior we want, which is grayscale.
+        d2dContext->PushLayer(D2D1::LayerParameters(rect,
+                                                    nullptr,
+                                                    D2D1_ANTIALIAS_MODE_ALIASED,
+                                                    D2D1::IdentityMatrix(),
+                                                    1.0,
+                                                    nullptr,
+                                                    D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE),
+                              nullptr);
+    }
+    else
+    {
+        popLayer.release();
+    }
     // Now go onto drawing the text.
 
     // First check if we want a color font and try to extract color emoji first.

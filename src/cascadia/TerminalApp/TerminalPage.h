@@ -45,6 +45,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
+        winrt::hstring ThirdPartyNoticesLink();
+
         void CloseWindow();
 
         int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
@@ -106,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
+        void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
         void _RegisterActionCallbacks();

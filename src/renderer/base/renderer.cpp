@@ -11,6 +11,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 static constexpr auto maxRetriesForRenderEngine = 3;
+// The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
+static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -78,8 +80,20 @@ Renderer::~Renderer()
             {
                 if (--tries == 0)
                 {
-                    FAIL_FAST_HR_MSG(E_UNEXPECTED, "A rendering engine required too many retries.");
+                    // Stop trying.
+                    _pThread->DisablePainting();
+                    if (_pfnRendererEnteredErrorState)
+                    {
+                        _pfnRendererEnteredErrorState();
+                    }
+                    // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+                    // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+                    // abort applications that host us.
+                    return S_FALSE;
                 }
+                // Add a bit of backoff.
+                // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+                Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
                 continue;
             }
             LOG_IF_FAILED(hr);
@@ -303,6 +317,22 @@ void Renderer::TriggerSelection()
         // Get selection rectangles
         const auto rects = _GetSelectionRects();
 
+        // Restrict all previous selection rectangles to inside the current viewport bounds
+        for (auto& sr : _previousSelection)
+        {
+            // Make the exclusive SMALL_RECT into a til::rectangle.
+            til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
+
+            // Make a viewport representing the coordinates that are currently presentable.
+            const til::rectangle viewport{ til::size{ _pData->GetViewport().Dimensions() } };
+
+            // Intersect them so we only invalidate things that are still visible.
+            rc &= viewport;
+
+            // Convert back into the exclusive SMALL_RECT and store in the vector.
+            sr = Viewport::FromInclusive(rc).ToExclusive();
+        }
+
         std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
@@ -330,13 +360,26 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        LOG_IF_FAILED(pEngine->UpdateViewport(srNewViewport));
-        LOG_IF_FAILED(pEngine->InvalidateScroll(&coordDelta));
-    });
+    for (auto engine : _rgpEngines)
+    {
+        LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
+    }
+
     _srViewportPrevious = srNewViewport;
 
-    return coordDelta.X != 0 || coordDelta.Y != 0;
+    if (coordDelta.X != 0 || coordDelta.Y != 0)
+    {
+        for (auto engine : _rgpEngines)
+        {
+            LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
+        }
+
+        _ScrollPreviousSelection(coordDelta);
+
+        return true;
+    }
+
+    return false;
 }
 
 // Routine Description:
@@ -368,6 +411,8 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     });
+
+    _ScrollPreviousSelection(*pcoordDelta);
 
     _NotifyPaintFrame();
 }
@@ -685,6 +730,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
+                // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+                size_t columnCount = 0;
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
@@ -698,7 +745,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         // And tell the next function to trim off the left half of it.
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
-                        clusters.emplace_back(it->Chars(), it->Columns() + 1);
+                        columnCount = it->Columns() + 1;
+                        clusters.emplace_back(it->Chars(), columnCount);
                     }
                     else
                     {
@@ -710,11 +758,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    clusters.emplace_back(it->Chars(), it->Columns());
+                    columnCount = it->Columns();
+                    clusters.emplace_back(it->Chars(), columnCount);
                 }
 
                 // Advance the cluster and column counts.
-                const auto columnCount = clusters.back().GetColumns();
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
                 cols += columnCount;
 
@@ -927,10 +975,13 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         {
             for (auto dirtyRect : dirtyAreas)
             {
+                // Make a copy as `TrimToViewport` will manipulate it and
+                // can destroy it for the next dirtyRect to test against.
+                auto rectCopy = rect;
                 Viewport dirtyView = Viewport::FromInclusive(dirtyRect);
-                if (dirtyView.TrimToViewport(&rect))
+                if (dirtyView.TrimToViewport(&rectCopy))
                 {
-                    LOG_IF_FAILED(pEngine->PaintSelection(rect));
+                    LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
             }
         }
@@ -1003,6 +1054,33 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 }
 
 // Method Description:
+// - Offsets all of the selection rectangles we might be holding onto
+//   as the previously selected area. If the whole viewport scrolls,
+//   we need to scroll these areas also to ensure they're invalidated
+//   properly when the selection further changes.
+// Arguments:
+// - delta - The scroll delta
+// Return Value:
+// - <none> - Updates internal state instead.
+void Renderer::_ScrollPreviousSelection(const til::point delta)
+{
+    if (delta != til::point{ 0, 0 })
+    {
+        for (auto& sr : _previousSelection)
+        {
+            // Get a rectangle representing this piece of the selection.
+            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
+
+            // Offset the entire existing rectangle by the delta.
+            rc += delta;
+
+            // Store it back into the vector.
+            sr = Viewport::FromInclusive(rc).ToExclusive();
+        }
+    }
+}
+
+// Method Description:
 // - Adds another Render engine to this renderer. Future rendering calls will
 //      also be sent to the new renderer.
 // Arguments:
@@ -1015,4 +1093,24 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
     _rgpEngines.push_back(pEngine);
+}
+
+// Method Description:
+// - Registers a callback that will be called when this renderer gives up.
+//   An application consuming a renderer can use this to display auxiliary Retry UI
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
+{
+    _pfnRendererEnteredErrorState = std::move(pfn);
+}
+
+// Method Description:
+// - Attempts to restart the renderer.
+void Renderer::ResetErrorStateAndResume()
+{
+    // because we're not stateful (we could be in the future), all we want to do is reenable painting.
+    EnablePainting();
 }

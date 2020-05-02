@@ -32,7 +32,8 @@ namespace winrt::TerminalApp::implementation
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
-        ActionEventArgs(const TerminalApp::IActionArgs& args) :
+
+        explicit ActionEventArgs(const TerminalApp::IActionArgs& args) :
             _ActionArgs{ args } {};
         GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
         GETSET_PROPERTY(bool, Handled, false);

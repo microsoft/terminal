@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool collapseText);
+        bool CopySelectionToClipboard(bool collapseText = false);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -79,6 +79,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
+        winrt::fire_and_forget _RendererEnteredErrorState();
+        void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
 
         void CreateSearchBoxControl();
 
@@ -195,7 +197,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
-        void _DoResize(const double newWidth, const double newHeight);
+        void _DoResizeUnderLock(const double newWidth, const double newHeight);
+        void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         winrt::fire_and_forget _TerminalCursorPositionChanged();
@@ -231,6 +234,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
+
+        winrt::fire_and_forget _AsyncCloseConnection();
 
         // this atomic is to be used as a guard against dispatching billions of coroutines for
         // routine state changes that might happen millions of times a second.

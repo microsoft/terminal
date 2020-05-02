@@ -1581,10 +1581,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 // - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
-// - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows,
+                                const int fontHeightPoints,
+                                const std::wstring_view fontFaceName,
+                                const COLORREF backgroundColor)
 {
     try
     {
@@ -1594,7 +1596,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         // HTML boiler plate required for CF_HTML
         // as part of the HTML Clipboard format
         const std::string htmlHeader =
-            "<!DOCTYPE><HTML><HEAD><TITLE>" + htmlTitle + "</TITLE></HEAD><BODY>";
+            "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
         htmlBuilder << htmlHeader;
 
         htmlBuilder << "<!--StartFragment -->";
@@ -1967,11 +1969,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
                            std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
 {
-    Cursor& oldCursor = oldBuffer.GetCursor();
+    const Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
-    // skip any drawing updates that might occur as we manipulate the new buffer
-    oldCursor.StartDeferDrawing();
-    newCursor.StartDeferDrawing();
 
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
@@ -2196,9 +2195,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);
     }
-
-    newCursor.EndDeferDrawing();
-    oldCursor.EndDeferDrawing();
 
     return hr;
 }

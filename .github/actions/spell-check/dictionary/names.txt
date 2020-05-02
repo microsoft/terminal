@@ -5,6 +5,7 @@ bhoj
 Bhojwani
 dhowett
 Diviness
+dsafa
 duhowett
 ethanschoonover
 Firefox
@@ -38,6 +39,7 @@ oldnewthing
 osgwiki
 paulcam
 pauldotknopf
+PGP
 Pham
 Rincewind
 rprichard
@@ -53,3 +55,4 @@ zadjii
 Zamor
 Zoey
 zorio
+Zverovich

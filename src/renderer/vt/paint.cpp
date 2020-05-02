@@ -443,15 +443,29 @@ using namespace Microsoft::Console::Types;
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
+    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
 
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
     // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
     // line we're trying to print right now _actually is the bottom line_
-    const bool removeSpaces = useEraseChar ||
-                              _clearedAllThisFrame ||
-                              (_newBottomLine && coord.Y == _lastViewport.BottomInclusive());
+    //
+    // GH#5291: DON'T remove spaces when the row wrapped. We might need those
+    // spaces to preserve the wrap state of this line, or the cursor position.
+    // For example, vim.exe uses "~    "... to clear the line, and then leaves
+    // the lines _wrapped_. It doesn't care to manually break the lines, but if
+    // we trimmed the spaces off here, we'd print all the "~"s one after another
+    // on the same line.
+    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+                                               _clearedAllThisFrame ||
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -547,7 +561,7 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_EraseLine());
         }
     }
-    else if (_newBottomLine && coord.Y == _lastViewport.BottomInclusive())
+    else if (_newBottomLine && printingBottomLine)
     {
         // If we're on a new line, then we don't need to erase the line. The
         //      line is already empty.
@@ -555,8 +569,9 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (numSpaces > 0)
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
@@ -566,9 +581,10 @@ using namespace Microsoft::Console::Types;
 
     // If we printed to the bottom line, and we previously thought that this was
     // a new bottom line, it certainly isn't new any longer.
-    if (coord.Y == _lastViewport.BottomInclusive())
+    if (printingBottomLine)
     {
         _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
     }
 
     return S_OK;

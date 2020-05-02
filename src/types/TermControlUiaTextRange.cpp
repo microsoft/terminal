@@ -98,9 +98,10 @@ void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(clientPos);
-        result += padding;
+        auto result = base::ClampedNumeric<double>(padding);
+        // only the padding is in DIPs now
         result *= scaleFactor;
+        result += clientPos;
         result += termControlPos;
         return result;
     };
@@ -131,10 +132,11 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) con
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(screenPos);
-        result -= termControlPos;
+        auto result = base::ClampedNumeric<double>(padding);
+        // only the padding is in DIPs now
         result /= scaleFactor;
-        result -= padding;
+        result -= screenPos;
+        result -= termControlPos;
         return result;
     };
 

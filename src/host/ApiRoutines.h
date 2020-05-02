@@ -129,7 +129,8 @@ public:
                                                           const wchar_t character,
                                                           const size_t lengthToWrite,
                                                           const COORD startingCoordinate,
-                                                          size_t& cellsModified) noexcept override;
+                                                          size_t& cellsModified,
+                                                          const bool enablePowershellShim = false) noexcept override;
 
     //// Process based. Restrict in protocol side?
     //HRESULT GenerateConsoleCtrlEventImpl(const ULONG ProcessGroupFilter,
@@ -179,7 +180,8 @@ public:
                                                          const COORD target,
                                                          std::optional<SMALL_RECT> clip,
                                                          const wchar_t fillCharacter,
-                                                         const WORD fillAttribute) noexcept override;
+                                                         const WORD fillAttribute,
+                                                         const bool enableCmdShim = false) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                       const WORD attribute) noexcept override;

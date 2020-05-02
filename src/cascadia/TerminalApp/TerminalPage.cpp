@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 
 using namespace winrt;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
@@ -75,7 +76,7 @@ namespace winrt::TerminalApp::implementation
             // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
             // but that process is running at a different IL than us.
             // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
         }
         CATCH_LOG();
 
@@ -251,6 +252,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         return RS_(L"ApplicationVersionUnknown");
+    }
+
+    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        currentPath.replace_filename(L"NOTICE.html");
+        ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     // Method Description:
@@ -572,7 +580,13 @@ namespace winrt::TerminalApp::implementation
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(), L".", L"Azure", settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
+                                                              L".",
+                                                              L"Azure",
+                                                              nullptr,
+                                                              settings.InitialRows(),
+                                                              settings.InitialCols(),
+                                                              winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&
@@ -583,12 +597,21 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
-                                                                    settings.StartingDirectory(),
-                                                                    settings.StartingTitle(),
-                                                                    settings.InitialRows(),
-                                                                    settings.InitialCols(),
-                                                                    winrt::guid());
+            std::wstring guidWString = Utils::GuidToString(profileGuid);
+
+            StringMap envMap{};
+            envMap.Insert(L"WT_PROFILE_ID", guidWString);
+            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+
+            auto conhostConn = TerminalConnection::ConptyConnection(
+                settings.Commandline(),
+                settings.StartingDirectory(),
+                settings.StartingTitle(),
+                envMap.GetView(),
+                settings.InitialRows(),
+                settings.InitialCols(),
+                winrt::guid());
+
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;
         }
@@ -1310,18 +1333,21 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        // copy html to dataPack
-        const auto htmlData = copiedData.Html();
-        if (!htmlData.empty())
+        if (_settings->GlobalSettings().GetCopyFormatting())
         {
-            dataPack.SetHtmlFormat(htmlData);
-        }
+            // copy html to dataPack
+            const auto htmlData = copiedData.Html();
+            if (!htmlData.empty())
+            {
+                dataPack.SetHtmlFormat(htmlData);
+            }
 
-        // copy rtf data to dataPack
-        const auto rtfData = copiedData.Rtf();
-        if (!rtfData.empty())
-        {
-            dataPack.SetRtf(rtfData);
+            // copy rtf data to dataPack
+            const auto rtfData = copiedData.Rtf();
+            if (!rtfData.empty())
+            {
+                dataPack.SetRtf(rtfData);
+            }
         }
 
         try

@@ -27,6 +27,13 @@ class PointTests
         VERIFY_ARE_EQUAL(10, pt._y);
     }
 
+    TEST_METHOD(RawFloatingConstruct)
+    {
+        const til::point pt{ til::math::rounding, 3.2f, 7.6f };
+        VERIFY_ARE_EQUAL(3, pt._x);
+        VERIFY_ARE_EQUAL(8, pt._y);
+    }
+
     TEST_METHOD(UnsignedConstruct)
     {
         Log::Comment(L"0.) Normal unsigned construct.");
@@ -411,6 +418,33 @@ class PointTests
             auto fn = [&]() {
                 auto actual = pt;
                 actual *= pt2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(ScaleByFloat)
+    {
+        Log::Comment(L"0.) Scale that should be in bounds.");
+        {
+            const til::point pt{ 5, 10 };
+            const float scale = 1.783f;
+
+            const til::point expected{ static_cast<ptrdiff_t>(ceil(5 * scale)), static_cast<ptrdiff_t>(ceil(10 * scale)) };
+
+            const auto actual = pt.scale(til::math::ceiling, scale);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"1.) Scale results in value that is too large.");
+        {
+            const til::point pt{ 5, 10 };
+            constexpr float scale = std::numeric_limits<float>().max();
+
+            auto fn = [&]() {
+                pt.scale(til::math::ceiling, scale);
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });

@@ -108,6 +108,8 @@ namespace Microsoft::Console::Render
 
         void SetResizeQuirk(const bool resizeQuirk);
 
+        [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
+
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
@@ -153,6 +155,7 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
+        std::optional<COLORREF> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -174,6 +177,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _CursorPosition(const COORD coord) noexcept;
         [[nodiscard]] HRESULT _CursorHome() noexcept;
         [[nodiscard]] HRESULT _ClearScreen() noexcept;
+        [[nodiscard]] HRESULT _ClearScrollback() noexcept;
         [[nodiscard]] HRESULT _ChangeTitle(const std::string& title) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
                                                            const bool fIsForeground) noexcept;
