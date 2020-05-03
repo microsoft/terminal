@@ -342,6 +342,8 @@ conattrs
 conbufferout
 concat
 concfg
+conda
+condabin
 conddkrefs
 condrv
 conechokey
