@@ -828,9 +828,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
-        _tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl);
-
-        _RemoveTabViewItemByIndex(tabIndexFromControl);
+        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _RemoveTabViewItemByIndex(tabIndexFromControl);
+        }
     }
 
     // Method Description:
