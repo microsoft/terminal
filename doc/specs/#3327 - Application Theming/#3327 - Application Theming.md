@@ -398,7 +398,20 @@ confusing, but they have that freedom.
 
 ## UI/UX Design
 
-[TODO]: # TODO: We should include some mockups here. That would be nice.
+[TODO]: # TODO: We should include more mockups here. That would be nice.
+
+![Tab matches Terminal background](Tab-Matches-Terminal-Color-000.png)
+_fig 1_: Using a tab color set to "terminalBackground". The Windows PowerShell
+tab has also set its color with the color picker.
+
+![Acrylic in the titlebar](AcrylicInTitlebar.png)
+_fig 2_: Using an acrylic titlebar color, with a tab color set to
+"terminalBackground"
+
+![Titlebar matches Terminal background](AcrylicTerminalBackgroundInTitlebar.png)
+_fig 3_: Using an acrylic terminal background, and the titlebar color is set to
+"terminalBackground"
+
 
 ## Capabilities
 
