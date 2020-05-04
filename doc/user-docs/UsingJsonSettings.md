@@ -252,6 +252,12 @@ like to hide all the WSL profiles, you could add the following setting:
 
 ```
 
+> 👉 **NOTE**: On launch, if a dynamic profile generator is enabled, it will
+> always add new profiles it detects to your list of profiles. If you delete a
+> dynamically generated profile from your list of profiles, it will just get
+> re-added the next time the Terminal is launched! To remove a dynamic profile
+> from your list of profiles, make sure to set `"hidden": true` in the profile.
+
 ### Default settings
 
 In [#2325](https://github.com/microsoft/terminal/issues/2325), we introduced the

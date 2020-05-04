@@ -902,13 +902,22 @@ namespace winrt::TerminalApp::implementation
         return 0;
     }
 
-    winrt::hstring AppLogic::EarlyExitMessage()
+    winrt::hstring AppLogic::ParseCommandlineMessage()
     {
         if (_root)
         {
-            return _root->EarlyExitMessage();
+            return _root->ParseCommandlineMessage();
         }
         return { L"" };
+    }
+
+    bool AppLogic::ShouldExitEarly()
+    {
+        if (_root)
+        {
+            return _root->ShouldExitEarly();
+        }
+        return false;
     }
 
     winrt::hstring AppLogic::ApplicationDisplayName() const
