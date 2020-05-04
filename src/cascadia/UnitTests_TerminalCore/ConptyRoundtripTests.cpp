@@ -2769,7 +2769,6 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     }
     else if (clearBufferMethod == ClearWithVT)
     {
-        // DebugBreak();
         sm.ProcessString(L"\x1b[2J");
         VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
         VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
