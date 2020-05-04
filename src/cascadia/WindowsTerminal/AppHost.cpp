@@ -102,7 +102,7 @@ void AppHost::_HandleCommandlineArgs()
             }
 
             const auto result = _logic.SetStartupCommandline({ args });
-            const auto message = _logic.EarlyExitMessage();
+            const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
                 const auto displayHelp = result == 0;
@@ -115,7 +115,10 @@ void AppHost::_HandleCommandlineArgs()
                             GetStringResource(messageTitle).data(),
                             MB_OK | messageIcon);
 
-                ExitProcess(result);
+                if (_logic.ShouldExitEarly())
+                {
+                    ExitProcess(result);
+                }
             }
         }
     }
