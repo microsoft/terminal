@@ -168,6 +168,11 @@ namespace winrt::TerminalApp::implementation
 
         void _ToggleFullscreen();
 
+        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
+        void _ClearNonClientAreaColors();
+        void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
+        void _ClearNewTabButtonColor();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

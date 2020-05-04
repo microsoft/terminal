@@ -1,0 +1,12 @@
+namespace TerminalApp
+{
+    delegate void ColorSelectedArgs(Windows.UI.Color color);
+    delegate void ColorClearedArgs();
+    
+    [default_interface] runtimeclass ColorPickupFlyout : Windows.UI.Xaml.Controls.Flyout
+    {
+        ColorPickupFlyout();
+        event ColorSelectedArgs ColorSelected;
+        event ColorClearedArgs ColorCleared;
+    }
+}

@@ -39,6 +39,8 @@ Author(s):
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include "winrt/Windows.UI.Xaml.Markup.h"
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>

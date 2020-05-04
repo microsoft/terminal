@@ -168,6 +168,27 @@
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="CloseWindowWarningTitle" xml:space="preserve">
+    <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Color...</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Custom...</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>

@@ -59,6 +59,7 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
+    <ClCompile Include="..\ColorHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -107,6 +108,7 @@
       <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="..\ColorHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
@@ -139,6 +141,9 @@
       <Filter>controls</Filter>
     </Page>
     <Page Include="../TitlebarControl.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="../ColorPickupFlyout.xaml">
       <Filter>controls</Filter>
     </Page>
   </ItemGroup>

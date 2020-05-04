@@ -2,9 +2,12 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include <LibraryResources.h>
+#include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
+#include "ColorHelper.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -82,6 +85,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called after construction of a Tab object to bind event handlers to its
+    //   associated Pane and TermControl object and to create the context menu of
+    //   the tab item
+    // Arguments:
+    // - control: reference to the TermControl object to bind event to
+    // Return Value:
+    // - <none>
+    void Tab::Initialize(const TermControl& control)
+    {
+        _BindEventHandlers(control);
+        _CreateContextMenu();
+    }
+
+    // Method Description:
     // - Returns true if this is the currently focused tab. For any set of tabs,
     //   there should only be one tab that is marked as focused, though each tab has
     //   no control over the other tabs in the set.
@@ -133,7 +150,7 @@ namespace winrt::TerminalApp::implementation
     // - control: reference to the TermControl object to bind event to
     // Return Value:
     // - <none>
-    void Tab::BindEventHandlers(const TermControl& control) noexcept
+    void Tab::_BindEventHandlers(const TermControl& control) noexcept
     {
         _AttachEventHandlersToPane(_rootPane);
         _AttachEventHandlersToControl(control);
@@ -440,6 +457,208 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Creates a context menu attached to the tab.
+    // Currently contains elements allowing to select or
+    // to close the current tab
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_CreateContextMenu()
+    {
+        auto weakThis{ get_weak() };
+
+        // Close
+        Controls::MenuFlyoutItem closeTabMenuItem;
+        Controls::FontIcon closeSymbol;
+        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        closeSymbol.Glyph(L"\xE8BB");
+
+        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_rootPane->Close();
+            }
+        });
+        closeTabMenuItem.Text(RS_(L"TabClose"));
+        closeTabMenuItem.Icon(closeSymbol);
+
+        // "Color..."
+        Controls::MenuFlyoutItem chooseColorMenuItem;
+        Controls::FontIcon colorPickSymbol;
+        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        colorPickSymbol.Glyph(L"\xE790");
+
+        chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_tabColorPickup.ShowAt(tab->_tabViewItem);
+            }
+        });
+        chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
+        chooseColorMenuItem.Icon(colorPickSymbol);
+
+        // Color Picker (it's convenient to have it here)
+        _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_SetTabColor(newTabColor);
+            }
+        });
+
+        _tabColorPickup.ColorCleared([weakThis]() {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_ResetTabColor();
+            }
+        });
+
+        // Build the menu
+        Controls::MenuFlyout newTabFlyout;
+        Controls::MenuFlyoutSeparator menuSeparator;
+        newTabFlyout.Items().Append(chooseColorMenuItem);
+        newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Items().Append(closeTabMenuItem);
+        _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // Returns the tab color, if any
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The tab's color, if any
+    std::optional<winrt::Windows::UI::Color> Tab::GetTabColor()
+    {
+        return _tabColor;
+    }
+
+    // Method Description:
+    // - Sets the tab background color to the color chosen by the user
+    // - Sets the tab foreground color depending on the luminance of
+    // the background color
+    // Arguments:
+    // - color: the shiny color the user picked for their tab
+    // Return Value:
+    // - <none>
+    void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
+    {
+        auto weakThis{ get_weak() };
+
+        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, color]() {
+            auto ptrTab = weakThis.get();
+            if (!ptrTab)
+                return;
+
+            auto tab{ ptrTab };
+            Media::SolidColorBrush selectedTabBrush{};
+            Media::SolidColorBrush deselectedTabBrush{};
+            Media::SolidColorBrush fontBrush{};
+            Media::SolidColorBrush hoverTabBrush{};
+            // calculate the luminance of the current color and select a font
+            // color based on that
+            // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
+            if (TerminalApp::ColorHelper::IsBrightColor(color))
+            {
+                fontBrush.Color(winrt::Windows::UI::Colors::Black());
+            }
+            else
+            {
+                fontBrush.Color(winrt::Windows::UI::Colors::White());
+            }
+
+            hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
+            selectedTabBrush.Color(color);
+
+            // currently if a tab has a custom color, a deselected state is
+            // signified by using the same color with a bit ot transparency
+            auto deselectedTabColor = color;
+            deselectedTabColor.A = 64;
+            deselectedTabBrush.Color(deselectedTabColor);
+
+            // currently if a tab has a custom color, a deselected state is
+            // signified by using the same color with a bit ot transparency
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+
+            tab->_RefreshVisualState();
+
+            tab->_tabColor.emplace(color);
+            tab->_colorSelected(color);
+        });
+    }
+
+    // Method Description:
+    // Clear the custom color of the tab, if any
+    // the background color
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_ResetTabColor()
+    {
+        auto weakThis{ get_weak() };
+
+        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
+            auto ptrTab = weakThis.get();
+            if (!ptrTab)
+                return;
+
+            auto tab{ ptrTab };
+            winrt::hstring keys[] = {
+                L"TabViewItemHeaderBackground",
+                L"TabViewItemHeaderBackgroundSelected",
+                L"TabViewItemHeaderBackgroundPointerOver",
+                L"TabViewItemHeaderForeground",
+                L"TabViewItemHeaderForegroundSelected",
+                L"TabViewItemHeaderForegroundPointerOver",
+                L"TabViewItemHeaderBackgroundPressed",
+                L"TabViewItemHeaderForegroundPressed"
+            };
+
+            // simply clear any of the colors in the tab's dict
+            for (auto keyString : keys)
+            {
+                auto key = winrt::box_value(keyString);
+                if (tab->_tabViewItem.Resources().HasKey(key))
+                {
+                    tab->_tabViewItem.Resources().Remove(key);
+                }
+            }
+
+            tab->_RefreshVisualState();
+            tab->_tabColor.reset();
+            tab->_colorCleared();
+        });
+    }
+
+    // Method Description:
+    // Toggles the visual state of the tab view item,
+    // so that changes to the tab color are reflected immediately
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_RefreshVisualState()
+    {
+        if (_focused)
+        {
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+        }
+        else
+        {
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+        }
+    }
+
     // - Get the total number of leaf panes in this tab. This will be the number
     //   of actual controls hosted by this tab.
     // Arguments:
@@ -467,4 +686,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(Tab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+    DEFINE_EVENT(Tab, ColorCleared, _colorCleared, winrt::delegate<>);
 }
