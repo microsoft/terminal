@@ -1186,10 +1186,10 @@ bool _IsBoxDrawingCharacter(const wchar_t wch)
 // - <none> - Operates on all runs then orders them back up.
 // Return Value:
 // - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_CorrectBoxDrawing()
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_CorrectBoxDrawing() noexcept
 try
 {
-    RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, _text.size()));
+    RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, gsl::narrow<UINT32>(_text.size())));
     _OrderRuns();
     return S_OK;
 }
