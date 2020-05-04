@@ -263,14 +263,20 @@ using namespace Microsoft::Console::Render;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
     // Draw the background
+    // The rectangle needs to be deduced based on the origin and the BidiDirection
+    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+
     D2D1_RECT_F rect;
     rect.top = origin.y;
     rect.bottom = rect.top + drawingContext->cellSize.height;
     rect.left = origin.x;
-    rect.right = rect.left;
-    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
-
-    rect.right = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), rect.right);
+    // Check for RTL, if it is, move rect.left to the left from the baseline
+    if (WI_IsFlagSet(glyphRun->bidiLevel, 1))
+    {
+        rect.left -= totalSpan;
+    }
+    rect.right = rect.left + totalSpan;
 
     // Clip all drawing in this glyph run to where we expect.
     // We need the AntialiasMode here to be Aliased to ensure
