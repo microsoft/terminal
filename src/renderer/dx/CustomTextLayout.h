@@ -65,7 +65,7 @@ namespace Microsoft::Console::Render
                                                                       UINT32 textLength,
                                                                       _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
-        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect) noexcept;
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale = 1.0f) noexcept;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
@@ -138,6 +138,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRun(const UINT32 runIndex) noexcept;
+        [[nodiscard]] HRESULT _CorrectBoxDrawing() noexcept;
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;

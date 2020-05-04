@@ -107,6 +107,11 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
     RETURN_IF_FAILED(_CorrectGlyphRuns());
+    // Correcting box drawing has to come after both font fallback and
+    // the glyph run advance correction (which will apply a font size scaling factor).
+    // We need to know all the proposed X and Y dimension metrics to get this right.
+    RETURN_IF_FAILED(_CorrectBoxDrawing());
+
     RETURN_IF_FAILED(_DrawGlyphRuns(clientDrawingContext, renderer, { originX, originY }));
 
     return S_OK;
@@ -165,9 +170,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                 run.fontFace = _font;
             }
         }
-
-        // Perform our box drawing analyzer no matter what.
-        RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, textLength));
 
         // Resequence the resulting runs in order before returning to caller.
         _OrderRuns();
@@ -1176,6 +1178,24 @@ bool _IsBoxDrawingCharacter(const wchar_t wch)
 }
 
 // Routine Description:
+// - Corrects all runs for box drawing characteristics. Splits as it walks, if it must.
+//   If there are fallback fonts, this must happen after that's analyzed and after the
+//   advances are corrected so we can use the font size scaling factors to determine
+//   the appropriate layout heights for the correction scale/translate matrix.
+// Arguments:
+// - <none> - Operates on all runs then orders them back up.
+// Return Value:
+// - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_CorrectBoxDrawing()
+try
+{
+    RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, _text.size()));
+    _OrderRuns();
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Routine Description:
 // - An analyzer to walk through the source text and search for runs of box drawing characters.
 //   It will segment the text into runs of those characters and mark them for special drawing, if necessary.
 // Arguments:
@@ -1259,14 +1279,18 @@ try
     {
         auto& run = _FetchNextRun(textLength);
 
-        //::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
+        if (run.fontFace == _font)
+        {
+            run.drawingEffect = _boxDrawingEffect;
+        }
+        else
+        {
+            ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
+            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), run.fontFace.Get(), &eff, run.fontScale));
 
-        //RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), run.fontFace.Get(), &eff));
-
-        //// store data in the run
-        //run.drawingEffect = eff;
-
-        run.drawingEffect = _boxDrawingEffect;
+            // store data in the run
+            run.drawingEffect = eff;
+        }
     }
 
     return S_OK;
@@ -1506,7 +1530,7 @@ void CustomTextLayout::_OrderRuns()
 
 #pragma endregion
 
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect) noexcept
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale) noexcept
 {
     const auto fontSize = format->GetFontSize();
     DWRITE_LINE_SPACING_METHOD spacingMethod;
@@ -1520,9 +1544,18 @@ void CustomTextLayout::_OrderRuns()
     DWRITE_FONT_METRICS1 fontMetrics;
     face->GetMetrics(&fontMetrics);
 
+    const auto scaledFontSize = fontScale * fontSize;
+
     const UINT32 cp = L'\x2588';
+    
     UINT16 gi;
     RETURN_IF_FAILED(face->GetGlyphIndicesW(&cp, 1, &gi));
+
+    if (gi == 0)
+    {
+        const UINT32 alternateCp = L'\x253C';
+        RETURN_IF_FAILED(face->GetGlyphIndicesW(&alternateCp, 1, &gi));
+    }
 
     INT32 adv;
     RETURN_IF_FAILED(face->GetDesignGlyphAdvances(1, &gi, &adv));
@@ -1537,8 +1570,8 @@ void CustomTextLayout::_OrderRuns()
         const auto boxDescentDesignUnits = boxMetrics.advanceHeight - boxMetrics.verticalOriginY - boxMetrics.bottomSideBearing;
         const auto boxHeightDesignUnits = boxAscentDesignUnits + boxDescentDesignUnits;
 
-        const auto cellAscentDesignUnits = fullPixelAscent * fontMetrics.designUnitsPerEm / fontSize;
-        const auto cellDescentDesignUnits = fullPixelDescent * fontMetrics.designUnitsPerEm / fontSize;
+        const auto cellAscentDesignUnits = fullPixelAscent * fontMetrics.designUnitsPerEm / scaledFontSize;
+        const auto cellDescentDesignUnits = fullPixelDescent * fontMetrics.designUnitsPerEm / scaledFontSize;
         const auto cellHeightDesignUnits = cellAscentDesignUnits + cellDescentDesignUnits;
 
         const auto boxTouchesCellTop = boxAscentDesignUnits >= cellAscentDesignUnits;
@@ -1556,7 +1589,7 @@ void CustomTextLayout::_OrderRuns()
 
                 const auto boxVerticalTranslationDesignUnits = (extraAscent - extraDescent) / 2;
 
-                boxVerticalTranslation = boxVerticalTranslationDesignUnits * fontSize / fontMetrics.designUnitsPerEm;
+                boxVerticalTranslation = boxVerticalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
             }
         }
     }
@@ -1589,7 +1622,7 @@ void CustomTextLayout::_OrderRuns()
 
                 const auto boxHorizontalTranslationDesignUnits = (extraLeft - extraRight) / 2;
 
-                boxHorizontalTranslation = boxHorizontalTranslationDesignUnits * fontSize / fontMetrics.designUnitsPerEm;
+                boxHorizontalTranslation = boxHorizontalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
             }
         }
     }
