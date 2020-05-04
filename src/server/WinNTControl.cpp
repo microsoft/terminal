@@ -13,7 +13,8 @@ WinNTControl::WinNTControl() :
     // NOTE: Use LoadLibraryExW with LOAD_LIBRARY_SEARCH_SYSTEM32 flag below to avoid unneeded directory traversal.
     //       This has triggered CPG boot IO warnings in the past.
     _NtDllDll(THROW_LAST_ERROR_IF_NULL(LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))),
-    _NtOpenFile(reinterpret_cast<PfnNtOpenFile>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_NtDllDll.get(), "NtOpenFile"))))
+    _NtOpenFile(reinterpret_cast<PfnNtOpenFile>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_NtDllDll.get(), "NtOpenFile")))),
+    _NtSetSystemInformation(reinterpret_cast<PfnNtSetSystemInformation>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_NtDllDll.get(), "NtSetSystemInformation"))))
 {
 }
 
@@ -46,6 +47,17 @@ WinNTControl& WinNTControl::GetInstance()
     try
     {
         return GetInstance()._NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, OpenOptions);
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]] NTSTATUS WinNTControl::NtSetSystemInformation(_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
+                                                            _In_reads_bytes_opt_(SystemInformationLength) PVOID SystemInformation,
+                                                            _In_ ULONG SystemInformationLength)
+{
+    try
+    {
+        return GetInstance()._NtSetSystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength);
     }
     CATCH_RETURN();
 }

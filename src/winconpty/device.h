@@ -15,6 +15,7 @@ Abstract:
 #pragma once
 
 #include "../server/DeviceHandle.h"
+#include "../server/WinNTControl.h"
 
 [[nodiscard]] static inline NTSTATUS CreateClientHandle(PHANDLE Handle, HANDLE ServerHandle, PCWSTR Name, BOOLEAN Inheritable)
 {

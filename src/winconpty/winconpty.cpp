@@ -46,6 +46,21 @@ static wchar_t* _ConsoleHostPath()
     return consoleHostPath.get();
 }
 
+static bool _EnsureDriverIsLoaded()
+{
+#ifdef __INSIDE_WINDOWS
+    return true;
+#else
+    static bool loaded{ []() {
+        SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
+        ConsoleInformation.DriverLoaded = TRUE;
+        (void)WinNTControl::NtSetSystemInformation(SystemConsoleInformation, &ConsoleInformation, sizeof(ConsoleInformation));
+        return true;
+    }() };
+    return loaded;
+#endif // __INSIDE_WINDOWS
+}
+
 static bool _HandleIsValid(HANDLE h) noexcept
 {
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
@@ -66,6 +81,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     {
         return E_INVALIDARG;
     }
+
+    _EnsureDriverIsLoaded();
 
     wil::unique_handle serverHandle;
     RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
