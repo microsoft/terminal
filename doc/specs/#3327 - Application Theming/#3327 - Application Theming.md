@@ -320,6 +320,31 @@ color picker to be able to change the overline color, not the background color
 of the tab. Then, when the user uses the color picker, the overline color will
 be overridden by the color picker, instead of the tab background color.
 
+**Other things to consider:**
+* Users might want to be able to set a tab color as a part of the profile. One
+  could imagine wanting to set the tab background color for Windows PowerShell
+  to `rgb(1, 36, 86)` automatically. If we make this property part of the
+  Profile, then we should use the profile's value as the runtime-override (of
+  the theme value) for this property. If the color picker is used to set the
+  color of the tab, then it'll override the runtime color for that tab.
+  - How does this interact with multiple Panes in a tab? Should the Tab
+    override color be per-terminal instance? If the terminal has a tab color,
+    then that would override the theme, but not the tab's own override color?
+    - If that were the case, the order of precedence would be:
+      1. A color set at runtime with the color picker
+      2. A color from the active terminal within the tab, if it has one
+      3. The tab color from the theme
+* Users might want to be able to configure the titlebar to use a color based off
+  the active tab color. We might need an additional special value like
+  `terminalBackground` that lets users say "I want to use the active tab color
+  as the titlebar color".
+  - During [#3789], there was a point where the terminal raised actually
+    implemented something like this. In it's implementation, the titlebar color
+    would be slightly lighter or darker than the tab color (to provide some
+    contrast). We'd want to make sure that the user could specify both "I want
+    to use the tab color with some contrast applied" or just literally "Use
+    whatever the active tab's color is."
+
 ### Default Themes
 
 Late in 1.0, we renamed the old property `requestedTheme` to just `theme`.
