@@ -13,7 +13,7 @@ using namespace winrt::TerminalApp;
 // - true of light, false if dark
 bool ColorHelper::IsBrightColor(const winrt::Windows::UI::Color& color)
 {
-    // http://www.w3.org/TR/AERT#color-contrast
+    // https://www.w3.org/TR/AERT#color-contrast
     auto brightness = (color.R * 299 + color.G * 587 + color.B * 114) / 1000.f;
     return brightness > 128.f;
 }
@@ -159,7 +159,7 @@ winrt::Windows::UI::Color ColorHelper::Darken(const winrt::Windows::UI::Color& c
 // Method Description:
 // Gets an accent color to a given color. Basically, generates
 // 16 shades of the color and finds the first which has a good
-// contrast according to http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
+// contrast according to https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
 // Readability ratio of 3.5 seems to look quite nicely
 // Arguments:
 // - color: the color for which we need an accent
@@ -198,7 +198,7 @@ winrt::Windows::UI::Color ColorHelper::GetAccentColor(const winrt::Windows::UI::
 
 // Method Description:
 // Gets the readability of two colors according to
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
+// https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
 // Arguments:
 // - firstColor: the first color for the readability check (hsl)
 // - secondColor: the second color for the readability check (hsl)
@@ -211,7 +211,7 @@ float ColorHelper::GetReadability(const HSL& first, const HSL& second)
 
 // Method Description:
 // Gets the readability of two colors according to
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
+// https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
 // Arguments:
 // - firstColor: the first color for the readability check (rgb)
 // - secondColor: the second color for the readability check (rgb)
@@ -227,7 +227,7 @@ float ColorHelper::GetReadability(const winrt::Windows::UI::Color& first, const 
 
 // Method Description:
 // Calculates the luminance of a given color according to
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+// https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 // Arguments:
 // - color: its luminance is going to be calculated
 // Return Value:

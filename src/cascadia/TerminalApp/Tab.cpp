@@ -557,7 +557,7 @@ namespace winrt::TerminalApp::implementation
             Media::SolidColorBrush hoverTabBrush{};
             // calculate the luminance of the current color and select a font
             // color based on that
-            // see http://www.w3.org/TR/WCAG20/#relativeluminancedef
+            // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
             if (TerminalApp::ColorHelper::IsBrightColor(color))
             {
                 fontBrush.Color(winrt::Windows::UI::Colors::Black());
