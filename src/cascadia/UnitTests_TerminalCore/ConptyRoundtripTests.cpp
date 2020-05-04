@@ -141,6 +141,15 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         _checkConptyOutput = true;
         _logConpty = false;
 
+        VERIFY_ARE_EQUAL(gci.GetActiveOutputBuffer().GetViewport().Dimensions(),
+                         gci.GetActiveOutputBuffer().GetBufferSize().Dimensions(),
+                         L"If this test fails, then there's a good chance "
+                         L"another test resized the buffer but didn't use IsolationLevel:Method");
+        VERIFY_ARE_EQUAL(gci.GetActiveOutputBuffer().GetViewport(),
+                         gci.GetActiveOutputBuffer().GetBufferSize(),
+                         L"If this test fails, then there's a good chance "
+                         L"another test resized the buffer but didn't use IsolationLevel:Method");
+
         return true;
     }
 
@@ -285,6 +294,10 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
 
 [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size& newSize)
 {
+    // IMPORTANT! Anyone calling this should make sure that the test is running
+    // in IsolationLevel: Method. If you don't add that, then it might secretly
+    // pollute other tests!
+
     Log::Comment(L"========== Resize the Terminal and conpty ==========");
 
     auto resizeResult = term->UserResize(newSize);
@@ -2508,6 +2521,10 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
 
 void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     // See https://github.com/microsoft/terminal/issues/5428
     Log::Comment(L"This test emulates what happens when you decrease the width "
                  L"of the window while running vim.exe.");
@@ -2704,6 +2721,9 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 
+    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
+
     if (clearBufferMethod == ClearLikeCls)
     {
         // Execute the cls, EXACTLY LIKE CMD.
@@ -2749,9 +2769,16 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     }
     else if (clearBufferMethod == ClearWithVT)
     {
+        // DebugBreak();
         sm.ProcessString(L"\x1b[2J");
+        VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+        VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
+
         sm.ProcessString(L"\x1b[3J");
     }
+
+    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());

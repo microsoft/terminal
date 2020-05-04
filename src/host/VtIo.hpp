@@ -46,7 +46,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsResizeQuirkEnabled() const;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
-        [[nodiscard]] HRESULT ManuallyClearViewport() const noexcept;
 
     private:
         // After CreateIoHandlers is called, these will be invalid.

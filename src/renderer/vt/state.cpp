@@ -509,17 +509,3 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     return S_OK;
 }
-
-// Method Description:
-// - Manually emit a "Erase All" sequence to the connected terminal. When the
-//   client requests a Erase All operation, we need to manually tell the
-//   connected terminal to do the same thing, so that the terminal will move
-//   it's own buffer contents into the scrollback.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
-[[nodiscard]] HRESULT VtEngine::ManuallyClearViewport() noexcept
-{
-    return _ClearScreen();
-}
