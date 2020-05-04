@@ -263,14 +263,20 @@ using namespace Microsoft::Console::Render;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
     // Draw the background
+    // The rectangle needs to be deduced based on the origin and the BidiDirection
+    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+
     D2D1_RECT_F rect;
     rect.top = origin.y;
     rect.bottom = rect.top + drawingContext->cellSize.height;
     rect.left = origin.x;
-    rect.right = rect.left;
-    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
-
-    rect.right = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), rect.right);
+    // Check for RTL, if it is, move rect.left to the left from the baseline
+    if (WI_IsFlagSet(glyphRun->bidiLevel, 1))
+    {
+        rect.left -= totalSpan;
+    }
+    rect.right = rect.left + totalSpan;
 
     // Clip all drawing in this glyph run to where we expect.
     // We need the AntialiasMode here to be Aliased to ensure
@@ -394,8 +400,7 @@ using namespace Microsoft::Console::Render;
                 case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8: {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawColorBitmapGlyphRun(colorRun->glyphImageFormat,
                                                          currentBaselineOrigin,
@@ -404,8 +409,7 @@ using namespace Microsoft::Console::Render;
                 }
                 break;
 
-                case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_SVG: {
                     // This run is SVG glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,
