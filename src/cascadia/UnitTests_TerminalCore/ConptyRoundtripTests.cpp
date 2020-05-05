@@ -3015,17 +3015,17 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     auto defaultAttrs = TextAttribute();
     auto conhostDefaultAttrs = si.GetAttributes();
 
-    // auto scrollBufferUp = [&]() {
-    //     // Emulate calling ScrollConsoleScreenBuffer to scroll the top height-1 lines up
-    //     SMALL_RECT src;
-    //     src.Top = 0;
-    //     src.Left = 0;
-    //     src.Right = si.GetViewport().Width();
-    //     src.Bottom = originalBottom - 1;
-    //     COORD tgt = { 0, -1 };
-    //     TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
-    //     ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
-    // };
+    auto scrollBufferUp = [&]() {
+        // Emulate calling ScrollConsoleScreenBuffer to scroll the top height-1 lines up
+        SMALL_RECT src;
+        src.Top = 0;
+        src.Left = 0;
+        src.Right = si.GetViewport().Width();
+        src.Bottom = si.GetViewport().Height();
+        COORD tgt = { 0, -1 };
+        TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
+        ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+    };
 
     auto wclString = [&](auto length) {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
@@ -3041,6 +3041,17 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
+        // if (i > TerminalViewHeight / 2)
+        // {
+        //     scrollBufferUp();
+        //     scrollBufferUp();
+        //     sm.ProcessString(L"\x1b[31;H");
+        // }
+        // else if (i > 0)
+        // {
+        //     sm.ProcessString(L"\r\n");
+        // }
+
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
@@ -3080,12 +3091,16 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
             VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
             if (isWrapped)
             {
-                TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInFirstLine);
+                // TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInFirstLine);
+                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), til::point{ 0, row });
             }
             else
             {
-                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInSecondLine);
-                TestUtils::VerifyLineContains(iter, L' ', actualSpacesAttrs, width - charsInSecondLine);
+                // auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInSecondLine);
+                // TestUtils::VerifyLineContains(iter, L' ', actualSpacesAttrs, width - charsInSecondLine);
+
+                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), til::point{ 0, row });
+                TestUtils::VerifyExpectedString(std::wstring(width - charsInSecondLine, L' '), iter);
             }
         }
     };
@@ -3097,5 +3112,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
+    VERIFY_ARE_EQUAL(circledRows, term->_mutableViewport.Top());
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
