@@ -585,7 +585,7 @@ bool ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool enabled)
 // - true if successful (see DoSrvPrivateEraseAll). false otherwise.
 bool ConhostInternalGetSet::PrivateEraseAll()
 {
-    return NT_SUCCESS(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+    return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:

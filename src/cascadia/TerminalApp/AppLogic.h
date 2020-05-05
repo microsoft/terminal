@@ -28,7 +28,8 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        winrt::hstring EarlyExitMessage();
+        winrt::hstring ParseCommandlineMessage();
+        bool ShouldExitEarly();
 
         winrt::hstring ApplicationDisplayName() const;
         winrt::hstring ApplicationVersion() const;

@@ -50,7 +50,8 @@ namespace winrt::TerminalApp::implementation
         void CloseWindow();
 
         int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
-        winrt::hstring EarlyExitMessage();
+        winrt::hstring ParseCommandlineMessage();
+        bool ShouldExitEarly();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -166,6 +167,11 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
         void _ToggleFullscreen();
+
+        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
+        void _ClearNonClientAreaColors();
+        void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
+        void _ClearNewTabButtonColor();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
