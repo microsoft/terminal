@@ -578,6 +578,10 @@ using namespace Microsoft::Console::Types;
             _lastText.X += static_cast<short>(numSpaces);
         }
     }
+    // else
+    // {
+    //     _deferredCursorPos = INVALID_COORDS;
+    // }
 
     // If we printed to the bottom line, and we previously thought that this was
     // a new bottom line, it certainly isn't new any longer.

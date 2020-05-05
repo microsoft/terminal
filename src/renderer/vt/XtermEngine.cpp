@@ -461,12 +461,6 @@ try
         };
         _trace.TraceInvalidate(lastCellOfWrappedRow);
         _invalidMap.set(lastCellOfWrappedRow);
-
-        // _delayedEolWrap = false;
-        // _wrappedRow = std::nullopt;
-        // // This boy right here, we should clear delayedEOL
-
-        // NOT THIS The problem is that the _wrappedRow is cleared after we paint the wrapped char
     }
 
     // If the entire viewport was invalidated this frame, don't mark the bottom

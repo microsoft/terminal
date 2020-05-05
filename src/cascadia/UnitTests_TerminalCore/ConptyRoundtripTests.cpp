@@ -215,6 +215,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(NewLinesAtBottomWithBackground);
 
     TEST_METHOD(WrapNewLineAtBottom);
+    TEST_METHOD(WrapNewLineAtBottomEx);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -3134,5 +3135,141 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     VERIFY_ARE_EQUAL(circledRows, term->_mutableViewport.Top());
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::WrapNewLineAtBottomEx()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        // TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
+        TEST_METHOD_PROPERTY(L"Data:circledRows", L"{4}")
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
+    END_TEST_METHOD_PROPERTIES();
+    constexpr int DontPaint = 0;
+    constexpr int PaintAfterBothLines = 1;
+    constexpr int PaintEveryLine = 2;
+
+    INIT_TEST_PROPERTY(int, circledRows, L"TODO");
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
+
+    // See https://github.com/microsoft/terminal/issues/5691
+    Log::Comment(L"TODO");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    const size_t width = static_cast<size_t>(TerminalViewWidth);
+
+    const auto charsInFirstLine = width;
+    const auto numCharsFirstColor = 30;
+    const auto numCharsSecondColor = charsInFirstLine - numCharsFirstColor;
+    const auto charsInSecondLine = width / 2;
+
+    const auto defaultAttrs = TextAttribute();
+    const auto conhostDefaultAttrs = si.GetAttributes();
+
+    for (auto i = 0; i < (TerminalViewHeight) / 2; i++)
+    {
+        Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
+
+        sm.ProcessString(L"\x1b[33m");
+        sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
+
+        if (paintEachNewline == PaintEveryLine)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+
+        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+        sm.ProcessString(L"\r\n");
+
+        if (paintEachNewline == PaintEveryLine ||
+            paintEachNewline == PaintAfterBothLines)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+    }
+    sm.ProcessString(L":");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    for (auto i = 0; i < (circledRows) / 2; i++)
+    {
+        Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
+
+        sm.ProcessString(L"\r");
+        sm.ProcessString(L"\x1b[33m");
+        sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
+        sm.ProcessString(L":");
+
+        if (paintEachNewline == PaintEveryLine)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+
+        sm.ProcessString(L"\r");
+        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+        sm.ProcessString(L"\r\n");
+        sm.ProcessString(L":");
+
+        if (paintEachNewline == PaintEveryLine ||
+            paintEachNewline == PaintAfterBothLines)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+        // VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
+        const auto width = viewport.width<short>();
+        const auto isTerminal = viewport.top() != 0;
+        auto lastRow = viewport.bottom<short>() - 1;
+        for (short row = 0; row < lastRow; row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+
+            const auto isWrapped = (row % 2) == (isTerminal ? 0 : 1);
+            const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
+
+            const auto actualNonSpacesAttrs = defaultAttrs;
+            const auto actualSpacesAttrs = rowCircled || isTerminal ? defaultAttrs : conhostDefaultAttrs;
+
+            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            if (isWrapped)
+            {
+                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), til::point{ 0, row });
+            }
+            else
+            {
+                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), til::point{ 0, row });
+                TestUtils::VerifyExpectedString(std::wstring(width - charsInSecondLine, L' '), iter);
+            }
+        }
+        VERIFY_IS_FALSE(tb.GetRowByOffset(lastRow).GetCharRow().WasWrapForced());
+        auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(1, L':'), til::point{ 0, lastRow });
+        TestUtils::VerifyExpectedString(std::wstring(width - 1, L' '), iter);
+    };
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    VERIFY_ARE_EQUAL(circledRows + 1, term->_mutableViewport.Top());
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
