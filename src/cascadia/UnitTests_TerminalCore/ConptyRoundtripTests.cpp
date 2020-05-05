@@ -213,6 +213,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(NewLinesAtBottomWithBackground);
 
+    TEST_METHOD(WrapNewLineAtBottom);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2962,6 +2964,100 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
                 TestUtils::VerifyLineContains(iter, L' ', blueAttrs, static_cast<size_t>(spacesToPrint));
                 TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
                 TestUtils::VerifyLineContains(iter, L' ', actualDefaultAttrs, static_cast<size_t>(width - 15));
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::WrapNewLineAtBottom()
+{
+    // BEGIN_TEST_METHOD_PROPERTIES()
+    //     TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
+    //     TEST_METHOD_PROPERTY(L"Data:spacesToPrint", L"{1, 7, 8, 9, 32}")
+    // END_TEST_METHOD_PROPERTIES();
+
+    // INIT_TEST_PROPERTY(bool, paintEachNewline, L"If true, call PaintFrame after each pair of lines.");
+    // INIT_TEST_PROPERTY(int, spacesToPrint, L"Controls the number of spaces printed after the first '#'");
+
+    // See https://github.com/microsoft/terminal/issues/5691
+    Log::Comment(L"TODO");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    const size_t width = static_cast<size_t>(TerminalViewWidth);
+
+    const auto charsInFirstLine = width;
+    const auto charsInSecondLine = width / 2;
+
+    auto defaultAttrs = TextAttribute();
+    auto conhostDefaultAttrs = si.GetAttributes();
+
+    // sm.ProcessString(L"\x1b[m");
+    const auto circledRows = 4;
+    for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
+    {
+        if (i > 0)
+        {
+            sm.ProcessString(L"\r\n");
+        }
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
+
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+        // sm.ProcessString(L"\r\n");
+    }
+    // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
+    // sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
+        const auto width = viewport.width<short>();
+        const auto isTerminal = viewport.top() != 0;
+        // const auto actualDefaultAttrs = isTerminal ? TextAttribute() : conhostDefaultAttrs;
+        // const auto actualDefaultAttrs = defaultAttrs;
+
+        for (short row = 0; row < viewport.bottom<short>(); row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+
+            const auto isWrapped = (row % 2) == 0;
+            const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
+
+            const auto actualNonSpacesAttrs = defaultAttrs;
+            const auto actualSpacesAttrs = rowCircled || isTerminal ? defaultAttrs : conhostDefaultAttrs;
+
+            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            if (isWrapped)
+            {
+                TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInFirstLine);
+            }
+            else
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInSecondLine);
+                TestUtils::VerifyLineContains(iter, L' ', actualSpacesAttrs, width - charsInSecondLine);
             }
         }
     };
