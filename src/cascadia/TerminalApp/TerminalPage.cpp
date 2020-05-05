@@ -913,8 +913,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // TODO GH#3327: Once we support colorizing the NewTab button based on
+        // the color of the tab, we'll want to make sure to call
+        // _ClearNewTabButtonColor here, to reset it to the default (for the
+        // newly created tab).
         // remove any colors left by other colored tabs
-        _ClearNewTabButtonColor();
+        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -1931,6 +1935,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
         winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
 
+        // TODO: Related to GH#3917 - I think if the system is set to "Dark"
+        // theme, but the app is set to light theme, then this lookup still
+        // returns to us the dark theme brushes. There's gotta be a way to get
+        // the right brushes...
+        // See also GH#5741
         if (res.HasKey(defaultBackgroundKey))
         {
             winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultBackgroundKey);
