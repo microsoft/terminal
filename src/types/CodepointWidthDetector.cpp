@@ -22,10 +22,7 @@ namespace
     static constexpr std::array<UnicodeRange, 351> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
-
-        // GH #900 Supplemented with ranges from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
-        // Codepoints marked as "emoji_presentation" (characters that by default should
-        // appear with an emoji presentation and so categorized as Wide).
+        // GH #900 Supplemented with emoji ranges from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -116,9 +113,7 @@ namespace
         UnicodeRange{ 0x2160, 0x216b, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2170, 0x2179, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2189, 0x2189, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2190, 0x2193, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2194, 0x2199, CodepointWidth::Wide },
-        UnicodeRange{ 0x21a9, 0x21aa, CodepointWidth::Wide },
+        UnicodeRange{ 0x2190, 0x2199, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x21b8, 0x21b9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x21d2, 0x21d2, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x21d4, 0x21d4, CodepointWidth::Ambiguous },
@@ -169,11 +164,9 @@ namespace
         UnicodeRange{ 0x25a3, 0x25a9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25aa, 0x25ab, CodepointWidth::Wide },
         UnicodeRange{ 0x25b2, 0x25b3, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25b6, 0x25b6, CodepointWidth::Wide },
-        UnicodeRange{ 0x25b7, 0x25b7, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x25b6, 0x25b7, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25bc, 0x25bd, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25c0, 0x25c0, CodepointWidth::Wide },
-        UnicodeRange{ 0x25c1, 0x25c1, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x25c0, 0x25c1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25c6, 0x25c8, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25cb, 0x25cb, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25ce, 0x25d1, CodepointWidth::Ambiguous },
@@ -267,8 +260,6 @@ namespace
         UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide },
         UnicodeRange{ 0x27b0, 0x27b0, CodepointWidth::Wide },
         UnicodeRange{ 0x27bf, 0x27bf, CodepointWidth::Wide },
-        UnicodeRange{ 0x2934, 0x2935, CodepointWidth::Wide },
-        UnicodeRange{ 0x2b05, 0x2b07, CodepointWidth::Wide },
         UnicodeRange{ 0x2b1b, 0x2b1c, CodepointWidth::Wide },
         UnicodeRange{ 0x2b50, 0x2b50, CodepointWidth::Wide },
         UnicodeRange{ 0x2b55, 0x2b55, CodepointWidth::Wide },
@@ -313,7 +304,10 @@ namespace
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f130, 0x1f169, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f170, 0x1f18d, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f170, 0x1f171, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f172, 0x1f17d, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f17e, 0x1f17f, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f180, 0x1f18d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f18e, 0x1f18e, CodepointWidth::Wide },
         UnicodeRange{ 0x1f18f, 0x1f190, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f191, 0x1f19a, CodepointWidth::Wide },
