@@ -24,6 +24,7 @@ class InputBuffer; // This for some reason needs to be fwd-decl'd
 #include "../host/inputBuffer.hpp"
 #include "../host/readDataCooked.hpp"
 #include "../host/output.h"
+#include "../host/_stream.h" // For WriteCharsLegacy
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -2991,6 +2992,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // See https://github.com/microsoft/terminal/issues/5691
     Log::Comment(L"TODO");
 
+    auto writeCharsLegacyMode = 0;
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -3012,6 +3015,28 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     auto defaultAttrs = TextAttribute();
     auto conhostDefaultAttrs = si.GetAttributes();
 
+    // auto scrollBufferUp = [&]() {
+    //     // Emulate calling ScrollConsoleScreenBuffer to scroll the top height-1 lines up
+    //     SMALL_RECT src;
+    //     src.Top = 0;
+    //     src.Left = 0;
+    //     src.Right = si.GetViewport().Width();
+    //     src.Bottom = originalBottom - 1;
+    //     COORD tgt = { 0, -1 };
+    //     TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
+    //     ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
+    // };
+
+    auto wclString = [&](auto length) {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        for (auto i = 0; i < length; i++)
+        {
+            wchar_t* str = L"~";
+            size_t seqCb = 2;
+            VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, hostTb->GetCursor().GetPosition().X, writeCharsLegacyMode, nullptr));
+        }
+    };
+
     // sm.ProcessString(L"\x1b[m");
     const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
@@ -3020,14 +3045,17 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         {
             sm.ProcessString(L"\r\n");
         }
-        sm.ProcessString(L"\x1b[m");
-        sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
 
-        VERIFY_SUCCEEDED(renderer.PaintFrame());
         sm.ProcessString(L"\x1b[m");
-        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+        // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
+        wclString(charsInFirstLine);
 
-        VERIFY_SUCCEEDED(renderer.PaintFrame());
+        // VERIFY_SUCCEEDED(renderer.PaintFrame());
+        sm.ProcessString(L"\x1b[m");
+        // sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+        wclString(charsInSecondLine);
+
+        // VERIFY_SUCCEEDED(renderer.PaintFrame());
         // sm.ProcessString(L"\r\n");
     }
     // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
