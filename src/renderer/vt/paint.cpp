@@ -474,7 +474,7 @@ using namespace Microsoft::Console::Types;
                                      (totalWidth - numSpaces) :
                                      totalWidth;
 
-    if (cchActual == 0)
+    if (cchActual == 0 && !_delayedEolWrap)
     {
         // If the previous row wrapped, but this line is empty, then we actually
         // do want to move the cursor down. Otherwise, we'll possibly end up

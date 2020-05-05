@@ -3052,6 +3052,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
+        Log::Comment(NoThrowString().Format(
+            L"writing pair of lines %d", i));
         // if (i > TerminalViewHeight / 2)
         // {
         //     scrollBufferUp();
@@ -3094,6 +3096,9 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         {
             wclString(numCharsSecondColor);
         }
+
+        // if (i >= 16)
+        //     DebugBreak();
 
         if (paintEachNewline == PaintEveryLine)
         {
