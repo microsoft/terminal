@@ -61,7 +61,7 @@ Copy and paste operations can also be keybound. For more information on how to b
 
 ## Add a "Open Windows Terminal Here" to File Explorer
 
-Not currently supported "out of the box". See issue [#1060](https://github.com/microsoft/terminal/issues/1060)
+Not currently supported "out of the box" (See issue [#1060](https://github.com/microsoft/terminal/issues/1060)). However, you can open Windows Terminal in current directory by typing `wt -d .` in the Explorer address bar.
 
 ## Configuring Windows Terminal
 
