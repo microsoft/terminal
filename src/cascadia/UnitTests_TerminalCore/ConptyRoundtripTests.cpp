@@ -2981,11 +2981,18 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
 void ConptyRoundtripTests::WrapNewLineAtBottom()
 {
+    // The actual bug case is
+    // * paintEachNewline=2
+    // * writingMethod=1
+    // * circledRows=4
+    //
+    // Though, mysteriously, the bug that this test caught _WASN'T_ the fix for
+    // #5691
+
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:reserveTwoSpaces", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:reserveTwoSpaces", L"{false}")
+        TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int DontPaint = 0;
     constexpr int PaintAfterBothLines = 1;
@@ -2996,12 +3003,15 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
 
     INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
     INIT_TEST_PROPERTY(int, writingMethod, L"TODO");
-    INIT_TEST_PROPERTY(bool, reserveTwoSpaces, L"TODO");
+    INIT_TEST_PROPERTY(int, circledRows, L"TODO");
+
+    // I've tested this with 0x0, 0x4, 0x80, 0x84, and 0-8, and none of these
+    // flags seem to make a difference. So we're just assuming 0 here, so we
+    // don't test a bunch of redundant cases.
+    const auto writeCharsLegacyMode = 0;
 
     // See https://github.com/microsoft/terminal/issues/5691
     Log::Comment(L"TODO");
-
-    auto writeCharsLegacyMode = 0;
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -3023,57 +3033,29 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     const auto numCharsSecondColor = charsInFirstLine - numCharsFirstColor;
     const auto charsInSecondLine = width / 2;
 
-    auto defaultAttrs = TextAttribute();
-    auto conhostDefaultAttrs = si.GetAttributes();
+    const auto defaultAttrs = TextAttribute();
+    const auto conhostDefaultAttrs = si.GetAttributes();
 
-    auto scrollBufferUp = [&]() {
-        // Emulate calling ScrollConsoleScreenBuffer to scroll the top height-1 lines up
-        SMALL_RECT src;
-        src.Top = 0;
-        src.Left = 0;
-        src.Right = si.GetViewport().Width();
-        src.Bottom = si.GetViewport().Height();
-        COORD tgt = { 0, -1 };
-        TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
-        ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
-    };
-
-    auto wclString = [&](auto length) {
+    // This is a simple helper for calling WriteCharsLegacy with the correct
+    // args. It will call WCL a number of times for the provided length, writing
+    // `length` '~' characters to the buffer.
+    auto writeCharsLegacyHelper = [&](const auto length) {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        wchar_t* str = L"~";
+        size_t seqCb = 2;
         for (auto i = 0; i < length; i++)
         {
-            wchar_t* str = L"~";
-            size_t seqCb = 2;
             VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, hostTb->GetCursor().GetPosition().X, writeCharsLegacyMode, nullptr));
         }
     };
 
-    // sm.ProcessString(L"\x1b[m");
-    const auto circledRows = 4;
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
-        Log::Comment(NoThrowString().Format(
-            L"writing pair of lines %d", i));
-        // if (i > TerminalViewHeight / 2)
-        // {
-        //     scrollBufferUp();
-        //     scrollBufferUp();
-        //     sm.ProcessString(L"\x1b[31;H");
-        // }
-        // else if (i > 0)
-        // {
-        //     sm.ProcessString(L"\r\n");
-        // }
+        Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
 
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
-            if (reserveTwoSpaces)
-            {
-                auto currentCursorRow = hostTb->GetCursor().GetPosition().Y;
-                sm.ProcessString(L"\r\n");
-                sm.ProcessString(fmt::format(L"\x1b[{};1H", currentCursorRow + 1));
-            }
         }
 
         sm.ProcessString(L"\x1b[33m");
@@ -3083,9 +3065,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            wclString(numCharsFirstColor);
+            writeCharsLegacyHelper(numCharsFirstColor);
         }
-        // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
         sm.ProcessString(L"\x1b[m");
 
         if (writingMethod == PrintWithPrintString)
@@ -3094,11 +3075,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            wclString(numCharsSecondColor);
+            writeCharsLegacyHelper(numCharsSecondColor);
         }
-
-        // if (i >= 16)
-        //     DebugBreak();
 
         if (paintEachNewline == PaintEveryLine)
         {
@@ -3111,7 +3089,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            wclString(charsInSecondLine);
+            writeCharsLegacyHelper(charsInSecondLine);
         }
 
         if (paintEachNewline == PaintEveryLine ||
@@ -3124,8 +3102,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
         const auto width = viewport.width<short>();
         const auto isTerminal = viewport.top() != 0;
-        // const auto actualDefaultAttrs = isTerminal ? TextAttribute() : conhostDefaultAttrs;
-        // const auto actualDefaultAttrs = defaultAttrs;
 
         for (short row = 0; row < viewport.bottom<short>(); row++)
         {
@@ -3140,14 +3116,10 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
             VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
             if (isWrapped)
             {
-                // TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInFirstLine);
                 TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), til::point{ 0, row });
             }
             else
             {
-                // auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'~', actualNonSpacesAttrs, charsInSecondLine);
-                // TestUtils::VerifyLineContains(iter, L' ', actualSpacesAttrs, width - charsInSecondLine);
-
                 auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), til::point{ 0, row });
                 TestUtils::VerifyExpectedString(std::wstring(width - charsInSecondLine, L' '), iter);
             }
