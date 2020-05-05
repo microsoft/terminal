@@ -1640,10 +1640,10 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 // Parameters:
 //  The ScreenBuffer to perform the erase on.
 // Return value:
-// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
-    return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
+    return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
