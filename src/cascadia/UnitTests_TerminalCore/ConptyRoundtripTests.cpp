@@ -2981,13 +2981,22 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
 void ConptyRoundtripTests::WrapNewLineAtBottom()
 {
-    // BEGIN_TEST_METHOD_PROPERTIES()
-    //     TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{false, true}")
-    //     TEST_METHOD_PROPERTY(L"Data:spacesToPrint", L"{1, 7, 8, 9, 32}")
-    // END_TEST_METHOD_PROPERTIES();
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
+        // TEST_METHOD_PROPERTY(L"Data:reserveTwoSpaces", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:reserveTwoSpaces", L"{false}")
+    END_TEST_METHOD_PROPERTIES();
+    constexpr int DontPaint = 0;
+    constexpr int PaintAfterBothLines = 1;
+    constexpr int PaintEveryLine = 2;
 
-    // INIT_TEST_PROPERTY(bool, paintEachNewline, L"If true, call PaintFrame after each pair of lines.");
-    // INIT_TEST_PROPERTY(int, spacesToPrint, L"Controls the number of spaces printed after the first '#'");
+    constexpr int PrintWithPrintString = 0;
+    constexpr int PrintWithWriteCharsLegacy = 1;
+
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
+    INIT_TEST_PROPERTY(int, writingMethod, L"TODO");
+    INIT_TEST_PROPERTY(bool, reserveTwoSpaces, L"TODO");
 
     // See https://github.com/microsoft/terminal/issues/5691
     Log::Comment(L"TODO");
@@ -3010,6 +3019,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     const size_t width = static_cast<size_t>(TerminalViewWidth);
 
     const auto charsInFirstLine = width;
+    const auto numCharsFirstColor = 30;
+    const auto numCharsSecondColor = charsInFirstLine - numCharsFirstColor;
     const auto charsInSecondLine = width / 2;
 
     auto defaultAttrs = TextAttribute();
@@ -3055,22 +3066,55 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
+            if (reserveTwoSpaces)
+            {
+                auto currentCursorRow = hostTb->GetCursor().GetPosition().Y;
+                sm.ProcessString(L"\r\n");
+                sm.ProcessString(fmt::format(L"\x1b[{};1H", currentCursorRow + 1));
+            }
         }
 
-        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(L"\x1b[33m");
+        if (writingMethod == PrintWithPrintString)
+        {
+            sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
+        }
+        else if (writingMethod == PrintWithWriteCharsLegacy)
+        {
+            wclString(numCharsFirstColor);
+        }
         // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
-        wclString(charsInFirstLine);
-
-        // VERIFY_SUCCEEDED(renderer.PaintFrame());
         sm.ProcessString(L"\x1b[m");
-        // sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
-        wclString(charsInSecondLine);
 
-        // VERIFY_SUCCEEDED(renderer.PaintFrame());
-        // sm.ProcessString(L"\r\n");
+        if (writingMethod == PrintWithPrintString)
+        {
+            sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
+        }
+        else if (writingMethod == PrintWithWriteCharsLegacy)
+        {
+            wclString(numCharsSecondColor);
+        }
+
+        if (paintEachNewline == PaintEveryLine)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
+
+        if (writingMethod == PrintWithPrintString)
+        {
+            sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
+        }
+        else if (writingMethod == PrintWithWriteCharsLegacy)
+        {
+            wclString(charsInSecondLine);
+        }
+
+        if (paintEachNewline == PaintEveryLine ||
+            paintEachNewline == PaintAfterBothLines)
+        {
+            VERIFY_SUCCEEDED(renderer.PaintFrame());
+        }
     }
-    // sm.ProcessString(std::wstring(charsInFirstLine, L'~'));
-    // sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
         const auto width = viewport.width<short>();
