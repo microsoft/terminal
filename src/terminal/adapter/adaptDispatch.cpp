@@ -588,7 +588,15 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
-        return _EraseAll();
+        // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
+        // make the state machine propagate this ED sequence to the connected
+        // terminal application. While we're in conpty mode, when the client
+        // requests a Erase All operation, we need to manually tell the
+        // connected terminal to do the same thing, so that the terminal will
+        // move it's own buffer contents into the scrollback.
+        const bool eraseAllResult = _EraseAll();
+        const bool isPty = _pConApi->IsConsolePty();
+        return eraseAllResult && (!isPty);
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
