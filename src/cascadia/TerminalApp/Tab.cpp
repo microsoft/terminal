@@ -526,7 +526,6 @@ namespace winrt::TerminalApp::implementation
             Controls::FontIcon renameTabSymbol;
             renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE932"); // Label
-            // Maybe E929 - Handwriting
 
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
@@ -549,6 +548,18 @@ namespace winrt::TerminalApp::implementation
         _tabViewItem.ContextFlyout(newTabFlyout);
     }
 
+    // Method Description:
+    // - This will update the contents of our TabViewItem for our current state.
+    //   - If we're not in a rename, we'll set the Header of the TabViewItem to
+    //     simply our current tab text (either the runtime tab text or the
+    //     active terminal's text).
+    //   - If we're in a rename, then we'll set the Header to a TextBox with the
+    //     current tab text. The user can then use that TextBox to set a string
+    //     to use as an override for the tab's text.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Tab::_UpdateTabHeader()
     {
         winrt::hstring tabText{ GetActiveTitle() };
@@ -569,17 +580,24 @@ namespace winrt::TerminalApp::implementation
             // Also get rid of the internal padding on the text box, between the
             // border and the text content, on the top and bottom. This will
             // help the box fit within the bounds of the tab.
-            Thickness t = ThicknessHelper::FromLengths(4, 0, 4, 0);
-            tabTextBox.Padding(t);
+            Thickness internalPadding = ThicknessHelper::FromLengths(4, 0, 4, 0);
+            tabTextBox.Padding(internalPadding);
 
             // Make the margin (0, -8, 0, -8), to counteract the padding that
-            // the TabViewItem has
+            // the TabViewItem has.
             //
-            // TODO: Probably should look this value up from resources using
-            // TabViewItemHeaderPadding
-            Thickness t3 = ThicknessHelper::FromLengths(0, -8, 0, -8);
-            tabTextBox.Margin(t3);
+            // TODO: Probably should look this value up from the TabViewItem's
+            // resources using TabViewItemHeaderPadding
+            Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
+            tabTextBox.Margin(negativeMargins);
 
+            // Set up some event handlers on the text box. We need three of them:
+            // * A LostFocus event, so when the TextBox loses focus, we'll
+            //   remove it and return to just the text on the tab.
+            // * A KeyUp event, to be able to submit the tab text on Enter or
+            //   dismiss the text box on Escape
+            // * A LayoutUpdated event, so that we can auto-focus the text box
+            //   when it's added to the tree.
             auto weakThis{ get_weak() };
 
             // When the text box loses focus, update the tab title of our tab.
@@ -599,35 +617,37 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-            // NOTE: *KeyDown does not work here. If you use that, we'll remove
-            // the TextBox from the UI tree, then the following KeyUp will
-            // bubble to the NewTabButton, which we don't want to have happen.
+            // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
+            // remove the TextBox from the UI tree, then the following KeyUp
+            // will bubble to the NewTabButton, which we don't want to have
+            // happen.
             tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
                 auto tab{ weakThis.get() };
                 auto textBox{ sender.try_as<Controls::TextBox>() };
                 if (tab && textBox)
                 {
-                    if (e.OriginalKey() == VirtualKey::Enter)
+                    switch (e.OriginalKey())
                     {
-                        e.Handled(true);
+                    case VirtualKey::Enter:
                         tab->_runtimeTabText = textBox.Text();
-                        tab->_inRename = false;
-                        tab->_UpdateTabHeader();
-                    }
-                    else if (e.OriginalKey() == VirtualKey::Escape)
-                    {
+                        [[fallthrough]];
+                    case VirtualKey::Escape:
                         e.Handled(true);
                         tab->_inRename = false;
                         tab->_UpdateTabHeader();
+                        break;
                     }
                 }
             });
 
             // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
-            _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](const IInspectable& /*sender*/, auto /*e*/) {
+            _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
+                // Curiously, the sender for this event is null, so we have to
+                // get the TextBox from the Tab's Header().
                 auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
                 if (textBox)
                 {
+                    textBox.SelectAll();
                     textBox.Focus(FocusState::Programmatic);
                 }
                 // Only let this succeed once.
