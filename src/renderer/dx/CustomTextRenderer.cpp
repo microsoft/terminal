@@ -624,8 +624,7 @@ try
     // this box.
     // If not? We didn't do the scaling or translation correctly. Oops.
 
-    // Draw the outline then fill it in.
-    clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
+    // Fill in the geometry. Don't outline, it can leave stuff outside the area we expect.
     clientDrawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
 
     return S_OK;

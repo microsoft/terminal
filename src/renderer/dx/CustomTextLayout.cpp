@@ -1289,7 +1289,7 @@ try
             RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _width, run.fontFace.Get(), run.fontScale, &eff));
 
             // store data in the run
-            run.drawingEffect = eff;
+            run.drawingEffect = std::move(eff);
         }
     }
 
