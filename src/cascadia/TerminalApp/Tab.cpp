@@ -14,6 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Windows::System;
 
 namespace winrt
 {
@@ -221,6 +222,10 @@ namespace winrt::TerminalApp::implementation
     // - the title string of the last focused terminal control in our tree.
     winrt::hstring Tab::GetActiveTitle() const
     {
+        if (!_runtimeTabText.empty())
+        {
+            return _runtimeTabText;
+        }
         const auto lastFocusedControl = GetActiveTerminalControl();
         return lastFocusedControl ? lastFocusedControl.Title() : L"";
     }
@@ -241,33 +246,10 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            Title(text);
+            // Bubble our current tab text to anyone who's listenting fr changes.
+            Title(GetActiveTitle());
 
-            ::winrt::Windows::UI::Xaml::Controls::TextBox tabTextBox;
-            tabTextBox.Text(text);
-
-            // The TextBox has a MinHeight already set by default, which is
-            // larger than we want. Get rid of it.
-            tabTextBox.MinHeight(0);
-            // Also get rid of the internal padding on the text box, between the
-            // border and the text content, on the top and bottom. This will
-            // help the box fit within the bounds of the tab.
-            winrt::Windows::UI::Xaml::Thickness t = ThicknessHelper::FromLengths(4, 0, 4, 0);
-            tabTextBox.Padding(t);
-
-            // Make the margin (0, -8, 0, -8), to counteract the padding that
-            // the TabViewItem has
-            //
-            // TODO: Probably should look this value up from resources using
-            // TabViewItemHeaderPadding
-            winrt::Windows::UI::Xaml::Thickness t3 = ThicknessHelper::FromLengths(0, -8, 0, -8);
-            tabTextBox.Margin(t3);
-
-            _tabViewItem.Header(tabTextBox);
-
-            // For good measure, refresh the tabs visual state... TODO I don't
-            // think we need this anymore
-            _RefreshVisualState();
+            _UpdateTabHeader();
         }
     }
 
@@ -538,13 +520,122 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        Controls::MenuFlyoutItem renameTabMenuItem;
+        {
+            // "Rename Tab"
+            Controls::FontIcon renameTabSymbol;
+            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            renameTabSymbol.Glyph(L"\xE932"); // Label
+            // Maybe E929 - Handwriting
+
+            renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_inRename = true;
+                    tab->_UpdateTabHeader();
+                }
+            });
+            renameTabMenuItem.Text(RS_(L"RenameTabText"));
+            renameTabMenuItem.Icon(renameTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
+        newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    void Tab::_UpdateTabHeader()
+    {
+        winrt::hstring tabText{ GetActiveTitle() };
+
+        if (!_inRename)
+        {
+            // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
+            _tabViewItem.Header(winrt::box_value(tabText));
+        }
+        else
+        {
+            Controls::TextBox tabTextBox;
+            tabTextBox.Text(tabText);
+
+            // The TextBox has a MinHeight already set by default, which is
+            // larger than we want. Get rid of it.
+            tabTextBox.MinHeight(0);
+            // Also get rid of the internal padding on the text box, between the
+            // border and the text content, on the top and bottom. This will
+            // help the box fit within the bounds of the tab.
+            Thickness t = ThicknessHelper::FromLengths(4, 0, 4, 0);
+            tabTextBox.Padding(t);
+
+            // Make the margin (0, -8, 0, -8), to counteract the padding that
+            // the TabViewItem has
+            //
+            // TODO: Probably should look this value up from resources using
+            // TabViewItemHeaderPadding
+            Thickness t3 = ThicknessHelper::FromLengths(0, -8, 0, -8);
+            tabTextBox.Margin(t3);
+
+            auto weakThis{ get_weak() };
+
+            // When the text box loses focus, update the tab title of our tab.
+            // - If there are any contents in the box, we'll use that value as
+            //   the new "runtime text", which will override any text set by the
+            //   application.
+            // - If the text box is empty, we'll reset the "runtime text", and
+            //   return to using the active terminal's title.
+            tabTextBox.LostFocus([weakThis](const IInspectable& sender, auto&&) {
+                auto tab{ weakThis.get() };
+                auto textBox{ sender.try_as<Controls::TextBox>() };
+                if (tab && textBox)
+                {
+                    tab->_runtimeTabText = textBox.Text();
+                    tab->_inRename = false;
+                    tab->_UpdateTabHeader();
+                }
+            });
+
+            // NOTE: *KeyDown does not work here. If you use that, we'll remove
+            // the TextBox from the UI tree, then the following KeyUp will
+            // bubble to the NewTabButton, which we don't want to have happen.
+            tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
+                auto tab{ weakThis.get() };
+                auto textBox{ sender.try_as<Controls::TextBox>() };
+                if (tab && textBox)
+                {
+                    if (e.OriginalKey() == VirtualKey::Enter)
+                    {
+                        e.Handled(true);
+                        tab->_runtimeTabText = textBox.Text();
+                        tab->_inRename = false;
+                        tab->_UpdateTabHeader();
+                    }
+                    else if (e.OriginalKey() == VirtualKey::Escape)
+                    {
+                        e.Handled(true);
+                        tab->_inRename = false;
+                        tab->_UpdateTabHeader();
+                    }
+                }
+            });
+
+            // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
+            _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](const IInspectable& /*sender*/, auto /*e*/) {
+                auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
+                if (textBox)
+                {
+                    textBox.Focus(FocusState::Programmatic);
+                }
+                // Only let this succeed once.
+                _tabRenameBoxLayoutUpdatedRevoker.revoke();
+            });
+
+            _tabViewItem.Header(tabTextBox);
+        }
     }
 
     // Method Description:
@@ -674,13 +765,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (_focused)
         {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
         }
         else
         {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
         }
     }
 

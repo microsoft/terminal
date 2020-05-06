@@ -73,6 +73,10 @@ namespace winrt::TerminalApp::implementation
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
+        winrt::hstring _runtimeTabText{};
+        bool _inRename{ false };
+        winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
+
         void _MakeTabViewItem();
         void _Focus();
 
@@ -88,6 +92,8 @@ namespace winrt::TerminalApp::implementation
 
         int _GetLeafPaneCount() const noexcept;
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
+
+        void _UpdateTabHeader();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
