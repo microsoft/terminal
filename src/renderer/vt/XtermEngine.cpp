@@ -237,7 +237,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
     //     the wrap of a line.
     // If they're all true, DON'T manually paint the cursor this frame.
-    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
+    if (!((cursorIsInDeferredWrap || _circled) && _delayedEolWrap && _wrappedRow.has_value()))
     {
         return VtEngine::PaintCursor(options);
     }

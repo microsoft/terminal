@@ -3261,9 +3261,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
             print(std::wstring(numCharsSecondColor + charsInSecondLine, L'~'));
         }
 
-        // if ()
-        // sm.ProcessString(L"\x1b[30;30H");
-
         print(L"\r\n");
         print(L":");
 
@@ -3272,7 +3269,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
         {
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
-        // VERIFY_SUCCEEDED(renderer.PaintFrame());
     }
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
