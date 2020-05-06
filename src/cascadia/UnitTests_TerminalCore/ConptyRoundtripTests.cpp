@@ -25,6 +25,7 @@ class InputBuffer; // This for some reason needs to be fwd-decl'd
 #include "../host/readDataCooked.hpp"
 #include "../host/output.h"
 #include "../host/_stream.h" // For WriteCharsLegacy
+#include "../host/cmdline.h" // For WC_LIMIT_BACKSPACE
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -3138,17 +3139,36 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
 
+void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
+{
+    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
+                                             string.data(),
+                                             string.data(),
+                                             string.data(),
+                                             &dwNumBytes,
+                                             nullptr,
+                                             screenInfo.GetTextBuffer().GetCursor().GetPosition().X,
+                                             flags,
+                                             nullptr));
+}
+
 void ConptyRoundtripTests::WrapNewLineAtBottomEx()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         // TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
         TEST_METHOD_PROPERTY(L"Data:circledRows", L"{4}")
         TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
     END_TEST_METHOD_PROPERTIES();
     constexpr int DontPaint = 0;
     constexpr int PaintAfterBothLines = 1;
     constexpr int PaintEveryLine = 2;
 
+    constexpr int PrintWithPrintString = 0;
+    constexpr int PrintWithWriteCharsLegacy = 1;
+
+    INIT_TEST_PROPERTY(int, writingMethod, L"TODO");
     INIT_TEST_PROPERTY(int, circledRows, L"TODO");
     INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
 
@@ -3178,21 +3198,36 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
     const auto defaultAttrs = TextAttribute();
     const auto conhostDefaultAttrs = si.GetAttributes();
 
+    auto print = [&](const std::wstring_view str) {
+        if (writingMethod == PrintWithPrintString)
+        {
+            sm.ProcessString(str);
+        }
+        else if (writingMethod == PrintWithWriteCharsLegacy)
+        {
+            doWriteCharsLegacy(si, str, WC_LIMIT_BACKSPACE);
+        }
+    };
+
     for (auto i = 0; i < (TerminalViewHeight) / 2; i++)
     {
         Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
 
         sm.ProcessString(L"\x1b[33m");
-        sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
+        print(std::wstring(numCharsFirstColor, L'~'));
         sm.ProcessString(L"\x1b[m");
-        sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
 
         if (paintEachNewline == PaintEveryLine)
         {
+            print(std::wstring(numCharsSecondColor, L'~'));
             VERIFY_SUCCEEDED(renderer.PaintFrame());
+            print(std::wstring(charsInSecondLine, L'~'));
+        }
+        else
+        {
+            print(std::wstring(numCharsSecondColor + charsInSecondLine, L'~'));
         }
 
-        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
         sm.ProcessString(L"\r\n");
 
         if (paintEachNewline == PaintEveryLine ||
@@ -3201,29 +3236,36 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
     }
-    sm.ProcessString(L":");
+    print(L":");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     for (auto i = 0; i < (circledRows) / 2; i++)
     {
         Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
 
-        sm.ProcessString(L"\r");
+        print(L"\r");
         sm.ProcessString(L"\x1b[33m");
-        sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
+        print(std::wstring(numCharsFirstColor, L'~'));
         sm.ProcessString(L"\x1b[m");
-        sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
-        sm.ProcessString(L":");
 
         if (paintEachNewline == PaintEveryLine)
         {
+            print(std::wstring(numCharsSecondColor, L'~'));
+            print(L":");
             VERIFY_SUCCEEDED(renderer.PaintFrame());
+            print(L"\r");
+            print(std::wstring(charsInSecondLine, L'~'));
+        }
+        else
+        {
+            print(std::wstring(numCharsSecondColor + charsInSecondLine, L'~'));
         }
 
-        sm.ProcessString(L"\r");
-        sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
-        sm.ProcessString(L"\r\n");
-        sm.ProcessString(L":");
+        // if ()
+        // sm.ProcessString(L"\x1b[30;30H");
+
+        print(L"\r\n");
+        print(L":");
 
         if (paintEachNewline == PaintEveryLine ||
             paintEachNewline == PaintAfterBothLines)

@@ -351,7 +351,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
-
     _delayedEolWrap = false;
 
     return hr;
