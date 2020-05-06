@@ -34,7 +34,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _analyzer{ analyzer.get() },
     _format{ format.get() },
     _font{ font.get() },
-    _boxDrawingEffect { boxEffect },
+    _boxDrawingEffect{ boxEffect },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
@@ -1204,7 +1204,7 @@ CATCH_RETURN();
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(IDWriteTextAnalysisSource* const source,
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source,
                                                                              UINT32 textPosition,
                                                                              UINT32 textLength)
 try
@@ -1308,7 +1308,12 @@ CATCH_RETURN();
 // Return Value:
 // - S_OK, GSL/WIL errors, DirectWrite errors, or math errors.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept
+try
 {
+    // Check for bad in parameters.
+    RETURN_HR_IF(E_INVALIDARG, !format);
+    RETURN_HR_IF(E_INVALIDARG, !face);
+
     // Check the out parameter and fill it up with null.
     RETURN_HR_IF(E_INVALIDARG, !effect);
     *effect = nullptr;
@@ -1492,7 +1497,7 @@ CATCH_RETURN();
         // However, https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics says
         // the X coordinate is specified by half the advanceWidth to the right of the horizontalOrigin.
         // So we'll use that as the "center" and apply it the role that verticalOriginY had above.
-        
+
         const auto boxCenterDesignUnits = boxMetrics.advanceWidth / 2;
         const auto boxLeftDesignUnits = boxCenterDesignUnits - boxMetrics.leftSideBearing;
         const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenterDesignUnits;
@@ -1530,6 +1535,7 @@ CATCH_RETURN();
 
     return S_OK;
 }
+CATCH_RETURN()
 
 #pragma endregion
 

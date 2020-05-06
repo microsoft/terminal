@@ -12,6 +12,7 @@ BoxDrawingEffect::BoxDrawingEffect() noexcept :
 {
 }
 
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT BoxDrawingEffect::RuntimeClassInitialize(float verticalScale, float verticalTranslate, float horizontalScale, float horizontalTranslate) noexcept
 {
     _scale.VerticalScale = verticalScale;

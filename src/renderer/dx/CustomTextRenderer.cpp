@@ -519,6 +519,7 @@ using namespace Microsoft::Console::Render;
                                                               _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                               _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/,
                                                               _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
@@ -629,6 +630,7 @@ using namespace Microsoft::Console::Render;
 
     return S_OK;
 }
+CATCH_RETURN();
 
 [[nodiscard]] HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                             D2D1_POINT_2F baselineOrigin,
