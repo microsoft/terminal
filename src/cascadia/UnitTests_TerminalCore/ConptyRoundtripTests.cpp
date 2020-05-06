@@ -216,7 +216,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(NewLinesAtBottomWithBackground);
 
     TEST_METHOD(WrapNewLineAtBottom);
-    TEST_METHOD(WrapNewLineAtBottomEx);
+    TEST_METHOD(WrapNewLineAtBottomLikeMSYS);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -2984,8 +2984,8 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 void ConptyRoundtripTests::WrapNewLineAtBottom()
 {
     // The actual bug case is
-    // * paintEachNewline=2
-    // * writingMethod=1
+    // * paintEachNewline=2 (PaintEveryLine)
+    // * writingMethod=1 (PrintWithWriteCharsLegacy)
     // * circledRows=4
     //
     // Though, mysteriously, the bug that this test caught _WASN'T_ the fix for
@@ -3003,17 +3003,20 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     constexpr int PrintWithPrintString = 0;
     constexpr int PrintWithWriteCharsLegacy = 1;
 
-    INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
-    INIT_TEST_PROPERTY(int, writingMethod, L"TODO");
-    INIT_TEST_PROPERTY(int, circledRows, L"TODO");
+    INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
+    INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"Controls whether we should call PaintFrame every line of text or not.");
 
     // I've tested this with 0x0, 0x4, 0x80, 0x84, and 0-8, and none of these
     // flags seem to make a difference. So we're just assuming 0 here, so we
     // don't test a bunch of redundant cases.
     const auto writeCharsLegacyMode = 0;
 
-    // See https://github.com/microsoft/terminal/issues/5691
-    Log::Comment(L"TODO");
+    // This test was originally written for
+    //   https://github.com/microsoft/terminal/issues/5691
+    //
+    // It does not _actually_ test #5691 however, it merely checks another issue
+    // found during debugging.
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -3153,11 +3156,19 @@ void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view 
                                              nullptr));
 }
 
-void ConptyRoundtripTests::WrapNewLineAtBottomEx()
+void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
 {
+    // See https://github.com/microsoft/terminal/issues/5691
+    Log::Comment(L"This test attempts to print text like the MSYS `less` pager "
+                 L"does. When it prints a wrapped line, we should make sure to "
+                 L"not break the line wrapping.");
+
+    // The importantly valuable variable here ended up being
+    // writingMethod=PrintWithWriteCharsLegacy. That was the one thing that
+    // actually repro'd this bug. The other variables were introduced as part of
+    // debugging, and are left for completeness.
     BEGIN_TEST_METHOD_PROPERTIES()
-        // TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
-        TEST_METHOD_PROPERTY(L"Data:circledRows", L"{4}")
+        TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
         TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
     END_TEST_METHOD_PROPERTIES();
@@ -3168,12 +3179,9 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
     constexpr int PrintWithPrintString = 0;
     constexpr int PrintWithWriteCharsLegacy = 1;
 
-    INIT_TEST_PROPERTY(int, writingMethod, L"TODO");
-    INIT_TEST_PROPERTY(int, circledRows, L"TODO");
-    INIT_TEST_PROPERTY(int, paintEachNewline, L"TODO");
-
-    // See https://github.com/microsoft/terminal/issues/5691
-    Log::Comment(L"TODO");
+    INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
+    INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
+    INIT_TEST_PROPERTY(int, paintEachNewline, L"Controls whether we should call PaintFrame every line of text or not.");
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -3198,6 +3206,8 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
     const auto defaultAttrs = TextAttribute();
     const auto conhostDefaultAttrs = si.GetAttributes();
 
+    // Helper to abstract calls into either StateMachine::ProcessString or
+    // WriteCharsLegacy
     auto print = [&](const std::wstring_view str) {
         if (writingMethod == PrintWithPrintString)
         {
@@ -3209,6 +3219,18 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
         }
     };
 
+    // Each of the lines of text in the buffer will look like the following:
+    //
+    // Line 1 chars: ~~~~~~~~~~~~~~~~~~ <wrap>
+    // Line 1 attrs: YYYYYYYDDDDDDDDDDD (First 30 are yellow FG, then default attrs)
+    // Line 2 chars: ~~~~~~~~~~________ <break> (there are width/2 '~'s here)
+    // Line 2 attrs: DDDDDDDDDDDDDDDDDD (all are default attrs)
+    //
+    // The last line of the buffer will be used as a "prompt" line, with a
+    // single ':' in it. This is similar to the way `less` typically displays
+    // it's prompt at the bottom of the buffer.
+
+    // First, print a whole viewport full of text.
     for (auto i = 0; i < (TerminalViewHeight) / 2; i++)
     {
         Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
@@ -3225,6 +3247,9 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
         }
         else
         {
+            // If we're not painting each and every line, then just print all of
+            // the wrapped text in one go. These '~'s will wrap from the first
+            // line onto the second line.
             print(std::wstring(numCharsSecondColor + charsInSecondLine, L'~'));
         }
 
@@ -3236,12 +3261,15 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
     }
+
+    // Then print the trailing ':' on the last line.
     print(L":");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
+    // Now, we'll print the lines that wrapped, after circling the buffer.
     for (auto i = 0; i < (circledRows) / 2; i++)
     {
-        Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i));
+        Log::Comment(NoThrowString().Format(L"writing pair of lines %d", i + (TerminalViewHeight / 2)));
 
         print(L"\r");
         sm.ProcessString(L"\x1b[33m");
@@ -3250,6 +3278,10 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
 
         if (paintEachNewline == PaintEveryLine)
         {
+            // If we're painting every line, then we'll print the first line and
+            // redraw the "prompt" line (with the ':'), paint the buffer, then
+            // print the second line and reprint the prompt, as if the user was
+            // slowly hitting the down arrow one line per frame.
             print(std::wstring(numCharsSecondColor, L'~'));
             print(L":");
             VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -3258,9 +3290,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottomEx()
         }
         else
         {
+            // Otherwise, we'll print the wrapped line all in one frame.
             print(std::wstring(numCharsSecondColor + charsInSecondLine, L'~'));
         }
 
+        // Print the prompt at the bottom of the buffer
         print(L"\r\n");
         print(L":");
 
