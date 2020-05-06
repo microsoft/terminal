@@ -495,10 +495,10 @@ using namespace Microsoft::Console::Render;
     // If a special drawing effect was specified, see if we know how to deal with it.
     if (clientDrawingEffect)
     {
-        IBoxDrawingEffect* boxEffect = nullptr;
+        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> boxEffect;
         if (SUCCEEDED(clientDrawingEffect->QueryInterface<IBoxDrawingEffect>(&boxEffect)))
         {
-            return _DrawBoxRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription, boxEffect);
+            return _DrawBoxRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription, boxEffect.Get());
         }
 
         //_DrawBasicGlyphRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);

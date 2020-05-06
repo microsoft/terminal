@@ -45,7 +45,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
     // Calculate out the box drawing effect for this font.
-    THROW_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _font.Get(), &_boxDrawingEffect));
+    THROW_IF_FAILED(s_CalculateBoxEffect(_format.Get(), width, _font.Get(), &_boxDrawingEffect));
 
     for (const auto& cluster : clusters)
     {
@@ -1286,7 +1286,7 @@ try
         else
         {
             ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
-            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), run.fontFace.Get(), &eff, run.fontScale));
+            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _width, run.fontFace.Get(), &eff, run.fontScale));
 
             // store data in the run
             run.drawingEffect = eff;
@@ -1300,14 +1300,19 @@ CATCH_RETURN();
 // Routine Description:
 // - Calculates the box drawing scale/translate matrix values to fit a box glyph into the cell as perfectly as possible.
 // Arguments:
-// - format - Text format used to determine line spacing as calculated from the base font.
+// - format - Text format used to determine line spacing (height including ascent & descent) as calculated from the base font.
+// - widthPixels - The pixel width of the available cell.
 // - face - The font face that is currently being used, may differ from the base font from the layout.
 // - effect - Receives the effect to apply to box drawing characters. If no effect is received, special treatment isn't required.
 // - fontScale - (optional, 1.0f default), if the given font face is going to be scaled versus the format, we need to know so we can compensate for that.
 // Return Value:
 // - S_OK, GSL/WIL errors, DirectWrite errors, or math errors.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale) noexcept
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale) noexcept
 {
+    // Check the out parameter and fill it up with null.
+    RETURN_HR_IF(E_INVALIDARG, !effect);
+    *effect = nullptr;
+
     // The format is based around the main font that was specified by the user.
     // We need to know its size as well as the final spacing that was calculated around
     // it when it was first selected to get an idea of how large the bounding box is.
@@ -1408,8 +1413,10 @@ CATCH_RETURN();
     // See also: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics
 
     // The scale is a multiplier and the translation is addition. So *1 and +0 will mean nothing happens.
-    float boxVerticalScaleFactor = 1.0f;
-    float boxVerticalTranslation = 0.0f;
+    const float defaultBoxVerticalScaleFactor = 1.0f;
+    float boxVerticalScaleFactor = defaultBoxVerticalScaleFactor;
+    const float defaultBoxVerticalTranslation = 0.0f;
+    float boxVerticalTranslation = defaultBoxVerticalTranslation;
     {
         // First, find the dimensions of the glyph representing our fully filled box.
 
@@ -1476,22 +1483,24 @@ CATCH_RETURN();
     }
 
     // The horizontal adjustments follow the exact same logic as the vertical ones.
-    float boxHorizontalScaleFactor = 1.0f;
-    float boxHorizontalTranslation = 0.0f;
+    const float defaultBoxHorizontalScaleFactor = 1.0f;
+    float boxHorizontalScaleFactor = defaultBoxHorizontalScaleFactor;
+    const float defaultBoxHorizontalTranslation = 0.0f;
+    float boxHorizontalTranslation = defaultBoxHorizontalTranslation;
     {
         // This is the only difference. We don't have a horizontalOriginX from the metrics.
         // However, https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics says
         // the X coordinate is specified by half the advanceWidth to the right of the horizontalOrigin.
         // So we'll use that as the "center" and apply it the role that verticalOriginY had above.
-        const auto boxCenter = boxMetrics.advanceWidth / 2.0f;
-
-        const auto boxLeftDesignUnits = boxCenter - boxMetrics.leftSideBearing;
-        const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenter;
+        
+        const auto boxCenterDesignUnits = boxMetrics.advanceWidth / 2;
+        const auto boxLeftDesignUnits = boxCenterDesignUnits - boxMetrics.leftSideBearing;
+        const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenterDesignUnits;
         const auto boxWidthDesignUnits = boxLeftDesignUnits + boxRightDesignUnits;
 
-        const auto cellLeftDesignUnits = boxCenter;
-        const auto cellRightDesignUnits = boxCenter;
-        const auto cellWidthDesignUnits = cellLeftDesignUnits + cellRightDesignUnits;
+        const auto cellWidthDesignUnits = widthPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
+        const auto cellLeftDesignUnits = cellWidthDesignUnits / 2;
+        const auto cellRightDesignUnits = cellLeftDesignUnits;
 
         const auto boxTouchesCellLeft = boxLeftDesignUnits >= cellLeftDesignUnits;
         const auto boxTouchesCellRight = boxRightDesignUnits >= cellRightDesignUnits;
@@ -1509,8 +1518,15 @@ CATCH_RETURN();
         }
     }
 
-    // OK, make the object that will represent our effect, stuff the metrics into it, and return it.
-    RETURN_IF_FAILED(WRL::MakeAndInitialize<BoxDrawingEffect>(effect, boxVerticalScaleFactor, boxVerticalTranslation, boxHorizontalScaleFactor, boxHorizontalTranslation));
+    // If we set anything, make a drawing effect. Otherwise, there isn't one.
+    if (defaultBoxVerticalScaleFactor != boxVerticalScaleFactor ||
+        defaultBoxVerticalTranslation != boxVerticalTranslation ||
+        defaultBoxHorizontalScaleFactor != boxHorizontalScaleFactor ||
+        defaultBoxHorizontalTranslation != boxHorizontalTranslation)
+    {
+        // OK, make the object that will represent our effect, stuff the metrics into it, and return it.
+        RETURN_IF_FAILED(WRL::MakeAndInitialize<BoxDrawingEffect>(effect, boxVerticalScaleFactor, boxVerticalTranslation, boxHorizontalScaleFactor, boxHorizontalTranslation));
+    }
 
     return S_OK;
 }

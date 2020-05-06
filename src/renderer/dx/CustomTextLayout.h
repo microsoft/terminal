@@ -65,7 +65,7 @@ namespace Microsoft::Console::Render
                                                                       UINT32 textLength,
                                                                       _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
-        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale = 1.0f) noexcept;
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale = 1.0f) noexcept;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
