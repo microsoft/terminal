@@ -35,10 +35,10 @@
     <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Release'">
       <SubType>Designer</SubType>
     </AppxManifest>
-        <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
+    <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Dev'">
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'==''">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
@@ -51,7 +51,7 @@
   </ItemGroup>
 
   <!-- This is picked up by CascadiaResources.build.items. -->
-  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Dev'">
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'==''">
     <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">

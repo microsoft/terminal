@@ -20,7 +20,7 @@ name: 'Terminal_$(date:yyMM).$(date:dd)$(rev:rrr)'
 #     true - this is running on our build agent
 #     false - running locally
 #   WindowsTerminalBranding=[Dev,Preview,Release]
-#     Dev - Development build resources
+#     <none>  - Development build resources (default)
 #     Preview - Preview build resources
 #     Release - regular build resources
 jobs:
