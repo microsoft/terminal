@@ -543,9 +543,7 @@ using namespace Microsoft::Console::Render;
         glyphRun->bidiLevel % 2,
         geometrySink.Get());
 
-    
     geometrySink->Close();
-
 
     // Can be used to see the dimensions of what is written.
     /*D2D1_RECT_F bounds;
@@ -572,7 +570,6 @@ using namespace Microsoft::Console::Render;
     //                               Bottom=
     //                               5.955
 
-
     // Dig out the box drawing effect parameters.
     BoxScale scale;
     RETURN_IF_FAILED(clientDrawingEffect->GetScale(&scale));
@@ -580,7 +577,7 @@ using namespace Microsoft::Console::Render;
     // The scale transform will inflate the entire geometry first.
     // We want to do this before it moves out of its original location as generally our
     // algorithms for fitting cells will blow up the glyph to the size it needs to be first and then
-    // nudge it into place with the translates.
+    // nudge it into place with the translations.
     const auto scaleTransform = D2D1::Matrix3x2F::Scale(scale.HorizontalScale, scale.VerticalScale);
 
     // Now shift it all the way to where the baseline says it should be.
@@ -613,11 +610,11 @@ using namespace Microsoft::Console::Render;
     // cell dimensions = 26 x 48 (notice 48 height is 39 + 9 or ascent + descent)
     // This means that our cell should be the rectangle
     //
-    //             T=528  
+    //             T=528
     //           |-------|
     //       L=0 |       |
     //           |       |
-    // Baseline->x       | 
+    // Baseline->x       |
     //  Origin   |       | R=26
     //           |-------|
     //             B=576

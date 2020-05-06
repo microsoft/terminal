@@ -18,6 +18,7 @@ namespace Microsoft::Console::Render
         HRESULT RuntimeClassInitialize(float verticalScale, float verticalTranslate, float horizontalScale, float horizontalTranslate) noexcept;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetScale(BoxScale* scale) noexcept override;
+
     protected:
     private:
         BoxScale _scale;

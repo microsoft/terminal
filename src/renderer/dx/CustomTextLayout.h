@@ -157,7 +157,7 @@ namespace Microsoft::Console::Render
         // DirectWrite font face
         const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
 
-        // Box drwaing effect
+        // Box drawing effect
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         // The text we're analyzing and processing into a layout

@@ -81,7 +81,7 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _selectionBackground{},
     _glyphCell{},
-    _boxDrawingEffect {},
+    _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
@@ -2177,8 +2177,6 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
                                         0.5f);
-
-    _selectionBackground = D2D1::ColorF(D2D1::ColorF::Red);
 }
 
 // Routine Description:

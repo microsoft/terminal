@@ -8,9 +8,8 @@
 using namespace Microsoft::Console::Render;
 
 BoxDrawingEffect::BoxDrawingEffect() noexcept :
-    _scale{1.0f, 0.0f, 1.0f, 0.0f}
+    _scale{ 1.0f, 0.0f, 1.0f, 0.0f }
 {
-
 }
 
 HRESULT BoxDrawingEffect::RuntimeClassInitialize(float verticalScale, float verticalTranslate, float horizontalScale, float horizontalTranslate) noexcept
