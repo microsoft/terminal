@@ -44,6 +44,10 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+
+        // winrt::Windows::UI::Xaml::Thickness t2 = ThicknessHelper::FromLengths(0, 0, 0, 0);
+        // _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderPadding"),
+        //                                 winrt::box_value(t2));
     }
 
     // Method Description:
@@ -242,7 +246,43 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             Title(text);
-            _tabViewItem.Header(winrt::box_value(text));
+
+            //auto tabHeight = _tabViewItem.ActualHeight(); // 32
+            //_tabViewItem.MaxHeight(tabHeight);
+
+            ::winrt::Windows::UI::Xaml::Controls::TextBox tabTextBox;
+            tabTextBox.Text(text);
+
+            tabTextBox.MinHeight(0);
+            winrt::Windows::UI::Xaml::Thickness t = ThicknessHelper::FromLengths(4, 0, 4, 0);
+            tabTextBox.Padding(t);
+
+            winrt::Windows::UI::Xaml::Thickness t3 = ThicknessHelper::FromLengths(0, -8, 0, -8);
+            tabTextBox.Margin(t3);
+
+            // winrt::Windows::UI::Xaml::Thickness t2 = ThicknessHelper::FromLengths(0, 0, 0, 0);
+            // _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderPadding"),
+            //                                 winrt::box_value(t2));
+
+            // _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderPadding"),
+            //                                 t2);
+            // _tabViewItem.Padding(t2);
+
+            // auto viewMargin = _tabViewItem.Margin();
+            // auto viewMargin = _tabViewItem.Padding();
+            // auto availableSpace = tabHeight - (viewMargin.Top + viewMargin.Bottom);
+            // TabViewItemHeaderPadding
+            // see https://github.com/microsoft/microsoft-ui-xaml/blob/master/dev/TabView/TabView.xaml
+            // and https://github.com/microsoft/microsoft-ui-xaml/blob/master/dev/TabView/TabView_themeresources.xaml
+            //auto availableSpace = tabHeight - (8 + 8);
+
+            //tabTextBox.MinHeight(availableSpace);
+            //tabTextBox.Height(availableSpace);
+
+            // _tabViewItem.Header(winrt::box_value(text));
+            _tabViewItem.Header(tabTextBox);
+
+            _RefreshVisualState();
         }
     }
 
