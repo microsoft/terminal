@@ -1231,7 +1231,8 @@ try
                             _dwriteTextFormat.Get(),
                             _dwriteFontFace.Get(),
                             clusters,
-                            _glyphCell.width());
+                            _glyphCell.width(),
+                            _boxDrawingEffect.Get());
 
     // Get the baseline for this font as that's where we draw from
     DWRITE_LINE_SPACING spacing;
@@ -1607,6 +1608,9 @@ try
 
     _glyphCell = fiFontInfo.GetSize();
 
+    // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
+    RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
+
     return S_OK;
 }
 CATCH_RETURN();
@@ -1740,7 +1744,8 @@ try
                             _dwriteTextFormat.Get(),
                             _dwriteFontFace.Get(),
                             { &cluster, 1 },
-                            _glyphCell.width());
+                            _glyphCell.width(),
+                            _boxDrawingEffect.Get());
 
     UINT32 columns = 0;
     RETURN_IF_FAILED(layout.GetColumns(&columns));

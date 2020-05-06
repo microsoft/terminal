@@ -24,8 +24,6 @@ namespace Microsoft::Console::Render
         BoxScale _scale;
 #ifdef UNIT_TESTING
     public:
-        BoxDrawingEffect() = default;
-
         friend class BoxDrawingEffectTests;
 #endif
     };

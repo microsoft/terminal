@@ -25,7 +25,8 @@ namespace Microsoft::Console::Render
                          gsl::not_null<IDWriteTextFormat*> const format,
                          gsl::not_null<IDWriteFontFace1*> const font,
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
-                         size_t const width);
+                         size_t const width,
+                         IBoxDrawingEffect* const boxEffect);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
 
@@ -65,7 +66,7 @@ namespace Microsoft::Console::Render
                                                                       UINT32 textLength,
                                                                       _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
-        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale = 1.0f) noexcept;
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
@@ -158,7 +159,7 @@ namespace Microsoft::Console::Render
         const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
 
         // Box drawing effect
-        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
+        const ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;

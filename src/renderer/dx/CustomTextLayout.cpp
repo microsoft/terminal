@@ -22,16 +22,19 @@ using namespace Microsoft::Console::Render;
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
+// - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
                                    std::basic_string_view<Cluster> const clusters,
-                                   size_t const width) :
+                                   size_t const width,
+                                   IBoxDrawingEffect* const boxEffect) :
     _factory{ factory.get() },
     _analyzer{ analyzer.get() },
     _format{ format.get() },
     _font{ font.get() },
+    _boxDrawingEffect { boxEffect },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
@@ -43,9 +46,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
-
-    // Calculate out the box drawing effect for this font.
-    THROW_IF_FAILED(s_CalculateBoxEffect(_format.Get(), width, _font.Get(), &_boxDrawingEffect));
 
     for (const auto& cluster : clusters)
     {
@@ -1286,7 +1286,7 @@ try
         else
         {
             ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
-            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _width, run.fontFace.Get(), &eff, run.fontScale));
+            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _width, run.fontFace.Get(), run.fontScale, &eff));
 
             // store data in the run
             run.drawingEffect = eff;
@@ -1303,11 +1303,11 @@ CATCH_RETURN();
 // - format - Text format used to determine line spacing (height including ascent & descent) as calculated from the base font.
 // - widthPixels - The pixel width of the available cell.
 // - face - The font face that is currently being used, may differ from the base font from the layout.
+// - fontScale -  if the given font face is going to be scaled versus the format, we need to know so we can compensate for that. pass 1.0f for no scaling.
 // - effect - Receives the effect to apply to box drawing characters. If no effect is received, special treatment isn't required.
-// - fontScale - (optional, 1.0f default), if the given font face is going to be scaled versus the format, we need to know so we can compensate for that.
 // Return Value:
 // - S_OK, GSL/WIL errors, DirectWrite errors, or math errors.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, IBoxDrawingEffect** effect, float fontScale) noexcept
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept
 {
     // Check the out parameter and fill it up with null.
     RETURN_HR_IF(E_INVALIDARG, !effect);
