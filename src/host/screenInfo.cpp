@@ -1413,6 +1413,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
+
+    // GH#3848 - Stash away the current attributes the old text buffer is using.
+    // We'll initialize the new buffer with the default attributes, but after
+    // the resize, we'll want to make sure that the new buffer's current
+    // attributes (the ones used for printing new text) match the old buffer's.
+    const auto oldPrimaryAttributes = _textBuffer->GetCurrentAttributes();
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
@@ -1444,6 +1450,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+
+        _textBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
         _textBuffer.swap(newTextBuffer);
     }
