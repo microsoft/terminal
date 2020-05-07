@@ -2855,6 +2855,122 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     // By simply reaching the end of this test, we know that we didn't crash. Hooray!
 }
 
+void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
+{
+    // See https://github.com/microsoft/terminal/issues/3848
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    auto defaultAttrs = si.GetAttributes();
+    auto conhostGreenAttrs = TextAttribute();
+
+    // Conhost and Terminal store attributes in different bits.
+    conhostGreenAttrs.SetIndexedAttributes(std::nullopt,
+                                           { static_cast<BYTE>(FOREGROUND_GREEN) });
+    auto terminalGreenAttrs = TextAttribute();
+    terminalGreenAttrs.SetIndexedAttributes(std::nullopt,
+                                            { static_cast<BYTE>(XTERM_GREEN_ATTR) });
+
+    const size_t width = static_cast<size_t>(TerminalViewWidth);
+
+    // Use an initial ^[[m to start printing with default-on-default
+    sm.ProcessString(L"\x1b[m");
+
+    // Print three lines with "# #", where the first "# " are in
+    // default-on-green.
+    for (int i = 0; i < 3; i++)
+    {
+        sm.ProcessString(L"\x1b[42m");
+        sm.ProcessString(L"# ");
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(L"#");
+        sm.ProcessString(L"\r\n");
+    }
+
+    // Now, leave the active attributes as default-on-green. When we resize the
+    // buffers, we don't want them initialized with default-on-green, we want
+    // them to use whatever the set default attributes are.
+    sm.ProcessString(L"\x1b[42m");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool isTerminal, const bool afterResize) {
+        const auto width = viewport.width<short>();
+
+        // Conhost and Terminal store attributes in different bits.
+        const auto greenAttrs = isTerminal ? terminalGreenAttrs : conhostGreenAttrs;
+
+        for (short row = 0; row < tb.GetSize().Height(); row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d...", row));
+
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+
+            const bool hasChar = row < 3;
+            const auto actualDefaultAttrs = isTerminal ? TextAttribute() : defaultAttrs;
+
+            if (hasChar)
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
+                // After the resize, the default attrs of the last char will
+                // extend to fill the rest of the row. This is GH#32. If that
+                // bug ever gets fixed, this test will break, but that's
+                // ABSOLUTELY OKAY.
+                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? TextAttribute() : actualDefaultAttrs), static_cast<size_t>(width - 3));
+            }
+            else
+            {
+                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.width<size_t>());
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false, false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true, false);
+
+    // After we resize, make sure to get the new textBuffers
+    std::tie(hostTb, termTb) = _performResize({ TerminalViewWidth + dx,
+                                                TerminalViewHeight + dy });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false, true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true, true);
+}
+
 void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
