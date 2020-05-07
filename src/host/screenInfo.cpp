@@ -1417,7 +1417,6 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
                                                      gci.GetDefaultAttributes(),
-                                                     GetAttributes(),
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
     }
