@@ -1466,7 +1466,8 @@ try
             // Since scale factor is a multiplier, it doesn't matter that this is design units.
             // The fraction between the two heights in pixels should be exactly the same
             // (which is what will matter when we go to actually render it... the pixels that is.)
-            boxVerticalScaleFactor = cellHeightDesignUnits / boxHeightDesignUnits;
+            // Don't scale below 1.0. If it'd shrink, just center it at the prescribed scale.
+            boxVerticalScaleFactor = std::max(cellHeightDesignUnits / boxHeightDesignUnits, 1.0f);
 
             // The box as scaled might be hanging over the top or bottom of the cell (or both).
             // We find out the amount of overhang/underhang on both the top and the bottom.
@@ -1513,7 +1514,7 @@ try
 
         if (!(boxTouchesCellLeft && boxTouchesCellRight && boxIsWideEnoughForCell))
         {
-            boxHorizontalScaleFactor = cellWidthDesignUnits / boxWidthDesignUnits;
+            boxHorizontalScaleFactor = std::max(cellWidthDesignUnits / boxWidthDesignUnits, 1.0f);
             const auto extraLeft = boxLeftDesignUnits * boxHorizontalScaleFactor - cellLeftDesignUnits;
             const auto extraRight = boxRightDesignUnits * boxHorizontalScaleFactor - cellRightDesignUnits;
 
