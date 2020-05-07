@@ -341,25 +341,11 @@ Commandline Mode, and `>` would enter the Action mode. I'd think that might
 actually be _backwards_ from what I'd expect, with `>` being the default
 character for the end of the default `cmd` `%PROMPT%`.
 
-As always, I'm also on board with the "this should be configurable by the user"
-route, so they can change what mode the command palette is in by default, and
-what the prefixes for differen modes are, but I'm not sure how we'd define that
-cleanly in the settings.
+**FOR DISCUSSION** What option makes the most sense to the team? I'm leaning
+towards the VsCode style (where Action='>', Commandline='') currently.
 
-```json
-{
-  "commandPaletteActionModePrefix": "", // or null, for no prefix
-  "commandPaletteCommandlineModePrefix": ">"
-}
-```
-
-We'd need to have validation on that though, what if both of them were set to
-`null`? One of them would _need_ to be `null`, so if both have a character, do
-we just assume one is the default?
-
-This counts as a future-considerations topic, and not something I'm seriously
-considering for Terminal 2.0.
-
+Enabling the user to configure this prefix is discussed below in "[Future
+Considerations](#configuring-the-actioncommandline-mode-prefix)".
 
 ## Capabilities
 
@@ -645,6 +631,24 @@ So, you could imagine the entire tree as follows:
       ├─ Split Vertically
       └─ Split Horizontally
 ```
+
+### Configuring the Action/Commandline Mode prefix
+
+As always, I'm also on board with the "this should be configurable by the user"
+route, so they can change what mode the command palette is in by default, and
+what the prefixes for differen modes are, but I'm not sure how we'd define that
+cleanly in the settings.
+
+```json
+{
+  "commandPaletteActionModePrefix": "", // or null, for no prefix
+  "commandPaletteCommandlineModePrefix": ">"
+}
+```
+
+We'd need to have validation on that though, what if both of them were set to
+`null`? One of them would _need_ to be `null`, so if both have a character, do
+we just assume one is the default?
 
 ## Resources
 Initial post that inspired this spec: #[2046](https://github.com/microsoft/terminal/issues/2046)
