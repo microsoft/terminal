@@ -36,6 +36,7 @@ public:
     void ValidateStartupCommands();
     std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
+    bool ShouldExitEarly() const noexcept;
 
 private:
     static const std::wregex _commandDelimiterRegex;
@@ -79,6 +80,7 @@ private:
 
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
     std::string _exitMessage;
+    bool _shouldExitEarly{ false };
 
     winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);

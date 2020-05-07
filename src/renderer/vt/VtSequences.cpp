@@ -109,6 +109,11 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[2J");
 }
 
+[[nodiscard]] HRESULT VtEngine::_ClearScrollback() noexcept
+{
+    return _Write("\x1b[3J");
+}
+
 // Method Description:
 // - Formats and writes a sequence to either insert or delete a number of lines
 //      into the buffer at the current cursor location.

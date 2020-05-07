@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
 #include <LibraryResources.h>
@@ -140,6 +141,11 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
     {
         _exitMessage = err.str();
     }
+
+    // We're displaying an error message - we should always exit instead of
+    // actually starting the Terminal.
+    _shouldExitEarly = true;
+
     return result;
 }
 
@@ -151,6 +157,22 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    auto versionCallback = [this](int64_t /*count*/) {
+        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+        {
+            // Set our message to display the application name and the current version.
+            _exitMessage = fmt::format("{0}\n{1}",
+                                       til::u16u8(appLogic->ApplicationDisplayName()),
+                                       til::u16u8(appLogic->ApplicationVersion()));
+            // Theoretically, we don't need to exit now, since this isn't really
+            // an error case. However, in practice, it feels weird to have `wt
+            // -v` open a new tab, and makes enough sense that `wt -v ;
+            // split-pane` (or whatever) just displays the version and exits.
+            _shouldExitEarly = true;
+        }
+    };
+    _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
+
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
@@ -538,6 +560,19 @@ std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupAct
 const std::string& AppCommandlineArgs::GetExitMessage()
 {
     return _exitMessage;
+}
+
+// Method Description:
+// - Returns true if we should exit the application before even starting the
+//   window. We might want to do this if we're displaying an error message or
+//   the version string, or if we want to open the settings file.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we should exit the application before even starting the window
+bool AppCommandlineArgs::ShouldExitEarly() const noexcept
+{
+    return _shouldExitEarly;
 }
 
 // Method Description:
