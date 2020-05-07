@@ -2816,7 +2816,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     // Don't let the cooked read pollute other tests
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
     END_TEST_METHOD_PROPERTIES()
 
@@ -2861,16 +2861,20 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        // TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1}")
-        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
         TEST_METHOD_PROPERTY(L"Data:leaveTrailingChar", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
     INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
     INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
     INIT_TEST_PROPERTY(bool, leaveTrailingChar, L"TODO");
+
+    // Do nothing if the resize would just be a no-op.
+    if (dx == 0 && dy == 0)
+    {
+        return;
+    }
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
