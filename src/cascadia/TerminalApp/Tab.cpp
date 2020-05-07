@@ -246,7 +246,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            // Bubble our current tab text to anyone who's listenting fr changes.
+            // Bubble our current tab text to anyone who's listening for changes.
             Title(GetActiveTitle());
 
             _UpdateTabHeader();
