@@ -2858,6 +2858,13 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
 void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 {
     // See https://github.com/microsoft/terminal/issues/3848
+    Log::Comment(L"This test checks that the attributes in the text buffer are "
+                 L"initialized to a sensible value during a resize. The entire "
+                 L"buffer shouldn't be filled with _whatever the current "
+                 L"attributes are_, it should be filled with the default "
+                 L"attributes (however the application defines that). Then, "
+                 L"after the resize, we should still be able to print to the "
+                 L"buffer with the old \"current attributes\"");
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
@@ -2868,7 +2875,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
     INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
     INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
-    INIT_TEST_PROPERTY(bool, leaveTrailingChar, L"TODO");
+    INIT_TEST_PROPERTY(bool, leaveTrailingChar, L"If true, we'll print one additional '#' on row 3");
 
     // Do nothing if the resize would just be a no-op.
     if (dx == 0 && dy == 0)
