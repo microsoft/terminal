@@ -54,12 +54,12 @@ namespace winrt::TerminalApp::implementation
         bool ShouldExitEarly();
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
-        TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, Windows::Foundation::IInspectable, winrt::hstring);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, Windows::Foundation::IInspectable, TerminalApp::LastTabClosedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, Windows::Foundation::IInspectable, Windows::UI::Xaml::UIElement);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, Windows::Foundation::IInspectable, Windows::UI::Xaml::Controls::ContentDialog);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, Windows::Foundation::IInspectable, TerminalApp::ToggleFullscreenEventArgs);
+        TYPED_EVENT(Initialized, Windows::Foundation::IInspectable, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const TerminalApp::Tab& tab) const;
 
         bool _isFullscreen{ false };
 
@@ -89,7 +89,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
-        winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
@@ -101,9 +101,9 @@ namespace winrt::TerminalApp::implementation
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
+        void _OpenNewTab(const TerminalApp::NewTerminalArgs& newTerminalArgs);
+        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::TerminalSettings settings);
+        Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -126,9 +126,9 @@ namespace winrt::TerminalApp::implementation
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);
-        void _MoveFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction);
+        void _MoveFocus(const Microsoft::Terminal::Settings::Direction& direction);
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
+        Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
@@ -140,17 +140,17 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitPane(const winrt::Microsoft::Terminal::Settings::SplitState splitType, const winrt::Microsoft::Terminal::Settings::SplitType splitMode = winrt::Microsoft::Terminal::Settings::SplitType::Manual, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
-        void _ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction);
+        void _SplitPane(const Microsoft::Terminal::Settings::SplitState splitType, const Microsoft::Terminal::Settings::SplitType splitMode = winrt::Microsoft::Terminal::Settings::SplitType::Manual, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
+        void _ResizePane(const Microsoft::Terminal::Settings::Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
-        winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
+        winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
-        static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
+        static fire_and_forget PasteFromClipboard(Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
         fire_and_forget _LaunchSettings(const bool openDefaults);
 
