@@ -29,7 +29,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    using FromJsonResult = std::tuple<winrt::TerminalApp::IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+    using FromJsonResult = std::tuple<TerminalApp::IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
 
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
-        bool Equals(const winrt::TerminalApp::NewTerminalArgs& other)
+        bool Equals(const TerminalApp::NewTerminalArgs& other)
         {
             return other.Commandline() == _Commandline &&
                    other.StartingDirectory() == _StartingDirectory &&
@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile;
         };
-        static winrt::TerminalApp::NewTerminalArgs FromJson(const Json::Value& json)
+        static TerminalApp::NewTerminalArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTerminalArgs>();
@@ -125,7 +125,7 @@ namespace winrt::TerminalApp::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
         bool Equals(const IActionArgs& other)
@@ -188,32 +188,32 @@ namespace winrt::TerminalApp::implementation
     // - directionString: the string to attempt to parse
     // Return Value:
     // - The encoded Direction value, or Direction::None if it was an invalid string
-    static winrt::Microsoft::Terminal::Settings::Direction ParseDirection(const std::string& directionString)
+    static Microsoft::Terminal::Settings::Direction ParseDirection(const std::string& directionString)
     {
         if (directionString == LeftString)
         {
-            return winrt::Microsoft::Terminal::Settings::Direction::Left;
+            return Microsoft::Terminal::Settings::Direction::Left;
         }
         else if (directionString == RightString)
         {
-            return winrt::Microsoft::Terminal::Settings::Direction::Right;
+            return Microsoft::Terminal::Settings::Direction::Right;
         }
         else if (directionString == UpString)
         {
-            return winrt::Microsoft::Terminal::Settings::Direction::Up;
+            return Microsoft::Terminal::Settings::Direction::Up;
         }
         else if (directionString == DownString)
         {
-            return winrt::Microsoft::Terminal::Settings::Direction::Down;
+            return Microsoft::Terminal::Settings::Direction::Down;
         }
         // default behavior for invalid data
-        return winrt::Microsoft::Terminal::Settings::Direction::None;
+        return Microsoft::Terminal::Settings::Direction::None;
     };
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::Direction, Direction, Microsoft::Terminal::Settings::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -235,7 +235,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            if (args->_Direction == Microsoft::Terminal::Settings::Direction::None)
             {
                 return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
@@ -249,7 +249,7 @@ namespace winrt::TerminalApp::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::Direction, Direction, Microsoft::Terminal::Settings::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -271,7 +271,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            if (args->_Direction == Microsoft::Terminal::Settings::Direction::None)
             {
                 return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
@@ -323,34 +323,34 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - directionString: the string to attempt to parse
     // Return Value:
-    // - The encoded Direction value, or Direction::None if it was an invalid string
-    static winrt::Microsoft::Terminal::Settings::SelectionExpansionMode ParseExpansionMode(const std::string& expansionModeString)
+    // - The encoded SelectionExpansionMode value, or SelectionExpansionMode::Cell if it was an invalid string
+    static Microsoft::Terminal::Settings::SelectionExpansionMode ParseExpansionMode(const std::string& expansionModeString)
     {
         if (expansionModeString == CellString)
         {
-            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
+            return Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
         }
         else if (expansionModeString == WordString)
         {
-            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Word;
+            return Microsoft::Terminal::Settings::SelectionExpansionMode::Word;
         }
         else if (expansionModeString == ViewportString)
         {
-            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Viewport;
+            return Microsoft::Terminal::Settings::SelectionExpansionMode::Viewport;
         }
         else if (expansionModeString == BufferString)
         {
-            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Buffer;
+            return Microsoft::Terminal::Settings::SelectionExpansionMode::Buffer;
         }
         // default behavior for invalid data
-        return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
+        return Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
     };
 
     struct MoveSelectionPointArgs : public MoveSelectionPointArgsT<MoveSelectionPointArgs>
     {
         MoveSelectionPointArgs() = default;
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SelectionExpansionMode, ExpansionMode, winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::Direction, Direction, Microsoft::Terminal::Settings::Direction::None);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::SelectionExpansionMode, ExpansionMode, Microsoft::Terminal::Settings::SelectionExpansionMode::Cell);
 
         static constexpr std::string_view DirectionKey{ "direction" };
         static constexpr std::string_view ExpansionModeKey{ "expansionMode" };
@@ -378,7 +378,7 @@ namespace winrt::TerminalApp::implementation
                     args->_ExpansionMode = ParseExpansionMode(expansionModeString.asString());
                 }
             }
-            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            if (args->_Direction == Microsoft::Terminal::Settings::Direction::None)
             {
                 return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
@@ -394,41 +394,41 @@ namespace winrt::TerminalApp::implementation
     static constexpr std::string_view VerticalKey{ "vertical" };
     static constexpr std::string_view HorizontalKey{ "horizontal" };
     static constexpr std::string_view AutomaticKey{ "auto" };
-    static winrt::Microsoft::Terminal::Settings::SplitState ParseSplitState(const std::string& stateString)
+    static Microsoft::Terminal::Settings::SplitState ParseSplitState(const std::string& stateString)
     {
         if (stateString == VerticalKey)
         {
-            return winrt::Microsoft::Terminal::Settings::SplitState::Vertical;
+            return Microsoft::Terminal::Settings::SplitState::Vertical;
         }
         else if (stateString == HorizontalKey)
         {
-            return winrt::Microsoft::Terminal::Settings::SplitState::Horizontal;
+            return Microsoft::Terminal::Settings::SplitState::Horizontal;
         }
         else if (stateString == AutomaticKey)
         {
-            return winrt::Microsoft::Terminal::Settings::SplitState::Automatic;
+            return Microsoft::Terminal::Settings::SplitState::Automatic;
         }
         // default behavior for invalid data
-        return winrt::Microsoft::Terminal::Settings::SplitState::Automatic;
+        return Microsoft::Terminal::Settings::SplitState::Automatic;
     };
 
     // Possible SplitType values
     static constexpr std::string_view DuplicateKey{ "duplicate" };
-    static winrt::Microsoft::Terminal::Settings::SplitType ParseSplitModeState(const std::string& stateString)
+    static Microsoft::Terminal::Settings::SplitType ParseSplitModeState(const std::string& stateString)
     {
         if (stateString == DuplicateKey)
         {
-            return winrt::Microsoft::Terminal::Settings::SplitType::Duplicate;
+            return Microsoft::Terminal::Settings::SplitType::Duplicate;
         }
-        return winrt::Microsoft::Terminal::Settings::SplitType::Manual;
+        return Microsoft::Terminal::Settings::SplitType::Manual;
     }
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitState, SplitStyle, winrt::Microsoft::Terminal::Settings::SplitState::Automatic);
-        GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitType, SplitMode, winrt::Microsoft::Terminal::Settings::SplitType::Manual);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::SplitState, SplitStyle, Microsoft::Terminal::Settings::SplitState::Automatic);
+        GETSET_PROPERTY(TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::SplitType, SplitMode, Microsoft::Terminal::Settings::SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
