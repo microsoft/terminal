@@ -2861,12 +2861,16 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
-        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        // TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
+        TEST_METHOD_PROPERTY(L"Data:leaveTrailingChar", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
     INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
     INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+    INIT_TEST_PROPERTY(bool, leaveTrailingChar, L"TODO");
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -2912,6 +2916,15 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
     // them to use whatever the set default attributes are.
     sm.ProcessString(L"\x1b[42m");
 
+    // If leaveTrailingChar is true, we'll leave one default-on-green '#' on row
+    // 3. This will force conpty to change the Terminal's colors to
+    // default-on-green, so we can check that not only conhost initialize the
+    // buffer colors correctly, but so does the Terminal.
+    if (leaveTrailingChar)
+    {
+        sm.ProcessString(L"#");
+    }
+
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool isTerminal, const bool afterResize) {
         const auto width = viewport.width<short>();
 
@@ -2937,6 +2950,11 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
                 // bug ever gets fixed, this test will break, but that's
                 // ABSOLUTELY OKAY.
                 TestUtils::VerifyLineContains(iter, L' ', (afterResize ? TextAttribute() : actualDefaultAttrs), static_cast<size_t>(width - 3));
+            }
+            else if (leaveTrailingChar && row == 3)
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? greenAttrs : actualDefaultAttrs), static_cast<size_t>(width - 1));
             }
             else
             {
