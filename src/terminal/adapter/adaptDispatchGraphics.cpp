@@ -44,7 +44,7 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // Arguments:
 // - options - An array of options that will be used to generate the RGB color
 // - attr - The attribute that will be updated with the parsed color.
-// - isForeground - Whether or not the parsed color is for the foreground or not.
+// - isForeground - Whether or not the parsed color is for the foreground.
 // Return Value:
 // - The number of options consumed, not including the initial 38/48.
 size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
@@ -76,6 +76,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchT
             COLORREF rgbColor;
             if (_pConApi->PrivateGetColorTableEntry(tableIndex, rgbColor))
             {
+                // TODO GH#1223: Decouple xterm-256color indexed storage from RGB storage
                 attr.SetColor(rgbColor, isForeground);
             }
         }
