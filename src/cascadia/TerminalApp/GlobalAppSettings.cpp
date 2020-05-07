@@ -27,8 +27,6 @@ static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
-static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
-static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
@@ -36,13 +34,22 @@ static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
+
+static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
+
+// Launch mode values
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
+
+// Tab Width Mode values
+static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
+static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
+static constexpr std::wstring_view TitleLengthCompactModeValue{ L"compact" };
+
+// Theme values
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
-
-static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -519,6 +526,10 @@ TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWi
     {
         return TabViewWidthMode::SizeToContent;
     }
+    else if (tabWidthModeString == TitleLengthCompactModeValue)
+    {
+        return TabViewWidthMode::Compact;
+    }
     // default behavior for invalid data or EqualTabWidthValue
     return TabViewWidthMode::Equal;
 }
@@ -536,6 +547,8 @@ std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMo
     {
     case TabViewWidthMode::SizeToContent:
         return TitleLengthTabWidthModeValue;
+    case TabViewWidthMode::Compact:
+        return TitleLengthCompactModeValue;
     default:
         return EqualTabWidthModeValue;
     }
