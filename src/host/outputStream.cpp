@@ -85,7 +85,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
+                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 
@@ -241,7 +241,7 @@ bool ConhostInternalGetSet::PrivateBoldText(const bool bolded)
 // - Retrieves the currently active ExtendedAttributes. See also
 //   DoSrvPrivateGetExtendedTextAttributes
 // Arguments:
-// - attrs: Recieves the ExtendedAttributes value.
+// - attrs: Receives the ExtendedAttributes value.
 // Return Value:
 // - true if successful (see DoSrvPrivateGetExtendedTextAttributes). false otherwise.
 bool ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes& attrs)
@@ -356,6 +356,19 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
 {
     return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+}
+
+// Routine Description:
+// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
 }
 
 // Routine Description:
@@ -478,80 +491,6 @@ bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
     return true;
 }
 
-// - Connects the PrivateHorizontalTabSet call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateHorizontalTabSet is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// <none>
-// Return Value:
-// - true if successful (see PrivateHorizontalTabSet). false otherwise.
-bool ConhostInternalGetSet::PrivateHorizontalTabSet()
-{
-    return NT_SUCCESS(DoSrvPrivateHorizontalTabSet());
-}
-
-// Routine Description:
-// - Connects the PrivateForwardTab call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateForwardTab is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - sNumTabs - the number of tabs to execute
-// Return Value:
-// - true if successful (see PrivateForwardTab). false otherwise.
-bool ConhostInternalGetSet::PrivateForwardTab(const size_t numTabs)
-{
-    SHORT tabs;
-    if (FAILED(SizeTToShort(numTabs, &tabs)))
-    {
-        return false;
-    }
-
-    return NT_SUCCESS(DoSrvPrivateForwardTab(tabs));
-}
-
-// Routine Description:
-// - Connects the PrivateBackwardsTab call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateBackwardsTab is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - numTabs - the number of tabs to execute
-// Return Value:
-// - true if successful (see PrivateBackwardsTab). false otherwise.
-bool ConhostInternalGetSet::PrivateBackwardsTab(const size_t numTabs)
-{
-    SHORT tabs;
-    if (FAILED(SizeTToShort(numTabs, &tabs)))
-    {
-        return false;
-    }
-
-    return NT_SUCCESS(DoSrvPrivateBackwardsTab(tabs));
-}
-
-// Routine Description:
-// - Connects the PrivateTabClear call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateTabClear is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - clearAll - set to true to enable blinking, false to disable
-// Return Value:
-// - true if successful (see PrivateTabClear). false otherwise.
-bool ConhostInternalGetSet::PrivateTabClear(const bool clearAll)
-{
-    DoSrvPrivateTabClear(clearAll);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateSetDefaultTabStops call directly into the private api point
-// Return Value:
-// - true
-bool ConhostInternalGetSet::PrivateSetDefaultTabStops()
-{
-    DoSrvPrivateSetDefaultTabStops();
-    return true;
-}
-
 // Routine Description:
 // - Connects the PrivateEnableVT200MouseMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEnableVT200MouseMode is an internal-only "API" call that the vt commands can execute,
@@ -646,7 +585,7 @@ bool ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool enabled)
 // - true if successful (see DoSrvPrivateEraseAll). false otherwise.
 bool ConhostInternalGetSet::PrivateEraseAll()
 {
-    return NT_SUCCESS(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+    return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:
@@ -718,7 +657,7 @@ bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 // Routine Description:
 // - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - codepage - recieves the outputCP of the console.
+// - codepage - receives the outputCP of the console.
 // Return Value:
 // - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
 bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
@@ -756,14 +695,17 @@ bool ConhostInternalGetSet::SetCursorColor(const COLORREF cursorColor)
 
 // Routine Description:
 // - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
+// - NOTE: This ONE method behaves differently! The rest of the methods on this
+//   interface return true if successful. This one just returns the result.
 // Arguments:
-// - isPty: recieves the bool indicating whether or not we're in pty mode.
+// - isPty: receives the bool indicating whether or not we're in pty mode.
 // Return Value:
-// - true if successful (see DoSrvIsConsolePty). false otherwise.
-bool ConhostInternalGetSet::IsConsolePty(bool& isPty) const
+// - true if we're in pty mode.
+bool ConhostInternalGetSet::IsConsolePty() const
 {
+    bool isPty = false;
     DoSrvIsConsolePty(isPty);
-    return true;
+    return isPty;
 }
 
 bool ConhostInternalGetSet::DeleteLines(const size_t count)
@@ -877,4 +819,17 @@ bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
                                               clipRect,
                                               destinationOrigin,
                                               standardFillAttrs));
+}
+
+// Routine Description:
+// - Checks if the InputBuffer is willing to accept VT Input directly
+//   PrivateIsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - <none>
+// Return value:
+// - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
+bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
+{
+    return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }

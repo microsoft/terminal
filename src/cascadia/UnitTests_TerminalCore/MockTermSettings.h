@@ -32,7 +32,7 @@ namespace TerminalCoreUnitTests
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
-        winrt::hstring WordDelimiters() { return winrt::to_hstring(DEFAULT_WORD_DELIMITERS.c_str()); }
+        winrt::hstring WordDelimiters() { return winrt::hstring(DEFAULT_WORD_DELIMITERS); }
         bool CopyOnSelect() { return _copyOnSelect; }
         winrt::hstring StartingTitle() { return _startingTitle; }
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }

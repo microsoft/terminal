@@ -18,6 +18,7 @@
     <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="SearchBoxControl.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -26,12 +27,12 @@
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="UiaTextRange.hpp" />
-    <ClCompile Include="SearchBoxControl.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
     <Midl Include="TermControlAutomationPeer.idl" />
     <Midl Include="SearchBoxControl.idl" />
+    <Midl Include="TSFInputControl.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />
@@ -42,5 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\*\Resources.resw">
+      <Filter>Resources</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>

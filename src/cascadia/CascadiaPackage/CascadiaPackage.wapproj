@@ -43,7 +43,8 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\Resources.resw" />
   </ItemGroup>
   <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
     <!-- This is picked up by CascadiaResources.build.items. -->
@@ -54,6 +55,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
   </ItemGroup>
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
@@ -91,9 +93,7 @@
        roll up our subproject resources. We have to suppress that rule but keep part of its logic, because that rule is
        where the AppxPackagePayload items are created. -->
   <PropertyGroup>
-    <!-- Only for MSBuild versions <= 16.4.0 -->
-    <!-- TODO: Change this to hard less than once the 16.4.0 previews fix the bug. -->
-    <WapProjBeforeGenerateAppxManifestDependsOn Condition="$(MSBuildVersion) &lt;= '16.4.0'">
+    <WapProjBeforeGenerateAppxManifestDependsOn>
         $([MSBuild]::Unescape('$(WapProjBeforeGenerateAppxManifestDependsOn.Replace('_RemoveAllNonWapUWPItems', '_OpenConsoleRemoveAllNonWapUWPItems'))'))
     </WapProjBeforeGenerateAppxManifestDependsOn>
   </PropertyGroup>
@@ -106,6 +106,30 @@
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
     </ItemGroup>
   </Target>
+
+  <!-- **BEGIN VC LIBS HACK** -->
+  <!--
+    For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
+    It's very difficult for users who do not have access to the store to get our dependency packages, and we want to be robust
+    and deployable everywhere. Since these libraries can be redistributed, it's easiest if we simply redistribute them.
+    See also the "VC LIBS HACK" section in WindowsTerminal.vcxproj.
+  -->
+  <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
+       This is part of the generic machinery that applies to every AppX. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
+    <ItemGroup Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
+    <ItemGroup Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" />
+    </ItemGroup>
+  </Target>
+  <!-- **END VC LIBS HACK** -->
+
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

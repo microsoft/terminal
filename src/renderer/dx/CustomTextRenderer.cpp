@@ -263,17 +263,72 @@ using namespace Microsoft::Console::Render;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
     // Draw the background
+    // The rectangle needs to be deduced based on the origin and the BidiDirection
+    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+
     D2D1_RECT_F rect;
     rect.top = origin.y;
     rect.bottom = rect.top + drawingContext->cellSize.height;
     rect.left = origin.x;
-    rect.right = rect.left;
-    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    // Check for RTL, if it is, move rect.left to the left from the baseline
+    if (WI_IsFlagSet(glyphRun->bidiLevel, 1))
+    {
+        rect.left -= totalSpan;
+    }
+    rect.right = rect.left + totalSpan;
 
-    rect.right = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), rect.right);
+    // Clip all drawing in this glyph run to where we expect.
+    // We need the AntialiasMode here to be Aliased to ensure
+    //  that background boxes line up with each other and don't leave behind
+    //  stray colors.
+    // See GH#3626 for more details.
+    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+
+    // Ensure we pop it on the way out
+    auto popclip = wil::scope_exit([&d2dContext]() noexcept {
+        d2dContext->PopAxisAlignedClip();
+    });
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
+    // GH#5098: If we're rendering with cleartype text, we need to always render
+    // onto an opaque background. If our background _isn't_ opaque, then we need
+    // to use grayscale AA for this run of text.
+    //
+    // We can force grayscale AA for just this run of text by pushing a new
+    // layer onto the d2d context. We'll only need to do this for cleartype
+    // text, when our eventual background isn't actually opaque. See
+    // DxEngine::PaintBufferLine and DxEngine::UpdateDrawingBrushes for more
+    // details.
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing).
+
+    // First, create the scope_exit to pop the layer. If we don't need the
+    // layer, we'll just gracefully release it.
+    auto popLayer = wil::scope_exit([&d2dContext]() noexcept {
+        d2dContext->PopLayer();
+    });
+
+    if (drawingContext->forceGrayscaleAA)
+    {
+        // Mysteriously, D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE actually
+        // gets us the behavior we want, which is grayscale.
+        d2dContext->PushLayer(D2D1::LayerParameters(rect,
+                                                    nullptr,
+                                                    D2D1_ANTIALIAS_MODE_ALIASED,
+                                                    D2D1::IdentityMatrix(),
+                                                    1.0,
+                                                    nullptr,
+                                                    D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE),
+                              nullptr);
+    }
+    else
+    {
+        popLayer.release();
+    }
     // Now go onto drawing the text.
 
     // First check if we want a color font and try to extract color emoji first.

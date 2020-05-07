@@ -192,7 +192,7 @@
     }
 
     // We must return the number of records in the message payload (to alert the client)
-    // as well as in the message headers (below in SetReplyInfomration) to alert the driver.
+    // as well as in the message headers (below in SetReplyInformation) to alert the driver.
     LOG_IF_FAILED(SizeTToULong(outEvents.size(), &a->NumRecords));
 
     size_t cbWritten;
@@ -502,11 +502,14 @@
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
+        // GH#3126 if the client application is powershell.exe, then we might
+        // need to enable a compatibility shim.
         hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                a->Element,
                                                                fill,
                                                                a->WriteCoord,
-                                                               amountWritten);
+                                                               amountWritten,
+                                                               m->GetProcessHandle()->GetShimPolicy().IsPowershellExe());
         break;
     }
     case CONSOLE_ASCII:
@@ -733,12 +736,15 @@
 
     if (a->Unicode)
     {
+        // GH#3126 if the client application is cmd.exe, then we might need to
+        // enable a compatibility shim.
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
                                                                 a->ScrollRectangle,
                                                                 a->DestinationOrigin,
                                                                 a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
-                                                                a->Fill.Attributes);
+                                                                a->Fill.Attributes,
+                                                                m->GetProcessHandle()->GetShimPolicy().IsCmdExe());
     }
     else
     {

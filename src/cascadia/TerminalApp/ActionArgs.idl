@@ -33,7 +33,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
-        Boolean TrimWhitespace { get; };
+        Boolean SingleLine { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -43,7 +43,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
-        Int32 TabIndex { get; };
+        UInt32 TabIndex { get; };
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
@@ -61,7 +61,7 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
-    [default_interface] runtimeclass MoveSelectionAnchorArgs : IActionArgs
+    [default_interface] runtimeclass MoveSelectionPointArgs : IActionArgs
     {
         Microsoft.Terminal.Settings.Direction Direction { get; };
         Microsoft.Terminal.Settings.SelectionExpansionMode ExpansionMode { get; };
@@ -71,5 +71,6 @@ namespace TerminalApp
     {
         Microsoft.Terminal.Settings.SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
+        Microsoft.Terminal.Settings.SplitType SplitMode { get; };
     };
 }

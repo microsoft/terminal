@@ -69,6 +69,10 @@ public:
 
     ApiRoutines api;
 
+#ifdef UNIT_TESTING
+    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
+#endif
+
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
 };

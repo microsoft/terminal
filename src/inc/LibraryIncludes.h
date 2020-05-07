@@ -46,6 +46,7 @@
 #include <functional>
 #include <set>
 #include <unordered_set>
+#include <regex>
 
 // WIL
 #include <wil/Common.h>
@@ -69,11 +70,24 @@
 #include <CppCoreCheck/Warnings.h>
 
 // Chromium Numerics (safe math)
+#pragma warning(push)
+#pragma warning(disable:4100) // unreferenced parameter
 #include <base/numerics/safe_math.h>
+#pragma warning(pop)
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
+
+// LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
+#include <libpopcnt.h>
+
+// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
+// Variable-size compressed-storage header-only bit flag storage library.
+#include <dynamic_bitset.hpp>
+
+// {fmt}, a C++20-compatible formatting library
+#include <fmt/format.h>
 
 // SAL
 #include <sal.h>
@@ -81,8 +95,16 @@
 // WRL
 #include <wrl.h>
 
+// WEX/TAEF testing
+// Include before TIL if we're unit testing so it can light up WEX/TAEF template extensions
+#ifdef UNIT_TESTING
+#include <WexTestClass.h>
+#endif
+
 // TIL - Terminal Implementation Library
+#ifndef BLOCK_TIL // Certain projects may want to include TIL manually to gain superpowers
 #include "til.h"
+#endif
 
 #pragma warning(pop)
 

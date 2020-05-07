@@ -40,7 +40,7 @@ const FontInfo& Terminal::GetFontInfo() noexcept
     //      by this method.
     // We could very likely replace this with just an IsRasterFont method
     //      (which would return false)
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
     return _fakeFontInfo;
 }
 #pragma warning(pop)
@@ -59,8 +59,8 @@ const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noe
 {
     const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
     // We only care about alpha for the default BG (which enables acrylic)
-    // If the bg isn't the default bg color, then make it fully opaque.
-    if (!attr.BackgroundIsDefault())
+    // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
+    if (!attr.BackgroundIsDefault() || WI_IsFlagSet(attr.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO))
     {
         return 0xff000000 | bgColor;
     }
@@ -105,9 +105,11 @@ COLORREF Terminal::GetCursorColor() const noexcept
     return _buffer->GetCursor().GetColor();
 }
 
-bool Terminal::IsCursorDoubleWidth() const noexcept
+bool Terminal::IsCursorDoubleWidth() const
 {
-    return false;
+    const auto position = _buffer->GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
+    return IsGlyphFullWidth(*it);
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
@@ -173,7 +175,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetEndSelectionPosition(realCoordEnd);
+    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept
@@ -203,4 +205,14 @@ void Terminal::LockConsole() noexcept
 void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
+}
+
+// Method Description:
+// - Returns whether the screen is inverted;
+//   This state is not currently known to Terminal.
+// Return Value:
+// - false.
+bool Terminal::IsScreenReversed() const noexcept
+{
+    return false;
 }

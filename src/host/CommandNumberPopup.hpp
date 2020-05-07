@@ -20,7 +20,7 @@ Author:
 class CommandNumberPopup final : public Popup
 {
 public:
-    CommandNumberPopup(SCREEN_INFORMATION& screenInfo);
+    explicit CommandNumberPopup(SCREEN_INFORMATION& screenInfo);
 
     [[nodiscard]] NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
 

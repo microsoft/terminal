@@ -75,6 +75,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class AnsiStatusType : unsigned int
     {
+        OS_OperatingStatus = 5,
         CPR_CursorPositionReport = 6,
     };
 
@@ -84,11 +85,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECCOLM_SetNumberOfColumns = 3,
         DECSCNM_ScreenMode = 5,
         DECOM_OriginMode = 6,
+        DECAWM_AutoWrapMode = 7,
         ATT610_StartCursorBlink = 12,
         DECTCEM_TextCursorEnableMode = 25,
         XTERM_EnableDECCOLMSupport = 40,
         VT200_MOUSE_MODE = 1000,
-        BUTTTON_EVENT_MOUSE_MODE = 1002,
+        BUTTON_EVENT_MOUSE_MODE = 1002,
         ANY_EVENT_MOUSE_MODE = 1003,
         UTF8_EXTENDED_MODE = 1005,
         SGR_EXTENDED_MODE = 1006,

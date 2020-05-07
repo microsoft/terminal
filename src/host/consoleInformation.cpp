@@ -35,7 +35,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // OutputCPInfo initialized below
     _cookedReadData(nullptr),
     ConsoleIme{},
-    terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo(),
     _blinker{},
     renderData{}
@@ -178,18 +177,6 @@ COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
 void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
 {
     _cookedReadData = readData;
-}
-
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - events - the input events to write to the input buffer
-// Return Value:
-// - <none>
-void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
-{
-    ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer->Write(events);
 }
 
 // Method Description:

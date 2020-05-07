@@ -13,9 +13,8 @@
 
 #include "ConptyConnection.g.cpp"
 
-#include "../../types/inc/Utils.hpp"
+#include "../../types/inc/utils.hpp"
 #include "../../types/inc/Environment.hpp"
-#include "../../types/inc/UTF8OutPipeReader.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
@@ -111,9 +110,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
-            auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
+            if (_environment)
+            {
+                // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
+                for (auto item : _environment)
+                {
+                    auto key = item.Key();
+                    auto value = item.Value();
+
+                    // avoid clobbering WSLENV
+                    if (std::wstring_view{ key } == L"WSLENV")
+                    {
+                        auto current = environment[L"WSLENV"];
+                        value = current + L":" + value;
+                    }
+
+                    environment.insert_or_assign(key.c_str(), value.c_str());
+                }
+            }
+
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+
+            auto wslEnv = environment[L"WSLENV"];
             wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
             environment.insert_or_assign(L"WSLENV", wslEnv);
         }
@@ -154,6 +173,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
 
+        const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(_piClient.hProcess, nullptr);
+        _clientName = processName.filename().wstring();
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConPtyConnected",
+            TraceLoggingDescription("Event emitted when ConPTY connection is started"),
+            TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -161,6 +193,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
+                                       const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                        const uint32_t initialRows,
                                        const uint32_t initialCols,
                                        const guid& initialGuid) :
@@ -169,7 +202,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
-        _guid{ initialGuid }
+        _environment{ environment },
+        _guid{ initialGuid },
+        _u8State{},
+        _u16Str{},
+        _buffer{}
     {
         if (_guid == guid{})
         {
@@ -186,7 +223,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     try
     {
         const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
-        THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, 0, &_inPipe, &_outPipe, &_hPC));
+        THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK, &_inPipe, &_outPipe, &_hPC));
         THROW_IF_FAILED(_LaunchAttachedClient());
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -231,7 +268,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // EXIT POINT
         const auto hr = wil::ResultFromCaughtException();
 
-        winrt::hstring failureText{ wil::str_printf<std::wstring>(RS_(L"ProcessFailedToLaunch").c_str(), gsl::narrow_cast<unsigned int>(hr), _commandline.c_str()) };
+        winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") }, gsl::narrow_cast<unsigned long>(hr), _commandline) };
         _TerminalOutputHandlers(failureText);
         _transitionToState(ConnectionState::Failed);
 
@@ -247,7 +284,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         try
         {
-            winrt::hstring exitText{ wil::str_printf<std::wstring>(RS_(L"ProcessExited").c_str(), status) };
+            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, status) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
         }
@@ -344,14 +381,31 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        UTF8OutPipeReader pipeReader{ _outPipe.get() };
-        std::string_view strView{};
+        // Keep us alive until the output thread terminates; the destructor
+        // won't wait for us, and the known exit points _do_.
+        auto strongThis{ get_strong() };
 
         // process the data of the output pipe in a loop
         while (true)
         {
-            const HRESULT result = pipeReader.Read(strView);
-            if (FAILED(result) || result == S_FALSE)
+            DWORD read{};
+
+            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            if (readFail) // reading failed (we must check this first, because read will also be 0.)
+            {
+                const auto lastError = GetLastError();
+                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                {
+                    // EXIT POINT
+                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
+                    _transitionToState(ConnectionState::Failed);
+                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
+                }
+                // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            }
+
+            const HRESULT result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
@@ -362,35 +416,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(-1);
+                return gsl::narrow_cast<DWORD>(result);
             }
 
-            if (strView.empty())
+            if (_u16Str.empty())
             {
                 return 0;
             }
 
-            if (!_recievedFirstByte)
+            if (!_receivedFirstByte)
             {
                 const auto now = std::chrono::high_resolution_clock::now();
                 const std::chrono::duration<double> delta = now - _startTime;
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
                 TraceLoggingWrite(g_hTerminalConnectionProvider,
-                                  "RecievedFirstByte",
-                                  TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  "ReceivedFirstByte",
+                                  TraceLoggingDescription("An event emitted when the connection receives the first byte"),
                                   TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-                _recievedFirstByte = true;
+                _receivedFirstByte = true;
             }
 
-            // Convert buffer to hstring
-            auto hstr{ winrt::to_hstring(strView) };
-
             // Pass the output to our registered event handlers
-            _TerminalOutputHandlers(hstr);
+            _TerminalOutputHandlers(_u16Str);
         }
 
         return 0;

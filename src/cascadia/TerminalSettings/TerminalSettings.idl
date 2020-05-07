@@ -38,6 +38,12 @@ namespace Microsoft.Terminal.Settings
         Horizontal
     };
 
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety

@@ -17,7 +17,7 @@ public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
-    void MakeWindow() noexcept;
+    virtual void MakeWindow() noexcept;
     void Close();
     virtual void OnSize(const UINT width, const UINT height);
 
@@ -49,7 +49,7 @@ public:
         TerminalApp to have TerminalApp handle the ChangeViewport call.
         (See IslandWindow::SetCreateCallback as an example of a similar
         pattern we're using today.) That way, if someone else were trying
-        to resuse this, they could have their own AppHost (or TerminalApp
+        to reuse this, they could have their own AppHost (or TerminalApp
         equivalent) handle the ChangeViewport call their own way.
         */
         return;
@@ -72,6 +72,7 @@ public:
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
+    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
 
 protected:
     void ForceResize()
@@ -101,4 +102,8 @@ protected:
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
+
+private:
+    // This minimum width allows for width the tabs fit
+    static constexpr long minimumWidth = 460L;
 };

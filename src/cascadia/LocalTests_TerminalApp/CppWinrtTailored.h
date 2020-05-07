@@ -57,7 +57,7 @@ namespace details
 
 // Function Description:
 // - This is a helper function for running a bit of test code on the UI thread.
-//   It will synchonously dispatch the provided function to the UI thread, and
+//   It will synchronously dispatch the provided function to the UI thread, and
 //   wait for that function to complete, before returning to the caller. Callers
 //   should make sure to VERIFY_SUCCEEDED the result of this function, to ensure
 //   the code executed successfully.

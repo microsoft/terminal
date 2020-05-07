@@ -13,5 +13,5 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
-#include "MoveSelectionAnchorArgs.g.cpp"
+#include "MoveSelectionPointArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"

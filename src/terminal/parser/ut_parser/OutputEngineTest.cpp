@@ -525,7 +525,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
+        VERIFY_ARE_EQUAL(mach._oscParameter, MAX_PARAMETER_VALUE);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -542,7 +542,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
+        VERIFY_ARE_EQUAL(mach._oscParameter, MAX_PARAMETER_VALUE);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -680,6 +680,7 @@ public:
         _cursorBlinking{ true },
         _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
+        _isAutoWrapEnabled{ true },
         _warningBell{ false },
         _carriageReturn{ false },
         _lineFeed{ false },
@@ -865,6 +866,9 @@ public:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
             break;
+        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+            fSuccess = SetAutoWrapMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
@@ -933,6 +937,12 @@ public:
     bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool SetAutoWrapMode(const bool wrapAtEOL) noexcept override
+    {
+        _isAutoWrapEnabled = wrapAtEOL;
         return true;
     }
 
@@ -1011,6 +1021,7 @@ public:
     bool _cursorBlinking;
     bool _isScreenModeReversed;
     bool _isOriginModeRelative;
+    bool _isAutoWrapEnabled;
     bool _warningBell;
     bool _carriageReturn;
     bool _lineFeed;
@@ -1053,14 +1064,19 @@ class StateMachineExternalTest final
     void ApplyParameterBoundary(size_t* uiExpected, size_t uiGiven)
     {
         // 0 and 1 should be 1. Use the preset value.
-        // 2019-12: No longer bound by SHORT_MAX. Goes all the way to size_t.
+        // 1-MAX_PARAMETER_VALUE should be what we set.
+        // > MAX_PARAMETER_VALUE should be MAX_PARAMETER_VALUE.
         if (uiGiven <= 1)
         {
             *uiExpected = 1u;
         }
-        else if (uiGiven > 1)
+        else if (uiGiven > 1 && uiGiven <= MAX_PARAMETER_VALUE)
         {
             *uiExpected = uiGiven;
+        }
+        else if (uiGiven > MAX_PARAMETER_VALUE)
+        {
+            *uiExpected = MAX_PARAMETER_VALUE; // 32767 is our max value.
         }
     }
 
@@ -1341,6 +1357,25 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_cursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_line, 1u);
         VERIFY_ARE_EQUAL(pDispatch->_column, 1u);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestAutoWrapMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?7l");
+        VERIFY_IS_FALSE(pDispatch->_isAutoWrapEnabled);
+
+        pDispatch->ClearState();
+        pDispatch->_isAutoWrapEnabled = false;
+
+        mach.ProcessString(L"\x1b[?7h");
+        VERIFY_IS_TRUE(pDispatch->_isAutoWrapEnabled);
 
         pDispatch->ClearState();
     }
@@ -1710,7 +1745,18 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 2: Check CSR (cursor position command) case 6. Should succeed.");
+        Log::Comment(L"Test 2: Check OS (operating status) case 5. Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::OS_OperatingStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check CPR (cursor position report) case 6. Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'6');
@@ -1721,7 +1767,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 3: Check unimplemented case 1. Should fail.");
+        Log::Comment(L"Test 4: Check unimplemented case 1. Should fail.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'1');
@@ -1807,7 +1853,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         ///////////////////////////////////////////////////////////////////////
-        Log::Comment(L"Test 3: Two sequences seperated by a non-sequence of characters");
+        Log::Comment(L"Test 3: Two sequences separated by a non-sequence of characters");
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 

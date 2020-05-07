@@ -6,7 +6,7 @@ Module Name:
 - IDefaultColorProvider.hpp
 
 Abstract:
-- Provides an abstraction for aquiring the default colors of a console object.
+- Provides an abstraction for acquiring the default colors of a console object.
 
 Author(s):
 - Mike Griese (migrie) 11 Oct 2017

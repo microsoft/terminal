@@ -3,8 +3,18 @@
 
 #pragma once
 
+#define _TIL_INLINEPREFIX __declspec(noinline) inline
+
 #include "til/at.h"
+#include "til/color.h"
+#include "til/math.h"
 #include "til/some.h"
+#include "til/size.h"
+#include "til/point.h"
+#include "til/operators.h"
+#include "til/rectangle.h"
+#include "til/bitmap.h"
+#include "til/u8u16convert.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
@@ -33,3 +43,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         LOG_CAUGHT_EXCEPTION();             \
         return false;                       \
     }
+
+// MultiByteToWideChar has a bug in it where it can return 0 and then not set last error.
+// WIL has a fit if the last error is 0 when a bool false is returned.
+// This macro doesn't have a fit. It just reports E_UNEXPECTED instead.
+#define THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(condition) \
+    do                                                    \
+    {                                                     \
+        if (condition)                                    \
+        {                                                 \
+            const auto gle = ::GetLastError();            \
+            if (gle)                                      \
+            {                                             \
+                THROW_WIN32(gle);                         \
+            }                                             \
+            else                                          \
+            {                                             \
+                THROW_HR(E_UNEXPECTED);                   \
+            }                                             \
+        }                                                 \
+    } while (0, 0)

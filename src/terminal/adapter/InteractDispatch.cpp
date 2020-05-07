@@ -46,8 +46,9 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WriteCtrlC()
 {
-    KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    return _pConApi->PrivateWriteConsoleControlInput(key);
+    KeyEvent keyDown = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    KeyEvent keyUp = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    return _pConApi->PrivateWriteConsoleControlInput(keyDown) && _pConApi->PrivateWriteConsoleControlInput(keyUp);
 }
 
 // Method Description:
@@ -88,7 +89,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
-//  This is kept seperate from the output version, as there may be
+//  This is kept separate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform
@@ -202,4 +203,15 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     }
 
     return success;
+}
+
+// Routine Description:
+// - Checks if the InputBuffer is willing to accept VT Input directly
+// Arguments:
+// - <none>
+// Return value:
+// - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
+bool InteractDispatch::IsVtInputEnabled() const
+{
+    return _pConApi->PrivateIsVtInputEnabled();
 }

@@ -13,12 +13,13 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
-#include "MoveSelectionAnchorArgs.g.h"
+#include "MoveSelectionPointArgs.g.h"
 #include "SplitPaneArgs.g.h"
 
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
+#include "TerminalWarnings.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
@@ -28,10 +29,13 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    using FromJsonResult = std::tuple<winrt::TerminalApp::IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
-        ActionEventArgs(const TerminalApp::IActionArgs& args) :
+
+        explicit ActionEventArgs(const TerminalApp::IActionArgs& args) :
             _ActionArgs{ args } {};
         GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
         GETSET_PROPERTY(bool, Handled, false);
@@ -92,9 +96,9 @@ namespace winrt::TerminalApp::implementation
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        GETSET_PROPERTY(bool, TrimWhitespace, true);
+        GETSET_PROPERTY(bool, SingleLine, false);
 
-        static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
+        static constexpr std::string_view SingleLineKey{ "singleLine" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -102,19 +106,19 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TrimWhitespace == _TrimWhitespace;
+                return otherAsUs->_SingleLine == _SingleLine;
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
-            if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
+            if (auto singleLine{ json[JsonKey(SingleLineKey)] })
             {
-                args->_TrimWhitespace = trimWhitespace.asBool();
+                args->_SingleLine = singleLine.asBool();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -133,19 +137,19 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-            return *args;
+            return { *args, {} };
         }
     };
 
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
         SwitchToTabArgs() = default;
-        GETSET_PROPERTY(int32_t, TabIndex, 0);
+        GETSET_PROPERTY(uint32_t, TabIndex, 0);
 
         static constexpr std::string_view TabIndexKey{ "index" };
 
@@ -159,15 +163,15 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SwitchToTabArgs>();
             if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
             {
-                args->_TabIndex = tabIndex.asInt();
+                args->_TabIndex = tabIndex.asUInt();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -223,7 +227,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ResizePaneArgs>();
@@ -231,7 +235,14 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return *args;
+            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 
@@ -252,7 +263,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MoveFocusArgs>();
@@ -260,7 +271,14 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return *args;
+            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 
@@ -281,7 +299,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<AdjustFontSizeArgs>();
@@ -289,7 +307,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Delta = jsonDelta.asInt();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -328,9 +346,9 @@ namespace winrt::TerminalApp::implementation
         return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
     };
 
-    struct MoveSelectionAnchorArgs : public MoveSelectionAnchorArgsT<MoveSelectionAnchorArgs>
+    struct MoveSelectionPointArgs : public MoveSelectionPointArgsT<MoveSelectionPointArgs>
     {
-        MoveSelectionAnchorArgs() = default;
+        MoveSelectionPointArgs() = default;
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SelectionExpansionMode, ExpansionMode, winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell);
 
@@ -340,17 +358,17 @@ namespace winrt::TerminalApp::implementation
     public:
         bool Equals(const IActionArgs& other)
         {
-            auto otherAsUs = other.try_as<MoveSelectionAnchorArgs>();
+            auto otherAsUs = other.try_as<MoveSelectionPointArgs>();
             if (otherAsUs)
             {
                 return (otherAsUs->_Direction == _Direction) && (otherAsUs->_ExpansionMode == _ExpansionMode);
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MoveSelectionAnchorArgs>();
+            auto args = winrt::make_self<MoveSelectionPointArgs>();
             if (auto directionString{ json[JsonKey(DirectionKey)] })
             {
                 args->_Direction = ParseDirection(directionString.asString());
@@ -360,7 +378,14 @@ namespace winrt::TerminalApp::implementation
                     args->_ExpansionMode = ParseExpansionMode(expansionModeString.asString());
                 }
             }
-            return *args;
+            if (args->_Direction == winrt::Microsoft::Terminal::Settings::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 
@@ -384,16 +409,29 @@ namespace winrt::TerminalApp::implementation
             return winrt::Microsoft::Terminal::Settings::SplitState::Automatic;
         }
         // default behavior for invalid data
-        return winrt::Microsoft::Terminal::Settings::SplitState::None;
+        return winrt::Microsoft::Terminal::Settings::SplitState::Automatic;
     };
+
+    // Possible SplitType values
+    static constexpr std::string_view DuplicateKey{ "duplicate" };
+    static winrt::Microsoft::Terminal::Settings::SplitType ParseSplitModeState(const std::string& stateString)
+    {
+        if (stateString == DuplicateKey)
+        {
+            return winrt::Microsoft::Terminal::Settings::SplitType::Duplicate;
+        }
+        return winrt::Microsoft::Terminal::Settings::SplitType::Manual;
+    }
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitState, SplitStyle, winrt::Microsoft::Terminal::Settings::SplitState::None);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitState, SplitStyle, winrt::Microsoft::Terminal::Settings::SplitState::Automatic);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitType, SplitMode, winrt::Microsoft::Terminal::Settings::SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
+        static constexpr std::string_view SplitModeKey{ "splitMode" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -402,11 +440,12 @@ namespace winrt::TerminalApp::implementation
             if (otherAsUs)
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
-                       otherAsUs->_TerminalArgs == _TerminalArgs;
+                       otherAsUs->_TerminalArgs == _TerminalArgs &&
+                       otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
@@ -415,7 +454,11 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
-            return *args;
+            if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
+            {
+                args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
+            }
+            return { *args, {} };
         }
     };
 }

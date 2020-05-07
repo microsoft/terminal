@@ -1,0 +1,13 @@
+{"Registrations":[ 
+    {
+      "component": { 
+       "type": "git", 
+       "git": { 
+         "repositoryUrl": "https://github.com/fmtlib/fmt", 
+         "commitHash": "9bdd1596cef1b57b9556f8bef32dc4a32322ef3e" 
+         }
+       }
+    }
+ ],
+ "Version": 1
+}

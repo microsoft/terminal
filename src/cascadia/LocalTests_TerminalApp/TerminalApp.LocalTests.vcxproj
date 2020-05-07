@@ -38,6 +38,14 @@
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -47,6 +55,7 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="CommandlineTest.cpp" />
     <ClCompile Include="SettingsTests.cpp" />
     <ClCompile Include="ProfileTests.cpp" />
     <ClCompile Include="ColorSchemeTests.cpp" />
@@ -80,7 +89,7 @@
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
 
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->

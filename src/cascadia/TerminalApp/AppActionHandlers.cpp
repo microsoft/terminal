@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -198,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.TrimWhitespace());
+            const auto handled = _CopyText(realArgs.SingleLine());
             args.Handled(handled);
         }
     }
@@ -236,13 +236,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleMoveSelectionAnchor(const IInspectable& /*sender*/,
-                                                  const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleMoveSelectionPoint(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveSelectionAnchorArgs>())
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveSelectionPointArgs>())
         {
             const auto termControl = _GetActiveControl();
-            const auto handled = termControl.MoveSelectionAnchor(realArgs.Direction(), realArgs.ExpansionMode());
+            const auto handled = termControl.MoveSelectionPoint(realArgs.Direction(), realArgs.ExpansionMode());
             args.Handled(handled);
         }
     }

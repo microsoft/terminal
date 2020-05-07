@@ -5,7 +5,7 @@
 // - Pane.h
 //
 // Abstract:
-// - Panes are an abstraction by which the terminal can dislay multiple terminal
+// - Panes are an abstraction by which the terminal can display multiple terminal
 //   instances simultaneously in a single terminal window. While tabs allow for
 //   a single terminal window to have many terminal sessions running
 //   simultaneously within a single window, only one tab can be visible at a
@@ -63,9 +63,12 @@ public:
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     void Shutdown();
     void Close();
+
+    int GetLeafPaneCount() const noexcept;
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -107,8 +110,7 @@ private:
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
-    void _CreateSplitContent();
+    void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
     void _UpdateBorders();
 
@@ -133,6 +135,9 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     winrt::Microsoft::Terminal::Settings::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::SplitState& splitType) const;
+
+    std::optional<winrt::Microsoft::Terminal::Settings::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.
@@ -182,7 +187,7 @@ private:
     };
 
     // Helper structure that builds a (roughly) binary tree corresponding
-    // to the pane tree. Used for layouting panes with snapped sizes.
+    // to the pane tree. Used for laying out panes with snapped sizes.
     struct LayoutSizeNode
     {
         float size;
@@ -191,13 +196,13 @@ private:
         std::unique_ptr<LayoutSizeNode> secondChild;
 
         // These two fields hold next possible snapped values of firstChild and
-        // secondChild. Although that could be calculated from these fields themself,
+        // secondChild. Although that could be calculated from these fields themselves,
         // it would be wasteful as we have to know these values more often than for
         // simple increment. Hence we cache that here.
         std::unique_ptr<LayoutSizeNode> nextFirstChild;
         std::unique_ptr<LayoutSizeNode> nextSecondChild;
 
-        LayoutSizeNode(const float minSize);
+        explicit LayoutSizeNode(const float minSize);
         LayoutSizeNode(const LayoutSizeNode& other);
 
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
