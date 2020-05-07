@@ -32,10 +32,13 @@
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Release'">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'==''">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
@@ -46,10 +49,15 @@
     <PRIResource Include="Resources\*\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
-    <!-- This is picked up by CascadiaResources.build.items. -->
+
+  <!-- This is picked up by CascadiaResources.build.items. -->
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'==''">
     <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
+    <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
@@ -117,14 +125,14 @@
   <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
        This is part of the generic machinery that applies to every AppX. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
-    <ItemGroup Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
     </ItemGroup>
   </Target>
 
   <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
-    <ItemGroup Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" />
     </ItemGroup>
   </Target>
