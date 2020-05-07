@@ -1409,12 +1409,14 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.X, coordNewScreenSize.Y);
         return STATUS_INVALID_PARAMETER;
     }
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
+                                                     gci.GetDefaultAttributes(),
                                                      GetAttributes(),
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
