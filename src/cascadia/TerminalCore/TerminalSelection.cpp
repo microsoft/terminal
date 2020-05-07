@@ -266,17 +266,16 @@ void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
 }
 
 // Method Description:
-// - update the endSelectionPosition anchor according to the direction provided.
+// - update _selection's endpoint according to the direction provided.
 //    It is moved according the the expansion mode.
 // Arguments:
-// - dir: the direction that the selection anchor will attempt to move to
+// - dir: the direction that the selection endpoint will attempt to move to
 // - mode: the selection expansion mode that the selection anchor will adhere to
 // Return Value:
 // - <none>
-void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionAnchorTarget target)
+void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionEndpoint target)
 {
-    // convert to buffer coordinates
-    COORD endpoint = ((target == SelectionAnchorTarget::Start) ? _selection->start : _selection->end);
+    COORD endpoint = ((target == SelectionEndpoint::Start) ? _selection->start : _selection->end);
 
     switch (mode)
     {
@@ -313,13 +312,13 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
 
     if (notifyScroll)
     {
+        // TODO CARLOS: I need to learn how to do TriggerScroll here properly
         _buffer->GetRenderTarget().TriggerRedrawAll();
         _NotifyScrollEvent();
     }
 
     // update internal state of selection anchor and vertical offset
-    THROW_IF_FAILED(ShortSub(endpoint.Y, gsl::narrow<SHORT>(ViewStartIndex()), &endpoint.Y));
-    if (target == SelectionAnchorTarget::Start)
+    if (target == SelectionEndpoint::Start)
     {
         _selection->start = endpoint;
     }
@@ -365,11 +364,11 @@ void Terminal::_UpdateAnchorByCell(Direction dir, COORD& anchor)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchorTarget target)
+void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionEndpoint target)
 {
     // we need this to be able to compare it later
     // NOTE: if target = START --> return END; else return START
-    COORD otherSelectionAnchor = ((target == SelectionAnchorTarget::Start) ? _selection->end : _selection->start);
+    COORD otherSelectionAnchor = ((target == SelectionEndpoint::Start) ? _selection->end : _selection->start);
 
     const auto bufferViewport = _buffer->GetSize();
     const auto comparison = bufferViewport.CompareInBounds(anchor, otherSelectionAnchor);

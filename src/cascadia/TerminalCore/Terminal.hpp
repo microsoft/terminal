@@ -198,14 +198,14 @@ public:
         Up,
         Down
     };
-    enum class SelectionAnchorTarget
+    enum class SelectionEndpoint
     {
         End,
         Start
     };
     void MoveSelectionAnchor(Direction dir,
                              SelectionExpansionMode mode,
-                             SelectionAnchorTarget target = SelectionAnchorTarget::End);
+                             SelectionEndpoint target = SelectionEndpoint::End);
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
@@ -311,7 +311,7 @@ private:
 
     // These methods are used by Keyboard Selection
     void _UpdateAnchorByCell(Direction dir, COORD& anchor);
-    void _UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchorTarget target = SelectionAnchorTarget::End);
+    void _UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionEndpoint target = SelectionEndpoint::End);
     void _UpdateAnchorByViewport(Direction dir, COORD& anchor);
     void _UpdateAnchorByBuffer(Direction dir, COORD& anchor);
 #pragma endregion

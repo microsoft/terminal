@@ -1362,7 +1362,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Moves the selection anchor in use. Used for Keyboard Selection.
+    // - Moves the selection endpoint in use. Used for Keyboard Selection.
     // Arguments:
     // - dir: The direction to move the selection anchor in
     // - expansionMode: The movement mode in use for movement
