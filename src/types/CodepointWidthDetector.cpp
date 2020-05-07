@@ -22,7 +22,15 @@ namespace
     static constexpr std::array<UnicodeRange, 351> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
-        // GH #900 Supplemented with emoji ranges from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
+        //
+        // GH #900 - Supplemented with emoji codepoints from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
+        // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to force a font lookup,
+        // but since we default all Ambiguous width to Narrow, those emojis always came out looking squished/tiny. They've been
+        // moved into this table and marked as Wide.
+        // There are also some codepoints that Microsoft has given an emoji presentation where it isn't specified
+        // as emoji in the unicode standard or are specified as Narrow/Ambiguous in the EastAsianWidth.txt.
+        // Some of them are included in here, but there is no easy way to get a full list
+        // of Microsoft specific emoji, so others may be missing.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -178,12 +186,10 @@ namespace
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x260e, 0x260e, CodepointWidth::Wide },
         UnicodeRange{ 0x260e, 0x260f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2611, 0x2611, CodepointWidth::Wide },
+        UnicodeRange{ 0x2611, 0x2612, CodepointWidth::Wide }, // MS addition
         UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide },
         UnicodeRange{ 0x2618, 0x2618, CodepointWidth::Wide },
-        UnicodeRange{ 0x261c, 0x261c, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x261d, 0x261d, CodepointWidth::Wide },
-        UnicodeRange{ 0x261e, 0x261e, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x261a, 0x261f, CodepointWidth::Wide }, // 0x261A-0x261C, 0x261E-0x261F MS addition
         UnicodeRange{ 0x2620, 0x2620, CodepointWidth::Wide },
         UnicodeRange{ 0x2622, 0x2623, CodepointWidth::Wide },
         UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide },
@@ -195,11 +201,7 @@ namespace
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
         UnicodeRange{ 0x265f, 0x265f, CodepointWidth::Wide },
         UnicodeRange{ 0x2660, 0x2660, CodepointWidth::Wide },
-        UnicodeRange{ 0x2661, 0x2661, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2663, 0x2663, CodepointWidth::Wide },
-        UnicodeRange{ 0x2664, 0x2664, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2665, 0x2666, CodepointWidth::Wide },
-        UnicodeRange{ 0x2667, 0x2667, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2661, 0x2667, CodepointWidth::Wide }, // 0x2661, 0x2662, 0x2664, 0x2666 MS addition
         UnicodeRange{ 0x2668, 0x2668, CodepointWidth::Wide },
         UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
@@ -239,7 +241,7 @@ namespace
         UnicodeRange{ 0x26fe, 0x26ff, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2702, 0x2702, CodepointWidth::Wide },
         UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide },
-        UnicodeRange{ 0x2708, 0x270f, CodepointWidth::Wide },
+        UnicodeRange{ 0x2708, 0x2710, CodepointWidth::Wide }, // 0x2710, 0x270E MS addition
         UnicodeRange{ 0x2712, 0x2712, CodepointWidth::Wide },
         UnicodeRange{ 0x2714, 0x2714, CodepointWidth::Wide },
         UnicodeRange{ 0x2716, 0x2716, CodepointWidth::Wide },
@@ -254,7 +256,7 @@ namespace
         UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide },
         UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide },
         UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide },
-        UnicodeRange{ 0x2763, 0x2764, CodepointWidth::Wide },
+        UnicodeRange{ 0x2763, 0x2765, CodepointWidth::Wide }, // 0x2765 MS addition
         UnicodeRange{ 0x2776, 0x277f, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide },
         UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide },
@@ -299,7 +301,7 @@ namespace
         UnicodeRange{ 0x18800, 0x18af2, CodepointWidth::Wide },
         UnicodeRange{ 0x1b000, 0x1b11e, CodepointWidth::Wide },
         UnicodeRange{ 0x1b170, 0x1b2fb, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f004, 0x1f004, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f000, 0x1f02b, CodepointWidth::Wide }, // All mahjong tiles except 0x1f004 are MS addition
         UnicodeRange{ 0x1f0cf, 0x1f0cf, CodepointWidth::Wide },
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
@@ -334,7 +336,7 @@ namespace
         UnicodeRange{ 0x1f587, 0x1f587, CodepointWidth::Wide },
         UnicodeRange{ 0x1f58a, 0x1f58d, CodepointWidth::Wide },
         UnicodeRange{ 0x1f590, 0x1f590, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f595, 0x1f596, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f594, 0x1f596, CodepointWidth::Wide }, // 0x1f594 MS addition
         UnicodeRange{ 0x1f5a4, 0x1f5a5, CodepointWidth::Wide },
         UnicodeRange{ 0x1f5a8, 0x1f5a8, CodepointWidth::Wide },
         UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide },
