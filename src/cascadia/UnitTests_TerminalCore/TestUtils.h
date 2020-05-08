@@ -71,6 +71,8 @@ public:
         size_t currentCharIndex = 0;
         for (const auto wch : expectedString)
         {
+            // This test spews out a lot of verify logging by default because of
+            // the loops, so suppress that to only show the failures.
             WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
 
             wchar_t buffer[]{ wch, L'\0' };

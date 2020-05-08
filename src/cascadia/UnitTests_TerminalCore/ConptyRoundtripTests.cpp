@@ -2981,6 +2981,20 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
 
+void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
+{
+    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
+                                             string.data(),
+                                             string.data(),
+                                             string.data(),
+                                             &dwNumBytes,
+                                             nullptr,
+                                             screenInfo.GetTextBuffer().GetCursor().GetPosition().X,
+                                             flags,
+                                             nullptr));
+}
+
 void ConptyRoundtripTests::WrapNewLineAtBottom()
 {
     // The actual bug case is
@@ -2996,9 +3010,14 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
         TEST_METHOD_PROPERTY(L"Data:circledRows", L"{2, 4, 10}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int DontPaint = 0;
-    constexpr int PaintAfterBothLines = 1;
-    constexpr int PaintEveryLine = 2;
+
+    // By modifying how often we call PaintFrame, we can test if different
+    // timings for the frame affect the results. In this test we'll be printing
+    // a bunch of paired lines. These values control when the PaintFrame calls
+    // will occur:
+    constexpr int DontPaint = 0; // Only paint at the end of all the output
+    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
 
     constexpr int PrintWithPrintString = 0;
     constexpr int PrintWithWriteCharsLegacy = 1;
@@ -3041,18 +3060,26 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     const auto defaultAttrs = TextAttribute();
     const auto conhostDefaultAttrs = si.GetAttributes();
 
-    // This is a simple helper for calling WriteCharsLegacy with the correct
-    // args. It will call WCL a number of times for the provided length, writing
-    // `length` '~' characters to the buffer.
-    auto writeCharsLegacyHelper = [&](const auto length) {
-        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-        wchar_t* str = L"~";
-        size_t seqCb = 2;
-        for (auto i = 0; i < length; i++)
+    // Helper to abstract calls into either StateMachine::ProcessString or
+    // WriteCharsLegacy
+    auto print = [&](const std::wstring_view str) {
+        if (writingMethod == PrintWithPrintString)
         {
-            VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, hostTb->GetCursor().GetPosition().X, writeCharsLegacyMode, nullptr));
+            sm.ProcessString(str);
+        }
+        else if (writingMethod == PrintWithWriteCharsLegacy)
+        {
+            doWriteCharsLegacy(si, str, writeCharsLegacyMode);
         }
     };
+
+    // Each of the lines of text in the buffer will look like the following:
+    //
+    // Line 1 chars: ~~~~~~~~~~~~~~~~~~ <wrap>
+    // Line 1 attrs: YYYYYYYDDDDDDDDDDD (First 30 are yellow FG, then default attrs)
+    // Line 2 chars: ~~~~~~~~~~________ <break> (there are width/2 '~'s here)
+    // Line 2 attrs: DDDDDDDDDDDDDDDDDD (all are default attrs)
+    //
 
     for (auto i = 0; i < (TerminalViewHeight + circledRows) / 2; i++)
     {
@@ -3064,38 +3091,23 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
 
         sm.ProcessString(L"\x1b[33m");
-        if (writingMethod == PrintWithPrintString)
-        {
-            sm.ProcessString(std::wstring(numCharsFirstColor, L'~'));
-        }
-        else if (writingMethod == PrintWithWriteCharsLegacy)
-        {
-            writeCharsLegacyHelper(numCharsFirstColor);
-        }
+
+        print(std::wstring(numCharsFirstColor, L'~'));
+
         sm.ProcessString(L"\x1b[m");
 
-        if (writingMethod == PrintWithPrintString)
-        {
-            sm.ProcessString(std::wstring(numCharsSecondColor, L'~'));
-        }
-        else if (writingMethod == PrintWithWriteCharsLegacy)
-        {
-            writeCharsLegacyHelper(numCharsSecondColor);
-        }
+        print(std::wstring(numCharsSecondColor, L'~'));
 
+        // If we're painting every line, then paint now, while conpty is in a
+        // deferred EOL state. Othewise, we'll wait to paint till after more output.
         if (paintEachNewline == PaintEveryLine)
         {
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
 
-        if (writingMethod == PrintWithPrintString)
-        {
-            sm.ProcessString(std::wstring(charsInSecondLine, L'~'));
-        }
-        else if (writingMethod == PrintWithWriteCharsLegacy)
-        {
-            writeCharsLegacyHelper(charsInSecondLine);
-        }
+        // Print the rest of the string of text, which should continue from the
+        // wrapped line before it.
+        print(std::wstring(charsInSecondLine, L'~'));
 
         if (paintEachNewline == PaintEveryLine ||
             paintEachNewline == PaintAfterBothLines)
@@ -3103,6 +3115,15 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
             VERIFY_SUCCEEDED(renderer.PaintFrame());
         }
     }
+
+    // At this point, the entire buffer looks like:
+    //
+    // row[0]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[1]: |~~~~~~             | <break>
+    // row[2]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[3]: |~~~~~~             | <break>
+    // row[4]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[5]: |~~~~~~             | <break>
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
         const auto width = viewport.width<short>();
@@ -3112,6 +3133,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
 
+            // The first line wrapped, the second didn't, so on and so forth
             const auto isWrapped = (row % 2) == 0;
             const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
 
@@ -3142,20 +3164,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
 }
 
-void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
-{
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
-    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
-                                             string.data(),
-                                             string.data(),
-                                             string.data(),
-                                             &dwNumBytes,
-                                             nullptr,
-                                             screenInfo.GetTextBuffer().GetCursor().GetPosition().X,
-                                             flags,
-                                             nullptr));
-}
-
 void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
 {
     // See https://github.com/microsoft/terminal/issues/5691
@@ -3172,9 +3180,14 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         TEST_METHOD_PROPERTY(L"Data:paintEachNewline", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:writingMethod", L"{0, 1}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int DontPaint = 0;
-    constexpr int PaintAfterBothLines = 1;
-    constexpr int PaintEveryLine = 2;
+
+    // By modifying how often we call PaintFrame, we can test if different
+    // timings for the frame affect the results. In this test we'll be printing
+    // a bunch of paired lines. These values control when the PaintFrame calls
+    // will occur:
+    constexpr int DontPaint = 0; // Only paint at the end of all the output
+    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
 
     constexpr int PrintWithPrintString = 0;
     constexpr int PrintWithWriteCharsLegacy = 1;
@@ -3266,6 +3279,16 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     print(L":");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
+    // At this point, the entire buffer looks like:
+    //
+    // row[25]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[26]: |~~~~~~             | <break>
+    // row[27]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[28]: |~~~~~~             | <break>
+    // row[29]: |~~~~~~~~~~~~~~~~~~~| <wrap>
+    // row[30]: |~~~~~~             | <break>
+    // row[31]: |:                  | <break>
+
     // Now, we'll print the lines that wrapped, after circling the buffer.
     for (auto i = 0; i < (circledRows) / 2; i++)
     {
@@ -3313,6 +3336,12 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
 
+            // The first line wrapped, the second didn't, so on and so forth.
+            // However, because conpty's buffer is only as tall as the viewport,
+            // we're going to lose lines off the top of the buffer. Most
+            // importantly, because we'll have the "prompt" line in the conpty
+            // buffer, then the top line of the conpty will _not_ be wrapped,
+            // when the 0th line of the terminal buffer _is_.
             const auto isWrapped = (row % 2) == (isTerminal ? 0 : 1);
             const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
 
