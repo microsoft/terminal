@@ -15,7 +15,7 @@ This spec describes a new set of keybindings that allows the user to create and 
 
 ConHost allows the user to modify a selection using the keyboard. Holding `Shift` allows the user to move the second selection endpoint in accordance with the arrow keys. The selection anchor updates by one cell per key event, allowing the user to refine the selected region.
 
-Mark mode allows the user to create a selection using only the keyboard. Then edit it as mentioned above.
+Mark mode allows the user to create a selection using only the keyboard, then edit it as mentioned above.
 
 
 ## Solution Design
@@ -25,7 +25,7 @@ The fundamental solution design for keyboard selection is that the responsibilit
 
 ### Fundamental Terminal Control Changes
 
-`TermControl::_KeyDownHandler()` is responsible for interpretting the key events. At the time of writing this spec, there are 3 cases handled in this order:
+`TermControl::_KeyDownHandler()` is responsible for interpreting the key events. At the time of writing this spec, there are 3 cases handled in this order:
 - Alt+Gr events
 - Keybindings
 - Send Key Event (also clears selection)
@@ -67,7 +67,7 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 
 ### Keybindings
 
-Thanks to Keybinding Args, there will only be 4 new commands that need to be added:
+Thanks to Keybinding Args, there will only be 2 new commands that need to be added:
 | Action | Keybinding Args | Description |
 |--|--|--|
 | `moveSelectionPoint` |                                                               | If a selection exists, moves the last selection anchor.
@@ -116,7 +116,7 @@ N/A
 
 With regards to the Terminal Core, the newly introduced code should rely on already existing and tested code. Thus no crash-related bugs are expected.
 
-With regards to Terminal Control and the settings model, crash-related bugs are not expected. However, ensuring that the selection is updated and cleared in general use-case scenarious must be ensured.
+With regards to Terminal Control and the settings model, crash-related bugs are not expected. However, ensuring that the selection is updated and cleared in general use-case scenarios must be ensured.
 
 ### Compatibility
 
