@@ -15,7 +15,12 @@ This spec describes a new set of keybindings that allows the user to create and 
 
 ConHost allows the user to modify a selection using the keyboard. Holding `Shift` allows the user to move the second selection endpoint in accordance with the arrow keys. The selection anchor updates by one cell per key event, allowing the user to refine the selected region.
 
-Mark mode allows the user to create a selection using only the keyboard, then edit it as mentioned above.
+### Creating a selection
+Mark Mode is a ConHost feature that allows the user to create a selection using only the keyboard. In CMD, pressing <kbd>ctrl+m</kbd> toggles mark mode. The current cursor position becomes a selection endpoint. The user can use the arrow keys to move that endpoint. While the user then holds <kbd>shift</kbd>, the selection endpoint ('start') is anchored to it's current position, and the arrow keys move the other selection endpoint ('end'). After a selection is made, the user can copy the selected text.
+
+Other terminal emulators have different approaches to this feature. iTerm2, for example, has Copy Mode (documentation [linked here](https://iterm2.com/documentation-copymode.html)). Here, <kbd>cmd+shift+c</kbd> makes the current cursor position become a selection endpoint. The arrow keys can be used to move that endpoint. However, unlike Mark Mode, a keybinding <kbd>c+space</kbd> is used to change the start/stop selecting. The first time it's pressed, the 'start' endpoint is anchored. The second time it's pressed, the 'end' endpoint is set. After this, you can still move a cursor, but the selection persists until a new selection is created (either by pressing the keybinding again, or using the mouse).
+
+Though tmux is not a terminal emulator, it does also have Copy Mode that behaves fairly similarly to that of iTerm2's.
 
 
 ## Solution Design
@@ -63,6 +68,39 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 **NOTE**: If `copyOnSelect` is enabled, we need to make sure we update the clipboard on every change in selection.
 
 
+
+### Mark Mode
+Mark Mode is a mode where the user can begin a selection using only the keyboard. It can be cycled into an enabled/disabled state through a user keybinding (`toggleMarkMode`).
+
+Upon being enabled, the current cursor position becomes the selection endpoint. The user can move the selection anchor using the same keybindings defined for keyboard selection (`moveSelectionPoint` action).
+
+#### `toggleMarkMode`
+`toggleMarkMode` has two keybinding arguments:
+| Parameter | Accepted Values | Default Value | Description |
+|--|--|--|--|
+| `anchorModifier` | regular keybindings and plain modifier keys | `Shift` | The keybinding used to anchor the selection endpoint to it's current text buffer position. While holding down that keybinding, any `moveSelectionPoint` actions will move the other selection anchor (`endSelectionPosition`). |
+| `anchorMode` | `Hold`, `Toggle` | `Hold` | If `Hold`, the user needs to hold the `anchorModifier` key to anchor the 'start' selection endpoint and move the second selection endpoint (like Mark Mode). If `Toggle`, the user switches between selection endpoints when they press it (like Copy Mode). |
+
+#### Rendering during Mark Mode
+Since we are just moving the selection anchors, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection anchor past the top/bottom of the viewport.
+
+In ConHost, output would be paused when a selection was present. This is a completely separate issue that is being tracked in (#2529)[https://github.com/microsoft/terminal/pull/2529].
+
+#### Interaction with CopyOnSelect
+If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". If `anchorMode=Hold`, the user has to use the `copy` keybinding to signify that they have finished creating a selection. If `anchorMode=Toggle`, the selection is copied either when the `copy` keybinding is used, or when the user presses the `anchorModifier` key and the 'end' endpoint is set.
+
+#### Exiting Mark Mode
+There are multiple ways to exit mark mode. The user can press...
+- the `toggleMarkMode` keybinding
+- the `ESC` key
+- the `copy` keybinding (which also copies the contents of the selection to the user's clipboard)
+
+
+
+
+
+
+
 ## UI/UX Design
 
 ### Keybindings
@@ -74,6 +112,7 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 |                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
 |                       | `Enum expansionMode { cell, word, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectEntireBuffer`  | | Select the entire text buffer.
+| `toggleMarkMode`      | | Enter or exit mark mode. This allows you to create an entire selection using only the keyboard. |
 
 
 By default, the following keybindings will be set:
@@ -100,6 +139,9 @@ By default, the following keybindings will be set:
 
 // Select All
 { "command": "selectEntireBuffer", "keys": "ctrl+shift+a" },
+
+// Mark Mode
+{ "command": { "action": "toggleMarkMode", "anchorModifier": "shift", "anchorMode": "toggle" }, "keys": "ctrl+shift+m" },
 ```
 
 ## Capabilities
@@ -107,6 +149,8 @@ By default, the following keybindings will be set:
 ### Accessibility
 
 Using the keyboard is generally a more accessible experience than using the mouse. Being able to modify a selection by using the keyboard is a good first step towards making selecting text more accessible.
+
+Being able to create and update a selection without the use of a mouse is a very important feature to users with disabilities. The UI Automation system is already set up to detect changes to the active selection, so as long as the UiaRenderer is notified of changes to the selection, this experience should be accessible.
 
 ### Security
 
@@ -130,7 +174,7 @@ The settings model makes all of these features easy to disable, if the user wish
 
 ## Future considerations
 
-This functionality will be expanded to create a feature similar to Mark Mode. This will allow a user to create a selection using only the keyboard.
+None
 
 
 ## Resources
