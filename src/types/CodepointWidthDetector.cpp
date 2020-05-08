@@ -30,7 +30,7 @@ namespace
         //
         // There are a couple of codepoints that Microsoft specifically gave an emoji representation
         // even if it's not specified as an emoji in the standard. I'll list the ones I'm aware of in this comment in case
-        // we decide to emojify them in the future:
+        // we decide to add them in the future:
         // 0x261A-0x261C, 0x261E-0x261F
         // 0x2661,
         // 0x2662,
