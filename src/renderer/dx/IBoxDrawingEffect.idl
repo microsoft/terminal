@@ -10,8 +10,9 @@ typedef struct BoxScale
 } BoxScale;
 
 [
+    uuid("C164926F-1A4D-470D-BB8A-3D2CC4B035E4"),
     object,
-    uuid("C164926F-1A4D-470D-BB8A-3D2CC4B035E4")
+    local
 ]
 interface IBoxDrawingEffect : IUnknown
 {

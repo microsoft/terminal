@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Midl>
-      <OutputDirectory>..\</OutputDirectory>
+      <OutputDirectory>$(SolutionDir)src\renderer\dx\</OutputDirectory>
     </Midl>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
