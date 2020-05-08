@@ -27,9 +27,18 @@ namespace
         // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to
         // force a font lookup, but since we default all Ambiguous width to Narrow, those emojis always
         // came out looking squished/tiny. They've been moved into this table and marked as Wide.
-        // ** Codepoint ranges marked with "OVR" have their given width from EastAsianWidth.txt overridden.
-        // ** Codepoint ranges marked with "MS" are given an emoji presentation by Microsoft but are not
-        //    necessarily specified as an emoji in the unicode standard.
+        //
+        // There are a couple of codepoints that Microsoft specifically gave an emoji representation
+        // even if it's not specified as an emoji in the standard. I'll list the ones I'm aware of in this comment in case
+        // we decide to use them in the future:
+        // 0x261A-0x261C, 0x261E-0x261F
+        // 0x2661,
+        // 0x2662,
+        // 0x2664,
+        // 0x2666 0x2710,
+        // 0x270E 0x2765 0x1f000 - 0x1f02b except 0x1f004 0x1f594
+        //
+        // *** Codepoint ranges marked with "OVR" have their given width from EastAsianWidth.txt overridden.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -185,10 +194,10 @@ namespace
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x260e, 0x260e, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x260e, 0x260f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2611, 0x2612, CodepointWidth::Wide }, // OVR all; MS all
+        UnicodeRange{ 0x2611, 0x2611, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide },
         UnicodeRange{ 0x2618, 0x2618, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x261a, 0x261f, CodepointWidth::Wide }, // OVR all; MS 61a-61c, 61e-61f
+        UnicodeRange{ 0x261d, 0x261d, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2620, 0x2620, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2622, 0x2623, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide }, // OVR
@@ -198,7 +207,9 @@ namespace
         UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
-        UnicodeRange{ 0x265f, 0x2668, CodepointWidth::Wide }, // OVR all; MS 661, 662, 664, 666
+        UnicodeRange{ 0x265f, 0x2660, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2663, 0x2663, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2665, 0x2666, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266f, 0x266f, CodepointWidth::Ambiguous },
@@ -236,7 +247,8 @@ namespace
         UnicodeRange{ 0x26fe, 0x26ff, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2702, 0x2702, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide },
-        UnicodeRange{ 0x2708, 0x2710, CodepointWidth::Wide }, // OVR 708-709, 70c-710; MS 710, 70e
+        UnicodeRange{ 0x2708, 0x270d, CodepointWidth::Wide }, // OVR 708-709, 70c-70d
+        UnicodeRange{ 0x270f, 0x270f, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2712, 0x2712, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2714, 0x2714, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2716, 0x2716, CodepointWidth::Wide }, // OVR
@@ -251,7 +263,7 @@ namespace
         UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide },
         UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide },
         UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide },
-        UnicodeRange{ 0x2763, 0x2765, CodepointWidth::Wide }, // OVR all, MS 65
+        UnicodeRange{ 0x2763, 0x2764, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2776, 0x277f, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide },
         UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide }, // OVR
@@ -296,7 +308,7 @@ namespace
         UnicodeRange{ 0x18800, 0x18af2, CodepointWidth::Wide },
         UnicodeRange{ 0x1b000, 0x1b11e, CodepointWidth::Wide },
         UnicodeRange{ 0x1b170, 0x1b2fb, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f000, 0x1f02b, CodepointWidth::Wide }, // OVR and MS all except 004
+        UnicodeRange{ 0x1f004, 0x1f004, CodepointWidth::Wide },
         UnicodeRange{ 0x1f0cf, 0x1f0cf, CodepointWidth::Wide },
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
@@ -331,7 +343,7 @@ namespace
         UnicodeRange{ 0x1f587, 0x1f587, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f58a, 0x1f58d, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f590, 0x1f590, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x1f594, 0x1f596, CodepointWidth::Wide }, // OVR 594, MS 594
+        UnicodeRange{ 0x1f595, 0x1f596, CodepointWidth::Wide },
         UnicodeRange{ 0x1f5a4, 0x1f5a5, CodepointWidth::Wide }, // OVR 5a5
         UnicodeRange{ 0x1f5a8, 0x1f5a8, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide }, // OVR
