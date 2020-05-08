@@ -35,7 +35,10 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
 
     TEST_METHOD(RendererDtorAndThread);
+
+#ifndef __INSIDE_WINDOWS
     TEST_METHOD(RendererDtorAndThreadAndDx);
+#endif
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
@@ -370,6 +373,7 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
+#ifndef __INSIDE_WINDOWS
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
@@ -396,6 +400,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         pRenderer.reset();
     }
 }
+#endif
 
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 {

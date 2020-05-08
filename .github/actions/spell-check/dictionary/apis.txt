@@ -1,6 +1,7 @@
 bitfield
 bitfields
 href
+IBox
 ICustom
 IMap
 IObject
@@ -9,6 +10,8 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOREDIRECTIONBITMAP
+oaidl
+ocidl
 rfind
 roundf
 SIZENS
