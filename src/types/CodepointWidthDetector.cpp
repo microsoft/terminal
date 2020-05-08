@@ -205,12 +205,13 @@ namespace
         UnicodeRange{ 0x262a, 0x262a, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2638, 0x263a, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
         UnicodeRange{ 0x265f, 0x2660, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2663, 0x2663, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2665, 0x2666, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2668, 0x2668, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266f, 0x266f, CodepointWidth::Ambiguous },
