@@ -73,9 +73,34 @@ Keys that we definitely need to support, that don't have unique VT sequences:
 
 ### Inspiration
 
-`kitty`, `Application Cursor Keys (DECCKM)`
+The design we've settled upon is one that's highly inspired by two precedents:
+* `Application Cursor Keys (DECCKM)` is a long-supported VT sequences which a
+  client application can use to request a different input format from the
+  Terminal. This is the DECSET sequence `^[[?1h`/`^[[?1l` (for enable/disable,
+  respectively). This changes the sequences sent by keys like the Arrow keys
+  from a sequence like `^[[A` to `^[OA` instead.
+* The `kitty` terminal emulator uses a similar DECSET sequence for enabling
+  their own input format, which they call ["full mode"]. Similar to DECCKM, this
+  changes the format of the sequences that the terminal should send for keyboard
+  input. Their "full mode" contains much more information when keys are pressed
+  or released (though, less than a full `INPUT_RECORD` worth of data). Instead
+  of input being sent to the client as a CSI or SS3 sequence, this `kitty` mode
+  uses "Application Program-Command" (or "APC) sequences , prefixed with `^[_`.
 
 
+[ConEmu specific OSCs](#ConEmu-specific-OSCs)
+
+https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
+
+https://www.iterm2.com/documentation-escape-codes.html
+
+```
+  ^[ ] 1000 ; 1 ; Ps ST
+
+         Ps: Whether to enable win32-input-mode or not. If omitted, defaults to '0'.
+             0: Disable win32-input-mode
+             1: Enable win32-input-mode
+```
 
 ### Requesting `win32-input-mode`
 
@@ -96,7 +121,7 @@ typedef struct _KEY_EVENT_RECORD {
 ```
 
 ```
-^[ _ 1 ; Kd ; Rc ; Vk ; Sc ; Uc ; Cs ST
+  ^[ _ 1 ; Kd ; Rc ; Vk ; Sc ; Uc ; Cs ST
 
          Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
 
@@ -114,6 +139,15 @@ typedef struct _KEY_EVENT_RECORD {
 
 **TODO**: Defaulting `Rc` to `1` makes more sense in my opinion, so
 `^[_1;;;Vk;;Uc;;ST` is all that's needed for most keys.
+
+
+
+TODO: I don't _love_ using APC 1 here - technically, if anyone else wants to use an
+APC, then there's no way to know if this conflicts. Maybe there's a convenient
+opening in CSI space?
+
+Also, pretty much no one uses OSC's for input, but conpty generally already does
+for window size, so we _could_ use that...
 
 ### Scenarios
 
@@ -262,11 +296,13 @@ Notably looking at [`modifyOtherKeys`](https://invisible-island.net/xterm/manpag
 
 ## Resources
 
-The initial discussion for this topic was done in [#879], and much of the
-research of available options is also available as a discussion in [#4999].
-
+* The initial discussion for this topic was done in [#879], and much of the
+  research of available options is also available as a discussion in [#4999].
 * [Why Is It so Hard to Detect Keyup Event on Linux?](https://blog.robertelder.org/detect-keyup-event-linux-terminal/)
   - and the [HackerNews discussion](https://news.ycombinator.com/item?id=19012132)
+* [ConEmu specific OSCs](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC)
+* [iterm2 specific sequences](https://www.iterm2.com/documentation-escape-codes.html)
+* [terminal-wg draft list of OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10)
 
 <!-- Footnotes -->
 [#530]: https://github.com/microsoft/terminal/issues/530
@@ -282,3 +318,5 @@ research of available options is also available as a discussion in [#4999].
 [#4999]: https://github.com/microsoft/terminal/issues/4999
 
 [`INPUT_RECORD`]: https://docs.microsoft.com/en-us/windows/console/input-record-str
+
+["full mode"]: https://sw.kovidgoyal.net/kitty/protocol-extensions.html#keyboard-handling
