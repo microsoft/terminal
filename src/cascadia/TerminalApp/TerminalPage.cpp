@@ -828,9 +828,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
-        _tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl);
-
-        _RemoveTabViewItemByIndex(tabIndexFromControl);
+        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _RemoveTabViewItemByIndex(tabIndexFromControl);
+        }
     }
 
     // Method Description:
@@ -851,6 +853,37 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
+        }
+        else if (_isFullscreen)
+        {
+            // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
+            // not Visible, it's _not_ going to raise a SelectionChanged event,
+            // which is what we usually use to focus another tab. Instead, we'll
+            // have to do it manually here.
+            //
+            // We can't use
+            //   auto selectedIndex = _tabView.SelectedIndex();
+            // Because this will always return -1 in this scenario unfortunately.
+            //
+            // So, what we're going to try to do is move the focus to the tab
+            // to the left, within the bounds of how many tabs we have.
+            //
+            // EX: we have 4 tabs: [A, B, C, D]. If we close:
+            // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
+            // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
+            // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
+            // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
+            const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
+            // _UpdatedSelectedTab will do the work of setting up the new tab as
+            // the focused one, and unfocusing all the others.
+            _UpdatedSelectedTab(newSelectedIndex);
+
+            // Also, we need to _manually_ set the SelectedItem of the tabView
+            // here. If we don't, then the TabView will technically not have a
+            // selected item at all, which can make things like ClosePane not
+            // work correctly.
+            auto newSelectedTab{ _GetStrongTabImpl(newSelectedIndex) };
+            _tabView.SelectedItem(newSelectedTab->GetTabViewItem());
         }
     }
 
@@ -911,8 +944,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // TODO GH#3327: Once we support colorizing the NewTab button based on
+        // the color of the tab, we'll want to make sure to call
+        // _ClearNewTabButtonColor here, to reset it to the default (for the
+        // newly created tab).
         // remove any colors left by other colored tabs
-        _ClearNewTabButtonColor();
+        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -1929,6 +1966,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
         winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
 
+        // TODO: Related to GH#3917 - I think if the system is set to "Dark"
+        // theme, but the app is set to light theme, then this lookup still
+        // returns to us the dark theme brushes. There's gotta be a way to get
+        // the right brushes...
+        // See also GH#5741
         if (res.HasKey(defaultBackgroundKey))
         {
             winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultBackgroundKey);
