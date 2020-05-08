@@ -19,18 +19,17 @@ namespace
         return range.upperBound < searchTerm;
     }
 
-    static constexpr std::array<UnicodeRange, 351> s_wideAndAmbiguousTable{
+    static constexpr std::array<UnicodeRange, 341> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
         //
         // GH #900 - Supplemented with emoji codepoints from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
-        // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to force a font lookup,
-        // but since we default all Ambiguous width to Narrow, those emojis always came out looking squished/tiny. They've been
-        // moved into this table and marked as Wide.
-        // There are also some codepoints that Microsoft has given an emoji presentation where it isn't specified
-        // as emoji in the unicode standard or are specified as Narrow/Ambiguous in the EastAsianWidth.txt.
-        // Some of them are included in here, but there is no easy way to get a full list
-        // of Microsoft specific emoji, so others may be missing.
+        // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to
+        // force a font lookup, but since we default all Ambiguous width to Narrow, those emojis always
+        // came out looking squished/tiny. They've been moved into this table and marked as Wide.
+        // ** Codepoint ranges marked with "OVR" have their given width from EastAsianWidth.txt overridden.
+        // ** Codepoint ranges marked with "MS" are given an emoji presentation by Microsoft but are not
+        //    necessarily specified as an emoji in the unicode standard.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -156,13 +155,13 @@ namespace
         UnicodeRange{ 0x22bf, 0x22bf, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2312, 0x2312, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x231a, 0x231b, CodepointWidth::Wide },
-        UnicodeRange{ 0x2328, 0x232a, CodepointWidth::Wide },
-        UnicodeRange{ 0x23cf, 0x23cf, CodepointWidth::Wide },
-        UnicodeRange{ 0x23e9, 0x23ef, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f0, 0x23f3, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f8, 0x23fa, CodepointWidth::Wide },
+        UnicodeRange{ 0x2328, 0x232a, CodepointWidth::Wide }, // OVR 328
+        UnicodeRange{ 0x23cf, 0x23cf, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x23e9, 0x23ef, CodepointWidth::Wide }, // OVR 3ed-3ef
+        UnicodeRange{ 0x23f0, 0x23f3, CodepointWidth::Wide }, // OVR 3f1-3f2
+        UnicodeRange{ 0x23f8, 0x23fa, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2460, 0x24c1, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x24c2, 0x24c2, CodepointWidth::Wide },
+        UnicodeRange{ 0x24c2, 0x24c2, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x24c3, 0x24e9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x24eb, 0x254b, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2550, 0x2573, CodepointWidth::Ambiguous },
@@ -170,7 +169,7 @@ namespace
         UnicodeRange{ 0x2592, 0x2595, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25a0, 0x25a1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25a3, 0x25a9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25aa, 0x25ab, CodepointWidth::Wide },
+        UnicodeRange{ 0x25aa, 0x25ab, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x25b2, 0x25b3, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25b6, 0x25b7, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25bc, 0x25bd, CodepointWidth::Ambiguous },
@@ -180,86 +179,82 @@ namespace
         UnicodeRange{ 0x25ce, 0x25d1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25e2, 0x25e5, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25ef, 0x25ef, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25fb, 0x25fe, CodepointWidth::Wide },
-        UnicodeRange{ 0x2600, 0x2604, CodepointWidth::Wide },
+        UnicodeRange{ 0x25fb, 0x25fe, CodepointWidth::Wide }, // OVR 5fb-5fc
+        UnicodeRange{ 0x2600, 0x2604, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2605, 0x2606, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x260e, 0x260e, CodepointWidth::Wide },
+        UnicodeRange{ 0x260e, 0x260e, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x260e, 0x260f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2611, 0x2612, CodepointWidth::Wide }, // MS addition
+        UnicodeRange{ 0x2611, 0x2612, CodepointWidth::Wide }, // OVR all; MS all
         UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide },
-        UnicodeRange{ 0x2618, 0x2618, CodepointWidth::Wide },
-        UnicodeRange{ 0x261a, 0x261f, CodepointWidth::Wide }, // 0x261A-0x261C, 0x261E-0x261F MS addition
-        UnicodeRange{ 0x2620, 0x2620, CodepointWidth::Wide },
-        UnicodeRange{ 0x2622, 0x2623, CodepointWidth::Wide },
-        UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide },
-        UnicodeRange{ 0x262a, 0x262a, CodepointWidth::Wide },
-        UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide },
-        UnicodeRange{ 0x2638, 0x263a, CodepointWidth::Wide },
+        UnicodeRange{ 0x2618, 0x2618, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x261a, 0x261f, CodepointWidth::Wide }, // OVR all; MS 61a-61c, 61e-61f
+        UnicodeRange{ 0x2620, 0x2620, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2622, 0x2623, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x262a, 0x262a, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2638, 0x263a, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
-        UnicodeRange{ 0x265f, 0x265f, CodepointWidth::Wide },
-        UnicodeRange{ 0x2660, 0x2660, CodepointWidth::Wide },
-        UnicodeRange{ 0x2661, 0x2667, CodepointWidth::Wide }, // 0x2661, 0x2662, 0x2664, 0x2666 MS addition
-        UnicodeRange{ 0x2668, 0x2668, CodepointWidth::Wide },
+        UnicodeRange{ 0x265f, 0x2668, CodepointWidth::Wide }, // OVR all; MS 661, 662, 664, 666
         UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266f, 0x266f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x267b, 0x267b, CodepointWidth::Wide },
-        UnicodeRange{ 0x267e, 0x267f, CodepointWidth::Wide },
-        UnicodeRange{ 0x2692, 0x2697, CodepointWidth::Wide },
-        UnicodeRange{ 0x2699, 0x2699, CodepointWidth::Wide },
-        UnicodeRange{ 0x269b, 0x269c, CodepointWidth::Wide },
+        UnicodeRange{ 0x267b, 0x267b, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x267e, 0x267f, CodepointWidth::Wide }, // OVR 67e
+        UnicodeRange{ 0x2692, 0x2697, CodepointWidth::Wide }, // OVR 692, 694-697
+        UnicodeRange{ 0x2699, 0x2699, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x269b, 0x269c, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x269e, 0x269f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26a0, 0x26a1, CodepointWidth::Wide },
-        UnicodeRange{ 0x26a7, 0x26a7, CodepointWidth::Wide },
+        UnicodeRange{ 0x26a0, 0x26a1, CodepointWidth::Wide }, // OVR 6a0
+        UnicodeRange{ 0x26a7, 0x26a7, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26aa, 0x26ab, CodepointWidth::Wide },
-        UnicodeRange{ 0x26b0, 0x26b1, CodepointWidth::Wide },
+        UnicodeRange{ 0x26b0, 0x26b1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26bd, 0x26be, CodepointWidth::Wide },
         UnicodeRange{ 0x26bf, 0x26bf, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26c4, 0x26c5, CodepointWidth::Wide },
-        UnicodeRange{ 0x26c4, 0x26c5, CodepointWidth::Wide },
         UnicodeRange{ 0x26c6, 0x26c7, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26c8, 0x26c8, CodepointWidth::Wide },
+        UnicodeRange{ 0x26c8, 0x26c8, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26c9, 0x26cd, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26ce, 0x26cf, CodepointWidth::Wide },
+        UnicodeRange{ 0x26ce, 0x26cf, CodepointWidth::Wide }, // OVR 6CF
         UnicodeRange{ 0x26d0, 0x26d0, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26d1, 0x26d1, CodepointWidth::Wide },
+        UnicodeRange{ 0x26d1, 0x26d1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26d2, 0x26d2, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26d3, 0x26d4, CodepointWidth::Wide },
+        UnicodeRange{ 0x26d3, 0x26d4, CodepointWidth::Wide }, // OVR 6d3
         UnicodeRange{ 0x26d5, 0x26e1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26e3, 0x26e3, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26e8, 0x26e8, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26e9, 0x26ea, CodepointWidth::Wide },
+        UnicodeRange{ 0x26e9, 0x26ea, CodepointWidth::Wide }, // OVR 6e9
         UnicodeRange{ 0x26eb, 0x26ef, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f0, 0x26f5, CodepointWidth::Wide },
+        UnicodeRange{ 0x26f0, 0x26f5, CodepointWidth::Wide }, // OVR 6f0-6f1, 6f4
         UnicodeRange{ 0x26f6, 0x26f6, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f7, 0x26fa, CodepointWidth::Wide },
+        UnicodeRange{ 0x26f7, 0x26fa, CodepointWidth::Wide }, // OVR 6f8-6f9
         UnicodeRange{ 0x26fb, 0x26fc, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26fd, 0x26fd, CodepointWidth::Wide },
         UnicodeRange{ 0x26fe, 0x26ff, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2702, 0x2702, CodepointWidth::Wide },
+        UnicodeRange{ 0x2702, 0x2702, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide },
-        UnicodeRange{ 0x2708, 0x2710, CodepointWidth::Wide }, // 0x2710, 0x270E MS addition
-        UnicodeRange{ 0x2712, 0x2712, CodepointWidth::Wide },
-        UnicodeRange{ 0x2714, 0x2714, CodepointWidth::Wide },
-        UnicodeRange{ 0x2716, 0x2716, CodepointWidth::Wide },
-        UnicodeRange{ 0x271d, 0x271d, CodepointWidth::Wide },
-        UnicodeRange{ 0x2721, 0x2721, CodepointWidth::Wide },
+        UnicodeRange{ 0x2708, 0x2710, CodepointWidth::Wide }, // OVR 708-709, 70c-710; MS 710, 70e
+        UnicodeRange{ 0x2712, 0x2712, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2714, 0x2714, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2716, 0x2716, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x271d, 0x271d, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2721, 0x2721, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2728, 0x2728, CodepointWidth::Wide },
-        UnicodeRange{ 0x2733, 0x2734, CodepointWidth::Wide },
+        UnicodeRange{ 0x2733, 0x2734, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x273d, 0x273d, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2744, 0x2744, CodepointWidth::Wide },
-        UnicodeRange{ 0x2747, 0x2747, CodepointWidth::Wide },
+        UnicodeRange{ 0x2744, 0x2744, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2747, 0x2747, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x274c, 0x274c, CodepointWidth::Wide },
         UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide },
         UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide },
         UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide },
-        UnicodeRange{ 0x2763, 0x2765, CodepointWidth::Wide }, // 0x2765 MS addition
+        UnicodeRange{ 0x2763, 0x2765, CodepointWidth::Wide }, // OVR all, MS 65
         UnicodeRange{ 0x2776, 0x277f, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide },
-        UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide },
+        UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x27b0, 0x27b0, CodepointWidth::Wide },
         UnicodeRange{ 0x27bf, 0x27bf, CodepointWidth::Wide },
         UnicodeRange{ 0x2b1b, 0x2b1c, CodepointWidth::Wide },
@@ -301,67 +296,67 @@ namespace
         UnicodeRange{ 0x18800, 0x18af2, CodepointWidth::Wide },
         UnicodeRange{ 0x1b000, 0x1b11e, CodepointWidth::Wide },
         UnicodeRange{ 0x1b170, 0x1b2fb, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f000, 0x1f02b, CodepointWidth::Wide }, // All mahjong tiles except 0x1f004 are MS addition
+        UnicodeRange{ 0x1f000, 0x1f02b, CodepointWidth::Wide }, // OVR and MS all except 004
         UnicodeRange{ 0x1f0cf, 0x1f0cf, CodepointWidth::Wide },
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f130, 0x1f169, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f170, 0x1f171, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f170, 0x1f171, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f172, 0x1f17d, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f17e, 0x1f17f, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f17e, 0x1f17f, CodepointWidth::Wide }, // OVR 17f
         UnicodeRange{ 0x1f180, 0x1f18d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f18e, 0x1f18e, CodepointWidth::Wide },
         UnicodeRange{ 0x1f18f, 0x1f190, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f191, 0x1f19a, CodepointWidth::Wide },
         UnicodeRange{ 0x1f19b, 0x1f1ac, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f1e6, 0x1f1ff, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f1e6, 0x1f1ff, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f200, 0x1f202, CodepointWidth::Wide },
         UnicodeRange{ 0x1f210, 0x1f23b, CodepointWidth::Wide },
         UnicodeRange{ 0x1f240, 0x1f248, CodepointWidth::Wide },
         UnicodeRange{ 0x1f250, 0x1f251, CodepointWidth::Wide },
         UnicodeRange{ 0x1f260, 0x1f265, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f300, 0x1f321, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f324, 0x1f393, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f396, 0x1f397, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f399, 0x1f39b, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f39e, 0x1f39f, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3a0, 0x1f3f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f3, 0x1f3f5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f7, 0x1f4fd, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f300, 0x1f321, CodepointWidth::Wide }, // OVR 321
+        UnicodeRange{ 0x1f324, 0x1f393, CodepointWidth::Wide }, // OVR 324-32c, 336, 37d
+        UnicodeRange{ 0x1f396, 0x1f397, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f399, 0x1f39b, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f39e, 0x1f39f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f3a0, 0x1f3f0, CodepointWidth::Wide }, // OVR 3cb-3ce, 3d4-3df
+        UnicodeRange{ 0x1f3f3, 0x1f3f5, CodepointWidth::Wide }, // OVR 3f3, 3f5
+        UnicodeRange{ 0x1f3f7, 0x1f4fd, CodepointWidth::Wide }, // OVR 3f7, 43f, 4fd
         UnicodeRange{ 0x1f4ff, 0x1f53d, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f549, 0x1f54e, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f549, 0x1f54e, CodepointWidth::Wide }, // OVR 549-54a
         UnicodeRange{ 0x1f550, 0x1f567, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f56f, 0x1f570, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f573, 0x1f57a, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f587, 0x1f587, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f58a, 0x1f58d, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f590, 0x1f590, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f594, 0x1f596, CodepointWidth::Wide }, // 0x1f594 MS addition
-        UnicodeRange{ 0x1f5a4, 0x1f5a5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5a8, 0x1f5a8, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5bc, 0x1f5bc, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5c2, 0x1f5c4, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5d1, 0x1f5d2, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5dc, 0x1f5de, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5e1, 0x1f5e1, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5e3, 0x1f5e3, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5e8, 0x1f5e8, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5ef, 0x1f5ef, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5f3, 0x1f5f3, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5fa, 0x1f64f, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f56f, 0x1f570, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f573, 0x1f57a, CodepointWidth::Wide }, // OVR 573-579
+        UnicodeRange{ 0x1f587, 0x1f587, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f58a, 0x1f58d, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f590, 0x1f590, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f594, 0x1f596, CodepointWidth::Wide }, // OVR 594, MS 594
+        UnicodeRange{ 0x1f5a4, 0x1f5a5, CodepointWidth::Wide }, // OVR 5a5
+        UnicodeRange{ 0x1f5a8, 0x1f5a8, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5bc, 0x1f5bc, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5c2, 0x1f5c4, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5d1, 0x1f5d2, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5dc, 0x1f5de, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e1, 0x1f5e1, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e3, 0x1f5e3, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e8, 0x1f5e8, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5ef, 0x1f5ef, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5f3, 0x1f5f3, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5fa, 0x1f64f, CodepointWidth::Wide }, // OVR 5fa
         UnicodeRange{ 0x1f680, 0x1f6c5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6cb, 0x1f6d2, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6cb, 0x1f6d2, CodepointWidth::Wide }, // OVR 6cb, 6cd-6cf
         UnicodeRange{ 0x1f6d5, 0x1f6d7, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6e0, 0x1f6e5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6e9, 0x1f6e9, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6e0, 0x1f6e5, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f6e9, 0x1f6e9, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f6eb, 0x1f6ec, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6f0, 0x1f6f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6f3, 0x1f6fc, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6f0, 0x1f6f0, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f6f3, 0x1f6fc, CodepointWidth::Wide }, // OVR 6f3
         UnicodeRange{ 0x1f7e0, 0x1f7eb, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f90c, 0x1f9ff, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f90c, 0x1f9ff, CodepointWidth::Wide }, // OVR 93b, 946
         UnicodeRange{ 0x1fa70, 0x1fa74, CodepointWidth::Wide },
-        UnicodeRange{ 0x1fa78, 0x1fa7A, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fa78, 0x1fa7a, CodepointWidth::Wide },
         UnicodeRange{ 0x1fa80, 0x1fa86, CodepointWidth::Wide },
         UnicodeRange{ 0x1fa90, 0x1faa8, CodepointWidth::Wide },
         UnicodeRange{ 0x1fab0, 0x1fab6, CodepointWidth::Wide },
