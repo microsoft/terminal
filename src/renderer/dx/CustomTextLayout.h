@@ -139,7 +139,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRun(const UINT32 runIndex) noexcept;
-        [[nodiscard]] HRESULT _CorrectBoxDrawing() noexcept;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _CorrectBoxDrawing() noexcept;
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
