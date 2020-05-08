@@ -2890,11 +2890,11 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     auto conhostBlueAttrs = defaultAttrs;
 
     // Conhost and Terminal store attributes in different bits.
-    conhostBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(FOREGROUND_GREEN) },
-                                          { static_cast<BYTE>(FOREGROUND_BLUE) });
+    conhostBlueAttrs.SetIndexedForeground(FOREGROUND_GREEN);
+    conhostBlueAttrs.SetIndexedBackground(FOREGROUND_BLUE);
     auto terminalBlueAttrs = TextAttribute();
-    terminalBlueAttrs.SetIndexedAttributes({ static_cast<BYTE>(XTERM_GREEN_ATTR) },
-                                           { static_cast<BYTE>(XTERM_BLUE_ATTR) });
+    terminalBlueAttrs.SetIndexedForeground(XTERM_GREEN_ATTR);
+    terminalBlueAttrs.SetIndexedBackground(XTERM_BLUE_ATTR);
 
     const size_t width = static_cast<size_t>(TerminalViewWidth);
 
