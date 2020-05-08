@@ -30,7 +30,7 @@ namespace
         //
         // There are a couple of codepoints that Microsoft specifically gave an emoji representation
         // even if it's not specified as an emoji in the standard. I'll list the ones I'm aware of in this comment in case
-        // we decide to use them in the future:
+        // we decide to emojify them in the future:
         // 0x261A-0x261C, 0x261E-0x261F
         // 0x2661,
         // 0x2662,
@@ -124,6 +124,7 @@ namespace
         UnicodeRange{ 0x2121, 0x2122, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2126, 0x2126, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x212b, 0x212b, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2139, 0x2139, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2153, 0x2154, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x215b, 0x215e, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2160, 0x216b, CodepointWidth::Ambiguous },
@@ -205,7 +206,7 @@ namespace
         UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2638, 0x263a, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
         UnicodeRange{ 0x265f, 0x2660, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2663, 0x2663, CodepointWidth::Wide }, // OVR
@@ -349,7 +350,7 @@ namespace
         UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5bc, 0x1f5bc, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5c2, 0x1f5c4, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x1f5d1, 0x1f5d2, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5d1, 0x1f5d3, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5dc, 0x1f5de, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5e1, 0x1f5e1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f5e3, 0x1f5e3, CodepointWidth::Wide }, // OVR
