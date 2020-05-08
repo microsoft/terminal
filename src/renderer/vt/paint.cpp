@@ -474,17 +474,6 @@ using namespace Microsoft::Console::Types;
                                      (totalWidth - numSpaces) :
                                      totalWidth;
 
-    if (cchActual == 0)
-    {
-        // If the previous row wrapped, but this line is empty, then we actually
-        // do want to move the cursor down. Otherwise, we'll possibly end up
-        // accidentally erasing the last character from the previous line, as
-        // the cursor is still waiting on that character for the next character
-        // to follow it.
-        _wrappedRow = std::nullopt;
-        _trace.TraceClearWrapped();
-    }
-
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
