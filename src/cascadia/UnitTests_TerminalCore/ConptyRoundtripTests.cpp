@@ -3099,7 +3099,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         print(std::wstring(numCharsSecondColor, L'~'));
 
         // If we're painting every line, then paint now, while conpty is in a
-        // deferred EOL state. Othewise, we'll wait to paint till after more output.
+        // deferred EOL state. Otherwise, we'll wait to paint till after more output.
         if (paintEachNewline == PaintEveryLine)
         {
             VERIFY_SUCCEEDED(renderer.PaintFrame());
