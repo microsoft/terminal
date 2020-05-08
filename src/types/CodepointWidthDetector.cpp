@@ -19,7 +19,7 @@ namespace
         return range.upperBound < searchTerm;
     }
 
-    static constexpr std::array<UnicodeRange, 341> s_wideAndAmbiguousTable{
+    static constexpr std::array<UnicodeRange, 342> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
         //
