@@ -726,6 +726,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 {
     bool success = false;
     std::wstring title;
+    std::wstring copyContent;
     size_t tableIndex = 0;
     DWORD color = 0;
 
@@ -734,7 +735,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
-        success = _GetOscTitle(string, title);
+        success = _GetOscString(string, title);
         break;
     case OscActionCodes::SetColor:
         success = _GetOscSetColorTable(string, tableIndex, color);
@@ -743,6 +744,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
         success = _GetOscSetColor(string, color);
+        break;
+    case OscActionCodes::CopyToClipboard:
+        success = _GetOscString(string, copyContent);
         break;
     case OscActionCodes::ResetCursorColor:
         // the console uses 0xffffffff as an "invalid color" value
@@ -778,6 +782,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             break;
         case OscActionCodes::SetCursorColor:
             success = _dispatch->SetCursorColor(color);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            break;
+        case OscActionCodes::CopyToClipboard:
+            success = _dispatch->CopyToClipboard(copyContent);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
         case OscActionCodes::ResetCursorColor:
@@ -1189,16 +1197,16 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_st
 // Routine Description:
 // - Null terminates, then returns, the string that we've collected as part of the OSC string.
 // Arguments:
-// - string - Osc String input
-// - title - Where to place the Osc String to use as a title.
+// - inString - Osc String input.
+// - outString - Where to place the Osc String.
 // Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
-                                            std::wstring& title) const
+// - True if there was a string to output.
+bool OutputStateMachineEngine::_GetOscString(const std::wstring_view inString,
+                                             std::wstring& outString) const
 {
-    title = string;
+    outString = inString;
 
-    return !string.empty();
+    return !inString.empty();
 }
 
 // Routine Description:

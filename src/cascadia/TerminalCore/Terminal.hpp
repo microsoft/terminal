@@ -111,6 +111,8 @@ public:
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
+
+    bool CopyToClipboard(std::wstring_view content) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -169,6 +171,7 @@ public:
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
+    void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
@@ -195,6 +198,7 @@ public:
 private:
     std::function<void(std::wstring&)> _pfnWriteInput;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
+    std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;

@@ -2070,6 +2070,17 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
     return _pConApi->SetCursorColor(cursorColor);
 }
 
+// Routine Description:
+// - OSC Copy to Clipboard
+// Arguments:
+// - content - The content to copy to clipboard. Must be null terminated.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::CopyToClipboard(const std::wstring_view content)
+{
+    return _pConApi->CopyToClipboard(content);
+}
+
 // Method Description:
 // - Sets a single entry of the colortable to a new value
 // Arguments:

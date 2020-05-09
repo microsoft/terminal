@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -435,4 +436,33 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
 {
     return _Write("\x1b[29m");
+}
+
+// Method Description:
+// - Writes operating system control sequence
+// Arguments:
+// - parameter: identifier of the OSC action to perform
+// - string: OSC string
+// Return Value:
+// - S_OK if we succeeded or OSC code was ignored, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::ProcessOsc(const size_t parameter, const std::wstring_view string) noexcept
+{
+    HRESULT hr = S_OK;
+    std::string contentFormat;
+
+    switch (parameter)
+    {
+    case OscActionCodes::CopyToClipboard:
+        contentFormat = "\x1b]" + std::to_string(parameter) + ";" + ConvertToA(CP_UTF8, string) + "\x07";
+        break;
+    default:
+        break;
+    }
+
+    if (!contentFormat.empty())
+    {
+        hr = _Write(contentFormat);
+    }
+
+    return hr;
 }

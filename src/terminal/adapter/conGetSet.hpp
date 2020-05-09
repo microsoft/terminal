@@ -99,5 +99,7 @@ namespace Microsoft::Console::VirtualTerminal
                                          const std::optional<SMALL_RECT> clipRect,
                                          const COORD destinationOrigin,
                                          const bool standardFillAttrs) = 0;
+
+        virtual bool CopyToClipboard(const std::wstring_view content) = 0;
     };
 }

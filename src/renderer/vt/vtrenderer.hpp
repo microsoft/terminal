@@ -102,6 +102,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
 
+        [[nodiscard]] HRESULT ProcessOsc(const size_t parameter, const std::wstring_view string) noexcept;
+
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
@@ -109,6 +111,11 @@ namespace Microsoft::Console::Render
         void SetResizeQuirk(const bool resizeQuirk);
 
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
+
+        enum OscActionCodes : unsigned int
+        {
+            CopyToClipboard = 52,
+        };
 
     protected:
         wil::unique_hfile _hFile;

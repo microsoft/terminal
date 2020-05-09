@@ -451,6 +451,43 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
+    TEST_METHOD(TestOscStringMultiLines)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L']');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        mach.ProcessCharacter(L'5');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        mach.ProcessCharacter(L'2');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        mach.ProcessCharacter(L';');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'f');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'o');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'o');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'\r');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'\n');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'b');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'a');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L'r');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        VERIFY_ARE_EQUAL(mach._oscString.size(), 8u);
+        mach.ProcessCharacter(AsciiChars::BEL);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
 
     TEST_METHOD(NormalTestOscParam)
     {
@@ -990,6 +1027,12 @@ public:
         return true;
     }
 
+    bool CopyToClipboard(std::wstring_view content) noexcept override
+    {
+        _copyContent = { content.begin(), content.end() };
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -1030,6 +1073,7 @@ public:
     size_t _numTabs;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
+    std::wstring _copyContent;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
@@ -2008,6 +2052,29 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_forwardTab);
         VERIFY_ARE_EQUAL(1u, pDispatch->_numTabs);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestCopyToClipboard)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b]52;foo\x07");
+        VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\x1b]52;foo\r\nbar\x07");
+        VERIFY_ARE_EQUAL(L"foo\r\nbar", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\x1b]52;foo\r\nbar\r\n\x07");
+        VERIFY_ARE_EQUAL(L"foo\r\nbar\r\n", pDispatch->_copyContent);
 
         pDispatch->ClearState();
     }

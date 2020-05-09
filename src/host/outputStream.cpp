@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::Render::VtEngine;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },
@@ -727,4 +728,21 @@ bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
 bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
+}
+
+// Routine Description:
+// - Process copy-to-clipboard OSC.
+// Arguments:
+// - content - The content to copy to clipboard.
+// Return Value:
+// - true if not in VT mode or OSC was processed successfully, false otherwise.
+bool ConhostInternalGetSet::CopyToClipboard(std::wstring_view content)
+{
+    HRESULT hr = S_OK;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.IsInVtIoMode())
+    {
+        hr = gci.GetVtIo()->ProcessOsc(VtEngine::OscActionCodes::CopyToClipboard, content);
+    }
+    return SUCCEEDED(hr);
 }

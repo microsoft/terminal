@@ -33,6 +33,8 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
+        [[nodiscard]] HRESULT ProcessOsc(const size_t parameter, const std::wstring_view string);
+
         void CloseInput() override;
         void CloseOutput() override;
 

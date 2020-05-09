@@ -102,6 +102,8 @@ public:
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
+    virtual bool CopyToClipboard(std::wstring_view content) = 0; // OscCopyToClipboard
+
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                     const std::basic_string_view<size_t> parameters) = 0;

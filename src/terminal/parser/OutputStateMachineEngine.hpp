@@ -136,6 +136,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            CopyToClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
@@ -191,8 +192,8 @@ namespace Microsoft::Console::VirtualTerminal
                                   size_t& topMargin,
                                   size_t& bottomMargin) const noexcept;
 
-        bool _GetOscTitle(const std::wstring_view string,
-                          std::wstring& title) const;
+        bool _GetOscString(const std::wstring_view inString,
+                           std::wstring& outString) const;
 
         static constexpr size_t DefaultTabDistance = 1;
         bool _GetTabDistance(const std::basic_string_view<size_t> parameters,
