@@ -41,17 +41,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
-                            <!-- The TabViewBackground is used on a control (DragBar, TitleBarControl) whose color is propagated to GDI.
-                            The default background is black or white with an alpha component, as it's intended to be layered on top of
-                            another control. Unfortunately, GDI cannot handle this: we need to either render the XAML to a surface and
-                            sample the pixels out of it, or premultiply the alpha into the background. For obvious reasons, we've chosen
-                            the latter. -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FF333333" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!-- Define resources for Light mode here -->
-                            <!-- See note about premultiplication above. -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FFCCCCCC" />
                         </ResourceDictionary>
 

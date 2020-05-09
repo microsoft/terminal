@@ -135,13 +135,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                     const DispatchTypes::EraseType eraseType,
                                     const size_t lineId) const;
-        void _SetGraphicsOptionHelper(const DispatchTypes::GraphicsOptions opt, WORD& attr);
         bool _EraseScrollback();
         bool _EraseAll();
         bool _InsertDeleteHelper(const size_t count, const bool isInsert) const;
         bool _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
-        static void s_DisableAllColors(WORD& attr, const bool isForeground) noexcept;
-        static void s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept;
 
         bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
@@ -179,17 +176,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isDECCOLMAllowed;
 
-        bool _changedForeground;
-        bool _changedBackground;
-        bool _changedMetaAttrs;
-
-        bool _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
-                                 COLORREF& rgbColor,
-                                 bool& isForeground,
-                                 size_t& optionsConsumed);
-
-        bool _SetBoldColorHelper(const DispatchTypes::GraphicsOptions option);
-        bool _SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option);
-        bool _SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions option);
+        size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+                                   TextAttribute& attr,
+                                   const bool isForeground);
     };
 }

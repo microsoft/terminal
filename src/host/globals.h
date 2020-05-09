@@ -70,7 +70,7 @@ public:
     ApiRoutines api;
 
 #ifdef UNIT_TESTING
-    void EnableConptyModeForTests();
+    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif
 
 private:

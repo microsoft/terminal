@@ -74,6 +74,7 @@
     <uap7:Extension Category="windows.sharedFonts">
       <uap7:SharedFonts>
         <uap4:Font File="Cascadia.ttf" />
+        <uap4:Font File="CascadiaMono.ttf" />
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>

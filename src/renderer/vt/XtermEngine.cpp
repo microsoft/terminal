@@ -234,10 +234,17 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
     //     the last cell anyways
+    //      - GH#5691 - If we're painting the frame because we circled the
+    //        buffer, then the cursor might still be in the position it was
+    //        before the text was written to the buffer to cause the buffer to
+    //        circle. In that case, then we DON'T want to paint the cursor here
+    //        either, because it'll cause us to manually break this line. That's
+    //        okay though, the frame will be painted again, after the circling
+    //        is complete.
     //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
     //     the wrap of a line.
     // If they're all true, DON'T manually paint the cursor this frame.
-    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
+    if (!((cursorIsInDeferredWrap || _circled) && _delayedEolWrap && _wrappedRow.has_value()))
     {
         return VtEngine::PaintCursor(options);
     }
@@ -351,7 +358,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
-
     _delayedEolWrap = false;
 
     return hr;
@@ -468,6 +474,16 @@ try
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
     const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
+
+    // GH#5502 - keep track of the BG color we had when we emitted this new
+    // bottom line. If the color changes by the time we get to printing that
+    // line, we'll need to make sure that we don't do any optimizations like
+    // _removing spaces_, because the background color of the spaces will be
+    // important information to send to the connected Terminal.
+    if (_newBottomLine)
+    {
+        _newBottomLineBG = _LastBG;
+    }
 
     return S_OK;
 }

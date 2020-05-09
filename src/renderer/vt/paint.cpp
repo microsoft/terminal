@@ -445,6 +445,12 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
     const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
+
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
@@ -459,7 +465,7 @@ using namespace Microsoft::Console::Types;
     // on the same line.
     const bool removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine));
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -467,17 +473,6 @@ using namespace Microsoft::Console::Types;
     const size_t columnsActual = removeSpaces ?
                                      (totalWidth - numSpaces) :
                                      totalWidth;
-
-    if (cchActual == 0)
-    {
-        // If the previous row wrapped, but this line is empty, then we actually
-        // do want to move the cursor down. Otherwise, we'll possibly end up
-        // accidentally erasing the last character from the previous line, as
-        // the cursor is still waiting on that character for the next character
-        // to follow it.
-        _wrappedRow = std::nullopt;
-        _trace.TraceClearWrapped();
-    }
 
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
@@ -563,8 +558,9 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (numSpaces > 0)
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
@@ -577,6 +573,7 @@ using namespace Microsoft::Console::Types;
     if (printingBottomLine)
     {
         _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
     }
 
     return S_OK;

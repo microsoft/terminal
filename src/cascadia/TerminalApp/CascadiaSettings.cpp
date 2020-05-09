@@ -211,6 +211,8 @@ void CascadiaSettings::_ValidateSettings()
     // warning if an action didn't have a required arg.
     // This will also catch other keybinding warnings, like from GH#4239
     _ValidateKeybindings();
+
+    _ValidateNoGlobalsKey();
 }
 
 // Method Description:
@@ -671,6 +673,25 @@ void CascadiaSettings::_ValidateKeybindings()
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
         _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+    }
+}
+
+// Method Description:
+// - Checks for the presence of the legacy "globals" key in the user's
+//   settings.json. If this key is present, then they've probably got a pre-0.11
+//   settings file that won't work as expected anymore. We should warn them
+//   about that.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::LegacyGlobalsProperty to our list of warnings if
+//   we find any invalid background images.
+void CascadiaSettings::_ValidateNoGlobalsKey()
+{
+    if (auto oldGlobalsProperty{ _userSettings["globals"] })
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
     }
 }
 

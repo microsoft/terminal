@@ -16,6 +16,7 @@
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
+#include "ColorHelper.h"
 #include "DebugTapConnection.h"
 
 using namespace winrt;
@@ -76,7 +77,7 @@ namespace winrt::TerminalApp::implementation
             // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
             // but that process is running at a different IL than us.
             // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
         }
         CATCH_LOG();
 
@@ -252,6 +253,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         return RS_(L"ApplicationVersionUnknown");
+    }
+
+    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        currentPath.replace_filename(L"NOTICE.html");
+        ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     // Method Description:
@@ -820,9 +828,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
-        _tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl);
-
-        _RemoveTabViewItemByIndex(tabIndexFromControl);
+        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _RemoveTabViewItemByIndex(tabIndexFromControl);
+        }
     }
 
     // Method Description:
@@ -843,6 +853,37 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
+        }
+        else if (_isFullscreen)
+        {
+            // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
+            // not Visible, it's _not_ going to raise a SelectionChanged event,
+            // which is what we usually use to focus another tab. Instead, we'll
+            // have to do it manually here.
+            //
+            // We can't use
+            //   auto selectedIndex = _tabView.SelectedIndex();
+            // Because this will always return -1 in this scenario unfortunately.
+            //
+            // So, what we're going to try to do is move the focus to the tab
+            // to the left, within the bounds of how many tabs we have.
+            //
+            // EX: we have 4 tabs: [A, B, C, D]. If we close:
+            // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
+            // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
+            // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
+            // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
+            const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
+            // _UpdatedSelectedTab will do the work of setting up the new tab as
+            // the focused one, and unfocusing all the others.
+            _UpdatedSelectedTab(newSelectedIndex);
+
+            // Also, we need to _manually_ set the SelectedItem of the tabView
+            // here. If we don't, then the TabView will technically not have a
+            // selected item at all, which can make things like ClosePane not
+            // work correctly.
+            auto newSelectedTab{ _GetStrongTabImpl(newSelectedIndex) };
+            _tabView.SelectedItem(newSelectedTab->GetTabViewItem());
         }
     }
 
@@ -865,7 +906,7 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab.BindEventHandlers(term);
+        hostingTab.Initialize(term);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
@@ -881,6 +922,34 @@ namespace winrt::TerminalApp::implementation
                 page->_UpdateTitle(*tab);
             }
         });
+
+        // react on color changed events
+        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->IsFocused())
+            {
+                page->_SetNonClientAreaColors(color);
+            }
+        });
+
+        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->IsFocused())
+            {
+                page->_ClearNonClientAreaColors();
+            }
+        });
+
+        // TODO GH#3327: Once we support colorizing the NewTab button based on
+        // the color of the tab, we'll want to make sure to call
+        // _ClearNewTabButtonColor here, to reset it to the default (for the
+        // newly created tab).
+        // remove any colors left by other colored tabs
+        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -1467,6 +1536,10 @@ namespace winrt::TerminalApp::implementation
             _RemoveTabViewItem(sender.as<MUX::Controls::TabViewItem>());
             eventArgs.Handled(true);
         }
+        else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
+        {
+            eventArgs.Handled(true);
+        }
     }
 
     void TerminalPage::_UpdatedSelectedTab(const int32_t index)
@@ -1488,7 +1561,20 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
+
+                // Raise an event that our title changed
                 _titleChangeHandlers(*this, Title());
+
+                // Raise an event that our titlebar color changed
+                std::optional<Windows::UI::Color> color = tab->GetTabColor();
+                if (color.has_value())
+                {
+                    _SetNonClientAreaColors(color.value());
+                }
+                else
+                {
+                    _ClearNonClientAreaColors();
+                }
             }
             CATCH_LOG();
         }
@@ -1732,14 +1818,29 @@ namespace winrt::TerminalApp::implementation
     //   message. If there were no errors, this message will be blank.
     // - If the user requested help on any command (using --help), this will
     //   contain the help message.
+    // - If the user requested the version number (using --version), this will
+    //   contain the version string.
     // Arguments:
     // - <none>
     // Return Value:
     // - the help text or error message for the provided commandline, if one
     //   exists, otherwise the empty string.
-    winrt::hstring TerminalPage::EarlyExitMessage()
+    winrt::hstring TerminalPage::ParseCommandlineMessage()
     {
         return winrt::to_hstring(_appArgs.GetExitMessage());
+    }
+
+    // Method Description:
+    // - Returns true if we should exit the application before even starting the
+    //   window. We might want to do this if we're displaying an error message or
+    //   the version string, or if we want to open the settings file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff we should exit the application before even starting the window
+    bool TerminalPage::ShouldExitEarly()
+    {
+        return _appArgs.ShouldExitEarly();
     }
 
     // Method Description:
@@ -1766,6 +1867,158 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(tab));
         return tabImpl;
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // Arguments:
+    // - color: The color of the newly selected tab, used to properly calculate
+    //          the foreground color of the split button (to match the font
+    //          color of the tab)
+    // - accentColor: the actual color we are going to use to paint the tab row and
+    //                split button, so that there is some contrast between the tab
+    //                and the non-client are behind it
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        bool IsBrightColor = ColorHelper::IsBrightColor(color);
+        bool isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
+        winrt::Windows::UI::Color pressedColor{};
+        winrt::Windows::UI::Color hoverColor{};
+        winrt::Windows::UI::Color foregroundColor{};
+        const float hoverColorAdjustment = 5.f;
+        const float pressedColorAdjustment = 7.f;
+
+        if (IsBrightColor)
+        {
+            foregroundColor = winrt::Windows::UI::Colors::Black();
+        }
+        else
+        {
+            foregroundColor = winrt::Windows::UI::Colors::White();
+        }
+
+        if (isLightAccentColor)
+        {
+            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
+        }
+        else
+        {
+            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
+        }
+
+        Media::SolidColorBrush backgroundBrush{ accentColor };
+        Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
+        Media::SolidColorBrush backgroundPressedBrush{ pressedColor };
+        Media::SolidColorBrush foregroundBrush{ foregroundColor };
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackground"), backgroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+    }
+
+    // Method Description:
+    // - Clears the tab split button color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // - Clears the tab row color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearNewTabButtonColor()
+    {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        winrt::hstring keys[] = {
+            L"SplitButtonBackground",
+            L"SplitButtonBackgroundPointerOver",
+            L"SplitButtonBackgroundPressed",
+            L"SplitButtonForeground",
+            L"SplitButtonForegroundPointerOver",
+            L"SplitButtonForegroundPressed"
+        };
+
+        // simply clear any of the colors in the split button's dict
+        for (auto keyString : keys)
+        {
+            auto key = winrt::box_value(keyString);
+            if (_newTabButton.Resources().HasKey(key))
+            {
+                _newTabButton.Resources().Remove(key);
+            }
+        }
+
+        const auto res = Application::Current().Resources();
+
+        const auto defaultBackgroundKey = winrt::box_value(L"TabViewItemHeaderBackground");
+        const auto defaultForegroundKey = winrt::box_value(L"SystemControlForegroundBaseHighBrush");
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
+
+        // TODO: Related to GH#3917 - I think if the system is set to "Dark"
+        // theme, but the app is set to light theme, then this lookup still
+        // returns to us the dark theme brushes. There's gotta be a way to get
+        // the right brushes...
+        // See also GH#5741
+        if (res.HasKey(defaultBackgroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultBackgroundKey);
+            backgroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            backgroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
+        }
+
+        if (res.HasKey(defaultForegroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultForegroundKey);
+            foregroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            foregroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
+        }
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // - This method could also set the color of the title bar and tab row
+    // in the future
+    // Arguments:
+    // - selectedTabColor: The color of the newly selected tab
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& /*selectedTabColor*/)
+    {
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
+    }
+
+    // Method Description:
+    // - Clears the tab split button color when the tab's color is cleared
+    // - This method could also clear the color of the title bar and tab row
+    // in the future
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearNonClientAreaColors()
+    {
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // -------------------------------- WinRT Events ---------------------------------

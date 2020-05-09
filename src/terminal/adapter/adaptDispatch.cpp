@@ -31,9 +31,6 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
-    _changedBackground(false),
-    _changedForeground(false),
-    _changedMetaAttrs(false),
     _termOutput()
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
@@ -588,7 +585,15 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
-        return _EraseAll();
+        // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
+        // make the state machine propagate this ED sequence to the connected
+        // terminal application. While we're in conpty mode, when the client
+        // requests a Erase All operation, we need to manually tell the
+        // connected terminal to do the same thing, so that the terminal will
+        // move it's own buffer contents into the scrollback.
+        const bool eraseAllResult = _EraseAll();
+        const bool isPty = _pConApi->IsConsolePty();
+        return eraseAllResult && (!isPty);
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -1750,8 +1755,12 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
         // Reset the meta/extended attributes (but leave the colors unchanged).
-        success = success && _pConApi->PrivateSetLegacyAttributes(0, false, false, true);
-        success = success && _pConApi->PrivateSetExtendedTextAttributes(ExtendedAttributes::Normal);
+        TextAttribute attr;
+        if (_pConApi->PrivateGetTextAttributes(attr))
+        {
+            attr.SetStandardErase();
+            success = success && _pConApi->PrivateSetTextAttributes(attr);
+        }
         // Reset the origin mode to absolute.
         success = success && SetOriginMode(false);
         // Clear the scrolling margins.
@@ -2070,12 +2079,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    bool success = tableIndex < 256;
-    if (success)
-    {
-        const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
-        success = _pConApi->PrivateSetColorTableEntry(realIndex, dwColor);
-    }
+    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

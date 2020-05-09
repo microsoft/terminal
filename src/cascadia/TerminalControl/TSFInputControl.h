@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _currentTextBlockHeight;
         winrt::Windows::Foundation::Rect _currentControlBounds;
         winrt::Windows::Foundation::Rect _currentTextBounds;
+        winrt::Windows::Foundation::Rect _currentWindowBounds;
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
