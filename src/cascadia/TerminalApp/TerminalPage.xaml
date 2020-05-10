@@ -52,6 +52,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Uid="CloseAllDialog"
             DefaultButton="Primary"
             PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
-        </ContentDialog>
+	    <CheckBox x:Name="ShowCloseAllTabsCheck" x:Uid="CloseAllDialog_ShowCloseAllTabsCheck" />
+	</ContentDialog>
     </Grid>
 </Page>

@@ -128,6 +128,7 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
+    <ClCompile Include="../ApplicationStateSettings.cpp" />
     <ClCompile Include="../AppCommandlineArgs.cpp" />
     <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">

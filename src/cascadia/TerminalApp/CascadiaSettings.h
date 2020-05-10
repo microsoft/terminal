@@ -17,6 +17,7 @@ Author(s):
 --*/
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include "ApplicationStateSettings.h"
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
@@ -54,6 +55,9 @@ public:
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
+    ApplicationStateSettings& GetAppState() noexcept;
+    void SaveAppState() noexcept;
+
     std::tuple<GUID, winrt::Microsoft::Terminal::Settings::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
     winrt::Microsoft::Terminal::Settings::TerminalSettings BuildSettings(GUID profileGuid) const;
 
@@ -75,6 +79,7 @@ public:
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
 private:
+    ApplicationStateSettings _appState;
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
@@ -100,6 +105,8 @@ private:
     void _ApplyDefaultsFromUserSettings();
 
     void _LoadDynamicProfiles();
+
+    void _LoadAppState() noexcept;
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);

@@ -148,6 +148,11 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
     return _globals;
 }
 
+ApplicationStateSettings& CascadiaSettings::GetAppState() noexcept
+{
+    return _appState;
+}
+
 // Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.

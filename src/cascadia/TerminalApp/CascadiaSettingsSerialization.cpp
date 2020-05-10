@@ -186,6 +186,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         }
     }
 
+    resultPtr->_LoadAppState();
+
     return resultPtr;
 }
 
@@ -910,4 +912,47 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
         return Json::Value::nullSingleton();
     }
     return json[JsonKey(DisabledProfileSourcesKey)];
+}
+
+void CascadiaSettings::_LoadAppState() noexcept
+{
+    auto pathToStateFile{ CascadiaSettings::GetSettingsPath() };
+    pathToStateFile.replace_filename(L"state.json");
+
+    wil::unique_hfile hFile{ CreateFileW(pathToStateFile.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         nullptr,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         nullptr) };
+
+    if (!hFile)
+    {
+        // no state - this is okay!
+        return;
+    }
+
+    const auto jsonData{ _ReadFile(hFile.get()) };
+    if (!jsonData.has_value())
+    {
+        // empty state - also okay!
+        return;
+    }
+
+    std::string errs; // This string will receive any error text from failing to parse.
+    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+    Json::Value root;
+    if (!reader->parse(jsonData->data(), jsonData->data() + jsonData->size() + 1, &root, &errs))
+    {
+        // invalid state - probably destroy it; ok for now
+        return;
+    }
+
+    _appState.LayerJson(root);
+}
+
+void CascadiaSettings::SaveAppState() noexcept
+{
 }
