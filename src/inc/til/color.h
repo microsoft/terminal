@@ -101,10 +101,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        constexpr color with_alpha(uint8_t alpha) const
+        {
+            return color{
+                r,
+                    g,
+                    b,
+                    alpha
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {
             return D3DCOLORVALUE{ r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
+        }
+#endif
+
+#ifdef WINRT_Windows_UI_H
+        operator winrt::Windows::UI::Color() const
+        {
+            winrt::Windows::UI::Color ret;
+            ret.R = r;
+            ret.G = g;
+            ret.B = b;
+            ret.A = a;
+            return ret;
         }
 #endif
 
