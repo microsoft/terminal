@@ -119,6 +119,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
 #ifdef WINRT_Windows_UI_H
+        constexpr color(const winrt::Windows::UI::Color& winUIColor):
+            color(winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A) { }
+
         operator winrt::Windows::UI::Color() const
         {
             winrt::Windows::UI::Color ret;
@@ -133,6 +136,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator==(const til::color& other) const
         {
             return r == other.r && g == other.g && b == other.b && a == other.a;
+        }
+
+        constexpr bool operator!=(const til::color& other) const
+        {
+            return !(*this == other);
         }
     };
 #pragma warning(pop)
