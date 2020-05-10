@@ -116,4 +116,18 @@ Assuming that you've installed VS 2019 Professional:
 }
 ```
 
+## Aliyun 
+
+Assuming that you've installed ssh.exe and config public key and private key, having one elastic compute service.
+in command `ssh.exe -p 22 -i C:/Users/14345/.ssh/id_rsa root@182.92.XXX.XXX`, the server ip is `182.92.XXX.XXX` and use ssh command connect as user root, the `C:/Users/14345/.ssh/id_rsa` is local computer private key.
+
+```json
+{
+    "name": "Aliyun",
+    "commandline": "ssh.exe -p 22 -i C:/Users/14345/.ssh/id_rsa root@182.92.XXX.XXX",
+    "icon": "D:/14345/Pictures/aliyun.ico",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
 <!-- Adding a tool here? Make sure to add it in alphabetical order! -->
