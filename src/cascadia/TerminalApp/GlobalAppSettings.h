@@ -27,6 +27,11 @@ namespace TerminalAppLocalTests
 namespace TerminalApp
 {
     class GlobalAppSettings;
+
+    struct LaunchPosition
+    {
+        std::optional<int> x, y;
+    };
 };
 
 class TerminalApp::GlobalAppSettings final
@@ -39,46 +44,10 @@ public:
     const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
     void AddColorScheme(ColorScheme scheme);
 
-    void SetDefaultProfile(const GUID defaultProfile) noexcept;
-    GUID GetDefaultProfile() const noexcept;
+    void DefaultProfile(const GUID defaultProfile) noexcept;
+    GUID DefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
-
-    bool GetAlwaysShowTabs() const noexcept;
-    void SetAlwaysShowTabs(const bool showTabs) noexcept;
-
-    bool GetShowTitleInTitlebar() const noexcept;
-    void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
-
-    bool GetConfirmCloseAllTabs() const noexcept;
-    void SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept;
-
-    winrt::Windows::UI::Xaml::ElementTheme GetTheme() const noexcept;
-    void SetTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
-
-    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
-    void SetTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode);
-
-    bool GetShowTabsInTitlebar() const noexcept;
-    void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
-
-    std::wstring GetWordDelimiters() const noexcept;
-    void SetWordDelimiters(const std::wstring wordDelimiters) noexcept;
-
-    bool GetCopyOnSelect() const noexcept;
-    void SetCopyOnSelect(const bool copyOnSelect) noexcept;
-
-    bool GetCopyFormatting() const noexcept;
-
-    std::optional<int32_t> GetInitialX() const noexcept;
-
-    std::optional<int32_t> GetInitialY() const noexcept;
-
-    winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
-    void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
-
-    bool GetForceFullRepaintRendering() noexcept;
-    bool GetSoftwareRendering() noexcept;
 
     bool DebugFeaturesEnabled() const noexcept;
 
@@ -89,7 +58,20 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
+    GETSET_PROPERTY(bool, AlwaysShowTabs, true);
+    GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
+    GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
+    GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+    GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+    GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
+    GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
+    GETSET_PROPERTY(bool, CopyOnSelect, false);
+    GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(LaunchPosition, InitialPosition);
+    GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
+    GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
+    GETSET_PROPERTY(bool, SoftwareRendering, false);
 
 private:
     GUID _defaultProfile;
@@ -103,26 +85,6 @@ private:
 
     int32_t _rowsToScroll;
 
-    std::optional<int32_t> _initialX;
-    std::optional<int32_t> _initialY;
-
-    bool _showStatusline;
-    bool _alwaysShowTabs;
-    bool _showTitleInTitlebar;
-    bool _confirmCloseAllTabs;
-
-    bool _showTabsInTitlebar;
-    std::wstring _wordDelimiters;
-    bool _copyOnSelect;
-    bool _copyFormatting;
-    winrt::Windows::UI::Xaml::ElementTheme _theme;
-    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
-
-    winrt::TerminalApp::LaunchMode _launchMode;
-
-    bool _softwareRendering;
-    bool _forceFullRepaintRendering;
-
     bool _debugFeatures;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
@@ -132,11 +94,9 @@ private:
     static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
     static void _ParseInitialPosition(const std::wstring& initialPosition,
-                                      std::optional<int32_t>& initialX,
-                                      std::optional<int32_t>& initialY) noexcept;
+                                      LaunchPosition& ret) noexcept;
 
-    static std::string _SerializeInitialPosition(const std::optional<int32_t>& initialX,
-                                                 const std::optional<int32_t>& initialY) noexcept;
+    static std::string _SerializeInitialPosition(const LaunchPosition& position) noexcept;,
 
     static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;

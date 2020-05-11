@@ -254,7 +254,7 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
+    const auto defaultProfileGuid = GlobalSettings().DefaultProfile();
     const bool nullDefaultProfile = defaultProfileGuid == GUID{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
@@ -273,7 +273,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+        GlobalSettings().DefaultProfile(_profiles[0].GetGuid());
     }
 }
 
@@ -643,7 +643,7 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         if (realIndex < 0 ||
             realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
-            return _globals.GetDefaultProfile();
+            return _globals.DefaultProfile();
         }
         const auto& selectedProfile = _profiles.at(realIndex);
         profileGuid = selectedProfile.GetGuid();
@@ -651,7 +651,7 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
     else
     {
         // get Guid for the default profile
-        profileGuid = _globals.GetDefaultProfile();
+        profileGuid = _globals.DefaultProfile();
     }
     return profileGuid;
 }
