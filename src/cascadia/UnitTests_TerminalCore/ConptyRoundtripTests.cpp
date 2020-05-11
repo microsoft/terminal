@@ -213,6 +213,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(NewLinesAtBottomWithBackground);
 
+    TEST_METHOD(DeleteWrappedWord);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2974,4 +2976,87 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::DeleteWrappedWord()
+{
+    // See https://github.com/microsoft/terminal/issues/5839
+    Log::Comment(L"TODO");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    auto defaultAttrs = si.GetAttributes();
+    auto conhostBlueAttrs = defaultAttrs;
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L" ");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool after) {
+        const auto width = viewport.width<short>();
+
+        VERIFY_ARE_EQUAL(!after, tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+
+        auto iter1 = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter1, 0, 50);
+        TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
+        if (after)
+        {
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 50);
+
+            auto iter2 = tb.GetCellDataAt({ 0, 1 });
+            TestUtils::VerifySpanOfText(L" ", iter2, 0, width);
+        }
+        else
+        {
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+
+            auto iter2 = tb.GetCellDataAt({ 0, 1 });
+            TestUtils::VerifySpanOfText(L"B", iter2, 0, 50 - (width - 51));
+            TestUtils::VerifySpanOfText(L" ", iter2, 0, width);
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[H");
+    sm.ProcessString(std::wstring(50, L'A'));
+
+    sm.ProcessString(std::wstring(TerminalViewWidth - 50, L' '));
+    sm.ProcessString(L"\x1b[K");
+    sm.ProcessString(L"  ");
+    sm.ProcessString(fmt::format(L"\x1b[{}X", 50 - (TerminalViewWidth - 50)));
+    sm.ProcessString(L"\x1b[1;50H");
+    sm.ProcessString(L"\x1b[?25h");
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
 }
