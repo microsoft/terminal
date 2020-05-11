@@ -77,6 +77,9 @@ public:
     winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
     void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
 
+    bool GetForceFullRepaintRendering() noexcept;
+    bool GetSoftwareRendering() noexcept;
+
     bool DebugFeaturesEnabled() const noexcept;
 
     Json::Value ToJson() const;
@@ -117,6 +120,9 @@ private:
     winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
+
+    bool _softwareRendering;
+    bool _forceFullRepaintRendering;
 
     bool _debugFeatures;
 

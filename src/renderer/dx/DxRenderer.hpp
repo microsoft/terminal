@@ -55,6 +55,10 @@ namespace Microsoft::Console::Render
 
         void SetRetroTerminalEffects(bool enable) noexcept;
 
+        void SetForceFullRepaintRendering(bool enable) noexcept;
+
+        void SetSoftwareRendering(bool enable) noexcept;
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -189,6 +193,10 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _pixelShaderSettingsBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+
+        // Preferences and overrides
+        bool _softwareRendering;
+        bool _forceFullRepaintRendering;
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
