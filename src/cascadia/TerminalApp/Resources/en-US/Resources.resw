@@ -339,7 +339,7 @@
     <comment>Close Button Text </comment>
   </data>
    <data name="ShortcutsDialog.Title" xml:space="preserve">
-    <value>Defult Keybindings</value>
+    <value>Default Keybindings</value>
     <comment></comment>
   </data>
   <data name="ShortcutsDialog_ClosePaneLabel.Text" xml:space="preserve">
