@@ -334,4 +334,40 @@
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
   </data>
+  <data name="ShortcutsDialog.CloseButtonText" xml:space="preserve">
+    <value>OK</value>
+    <comment>Close Button Text </comment>
+  </data>
+   <data name="ShortcutsDialog.Title" xml:space="preserve">
+    <value>Defult Keybindings</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_ClosePaneLabel.Text" xml:space="preserve">
+    <value>Close Pane:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_CopyLabel.Text" xml:space="preserve">
+    <value>Copy:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_FindLabel.Text" xml:space="preserve">
+    <value>Find:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_PasteLabel.Text" xml:space="preserve">
+    <value>Paste:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_ResizePaneLabel.Text" xml:space="preserve">
+    <value>Resize Pane:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_SplitPaneLabel.Text" xml:space="preserve">
+    <value>Split Pane:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsMenuItem" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment></comment>
+  </data>
 </root>
