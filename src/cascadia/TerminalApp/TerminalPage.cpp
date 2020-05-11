@@ -381,6 +381,13 @@ namespace winrt::TerminalApp::implementation
                 {
                     _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
                 }
+      
+                // Create the shortcuts button.
+                auto shortcutsItem = WUX::Controls::MenuFlyoutItem{};
+                shortcutsItem.Text(RS_(L"ShortcutsMenuItem"));
+
+                shortcutsItem.Click({ this, &TerminalPage::_ShortcutsButtonOnClick });
+                newTabFlyout.Items().Append(shortcutsItem);
 
                 // Create the feedback button.
                 auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
