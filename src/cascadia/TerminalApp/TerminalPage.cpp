@@ -235,6 +235,14 @@ namespace winrt::TerminalApp::implementation
         _showDialogHandlers(*this, FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
+    
+    // Method Description:
+    // - Show a dialog with Shortcuts information. Displays the app's defult keybindings
+    void TerminalPage::_ShowShortcutsDialog()
+    {
+        _showDialogHandlers(*this, FindName(L"ShortcutsDialog").try_as<WUX::Controls::ContentDialog>());
+    }
+    
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
         if (const auto appLogic{ implementation::AppLogic::Current() })
@@ -656,6 +664,19 @@ namespace winrt::TerminalApp::implementation
         _LaunchSettings(altPressed);
     }
 
+    // Method Description:
+    // - Called when the shortcuts button is clicked. See _ShowShortcutsDialog for more info.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ShortcutsButtonOnClick(const IInspectable&,
+                                           const RoutedEventArgs&)
+    {
+        _ShowShortcutsDialog();
+    }
+
+    
     // Method Description:
     // - Called when the feedback button is clicked. Launches github in your
     //   default browser, navigated to the "issues" page of the Terminal repo.
