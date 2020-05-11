@@ -105,9 +105,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return color{
                 r,
-                    g,
-                    b,
-                    alpha
+                g,
+                b,
+                alpha
             };
         }
 
@@ -119,8 +119,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
 #ifdef WINRT_Windows_UI_H
-        constexpr color(const winrt::Windows::UI::Color& winUIColor):
-            color(winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A) { }
+        constexpr color(const winrt::Windows::UI::Color& winUIColor) :
+            color(winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A)
+        {
+        }
 
         operator winrt::Windows::UI::Color() const
         {
