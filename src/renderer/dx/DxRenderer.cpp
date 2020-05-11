@@ -1177,7 +1177,12 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 try
 {
-    D2D1_COLOR_F nothing = { 0 };
+    D2D1_COLOR_F nothing{ 0 };
+    if (_chainMode == SwapChainMode::ForHwnd)
+    {
+        // When we're drawing over an HWND target, we need to fully paint the background color.
+        nothing = _backgroundColor;
+    }
 
     // If the entire thing is invalid, just use one big clear operation.
     if (_invalidMap.all())
