@@ -44,25 +44,55 @@ static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
 // Launch mode values
-static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
-static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
-static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
+static constexpr std::string_view DefaultLaunchModeValue{ "default" };
+static constexpr std::string_view MaximizedLaunchModeValue{ "maximized" };
+static constexpr std::string_view FullscreenLaunchModeValue{ "fullscreen" };
 
 // Tab Width Mode values
-static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
-static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
-static constexpr std::wstring_view TitleLengthCompactModeValue{ L"compact" };
+static constexpr std::string_view EqualTabWidthModeValue{ "equal" };
+static constexpr std::string_view TitleLengthTabWidthModeValue{ "titleLength" };
+static constexpr std::string_view TitleLengthCompactModeValue{ "compact" };
 
 // Theme values
-static constexpr std::wstring_view LightThemeValue{ L"light" };
-static constexpr std::wstring_view DarkThemeValue{ L"dark" };
-static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view LightThemeValue{ "light" };
+static constexpr std::string_view DarkThemeValue{ "dark" };
+static constexpr std::string_view SystemThemeValue{ "system" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
 #else
 static constexpr bool debugFeaturesDefault{ false };
 #endif
+
+template<>
+struct JsonUtils::ConversionTrait<ElementTheme> : public JsonUtils::KeyValueMapper<ElementTheme, JsonUtils::ConversionTrait<ElementTheme>>
+{
+    static constexpr std::array<pair_type, 3> mappings = {
+        pair_type{ SystemThemeValue, ElementTheme::Default },
+        pair_type{ LightThemeValue, ElementTheme::Light },
+        pair_type{ DarkThemeValue, ElementTheme::Dark },
+    };
+};
+
+template<>
+struct JsonUtils::ConversionTrait<LaunchMode> : public JsonUtils::KeyValueMapper<LaunchMode, JsonUtils::ConversionTrait<LaunchMode>>
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ DefaultLaunchModeValue, LaunchMode::DefaultMode },
+        pair_type{ MaximizedLaunchModeValue, LaunchMode::MaximizedMode },
+        pair_type{ FullscreenLaunchModeValue, LaunchMode::FullscreenMode },
+    };
+};
+
+template<>
+struct JsonUtils::ConversionTrait<TabViewWidthMode> : public JsonUtils::KeyValueMapper<TabViewWidthMode, JsonUtils::ConversionTrait<TabViewWidthMode>>
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ EqualTabWidthModeValue, TabViewWidthMode::Equal },
+        pair_type{ TitleLengthTabWidthModeValue, TabViewWidthMode::SizeToContent },
+        pair_type{ TitleLengthCompactModeValue, TabViewWidthMode::Compact },
+    };
+};
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
@@ -148,64 +178,49 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
-    {
-        _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
-    }
+    JsonUtils::GetValueForKey(json, DefaultProfileKey, _unparsedDefaultProfile);
 
-    JsonUtils::GetBool(json, AlwaysShowTabsKey, _AlwaysShowTabs);
+    JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
-    JsonUtils::GetBool(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
+    JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
 
-    JsonUtils::GetInt(json, InitialRowsKey, _InitialRows);
+    JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
 
-    JsonUtils::GetInt(json, InitialColsKey, _InitialCols);
+    JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
 
-    if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
-    {
-        _ParseInitialPosition(initialPosition.asString(), _InitialPosition);
-    }
+    JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
-    JsonUtils::GetBool(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
+    JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
-    JsonUtils::GetBool(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
+    JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
 
-    JsonUtils::GetWstring(json, WordDelimitersKey, _WordDelimiters);
+    JsonUtils::GetValueForKey(json, WordDelimitersKey, _WordDelimiters);
 
-    JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
+    JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
 
-    JsonUtils::GetBool(json, CopyFormattingKey, _CopyFormatting);
+    JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
 
-    JsonUtils::GetBool(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
+    JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
 
-    JsonUtils::GetBool(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+    JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
-    if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
-    {
-        _LaunchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
-    }
+    JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
 
-    if (auto theme{ json[JsonKey(ThemeKey)] })
-    {
-        _Theme = _ParseTheme(GetWstringFromJson(theme));
-    }
+    JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
 
-    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
-    {
-        _TabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
-    }
+    JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
 
-    JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+    JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
-    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
+    // GetValueForKey will only override the current value if the key exists
+    JsonUtils::GetValueForKey(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
-    JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
-    JsonUtils::GetBool(json, ForceVTInputKey, _ForceVTInput);
+    JsonUtils::GetValueForKey(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
 
-    // GetBool will only override the current value if the key exists
-    JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
+    JsonUtils::GetValueForKey(json, SoftwareRenderingKey, _SoftwareRendering);
+    JsonUtils::GetValueForKey(json, ForceVTInputKey, _ForceVTInput);
 
-    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
+    JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
@@ -234,27 +249,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 }
 
 // Method Description:
-// - Helper function for converting a user-specified cursor style corresponding
-//   CursorStyle enum value
-// Arguments:
-// - themeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
-{
-    if (themeString == LightThemeValue)
-    {
-        return ElementTheme::Light;
-    }
-    else if (themeString == DarkThemeValue)
-    {
-        return ElementTheme::Dark;
-    }
-    // default behavior for invalid data or SystemThemeValue
-    return ElementTheme::Default;
-}
-
-// Method Description:
 // - Helper function for converting the initial position string into
 //   2 coordinate values. We allow users to only provide one coordinate,
 //   thus, we use comma as the separator:
@@ -265,83 +259,53 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 //   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
 // Arguments:
 // - initialPosition: the initial position string from json
-//   ret: reference to a struct whose optionals will be populated
+//   initialX: reference to the _initialX member
+//   initialY: reference to the _initialY member
 // Return Value:
 // - None
-void GlobalAppSettings::_ParseInitialPosition(const std::string& initialPosition,
-                                              LaunchPosition& ret) noexcept
+template<>
+struct JsonUtils::ConversionTrait<LaunchPosition>
 {
-    static constexpr char singleCharDelim = ',';
-    std::stringstream tokenStream(initialPosition);
-    std::string token;
-    uint8_t initialPosIndex = 0;
-
-    // Get initial position values till we run out of delimiter separated values in the stream
-    // or we hit max number of allowable values (= 2)
-    // Non-numeral values or empty string will be caught as exception and we do not assign them
-    for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
+    LaunchPosition FromJson(const Json::Value& json)
     {
-        try
-        {
-            int32_t position = std::stoi(token);
-            if (initialPosIndex == 0)
-            {
-                ret.x.emplace(position);
-            }
+        LaunchPosition ret;
+        std::string initialPosition{ json.asString() };
+        static constexpr char singleCharDelim = ',';
+        std::stringstream tokenStream(initialPosition);
+        std::string token;
+        uint8_t initialPosIndex = 0;
 
-            if (initialPosIndex == 1)
+        // Get initial position values till we run out of delimiter separated values in the stream
+        // or we hit max number of allowable values (= 2)
+        // Non-numeral values or empty string will be caught as exception and we do not assign them
+        for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
+        {
+            try
             {
-                ret.y.emplace(position);
+                int32_t position = std::stoi(token);
+                if (initialPosIndex == 0)
+                {
+                    ret.x.emplace(position);
+                }
+
+                if (initialPosIndex == 1)
+                {
+                    ret.y.emplace(position);
+                }
+            }
+            catch (...)
+            {
+                // Do nothing
             }
         }
-        catch (...)
-        {
-            // Do nothing
-        }
-    }
-}
-
-// Method Description:
-// - Helper function for converting the user-specified launch mode
-//   to a LaunchMode enum value
-// Arguments:
-// - launchModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeString) noexcept
-{
-    if (launchModeString == MaximizedLaunchModeValue)
-    {
-        return LaunchMode::MaximizedMode;
-    }
-    else if (launchModeString == FullscreenLaunchModeValue)
-    {
-        return LaunchMode::FullscreenMode;
+        return ret;
     }
 
-    return LaunchMode::DefaultMode;
-}
-
-// Method Description:
-// - Helper function for converting the user-specified tab width
-//   to a TabViewWidthMode enum value
-// Arguments:
-// - tabWidthModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept
-{
-    if (tabWidthModeString == TitleLengthTabWidthModeValue)
+    bool CanConvert(const Json::Value& json)
     {
-        return TabViewWidthMode::SizeToContent;
+        return json.isString();
     }
-    else if (tabWidthModeString == TitleLengthCompactModeValue)
-    {
-        return TabViewWidthMode::Compact;
-    }
-    // default behavior for invalid data or EqualTabWidthValue
-    return TabViewWidthMode::Equal;
-}
+};
 
 // Method Description:
 // - Adds the given colorscheme to our map of schemes, using its name as the key.

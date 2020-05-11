@@ -95,15 +95,6 @@ private:
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
     std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
-    static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
-
-    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
-
-    static void _ParseInitialPosition(const std::string& initialPosition,
-                                      LaunchPosition& ret) noexcept;
-
-    static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
-
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;
 };

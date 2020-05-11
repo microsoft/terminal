@@ -6,7 +6,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "utils.h"
-#include "JsonUtils.h"
+#include "JsonUtils-DH.h"
 #include <appmodel.h>
 #include <shlobj.h>
 
@@ -249,9 +249,11 @@ void CascadiaSettings::_LoadDynamicProfiles()
     const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
     if (disabledProfileSources.isArray())
     {
-        for (const auto& ns : disabledProfileSources)
+        for (const auto& json : disabledProfileSources)
         {
-            ignoredNamespaces.emplace(GetWstringFromJson(ns));
+            std::wstring ns{};
+            JsonUtils::GetValue(json, ns);
+            ignoredNamespaces.emplace(std::move(ns));
         }
     }
 
