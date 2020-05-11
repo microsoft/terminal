@@ -53,5 +53,30 @@ the MIT License. See LICENSE in the project root for license information. -->
             DefaultButton="Primary"
             PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
         </ContentDialog>
+        
+        <ContentDialog
+        x:Load="False"
+        x:Name="ShortcutsDialog"
+        x:Uid="ShortcutsDialog"
+        DefaultButton="Close">
+        <StackPanel Orientation="Horizontal">
+                <TextBlock IsTextSelectionEnabled="True">
+                    <Run x:Uid="ShortcutsDialog_CopyLabel"/>
+                    <Run Text="Ctrl+C"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_PasteLabel"/>
+                    <Run Text="Ctrl+V"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_FindLabel"/>
+                    <Run Text="Ctrl+F"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_SplitPaneLabel"/>
+                    <Run Text="Alt+Shift+D"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_ClosePaneLabel"/>
+                    <Run Text="Alt+Shift+W"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_ResizePaneLabel"/>
+                    <Run Text="Alt+Shift+Up, Alt+Shift+Down, Alt+Shift+Left, Alt+Shift+Right"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_ChangeFocusLabel"/>
+                    <Run Text="Alt+Up, Alt+Down, Alt+Left, Alt+Right"/> <LineBreak/>
+                </TextBlock>
+            </StackPanel>
+        </ContentDialog>
     </Grid>
 </Page>
