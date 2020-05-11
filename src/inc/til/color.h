@@ -144,6 +144,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return !(*this == other);
         }
+
+        std::wstring to_string() const
+        {
+            std::wstringstream wss;
+            wss << L"Color #" << std::uppercase << std::setfill(L'0') << std::hex;
+            // Force the compiler to promote from byte to int. Without it, the
+            // stringstream will try to write the components as chars
+            wss << std::setw(2) << static_cast<int>(a);
+            wss << std::setw(2) << static_cast<int>(r);
+            wss << std::setw(2) << static_cast<int>(g);
+            wss << std::setw(2) << static_cast<int>(b);
+
+            return wss.str();
+        }
     };
 #pragma warning(pop)
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::color>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::color& color)
+        {
+            return WEX::Common::NoThrowString(color.to_string().c_str());
+        }
+    };
+};
+#endif
