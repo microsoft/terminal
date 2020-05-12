@@ -2632,6 +2632,7 @@ wfdopen
 WFill
 wfopen
 wfstream
+WGL
 WHelper
 whitelisting
 WIDTHSCROLL
