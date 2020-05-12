@@ -179,7 +179,6 @@ namespace
         UnicodeRange{ 0x2592, 0x2595, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25a0, 0x25a1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25a3, 0x25a9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25aa, 0x25ab, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x25b2, 0x25b3, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25b6, 0x25b7, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25bc, 0x25bd, CodepointWidth::Ambiguous },
@@ -204,13 +203,9 @@ namespace
         UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x262a, 0x262a, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2638, 0x263a, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2638, 0x2639, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
-        UnicodeRange{ 0x265f, 0x2660, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2663, 0x2663, CodepointWidth::Wide }, // OVR
-        UnicodeRange{ 0x2665, 0x2666, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x265f, 0x265f, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2668, 0x2668, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
