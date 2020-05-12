@@ -2598,6 +2598,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _SendInputToConnection(allPaths);
             }
         }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            try
+            {
+                std::wstring text{ co_await e.DataView().GetTextAsync() };
+                _SendPastedTextToConnection(text);
+            }
+            CATCH_LOG();
+        }
     }
 
     // Method Description:
@@ -2618,9 +2627,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        // We can only handle drag/dropping StorageItems (files) and plain Text
+        // currently. If the format on the clipboard is anything else, returning
+        // early here will prevent the drag/drop from doing anything.
+        if (!(e.DataView().Contains(StandardDataFormats::StorageItems()) ||
+              e.DataView().Contains(StandardDataFormats::Text())))
         {
-            // We can't do anything for non-storageitems right now.
             return;
         }
 
@@ -2628,7 +2640,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.AcceptedOperation(DataPackageOperation::Copy);
 
         // Sets custom UI text
-        e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragTextCaption"));
+        }
+
         // Sets if the caption is visible
         e.DragUIOverride().IsCaptionVisible(true);
         // Sets if the dragged content is visible
