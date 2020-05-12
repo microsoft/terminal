@@ -586,9 +586,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // TODO:GH#3927 - Make it possible to hot-reload this setting. Right
+            // TODO:GH#3927 - Make it possible to hot-reload these settings. Right
             // here, the setting will only be used when the Terminal is initialized.
             dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
             // TODO:GH#3927 - hot-reload this one too
             // Update DxEngine's AntialiasingMode
@@ -1820,6 +1822,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
+        if (!_terminal->IsSelectionActive())
+        {
+            return;
+        }
+
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);

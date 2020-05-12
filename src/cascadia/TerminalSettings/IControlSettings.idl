@@ -52,6 +52,8 @@ namespace Microsoft.Terminal.Settings
 
         UInt32 SelectionBackground;
         Boolean RetroTerminalEffect;
+        Boolean ForceFullRepaintRendering;
+        Boolean SoftwareRendering;
 
         TextAntialiasingMode AntialiasingMode;
     };

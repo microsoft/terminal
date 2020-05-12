@@ -8,6 +8,7 @@
     <ClCompile Include="..\CustomTextRenderer.cpp" />
     <ClCompile Include="..\precomp.cpp" />
     <ClCompile Include="..\DxRenderer.cpp" />
+    <ClCompile Include="..\BoxDrawingEffect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\CustomTextLayout.h" />
@@ -16,5 +17,9 @@
     <ClInclude Include="..\DxRenderer.hpp" />
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />
+    <ClInclude Include="..\BoxDrawingEffect.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\IBoxDrawingEffect.idl" />
   </ItemGroup>
 </Project>

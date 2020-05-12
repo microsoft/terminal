@@ -42,6 +42,9 @@ static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
+static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
+static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
+
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 #ifdef _DEBUG
@@ -70,6 +73,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _copyOnSelect{ false },
     _copyFormatting{ false },
     _launchMode{ LaunchMode::DefaultMode },
+    _forceFullRepaintRendering{ false },
+    _softwareRendering{ false },
     _debugFeatures{ debugFeaturesDefault }
 {
 }
@@ -187,6 +192,16 @@ void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) n
     _confirmCloseAllTabs = confirmCloseAllTabs;
 }
 
+bool GlobalAppSettings::GetForceFullRepaintRendering() noexcept
+{
+    return _forceFullRepaintRendering;
+}
+
+bool GlobalAppSettings::GetSoftwareRendering() noexcept
+{
+    return _softwareRendering;
+}
+
 bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
 {
     return _debugFeatures;
@@ -230,6 +245,8 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
+    settings.ForceFullRepaintRendering(_forceFullRepaintRendering);
+    settings.SoftwareRendering(_softwareRendering);
 }
 
 // Method Description:
@@ -259,6 +276,8 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
     jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
+    jsonObject[JsonKey(ForceFullRepaintRenderingKey)] = _forceFullRepaintRendering;
+    jsonObject[JsonKey(SoftwareRenderingKey)] = _softwareRendering;
     jsonObject[JsonKey(DebugFeaturesKey)] = _debugFeatures;
 
     return jsonObject;
@@ -349,6 +368,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+
+    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);
+
+    JsonUtils::GetBool(json, SoftwareRenderingKey, _softwareRendering);
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);

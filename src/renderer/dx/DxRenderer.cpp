@@ -81,8 +81,11 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _selectionBackground{},
     _glyphCell{},
+    _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
+    _forceFullRepaintRendering{ false },
+    _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
     _defaultTextBackgroundOpacity{ 1.0f },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -386,16 +389,23 @@ try
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
     // for Windows 7 in a VM.
-    const auto hardwareResult = D3D11CreateDevice(nullptr,
-                                                  D3D_DRIVER_TYPE_HARDWARE,
-                                                  nullptr,
-                                                  DeviceFlags,
-                                                  FeatureLevels.data(),
-                                                  gsl::narrow_cast<UINT>(FeatureLevels.size()),
-                                                  D3D11_SDK_VERSION,
-                                                  &_d3dDevice,
-                                                  nullptr,
-                                                  &_d3dDeviceContext);
+    HRESULT hardwareResult = E_NOT_SET;
+
+    // If we're not forcing software rendering, try hardware first.
+    // Otherwise, let the error state fall down and create with the software renderer directly.
+    if (!_softwareRendering)
+    {
+        hardwareResult = D3D11CreateDevice(nullptr,
+                                           D3D_DRIVER_TYPE_HARDWARE,
+                                           nullptr,
+                                           DeviceFlags,
+                                           FeatureLevels.data(),
+                                           gsl::narrow_cast<UINT>(FeatureLevels.size()),
+                                           D3D11_SDK_VERSION,
+                                           &_d3dDevice,
+                                           nullptr,
+                                           &_d3dDeviceContext);
+    }
 
     if (FAILED(hardwareResult))
     {
@@ -675,6 +685,16 @@ void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
     _retroTerminalEffects = enable;
 }
 
+void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
+{
+    _forceFullRepaintRendering = enable;
+}
+
+void DxEngine::SetSoftwareRendering(bool enable) noexcept
+{
+    _softwareRendering = enable;
+}
+
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     if (_dxgiSwapChain.Get() == nullptr)
@@ -896,11 +916,14 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
+    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // so the entire frame is repainted.
+    //
     // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
     // Yes, this will further impact the performance of retro terminal effects.
     // But we're talking about running the entire display pipeline through a shader for
     // cosmetic effect, so performance isn't likely the top concern with this feature.
-    if (_retroTerminalEffects)
+    if (_forceFullRepaintRendering || _retroTerminalEffects)
     {
         _invalidMap.set_all();
     }
@@ -1176,7 +1199,12 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 try
 {
-    D2D1_COLOR_F nothing = { 0 };
+    D2D1_COLOR_F nothing{ 0 };
+    if (_chainMode == SwapChainMode::ForHwnd)
+    {
+        // When we're drawing over an HWND target, we need to fully paint the background color.
+        nothing = _backgroundColor;
+    }
 
     // If the entire thing is invalid, just use one big clear operation.
     if (_invalidMap.all())
@@ -1230,7 +1258,8 @@ try
                             _dwriteTextFormat.Get(),
                             _dwriteFontFace.Get(),
                             clusters,
-                            _glyphCell.width());
+                            _glyphCell.width(),
+                            _boxDrawingEffect.Get());
 
     // Get the baseline for this font as that's where we draw from
     DWRITE_LINE_SPACING spacing;
@@ -1606,6 +1635,9 @@ try
 
     _glyphCell = fiFontInfo.GetSize();
 
+    // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
+    RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
+
     return S_OK;
 }
 CATCH_RETURN();
@@ -1739,7 +1771,8 @@ try
                             _dwriteTextFormat.Get(),
                             _dwriteFontFace.Get(),
                             { &cluster, 1 },
-                            _glyphCell.width());
+                            _glyphCell.width(),
+                            _boxDrawingEffect.Get());
 
     UINT32 columns = 0;
     RETURN_IF_FAILED(layout.GetColumns(&columns));
@@ -1990,6 +2023,9 @@ CATCH_RETURN();
         INT32 advanceInDesignUnits;
         THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
 
+        DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
+        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
+
         // The math here is actually:
         // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
         // - DPI = dots per inch
@@ -2029,6 +2065,10 @@ CATCH_RETURN();
         const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
         const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
+        // Get the gap.
+        const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
+        const float halfGap = gap / 2;
+
         // We're going to build a line spacing object here to track all of this data in our format.
         DWRITE_LINE_SPACING lineSpacing = {};
         lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
@@ -2041,18 +2081,40 @@ CATCH_RETURN();
         // and set the baseline to the full round pixel ascent value.
         //
         // For reference, for the letters "ag":
-        // aaaaaa   ggggggg     <===================================
-        //      a   g    g            |                            |
-        //  aaaaa   ggggg             |<-ascent                    |
-        // a    a   g                 |                            |---- height
-        // aaaaa a  gggggg      <-------------------baseline       |
-        //          g     g           |<-descent                   |
-        //          gggggg      <===================================
+        // ...
+        //          gggggg      bottom of previous line
         //
-        const auto fullPixelAscent = ceil(ascent);
-        const auto fullPixelDescent = ceil(descent);
+        // -----------------    <===========================================|
+        //                         | topSideBearing       |  1/2 lineGap    |
+        // aaaaaa   ggggggg     <-------------------------|-------------|   |
+        //      a   g    g                                |             |   |
+        //  aaaaa   ggggg                                 |<-ascent     |   |
+        // a    a   g                                     |             |   |---- lineHeight
+        // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
+        //          g     g                               |<-descent    |   |
+        //          gggggg      <-------------------------|-------------|   |
+        //                         | bottomSideBearing    | 1/2 lineGap     |
+        // -----------------    <===========================================|
+        //
+        // aaaaaa   ggggggg     top of next line
+        // ...
+        //
+        // Also note...
+        // We're going to add half the line gap to the ascent and half the line gap to the descent
+        // to ensure that the spacing is balanced vertically.
+        // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
+        // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
+        // box than would be desired for proper alignment of things like line and box characters
+        // which will try to sit centered in the area and touch perfectly with their neighbors.
+
+        const auto fullPixelAscent = ceil(ascent + halfGap);
+        const auto fullPixelDescent = ceil(descent + halfGap);
         lineSpacing.height = fullPixelAscent + fullPixelDescent;
         lineSpacing.baseline = fullPixelAscent;
+
+        // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
+        // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
+        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
 
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
@@ -2084,7 +2146,7 @@ CATCH_RETURN();
         // of hit testing math and other such multiplication/division.
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
+        coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
 
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
