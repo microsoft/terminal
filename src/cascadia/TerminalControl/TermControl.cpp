@@ -1822,6 +1822,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
+        if (!_terminal->IsSelectionActive())
+        {
+            return;
+        }
+
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
