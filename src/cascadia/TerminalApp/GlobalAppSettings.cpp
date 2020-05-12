@@ -61,7 +61,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _InitialCols{ DEFAULT_COLS },
     _RowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
-    _DebugFeatures{ debugFeaturesDefault }
+    _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
 }
 
@@ -194,7 +194,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
 
     // GetBool will only override the current value if the key exists
-    JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeatures);
+    JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 }
 
 // Method Description:
