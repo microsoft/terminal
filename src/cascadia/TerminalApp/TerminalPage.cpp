@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
 
     
     // Method Description:
-    // - Show a dialog with Shortcuts information. Displays the app's defult keybindings
+    // - Show a dialog with Shortcuts information. Displays the app's default keybindings
     void TerminalPage::_ShowShortcutsDialog()
     {
         _showDialogHandlers(*this, FindName(L"ShortcutsDialog").try_as<WUX::Controls::ContentDialog>());
