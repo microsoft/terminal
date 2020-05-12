@@ -1448,12 +1448,16 @@ namespace winrt::TerminalApp::implementation
         // will crash on the UI thread, because the main thread is a STA.
         co_await winrt::resume_background();
 
-        hstring text = L"";
-        if (data.Contains(StandardDataFormats::Text()))
+        try
         {
-            text = co_await data.GetTextAsync();
+            hstring text = L"";
+            if (data.Contains(StandardDataFormats::Text()))
+            {
+                text = co_await data.GetTextAsync();
+            }
+            eventArgs.HandleClipboardData(text);
         }
-        eventArgs.HandleClipboardData(text);
+        CATCH_LOG();
     }
 
     // Method Description:
