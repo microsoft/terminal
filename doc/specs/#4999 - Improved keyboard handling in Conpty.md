@@ -94,17 +94,34 @@ https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
 
 https://www.iterm2.com/documentation-escape-codes.html
 
+
+### Requesting `win32-input-mode`
+
+An application can request `win32-input-mode` with the following OSC sequence
+
 ```
   ^[ ] 1000 ; 1 ; Ps ST
 
-         Ps: Whether to enable win32-input-mode or not. If omitted, defaults to '0'.
+         Ps: Whether to enable or disable win32-input-mode. If omitted, defaults to '0'.
              0: Disable win32-input-mode
              1: Enable win32-input-mode
 ```
 
-### Requesting `win32-input-mode`
+OSC 1000 seemed to be unused according to [this discussion of used
+OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10).
+This seems like a reasonable place to stake a claim for sequences used by the
+the Windows Terminal - future WT-specific sequences could also be placed as `OSC
+1000;2`, `OSC 1000;3`, etc. This pattern is also similar to the way iTerm2
+defines their own sequences.
+
+When a terminal recieves a `^[]1000;1;1ST` sequence, they should switch into
+`win32-input-mode`. In `win32-input-mode`, the terminal will send keyboard input
+to the connected client application in the following format:
 
 ### `win32-input-mode` sequences
+
+The `KEY_EVENT_RECORD` portion of an input record (the part that's important for
+us to encode in this feature) is defined as the following:
 
 ```c++
 typedef struct _KEY_EVENT_RECORD {
@@ -120,37 +137,92 @@ typedef struct _KEY_EVENT_RECORD {
 } KEY_EVENT_RECORD;
 ```
 
+To encode all of this information, I propose the following sequence. This is a
+CSI sequence with a final terminator character of `!`. This character appears
+unused as a terminator by sequences _output_ by a client application, and
+doesn't seem to be used as an _input_ sequence terminator either.
+
 ```
-  ^[ _ 1 ; Kd ; Rc ; Vk ; Sc ; Uc ; Cs ST
+  ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs !
 
-         Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+       Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
 
-         Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+       Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
 
-         Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+       Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
 
-         Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+       Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
 
-         Uc: the value of UnicodeChar - TODO I think this should be
-             decimal-encoded, because otherwise control chars would be mixed in.
+       Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+           "10", the character 'A' is "65". If omitted, defaults to '0'.
 
-         Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+       Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
 ```
 
-**TODO**: Defaulting `Rc` to `1` makes more sense in my opinion, so
-`^[_1;;;Vk;;Uc;;ST` is all that's needed for most keys.
+> 👉 NOTE: an earlier draft of this spec used an APC sequence for encoding the
+> input sequences. This was changed to a CSI for stylistic reasons. There's not
+> a great body of reference anywhere that lists APC sequences in use, so there's
+> no way to know if the sequence would collide with another terminal emulator's
+> usage. Furthermore, useing an APC seems to give a distinct impression that
+> this is some "Windows Terminal" specific sequence, which is not intended. This
+> is a Windows-specific sequence, but one that any Terminal/application could
+> use.
 
+In this way, a terminal can communicate input to a connected client application
+as `INPUT_RECORD`s, without any loss of fidelity.
 
+#### Example
 
-TODO: I don't _love_ using APC 1 here - technically, if anyone else wants to use an
-APC, then there's no way to know if this conflicts. Maybe there's a convenient
-opening in CSI space?
+When the user presses <kbd>Ctrl+F1</kbd> in the console, the console actually send 4 input records to the client application:
+* A <kbd>Ctrl</kbd> down event
+* A <kbd>F1</kbd> down event
+* A <kbd>F1</kbd> up event
+* A <kbd>Ctrl</kbd> up event
 
-Also, pretty much no one uses OSC's for input, but conpty generally already does
-for window size, so we _could_ use that...
+Encoded in `win32-input-mode`, this would look like the following:
+```
+^[[1;1;17;29;0;40!
+^[[1;1;112;59;0;40!
+^[[0;1;112;59;0;40!
+^[[0;1;17;29;0;32!
+
+Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
+Down: 1 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
+Down: 0 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
+Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
+```
+
+Similarly, for a keypress like <kbd>Ctrl+Alt+A</kbd>, which is 6 key events:
+```
+^[[1;1;17;29;0;40!
+^[[1;1;18;56;0;42!
+^[[1;1;65;30;0;42!
+^[[0;1;65;30;0;42!
+^[[0;1;18;56;0;40!
+^[[0;1;17;29;0;32!
+
+Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
+Down: 1 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x2a
+Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: \0 (0x0) KeyState: 0x2a
+Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: \0 (0x0) KeyState: 0x2a
+Down: 0 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x28
+Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
+```
+
+Or, for something simple like <kbd>A</kbd> (which is 4 key events):
+```
+^[[1;1;16;42;0;48!
+^[[1;1;65;30;65;48!
+^[[0;1;16;42;0;32!
+^[[0;1;65;30;97;32!
+
+Down: 1 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x30
+Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
+Down: 0 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x20
+Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
+```
 
 ### Scenarios
-
 
 #### User is typing into WSL from the Windows Terminal
 
