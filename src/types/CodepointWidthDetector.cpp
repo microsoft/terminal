@@ -38,6 +38,10 @@ namespace
         // 0x2666 0x2710,
         // 0x270E 0x2765 0x1f000 - 0x1f02b except 0x1f004 0x1f594
         //
+        // GH #5822 - Removed glyphs that appear inside of CP437 (https://en.wikipedia.org/wiki/Code_page_437)
+        // and WGL4 (https://en.wikipedia.org/wiki/Windows_Glyph_List_4) since they've been narrow since the
+        // beginning of time and changing it to wide would only cause destruction.
+        //
         // *** Codepoint ranges marked with "OVR" have their given width from EastAsianWidth.txt overridden.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
