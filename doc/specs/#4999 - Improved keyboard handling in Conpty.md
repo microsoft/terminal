@@ -73,7 +73,7 @@ Keys that we definitely need to support, that don't have unique VT sequences:
 
 ### Inspiration
 
-The design we've settled upon is one that's highly inspired by two precedents:
+The design we've settled upon is one that's highly inspired by a few precedents:
 * `Application Cursor Keys (DECCKM)` is a long-supported VT sequences which a
   client application can use to request a different input format from the
   Terminal. This is the DECSET sequence `^[[?1h`/`^[[?1l` (for enable/disable,
@@ -86,14 +86,11 @@ The design we've settled upon is one that's highly inspired by two precedents:
   or released (though, less than a full `INPUT_RECORD` worth of data). Instead
   of input being sent to the client as a CSI or SS3 sequence, this `kitty` mode
   uses "Application Program-Command" (or "APC) sequences , prefixed with `^[_`.
-
-
-[ConEmu specific OSCs](#ConEmu-specific-OSCs)
-
-https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
-
-https://www.iterm2.com/documentation-escape-codes.html
-
+* [iTerm2](https://www.iterm2.com/documentation-escape-codes.html) has a region
+  of OSC's that they've carved for themselves all starting with the same initial
+  parameter, `1337`. They then have a number of commands that all use the second
+  parameter to indicate what command specific to iTerm2 they're actually
+  implementing.
 
 ### Requesting `win32-input-mode`
 
@@ -221,6 +218,10 @@ Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
 Down: 0 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x20
 Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 ```
+
+> 👉 NOTE: In all the above examples, I had my NumLock key on, so all the
+> KeyState parameters have bits 0x20 set. To get these ketys without a NumLock,
+> subtract 32 from the value.
 
 ### Scenarios
 
