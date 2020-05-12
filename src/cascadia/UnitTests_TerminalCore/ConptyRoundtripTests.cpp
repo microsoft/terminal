@@ -2982,7 +2982,6 @@ void ConptyRoundtripTests::DeleteWrappedWord()
 {
     // See https://github.com/microsoft/terminal/issues/5839
     Log::Comment(L"TODO");
-
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -2996,9 +2995,6 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     _checkConptyOutput = false;
     _logConpty = true;
 
-    auto defaultAttrs = si.GetAttributes();
-    auto conhostBlueAttrs = defaultAttrs;
-
     sm.ProcessString(L"\x1b[?25l");
     sm.ProcessString(std::wstring(50, L'A'));
     sm.ProcessString(L" ");
@@ -3007,9 +3003,6 @@ void ConptyRoundtripTests::DeleteWrappedWord()
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool after) {
         const auto width = viewport.width<short>();
-
-        VERIFY_ARE_EQUAL(!after, tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
 
         auto iter1 = tb.GetCellDataAt({ 0, 0 });
         TestUtils::VerifySpanOfText(L"A", iter1, 0, 50);
@@ -3036,18 +3029,18 @@ void ConptyRoundtripTests::DeleteWrappedWord()
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
-
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
 
     sm.ProcessString(L"\x1b[?25l");
     sm.ProcessString(L"\x1b[H");
     sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L" ");
 
-    sm.ProcessString(std::wstring(TerminalViewWidth - 50, L' '));
-    sm.ProcessString(L"\x1b[K");
-    sm.ProcessString(L"  ");
-    sm.ProcessString(fmt::format(L"\x1b[{}X", 50 - (TerminalViewWidth - 50)));
+    sm.ProcessString(std::wstring(TerminalViewWidth - 51, L' '));
+
+    sm.ProcessString(L"\x1b[2;1H");
+    sm.ProcessString(std::wstring(50 - (TerminalViewWidth - 51), L' '));
     sm.ProcessString(L"\x1b[1;50H");
     sm.ProcessString(L"\x1b[?25h");
 
@@ -3056,7 +3049,6 @@ void ConptyRoundtripTests::DeleteWrappedWord()
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
-
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
 }
