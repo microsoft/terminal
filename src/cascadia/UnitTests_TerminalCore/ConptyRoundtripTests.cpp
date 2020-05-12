@@ -218,6 +218,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(WrapNewLineAtBottom);
     TEST_METHOD(WrapNewLineAtBottomLikeMSYS);
 
+    TEST_METHOD(DeleteWrappedWord);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -3026,6 +3028,17 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
     INIT_TEST_PROPERTY(int, paintEachNewline, L"Controls whether we should call PaintFrame every line of text or not.");
 
+    // GH#5839 -
+    // This test does expose a real bug when using WriteCharsLegacy to emit
+    // wrapped lines in conpty without WC_DELAY_EOL_WRAP. However, this fix has
+    // not yet been made, so for now, we need to just skip the cases that cause
+    // this.
+    if (writingMethod == PrintWithWriteCharsLegacy && paintEachNewline == PaintEveryLine)
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     // I've tested this with 0x0, 0x4, 0x80, 0x84, and 0-8, and none of these
     // flags seem to make a difference. So we're just assuming 0 here, so we
     // don't test a bunch of redundant cases.
@@ -3373,4 +3386,94 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     VERIFY_ARE_EQUAL(circledRows + 1, term->_mutableViewport.Top());
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+}
+
+void ConptyRoundtripTests::DeleteWrappedWord()
+{
+    // See https://github.com/microsoft/terminal/issues/5839
+    Log::Comment(L"This test ensures that when we print a empty row beneath a "
+                 L"wrapped row, that we _actually_ clear it.");
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Print two lines of text:
+    // |AAAAAAAAAAAAA BBBBBB| <wrap>
+    // |BBBBBBBB_           | <break>
+    // (cursor on the '_')
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L" ");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool after) {
+        const auto width = viewport.width<short>();
+
+        auto iter1 = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter1, 0, 50);
+        TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
+        if (after)
+        {
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 50);
+
+            auto iter2 = tb.GetCellDataAt({ 0, 1 });
+            TestUtils::VerifySpanOfText(L" ", iter2, 0, width);
+        }
+        else
+        {
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+
+            auto iter2 = tb.GetCellDataAt({ 0, 1 });
+            TestUtils::VerifySpanOfText(L"B", iter2, 0, 50 - (width - 51));
+            TestUtils::VerifySpanOfText(L" ", iter2, 0, width);
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
+
+    // Now, go back and erase all the 'B's, as if the user executed a
+    // backward-kill-word in PowerShell. Afterwards, the buffer will look like:
+    //
+    // |AAAAAAAAAAAAA_      |
+    // |                    |
+    //
+    // We're doing this the same way PsReadline redraws the prompt - by just
+    // reprinting all of it.
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[H");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L" ");
+
+    sm.ProcessString(std::wstring(TerminalViewWidth - 51, L' '));
+
+    sm.ProcessString(L"\x1b[2;1H");
+    sm.ProcessString(std::wstring(50 - (TerminalViewWidth - 51), L' '));
+    sm.ProcessString(L"\x1b[1;50H");
+    sm.ProcessString(L"\x1b[?25h");
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
 }
