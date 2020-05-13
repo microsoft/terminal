@@ -334,4 +334,16 @@
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
   </data>
+  <data name="CloseTabDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close Tab</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
+  <data name="CloseTabDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
+  <data name="CloseTabDialog.Title" xml:space="preserve">
+    <value>Are you sure you want to close this tab?</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
 </root>
