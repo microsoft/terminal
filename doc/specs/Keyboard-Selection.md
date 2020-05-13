@@ -78,7 +78,7 @@ Upon being enabled, the current cursor position becomes the selection endpoint. 
 `toggleMarkMode` has two keybinding arguments:
 | Parameter | Accepted Values | Default Value | Description |
 |--|--|--|--|
-| `anchorModifier` | regular keybindings and plain modifier keys | `Shift` | The keybinding used to anchor the selection endpoint to it's current text buffer position. While holding down that keybinding, any `moveSelectionPoint` actions will move the other selection anchor (`endSelectionPosition`). |
+| `anchorModifier` | regular keybindings and plain modifier keys | `Shift` | The keybinding used to anchor the selection endpoint to its current text buffer position. While holding down that keybinding, any `moveSelectionPoint` actions will move the other selection anchor (`endSelectionPosition`). |
 | `anchorMode` | `Hold`, `Toggle` | `Hold` | If `Hold`, the user needs to hold the `anchorModifier` key to anchor the 'start' selection endpoint and move the second selection endpoint (like Mark Mode). If `Toggle`, the user switches between selection endpoints when they press it (like Copy Mode). |
 
 #### Rendering during Mark Mode
@@ -89,13 +89,22 @@ In ConHost, output would be paused when a selection was present. This is a compl
 #### Interaction with CopyOnSelect
 If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". If `anchorMode=Hold`, the user has to use the `copy` keybinding to signify that they have finished creating a selection. If `anchorMode=Toggle`, the selection is copied either when the `copy` keybinding is used, or when the user presses the `anchorModifier` key and the 'end' endpoint is set.
 
+#### Mouse Interaction and Mark Mode
+If a selection exists prior to entering Mark Mode, upon entering Mark Mode, the user should be modifying the "end" endpoint of the selection, instead of the cursor. The existing selection should not be cleared (contrary to prior behavior).
+
+During Mark Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Mark Mode. The target endpoint being modified in Mark Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier).
+
+
 #### Exiting Mark Mode
 There are multiple ways to exit mark mode. The user can press...
 - the `toggleMarkMode` keybinding
 - the `ESC` key
 - the `copy` keybinding (which also copies the contents of the selection to the user's clipboard)
 
+In all three cases, the selection will be cleared.
 
+NOTE - Related to #3884:
+    If the user has chosen to have selections persist after a copy operation, the selection created by Mark Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation.
 
 
 
