@@ -509,3 +509,16 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     return S_OK;
 }
+
+// Method Description:
+// - TODO
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestWin32Input() noexcept
+{
+    RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}

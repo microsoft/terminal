@@ -436,3 +436,14 @@ using namespace Microsoft::Console::Render;
 {
     return _Write("\x1b[29m");
 }
+
+// Method Description:
+// - TODO
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
+{
+    return _Write("\x1b]1000;1;1\x07");
+}
