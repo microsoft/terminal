@@ -27,5 +27,9 @@ namespace Microsoft.Terminal.TerminalControl
 
         void NotifyFocusEnter();
         void NotifyFocusLeave();
+        void ClearBuffer();
+        void TryRedrawCanvas();
+
+        void Close();
     }
 }

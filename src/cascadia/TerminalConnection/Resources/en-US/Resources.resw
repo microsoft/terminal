@@ -124,13 +124,16 @@
     <value>Please enter the desired tenant number.</value>
   </data>
   <data name="AzureNewLogin" xml:space="preserve">
-    <value>Enter "n" to login with a different account.</value>
+    <value>Enter {0} to login with a new account</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin; it is intended to be a single-character shorthand for "new account"</comment>
   </data>
   <data name="AzureRemoveStored" xml:space="preserve">
-    <value>Enter "r" to remove the above saved connection settings.</value>
+    <value>Enter {0} to remove the above saved connection settings.</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_RemoveStored; it is intended to be a single-character shorthand for "remove stored"</comment>
   </data>
   <data name="AzureInvalidAccessInput" xml:space="preserve">
-    <value>Please enter a valid number to access the stored connection settings, n to make a new one, or r to remove the stored ones.</value>
+    <value>Please enter a valid number to access the stored connection settings, {0} to log in with a new account, or {1} to remove the saved connection settings.</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin, and {1} will be replaced with AzureUserEntry_RemoveStored. This is an error message, used after AzureNewLogin/AzureRemoveStored if the user enters an invalid value.</comment>
   </data>
   <data name="AzureNonNumberError" xml:space="preserve">
     <value>Please enter a number.</value>
@@ -143,12 +146,15 @@
   </data>
   <data name="AzureNoCloudAccount" xml:space="preserve">
     <value>You have not set up your cloud shell account yet. Please go to https://shell.azure.com to set it up.</value>
+    <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
   </data>
   <data name="AzureStorePrompt" xml:space="preserve">
-    <value>Do you want to save these connection settings for future logins? [y/n]</value>
+    <value>Do you want to save these connection settings for future logins? [{0}/{1}]</value>
+    <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. They are single-character shorthands for "yes" and "no" in this language.</comment>
   </data>
   <data name="AzureInvalidStoreInput" xml:space="preserve">
-    <value>Please enter y or n</value>
+    <value>Please enter {0} or {1}</value>
+    <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. This resource will be used as an error response after AzureStorePrompt.</comment>
   </data>
   <data name="AzureRequestingCloud" xml:space="preserve">
     <value>Requesting a cloud shell instance...</value>
@@ -168,15 +174,6 @@
   <data name="AzureTokensRemoved" xml:space="preserve">
     <value>Saved connection settings removed.</value>
   </data>
-  <data name="AzureExitStr" xml:space="preserve">
-    <value>Exit.</value>
-  </data>
-  <data name="AzureAuthString" xml:space="preserve">
-    <value>Authenticated.</value>
-  </data>
-  <data name="AzureInternetOrServerIssue" xml:space="preserve">
-    <value>Could not connect to Azure. You may not have internet or the server might be down.</value>
-  </data>
   <data name="AzureOldCredentialsFlushedMessage" xml:space="preserve">
     <value>Authentication parameters changed. You'll need to log in again.</value>
   </data>
@@ -184,34 +181,38 @@
     <value>&lt;unknown tenant name&gt;</value>
   </data>
   <data name="AzureIthTenant" xml:space="preserve">
-    <value>Tenant %d: %s (%s)</value>
+    <value>Tenant {0}: {1} ({2})</value>
+    <comment>{0} is the tenant's number, which the user will enter to connect to the tenant. {1} is the tenant's display name, which will be meaningful for the user. {2} is the tenant's internal ID number.</comment>
   </data>
   <data name="AzureSuccessfullyAuthenticated" xml:space="preserve">
     <value>Authenticated.</value>
   </data>
   <data name="AzureUserEntry_NewLogin" xml:space="preserve">
     <value>n</value>
-    <comment>The user must enter this character to say NEW LOGIN (AzureInvalidAccessInput, AzureNewLogin)</comment>
+    <comment>This is shorthand for "new login". The user must enter this character to activate the New Login feature (AzureInvalidAccessInput, AzureNewLogin)</comment>
   </data>
   <data name="AzureUserEntry_RemoveStored" xml:space="preserve">
     <value>r</value>
-    <comment>The user must enter this character to say REMOVE SAVED LOGINS (AzureRemoveStored, AzureInvalidAccessInput)</comment>
+    <comment>This is shorthand for "remove saved connections". The user must enter this character to activate the Remove Saved Logins feature (AzureRemoveStored, AzureInvalidAccessInput)</comment>
   </data>
   <data name="AzureUserEntry_Yes" xml:space="preserve">
     <value>y</value>
-    <comment>The user must enter this character to signify YES</comment>
+    <comment>This is shorthand for "yes". The user must enter this character to CONFIRM a prompt.</comment>
   </data>
   <data name="AzureUserEntry_No" xml:space="preserve">
     <value>n</value>
-    <comment>The user must enter this character to signify NO</comment>
+    <comment>This is shorthand for "no". The user must enter this character to DECLINE a prompt.</comment>
   </data>
   <data name="ProcessExited" xml:space="preserve">
-    <value>[process exited with code %u]</value>
-    <comment>The first argument (%u) is the (positive) error code of the process. 0 is success.</comment>
+    <value>[process exited with code {0}]</value>
+    <comment>The first argument {0} is the (positive) error code of the process. When there is no error, the number ZERO will be displayed.</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
-    <value>[error 0x%8.08x when launching `%ls']</value>
-    <comment>The first argument is the hexadecimal error code. The second is the process name.
-If this resource spans multiple lines, it will not be displayed properly. Yeah.</comment>
+    <value>[error {0:#08x} when launching `{1}']</value>
+    <comment>The first argument {0...} is the hexadecimal error code. The second argument {1} is the user-specified path to a program.
+      If this string is broken to multiple lines, it will not be displayed properly.</comment>
+  </data>
+  <data name="TelnetInternetOrServerIssue" xml:space="preserve">
+    <value>Could not connect to telnet server.</value>
   </data>
 </root>

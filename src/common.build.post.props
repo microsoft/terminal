@@ -13,7 +13,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>onecoreuap_apiset.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap_apiset.lib;d3dcompiler.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -54,7 +54,7 @@
   <Target Name="CleanUpPrecompForSmallCIAgents"
           DependsOnTargets="_ComputePrecompToCleanUp"
           AfterTargets="AfterBuild"
-          Condition="'$(AGENT_ID)' != '' and !$(ProjectName.Contains('TerminalApp'))">
+          Condition="'$(AGENT_ID)' != ''">
     <!-- We just need to keep *TerminalApp*'s PCHs because they get rebuilt more often. -->
     <Delete Files="@(_PCHFileToCleanWithTimestamp)"/>
     <Touch Files="@(_PCHFileToCleanWithTimestamp)" Time="%(LastWriteTime)" AlwaysCreate="true" />

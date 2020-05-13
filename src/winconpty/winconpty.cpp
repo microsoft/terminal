@@ -20,6 +20,7 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4273) // inconsistent dll linkage (we are exporting things kernel32 also exports)
+#pragma warning(disable : 26485) // array-to-pointer decay is virtually impossible to avoid when we can't use STL.
 
 // Function Description:
 // - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
@@ -57,7 +58,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                              const DWORD dwFlags,
                              _Inout_ PseudoConsole* pPty)
 {
-    if (pPty == NULL)
+    if (pPty == nullptr)
     {
         return E_INVALIDARG;
     }
@@ -76,20 +77,23 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     sa.nLength = sizeof(sa);
     // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
     sa.bInheritHandle = FALSE;
-    sa.lpSecurityDescriptor = NULL;
+    sa.lpSecurityDescriptor = nullptr;
 
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    const wchar_t* pwszFormat = L"%s --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
+    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
-    wchar_t cmd[MAX_PATH];
+    wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
+    const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
+               bResizeQuirk ? L"--resizeQuirk " : L"",
                size.X,
                size.Y,
                signalPipeConhostSide.get(),
@@ -112,19 +116,19 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     // Get the size of the attribute list. We need one attribute, the handle list.
     SIZE_T listSize = 0;
-    InitializeProcThreadAttributeList(NULL, 1, 0, &listSize);
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &listSize);
 
     // I have to use a HeapAlloc here because kernelbase can't link new[] or delete[]
-    PPROC_THREAD_ATTRIBUTE_LIST attrList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
+    PPROC_THREAD_ATTRIBUTE_LIST attrList = static_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
     RETURN_IF_NULL_ALLOC(attrList);
-    auto attrListDelete = wil::scope_exit([&] {
+    auto attrListDelete = wil::scope_exit([&]() noexcept {
         HeapFree(GetProcessHeap(), 0, attrList);
     });
 
     siEx.lpAttributeList = attrList;
     RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &listSize));
     // Set cleanup data for ProcThreadAttributeList when successful.
-    auto cleanupProcThreadAttribute = wil::scope_exit([&] {
+    auto cleanupProcThreadAttribute = wil::scope_exit([&]() noexcept {
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     });
     RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
@@ -132,8 +136,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                                                          PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
                                                          inheritedHandles,
                                                          (INHERITED_HANDLES_COUNT * sizeof(HANDLE)),
-                                                         NULL,
-                                                         NULL));
+                                                         nullptr,
+                                                         nullptr));
     wil::unique_process_information pi;
     { // wow64 disabled filesystem redirection scope
 #if defined(BUILD_WOW6432)
@@ -145,17 +149,17 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
             RtlWow64EnableFsRedirectionEx(RedirectionFlag, &RedirectionFlag);
         });
 #endif
-        if (hToken == INVALID_HANDLE_VALUE || hToken == NULL)
+        if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
         {
             // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
+            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
                                                       cmd,
-                                                      NULL,
-                                                      NULL,
+                                                      nullptr,
+                                                      nullptr,
                                                       TRUE,
                                                       EXTENDED_STARTUPINFO_PRESENT,
-                                                      NULL,
-                                                      NULL,
+                                                      nullptr,
+                                                      nullptr,
                                                       &siEx.StartupInfo,
                                                       pi.addressof()));
         }
@@ -163,14 +167,14 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         {
             // Call create process
             RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            NULL,
+                                                            _ConsoleHostPath(),
                                                             cmd,
-                                                            NULL,
-                                                            NULL,
+                                                            nullptr,
+                                                            nullptr,
                                                             TRUE,
                                                             EXTENDED_STARTUPINFO_PRESENT,
-                                                            NULL,
-                                                            NULL,
+                                                            nullptr,
+                                                            nullptr,
                                                             &siEx.StartupInfo,
                                                             pi.addressof()));
         }
@@ -178,7 +182,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     // Move the process handle out of the PROCESS_INFORMATION into out Pseudoconsole
     pPty->hConPtyProcess = pi.hProcess;
-    pi.hProcess = NULL;
+    pi.hProcess = nullptr;
 
     RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(&pPty->hPtyReference,
                                                  serverHandle.get(),
@@ -194,13 +198,13 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 // - Resizes the conpty
 // Arguments:
 // - hSignal: A signal pipe as returned by CreateConPty.
-// - size: The new dimenstions of the conpty, in characters.
+// - size: The new dimensions of the conpty, in characters.
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the resize message to the pty.
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size)
 {
-    if (pPty == NULL)
+    if (pPty == nullptr || size.X < 0 || size.Y < 0)
     {
         return E_INVALIDARG;
     }
@@ -210,7 +214,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
     signalPacket[1] = size.X;
     signalPacket[2] = size.Y;
 
-    BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), NULL, NULL);
+    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -225,14 +229,14 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 // - <none>
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 {
-    if (pPty != NULL)
+    if (pPty != nullptr)
     {
         // See MSFT:19918626
         // First break the signal pipe - this will trigger conhost to tear itself down
         if (_HandleIsValid(pPty->hSignal))
         {
             CloseHandle(pPty->hSignal);
-            pPty->hSignal = 0;
+            pPty->hSignal = nullptr;
         }
         // Then, wait on the conhost process before killing it.
         // We do this to make sure the conhost finishes flushing any output it
@@ -252,7 +256,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
             }
 
             TerminateProcess(pPty->hConPtyProcess, 0);
-            pPty->hConPtyProcess = 0;
+            pPty->hConPtyProcess = nullptr;
         }
         // Then take care of the reference handle.
         // TODO GH#1810: Closing the reference handle late leaves conhost thinking
@@ -260,7 +264,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
         if (_HandleIsValid(pPty->hPtyReference))
         {
             CloseHandle(pPty->hPtyReference);
-            pPty->hPtyReference = 0;
+            pPty->hPtyReference = nullptr;
         }
     }
 }
@@ -268,14 +272,14 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 // Function Description:
 // - This closes each of the members of a PseudoConsole, and HeapFree's the
 //      memory allocated to it. This should be used to cleanup any
-//      PseudoConosles that were created with CreatePseudoConsole.
+//      PseudoConsoles that were created with CreatePseudoConsole.
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
 // Return Value:
 // - <none>
 VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 {
-    if (pPty != NULL)
+    if (pPty != nullptr)
     {
         _ClosePseudoConsoleMembers(pPty);
         HeapFree(GetProcessHeap(), 0, pPty);
@@ -300,7 +304,7 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 //      for applications like `ssh`, where ssh (currently running in a terminal)
 //      might want to create a pseudoterminal session for an child application
 //      and the child inherit the cursor position of ssh.
-//      The creted conpty will immediately emit a "Device Status Request" VT
+//      The created conpty will immediately emit a "Device Status Request" VT
 //      sequence to hOutput, that should be replied to on hInput in the format
 //      "\x1b[<r>;<c>R", where `<r>` is the row and `<c>` is the column of the
 //      cursor position.
@@ -325,11 +329,11 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                                    _In_ DWORD dwFlags,
                                                    _Out_ HPCON* phPC)
 {
-    if (phPC == NULL)
+    if (phPC == nullptr)
     {
         return E_INVALIDARG;
     }
-    *phPC = NULL;
+    *phPC = nullptr;
     if ((!_HandleIsValid(hInput)) && (!_HandleIsValid(hOutput)))
     {
         return E_INVALIDARG;
@@ -337,7 +341,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 
     PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
-    auto cleanupPty = wil::scope_exit([&] {
+    auto cleanupPty = wil::scope_exit([&]() noexcept {
         _ClosePseudoConsole(pPty);
     });
 
@@ -358,8 +362,8 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 // Resizes the given conpty to the specified size, in characters.
 extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 {
-    PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    HRESULT hr = pPty == NULL ? E_INVALIDARG : S_OK;
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
         hr = _ResizePseudoConsole(pPty, size);
@@ -376,7 +380,7 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
     PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    if (pPty != NULL)
+    if (pPty != nullptr)
     {
         _ClosePseudoConsole(pPty);
     }

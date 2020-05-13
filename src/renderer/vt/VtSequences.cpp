@@ -54,7 +54,7 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -82,7 +82,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
-
     return _WriteFormattedString(&format, chars);
 }
 
@@ -95,12 +94,11 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dC";
-
     return _WriteFormattedString(&format, chars);
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -109,6 +107,11 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_ClearScreen() noexcept
 {
     return _Write("\x1b[2J");
+}
+
+[[nodiscard]] HRESULT VtEngine::_ClearScrollback() noexcept
+{
+    return _Write("\x1b[3J");
 }
 
 // Method Description:
@@ -197,7 +200,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
 {
-    const std::string fmt = isBold ? "\x1b[1m" : "\x1b[22m";
+    const std::string_view fmt = isBold ? "\x1b[1m" : "\x1b[22m";
     return _Write(fmt);
 }
 
@@ -234,7 +237,7 @@ using namespace Microsoft::Console::Render;
     //      dark colors. For conhost as a terminal, it can't draw bold
     //      characters, so it displays "bold" as bright, and in fact most
     //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness seperately, we'll make sure the
+    // By specifying the boldness and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30 +
                         (fIsForeground ? 0 : 10) +
@@ -277,7 +280,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
+    const std::string_view fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
 
     return _Write(fmt);
 }

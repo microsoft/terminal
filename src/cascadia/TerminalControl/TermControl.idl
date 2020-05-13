@@ -1,10 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IMouseWheelListener.idl";
+
 namespace Microsoft.Terminal.TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
+    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
+
+    // C++/winrt makes it difficult to share this idl between two projects,
+    // Instead, we just pin the uuid and include it in both TermControl and App
+    // If you update this one, please update TerminalApp\IF7Listener.idl.
+    // If you change this interface, please update the guid.
+    // If you press F7 and get a runtime error, go make sure both copies are the same.
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
+    interface IF7Listener
+    {
+        Boolean OnF7Pressed();
+    }
 
     runtimeclass CopyToClipboardEventArgs
     {
@@ -18,7 +32,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IF7Listener, IMouseWheelListener
     {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -28,9 +42,11 @@ namespace Microsoft.Terminal.TerminalControl
         void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
 
         event TitleChangedEventArgs TitleChanged;
+        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;
@@ -38,17 +54,19 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
 
-        Boolean CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+        Boolean CopySelectionToClipboard(Boolean collapseText);
         void PasteTextFromClipboard();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
+        Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         void ScrollViewport(Int32 viewTop);
-        void KeyboardScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
+
+        void CreateSearchBoxControl();
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();

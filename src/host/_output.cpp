@@ -173,7 +173,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         std::wstring_view writtenView(wideChars);
         writtenView = writtenView.substr(0, wideCharsWritten);
 
-        // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
+        // Look over written wide chars to find equivalent count of ascii chars so we can properly report back
         // how many elements were actually written
         used = GetALengthFromW(codepage, writtenView);
     }
@@ -219,24 +219,6 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     try
     {
         TextAttribute useThisAttr(attribute);
-
-        // Here we're being a little clever -
-        // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
-        // because their first call to GetScreenBufferInfo returned a legacy attr.
-        // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-        // This could create a scenario where someone emitted RGB with VT,
-        // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-        // they had set.
-        if (screenBuffer.InVTMode())
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            auto bufferLegacy = gci.GenerateLegacyAttributes(screenBuffer.GetAttributes());
-            if (bufferLegacy == attribute)
-            {
-                useThisAttr = TextAttribute(screenBuffer.GetAttributes());
-            }
-        }
-
         const OutputCellIterator it(useThisAttr, lengthToWrite);
         const auto done = screenBuffer.Write(it, startingCoordinate);
 
@@ -260,13 +242,17 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - lengthToWrite - the number of elements to write
 // - startingCoordinate - Screen buffer coordinate to begin writing to.
 // - cellsModified - the number of elements written
+// - enablePowershellShim - true iff the client process that's calling this
+//   method is "powershell.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
 [[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                    const wchar_t character,
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
-                                                                   size_t& cellsModified) noexcept
+                                                                   size_t& cellsModified,
+                                                                   const bool enablePowershellShim) noexcept
 {
     // Set modified cells to 0 from the beginning.
     cellsModified = 0;
@@ -287,6 +273,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
+    HRESULT hr = S_OK;
     try
     {
         const OutputCellIterator it(character, lengthToWrite);
@@ -300,10 +287,32 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         auto endingCoordinate = startingCoordinate;
         bufferSize.MoveInBounds(cellsModified, endingCoordinate);
         screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+
+        // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
+        // the vintage console, `Clear-Host` is supposed to clear the entire
+        // buffer. In conpty however, there's no difference between the viewport
+        // and the entirety of the buffer. We're going to see if this API call
+        // exactly matched the way we expect powershell to call it. If it does,
+        // then let's manually emit a ^[[3J to the connected terminal, so that
+        // their entire buffer will be cleared as well.
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (enablePowershellShim && gci.IsInVtIoMode())
+        {
+            const til::size currentBufferDimensions{ screenInfo.GetBufferSize().Dimensions() };
+
+            const bool wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+            const bool startedAtOrigin = startingCoordinate == COORD{ 0, 0 };
+            const bool wroteSpaces = character == UNICODE_SPACE;
+
+            if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+            {
+                hr = gci.GetVtIo()->ManuallyClearScrollback();
+            }
+        }
     }
     CATCH_RETURN();
 
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
@@ -321,7 +330,11 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
                                                                    size_t& cellsModified) noexcept
+try
 {
+    // In case ConvertToW throws causing an early return, set modified cells to 0.
+    cellsModified = 0;
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // convert to wide chars and call W version
@@ -331,3 +344,4 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     return FillConsoleOutputCharacterWImpl(OutContext, wchs.at(0), lengthToWrite, startingCoordinate, cellsModified);
 }
+CATCH_RETURN()

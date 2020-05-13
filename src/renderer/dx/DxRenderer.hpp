@@ -25,6 +25,10 @@
 
 #include "../../types/inc/Viewport.hpp"
 
+#include <TraceLoggingProvider.h>
+
+TRACELOGGING_DECLARE_PROVIDER(g_hDxRenderProvider);
+
 namespace Microsoft::Console::Render
 {
     class DxEngine final : public RenderEngineBase
@@ -49,6 +53,12 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        void SetRetroTerminalEffects(bool enable) noexcept;
+
+        void SetForceFullRepaintRendering(bool enable) noexcept;
+
+        void SetSoftwareRendering(bool enable) noexcept;
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -70,7 +80,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               COORD const coord,
-                                              bool const fTrimLeft) noexcept override;
+                                              bool const fTrimLeft,
+                                              const bool lineWrapped) noexcept override;
 
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
@@ -88,7 +99,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() noexcept override;
+        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -98,9 +109,12 @@ namespace Microsoft::Console::Render
         float GetScaling() const noexcept;
 
         void SetSelectionBackground(const COLORREF color) noexcept;
+        void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
+        void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
 
     private:
         enum class SwapChainMode
@@ -112,17 +126,19 @@ namespace Microsoft::Console::Render
         SwapChainMode _chainMode;
 
         HWND _hwndTarget;
-        SIZE _sizeTarget;
+        til::size _sizeTarget;
         int _dpi;
         float _scale;
+        float _prevScale;
 
         std::function<void()> _pfn;
 
         bool _isEnabled;
         bool _isPainting;
 
-        SIZE _displaySizePixels;
-        SIZE _glyphCell;
+        til::size _displaySizePixels;
+        til::size _glyphCell;
+        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -131,22 +147,18 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
-        [[nodiscard]] RECT _GetDisplayRect() const noexcept;
-
-        bool _isInvalidUsed;
-        RECT _invalidRect;
-        SIZE _invalidScroll;
-
-        void _InvalidOr(SMALL_RECT sr) noexcept;
-        void _InvalidOr(RECT rc) noexcept;
-
-        void _InvalidOffset(POINT pt);
+        bool _firstFrame;
+        bool _invalidateFullRows;
+        til::bitmap _invalidMap;
+        til::point _invalidScroll;
 
         bool _presentReady;
-        RECT _presentDirty;
+        std::vector<RECT> _presentDirty;
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
+
+        static std::atomic<size_t> _tracelogCount;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
@@ -171,7 +183,36 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
+        // Terminal effects resources.
+        bool _retroTerminalEffects;
+        ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
+        ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
+        ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
+        ::Microsoft::WRL::ComPtr<ID3D11InputLayout> _vertexLayout;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _pixelShaderSettingsBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+
+        // Preferences and overrides
+        bool _softwareRendering;
+        bool _forceFullRepaintRendering;
+
+        D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
+
+        float _defaultTextBackgroundOpacity;
+
+        // DirectX constant buffers need to be a multiple of 16; align to pad the size.
+        __declspec(align(16)) struct
+        {
+            float ScaledScanLinePeriod;
+            float ScaledGaussianSigma;
+#pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
+        } _pixelShaderSettings;
+
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        HRESULT _SetupTerminalEffects();
+        void _ComputePixelShaderSettings() noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
@@ -210,9 +251,9 @@ namespace Microsoft::Console::Render
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
-        [[nodiscard]] COORD _GetFontSize() const noexcept;
+        [[nodiscard]] til::size _GetClientSize() const;
 
-        [[nodiscard]] SIZE _GetClientSize() const noexcept;
+        void _InvalidateRectangle(const til::rectangle& rc);
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

@@ -41,7 +41,8 @@ public:
 #endif
 
 private:
-    bool _lookupIsWide(const std::wstring_view glyph) const noexcept;
+    CodepointWidth _lookupGlyphWidth(const std::wstring_view glyph) const;
+    CodepointWidth _lookupGlyphWidthWithCache(const std::wstring_view glyph) const noexcept;
     bool _checkFallbackViaCache(const std::wstring_view glyph) const;
     static unsigned int _extractCodepoint(const std::wstring_view glyph) noexcept;
 

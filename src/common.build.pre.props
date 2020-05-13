@@ -66,6 +66,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -82,11 +83,12 @@
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <AdditionalOptions>/std:c++17 /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -146,10 +148,21 @@
     <CodeAnalysisRuleSet>$(SolutionDir)\src\StaticAnalysis.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep;$(SolutionDir)\oss;$(SolutionDir)\packages</CAExcludePath>
+    <OpenConsoleVcpkgConfiguration>Release</OpenConsoleVcpkgConfiguration>
+    <OpenConsoleTppVcpkgConfiguration>Release</OpenConsoleTppVcpkgConfiguration>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
   </ItemDefinitionGroup>
+
+  <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->
+  <Target Name="EnsureSubmodulesExist" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\dep\wil') Or !Exists('$(SolutionDir)\dep\gsl')" Text="$([System.String]::Format('$(ErrorText)'))" />
+  </Target>
 </Project>

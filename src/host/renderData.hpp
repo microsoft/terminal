@@ -24,6 +24,7 @@ class RenderData final :
 public:
 #pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
+    COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
 
@@ -48,6 +49,8 @@ public:
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
 
+    bool IsScreenReversed() const noexcept override;
+
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
@@ -57,9 +60,11 @@ public:
 
 #pragma region IUiaData
     const bool IsSelectionActive() const override;
+    const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const;
+    const COORD GetSelectionAnchor() const noexcept;
+    const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 #pragma endregion
 };

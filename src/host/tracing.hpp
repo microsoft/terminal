@@ -21,25 +21,6 @@ Author(s):
 
 #include "../types/inc/Viewport.hpp"
 
-namespace Microsoft::Console::Interactivity::Win32
-{
-    class UiaTextRange;
-
-    namespace UiaTextRangeTracing
-    {
-        enum class ApiCall;
-        struct IApiMsg;
-    }
-
-    class ScreenInfoUiaProvider;
-
-    namespace ScreenInfoUiaProviderTracing
-    {
-        enum class ApiCall;
-        struct IApiMsg;
-    }
-}
-
 #if DBG
 #define DBGCHARS(_params_)              \
     {                                   \
@@ -83,30 +64,10 @@ public:
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
-// TODO GitHub #1914: Re-attach Tracing to UIA Tree
-#if 0
-    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
-                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
-                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
-
-    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
-                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
-                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
-
-    static void s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const pProvider,
-                           const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
-                           const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg);
-#endif
-
 private:
     static ULONG s_ulDebugFlag;
 
     Tracing(std::function<void()> onExit);
 
     std::function<void()> _onExit;
-
-    static const wchar_t* const _textPatternRangeEndpointToString(int endpoint);
-    static const wchar_t* const _textUnitToString(int unit);
-    static const wchar_t* const _eventIdToString(long eventId);
-    static const wchar_t* const _directionToString(int direction);
 };

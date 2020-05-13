@@ -19,9 +19,30 @@ namespace
         return range.upperBound < searchTerm;
     }
 
-    static constexpr std::array<UnicodeRange, 285> s_wideAndAmbiguousTable{
+    static constexpr std::array<UnicodeRange, 342> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
+        //
+        // GH #900 - Supplemented with emoji codepoints from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
+        // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to
+        // force a font lookup, but since we default all Ambiguous width to Narrow, those emojis always
+        // came out looking squished/tiny. They've been moved into this table and marked as Wide.
+        //
+        // There are a couple of codepoints that Microsoft specifically gave an emoji representation
+        // even if it's not specified as an emoji in the standard. I'll list the ones I'm aware of in this comment in case
+        // we decide to add them in the future:
+        // 0x261A-0x261C, 0x261E-0x261F
+        // 0x2661,
+        // 0x2662,
+        // 0x2664,
+        // 0x2666 0x2710,
+        // 0x270E 0x2765 0x1f000 - 0x1f02b except 0x1f004 0x1f594
+        //
+        // GH #5822 - Removed glyphs that appear inside of CP437 (https://en.wikipedia.org/wiki/Code_page_437)
+        // and WGL4 (https://en.wikipedia.org/wiki/Windows_Glyph_List_4) since they've been narrow since the
+        // beginning of time and changing it to wide would only cause destruction.
+        //
+        // *** Codepoint ranges marked with "OVR" have their given width from EastAsianWidth.txt overridden.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -107,6 +128,7 @@ namespace
         UnicodeRange{ 0x2121, 0x2122, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2126, 0x2126, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x212b, 0x212b, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2139, 0x2139, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2153, 0x2154, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x215b, 0x215e, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2160, 0x216b, CodepointWidth::Ambiguous },
@@ -147,11 +169,14 @@ namespace
         UnicodeRange{ 0x22bf, 0x22bf, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2312, 0x2312, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x231a, 0x231b, CodepointWidth::Wide },
-        UnicodeRange{ 0x2329, 0x232a, CodepointWidth::Wide },
-        UnicodeRange{ 0x23e9, 0x23ec, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f0, 0x23f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f3, 0x23f3, CodepointWidth::Wide },
-        UnicodeRange{ 0x2460, 0x24e9, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2328, 0x232a, CodepointWidth::Wide }, // OVR 328
+        UnicodeRange{ 0x23cf, 0x23cf, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x23e9, 0x23ef, CodepointWidth::Wide }, // OVR 3ed-3ef
+        UnicodeRange{ 0x23f0, 0x23f3, CodepointWidth::Wide }, // OVR 3f1-3f2
+        UnicodeRange{ 0x23f8, 0x23fa, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2460, 0x24c1, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x24c2, 0x24c2, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x24c3, 0x24e9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x24eb, 0x254b, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2550, 0x2573, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2580, 0x258f, CodepointWidth::Ambiguous },
@@ -167,56 +192,82 @@ namespace
         UnicodeRange{ 0x25ce, 0x25d1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25e2, 0x25e5, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25ef, 0x25ef, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25fd, 0x25fe, CodepointWidth::Wide },
+        UnicodeRange{ 0x25fb, 0x25fe, CodepointWidth::Wide }, // OVR 5fb-5fc
+        UnicodeRange{ 0x2600, 0x2604, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2605, 0x2606, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x260e, 0x260e, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x260e, 0x260f, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2611, 0x2611, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide },
-        UnicodeRange{ 0x261c, 0x261c, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x261e, 0x261e, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2618, 0x2618, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x261d, 0x261d, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2620, 0x2620, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2622, 0x2623, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2626, 0x2626, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x262a, 0x262a, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x262e, 0x262f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2638, 0x2639, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
-        UnicodeRange{ 0x2660, 0x2661, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2663, 0x2665, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2667, 0x266a, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x265f, 0x265f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2668, 0x2668, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2669, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266f, 0x266f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x267f, 0x267f, CodepointWidth::Wide },
-        UnicodeRange{ 0x2693, 0x2693, CodepointWidth::Wide },
+        UnicodeRange{ 0x267b, 0x267b, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x267e, 0x267f, CodepointWidth::Wide }, // OVR 67e
+        UnicodeRange{ 0x2692, 0x2697, CodepointWidth::Wide }, // OVR 692, 694-697
+        UnicodeRange{ 0x2699, 0x2699, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x269b, 0x269c, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x269e, 0x269f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26a1, 0x26a1, CodepointWidth::Wide },
+        UnicodeRange{ 0x26a0, 0x26a1, CodepointWidth::Wide }, // OVR 6a0
+        UnicodeRange{ 0x26a7, 0x26a7, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26aa, 0x26ab, CodepointWidth::Wide },
+        UnicodeRange{ 0x26b0, 0x26b1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x26bd, 0x26be, CodepointWidth::Wide },
         UnicodeRange{ 0x26bf, 0x26bf, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26c4, 0x26c5, CodepointWidth::Wide },
-        UnicodeRange{ 0x26c6, 0x26cd, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26ce, 0x26ce, CodepointWidth::Wide },
-        UnicodeRange{ 0x26cf, 0x26d3, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26d4, 0x26d4, CodepointWidth::Wide },
+        UnicodeRange{ 0x26c6, 0x26c7, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26c8, 0x26c8, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x26c9, 0x26cd, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26ce, 0x26cf, CodepointWidth::Wide }, // OVR 6CF
+        UnicodeRange{ 0x26d0, 0x26d0, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26d1, 0x26d1, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x26d2, 0x26d2, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26d3, 0x26d4, CodepointWidth::Wide }, // OVR 6d3
         UnicodeRange{ 0x26d5, 0x26e1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26e3, 0x26e3, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26e8, 0x26e9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26ea, 0x26ea, CodepointWidth::Wide },
-        UnicodeRange{ 0x26eb, 0x26f1, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f2, 0x26f3, CodepointWidth::Wide },
-        UnicodeRange{ 0x26f4, 0x26f4, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f5, 0x26f5, CodepointWidth::Wide },
-        UnicodeRange{ 0x26f6, 0x26f9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26fa, 0x26fa, CodepointWidth::Wide },
+        UnicodeRange{ 0x26e8, 0x26e8, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26e9, 0x26ea, CodepointWidth::Wide }, // OVR 6e9
+        UnicodeRange{ 0x26eb, 0x26ef, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26f0, 0x26f5, CodepointWidth::Wide }, // OVR 6f0-6f1, 6f4
+        UnicodeRange{ 0x26f6, 0x26f6, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x26f7, 0x26fa, CodepointWidth::Wide }, // OVR 6f8-6f9
         UnicodeRange{ 0x26fb, 0x26fc, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26fd, 0x26fd, CodepointWidth::Wide },
         UnicodeRange{ 0x26fe, 0x26ff, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2702, 0x2702, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide },
-        UnicodeRange{ 0x270a, 0x270b, CodepointWidth::Wide },
+        UnicodeRange{ 0x2708, 0x270d, CodepointWidth::Wide }, // OVR 708-709, 70c-70d
+        UnicodeRange{ 0x270f, 0x270f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2712, 0x2712, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2714, 0x2714, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2716, 0x2716, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x271d, 0x271d, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2721, 0x2721, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2728, 0x2728, CodepointWidth::Wide },
+        UnicodeRange{ 0x2733, 0x2734, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x273d, 0x273d, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x2744, 0x2744, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x2747, 0x2747, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x274c, 0x274c, CodepointWidth::Wide },
         UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide },
         UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide },
         UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide },
+        UnicodeRange{ 0x2763, 0x2764, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2776, 0x277f, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide },
+        UnicodeRange{ 0x27a1, 0x27a1, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x27b0, 0x27b0, CodepointWidth::Wide },
         UnicodeRange{ 0x27bf, 0x27bf, CodepointWidth::Wide },
         UnicodeRange{ 0x2b1b, 0x2b1c, CodepointWidth::Wide },
@@ -263,45 +314,67 @@ namespace
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f130, 0x1f169, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f170, 0x1f18d, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f170, 0x1f171, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f172, 0x1f17d, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f17e, 0x1f17f, CodepointWidth::Wide }, // OVR 17f
+        UnicodeRange{ 0x1f180, 0x1f18d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f18e, 0x1f18e, CodepointWidth::Wide },
         UnicodeRange{ 0x1f18f, 0x1f190, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f191, 0x1f19a, CodepointWidth::Wide },
         UnicodeRange{ 0x1f19b, 0x1f1ac, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f1e6, 0x1f1ff, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f200, 0x1f202, CodepointWidth::Wide },
         UnicodeRange{ 0x1f210, 0x1f23b, CodepointWidth::Wide },
         UnicodeRange{ 0x1f240, 0x1f248, CodepointWidth::Wide },
         UnicodeRange{ 0x1f250, 0x1f251, CodepointWidth::Wide },
         UnicodeRange{ 0x1f260, 0x1f265, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f300, 0x1f320, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f32d, 0x1f335, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f337, 0x1f37c, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f37e, 0x1f393, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3a0, 0x1f3ca, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3cf, 0x1f3d3, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3e0, 0x1f3f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f4, 0x1f3f4, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f8, 0x1f43e, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f440, 0x1f440, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f442, 0x1f4fc, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f300, 0x1f321, CodepointWidth::Wide }, // OVR 321
+        UnicodeRange{ 0x1f324, 0x1f393, CodepointWidth::Wide }, // OVR 324-32c, 336, 37d
+        UnicodeRange{ 0x1f396, 0x1f397, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f399, 0x1f39b, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f39e, 0x1f39f, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f3a0, 0x1f3f0, CodepointWidth::Wide }, // OVR 3cb-3ce, 3d4-3df
+        UnicodeRange{ 0x1f3f3, 0x1f3f5, CodepointWidth::Wide }, // OVR 3f3, 3f5
+        UnicodeRange{ 0x1f3f7, 0x1f4fd, CodepointWidth::Wide }, // OVR 3f7, 43f, 4fd
         UnicodeRange{ 0x1f4ff, 0x1f53d, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f54b, 0x1f54e, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f549, 0x1f54e, CodepointWidth::Wide }, // OVR 549-54a
         UnicodeRange{ 0x1f550, 0x1f567, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f57a, 0x1f57a, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f56f, 0x1f570, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f573, 0x1f57a, CodepointWidth::Wide }, // OVR 573-579
+        UnicodeRange{ 0x1f587, 0x1f587, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f58a, 0x1f58d, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f590, 0x1f590, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f595, 0x1f596, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5a4, 0x1f5a4, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5fb, 0x1f64f, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f5a4, 0x1f5a5, CodepointWidth::Wide }, // OVR 5a5
+        UnicodeRange{ 0x1f5a8, 0x1f5a8, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5b1, 0x1f5b2, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5bc, 0x1f5bc, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5c2, 0x1f5c4, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5d1, 0x1f5d3, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5dc, 0x1f5de, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e1, 0x1f5e1, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e3, 0x1f5e3, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5e8, 0x1f5e8, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5ef, 0x1f5ef, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5f3, 0x1f5f3, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f5fa, 0x1f64f, CodepointWidth::Wide }, // OVR 5fa
         UnicodeRange{ 0x1f680, 0x1f6c5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6cc, 0x1f6cc, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6d0, 0x1f6d2, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6cb, 0x1f6d2, CodepointWidth::Wide }, // OVR 6cb, 6cd-6cf
+        UnicodeRange{ 0x1f6d5, 0x1f6d7, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6e0, 0x1f6e5, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f6e9, 0x1f6e9, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x1f6eb, 0x1f6ec, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6f4, 0x1f6f8, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f910, 0x1f93e, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f940, 0x1f94c, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f950, 0x1f96b, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f980, 0x1f997, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f9c0, 0x1f9c0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f9d0, 0x1f9e6, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f6f0, 0x1f6f0, CodepointWidth::Wide }, // OVR
+        UnicodeRange{ 0x1f6f3, 0x1f6fc, CodepointWidth::Wide }, // OVR 6f3
+        UnicodeRange{ 0x1f7e0, 0x1f7eb, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f90c, 0x1f9ff, CodepointWidth::Wide }, // OVR 93b, 946
+        UnicodeRange{ 0x1fa70, 0x1fa74, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fa78, 0x1fa7a, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fa80, 0x1fa86, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fa90, 0x1faa8, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fab0, 0x1fab6, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fac0, 0x1fac2, CodepointWidth::Wide },
+        UnicodeRange{ 0x1fad0, 0x1fad6, CodepointWidth::Wide },
         UnicodeRange{ 0x20000, 0x2fffd, CodepointWidth::Wide },
         UnicodeRange{ 0x30000, 0x3fffd, CodepointWidth::Wide },
         UnicodeRange{ 0xe0100, 0xe01ef, CodepointWidth::Ambiguous },
@@ -319,29 +392,47 @@ CodepointWidthDetector::CodepointWidthDetector() noexcept :
 }
 
 // Routine Description:
-// - returns the width type of codepoint by searching the map generated from the unicode spec
+// - returns the width type of codepoint as fast as we can by using quick lookup table and fallback cache.
 // Arguments:
 // - glyph - the utf16 encoded codepoint to search for
 // Return Value:
 // - the width type of the codepoint
 CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) const
 {
-    if (glyph.empty())
+    THROW_HR_IF(E_INVALIDARG, glyph.empty());
+    if (glyph.size() == 1)
     {
-        return CodepointWidth::Invalid;
+        // We first attempt to look at our custom quick lookup table of char width preferences.
+        const auto width = GetQuickCharWidth(glyph.front());
+
+        // If it's invalid, the quick width had no opinion, so go to the lookup table.
+        if (width == CodepointWidth::Invalid)
+        {
+            return _lookupGlyphWidthWithCache(glyph);
+        }
+        // If it's ambiguous, the quick width wanted us to ask the font directly, try that if we can.
+        // If not, go to the lookup table.
+        else if (width == CodepointWidth::Ambiguous)
+        {
+            if (_pfnFallbackMethod)
+            {
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Ambiguous;
+            }
+            else
+            {
+                return _lookupGlyphWidthWithCache(glyph);
+            }
+        }
+        // Otherwise, return Width as it is.
+        else
+        {
+            return width;
+        }
     }
-
-    const auto codepoint = _extractCodepoint(glyph);
-    const auto it = std::lower_bound(s_wideAndAmbiguousTable.begin(), s_wideAndAmbiguousTable.end(), codepoint);
-
-    // For characters that are not _in_ the table, lower_bound will return the nearest item that is.
-    // We must check its bounds to make sure that our hit was a true hit.
-    if (it != s_wideAndAmbiguousTable.end() && codepoint >= it->lowerBound && codepoint <= it->upperBound)
+    else
     {
-        return it->width;
+        return _lookupGlyphWidthWithCache(glyph);
     }
-
-    return CodepointWidth::Narrow;
 }
 
 // Routine Description:
@@ -369,74 +460,71 @@ bool CodepointWidthDetector::IsWide(const wchar_t wch) const noexcept
 // - true if codepoint is wide
 bool CodepointWidthDetector::IsWide(const std::wstring_view glyph) const
 {
-    THROW_HR_IF(E_INVALIDARG, glyph.empty());
-    if (glyph.size() == 1)
-    {
-        // We first attempt to look at our custom quick lookup table of char width preferences.
-        const auto width = GetQuickCharWidth(glyph.front());
-
-        // If it's invalid, the quick width had no opinion, so go to the lookup table.
-        if (width == CodepointWidth::Invalid)
-        {
-            return _lookupIsWide(glyph);
-        }
-        // If it's ambiguous, the quick width wanted us to ask the font directly, try that if we can.
-        // If not, go to the lookup table.
-        else if (width == CodepointWidth::Ambiguous)
-        {
-            if (_pfnFallbackMethod)
-            {
-                return _checkFallbackViaCache(glyph);
-            }
-            else
-            {
-                return _lookupIsWide(glyph);
-            }
-        }
-        // Otherwise, return Wide as True and Narrow as False.
-        else
-        {
-            return width == CodepointWidth::Wide;
-        }
-    }
-    else
-    {
-        return _lookupIsWide(glyph);
-    }
+    return GetWidth(glyph) == CodepointWidth::Wide;
 }
 
 // Routine Description:
-// - checks if codepoint is wide using fallback methods.
+// - returns the width type of codepoint by searching the map generated from the unicode spec
+// Arguments:
+// - glyph - the utf16 encoded codepoint to search for
+// Return Value:
+// - the width type of the codepoint
+CodepointWidth CodepointWidthDetector::_lookupGlyphWidth(const std::wstring_view glyph) const
+{
+    if (glyph.empty())
+    {
+        return CodepointWidth::Invalid;
+    }
+
+    const auto codepoint = _extractCodepoint(glyph);
+    const auto it = std::lower_bound(s_wideAndAmbiguousTable.begin(), s_wideAndAmbiguousTable.end(), codepoint);
+
+    // For characters that are not _in_ the table, lower_bound will return the nearest item that is.
+    // We must check its bounds to make sure that our hit was a true hit.
+    if (it != s_wideAndAmbiguousTable.end() && codepoint >= it->lowerBound && codepoint <= it->upperBound)
+    {
+        return it->width;
+    }
+
+    return CodepointWidth::Narrow;
+}
+
+// Routine Description:
+// - returns the width type of codepoint using fallback methods.
 // Arguments:
 // - glyph - the utf16 encoded codepoint to check width of
 // Return Value:
-// - true if codepoint is wide or if it can't be confirmed to be narrow
-bool CodepointWidthDetector::_lookupIsWide(const std::wstring_view glyph) const noexcept
+// - the width type of the codepoint
+CodepointWidth CodepointWidthDetector::_lookupGlyphWidthWithCache(const std::wstring_view glyph) const noexcept
 {
     try
     {
         // Use our generated table to try to lookup the width based on the Unicode standard.
-        const CodepointWidth width = GetWidth(glyph);
+        const CodepointWidth width = _lookupGlyphWidth(glyph);
 
         // If it's ambiguous, then ask the font if we can.
         if (width == CodepointWidth::Ambiguous)
         {
             if (_pfnFallbackMethod)
             {
-                return _checkFallbackViaCache(glyph);
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Ambiguous;
+            }
+            else
+            {
+                return CodepointWidth::Ambiguous;
             }
         }
-        // If it's not ambiguous, it should say wide or narrow. Turn that into True = Wide or False = Narrow.
+        // If it's not ambiguous, it should say wide or narrow.
         else
         {
-            return width == CodepointWidth::Wide;
+            return width;
         }
     }
     CATCH_LOG();
 
     // If we got this far, we couldn't figure it out.
     // It's better to be too wide than too narrow.
-    return true;
+    return CodepointWidth::Wide;
 }
 
 // Routine Description:

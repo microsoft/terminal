@@ -64,7 +64,7 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const TextAttribute& 
 // Routine Description:
 // - This is a fill-mode iterator for one particular CHAR_INFO. It will repeat forever if fillLimit is 0.
 // Arguments:
-// - charInfo - The legacy character and color data to use for fililng (uses Unicode portion of text data)
+// - charInfo - The legacy character and color data to use for filling (uses Unicode portion of text data)
 // - fillLimit - How many times to allow this value to be viewed/filled. Infinite if 0.
 OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit) noexcept :
     _mode(Mode::Fill),
@@ -518,8 +518,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const CHAR_INFO& charInfo) noe
         dbcsAttr.SetTrailing();
     }
 
-    TextAttribute textAttr;
-    textAttr.SetFromLegacy(charInfo.Attributes);
+    const TextAttribute textAttr(charInfo.Attributes);
 
     const auto behavior = TextAttributeBehavior::Stored;
     return OutputCellView(glyph, dbcsAttr, textAttr, behavior);

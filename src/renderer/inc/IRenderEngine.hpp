@@ -93,7 +93,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                       const COORD coord,
-                                                      const bool fTrimLeft) noexcept = 0;
+                                                      const bool fTrimLeft,
+                                                      const bool lineWrapped) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,
                                                            const COLORREF color,
                                                            const size_t cchLine,
@@ -116,7 +117,7 @@ namespace Microsoft::Console::Render
                                                       _Out_ FontInfo& FontInfo,
                                                       const int iDpi) noexcept = 0;
 
-        virtual SMALL_RECT GetDirtyRectInChars() = 0;
+        virtual std::vector<til::rectangle> GetDirtyArea() = 0;
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring& newTitle) noexcept = 0;

@@ -170,9 +170,9 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     _UseBackground(hDlg, initialTerminalBG);
     _UseCursorColor(hDlg, !initialCursorLegacy);
 
-    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_FGCOLOR), NULL, FALSE);
-    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_BGCOLOR), NULL, FALSE);
-    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_CURSOR_COLOR), NULL, FALSE);
+    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_FGCOLOR), nullptr, FALSE);
+    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_BGCOLOR), nullptr, FALSE);
+    InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_CURSOR_COLOR), nullptr, FALSE);
 
     CheckRadioButton(hDlg,
                      IDD_TERMINAL_LEGACY_CURSOR,
@@ -221,7 +221,7 @@ void _ChangeColorControl(const HWND hDlg,
         setting = RGB(r, g, b);
     }
 
-    InvalidateRect(GetDlgItem(hDlg, colorControl), NULL, FALSE);
+    InvalidateRect(GetDlgItem(hDlg, colorControl), nullptr, FALSE);
 }
 
 void _ChangeForegroundRGB(const HWND hDlg, const WORD item) noexcept
@@ -378,11 +378,11 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
                 PNMLINK pnmLink = (PNMLINK)lParam;
                 if (0 == pnmLink->item.iLink)
                 {
-                    ShellExecute(NULL,
+                    ShellExecute(nullptr,
                                  L"open",
                                  pnmLink->item.szUrl,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
                                  SW_SHOW);
                 }
 

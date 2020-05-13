@@ -1,75 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "../ActionArgs.idl";
+import "../ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    // TODO: GH#1069 - Many of these shortcut actions are "legacy" now that we
-    // have support for arbitrary args (#1142). We should remove them, and our
-    // legacy deserializers.
-    enum ShortcutAction
-    {
-        Invalid = 0,
-        CopyText,
-        CopyTextWithoutNewlines,
-        PasteText,
-        OpenNewTabDropdown,
-        DuplicateTab,
-        NewTab,
-        NewTabProfile0, // Legacy
-        NewTabProfile1, // Legacy
-        NewTabProfile2, // Legacy
-        NewTabProfile3, // Legacy
-        NewTabProfile4, // Legacy
-        NewTabProfile5, // Legacy
-        NewTabProfile6, // Legacy
-        NewTabProfile7, // Legacy
-        NewTabProfile8, // Legacy
-        NewWindow,
-        CloseWindow,
-        CloseTab,
-        ClosePane,
-        NextTab,
-        PrevTab,
-        SplitVertical,
-        SplitHorizontal,
-        SwitchToTab,
-        SwitchToTab0, // Legacy
-        SwitchToTab1, // Legacy
-        SwitchToTab2, // Legacy
-        SwitchToTab3, // Legacy
-        SwitchToTab4, // Legacy
-        SwitchToTab5, // Legacy
-        SwitchToTab6, // Legacy
-        SwitchToTab7, // Legacy
-        SwitchToTab8, // Legacy
-        IncreaseFontSize,
-        DecreaseFontSize,
-        ResetFontSize,
-        ScrollUp,
-        ScrollDown,
-        ScrollUpPage,
-        ScrollDownPage,
-        ResizePane,
-        ResizePaneLeft, // Legacy
-        ResizePaneRight, // Legacy
-        ResizePaneUp, // Legacy
-        ResizePaneDown, // Legacy
-        MoveFocus,
-        MoveFocusLeft, // Legacy
-        MoveFocusRight, // Legacy
-        MoveFocusUp, // Legacy
-        MoveFocusDown, // Legacy
-        ToggleFullscreen,
-        OpenSettings
-    };
-
-    [default_interface] runtimeclass ActionAndArgs {
-        ActionAndArgs();
-        IActionArgs Args;
-        ShortcutAction Action;
-    };
-
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
@@ -80,29 +15,6 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
         Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
 
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PasteText;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenNewTabDropdown;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> DuplicateTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewWindow;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CloseWindow;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CloseTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ClosePane;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SwitchToTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NextTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PrevTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitVertical;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitHorizontal;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> AdjustFontSize;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResetFontSize;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollUp;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollDown;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollUpPage;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollDownPage;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSettings;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResizePane;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> MoveFocus;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ToggleFullscreen;
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

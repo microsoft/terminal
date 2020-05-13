@@ -340,7 +340,7 @@ N/A
   For example, by default, <kbd>Alt+&lt;N&gt;</kbd> to focuses the
   Nth tab. Currently, those are 8 separate entries in the keybindings. Should we
   enable some way for them be combined into a single binding entry, where the
-  binding automatically recieves the number pressed as an arg? I couldn't find
+  binding automatically receives the number pressed as an arg? I couldn't find
   any prior art of this, so it doesn't seem worth it to try and invent
   currently. This might be something that we want to loop back on, but for the
   time being, it remains out of scope of this PR.

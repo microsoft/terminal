@@ -17,7 +17,7 @@ public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
-    void MakeWindow() noexcept;
+    virtual void MakeWindow() noexcept;
     void Close();
     virtual void OnSize(const UINT width, const UINT height);
 
@@ -29,10 +29,12 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
+    void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void ToggleFullscreen();
 
@@ -47,7 +49,7 @@ public:
         TerminalApp to have TerminalApp handle the ChangeViewport call.
         (See IslandWindow::SetCreateCallback as an example of a similar
         pattern we're using today.) That way, if someone else were trying
-        to resuse this, they could have their own AppHost (or TerminalApp
+        to reuse this, they could have their own AppHost (or TerminalApp
         equivalent) handle the ChangeViewport call their own way.
         */
         return;
@@ -70,6 +72,7 @@ public:
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
+    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
 
 protected:
     void ForceResize()
@@ -87,8 +90,10 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
     bool _fullscreen{ false };
     RECT _fullscreenWindowSize;
@@ -98,6 +103,7 @@ protected:
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
 
-    // See _SetIsFullscreen for details on this method.
-    virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
+private:
+    // This minimum width allows for width the tabs fit
+    static constexpr long minimumWidth = 460L;
 };

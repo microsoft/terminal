@@ -36,7 +36,6 @@
     <ClCompile Include="..\WindowIo.cpp" />
     <ClCompile Include="..\WindowMetrics.cpp" />
     <ClCompile Include="..\WindowProc.cpp" />
-    <ClCompile Include="..\windowtheme.cpp" />
     <ClCompile Include="..\windowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -59,8 +58,12 @@
     <ClInclude Include="..\WindowIme.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />
     <ClInclude Include="..\WindowIo.hpp" />
-    <ClInclude Include="..\windowtheme.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\renderer\dx\lib\dx.vcxproj">
+      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

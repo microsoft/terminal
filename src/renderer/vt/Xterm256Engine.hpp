@@ -37,6 +37,8 @@ namespace Microsoft::Console::Render
                                                    const ExtendedAttributes extendedAttrs,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
+        [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
+
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
 
@@ -46,6 +48,7 @@ namespace Microsoft::Console::Render
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
 #endif
     };
 }

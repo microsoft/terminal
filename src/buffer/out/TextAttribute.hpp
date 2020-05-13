@@ -75,7 +75,7 @@ public:
     // Arguments:
     // - defaultFgIndex: the BYTE to use as the index for the foreground, should
     //      the foreground not be a legacy style attribute.
-    // - defaultBgIndex: the BYTE to use as the index for the backgound, should
+    // - defaultBgIndex: the BYTE to use as the index for the background, should
     //      the background not be a legacy style attribute.
     // Return Value:
     // - a WORD with legacy-style attributes for this textattribute.
@@ -107,22 +107,6 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    void SetFromLegacy(const WORD wLegacy) noexcept;
-
-    void SetLegacyAttributes(const WORD attrs,
-                             const bool setForeground,
-                             const bool setBackground,
-                             const bool setMeta) noexcept;
-
-    void SetIndexedAttributes(const std::optional<const BYTE> foreground,
-                              const std::optional<const BYTE> background) noexcept;
-
-    void SetMetaAttributes(const WORD wMeta) noexcept;
-    WORD GetMetaAttributes() const noexcept;
-
-    void Embolden() noexcept;
-    void Debolden() noexcept;
-
     void Invert() noexcept;
 
     friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
@@ -133,21 +117,28 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
+    bool IsBold() const noexcept;
+    bool IsItalic() const noexcept;
+    bool IsBlinking() const noexcept;
+    bool IsInvisible() const noexcept;
+    bool IsCrossedOut() const noexcept;
+    bool IsUnderlined() const noexcept;
+    bool IsReverseVideo() const noexcept;
 
-    constexpr bool IsBold() const noexcept
-    {
-        return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
-    }
+    void SetBold(bool isBold) noexcept;
+    void SetItalics(bool isItalic) noexcept;
+    void SetBlinking(bool isBlinking) noexcept;
+    void SetInvisible(bool isInvisible) noexcept;
+    void SetCrossedOut(bool isCrossedOut) noexcept;
+    void SetUnderline(bool isUnderlined) noexcept;
+    void SetReverseVideo(bool isReversed) noexcept;
 
-    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
-    {
-        return _extendedAttrs;
-    }
-
-    void SetExtendedAttributes(const ExtendedAttributes attrs) noexcept;
+    ExtendedAttributes GetExtendedAttributes() const noexcept;
 
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
+    void SetIndexedForeground(const BYTE fgIndex) noexcept;
+    void SetIndexedBackground(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
 
     void SetDefaultForeground() noexcept;
@@ -156,9 +147,35 @@ public:
     bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
+    void SetStandardErase() noexcept;
+
     constexpr bool IsRgb() const noexcept
     {
         return _foreground.IsRgb() || _background.IsRgb();
+    }
+
+    // This returns whether this attribute, if printed directly next to another attribute, for the space
+    // character, would look identical to the other one.
+    bool HasIdenticalVisualRepresentationForBlankSpace(const TextAttribute& other, const bool inverted = false) const noexcept
+    {
+        // sneaky-sneaky: I'm using xor here
+        // inverted is whether there's a global invert; Reverse is a local one.
+        // global ^ local == true : the background attribute is actually the visible foreground, so we care about the foregrounds being identical
+        // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
+        const auto checkForeground = (inverted != IsReverseVideo());
+        return !IsAnyGridLineEnabled() && // grid lines have a visual representation
+               // crossed out, doubly and singly underlined have a visual representation
+               WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // all other attributes do not have a visual representation
+               (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
+               ((checkForeground && _foreground == other._foreground) ||
+                (!checkForeground && _background == other._background)) &&
+               _extendedAttrs == other._extendedAttrs;
+    }
+
+    constexpr bool IsAnyGridLineEnabled() const noexcept
+    {
+        return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
     }
 
 private:
@@ -166,8 +183,6 @@ private:
                                COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
-    bool _IsReverseVideo() const noexcept;
-    void _SetBoldness(const bool isBold) noexcept;
 
     WORD _wAttrLegacy;
     TextColor _foreground;

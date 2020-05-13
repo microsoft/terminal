@@ -10,10 +10,19 @@ namespace TerminalApp
     {
         TerminalPage();
 
+        Int32 SetStartupCommandline(String[] commands);
+        String ParseCommandlineMessage { get; };
+        Boolean ShouldExitEarly { get; };
+
+        // XAML bound properties
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
     }
 }

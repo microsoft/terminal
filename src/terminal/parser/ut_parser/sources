@@ -39,6 +39,7 @@ TARGETLIBS = \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dwrite.lib \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dxgi.lib \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3dcompiler.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \
@@ -77,7 +78,6 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(CONSOLE_OBJ_PATH)\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
-    $(CONSOLE_OBJ_PATH)\renderer\dx\lib\$(O)\ConRenderDx.lib \
     $(CONSOLE_OBJ_PATH)\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
     $(CONSOLE_OBJ_PATH)\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
     $(CONSOLE_OBJ_PATH)\renderer\vt\lib\$(O)\ConRenderVt.lib \

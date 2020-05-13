@@ -19,7 +19,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
@@ -64,16 +63,15 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirtyRect = GetDirtyRectInChars();
-        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
-        if (!_resized && dirtyView == _lastViewport)
+        const auto dirty = GetDirtyArea();
+
+        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+
+        // If there's more than 1, union them all up with the 1 we already have.
+        for (size_t i = 1; i < dirty.size(); ++i)
         {
-            // TODO: MSFT:21096414 - This is never actually hit. We set
-            // _resized=true on every frame (see VtEngine::UpdateViewport).
-            // Unfortunately, not always setting _resized is not a good enough
-            // solution, see that work item for a description why.
-            RETURN_IF_FAILED(_ClearScreen());
-            _clearedAllThisFrame = true;
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
         }
     }
 
@@ -107,7 +105,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // by prepending a cursor off.
         if (_lastCursorIsVisible)
         {
-            _buffer.insert(0, "\x1b[25l");
+            _buffer.insert(0, "\x1b[?25l");
             _lastCursorIsVisible = false;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
@@ -216,7 +214,42 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // _nextCursorIsVisible will still be false (from when we set it during
     // StartPaint)
     _nextCursorIsVisible = true;
-    return VtEngine::PaintCursor(options);
+
+    // If we did a delayed EOL wrap because we actually wrapped the line here,
+    // then don't PaintCursor. When we're at the EOL because we've wrapped, our
+    // internal _lastText thinks the cursor is on the cell just past the right
+    // of the viewport (ex { 120, 0 }). However, conhost thinks the cursor is
+    // actually on the last cell of the row. So it'll tell us to paint the
+    // cursor at { 119, 0 }. If we do that movement, then we'll break line
+    // wrapping.
+    // See GH#5113, GH#1245, GH#357
+    const auto nextCursorPosition = options.coordCursor;
+    // Only skip this paint when we think the cursor is in the cell
+    // immediately off the edge of the terminal, and the actual cursor is in
+    // the last cell of the row. We're in a deferred wrap, but the host
+    // thinks the cursor is actually in-frame.
+    // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
+    const bool cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
+    // If all three of these conditions are true, then:
+    //   * cursorIsInDeferredWrap: The cursor is in a position where the line
+    //     filled the last cell of the row, but the host tried to paint it in
+    //     the last cell anyways
+    //      - GH#5691 - If we're painting the frame because we circled the
+    //        buffer, then the cursor might still be in the position it was
+    //        before the text was written to the buffer to cause the buffer to
+    //        circle. In that case, then we DON'T want to paint the cursor here
+    //        either, because it'll cause us to manually break this line. That's
+    //        okay though, the frame will be painted again, after the circling
+    //        is complete.
+    //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
+    //     the wrap of a line.
+    // If they're all true, DON'T manually paint the cursor this frame.
+    if (!((cursorIsInDeferredWrap || _circled) && _delayedEolWrap && _wrappedRow.has_value()))
+    {
+        return VtEngine::PaintCursor(options);
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -234,7 +267,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
-
+    const auto originalPos = _lastText;
+    _trace.TraceMoveCursor(_lastText, coord);
+    bool performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -242,14 +277,26 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            if (_previousLineWrapped)
+            bool previousLineWrapped = false;
+            if (_wrappedRow.has_value())
             {
+                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
+            }
+
+            if (previousLineWrapped)
+            {
+                performedSoftWrap = true;
+                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else
@@ -257,6 +304,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                 std::string seq = "\r\n";
                 hr = _Write(seq);
             }
+        }
+        else if (_delayedEolWrap)
+        {
+            // GH#1245, GH#357 - If we were in the delayed EOL wrap state, make
+            // sure to _manually_ position the cursor now, with a full CUP
+            // sequence, don't try and be clever with \b or \r or other control
+            // sequences. Different terminals (conhost, gnome-terminal, wt) all
+            // behave differently with how the cursor behaves at an end of line.
+            // This is the only solution that works in all of them, and also
+            // works wrapped lines emitted by conpty.
+            //
+            // Make sure to do this _after_ the possible \r\n branch above,
+            // otherwise we might accidentally break wrapped lines (GH#405)
+            hr = _CursorPosition(coord);
         }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
@@ -293,11 +354,12 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _lastText = coord;
         }
     }
-    if (_lastText.Y != _lastViewport.ToOrigin().BottomInclusive())
-    {
-        _newBottomLine = false;
-    }
+
     _deferredCursorPos = INVALID_COORDS;
+
+    _wrappedRow = std::nullopt;
+    _delayedEolWrap = false;
+
     return hr;
 }
 
@@ -313,54 +375,119 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
+try
 {
-    if (_scrollDelta.X != 0)
+    _trace.TraceScrollFrame(_scrollDelta);
+
+    if (_scrollDelta.x() != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.Y == 0)
+    if (_scrollDelta.y() == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.Y;
+    const short dy = _scrollDelta.y<short>();
     const short absDy = static_cast<short>(abs(dy));
 
-    HRESULT hr = S_OK;
+    // Save the old wrap state here. We're going to clear it so that
+    // _MoveCursor will definitely move us to the right position. We'll
+    // restore the state afterwards.
+    const auto oldWrappedRow = _wrappedRow;
+    const auto oldDelayedEolWrap = _delayedEolWrap;
+    _delayedEolWrap = false;
+    _wrappedRow = std::nullopt;
+
     if (dy < 0)
     {
-        // Instead of deleting the first line (causing everything to move up)
-        // move to the bottom of the buffer, and newline.
-        //      That will cause everything to move up, by moving the viewport down.
-        // This will let remote conhosts scroll up to see history like normal.
-        const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        hr = _MoveCursor({ 0, bottom });
-        if (SUCCEEDED(hr))
-        {
-            std::string seq = std::string(absDy, '\n');
-            hr = _Write(seq);
-            // Mark that the bottom line is new, so we won't spend time with an
-            // ECH on it.
-            _newBottomLine = true;
-        }
-        // We don't need to _MoveCursor the cursor again, because it's still
-        //      at the bottom of the viewport.
+        // TODO GH#5228 - We could optimize this by only doing this newline work
+        // when there's more invalid than just the bottom line. If only the
+        // bottom line is invalid, then the next thing the Renderer is going to
+        // tell us to do is print the new line at the bottom of the viewport,
+        // and _MoveCursor will automatically give us the newline we want.
+        // When that's implemented, we'll probably want to make sure to add a
+        //   _lastText.Y += dy;
+        // statement here.
+
+        // Move the cursor to the bottom of the current viewport
+        const short bottom = _lastViewport.BottomInclusive();
+        RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
+        // Emit some number of newlines to create space in the buffer.
+        RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
     }
     else if (dy > 0)
     {
-        // Move to the top of the buffer, and insert some lines of text, to
-        //      cause the viewport contents to shift down.
-        hr = _MoveCursor({ 0, 0 });
-        if (SUCCEEDED(hr))
-        {
-            hr = _InsertLine(absDy);
-        }
+        // If we've scrolled _down_, then move the cursor to the top of the
+        // buffer, and insert some newlines using the InsertLines VT sequence
+        RETURN_IF_FAILED(_MoveCursor({ 0, 0 }));
+        RETURN_IF_FAILED(_InsertLine(absDy));
     }
 
-    return hr;
+    // Restore our wrap state.
+    _wrappedRow = oldWrappedRow;
+    _delayedEolWrap = oldDelayedEolWrap;
+
+    // Shift our internal tracker of the last text position according to how
+    // much we've scrolled. If we manually scroll the buffer right now, by
+    // moving the cursor to the bottom row of the viewport and emitting a
+    // newline, we'll cause any wrapped lines to get broken.
+    //
+    // Instead, we'll just update our internal tracker of where the buffer
+    // contents are. On this frame, we'll then still move the cursor correctly
+    // relative to the new frame contents. To do this, we'll shift our
+    // coordinates we're tracking, like the row that we wrapped on and the
+    // position we think we left the cursor.
+    //
+    // See GH#5113
+    _trace.TraceLastText(_lastText);
+    if (_wrappedRow.has_value())
+    {
+        _wrappedRow.value() += dy;
+        _trace.TraceSetWrapped(_wrappedRow.value());
+    }
+
+    if (_delayedEolWrap && _wrappedRow.has_value())
+    {
+        // If we wrapped the last line, and we're in the middle of painting it,
+        // then the newline we did above just manually broke the line. What
+        // we're doing here is a hack: we're going to manually re-invalidate the
+        // last character of the wrapped row. When the PaintBufferLine calls
+        // come back through, we'll paint this last character again, causing us
+        // to get into the wrapped state once again. This is the only way to
+        // ensure that if a line was wrapped, and we painted the first line in
+        // one frame, and the second line in another frame that included other
+        // changes _above_ the wrapped line, that we maintain the wrap state in
+        // the Terminal.
+        const til::rectangle lastCellOfWrappedRow{
+            til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
+            til::size{ 1, 1 }
+        };
+        _trace.TraceInvalidate(lastCellOfWrappedRow);
+        _invalidMap.set(lastCellOfWrappedRow);
+    }
+
+    // If the entire viewport was invalidated this frame, don't mark the bottom
+    // line as new. There are cases where this can cause visual artifacts - see
+    // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
+    const bool allInvalidated = _invalidMap.all();
+    _newBottomLine = !allInvalidated;
+
+    // GH#5502 - keep track of the BG color we had when we emitted this new
+    // bottom line. If the color changes by the time we get to printing that
+    // line, we'll need to make sure that we don't do any optimizations like
+    // _removing spaces_, because the background color of the spaces will be
+    // important information to send to the connected Terminal.
+    if (_newBottomLine)
+    {
+        _newBottomLineBG = _LastBG;
+    }
+
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Notifies us that the console is attempting to scroll the existing screen
@@ -372,38 +499,23 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+try
 {
-    const short dx = pcoordDelta->X;
-    const short dy = pcoordDelta->Y;
+    const til::point delta{ *pcoordDelta };
 
-    if (dx != 0 || dy != 0)
+    if (delta != til::point{ 0, 0 })
     {
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+        _trace.TraceInvalidateScroll(delta);
 
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
+        // Scroll the current offset and invalidate the revealed area
+        _invalidMap.translate(delta, true);
 
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
-
-        COORD invalidScrollNew;
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
-
-        // Store if safemath succeeded
-        _scrollDelta = invalidScrollNew;
+        _scrollDelta += delta;
     }
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the
@@ -415,15 +527,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
-                                                   const bool /*trimLeft*/) noexcept
+                                                   const bool /*trimLeft*/,
+                                                   const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
 }
 
 // Method Description:
@@ -433,11 +549,23 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
 {
-    return _fUseAsciiOnly ?
-               VtEngine::_WriteTerminalAscii(wstr) :
-               VtEngine::_WriteTerminalUtf8(wstr);
+    RETURN_IF_FAILED(_fUseAsciiOnly ?
+                         VtEngine::_WriteTerminalAscii(wstr) :
+                         VtEngine::_WriteTerminalUtf8(wstr));
+    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // StateMachine, when we've encountered a string we don't understand. When
+    // this happens, we usually don't actually trigger another frame, but we
+    // _do_ want this string to immediately be sent to the terminal. Since we
+    // only flush our buffer on actual frames, this means that strings we've
+    // decided to pass through would have gotten buffered here until the next
+    // actual frame is triggered.
+    //
+    // To fix this, flush here, so this string is sent to the connected terminal
+    // application.
+
+    return _Flush();
 }
 
 // Method Description:

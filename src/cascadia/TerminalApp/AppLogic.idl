@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 import "../TerminalPage.idl";
+import "../ShortcutActionDispatch.idl";
+import "../IF7Listener.idl";
 
 namespace TerminalApp
 {
@@ -11,7 +13,7 @@ namespace TerminalApp
         MaximizedMode,
     };
 
-    [default_interface] runtimeclass AppLogic
+    [default_interface] runtimeclass AppLogic : IF7Listener
     {
         AppLogic();
 
@@ -22,18 +24,28 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        Boolean IsUwp();
         void RunAsUwp();
+        Boolean IsElevated();
+
+        Int32 SetStartupCommandline(String[] commands);
+        String ParseCommandlineMessage { get; };
+        Boolean ShouldExitEarly { get; };
 
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
         String Title { get; };
 
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 

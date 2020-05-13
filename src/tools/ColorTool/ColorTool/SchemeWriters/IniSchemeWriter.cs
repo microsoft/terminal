@@ -38,16 +38,16 @@ namespace ColorTool.SchemeWriters
 
                         file.WriteLine();
                         file.WriteLine("[screen]");
-                        var forgroundIndex = csbiex.wAttributes & 0xF;
+                        var foregroundIndex = csbiex.wAttributes & 0xF;
                         var backgroundIndex = csbiex.wAttributes >> 4;
-                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[forgroundIndex]}");
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[foregroundIndex]}");
                         file.WriteLine($"BACKGROUND = {IniSchemeParser.ColorNames[backgroundIndex]}");
 
                         file.WriteLine();
                         file.WriteLine("[popup]");
-                        forgroundIndex = csbiex.wPopupAttributes & 0xF;
+                        foregroundIndex = csbiex.wPopupAttributes & 0xF;
                         backgroundIndex = csbiex.wPopupAttributes >> 4;
-                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[forgroundIndex]}");
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[foregroundIndex]}");
                         file.WriteLine($"BACKGROUND = {IniSchemeParser.ColorNames[backgroundIndex]}");
                     }
                 }

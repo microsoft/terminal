@@ -23,7 +23,14 @@ namespace TerminalApp
     {
         MissingDefaultProfile = 0,
         DuplicateProfile = 1,
-        UnknownColorScheme = 2
+        UnknownColorScheme = 2,
+        InvalidBackgroundImage = 3,
+        InvalidIcon = 4,
+        AtLeastOneKeybindingWarning = 5,
+        TooManyKeysForChord = 6,
+        MissingRequiredParameter = 7,
+        LegacyGlobalsProperty = 8,
+        WARNINGS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
     };
 
     // SettingsLoadWarnings are scenarios where the settings had invalid state
@@ -31,7 +38,8 @@ namespace TerminalApp
     enum class SettingsLoadErrors : uint32_t
     {
         NoProfiles = 0,
-        AllProfilesHidden = 1
+        AllProfilesHidden = 1,
+        ERRORS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
     };
 
     // This is a helper class to wrap up a SettingsLoadErrors into a proper
@@ -39,7 +47,7 @@ namespace TerminalApp
     class SettingsException : public std::runtime_error
     {
     public:
-        SettingsException(const SettingsLoadErrors& error) :
+        explicit SettingsException(const SettingsLoadErrors& error) :
             std::runtime_error{ nullptr },
             _error{ error } {};
 

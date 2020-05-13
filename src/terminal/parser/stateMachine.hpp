@@ -21,6 +21,12 @@ Abstract:
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    // The DEC STD 070 reference recommends supporting up to at least 16384 for
+    // parameter values, so 32767 should be more than enough. At most we might
+    // want to increase this to 65535, since that is what XTerm and VTE support,
+    // but for now 32767 is the safest limit for our existing code base.
+    constexpr size_t MAX_PARAMETER_VALUE = 32767;
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -29,46 +35,19 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(IStateMachineEngine* const pEngine);
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
         void ProcessCharacter(const wchar_t wch);
-        void ProcessString(const wchar_t* const rgwch, const size_t cch);
-        void ProcessString(const std::wstring& wstr);
+        void ProcessString(const std::wstring_view string);
 
-        void ResetState();
+        void ResetState() noexcept;
 
         bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
-        static const short s_cIntermediateMax = 1;
-        static const short s_cParamsMax = 16;
-        static const short s_cOscStringMaxLength = 256;
-
     private:
-        static bool s_IsActionableFromGround(const wchar_t wch);
-        static bool s_IsC0Code(const wchar_t wch);
-        static bool s_IsC1Csi(const wchar_t wch);
-        static bool s_IsIntermediate(const wchar_t wch);
-        static bool s_IsDelete(const wchar_t wch);
-        static bool s_IsEscape(const wchar_t wch);
-        static bool s_IsCsiIndicator(const wchar_t wch);
-        static bool s_IsCsiDelimiter(const wchar_t wch);
-        static bool s_IsCsiParamValue(const wchar_t wch);
-        static bool s_IsCsiPrivateMarker(const wchar_t wch);
-        static bool s_IsCsiInvalid(const wchar_t wch);
-        static bool s_IsOscIndicator(const wchar_t wch);
-        static bool s_IsOscDelimiter(const wchar_t wch);
-        static bool s_IsOscParamValue(const wchar_t wch);
-        static bool s_IsOscInvalid(const wchar_t wch);
-        static bool s_IsOscTerminator(const wchar_t wch);
-        static bool s_IsOscTerminationInitiator(const wchar_t wch);
-        static bool s_IsDesignateCharsetIndicator(const wchar_t wch);
-        static bool s_IsCharsetCode(const wchar_t wch);
-        static bool s_IsNumber(const wchar_t wch);
-        static bool s_IsSs3Indicator(const wchar_t wch);
-
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
@@ -76,26 +55,26 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionCollect(const wchar_t wch);
         void _ActionParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
-        void _ActionOscParam(const wchar_t wch);
+        void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
         void _ActionOscDispatch(const wchar_t wch);
         void _ActionSs3Dispatch(const wchar_t wch);
 
         void _ActionClear();
-        void _ActionIgnore();
+        void _ActionIgnore() noexcept;
 
-        void _EnterGround();
+        void _EnterGround() noexcept;
         void _EnterEscape();
-        void _EnterEscapeIntermediate();
+        void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
-        void _EnterCsiParam();
-        void _EnterCsiIgnore();
-        void _EnterCsiIntermediate();
-        void _EnterOscParam();
-        void _EnterOscString();
-        void _EnterOscTermination();
+        void _EnterCsiParam() noexcept;
+        void _EnterCsiIgnore() noexcept;
+        void _EnterCsiIntermediate() noexcept;
+        void _EnterOscParam() noexcept;
+        void _EnterOscString() noexcept;
+        void _EnterOscTermination() noexcept;
         void _EnterSs3Entry();
-        void _EnterSs3Param();
+        void _EnterSs3Param() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -104,11 +83,13 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
-        void _EventOscParam(const wchar_t wch);
+        void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
+
+        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 
         enum class VTStates
         {
@@ -128,31 +109,22 @@ namespace Microsoft::Console::VirtualTerminal
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
-        std::unique_ptr<IStateMachineEngine> _pEngine;
+        std::unique_ptr<IStateMachineEngine> _engine;
 
         VTStates _state;
 
-        wchar_t _wchIntermediate;
-        unsigned short _cIntermediate;
+        std::wstring_view _run;
 
-        unsigned short _rgusParams[s_cParamsMax];
-        unsigned short _cParams;
-        unsigned short* _pusActiveParam;
-        unsigned short _iParamAccumulatePos;
+        std::vector<wchar_t> _intermediates;
+        std::vector<size_t> _parameters;
 
-        unsigned short _sOscParam;
-        unsigned short _sOscNextChar;
-        wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
+        std::wstring _oscString;
+        size_t _oscParameter;
 
-        // These members track out state in the parsing of a single string.
-        // FlushToTerminal uses these, so that an engine can force a string
-        // we're parsing to go straight through to the engine's ActionPassThroughString
-        const wchar_t* _pwchCurr;
-        const wchar_t* _pwchSequenceStart;
-        size_t _currRunLength;
+        std::optional<std::wstring> _cachedSequence;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
-        bool _fProcessingIndividually;
+        bool _processingIndividually;
     };
 }
