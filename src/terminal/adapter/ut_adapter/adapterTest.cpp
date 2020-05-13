@@ -690,11 +690,6 @@ public:
         _expectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
     }
 
-    bool CopyToClipboard(const std::wstring_view /*content*/)
-    {
-        return true;
-    }
-
     ~TestGetSet()
     {
     }

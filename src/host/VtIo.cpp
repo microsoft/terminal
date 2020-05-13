@@ -484,16 +484,3 @@ bool VtIo::IsResizeQuirkEnabled() const
     }
     return S_OK;
 }
-
-// Method Description:
-// - Process operating system control sequence.
-// Arguments:
-// - parameter: identifier of the OSC action to perform.
-// - string: OSC string.
-// Return Value:
-// - S_OK if we successfully processed OSC or did nothing, else an
-//      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::ProcessOsc(const size_t parameter, const std::wstring_view string)
-{
-    return _pVtRenderEngine->ProcessOsc(parameter, string);
-}

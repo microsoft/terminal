@@ -2076,9 +2076,9 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - content - The content to copy to clipboard. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CopyToClipboard(const std::wstring_view content)
+bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/)
 {
-    return _pConApi->CopyToClipboard(content);
+    return false;
 }
 
 // Method Description:

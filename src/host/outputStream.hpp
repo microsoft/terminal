@@ -142,8 +142,6 @@ public:
 
     bool PrivateIsVtInputEnabled() const override;
 
-    bool CopyToClipboard(const std::wstring_view content) override;
-
 private:
     Microsoft::Console::IIoProvider& _io;
 };

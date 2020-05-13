@@ -254,7 +254,7 @@ static constexpr bool _isOscTerminationInitiator(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isOscInvalid(const wchar_t wch) noexcept
 {
-    return (wch <= L'\x17' && wch != L'\x0a' && wch != L'\x0d') ||
+    return wch <= L'\x17' ||
            wch == L'\x19' ||
            (wch >= L'\x1c' && wch <= L'\x1f');
 }

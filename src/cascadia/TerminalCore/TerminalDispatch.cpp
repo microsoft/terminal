@@ -146,7 +146,7 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool TerminalDispatch::CopyToClipboard(std::wstring_view content) noexcept
+bool TerminalDispatch::SetClipboard(std::wstring_view content) noexcept
 try
 {
     return _terminalApi.CopyToClipboard(content);

@@ -96,7 +96,7 @@ public:
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) noexcept override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) noexcept override { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
-    bool CopyToClipboard(std::wstring_view /*content*/) noexcept override { return false; } // OscCopyToClipboard
+    bool SetClipboard(std::wstring_view /*content*/) noexcept override { return false; } // OscSetClipboard
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
