@@ -1667,6 +1667,12 @@ namespace winrt::TerminalApp::implementation
     {
         _CloseAllTabs();
     }
+    
+    void TerminalPage::_CloseTabWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+                                                            WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    {
+        _CloseFocusedTab();
+    }
 
     // Method Description:
     // - Hook up keybindings, and refresh the UI of the terminal.
