@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-22
-last updated: 2019-08-22
+last updated: 2020-05-13
 issue id: 980
 ---
 
@@ -26,24 +26,18 @@ Typical Unix terminals work differently. Rather than disabling the output, they 
 `snapOnOutput` will be a profile-level `ICoreSettings` setting of type enum. It can be set to the following values:
 - `never`: new output does not cause the viewport to update to the bottom of the scroll region
 - `noSelection`: (**default**) new output causes the viewport to update to the bottom of the scroll region **IF** no selection is active
+- `atBottom`: new output causes the viewport to update **IF** the viewport is already at the virtual bottom
 - `always`: new output causes the viewport to update to the bottom of the scroll region
 
 The `TerminalCore` is responsible for moving the viewport on a scroll event. All of the logic for this feature should be handled here.
 
-A new private field `std::function<bool(void)> _snapOnOutput` will be introduced. This field will be set when the settings are loaded, with the following logic:
-- `never`       --> `return false`
-- `noSelection` --> `return !isSelectionActive()`
-- `always`      --> `return true`
+A new private enum `_snapOnOutput` will be introduced for each of the possible settings values. The `_NotifyScrollEvent()` calls (and nearby code) will be surrounded by conditional checks for the enums above.
+
 `_snapOnOutput` can then be used to determine if the viewport should update given a specific situation.
 
 ## UI/UX Design
 
-`snapOnOutput` will be a profile-level `ICoreSettings` setting of type enum. It can be set to the following values:
-- `never`: new output does not cause the viewport to update to the bottom of the scroll region
-- `noSelection`: (**default**) new output causes the viewport to update to the bottom of the scroll region **IF** no selection is active
-- `always`: new output causes the viewport to update to the bottom of the scroll region
-
-This is done at a profile-level to be near `snapOnInput`. Additionally, the `never` value seems more valuable when the user can dedicate a specific task to the profile. Such a scenario would be a shell that frequently generates new output (i.e.: a live-generating log), but the user is not necessarily interested in what the latest output is.
+The `snapOnOutput` setting is done at a profile-level to be near `snapOnInput`. Additionally, the `never` value seems more valuable when the user can dedicate a specific task to the profile. Such a scenario would be a shell that frequently generates new output (i.e.: a live-generating log), but the user is not necessarily interested in what the latest output is.
 
 ## Capabilities
 
@@ -82,6 +76,12 @@ Another would be to introduce a more complex boolean function dependent on the s
 At the time of introducing this, the infinite scrollback feature is not supported. This means that the buffer saves the history up to the `historySize` amount of lines. When infinite scrollback is introduced, the buffer needs to change its own contents to allow the user to scroll beyond the `historySize`. With infinite scrollback enabled and the mutable viewport **NOT** snapping to new output, the `TerminalCore` needs to keep track of...
 - what contents are currently visible to the user (in the current location of the mutable viewport)
 - how to respond to a user's action of changing the location of the mutable viewport (i.e.: snapOnInput, scroll up/down)
+
+### Private Mode Escape Sequences
+There are a couple of private mode escape sequences that some terminals use to control this kind of thing. Mode 1010, for example, snaps the viewport to the bottom on output, whereas Mode 1011 spans the viewport to the bottom on a keypress.
+
+Mode 1010 should set the `SnapOnOutput` value via a Terminal API.
+Mode 1011 should set the `SnapOnInput` value via a Terminal API.
 
 ## Resources
 
