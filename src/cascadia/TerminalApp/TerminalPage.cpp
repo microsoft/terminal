@@ -1667,7 +1667,11 @@ namespace winrt::TerminalApp::implementation
     {
         _CloseAllTabs();
     }
-    
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    // This calls _CloseFocusedTab(), which closes the focused tab.
+    // This method will be called if the user confirms to close focused tab 
+    // when there are more then one pane.
     void TerminalPage::_CloseTabWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
                                                             WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
