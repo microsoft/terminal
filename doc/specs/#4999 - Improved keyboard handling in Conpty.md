@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-05-07
-last updated: 2020-05-07
+last updated: 2020-05-13
 issue id: 4999
 ---
 
@@ -170,7 +170,8 @@ as `INPUT_RECORD`s, without any loss of fidelity.
 
 #### Example
 
-When the user presses <kbd>Ctrl+F1</kbd> in the console, the console actually send 4 input records to the client application:
+When the user presses <kbd>Ctrl+F1</kbd> in the console, the console actually
+send 4 input records to the client application:
 * A <kbd>Ctrl</kbd> down event
 * A <kbd>F1</kbd> down event
 * A <kbd>F1</kbd> up event
@@ -178,10 +179,10 @@ When the user presses <kbd>Ctrl+F1</kbd> in the console, the console actually se
 
 Encoded in `win32-input-mode`, this would look like the following:
 ```
-^[[1;1;17;29;0;40!
-^[[1;1;112;59;0;40!
-^[[0;1;112;59;0;40!
-^[[0;1;17;29;0;32!
+^[[1;1;17;29;0;8!
+^[[1;1;112;59;0;8!
+^[[0;1;112;59;0;8!
+^[[0;1;17;29;0;0!
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
@@ -191,12 +192,12 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Similarly, for a keypress like <kbd>Ctrl+Alt+A</kbd>, which is 6 key events:
 ```
-^[[1;1;17;29;0;40!
-^[[1;1;18;56;0;42!
-^[[1;1;65;30;0;42!
-^[[0;1;65;30;0;42!
-^[[0;1;18;56;0;40!
-^[[0;1;17;29;0;32!
+^[[1;1;17;29;0;8!
+^[[1;1;18;56;0;10!
+^[[1;1;65;30;0;10!
+^[[0;1;65;30;0;10!
+^[[0;1;18;56;0;8!
+^[[0;1;17;29;0;0!
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x2a
@@ -208,10 +209,10 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Or, for something simple like <kbd>A</kbd> (which is 4 key events):
 ```
-^[[1;1;16;42;0;48!
-^[[1;1;65;30;65;48!
-^[[0;1;16;42;0;32!
-^[[0;1;65;30;97;32!
+^[[1;1;16;42;0;16!
+^[[1;1;65;30;65;16!
+^[[0;1;16;42;0;0!
+^[[0;1;65;30;97;0!
 
 Down: 1 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x30
 Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
@@ -219,9 +220,9 @@ Down: 0 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x20
 Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 ```
 
-> 👉 NOTE: In all the above examples, I had my NumLock key on, so all the
-> KeyState parameters have bits 0x20 set. To get these ketys without a NumLock,
-> subtract 32 from the value.
+> 👉 NOTE: In all the above examples, I had my NumLock key off. If I had the
+> NumLock key instead pressed, all the KeyState parameters would have bits 0x20
+> set. To get these keys with a NumLock, add 32 to the value.
 
 ### Scenarios
 
@@ -229,12 +230,13 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 
 `WT -> conpty[1] -> wsl`
 
-* Conpty[1] will ask for `win32-input-mode` from the Windows Terminal
+* Conpty[1] will ask for `win32-input-mode` from the Windows Terminal when
+  conpty[1] first boots up.
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
 * Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
 * When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences corresponding to whatever input mode the linux app is in
+  sequences corresponding to whatever input mode the linux app is in.
 
 #### User is typing into `cmd.exe` running in WSL interop
 
@@ -242,12 +244,14 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 
 (presuming you start from the previous scenario, and launch `cmd.exe` inside wsl)
 
-* Conpty[2] will ask for `win32-input-mode` from conpty[1]
+* Conpty[2] will ask for `win32-input-mode` from conpty[1] when conpty[2] first
+  boots up.
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
 * Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
 * When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences for the win32 input that conpty 2 requested
+  sequences for the `win32-input-mode`, because it believes the client (in this
+  case, the conpty[2] running attached to `wsl`) wants `win32-input-mode`.
 * Conpty[2] will get those sequences, and will translate those win32 sequences
   into `INPUT_RECORD`s
 * When `cmd.exe` reads the input, they'll receive the full `INPUT_RECORD`s
@@ -256,7 +260,7 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 
 ## UI/UX Design
 
-[comment]: # What will this fix/feature look like? How will it affect the end user?
+This is not a user-facing feature.
 
 ## Capabilities
 
@@ -274,7 +278,16 @@ _(no change expected)_
 
 ### Compatibility
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+This isn't expected to break any existing scenarios. The information that we're
+passing to conpty from the Terminal should strictly have _more_ information in
+them than they used to. Conhost was already capable of translating
+`INPUT_RECORD`s back into VT sequences, so this should work the same as before.
+
+There's some hypothetical future where the Terminal isn't connected to conpty.
+In that future, the Terminal will still be able to work correctly, even with
+this ConPTY change. The Terminal will only switch into sending
+`win32-input-mode` sequences when _conpty asks for them_. Otherwise, the
+Terminal will still behave like a normal terminal emulator.
 
 ### Performance, Power, and Efficiency
 
@@ -282,22 +295,35 @@ _(no change expected)_
 
 ## Potential Issues
 
-[comment]: # What are some of the things that might cause problems with the fixes/features proposed? Consider how the user might be negatively impacted.
+_(no change expected)_
 
 ## Future considerations
 
-[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios?
-
+* We could also hypothetically use this same mechanism to send Win32-like mouse
+  events to conpty, since similar to VT keyboard events, VT mouse events don't
+  have the same fidelity that Win32 mouse events do.
+  - We could enable this with a different terminating character, like `"`
+* Client applications that want to be able to read full Win32 keyboard input
+  from `conhost` _using VT_ will also be able to use OSC 1000;1 to do this. If
+  they emit OSC 1000;1, then conhost will switch itself into `win32-input-mode`,
+  and the client will read `win32-input-mode` encoded sequences as input. This
+  could enable other cross-platform applications to also use win32-like input in
+  the future.
 
 ## Options Considered
 
-
 ### Create our own format for `INPUT_RECORD`s
 
-* If we wanted to do this, then we'd probably want to have the Terminal only send input as this format, and not use the existing translator to synthesize VT sequences
-    - Consider sending a ctrl down, '^A', ctrl up. We wouldn't want to send this as three sequences, because conpty will take the '^A' and synthesize _another_ ctrl down, ctrl up pair.
-* With conpty passthrough mode, we'd still need the `InpustStateMachineEngine` to convert these sequences into INPUT_RECORDs to translate back to VT
-* Wouldn't really expect client apps to ever _need_ this format, but it could always be possible for them to need it in the future.
+* If we wanted to do this, then we'd probably want to have the Terminal only
+  send input as this format, and not use the existing translator to synthesize
+  VT sequences
+    - Consider sending a ctrl down, '^A', ctrl up. We wouldn't want to send this
+      as three sequences, because conpty will take the '^A' and synthesize
+      _another_ ctrl down, ctrl up pair.
+* With conpty passthrough mode, we'd still need the `InpustStateMachineEngine`
+  to convert these sequences into INPUT_RECORDs to translate back to VT
+* Wouldn't really expect client apps to ever _need_ this format, but it could
+  always be possible for them to need it in the future.
 
 #### Pros:
 * Definitely gets us all the information that we need.
@@ -307,30 +333,43 @@ _(no change expected)_
 
 #### Cons:
 * No reference implementation, so we'd be flying blind
-* We'd be defining our own VT sequences for these, which we've never done before. This was _inevitable_, however, this is still the first time we'd be doing this.
+* We'd be defining our own VT sequences for these, which we've never done
+  before. This was _inevitable_, however, this is still the first time we'd be
+  doing this.
 * Something about Microsoft extending well-defined protocols being bad 😆
-* By having the Terminal send all input as _this protocol_, VT Input passthrough to apps that want VT input won't work anymore for the Terminal. That's _okay_
+* By having the Terminal send all input as _this protocol_, VT Input passthrough
+  to apps that want VT input won't work anymore for the Terminal. That's _okay_
 
 ### kitty extension
 [Reference](https://sw.kovidgoyal.net/kitty/protocol-extensions.html#keyboard-handling)
 
 #### Pros:
 * Not terribly difficult to decode
-* Unique from anything else we'd be processing, as it's an APC sequence (`\x1b_`)
-* From their docs:
-  > All printable key presses without modifier keys are sent just as in the normal mode. ... For non printable keys and key combinations including one or more modifiers, an escape sequence encoding the key event is sent
-   - I think like this. ASCII and other keyboard layout chars (things that would hit `SendChar`) would still just come through as the normal char.
+* Unique from anything else we'd be processing, as it's an APC sequence
+  (`\x1b_`)
+* From their docs: > All printable key presses without modifier keys are sent
+  just as in the normal mode. ... For non printable keys and key combinations
+  including one or more modifiers, an escape sequence encoding the key event is
+  sent
+   - I think like this. ASCII and other keyboard layout chars (things that would
+     hit `SendChar`) would still just come through as the normal char.
 
 #### Cons:
-* Their encoding table is _mad_. [Look at this](https://sw.kovidgoyal.net/kitty/key-encoding.html). What order is that in? Obviously the first column is sorted alphabetically, but the mapping of key->char is in a seemingly bonkers order.
+* Their encoding table is _mad_. [Look at
+  this](https://sw.kovidgoyal.net/kitty/key-encoding.html). What order is that
+  in? Obviously the first column is sorted alphabetically, but the mapping of
+  key->char is in a seemingly bonkers order.
 * I can't get it working locally, so hard to test 😐
-* They do declare the `fullkbd` terminfo capability to identify that they support this mode, but I'm not sure anyone else uses it.
+* They do declare the `fullkbd` terminfo capability to identify that they
+  support this mode, but I'm not sure anyone else uses it.
   - I'm also not sure that any _client_ apps are reading this currently.
-* This isn't designed to be full `KEY_EVENT`s - where would we put the scancode (for apps that think that's important)?
+* This isn't designed to be full `KEY_EVENT`s - where would we put the scancode
+  (for apps that think that's important)?
   - We'd have  to extend this protocol _anyways_
 
 ### `xterm` "Set key modifier options"
-Notably looking at [`modifyOtherKeys`](https://invisible-island.net/xterm/manpage/xterm.html#VT100-Widget-Resources:modifyOtherKeys).
+Notably looking at
+[`modifyOtherKeys`](https://invisible-island.net/xterm/manpage/xterm.html#VT100-Widget-Resources:modifyOtherKeys).
 
 #### Pros:
 * `xterm` implements this so there's a reference implementation
@@ -347,11 +386,15 @@ Notably looking at [`modifyOtherKeys`](https://invisible-island.net/xterm/manpag
 * Enables us to send key-down and key-up keys independently
 * Enables us to send modifiers on their own
 * Part of the VT 510 standard
-#### Cons:
-* neither `xterm` nor `gnome-terminal` (VTE) seem to implement this. I'm not sure if anyone's got a reference implementation for us to work with.
-* Unsure how this would work with other keyboard layouts
-    - [this doc](https://vt100.net/docs/vt510-rm/chapter8.html#S8.13) seems to list the key-down/up codes for all the en-us keyboard keys, but the scancodes for these are different for up and down. That would seem to imply we couldn't just shove the Win32 scancode in those bits
 
+#### Cons:
+* neither `xterm` nor `gnome-terminal` (VTE) seem to implement this. I'm not
+  sure if anyone's got a reference implementation for us to work with.
+* Unsure how this would work with other keyboard layouts
+    - [this doc](https://vt100.net/docs/vt510-rm/chapter8.html#S8.13) seems to
+      list the key-down/up codes for all the en-us keyboard keys, but the
+      scancodes for these are different for up and down. That would seem to
+      imply we couldn't just shove the Win32 scancode in those bits
 
 ### `DECPKM`, `DECSKMR`
 [DECPKM](https://vt100.net/docs/vt510-rm/DECKPM.html)
@@ -362,9 +405,23 @@ Notably looking at [`modifyOtherKeys`](https://invisible-island.net/xterm/manpag
 * Enables us to send key-down and key-up keys independently
 * Enables us to send modifiers on their own
 * Part of the VT 510 standard
+
 #### Cons:
-* neither `xterm` nor `gnome-terminal` (VTE) seem to implement this. I'm not sure if anyone's got a reference implementation for us to work with.
-* not sure that "a three-character ISO key position name, for example C01" is super compatible with our Win32 VKEYs.
+* neither `xterm` nor `gnome-terminal` (VTE) seem to implement this. I'm not
+  sure if anyone's got a reference implementation for us to work with.
+* not sure that "a three-character ISO key position name, for example C01" is
+  super compatible with our Win32 VKEYs.
+
+
+### `libtickit` encoding
+[Source](http://www.leonerd.org.uk/hacks/fixterms)
+
+#### Pros:
+* Simple encoding scheme
+
+#### Cons:
+* Doesn't differentiate between keydowns and keyups
+* Unsure who implements this - not extensivly investigated
 
 
 ## Resources
