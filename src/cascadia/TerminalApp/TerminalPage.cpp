@@ -64,6 +64,9 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
+        // winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabRow.TabView(), L"WindowState_Normal", false);
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabRow, L"WindowState_Normal", false);
+
         _tabView = _tabRow.TabView();
         _rearranging = false;
 

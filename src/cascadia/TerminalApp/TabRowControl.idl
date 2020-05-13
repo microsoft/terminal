@@ -3,7 +3,7 @@
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.ContentPresenter
+    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.Grid
     {
         TabRowControl();
         Microsoft.UI.Xaml.Controls.TabView TabView { get; };

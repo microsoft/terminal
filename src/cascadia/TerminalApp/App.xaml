@@ -41,11 +41,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
+                            <!-- <StaticResource x:Key="AccentButtonForeground" ResourceKey="SystemControlBackgroundChromeWhiteBrush" /> -->
+
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FF333333" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!-- Define resources for Light mode here -->
+                            <!-- <StaticResource x:Key="AccentButtonForeground" ResourceKey="SystemControlBackgroundChromeWhiteBrush" /> -->
+
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FFCCCCCC" />
                         </ResourceDictionary>
 
