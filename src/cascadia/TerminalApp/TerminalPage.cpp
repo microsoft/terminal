@@ -263,6 +263,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for warnings found while closing a tab if there are more then one pane(s)
+    //   key binding with multiple tabs opened. Display messages to warn user
+    //   that more than 1 pane(s) is opened, and once the user clicks the OK button, remove
+    //   the tab. If cancel is clicked, the dialog will close
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void TerminalPage::_ShowCloseTabDialog()
+    {
+        _showDialogHandlers(*this, FindName(L"CloseTabDialog").try_as<WUX::Controls::ContentDialog>());
+    }
+    
+    // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
     //   that more than 1 tab is opened, and once the user clicks the OK button, remove
@@ -1069,6 +1081,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Close the currently focused tab. Focus will move to the left, if possible.
+    void TerminalPage::_CloseFocusedTabPane()
+    {
+        if (_panes.Size() > 1)
+        {
+            _ShowCloseTabDialog();
+        }
+        else
+        {
+            _CloseFocusedTab();
+        }
+    }
+    
     // Method Description:
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void TerminalPage::_CloseFocusedTab()
