@@ -1758,21 +1758,6 @@ bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
                                                     size_t& opcode,
                                                     std::wstring_view& remainingParams) const
 {
-    // auto found = str.find(L';');
-    // if (found == std::wstring::npos || found == 0)
-    // {
-    //     return false;
-    // }
-    // std::wstring_view opcodeString = str.substr(0, found);
-    // size_t opcodeResult = 0;
-    // const auto [p, ec] = std::from_chars(opcodeString.begin(), opcodeString.end(), opcodeResult);
-    // if (ec == std::errc())
-    // {
-    //     return false;
-    // }
-    // opcode = opcodeResult;
-    // remainingParams = str.substr(found);
-
     // First try to get the table index, a number between [0,256]
     size_t opcodeResult = 0;
     size_t current = 0;
@@ -1813,7 +1798,6 @@ bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
 bool OutputStateMachineEngine::_DispatchWindowsCommand(const size_t opcode,
                                                        const std::wstring_view remainingParams) const
 {
-    // DebugBreak();
     switch (opcode)
     {
     case 1:

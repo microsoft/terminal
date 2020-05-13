@@ -73,6 +73,7 @@ namespace Microsoft::Console::VirtualTerminal
         CSI_F4 = L'S',
         DTTERM_WindowManipulation = L't',
         CursorBackTab = L'Z',
+        Win32KeyboardInput = L'!'
     };
 
     enum CsiMouseButtonCodes : unsigned short
@@ -208,6 +209,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
                                         unsigned int& function) const noexcept;
+
+        bool _GenerateWin32Key(const std::basic_string_view<size_t> parameters, KeyEvent& key);
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;

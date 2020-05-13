@@ -347,7 +347,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                 const std::basic_string_view<wchar_t> intermediates,
                                                 const std::basic_string_view<size_t> parameters)
 {
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    const auto actionCode = static_cast<CsiActionCodes>(wch);
+    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue && actionCode != CsiActionCodes::Win32KeyboardInput)
     {
         return _pfnFlushToInputQueue();
     }
@@ -357,6 +358,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     unsigned int function = 0;
     size_t col = 0;
     size_t row = 0;
+    KeyEvent key;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
@@ -385,7 +387,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         }
         return success;
     }
-    switch (static_cast<CsiActionCodes>(wch))
+    switch (actionCode)
     {
     case CsiActionCodes::Generic:
         modifierState = _GetGenericKeysModifierState(parameters);
@@ -421,6 +423,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
+        break;
+    case CsiActionCodes::Win32KeyboardInput:
+        success = _GenerateWin32Key(parameters, key);
         break;
     default:
         success = false;
@@ -462,6 +467,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
                                                      remainingArgs);
             break;
+        case CsiActionCodes::Win32KeyboardInput:
+        {
+            // auto event = std::make_unique<KeyEvent>(key);
+            auto dumb = key.ToInputRecord();
+            std::deque<std::unique_ptr<IInputEvent>> input = IInputEvent::Create(gsl::make_span(&dumb, 1));
+            success = _pDispatch->WriteInput(input);
+            break;
+        }
         default:
             success = false;
             break;
@@ -1259,5 +1272,28 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
         column = DefaultColumn;
     }
 
+    return true;
+}
+
+bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<size_t> parameters,
+                                                KeyEvent& key)
+{
+    // return fmt::format(L"\x1b[{};{};{};{};{};{}!",
+    //                    key.IsKeyDown() ? 1 : 0,
+    //                    key.GetRepeatCount(),
+    //                    key.GetVirtualKeyCode(),
+    //                    key.GetVirtualScanCode(),
+    //                    static_cast<int>(key.GetCharData()),
+    //                    key.GetActiveModifierKeys());
+    if (parameters.size() != 6)
+    {
+        return false;
+    }
+    key = KeyEvent(static_cast<bool>(parameters.at(0)),
+                   ::base::saturated_cast<WORD>(parameters.at(1)),
+                   ::base::saturated_cast<WORD>(parameters.at(2)),
+                   ::base::saturated_cast<WORD>(parameters.at(3)),
+                   static_cast<wchar_t>(parameters.at(4)),
+                   ::base::saturated_cast<DWORD>(parameters.at(5)));
     return true;
 }
