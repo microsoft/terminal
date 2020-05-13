@@ -40,6 +40,7 @@ the appearance of the new tab dropdown. Let's take a look at an example:
         {
             "type":"folder",
             "name": "ssh",
+            "icon": "C:\\path\\to\\icon.png",
             "entries":[
                 { "type":"profile", "profile": "Host 1" },
                 { "type":"profile", "profile": "8.8.8.8" },
@@ -66,10 +67,12 @@ There are three `type`s of objects in this menu:
   parameter, which accepts either a profile `name` or GUID.
 * `"type":"separator"`: This represents a XAML `MenuFlyoutSeparator`, enabling
   the user to visually space out entries.
-* `"type":"entries"`: This represents a nested menu of entries.
+* `"type":"folder"`: This represents a nested menu of entries.
   - The `"name"` property provides a string of text to display for the group.
+  - The `"icon"` property provides a path to a image to use as the icon. This
+    property is optional.
   - The `"entries"` property specifies a list of menu entries that will appear
-    nested under this entry. This can contain other `"type":"entries"` groups as
+    nested under this entry. This can contain other `"type":"folder"` groups as
     well!
 
 ## UI/UX Design
