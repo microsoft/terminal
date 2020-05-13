@@ -19,7 +19,7 @@ customization in their settings.
 
 ## Inspiration
 
-Largely, this spec was inspired by disscussion in
+Largely, this spec was inspired by discussion in
 [#1571](https://github.com/microsoft/terminal/issues/1571#issuecomment-519504048)
 and the _many_ linked threads.
 
@@ -121,5 +121,5 @@ confusing.
   "action", "action": {...} }`
 * The user could set a `"name"`/`"text"`, or `"icon"` property to these menu
   items manually, to override the value from the profile
-    - This would be especially useful for the `"folder"` or aformentioned
+    - This would be especially useful for the `"folder"` or aforementioned
       `"action"` menu entry
