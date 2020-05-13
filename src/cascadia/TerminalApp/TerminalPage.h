@@ -98,6 +98,7 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
+        void _ShowCloseTabDialog();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
@@ -132,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
+        void _CloseFocusedTabPane();
         void _CloseFocusedPane();
         void _CloseAllTabs();
 
