@@ -24,6 +24,8 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
 | `startOnUserLogin` | Optional | Boolean | `false` | When set to `true` enables the launch of Windows Terminal at startup. Setting to `false` will disable the startup task entry. Note: if the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect. |
 | `disabledProfileSources` | Optional | Array[String] | `[]` | Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup. This array can contain any combination of `Windows.Terminal.Wsl`, `Windows.Terminal.Azure`, or `Windows.Terminal.PowershellCore`. For more information, see [UsingJsonSettings.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#dynamic-profiles) |
+| `experimental.rendering.forceFullRepaint` | Optional | Boolean | `false` | When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames. |
+| `experimental.rendering.software` | Optional | Boolean | `false` | When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one. |
 
 ## Profiles
 

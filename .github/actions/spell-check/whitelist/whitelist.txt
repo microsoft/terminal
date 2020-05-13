@@ -1671,6 +1671,7 @@ OUTPATHROOT
 Outptr
 Ov
 OVERLAPPEDWINDOW
+OVR
 OWNDC
 OWNERDRAWFIXED
 packageuwp
@@ -2631,6 +2632,7 @@ wfdopen
 WFill
 wfopen
 wfstream
+WGL
 WHelper
 whitelisting
 WIDTHSCROLL

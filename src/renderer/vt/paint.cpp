@@ -481,6 +481,13 @@ using namespace Microsoft::Console::Types;
         // accidentally erasing the last character from the previous line, as
         // the cursor is still waiting on that character for the next character
         // to follow it.
+        //
+        // GH#5839 - If we've emitted a wrapped row, because the cursor is
+        // sitting just past the last cell of the previous row, if we execute a
+        // EraseCharacter or EraseLine here, then the row won't actually get
+        // cleared here. This logic is important to make sure that the cursor is
+        // in the right position before we do that.
+
         _wrappedRow = std::nullopt;
         _trace.TraceClearWrapped();
     }

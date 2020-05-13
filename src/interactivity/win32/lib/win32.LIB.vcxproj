@@ -60,6 +60,11 @@
     <ClInclude Include="..\WindowIo.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\renderer\dx\lib\dx.vcxproj">
+      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
