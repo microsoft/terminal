@@ -10,52 +10,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-
-    <ContentPresenter.Resources>
-        <ResourceDictionary>
-            <Style x:Key="MyTabView" TargetType="mux:TabView" BasedOn="{StaticResource DefaultTabViewStyle}">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="mux:TabView">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="MinMax_States">
-                                    <VisualState x:Name="WindowState_Normal">
-                                        <VisualState.Setters>
-                                            <Setter Target="Padding" Value="14" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="WindowState_Maximized">
-                                        <VisualState.Setters>
-                                            <Setter Target="Padding" Value="0" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </ResourceDictionary>
-    </ContentPresenter.Resources>
-
-
-<!--     <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="MinMax_States">
-                <VisualState x:Name="WindowState_Normal">
-                    <VisualState.Setters>
-                        <Setter Target="TabView.Padding" Value="14" />
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState x:Name="WindowState_Maximized">
-                    <VisualState.Setters>
-                        <Setter Target="TabView.Padding" Value="0" />
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups> -->
-
     <mux:TabView x:Name="TabView"
-                 Style="{StaticResource MyTabView}"
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  IsAddTabButtonVisible="false"
@@ -63,21 +18,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                  CanReorderTabs="True"
                  CanDragTabs="True"
                  AllowDropTabs="True">
-
-        <!-- <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="MinMax_States">
-                <VisualState x:Name="WindowState_Normal">
-                    <VisualState.Setters>
-                        <Setter Target="Padding" Value="14" />
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState x:Name="WindowState_Maximized">
-                    <VisualState.Setters>
-                        <Setter Target="Padding" Value="0" />
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups> -->
 
         <mux:TabView.TabStripFooter>
             <mux:SplitButton
