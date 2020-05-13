@@ -230,6 +230,11 @@ void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
     _cursorApplicationMode = applicationMode;
 }
 
+void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
+{
+    _win32InputMode = win32InputMode;
+}
+
 static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
                                                                const bool cursorApplicationMode,
                                                                const bool keypadApplicationMode) noexcept
@@ -468,6 +473,13 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
+    if (_win32InputMode)
+    {
+        const auto seq = _GenerateWin32KeySequence(keyEvent);
+        _SendInputSequence(seq);
+        return true;
+    }
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
@@ -666,4 +678,15 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
             LOG_HR(wil::ResultFromCaughtException());
         }
     }
+}
+
+std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
+{
+    return fmt::format(L"\x1b[{};{};{};{};{};{}!",
+                       key.IsKeyDown() ? 1 : 0,
+                       key.GetRepeatCount(),
+                       key.GetVirtualKeyCode(),
+                       key.GetVirtualScanCode(),
+                       static_cast<int>(key.GetCharData()),
+                       key.GetActiveModifierKeys());
 }

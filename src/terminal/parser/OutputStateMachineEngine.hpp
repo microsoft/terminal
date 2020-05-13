@@ -139,6 +139,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
+            WindowsTerminal = 1000
         };
 
         enum class DesignateCharsetTypes
@@ -193,6 +194,12 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
+
+        bool _GetWindowsOperation(const std::wstring_view str,
+                                  size_t& opcode,
+                                  std::wstring_view& remainingParams) const;
+        bool _DispatchWindowsCommand(const size_t opcode,
+                                     const std::wstring_view remainingParams) const;
 
         static constexpr size_t DefaultTabDistance = 1;
         bool _GetTabDistance(const std::basic_string_view<size_t> parameters,

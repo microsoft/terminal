@@ -1070,6 +1070,26 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     return success;
 }
 
+// Method Description:
+// - TODO
+// Arguments:
+// - win32InputMode - TODO
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
+{
+    bool success = true;
+    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
+
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
+    return success;
+}
+
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
 // Arguments:
 // - applicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.

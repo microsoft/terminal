@@ -1222,6 +1222,12 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     return STATUS_SUCCESS;
 }
 
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
+}
+
 // Routine Description:
 // - A private API call for changing the screen mode between normal and reverse.
 //    When in reverse screen mode, the background and foreground colors are switched.

@@ -67,6 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
         bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM

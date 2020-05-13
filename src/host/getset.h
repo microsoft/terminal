@@ -20,6 +20,7 @@ class SCREEN_INFORMATION;
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL);

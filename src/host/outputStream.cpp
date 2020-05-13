@@ -239,6 +239,12 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
     return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
 }
 
+bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    DoSrvPrivateEnableWin32InputMode(win32InputMode);
+    return true;
+}
+
 // Routine Description:
 // - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,

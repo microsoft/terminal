@@ -37,6 +37,8 @@ namespace Microsoft::Console::VirtualTerminal
         void ChangeKeypadMode(const bool applicationMode) noexcept;
         void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
+        void ChangeWin32InputMode(const bool win32InputMode) noexcept;
+
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
         bool HandleMouse(const COORD position,
@@ -67,13 +69,15 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        bool _keypadApplicationMode = false;
-        bool _cursorApplicationMode = false;
+        bool _keypadApplicationMode{ false };
+        bool _cursorApplicationMode{ false };
+        bool _win32InputMode{ false };
 
         void _SendChar(const wchar_t ch);
         void _SendNullInputSequence(const DWORD dwControlKeyState) const;
         void _SendInputSequence(const std::wstring_view sequence) const noexcept;
         void _SendEscapedInputSequence(const wchar_t wch) const;
+        static std::wstring _GenerateWin32KeySequence(const KeyEvent& key);
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp

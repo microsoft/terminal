@@ -7,6 +7,7 @@
 #include "OutputStateMachineEngine.hpp"
 
 #include "ascii.hpp"
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -728,6 +729,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     std::wstring title;
     size_t tableIndex = 0;
     DWORD color = 0;
+    size_t windowsTerminalOpcode = 0;
+    std::wstring_view windowsTerminalParams;
 
     switch (parameter)
     {
@@ -748,6 +751,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         // the console uses 0xffffffff as an "invalid color" value
         color = 0xffffffff;
         success = true;
+        break;
+    case OscActionCodes::WindowsTerminal:
+        success = _GetWindowsOperation(string, windowsTerminalOpcode, windowsTerminalParams);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -783,6 +789,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
+            break;
+        case OscActionCodes::WindowsTerminal:
+            success = _DispatchWindowsCommand(windowsTerminalOpcode, windowsTerminalParams);
+            // TODO: TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1742,4 +1752,80 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
 void OutputStateMachineEngine::_ClearLastChar() noexcept
 {
     _lastPrintedChar = AsciiChars::NUL;
+}
+
+bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
+                                                    size_t& opcode,
+                                                    std::wstring_view& remainingParams) const
+{
+    // auto found = str.find(L';');
+    // if (found == std::wstring::npos || found == 0)
+    // {
+    //     return false;
+    // }
+    // std::wstring_view opcodeString = str.substr(0, found);
+    // size_t opcodeResult = 0;
+    // const auto [p, ec] = std::from_chars(opcodeString.begin(), opcodeString.end(), opcodeResult);
+    // if (ec == std::errc())
+    // {
+    //     return false;
+    // }
+    // opcode = opcodeResult;
+    // remainingParams = str.substr(found);
+
+    // First try to get the table index, a number between [0,256]
+    size_t opcodeResult = 0;
+    size_t current = 0;
+    bool foundTableIndex = false;
+    for (size_t i = 0; i < str.size(); i++)
+    {
+        const wchar_t wch = str.at(current);
+        if (_isNumber(wch))
+        {
+            opcodeResult *= 10;
+            opcodeResult += wch - L'0';
+
+            ++current;
+        }
+        else if (wch == L';' && i > 0)
+        {
+            // We need to explicitly pass in a number, we can't default to 0 if
+            //  there's no param
+            ++current;
+            foundTableIndex = true;
+            break;
+        }
+        else
+        {
+            // Found an unexpected character, fail.
+            break;
+        }
+    }
+    if (!foundTableIndex)
+    {
+        return false;
+    }
+    opcode = opcodeResult;
+    remainingParams = str.substr(current);
+
+    return true;
+}
+bool OutputStateMachineEngine::_DispatchWindowsCommand(const size_t opcode,
+                                                       const std::wstring_view remainingParams) const
+{
+    // DebugBreak();
+    switch (opcode)
+    {
+    case 1:
+        if (remainingParams.size() == 1)
+        {
+            const auto wch = remainingParams.at(0);
+            if (wch == L'0' || wch == L'1')
+            {
+                return _dispatch->EnableWin32InputMode(wch == L'1');
+            }
+        }
+        break;
+    }
+    return false;
 }
