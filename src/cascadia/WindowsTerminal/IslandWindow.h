@@ -17,7 +17,7 @@ public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
-    void MakeWindow() noexcept;
+    virtual void MakeWindow() noexcept;
     void Close();
     virtual void OnSize(const UINT width, const UINT height);
 
@@ -28,15 +28,18 @@ public:
     void OnRestore() override;
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
+    void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void ToggleFullscreen();
 
 #pragma region IUiaWindow
-    void ChangeViewport(const SMALL_RECT NewWindow)
+    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
     {
         // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         // Relevant comment from zadjii-msft:
@@ -46,7 +49,7 @@ public:
         TerminalApp to have TerminalApp handle the ChangeViewport call.
         (See IslandWindow::SetCreateCallback as an example of a similar
         pattern we're using today.) That way, if someone else were trying
-        to resuse this, they could have their own AppHost (or TerminalApp
+        to reuse this, they could have their own AppHost (or TerminalApp
         equivalent) handle the ChangeViewport call their own way.
         */
         return;
@@ -57,7 +60,7 @@ public:
         return BaseWindow::GetHandle();
     };
 
-    [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) override { return E_NOTIMPL; };
+    [[nodiscard]] HRESULT SignalUia(_In_ EVENTID /*id*/) override { return E_NOTIMPL; };
     [[nodiscard]] HRESULT UiaSetTextAreaFocus() override { return E_NOTIMPL; };
 
     RECT GetWindowRect() const noexcept override
@@ -68,6 +71,8 @@ public:
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+    DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
+    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
 
 protected:
     void ForceResize()
@@ -84,7 +89,21 @@ protected:
 
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-    std::function<void(const HWND, const RECT)> _pfnCreateCallback;
+    std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
+
+    bool _fullscreen{ false };
+    RECT _fullscreenWindowSize;
+    RECT _nonFullscreenWindowSize;
+
+    virtual void _SetIsFullscreen(const bool fullscreenEnabled);
+    void _BackupWindowSizes(const bool currentIsInFullscreen);
+    void _ApplyWindowSize();
+
+private:
+    // This minimum width allows for width the tabs fit
+    static constexpr long minimumWidth = 460L;
 };

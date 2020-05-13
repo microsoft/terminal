@@ -63,13 +63,38 @@ private:                                                                        
 // signatures and define them both for you, because they don't really vary from
 // event to event.
 // Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
-#define TYPED_EVENT(name, sender, args)                                                                                                     \
-public:                                                                                                                                     \
-    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
-    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); }                                                \
-                                                                                                                                            \
-private:                                                                                                                                    \
-    winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
+#define TYPED_EVENT(name, sender, args)                                                                                                            \
+public:                                                                                                                                            \
+    winrt::event_token name(winrt::Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
+    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }                                                                \
+                                                                                                                                                   \
+private:                                                                                                                                           \
+    winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
+
+// This is a helper macro for both declaring the signature of a callback (nee event) and
+// defining the body. Winrt callbacks need a method for adding a delegate to the
+// callback and removing the delegate. This macro will both declare the method
+// signatures and define them both for you, because they don't really vary from
+// event to event.
+// Use this in a class's header if you have a "delegate" type in your IDL.
+#define WINRT_CALLBACK(name, args)                                                          \
+public:                                                                                     \
+    winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); } \
+    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }         \
+                                                                                            \
+private:                                                                                    \
+    winrt::event<args> _##name##Handlers;
+
+// This is a helper macro for both declaring the signature and body of an event
+// which is exposed by one class, but actually handled entirely by one of the
+// class's members. This type of event could be considered "forwarded" or
+// "proxied" to the handling type. Case in point: many of the events on App are
+// just forwarded straight to TerminalPage. This macro will both declare the
+// method signatures and define them both for you.
+#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
+public:                                                                                                                        \
+    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler->handlerName(h); } \
+    void name(winrt::event_token const& token) noexcept { handler->handlerName(token); }
 
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
@@ -81,6 +106,24 @@ public:                                               \
                                                       \
 private:                                              \
     type _##name{ __VA_ARGS__ };
+
+// Use this macro to quickly implement both the getter and setter for an observable property.
+// This is similar to the GETSET_PROPERTY macro above, except this will also raise a
+// PropertyChanged event with the name of the property that has changed inside of the setter.
+#define OBSERVABLE_GETSET_PROPERTY(type, name, event)                                  \
+public:                                                                                \
+    type name() { return _##name; };                                                   \
+                                                                                       \
+private:                                                                               \
+    const type _##name;                                                                \
+    void name(const type& value)                                                       \
+    {                                                                                  \
+        if (_##name != value)                                                          \
+        {                                                                              \
+            const_cast<type&>(_##name) = value;                                        \
+            event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
+        }                                                                              \
+    };
 
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,

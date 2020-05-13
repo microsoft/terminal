@@ -57,10 +57,10 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // is made implicitly by the renderers, the rest of the console is not aware
     // of it and the renderer procedure goes on to translate output text so that
     // it be renderable with raster fonts, which messes up the final output.
-    // Hence, we make it seem like the console is in fact configred to use a
+    // Hence, we make it seem like the console is in fact configured to use a
     // TrueType font by the user.
 
-    pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME));
+    pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME);
     pLinkSettings->SetFontFamily(TMPF_TRUETYPE);
 
     return;

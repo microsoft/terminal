@@ -144,7 +144,8 @@ public:
                                                                   const wchar_t character,
                                                                   const size_t lengthToWrite,
                                                                   const COORD startingCoordinate,
-                                                                  size_t& cellsModified) noexcept = 0;
+                                                                  size_t& cellsModified,
+                                                                  const bool enablePowershellShim = false) noexcept = 0;
 
     virtual void SetConsoleActiveScreenBufferImpl(IConsoleOutputObject& newContext) noexcept = 0;
 
@@ -190,7 +191,8 @@ public:
                                                                  const COORD target,
                                                                  std::optional<SMALL_RECT> clip,
                                                                  const wchar_t fillCharacter,
-                                                                 const WORD fillAttribute) noexcept = 0;
+                                                                 const WORD fillAttribute,
+                                                                 const bool enableCmdShim = false) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleTextAttributeImpl(IConsoleOutputObject& context,
                                                               const WORD attribute) noexcept = 0;

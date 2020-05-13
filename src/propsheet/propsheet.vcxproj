@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>propsheet</RootNamespace>
+    <ProjectName>Propsheet.DLL</ProjectName>
+    <TargetName>console</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="console.cpp" />
@@ -49,16 +57,6 @@
   <ItemGroup>
     <None Include="console.def" />
   </ItemGroup>
-  <PropertyGroup Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ProjectGuid>{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>propsheet</RootNamespace>
-    <ProjectName>Propsheet.DLL</ProjectName>
-    <TargetName>console</TargetName>
-  </PropertyGroup>
   <PropertyGroup>
     <EmbedManifest>
     </EmbedManifest>
@@ -81,6 +79,5 @@
     <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\common.build.dll.props" />
   <Import Project="..\common.build.post.props" />
 </Project>

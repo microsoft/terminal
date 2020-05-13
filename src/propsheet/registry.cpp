@@ -124,9 +124,9 @@ VOID InitRegistryValues(
     // clang-format on
 
     pStateInfo->CodePage = OEMCP;
-    pStateInfo->hWnd = NULL;
-    pStateInfo->OriginalTitle = NULL;
-    pStateInfo->LinkTitle = NULL;
+    pStateInfo->hWnd = nullptr;
+    pStateInfo->OriginalTitle = nullptr;
+    pStateInfo->LinkTitle = nullptr;
 
     // v2 console state
     pStateInfo->fWrapText = TRUE;
@@ -193,7 +193,7 @@ DWORD GetRegistryValues(
                                                      sizeof(dwValue),
                                                      REG_DWORD,
                                                      (PBYTE)&dwValue,
-                                                     NULL);
+                                                     nullptr);
         if (NT_SUCCESS(Status))
         {
             dwRet = dwValue;
@@ -231,7 +231,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->ScreenAttributes = (WORD)dwValue;
@@ -246,7 +246,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->PopupAttributes = (WORD)dwValue;
@@ -267,7 +267,7 @@ DWORD GetRegistryValues(
                                                      sizeof(dwValue),
                                                      REG_DWORD,
                                                      (PBYTE)&dwValue,
-                                                     NULL);
+                                                     nullptr);
         if (NT_SUCCESS(Status))
         {
             pStateInfo->ColorTable[i] = dwValue;
@@ -282,7 +282,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->InsertMode = !!dwValue;
@@ -296,7 +296,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->QuickEdit = !!dwValue;
@@ -312,7 +312,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         if (IsValidCodePage(dwValue))
@@ -329,7 +329,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->ScreenBufferSize.X = LOWORD(dwValue);
@@ -344,7 +344,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->WindowSize.X = LOWORD(dwValue);
@@ -359,7 +359,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->WindowPosX = (SHORT)LOWORD(dwValue);
@@ -376,7 +376,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->FontSize.X = LOWORD(dwValue);
@@ -391,7 +391,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->FontFamily = dwValue;
@@ -405,7 +405,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->FontWeight = dwValue;
@@ -419,7 +419,7 @@ DWORD GetRegistryValues(
                                                  sizeof(awchBuffer),
                                                  REG_SZ,
                                                  (PBYTE)awchBuffer,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         RtlCopyMemory(pStateInfo->FaceName, awchBuffer, sizeof(awchBuffer));
@@ -433,7 +433,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->CursorSize = dwValue;
@@ -447,7 +447,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->HistoryBufferSize = dwValue;
@@ -461,7 +461,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->NumberOfHistoryBuffers = dwValue;
@@ -475,7 +475,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->HistoryNoDup = dwValue;
@@ -489,7 +489,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->fWrapText = dwValue;
@@ -503,7 +503,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->fFilterOnPaste = dwValue;
@@ -517,7 +517,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->fCtrlKeyShortcutsDisabled = dwValue;
@@ -531,7 +531,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->fLineSelection = dwValue;
@@ -545,7 +545,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         if (dwValue <= BYTE_MAX)
@@ -560,7 +560,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->CursorColor = dwValue;
@@ -571,7 +571,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->CursorType = dwValue;
@@ -583,7 +583,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->InterceptCopyPaste = !!dwValue;
@@ -595,7 +595,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->DefaultForeground = dwValue;
@@ -607,7 +607,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->DefaultBackground = dwValue;
@@ -619,7 +619,7 @@ DWORD GetRegistryValues(
                                                  sizeof(dwValue),
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
-                                                 NULL);
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         pStateInfo->TerminalScrolling = dwValue;
@@ -946,52 +946,59 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-    // Save cursor type and color
-    dwValue = pStateInfo->CursorType;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORTYPE,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+    // Only save the "Terminal" settings if we launched as a v2 propsheet. The
+    // v1 console doesn't know anything about these settings, and their value
+    // will be incorrectly zero'd if we save in this state.
+    // See microsoft/terminal#2319 for more details.
+    if (gpStateInfo->fIsV2Console)
+    {
+        // Save cursor type and color
+        dwValue = pStateInfo->CursorType;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_CURSORTYPE,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->CursorColor;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORCOLOR,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->CursorColor;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_CURSORCOLOR,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->InterceptCopyPaste;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->InterceptCopyPaste;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->TerminalScrolling;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_TERMINALSCROLLING,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
-    dwValue = pStateInfo->DefaultForeground;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_DEFAULTFOREGROUND,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
-    dwValue = pStateInfo->DefaultBackground;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_DEFAULTBACKGROUND,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->TerminalScrolling;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_TERMINALSCROLLING,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+        dwValue = pStateInfo->DefaultForeground;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_DEFAULTFOREGROUND,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+        dwValue = pStateInfo->DefaultBackground;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_DEFAULTBACKGROUND,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+    }
 
     //
     // Close the registry keys

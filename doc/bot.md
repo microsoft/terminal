@@ -33,6 +33,17 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 
 ## Rules
 
+### Triage Shorthand
+- All rules in this category apply to triaging issues. They're shorthand comments that the triage team can use in order to complete the triage process faster. 
+- Only individuals with `Write` or `Admin` privileges on the repository can use these responses.
+
+#### Duplicate Issues
+- When a comment on the thread says `/dup #<issue ID>`...
+1. Reply with a comment explaining that the issue is a duplicate and recommend that the opener and interested parties follow the issue on the listed ID number.
+1. Close the issue
+1. Remove all `Needs-*` tags
+1. Add `Resolution-Duplicate`
+
 ### Issue Management
 
 #### Mark as Triage Needed
@@ -65,10 +76,12 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - Then close the issue automatically informing the opener that they can resolve the problem and reopen the issue. (See Bug/Feature templates for example situations.)
 
 #### Help ask for Feedback Hub
-- If an issue is tagged `Needs-Feedback-Hub`
-- Then reply to the issue with a bit of text on asking the author to send us data with Feedback Hub and give us the link.
-- And remove the `Needs-Feedback-Hub` tag
-- And add the `Needs-Author-Feedback` tag
+- When a comment on the thread says `/feedback`...
+1. Then reply to the issue with a bit of text on asking the author to send us data with Feedback Hub and give us the link.
+1. And add the `Needs-Author-Feedback` tag
+
+#### Remove Help Wanted from In PR issues
+- If an issue gets the `In-PR` tag when a new PR is created, we will remove the `Help-Wanted` tag to avoid someone trying to work on an issue where another person has already submitted a proposed fix.
 
 ### PR Management
 

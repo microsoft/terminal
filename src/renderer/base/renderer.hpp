@@ -76,6 +76,9 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
+        void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
+        void ResetErrorStateAndResume();
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
@@ -86,7 +89,7 @@ namespace Microsoft::Console::Render
 
         void _NotifyPaintFrame();
 
-        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
 
         bool _CheckViewportAndScroll();
 
@@ -96,7 +99,8 @@ namespace Microsoft::Console::Render
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                       TextBufferCellIterator it,
-                                      const COORD target);
+                                      const COORD target,
+                                      const bool lineWrapped);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
@@ -118,6 +122,7 @@ namespace Microsoft::Console::Render
         SMALL_RECT _srViewportPrevious;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
+        void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
 
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
@@ -125,5 +130,11 @@ namespace Microsoft::Console::Render
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
+
+        std::function<void()> _pfnRendererEnteredErrorState;
+
+#ifdef UNIT_TESTING
+        friend class ConptyOutputTests;
+#endif
     };
 }

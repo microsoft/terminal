@@ -120,19 +120,10 @@
   <data name="AppDescription" xml:space="preserve">
     <value>The New Windows Terminal</value>
   </data>
-  <data name="AppName" xml:space="preserve">
-    <value>Windows Terminal (Preview)</value>
-  </data>
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
   </data>
-  <data name="AppNameDev" xml:space="preserve">
-    <value>Windows Terminal (Dev Build)</value>
-  </data>
-  <data name="AppShortName" xml:space="preserve">
-    <value>Terminal</value>
-  </data>
-  <data name="AppShortNameDev" xml:space="preserve">
-    <value>Terminal (Dev)</value>
+  <data name="AppDescriptionPre" xml:space="preserve">
+    <value>Windows Terminal with a preview of upcoming features</value>
   </data>
 </root>

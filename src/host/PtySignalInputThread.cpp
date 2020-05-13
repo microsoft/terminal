@@ -34,7 +34,7 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_IF_NULL_ALLOC(_pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -60,7 +60,7 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 
 // Method Description:
 // - Tell us that there's a client attached to the console, so we can actually
-//      do something with the messages we recieve now. Before this is set, there
+//      do something with the messages we receive now. Before this is set, there
 //      is no guarantee that a client has attached, so most parts of the console
 //      (in and screen buffers) haven't yet been initialized.
 // Arguments:

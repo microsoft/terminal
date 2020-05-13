@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include <LibraryResources.h>
 
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
@@ -29,3 +30,5 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
 
     return TRUE;
 }
+
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources")

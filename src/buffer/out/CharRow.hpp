@@ -27,6 +27,13 @@ Revision History:
 
 class ROW;
 
+enum class DelimiterClass
+{
+    ControlChar,
+    DelimiterChar,
+    RegularChar
+};
+
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
 // more pixels to the screen than we have to:
@@ -53,7 +60,7 @@ public:
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
-    void Reset();
+    void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const;
     size_t MeasureRight() const noexcept;
@@ -64,8 +71,7 @@ public:
     void ClearGlyph(const size_t column);
     std::wstring GetText() const;
 
-    // other functions implemented at the template class level
-    std::wstring GetTextRaw() const;
+    const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
 
     // working with glyphs
     const reference GlyphAt(const size_t column) const;
@@ -78,9 +84,9 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
-    UnicodeStorage& GetUnicodeStorage();
-    const UnicodeStorage& GetUnicodeStorage() const;
-    COORD GetStorageKey(const size_t column) const;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
+    COORD GetStorageKey(const size_t column) const noexcept;
 
     void UpdateParent(ROW* const pParent) noexcept;
 

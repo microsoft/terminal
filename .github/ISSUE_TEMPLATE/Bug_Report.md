@@ -1,7 +1,7 @@
 ---
-name: Bug report 🐛
+name: "Bug report 🐛"
 about: Report errors or unexpected behavior
-title: "Bug Report (IF I DO NOT CHANGE THIS THE ISSUE WILL BE AUTO-CLOSED)"
+title: ''
 labels: ''
 assignees: ''
 

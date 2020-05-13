@@ -3,88 +3,88 @@
 NOTE: At the time of writing Windows Terminal is still under active development and many things will
 change. If you notice an error in the docs, please raise an issue. Or better yet, please file a PR with an appropriate update!
 
-## Installing Windows Terminal 
+## Installing Windows Terminal
 
 ### From Source Code
 
-Follow the instructions in this repo's [README](/README.md#developer-guidance).
+To compile Windows Terminal yourself using the source code, follow the instructions in the [README](/README.md#developer-guidance).
 
 ### From the Microsoft Store
 
-1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
-2. Search for Windows Terminal in the Store
-3. Review the minimum system settings to ensure you can successfully install Windows Terminal
-4. Install in the normal fashion
+1. Make sure you have upgraded to the current Windows 10 release (at least build `1903`). To determine your build number, see [winver](https://docs.microsoft.com/en-us/windows/client-management/windows-version-search).
+2. Open the Windows Terminal listing in the [Microsoft Store](https://aka.ms/install-terminal).
+3. Review the minimum system requirements to confirm you can successfully install Windows Terminal.
+4. Click `Get` to begin the installation process.
 
 ## Starting Windows Terminal
 
-From the Windows Start menu, select Windows Terminal and run the application.
+1. Locate the _Windows Terminal_ app in your Start menu.
+2. Click _Windows Terminal_ to launch the app. If you need administrative privileges, right-click the entry and click `Run as administrator`. Alternatively, you can highlight the app and press `Ctrl`+`Shift`+`Enter`.
 
-Note: You can right click on the application item and run with Windows Administrator privilege if required.
-
-The default shell is PowerShell.
-
+NOTE: The default shell is PowerShell; you can change this using the _Running a Different Shell_ procedure.
 
 ### Command line options
 
-None at this time. See issue [#607](https://github.com/microsoft/terminal/issues/607)
+Windows Terminal has implemented a rich set of command-line options in part as response to issue [#607](https://github.com/microsoft/terminal/issues/607).  See [UsingCommandlineArguments.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingCommandlineArguments.md) for details.
 
 ## Multiple Tabs
 
 Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
-default shell is displayed (default shortcut `Ctrl+Shift+1`).
+default shell is displayed (default shortcut: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
 
 ## Running a Different Shell
 
-Note: The following text assumes you have WSL installed.
+Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed. For more information, see [the installation guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
-To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
+Windows Terminal uses PowerShell as its default shell. You can also use Windows Terminal to launch other shells, such as `cmd.exe` or WSL's `bash`:
 
-1. Select the `down` button next to the `+` in the tab bar
-2. Choose your new shell from the list (more on how to extend the list in the config section)
+1. In the tab bar, click the `⌵` button to view the available shells.
+2. Choose your shell from the dropdown list. The new shell session will open in a new tab.
+
+To customize the shell list, see the _Configuring Windows Terminal_ section below.
 
 ## Starting a new PowerShell tab with admin privilege
 
 There is no current plan to support this feature for security reasons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
 
-## Using cut and paste in the Terminal window
+## Selecting and Copying Text in Windows Terminal
 
-### With PowerShell
+As in ConHost, a selection can be made by left-clicking and dragging the mouse across the terminal. This is a line selection by default, meaning that the selection will wrap to the end of the line and the beginning of the next one. You can select in block mode by holding down the <kbd>Alt</kbd> key when starting a selection.
 
-* Copy - Select the text with mouse (default left button), then right click with mouse
-* Paste - by default use `<ctrl>+v`>, or right click with mouse
+To copy the text to your clipboard, you can right-click the terminal when a selection is active. As of [#1224](https://github.com/microsoft/terminal/pull/1224) (first available in Windows Terminal v0.4), the Windows Terminal now supports HTML copy. The HTML is automatically copied to your clipboard along with the regular text in any copy operation.
 
-### With Bash
+If there is not an active selection, a right-click will paste the text content from your clipboard to the terminal.
 
-* Copy - Select the text with mouse (default left button), then right click with mouse
-* Paste - Right click with mouse
+Copy and paste operations can also be keybound. For more information on how to bind keys, see [Using Json Settings](UsingJsonSettings.md#adding-copy-and-paste-keybindings).
+
+> 👉 **Note**: If you have the `copyOnSelect` global setting enabled, a selection will persist and immediately copy the selected text to your clipboard. Right-clicking will always paste your clipboard data.
 
 ## Add a "Open Windows Terminal Here" to File Explorer
 
-Not currently supported "out of the box". See issue [#1060](https://github.com/microsoft/terminal/issues/1060)
+Not currently supported "out of the box" (See issue [#1060](https://github.com/microsoft/terminal/issues/1060)). However, you can open Windows Terminal in current directory by typing `wt -d .` in the Explorer address bar.
 
 ## Configuring Windows Terminal
 
-At the time of writing all Windows Terminal settings are managed via a json file.
+All Windows Terminal settings are currently managed using the `settings.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState`.
 
-From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`).
+To open the settings file from Windows Terminal:
 
-Your default json editor will open up the Terminal settings file. The file can be found
-at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
+1. Click the `⌵` button in the top bar.
+2. From the dropdown list, click `Settings`. You can also use a shortcut: <kbd>Ctrl</kbd>+<kbd>,</kbd>.
+3. Your default `json` editor will open the settings file.
 
-An introduction to the the various settings can be found [here](UsingJsonSettings.md).
+For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [settings.json documentation](../cascadia/SettingsSchema.md) section.
 
-The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
-
-## Tips and Tricks:
+## Tips and Tricks
 
 1. In PowerShell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
 
     Under pwsh you can also use
-`(Get-Process -Id $pid).Parent.Parent.ProcessName -eq 'WindowsTerminal'`
+`(Get-Process -Id $pid).Parent.ProcessName -eq 'WindowsTerminal'`
 
-    (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
+    (ref [https://twitter.com/r_keith_hill/status/1142871145852440576](https://twitter.com/r_keith_hill/status/1142871145852440576))
 
-2. Terminal zoom can be changed by holding `Ctrl` and scrolling with mouse.
-3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding `Ctrl+Shift` and scrolling with mouse.
-4. Please add more Tips and Tricks
+2. Terminal zoom can be changed by holding <kbd>Ctrl</kbd> and scrolling with mouse.
+3. Background opacity can be changed by holding <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and scrolling with mouse. Note that acrylic transparency is limited by the OS only to focused windows.
+4. Open Windows Terminal in current directory by typing `wt -d .` in the address bar.
+5. Please add more Tips and Tricks.

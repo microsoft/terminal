@@ -8,62 +8,12 @@
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProviderBase::WindowUiaProviderBase(IUiaWindow* baseWindow) :
-    _signalEventFiring{},
-    _baseWindow{ baseWindow },
-    _cRefs(1)
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
+HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept
 {
-}
-
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::AddRef()
-{
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::Release()
-{
-    long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    if (riid == __uuidof(IUnknown))
-    {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderSimple))
-    {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragment))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragment*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragmentRoot))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragmentRoot*>(this);
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    (static_cast<IUnknown*>(*ppInterface))->AddRef();
-
+    _baseWindow = baseWindow;
     return S_OK;
 }
-
-#pragma endregion
 
 #pragma region IRawElementProviderSimple
 
@@ -71,6 +21,7 @@ IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outp
 // Gets UI Automation provider options.
 IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *pOptions = ProviderOptions_ServerSideProvider;
@@ -82,6 +33,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions*
 IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patternId*/,
                                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
     *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -92,6 +44,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patter
 // Gets custom properties.
 IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pVariant);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     pVariant->vt = VT_EMPTY;
@@ -148,6 +101,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyI
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     try
     {
         const HWND hwnd = GetWindowHandle();
@@ -155,7 +109,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_res
     }
     catch (...)
     {
-        return static_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
+        return gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
     }
 }
 #pragma endregion
@@ -164,6 +118,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_res
 
 IFACEMETHODIMP WindowUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRuntimeId);
     RETURN_IF_FAILED(_EnsureValidHwnd());
     // Root defers this to host, others must implement it...
     *ppRuntimeId = nullptr;
@@ -173,6 +128,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRect);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     const IUiaWindow* const pConsoleWindow = _baseWindow;
@@ -182,14 +138,20 @@ IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect
 
     pRect->left = rc.left;
     pRect->top = rc.top;
-    pRect->width = rc.right - rc.left;
-    pRect->height = rc.bottom - rc.top;
+
+    LONG longWidth = 0;
+    RETURN_IF_FAILED(LongSub(rc.right, rc.left, &longWidth));
+    pRect->width = longWidth;
+    LONG longHeight = 0;
+    RETURN_IF_FAILED(LongSub(rc.bottom, rc.top, &longHeight));
+    pRect->height = longHeight;
 
     return S_OK;
 }
 
 IFACEMETHODIMP WindowUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRoots);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *ppRoots = nullptr;
@@ -198,10 +160,10 @@ IFACEMETHODIMP WindowUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = this;
-    AddRef();
+    RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(ppProvider)));
     return S_OK;
 }
 
@@ -209,10 +171,15 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
 
 HWND WindowUiaProviderBase::GetWindowHandle() const
 {
-    IUiaWindow* const pConsoleWindow = _baseWindow;
-    THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
-
-    return pConsoleWindow->GetWindowHandle();
+    const IUiaWindow* const pConsoleWindow = _baseWindow;
+    if (pConsoleWindow)
+    {
+        return pConsoleWindow->GetWindowHandle();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 [[nodiscard]] HRESULT WindowUiaProviderBase::_EnsureValidHwnd() const

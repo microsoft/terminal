@@ -21,9 +21,10 @@ namespace Microsoft::Console::VirtualTerminal
     class AdaptDefaults
     {
     public:
+        virtual ~AdaptDefaults() = default;
         virtual void Print(const wchar_t wch) = 0;
         // These characters need to be mutable so that they can be processed by the TerminalInput translater.
-        virtual void PrintString(const wchar_t* const rgwch, const size_t cch) = 0;
+        virtual void PrintString(const std::wstring_view string) = 0;
         virtual void Execute(const wchar_t wch) = 0;
     };
 }

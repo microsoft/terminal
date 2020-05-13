@@ -35,7 +35,6 @@ public:
 
     const TextAttribute& GetAttributes() const noexcept;
     void SetAttributes(const TextAttribute textAttribute) noexcept;
-    void SetAttributesFromLegacy(const WORD wNew) noexcept;
 
 private:
     size_t _cchLength;

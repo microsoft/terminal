@@ -1,0 +1,9 @@
+LKG
+mfcribbon
+microsoft
+microsoftonline
+osgvsowi
+powershell
+tdbuildteamid
+vcruntime
+visualstudio

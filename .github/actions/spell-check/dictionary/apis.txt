@@ -1,0 +1,17 @@
+bitfield
+bitfields
+href
+IBox
+ICustom
+IMap
+IObject
+LCID
+NCHITTEST
+NCLBUTTONDBLCLK
+NCRBUTTONDBLCLK
+NOREDIRECTIONBITMAP
+oaidl
+ocidl
+rfind
+roundf
+SIZENS

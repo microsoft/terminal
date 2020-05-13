@@ -19,7 +19,8 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
+#include <UIAutomationCore.h>
+
 #include "..\types\ScreenInfoUiaProviderBase.h"
 #include "..\types\UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"
@@ -29,8 +30,9 @@ namespace Microsoft::Console::Interactivity::Win32
     class ScreenInfoUiaProvider final : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Types::IUiaData* pData,
-                              _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
+        ScreenInfoUiaProvider() = default;
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
@@ -39,30 +41,35 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const SMALL_RECT NewWindow) override;
 
     protected:
-        std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
+        HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range at cursor position
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Cursor& cursor) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const Cursor& cursor,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // specific endpoint range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Endpoint start,
-                                                                     const Endpoint end,
-                                                                     const bool degenerate) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const COORD start,
+                                const COORD end,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // range from a UiaPoint
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const UiaPoint point) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const UiaPoint point,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
     private:
         // weak reference to uia parent
-        Microsoft::Console::Types::WindowUiaProviderBase* const _pUiaParent;
+        Microsoft::Console::Types::WindowUiaProviderBase* _pUiaParent;
     };
 }

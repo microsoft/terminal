@@ -13,7 +13,7 @@
 
     CLIENT_ID ClientId;
     ClientId.UniqueProcess = UlongToHandle(*ProcessId);
-    ClientId.UniqueThread = 0;
+    ClientId.UniqueThread = nullptr;
 
     HANDLE ProcessHandle;
     NTSTATUS Status = s_NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);

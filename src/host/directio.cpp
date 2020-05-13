@@ -1223,7 +1223,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                          WindowSize,
                                                          siExisting.GetAttributes(),
                                                          siExisting.GetAttributes(),
-                                                         CURSOR_SMALL_SIZE,
+                                                         Cursor::CURSOR_SMALL_SIZE,
                                                          &ScreenInfo);
 
     if (!NT_SUCCESS(Status))

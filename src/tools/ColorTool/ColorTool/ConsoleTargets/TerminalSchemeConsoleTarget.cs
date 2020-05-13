@@ -10,7 +10,7 @@ namespace ColorTool.ConsoleTargets
     {
         public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
         {
-            Console.WriteLine("Copy and paste the following text into the schemes array of your Windows Terminal profiles.json file to add this color scheme. (Don't forget to add a comma separator after the previous scheme.)");
+            Console.WriteLine("Copy and paste the following text into the schemes array of your Windows Terminal settings.json file to add this color scheme. (Don't forget to add a comma separator after the previous scheme.)");
             Console.WriteLine("{");
             Console.WriteLine($"    \"name\": \"{colorScheme.Name}\",");
 

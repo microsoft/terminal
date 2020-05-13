@@ -102,7 +102,7 @@
 
         // Call first time to find size
         SIZE_T AttributeListSize;
-        InitializeProcThreadAttributeList(NULL,
+        InitializeProcThreadAttributeList(nullptr,
                                           2,
                                           0,
                                           &AttributeListSize);
@@ -154,21 +154,11 @@
         }
 
         // Expand any environment variables present in the command line string.
-        // - Get needed size
-        DWORD cchCmdLineExpanded = ExpandEnvironmentStringsW(pwszCmdLine, nullptr, 0);
-        RETURN_LAST_ERROR_IF(0 == cchCmdLineExpanded);
-
-        // - Allocate space to hold result
-        wistd::unique_ptr<wchar_t[]> CmdLineMutable = wil::make_unique_nothrow<wchar_t[]>(cchCmdLineExpanded);
-        RETURN_IF_NULL_ALLOC(CmdLineMutable);
-
-        // - Expand string into allocated space
-        RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszCmdLine, CmdLineMutable.get(), cchCmdLineExpanded));
-
+        std::wstring cmdLine = wil::ExpandEnvironmentStringsW<std::wstring>(pwszCmdLine);
         // Call create process
         wil::unique_process_information ProcessInformation;
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
-                                                  CmdLineMutable.get(),
+                                                  cmdLine.data(),
                                                   NULL,
                                                   NULL,
                                                   TRUE,

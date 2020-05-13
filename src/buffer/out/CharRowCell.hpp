@@ -27,10 +27,10 @@ Author(s):
 class CharRowCell final
 {
 public:
-    CharRowCell();
-    CharRowCell(const wchar_t wch, const DbcsAttribute attr);
+    CharRowCell() noexcept;
+    CharRowCell(const wchar_t wch, const DbcsAttribute attr) noexcept;
 
-    void EraseChars();
+    void EraseChars() noexcept;
     void Reset() noexcept;
 
     bool IsSpace() const noexcept;

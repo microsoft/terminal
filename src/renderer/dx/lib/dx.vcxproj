@@ -1,7 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{48D21369-3D7B-4431-9967-24E81292CF62}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>dx</RootNamespace>
+    <ProjectName>RendererDx</ProjectName>
+    <TargetName>ConRenderDx</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Midl>
+      <OutputDirectory>$(SolutionDir)src\renderer\dx\</OutputDirectory>
+    </Midl>
+  </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\BoxDrawingEffect.cpp" />
     <ClCompile Include="..\CustomTextLayout.cpp" />
     <ClCompile Include="..\CustomTextRenderer.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -10,19 +24,17 @@
     <ClCompile Include="..\DxRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\BoxDrawingEffect.h" />
     <ClInclude Include="..\CustomTextLayout.h" />
     <ClInclude Include="..\CustomTextRenderer.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\DxRenderer.hpp" />
+    <ClInclude Include="..\ScreenPixelShader.h" />
+    <ClInclude Include="..\ScreenVertexShader.h" />
   </ItemGroup>
-  <PropertyGroup>
-    <ProjectGuid>{48D21369-3D7B-4431-9967-24E81292CF62}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>dx</RootNamespace>
-    <ProjectName>RendererDx</ProjectName>
-    <TargetName>ConRenderDx</TargetName>
-  </PropertyGroup>
+  <ItemGroup>
+    <Midl Include="..\IBoxDrawingEffect.idl" />
+  </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

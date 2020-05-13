@@ -39,6 +39,14 @@ namespace Microsoft::Console::VirtualTerminal
         void BeginResize();
         void EndResize();
 
+#ifdef UNIT_TESTING
+        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
+#endif
+
+        bool IsResizeQuirkEnabled() const;
+
+        [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
+
     private:
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
@@ -52,6 +60,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _lookingForCursorPosition;
         std::mutex _shutdownLock;
+
+        bool _resizeQuirk{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <!-- License Info -->
+    <Content Include="$(OpenConsoleDir)src\cascadia\CascadiaPackage\NOTICE.html">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>%(FileName)%(Extension)</Link>
+    </Content>
+    <!-- Images -->
+    <Content Include="$(OpenConsoleDir)res\terminal\images$(WindowsTerminalAssetSuffix)\**\*">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>Images\%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+    <!-- Fonts -->
+    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\CascadiaMono.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+    <!-- Profile Icons -->
+    <Content Include="$(OpenConsoleDir)src\cascadia\CascadiaPackage\ProfileIcons\**\*">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>ProfileIcons\%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+    <!-- Default Settings -->
+    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalApp\defaults.json">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+  <!-- Reprint all content as Nones for Universal project type to include it in the resources -->
+  <ItemGroup>
+    <None Include="@(Content)" />
+  </ItemGroup>
+</Project>

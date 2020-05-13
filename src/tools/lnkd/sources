@@ -1,5 +1,4 @@
 MSC_WARNING_LEVEL=/W4 /WX
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 !include $(NTMAKEENV)\system_defaultmk.inc
 !include $(WINCORE_PATH)\core.inc
 SOURCES_USED=$(WINCORE_PATH)\core.inc

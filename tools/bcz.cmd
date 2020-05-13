@@ -18,7 +18,7 @@ if (%_LAST_BUILD_CONF%)==() (
     set _LAST_BUILD_CONF=%DEFAULT_CONFIGURATION%
 )
 
-set _MSBUILD_TARGET=Clean,Build
+set _MSBUILD_TARGET=Clean;Build
 set _EXCLUSIVE=
 set _APPX_ARGS=
 
@@ -68,7 +68,7 @@ if "%_EXCLUSIVE%" == "1" (
 echo Performing nuget restore...
 nuget.exe restore %OPENCON%\OpenConsole.sln
 
-set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 echo Starting build...
@@ -116,7 +116,7 @@ if "%_MSBUILD_TARGET%" == "Build" (
 ) else if "%_MSBUILD_TARGET%" == "Clean,Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%:Rebuild
 )
-rem This statement will propogate our internal variables up to the calling
+rem This statement will propagate our internal variables up to the calling
 rem scope. Because they're all on one line, the value of our local variables
 rem will be evaluated before we endlocal
 endlocal & set "PROJECT_NAME=%__PROJECT_NAME%" & set "_MSBUILD_TARGET=%__MSBUILD_TARGET%"

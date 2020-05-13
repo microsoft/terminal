@@ -40,7 +40,12 @@ namespace Microsoft::Console::Render
     class IRenderData : public Microsoft::Console::Types::IBaseData
     {
     public:
-        virtual ~IRenderData() = 0;
+        ~IRenderData() = 0;
+        IRenderData(const IRenderData&) = default;
+        IRenderData(IRenderData&&) = default;
+        IRenderData& operator=(const IRenderData&) = default;
+        IRenderData& operator=(IRenderData&&) = default;
+
         virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
         virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;
@@ -53,12 +58,17 @@ namespace Microsoft::Console::Render
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
         virtual COLORREF GetCursorColor() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const noexcept = 0;
+        virtual bool IsCursorDoubleWidth() const = 0;
+
+        virtual bool IsScreenReversed() const noexcept = 0;
 
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring GetConsoleTitle() const noexcept = 0;
+
+    protected:
+        IRenderData() = default;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

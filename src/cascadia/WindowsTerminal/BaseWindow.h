@@ -34,10 +34,8 @@ public:
             WINRT_ASSERT(that);
             WINRT_ASSERT(!that->_window);
             that->_window = wil::unique_hwnd(window);
-            SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
-            EnableNonClientDpiScaling(window);
-            that->_currentDpi = GetDpiForWindow(window);
+            return that->_OnNcCreate(wparam, lparam);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -56,13 +54,24 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
         case WM_GETOBJECT:
         {
             return HandleGetObject(_window.get(), wparam, lparam);
         }
+        */
 
         case WM_DESTROY:
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+            // signal to uia that they can disconnect our uia provider
+            if (_pUiaProvider)
+            {
+                UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            }
+            */
             PostQuitMessage(0);
             return 0;
         }
@@ -182,7 +191,7 @@ public:
 
     //// Gets the logical (in DIPs) size of a physical size specified by the parameter physicalSize
     //// Remarks:
-    //// XAML coordinate system is always in Display Indepenent Pixels (a.k.a DIPs or Logical). However Win32 GDI (because of legacy reasons)
+    //// XAML coordinate system is always in Display Independent Pixels (a.k.a DIPs or Logical). However Win32 GDI (because of legacy reasons)
     //// in DPI mode "Per-Monitor and Per-Monitor (V2) DPI Awareness" is always in physical pixels.
     //// The formula to transform is:
     ////     logical = (physical / dpi) + 0.5 // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
@@ -194,8 +203,8 @@ public:
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
         const auto logicalWidth = (physicalSize.cx / scale) + 0.5f;
-        const auto logicalHeigth = (physicalSize.cy / scale) + 0.5f;
-        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeigth);
+        const auto logicalHeight = (physicalSize.cy / scale) + 0.5f;
+        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
     }
 
     winrt::Windows::Foundation::Size GetLogicalSize() const noexcept
@@ -215,6 +224,15 @@ public:
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     }
 
+    // Method Description:
+    // Reset the current dpi of the window. This method is only called after we change the
+    // initial launch position. This makes sure the dpi is consistent with the monitor on which
+    // the window will launch
+    void RefreshCurrentDPI()
+    {
+        _currentDpi = GetDpiForWindow(_window.get());
+    }
+
 protected:
     using base_type = BaseWindow<T>;
     wil::unique_hwnd _window;
@@ -225,6 +243,20 @@ protected:
     std::wstring _title = L"";
 
     bool _minimized = false;
+
+    // Method Description:
+    // - This method is called when the window receives the WM_NCCREATE message.
+    // Return Value:
+    // - The value returned from the window proc.
+    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    {
+        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+        EnableNonClientDpiScaling(_window.get());
+        _currentDpi = GetDpiForWindow(_window.get());
+
+        return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
+    };
 };
 
 template<typename T>

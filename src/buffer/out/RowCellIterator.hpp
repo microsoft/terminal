@@ -31,20 +31,20 @@ public:
     RowCellIterator(const ROW& row, const size_t start, const size_t length);
     ~RowCellIterator() = default;
 
-    RowCellIterator& operator=(const RowCellIterator& it) = default;
+    RowCellIterator& operator=(const RowCellIterator& it) = delete;
 
     operator bool() const noexcept;
 
     bool operator==(const RowCellIterator& it) const noexcept;
     bool operator!=(const RowCellIterator& it) const noexcept;
 
-    RowCellIterator& operator+=(const ptrdiff_t& movement);
-    RowCellIterator& operator++();
-    RowCellIterator operator++(int);
-    RowCellIterator operator+(const ptrdiff_t& movement);
+    RowCellIterator& operator+=(const ptrdiff_t& movement) noexcept;
+    RowCellIterator& operator++() noexcept;
+    RowCellIterator operator++(int) noexcept;
+    RowCellIterator operator+(const ptrdiff_t& movement) noexcept;
 
-    const OutputCellView& operator*() const;
-    const OutputCellView* operator->() const;
+    const OutputCellView& operator*() const noexcept;
+    const OutputCellView* operator->() const noexcept;
 
 private:
     const ROW& _row;

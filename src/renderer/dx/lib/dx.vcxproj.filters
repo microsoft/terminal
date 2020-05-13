@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\CustomTextLayout.cpp" />
+    <ClCompile Include="..\CustomTextRenderer.cpp" />
+    <ClCompile Include="..\precomp.cpp" />
+    <ClCompile Include="..\DxRenderer.cpp" />
+    <ClCompile Include="..\BoxDrawingEffect.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\CustomTextLayout.h" />
+    <ClInclude Include="..\CustomTextRenderer.h" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\DxRenderer.hpp" />
+    <ClInclude Include="..\ScreenPixelShader.h" />
+    <ClInclude Include="..\ScreenVertexShader.h" />
+    <ClInclude Include="..\BoxDrawingEffect.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\IBoxDrawingEffect.idl" />
+  </ItemGroup>
+</Project>

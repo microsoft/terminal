@@ -24,20 +24,20 @@ using namespace Microsoft::Console::Types;
 #pragma region Public Methods
 
 // Arguments:
-// - fAlsoCopyHtml - Place colored HTML text onto the clipboard as well as the usual plain text.
+// - fAlsoCopyFormatting - Place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
 //   <none>
-// NOTE:  if the registry is set to always copy color data then we will even if fAlsoCopyHTML is false
-void Clipboard::Copy(bool fAlsoCopyHtml)
+// NOTE:  if the registry is set to always copy color data then we will even if fAlsoCopyFormatting is false
+void Clipboard::Copy(bool fAlsoCopyFormatting)
 {
     try
     {
-        // registry settings may tell us to always copy the color/formating
+        // registry settings may tell us to always copy the color/formatting
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        fAlsoCopyHtml = fAlsoCopyHtml || gci.GetCopyColor();
+        fAlsoCopyFormatting = fAlsoCopyFormatting || gci.GetCopyColor();
 
         // store selection in clipboard
-        StoreSelectionToClipboard(fAlsoCopyHtml);
+        StoreSelectionToClipboard(fAlsoCopyFormatting);
         Selection::Instance().ClearSelection(); // clear selection in console
     }
     CATCH_LOG();
@@ -133,7 +133,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                                                     const size_t cchData)
 {
-    THROW_IF_NULL_ALLOC(pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
 
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
@@ -188,10 +188,10 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 // - Copies the selected area onto the global system clipboard.
 // - NOTE: Throws on allocation and other clipboard failures.
 // Arguments:
-// - fAlsoCopyHtml - This will also place colored HTML text onto the clipboard as well as the usual plain text.
+// - copyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
 //   <none>
-void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyHtml)
+void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 {
     const auto& selection = Selection::Instance();
 
@@ -203,47 +203,39 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyHtml)
 
     // read selection area.
     const auto selectionRects = selection.GetSelectionRects();
-    const bool lineSelection = Selection::Instance().IsLineSelection();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-    const auto text = RetrieveTextFromBuffer(screenInfo,
-                                             lineSelection,
-                                             selectionRects);
-
-    CopyTextToSystemClipboard(text, fAlsoCopyHtml);
-}
-
-// Routine Description:
-// - Retrieves the text data from the selected region of the text buffer
-// Arguments:
-// - screenInfo - what is rendered on the screen
-// - lineSelection - true if entire line is being selected. False otherwise (box selection)
-// - selectionRects - the selection regions from which the data will be extracted from the buffer
-TextBuffer::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                           const bool lineSelection,
-                                                           const std::vector<SMALL_RECT>& selectionRects)
-{
-    const auto& buffer = screenInfo.GetTextBuffer();
-    const bool trimTrailingWhitespace = !WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
 
-    return buffer.GetTextForClipboard(lineSelection,
-                                      trimTrailingWhitespace,
-                                      selectionRects,
-                                      GetForegroundColor,
-                                      GetBackgroundColor);
+    bool includeCRLF, trimTrailingWhitespace;
+    if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
+    {
+        // When shift is held, put everything in one line
+        includeCRLF = trimTrailingWhitespace = false;
+    }
+    else
+    {
+        includeCRLF = trimTrailingWhitespace = true;
+    }
+
+    const auto text = buffer.GetText(includeCRLF,
+                                     trimTrailingWhitespace,
+                                     selectionRects,
+                                     GetForegroundColor,
+                                     GetBackgroundColor);
+
+    CopyTextToSystemClipboard(text, copyFormatting);
 }
 
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
 // - rows - Rows of text data to copy
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyHtml)
+// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
+void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
 {
     std::wstring finalString;
 
@@ -270,47 +262,67 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
 
     // Set global data to clipboard
     THROW_LAST_ERROR_IF(!OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
-    THROW_LAST_ERROR_IF(!EmptyClipboard());
-    THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-    if (fAlsoCopyHtml)
-    {
-        const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
-        int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
-        std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), "Windows Console Host");
-        const size_t cbNeededHTML = HTMLToPlaceOnClip.size();
-        if (cbNeededHTML)
+    { // Clipboard Scope
+        auto clipboardCloser = wil::scope_exit([]() {
+            THROW_LAST_ERROR_IF(!CloseClipboard());
+        });
+
+        THROW_LAST_ERROR_IF(!EmptyClipboard());
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
+
+        if (fAlsoCopyFormatting)
         {
-            wil::unique_hglobal globalHandleHTML(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeededHTML));
-            THROW_LAST_ERROR_IF_NULL(globalHandleHTML.get());
+            const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
+            int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
+            const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
 
-            PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleHTML.get());
-            THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
-            // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-            const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbNeededHTML, HTMLToPlaceOnClip.data());
-            GlobalUnlock(globalHandleHTML.get());
-            THROW_IF_FAILED(hr2);
-
-            UINT const CF_HTML = RegisterClipboardFormatW(L"HTML Format");
-            THROW_LAST_ERROR_IF(0 == CF_HTML);
-
-            THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_HTML, globalHandleHTML.get()));
-
-            // only free if we failed.
-            // the memory has to remain allocated if we successfully placed it on the clipboard.
-            // Releasing the smart pointer will leave it allocated as we exit scope.
-            globalHandleHTML.release();
+            std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }
-
-    THROW_LAST_ERROR_IF(!CloseClipboard());
 
     // only free if we failed.
     // the memory has to remain allocated if we successfully placed it on the clipboard.
     // Releasing the smart pointer will leave it allocated as we exit scope.
     globalHandle.release();
+}
+
+// Routine Description:
+// - Copies the given string onto the global system clipboard in the specified format
+// Arguments:
+// - stringToCopy - The string to copy
+// - lpszFormat - the name of the format
+void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+{
+    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    if (cbData)
+    {
+        wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
+        THROW_LAST_ERROR_IF_NULL(globalHandleData.get());
+
+        PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleData.get());
+        THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
+
+        // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
+        // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
+        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        GlobalUnlock(globalHandleData.get());
+        THROW_IF_FAILED(hr2);
+
+        UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
+        THROW_LAST_ERROR_IF(0 == CF_FORMAT);
+
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
+
+        // only free if we failed.
+        // the memory has to remain allocated if we successfully placed it on the clipboard.
+        // Releasing the smart pointer will leave it allocated as we exit scope.
+        globalHandleData.release();
+    }
 }
 
 // Returns true if the character should be emitted to the paste stream
@@ -348,7 +360,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR* const pwch)
             break;
         }
 
-        // Replace Unicode dashes with a standard hypen
+        // Replace Unicode dashes with a standard hyphen
         case UNICODE_EM_DASH:
         case UNICODE_EN_DASH:
         {
