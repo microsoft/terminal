@@ -413,7 +413,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states, const bool keyDown)
 {
     TrySnapOnInput();
     _StoreKeyEvent(vkey, scanCode);
@@ -443,7 +443,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 

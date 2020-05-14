@@ -559,7 +559,7 @@ void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode) noexcept
 try
 {
     const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags);
+    _terminal->SendKeyEvent(vkey, scanCode, flags, true);
 }
 CATCH_LOG();
 

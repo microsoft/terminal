@@ -246,6 +246,18 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
     return true;
 }
 
+// Method Description
+// - TODO
+// Arguments:
+// - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableWin32InputMode(const bool win32Mode) noexcept
+{
+    _terminalApi.EnableWin32InputMode(win32Mode);
+    return true;
+}
+
 //Routine Description:
 // Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
 //Arguments:
