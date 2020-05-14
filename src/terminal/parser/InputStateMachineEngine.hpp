@@ -73,7 +73,7 @@ namespace Microsoft::Console::VirtualTerminal
         CSI_F4 = L'S',
         DTTERM_WindowManipulation = L't',
         CursorBackTab = L'Z',
-        Win32KeyboardInput = L'!'
+        Win32KeyboardInput = L'_'
     };
 
     enum CsiMouseButtonCodes : unsigned short

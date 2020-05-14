@@ -682,7 +682,7 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
 
 std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
 {
-    return fmt::format(L"\x1b[{};{};{};{};{};{}!",
+    return fmt::format(L"\x1b[{};{};{};{};{};{}_",
                        key.IsKeyDown() ? 1 : 0,
                        key.GetRepeatCount(),
                        key.GetVirtualKeyCode(),
