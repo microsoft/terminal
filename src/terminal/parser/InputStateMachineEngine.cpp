@@ -350,7 +350,16 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                 const std::basic_string_view<size_t> parameters)
 {
     const auto actionCode = static_cast<CsiActionCodes>(wch);
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue && actionCode != CsiActionCodes::Win32KeyboardInput)
+
+    // GH#4999 - If the client was in VT input mode, but we received a
+    // win32-input-mode sequence, then _don't_ passthrough the sequence to the
+    // client. It's impossibly unlikely that the client actually wanted
+    // win32-input-mode, and if they did, then we'll just translate the
+    // INPUT_RECORD back to the same sequence we say here later on, when the
+    // client reads it.
+    if (_pDispatch->IsVtInputEnabled() &&
+        _pfnFlushToInputQueue &&
+        actionCode != CsiActionCodes::Win32KeyboardInput)
     {
         return _pfnFlushToInputQueue();
     }

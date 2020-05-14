@@ -246,10 +246,11 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
     return true;
 }
 
-// Method Description
-// - TODO
+// Method Description:
+// - win32-input-mode: Enable sending full input records encoded as a string of
+//   characters to the client application.
 // Arguments:
-// - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableWin32InputMode(const bool win32Mode) noexcept
