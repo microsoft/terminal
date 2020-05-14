@@ -38,17 +38,15 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 
 // Method Description:
 // - Writes a Ctrl-C event to the host. The host will then decide what to do
-//      with it, including potentially sending an interrupt to a client
-//      application.
+//   with it, including potentially sending an interrupt to a client
+//   application.
 // Arguments:
-// <none>
+// TODO
 // Return Value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WriteCtrlC()
+bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    KeyEvent keyDown = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    KeyEvent keyUp = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    return _pConApi->PrivateWriteConsoleControlInput(keyDown) && _pConApi->PrivateWriteConsoleControlInput(keyUp);
+    return _pConApi->PrivateWriteConsoleControlInput(event);
 }
 
 // Method Description:

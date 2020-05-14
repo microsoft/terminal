@@ -443,6 +443,11 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
+    // if (vkey == 0x43 && ch == UNICODE_ETX && keyDown)
+    // {
+    //     return false;
+    // }
+
     KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
@@ -503,9 +508,17 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     {
         vkey = _VirtualKeyFromCharacter(ch);
     }
+    // const bool isCtrlC = (vkey == 0x43 && ch == UNICODE_ETX);
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    // KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
+    // return _terminalInput->HandleKey(&keyEv);
+
+    KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
+    // const auto handledDown = isCtrlC ? false : _terminalInput->HandleKey(&keyDown);
+    const auto handledDown = _terminalInput->HandleKey(&keyDown);
+    const auto handledUp = _terminalInput->HandleKey(&keyUp);
+    return handledDown || handledUp;
 }
 
 // Method Description:

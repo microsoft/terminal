@@ -771,9 +771,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate
+        // between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
-        if (!modifiers.IsAltGrPressed())
+        if (!modifiers.IsAltGrPressed() && keyDown)
         {
             auto bindings = _settings.KeyBindings();
             if (bindings)
