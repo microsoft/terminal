@@ -34,7 +34,7 @@ public:
     SMALL_RECT rcViewCaWindow;
     COORD coordConView;
 
-    ConversionAreaBufferInfo(const COORD coordBufferSize);
+    explicit ConversionAreaBufferInfo(const COORD coordBufferSize);
 };
 
 class ConversionAreaInfo final

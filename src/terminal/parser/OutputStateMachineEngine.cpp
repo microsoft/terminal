@@ -274,6 +274,13 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         }
     }
 
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !success)
+    {
+        success = _pfnFlushToTerminal();
+    }
+
     _ClearLastChar();
 
     return success;
@@ -1106,6 +1113,10 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
         switch (param)
         {
         // This looks kinda silly, but I want the parser to reject (success = false) any status types we haven't put here.
+        case (unsigned short)DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+            statusType = DispatchTypes::AnsiStatusType::OS_OperatingStatus;
+            success = true;
+            break;
         case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;

@@ -27,21 +27,43 @@ variables:
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
-jobs:
-  - template: ./templates/build-console-audit-job.yml
-    parameters:
-      platform: x64
+stages:
+  - stage: Audit_x64
+    displayName: Audit Mode
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+      - template: ./templates/build-console-audit-job.yml
+        parameters:
+          platform: x64
+  - stage: Build_x64
+    displayName: Build x64
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+      - template: ./templates/build-console-ci.yml
+        parameters:
+          platform: x64
+  - stage: Build_x86
+    displayName: Build x86
+    dependsOn: []
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - template: ./templates/build-console-ci.yml
+        parameters:
+          platform: x86
+  - stage: Build_ARM64
+    displayName: Build ARM64
+    dependsOn: []
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - template: ./templates/build-console-ci.yml
+        parameters:
+          platform: ARM64
+  - stage: Scripts
+    displayName: Code Health Scripts
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+      - template: ./templates/check-formatting.yml
 
-  - template: ./templates/build-console-ci.yml
-    parameters:
-      platform: x64
-
-  - template: ./templates/build-console-ci.yml
-    parameters:
-      platform: x86
-
-  - template: ./templates/build-console-ci.yml
-    parameters:
-      platform: ARM64
-
-  - template: ./templates/check-formatting.yml

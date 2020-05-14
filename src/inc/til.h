@@ -3,8 +3,17 @@
 
 #pragma once
 
+#define _TIL_INLINEPREFIX __declspec(noinline) inline
+
 #include "til/at.h"
+#include "til/color.h"
+#include "til/math.h"
 #include "til/some.h"
+#include "til/size.h"
+#include "til/point.h"
+#include "til/operators.h"
+#include "til/rectangle.h"
+#include "til/bitmap.h"
 #include "til/u8u16convert.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"

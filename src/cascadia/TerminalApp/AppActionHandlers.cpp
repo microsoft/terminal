@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -198,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.TrimWhitespace());
+            const auto handled = _CopyText(realArgs.SingleLine());
             args.Handled(handled);
         }
     }

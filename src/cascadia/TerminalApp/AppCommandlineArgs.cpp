@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
 #include <LibraryResources.h>
@@ -9,7 +10,7 @@
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-// Either a ; at the start of a line, or a ; preceeded by any non-\ char.
+// Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
 AppCommandlineArgs::AppCommandlineArgs()
@@ -140,6 +141,11 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
     {
         _exitMessage = err.str();
     }
+
+    // We're displaying an error message - we should always exit instead of
+    // actually starting the Terminal.
+    _shouldExitEarly = true;
+
     return result;
 }
 
@@ -151,6 +157,22 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    auto versionCallback = [this](int64_t /*count*/) {
+        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+        {
+            // Set our message to display the application name and the current version.
+            _exitMessage = fmt::format("{0}\n{1}",
+                                       til::u16u8(appLogic->ApplicationDisplayName()),
+                                       til::u16u8(appLogic->ApplicationVersion()));
+            // Theoretically, we don't need to exit now, since this isn't really
+            // an error case. However, in practice, it feels weird to have `wt
+            // -v` open a new tab, and makes enough sense that `wt -v ;
+            // split-pane` (or whatever) just displays the version and exits.
+            _shouldExitEarly = true;
+        }
+    };
+    _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
+
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
@@ -172,7 +194,7 @@ void AppCommandlineArgs::_buildNewTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newTabCommand.subcommand->callback([&, this]() {
-        // Buld the NewTab action from the values we've parsed on the commandline.
+        // Build the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();
@@ -207,7 +229,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newPaneCommand.subcommand->callback([&, this]() {
-        // Buld the SplitPane action from the values we've parsed on the commandline.
+        // Build the SplitPane action from the values we've parsed on the commandline.
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
         auto args = winrt::make_self<implementation::SplitPaneArgs>();
@@ -217,7 +239,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         args->SplitStyle(SplitState::Automatic);
         // Make sure to use the `Option`s here to check if they were set -
         // _getNewTerminalArgs might reset them while parsing a commandline
-        if ((*_horizontalOption || *_verticalOption) && (_splitHorizontal))
+        if ((*_horizontalOption || *_verticalOption))
         {
             if (_splitHorizontal)
             {
@@ -225,7 +247,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
             }
             else if (_splitVertical)
             {
-                args->SplitStyle(SplitState::Horizontal);
+                args->SplitStyle(SplitState::Vertical);
             }
         }
 
@@ -259,7 +281,7 @@ void AppCommandlineArgs::_buildFocusTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _focusTabCommand->callback([&, this]() {
-        // Buld the action from the values we've parsed on the commandline.
+        // Build the action from the values we've parsed on the commandline.
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
 
         if (_focusTabIndex >= 0)
@@ -393,7 +415,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -423,7 +445,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -457,7 +479,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const std::vector<con
 // Function Description:
 // - Update and append Commandline objects for the given arg to the given list
 //   of commands. Each Commandline represents a single command to parse. These
-//   commands can be seperated by ";", which indicates the start of the next
+//   commands can be separated by ";", which indicates the start of the next
 //   commandline. If the user would like to provide ';' in the text of the
 //   commandline, they can escape it as "\;".
 // - As we parse arg, if it doesn't contain a delimiter in it, we'll add it to
@@ -538,6 +560,19 @@ std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupAct
 const std::string& AppCommandlineArgs::GetExitMessage()
 {
     return _exitMessage;
+}
+
+// Method Description:
+// - Returns true if we should exit the application before even starting the
+//   window. We might want to do this if we're displaying an error message or
+//   the version string, or if we want to open the settings file.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we should exit the application before even starting the window
+bool AppCommandlineArgs::ShouldExitEarly() const noexcept
+{
+    return _shouldExitEarly;
 }
 
 // Method Description:

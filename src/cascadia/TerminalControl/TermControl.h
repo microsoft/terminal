@@ -61,13 +61,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
+        hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
+        bool CopySelectionToClipboard(bool collapseText = false);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
-        Windows::Foundation::Size MinimumSize() const;
-        float SnapDimensionToGrid(const bool widthOrHeight, const float dimension) const;
+        Windows::Foundation::Size MinimumSize();
+        float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
@@ -76,16 +77,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
-        winrt::fire_and_forget SwapChainChanged();
+        winrt::fire_and_forget RenderEngineSwapChainChanged();
+        void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
+        winrt::fire_and_forget _RendererEnteredErrorState();
+        void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
 
         void CreateSearchBoxControl();
+
+        bool OnF7Pressed();
+
+        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const FontInfo GetActualFont() const;
-        const Windows::UI::Xaml::Thickness GetPadding() const;
+        const Windows::UI::Xaml::Thickness GetPadding();
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
@@ -105,20 +113,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // clang-format on
 
     private:
+        friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
-        Windows::UI::Xaml::Controls::Grid _root;
-        Windows::UI::Xaml::Controls::Image _bgImageLayer;
-        Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
-        Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
-
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
-        TSFInputControl _tsfInputControl;
-
         event_token _connectionOutputEventToken;
-        TermControl::Tapped_revoker _tappedRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -159,26 +160,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // imported from WinUser
         // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         Timestamp _multiClickTimer;
-        Timestamp _lastMouseClick;
         unsigned int _multiClickCounter;
+        Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _clickDragStartPos{ std::nullopt };
+        std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        // This field tracks whether the selection has changed meaningfully
+        // since it was last copied. It's generally used to prevent copyOnSelect
+        // from firing when the pointer _just happens_ to be released over the
+        // terminal.
+        bool _selectionNeedsToBeCopied;
 
-        // Event revokers -- we need to deregister ourselves before we die,
-        // lest we get callbacks afterwards.
-        winrt::Windows::UI::Xaml::Controls::Control::SizeChanged_revoker _sizeChangedRevoker;
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::CompositionScaleChanged_revoker _compositionScaleChangedRevoker;
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
-        winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
-        winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
-        void _Create();
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
         void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
+        void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -188,24 +188,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
-        winrt::fire_and_forget _DoDragDrop(Windows::UI::Xaml::DragEventArgs const e);
 
-        void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
         void _SendPastedTextToConnection(const std::wstring& wstr);
-        winrt::fire_and_forget _SwapChainRoutine();
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
-        void _DoResize(const double newWidth, const double newHeight);
+        void _DoResizeUnderLock(const double newWidth, const double newHeight);
+        void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        winrt::fire_and_forget _TerminalCursorPositionChanged();
 
-        void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
+        void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
+        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const bool isLeftButtonPressed);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -219,6 +220,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
+        bool _CanSendVTMouseInput();
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
@@ -231,6 +234,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
+
+        winrt::fire_and_forget _AsyncCloseConnection();
+
+        // this atomic is to be used as a guard against dispatching billions of coroutines for
+        // routine state changes that might happen millions of times a second.
+        // Unbounded main dispatcher use leads to massive memory leaks and intense slowdowns
+        // on the UI thread.
+        std::atomic<bool> _coroutineDispatchStateUpdateInProgress{ false };
     };
 }
 

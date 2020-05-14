@@ -17,6 +17,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _dispatcher{ THROW_HR_IF_NULL(E_INVALIDARG, dispatcher) },
     _isPainting{ false },
     _selectionChanged{ false },
+    _textBufferChanged{ false },
+    _cursorChanged{ false },
     _isEnabled{ true },
     _prevSelection{},
     RenderEngineBase()
@@ -56,7 +58,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
-    return S_FALSE;
+    _textBufferChanged = true;
+    return S_OK;
 }
 
 // Routine Description:
@@ -65,11 +68,21 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // Arguments:
 // - pcoordCursor - the new position of the cursor
 // Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+// - S_OK
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+try
 {
-    return S_FALSE;
+    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+
+    // check if cursor moved
+    if (*pcoordCursor != _prevCursorPos)
+    {
+        _prevCursorPos = *pcoordCursor;
+        _cursorChanged = true;
+    }
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
@@ -150,7 +163,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::InvalidateAll() noexcept
 {
-    return S_FALSE;
+    _textBufferChanged = true;
+    return S_OK;
 }
 
 // Routine Description:
@@ -192,10 +206,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    // bool somethingToDo = _selectionChanged;
+    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged;
 
     // If there's nothing to do, quick return
-    RETURN_HR_IF(S_FALSE, !_selectionChanged);
+    RETURN_HR_IF(S_FALSE, !somethingToDo);
 
     _isPainting = true;
     return S_OK;
@@ -221,9 +235,26 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         }
         CATCH_LOG();
     }
+    if (_textBufferChanged)
+    {
+        try
+        {
+            _dispatcher->SignalTextChanged();
+        }
+        CATCH_LOG();
+    }
+    if (_cursorChanged)
+    {
+        try
+        {
+            _dispatcher->SignalCursorChanged();
+        }
+        CATCH_LOG();
+    }
 
     _selectionChanged = false;
-    _prevSelection.clear();
+    _textBufferChanged = false;
+    _cursorChanged = false;
     _isPainting = false;
 
     return S_OK;
@@ -276,7 +307,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
-                                                 const bool /*trimLeft*/) noexcept
+                                                 const bool /*trimLeft*/,
+                                                 const bool /*lineWrapped*/) noexcept
 {
     return S_FALSE;
 }
@@ -402,9 +434,9 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT UiaEngine::GetDirtyRectInChars() noexcept
+[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea()
 {
-    return Viewport::Empty().ToInclusive();
+    return { Viewport::Empty().ToInclusive() };
 }
 
 // Routine Description:

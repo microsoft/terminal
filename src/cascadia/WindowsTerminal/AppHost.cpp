@@ -51,7 +51,7 @@ AppHost::AppHost() noexcept :
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
-
+    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->MakeWindow();
 }
 
@@ -61,6 +61,15 @@ AppHost::~AppHost()
     _window = nullptr;
     _app.Close();
     _app = nullptr;
+}
+
+bool AppHost::OnF7Pressed()
+{
+    if (_logic)
+    {
+        return _logic.OnF7Pressed();
+    }
+    return false;
 }
 
 // Method Description:
@@ -93,7 +102,7 @@ void AppHost::_HandleCommandlineArgs()
             }
 
             const auto result = _logic.SetStartupCommandline({ args });
-            const auto message = _logic.EarlyExitMessage();
+            const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
                 const auto displayHelp = result == 0;
@@ -106,7 +115,10 @@ void AppHost::_HandleCommandlineArgs()
                             GetStringResource(messageTitle).data(),
                             MB_OK | messageIcon);
 
-                ExitProcess(result);
+                if (_logic.ShouldExitEarly())
+                {
+                    ExitProcess(result);
+                }
             }
         }
     }
@@ -157,6 +169,24 @@ void AppHost::Initialize()
     // set that content as well.
     _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
+
+    // THIS IS A HACK
+    //
+    // We've got a weird crash that happens terribly inconsistently, but pretty
+    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
+    // weird ref-counting magic that goes on during teardown, and our
+    // Application doesn't get closed quite right, which can cause us to crash
+    // into the debugger. This of course, only happens on exit, and happens
+    // somewhere in the XamlHost.dll code.
+    //
+    // Crazily, if we _manually leak the Application_ here, then the crash
+    // doesn't happen. This doesn't matter, because we really want the
+    // Application to live for _the entire lifetime of the process_, so the only
+    // time when this object would actually need to get cleaned up is _during
+    // exit_. So we can safely leak this Application object, and have it just
+    // get cleaned up normally when our process exits.
+    ::winrt::TerminalApp::App a{ _app };
+    ::winrt::detach_abi(a);
 }
 
 // Method Description:
@@ -328,4 +358,49 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::TerminalApp::ToggleFullscreenEventArgs&)
 {
     _window->ToggleFullscreen();
+}
+
+// Method Description:
+// - Called when the IslandWindow has received a WM_MOUSEWHEEL message. This can
+//   happen on some laptops, where their trackpads won't scroll inactive windows
+//   _ever_.
+// - We're going to take that message and manually plumb it through to our
+//   TermControl's, or anything else that implements IMouseWheelListener.
+// - See GH#979 for more details.
+// Arguments:
+// - coord: The Window-relative, logical coordinates location of the mouse during this event.
+// - delta: the wheel delta that triggered this event.
+// Return Value:
+// - <none>
+void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
+{
+    if (_logic)
+    {
+        // Find all the elements that are underneath the mouse
+        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
+        for (const auto& e : elems)
+        {
+            // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
+            {
+                try
+                {
+                    // Translate the event to the coordinate space of the control
+                    // we're attempting to dispatch it to
+                    const auto transform = e.TransformToVisual(nullptr);
+                    const til::point controlOrigin{ til::math::flooring, transform.TransformPoint(til::point{ 0, 0 }) };
+
+                    const til::point offsetPoint = coord - controlOrigin;
+
+                    if (control.OnMouseWheel(offsetPoint, delta))
+                    {
+                        // If the element handled the mouse wheel event, don't
+                        // continue to iterate over the remaining controls.
+                        break;
+                    }
+                }
+                CATCH_LOG();
+            }
+        }
+    }
 }

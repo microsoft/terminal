@@ -28,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
         _copyOnSelect{ false },
+        _profileName{},
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
@@ -39,7 +40,10 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
         _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
-        _scrollbarState{ ScrollbarState::Visible }
+        _scrollbarState{ ScrollbarState::Visible },
+        _antialiasingMode{ TextAntialiasingMode::Grayscale },
+        _forceFullRepaintRendering{ false },
+        _softwareRendering{ false }
     {
     }
 
@@ -192,6 +196,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::CopyOnSelect(bool value) noexcept
     {
         _copyOnSelect = value;
+    }
+
+    void TerminalSettings::ProfileName(hstring const& value)
+    {
+        _profileName = value;
+    }
+
+    hstring TerminalSettings::ProfileName()
+    {
+        return _profileName;
     }
 
     bool TerminalSettings::UseAcrylic() noexcept
@@ -372,6 +386,36 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::RetroTerminalEffect(bool value) noexcept
     {
         _retroTerminalEffect = value;
+    }
+
+    bool TerminalSettings::ForceFullRepaintRendering() noexcept
+    {
+        return _forceFullRepaintRendering;
+    }
+
+    void TerminalSettings::ForceFullRepaintRendering(bool value) noexcept
+    {
+        _forceFullRepaintRendering = value;
+    }
+
+    bool TerminalSettings::SoftwareRendering() noexcept
+    {
+        return _softwareRendering;
+    }
+
+    void TerminalSettings::SoftwareRendering(bool value) noexcept
+    {
+        _softwareRendering = value;
+    }
+
+    Settings::TextAntialiasingMode TerminalSettings::AntialiasingMode() const noexcept
+    {
+        return _antialiasingMode;
+    }
+
+    void TerminalSettings::AntialiasingMode(const Settings::TextAntialiasingMode& value) noexcept
+    {
+        _antialiasingMode = value;
     }
 
 }

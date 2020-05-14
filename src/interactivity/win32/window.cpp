@@ -53,7 +53,7 @@ Window* Window::s_Instance = nullptr;
 Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
-    _hWnd(0),
+    _hWnd(nullptr),
     _pUiaProvider(nullptr)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
@@ -206,9 +206,10 @@ void Window::_UpdateSystemMetrics() const
 
     const bool useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
-    DxEngine* pDxEngine = nullptr;
+    [[maybe_unused]] DxEngine* pDxEngine = nullptr;
     try
     {
+#ifndef __INSIDE_WINDOWS
         if (useDx)
         {
             pDxEngine = new DxEngine();
@@ -217,10 +218,11 @@ void Window::_UpdateSystemMetrics() const
             // determine the initial window size, which happens BEFORE the
             // window is created, we'll want to make sure the DX engine does
             // math in the hwnd mode, not the Composition mode.
-            THROW_IF_FAILED(pDxEngine->SetHwnd(0));
+            THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
             g.pRender->AddRenderEngine(pDxEngine);
         }
         else
+#endif
         {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -308,6 +310,7 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
+#ifndef __INSIDE_WINDOWS
             if (useDx)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
@@ -318,6 +321,7 @@ void Window::_UpdateSystemMetrics() const
                 }
             }
             else
+#endif
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }

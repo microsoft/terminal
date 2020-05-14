@@ -4,6 +4,7 @@
 #pragma once
 
 #include <wrl/implements.h>
+#include "BoxDrawingEffect.h"
 
 namespace Microsoft::Console::Render
 {
@@ -12,6 +13,7 @@ namespace Microsoft::Console::Render
         DrawingContext(ID2D1RenderTarget* renderTarget,
                        ID2D1Brush* foregroundBrush,
                        ID2D1Brush* backgroundBrush,
+                       bool forceGrayscaleAA,
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
@@ -20,6 +22,7 @@ namespace Microsoft::Console::Render
             this->renderTarget = renderTarget;
             this->foregroundBrush = foregroundBrush;
             this->backgroundBrush = backgroundBrush;
+            this->forceGrayscaleAA = forceGrayscaleAA;
             this->dwriteFactory = dwriteFactory;
             this->spacing = spacing;
             this->cellSize = cellSize;
@@ -29,6 +32,7 @@ namespace Microsoft::Console::Render
         ID2D1RenderTarget* renderTarget;
         ID2D1Brush* foregroundBrush;
         ID2D1Brush* backgroundBrush;
+        bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;
@@ -95,13 +99,15 @@ namespace Microsoft::Console::Render
                                                  DWRITE_MEASURING_MODE measuringMode,
                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                  _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                                 ID2D1Brush* brush);
+                                                 ID2D1Brush* brush,
+                                                 _In_opt_ IUnknown* clientDrawingEffect);
 
-        [[nodiscard]] HRESULT _DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
-                                                         D2D1_POINT_2F baselineOrigin,
-                                                         DWRITE_MEASURING_MODE measuringMode,
-                                                         _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                         _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
+        [[nodiscard]] HRESULT _DrawBoxRunManually(DrawingContext* clientDrawingContext,
+                                                  D2D1_POINT_2F baselineOrigin,
+                                                  DWRITE_MEASURING_MODE measuringMode,
+                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                  _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                  _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept;
 
         [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                 D2D1_POINT_2F baselineOrigin,

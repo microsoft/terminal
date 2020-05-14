@@ -10,6 +10,7 @@
 #include <wrl/client.h>
 #include <wrl/implements.h>
 
+#include "BoxDrawingEffect.h"
 #include "../inc/Cluster.hpp"
 
 namespace Microsoft::Console::Render
@@ -24,7 +25,8 @@ namespace Microsoft::Console::Render
                          gsl::not_null<IDWriteTextFormat*> const format,
                          gsl::not_null<IDWriteFontFace1*> const font,
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
-                         size_t const width);
+                         size_t const width,
+                         IBoxDrawingEffect* const boxEffect);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
 
@@ -64,6 +66,8 @@ namespace Microsoft::Console::Render
                                                                       UINT32 textLength,
                                                                       _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
+
     protected:
         // A single contiguous run of characters containing the same analysis results.
         struct Run
@@ -78,7 +82,8 @@ namespace Microsoft::Console::Render
                 isNumberSubstituted(),
                 isSideways(),
                 fontFace{ nullptr },
-                fontScale{ 1.0 }
+                fontScale{ 1.0 },
+                drawingEffect{ nullptr }
             {
             }
 
@@ -92,6 +97,7 @@ namespace Microsoft::Console::Render
             bool isSideways;
             ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
+            ::Microsoft::WRL::ComPtr<IUnknown> drawingEffect;
 
             inline bool ContainsTextPosition(UINT32 desiredTextPosition) const noexcept
             {
@@ -117,17 +123,23 @@ namespace Microsoft::Console::Render
         };
 
         [[nodiscard]] LinkedRun& _FetchNextRun(UINT32& textLength);
+        [[nodiscard]] LinkedRun& _GetCurrentRun();
         void _SetCurrentRun(const UINT32 textPosition);
         void _SplitCurrentRun(const UINT32 splitPosition);
+        void _OrderRuns();
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
+
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
 
         [[nodiscard]] HRESULT _AnalyzeRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _CorrectGlyphRun(const UINT32 runIndex) noexcept;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _CorrectBoxDrawing() noexcept;
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
@@ -145,6 +157,9 @@ namespace Microsoft::Console::Render
 
         // DirectWrite font face
         const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
+
+        // Box drawing effect
+        const ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;
@@ -164,9 +179,35 @@ namespace Microsoft::Console::Render
         UINT32 _runIndex;
 
         // Glyph shaping results
+
         std::vector<DWRITE_GLYPH_OFFSET> _glyphOffsets;
+
+        // Clusters are complicated. They're in respect to each individual run.
+        // The offsets listed here are in respect to the _text string, but from the beginning index of
+        // each run.
+        // That means if we have two runs, we will see 0 1 2 3 4 0 1 2 3 4 5 6 7... in this clusters count.
         std::vector<UINT16> _glyphClusters;
+
+        // This appears to be the index of the glyph inside each font.
         std::vector<UINT16> _glyphIndices;
+
         std::vector<float> _glyphAdvances;
+
+        struct ScaleCorrection
+        {
+            UINT32 textIndex;
+            UINT32 textLength;
+            float scale;
+        };
+
+        // These are used to further break the runs apart and adjust the font size so glyphs fit inside the cells.
+        std::vector<ScaleCorrection> _glyphScaleCorrections;
+
+#ifdef UNIT_TESTING
+    public:
+        CustomTextLayout() = default;
+
+        friend class CustomTextLayoutTests;
+#endif
     };
 }

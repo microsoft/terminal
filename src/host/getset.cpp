@@ -127,7 +127,13 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
                                                              &data.dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
-        // Callers of this function expect to receive an exclusive rect, not an inclusive one.
+
+        // Callers of this function expect to receive an exclusive rect, not an
+        // inclusive one. The driver will mangle this value for us
+        // - For GetConsoleScreenBufferInfoEx, it will re-decrement these values
+        //   to return an inclusive rect.
+        // - For GetConsoleScreenBufferInfo, it will leave these values
+        //   untouched, returning an exclusive rect.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
     }
@@ -404,13 +410,6 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         {
             // jiggle the handle
             screenInfo.GetStateMachine().ResetState();
-            screenInfo.ClearTabStops();
-        }
-        // if we're moving from VT off->on
-        else if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
-                 WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-        {
-            screenInfo.SetDefaultVtTabStops();
         }
 
         gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
@@ -596,7 +595,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (NewSize.X != context.GetViewport().Width() ||
             NewSize.Y != context.GetViewport().Height())
         {
+            // GH#1856 - make sure to hide the commandline _before_ we execute
+            // the resize, and the re-display it after the resize. If we leave
+            // it displayed, we'll crash during the resize when we try to figure
+            // out if the bounds of the old commandline fit within the new
+            // window (it might not).
+            CommandLine& commandLine = CommandLine::Instance();
+            commandLine.Hide(FALSE);
             context.SetViewportSize(&NewSize);
+            commandLine.Show();
 
             IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)
@@ -759,15 +766,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
         //      will only return the buffer size, so we can't use that to clip the arg here.
         // So only clip the requested size if we're not headless
+        if (g.getConsoleInformation().IsInVtIoMode())
+        {
+            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
+            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+        }
         if (!g.IsHeadless())
         {
             COORD const coordMax = context.GetMaxWindowSizeInCharacters();
             RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
-        }
-        else if (g.getConsoleInformation().IsInVtIoMode())
-        {
-            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
-            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
@@ -776,7 +783,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
             context.PostUpdateWindowSize();
-            WriteToScreen(context, context.GetViewport());
+
+            // Use WriteToScreen to invalidate the viewport with the renderer.
+            // GH#3490 - If we're in conpty mode, don't invalidate the entire
+            // viewport. In conpty mode, the VtEngine will later decide what
+            // part of the buffer actually needs to be re-sent to the terminal.
+            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
+            {
+                WriteToScreen(context, context.GetViewport());
+            }
         }
         return S_OK;
     }
@@ -819,6 +834,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
 // - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// - enableCmdShim - true iff the client process that's calling this
+//   method is "cmd.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
@@ -826,7 +844,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                                   const COORD target,
                                                                   std::optional<SMALL_RECT> clip,
                                                                   const wchar_t fillCharacter,
-                                                                  const WORD fillAttribute) noexcept
+                                                                  const WORD fillAttribute,
+                                                                  const bool enableCmdShim) noexcept
 {
     try
     {
@@ -838,7 +857,36 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         TextAttribute useThisAttr(fillAttribute);
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
-        return S_OK;
+        HRESULT hr = S_OK;
+
+        // GH#3126 - This is a shim for cmd's `cls` function. In the
+        // legacy console, `cls` is supposed to clear the entire buffer. In
+        // conpty however, there's no difference between the viewport and the
+        // entirety of the buffer. We're going to see if this API call exactly
+        // matched the way we expect cmd to call it. If it does, then
+        // let's manually emit a ^[[3J to the connected terminal, so that their
+        // entire buffer will be cleared as well.
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (enableCmdShim && gci.IsInVtIoMode())
+        {
+            const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
+            const bool sourceIsWholeBuffer = (source.Top == 0) &&
+                                             (source.Left == 0) &&
+                                             (source.Right == currentBufferDimensions.X) &&
+                                             (source.Bottom == currentBufferDimensions.Y);
+            const bool targetIsNegativeBufferHeight = (target.X == 0) &&
+                                                      (target.Y == -currentBufferDimensions.Y);
+            const bool noClipProvided = clip == std::nullopt;
+            const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
+                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+
+            if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
+            {
+                hr = gci.GetVtIo()->ManuallyClearScrollback();
+            }
+        }
+
+        return hr;
     }
     CATCH_RETURN();
 }
@@ -869,123 +917,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
-                                     const WORD Attribute,
-                                     const bool fForeground,
-                                     const bool fBackground,
-                                     const bool fMeta)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    const TextAttribute OldAttributes = buffer.GetAttributes();
-    TextAttribute NewAttributes = OldAttributes;
-
-    NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
-
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
-                                      const bool fForeground,
-                                      const bool fBackground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    if (fForeground)
-    {
-        NewAttributes.SetDefaultForeground();
-    }
-    if (fBackground)
-    {
-        NewAttributes.SetDefaultBackground();
-    }
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                              const int iXtermTableEntry,
-                                              const bool fIsForeground)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-
-    COLORREF rgbColor;
-    if (iXtermTableEntry < COLOR_TABLE_SIZE)
-    {
-        //Convert the xterm index to the win index
-        WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
-
-        rgbColor = gci.GetColorTableEntry(iWinEntry);
-    }
-    else
-    {
-        rgbColor = gci.GetColorTableEntry(iXtermTableEntry);
-    }
-
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                            const COLORREF rgbColor,
-                                            const bool fIsForeground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    if (bolded)
-    {
-        attrs.Embolden();
-    }
-    else
-    {
-        attrs.Debolden();
-    }
-    buffer.SetAttributes(attrs);
-}
-
-// Method Description:
-// - Retrieves the active ExtendedAttributes (italic, underline, etc.) of the
-//   given screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to get the extended attrs from.
-// Return Value:
-// - the currently active ExtendedAttributes.
-ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    return attrs.GetExtendedAttributes();
-}
-
-// Method Description:
-// - Sets the active ExtendedAttributes (italic, underline, etc.) of the given
-//   screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to set the extended attrs for.
-// - extendedAttrs: The new ExtendedAttributes to use
-// Return Value:
-// - <none>
-void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
-                                           const ExtendedAttributes extendedAttrs)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    attrs.SetExtendedAttributes(extendedAttrs);
-    buffer.SetAttributes(attrs);
 }
 
 // Routine Description:
@@ -1515,99 +1446,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for setting a VT tab stop in the cursor's current column.
-// Parameters:
-// <none>
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet()
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-
-    const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-    try
-    {
-        _screenBuffer.AddTabStop(cursorPos.X);
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - A private helper for executing a number of tabs.
-// Parameters:
-// sNumTabs - The number of tabs to execute
-// fForward - whether to tab forward or backwards
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-
-    FAIL_FAST_IF(!(sNumTabs >= 0));
-    for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs; sTabsExecuted++)
-    {
-        cursorPos = (fForward) ? _screenBuffer.GetForwardTab(cursorPos) : _screenBuffer.GetReverseTab(cursorPos);
-    }
-
-    return AdjustCursorPosition(_screenBuffer, cursorPos, TRUE, nullptr);
-}
-
-// Routine Description:
-// - A private API call for performing a forwards tab. This will take the
-//     cursor to the tab stop following its current location. If there are no
-//     more tabs in this row, it will take it to the right side of the window.
-//     If it's already in the last column of the row, it will move it to the next line.
-// Parameters:
-// - sNumTabs - The number of tabs to perform.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
-{
-    return DoPrivateTabHelper(sNumTabs, true);
-}
-
-// Routine Description:
-// - A private API call for performing a backwards tab. This will take the
-//     cursor to the tab stop previous to its current location. It will not reverse line feed.
-// Parameters:
-// - sNumTabs - The number of tabs to perform.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
-{
-    return DoPrivateTabHelper(sNumTabs, false);
-}
-
-// Routine Description:
-// - A private API call for clearing the VT tabs that have been set.
-// Parameters:
-// - fClearAll - If false, only clears the tab in the current column (if it exists)
-//      otherwise clears all set tabs. (and reverts to legacy 8-char tabs behavior.)
-// Return value:
-// - None
-void DoSrvPrivateTabClear(const bool fClearAll)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    if (fClearAll)
-    {
-        screenBuffer.ClearTabStops();
-    }
-    else
-    {
-        const COORD cursorPos = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        screenBuffer.ClearTabStop(cursorPos.X);
-    }
-}
-
-// Routine Description:
 // - A private API call for enabling VT200 style mouse mode.
 // Parameters:
 // - fEnable - true to enable default tracking mode, false to disable mouse mode.
@@ -1616,7 +1454,7 @@ void DoSrvPrivateTabClear(const bool fClearAll)
 void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableDefaultTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableDefaultTracking(fEnable);
 }
 
 // Routine Description:
@@ -1628,7 +1466,7 @@ void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetUtf8ExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1640,7 +1478,7 @@ void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetSGRExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1652,7 +1490,7 @@ void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableButtonEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableButtonEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1664,7 +1502,7 @@ void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAnyEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAnyEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1676,7 +1514,7 @@ void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAlternateScroll(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAlternateScroll(fEnable);
 }
 
 // Routine Description:
@@ -1685,10 +1523,10 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 // Parameters:
 //  The ScreenBuffer to perform the erase on.
 // Return value:
-// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
-    return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
+    return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
@@ -1701,23 +1539,6 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
-}
-
-// Routine Description:
-// - A private API call to get only the default color attributes of the screen buffer.
-// - This is used as a performance optimization by the VT adapter in SGR (Set Graphics Rendition) instead
-//   of calling for this information through the public API GetConsoleScreenBufferInfoEx which returns a lot
-//   of extra unnecessary data and takes a lot of extra processing time.
-// Parameters
-// - screenInfo - The screen buffer to retrieve default color attributes information from
-// - attributes - Space that will receive color attributes data
-// Return Value:
-// - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo, WORD& attributes)
-{
-    attributes = screenInfo.GetActiveBuffer().GetAttributes().GetLegacyAttributes();
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -2073,13 +1894,6 @@ void DoSrvIsConsolePty(bool& isPty)
 }
 
 // Routine Description:
-// - a private API call for setting the default tab stops in the active screen buffer.
-void DoSrvPrivateSetDefaultTabStops()
-{
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().SetDefaultVtTabStops();
-}
-
-// Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
 //   this also moves the cursor to the left margin, which is expected behavior for IL and DL
 // Parameters:
@@ -2160,6 +1974,28 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 }
 
 // Method Description:
+// - Retrieve the color table value at the specified index.
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept
+{
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Method Description:
 // - Sets the color table value in index to the color specified in value.
 //      Can be used to set the 256-color table as well as the 16-color table.
 // Arguments:
@@ -2170,7 +2006,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Notes:
 //  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
@@ -2178,7 +2014,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(index, value);
+        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.

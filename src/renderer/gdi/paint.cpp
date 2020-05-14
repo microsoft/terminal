@@ -286,7 +286,8 @@ using namespace Microsoft::Console::Render;
 //#define MAX_POLY_LINES 80
 [[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                  const COORD coord,
-                                                 const bool trimLeft) noexcept
+                                                 const bool trimLeft,
+                                                 const bool /*lineWrapped*/) noexcept
 {
     try
     {
@@ -666,7 +667,7 @@ void GdiEngine::_CreateDebugWindow()
                                        0,
                                        0,
                                        0,
-                                       0,
+                                       nullptr,
                                        nullptr,
                                        nullptr,
                                        nullptr);

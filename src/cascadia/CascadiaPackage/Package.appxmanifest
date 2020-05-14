@@ -17,7 +17,7 @@
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>ms-resource:AppName</DisplayName>
+    <DisplayName>Windows Terminal</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -74,6 +74,7 @@
     <uap7:Extension Category="windows.sharedFonts">
       <uap7:SharedFonts>
         <uap4:Font File="Cascadia.ttf" />
+        <uap4:Font File="CascadiaMono.ttf" />
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>

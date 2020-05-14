@@ -82,7 +82,7 @@ LONG CPlApplet(
 
         lpCPlInfo = (LPNEWCPLINFO)lParam2;
 
-        lpCPlInfo->hIcon = LoadIcon(NULL, MAKEINTRESOURCE(IDI_CONSOLE));
+        lpCPlInfo->hIcon = LoadIcon(nullptr, MAKEINTRESOURCE(IDI_CONSOLE));
 
         if (!LoadString(ghInstance, IDS_NAME, lpCPlInfo->szName, ARRAYSIZE(lpCPlInfo->szName)))
         {

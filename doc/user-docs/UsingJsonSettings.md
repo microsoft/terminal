@@ -1,15 +1,15 @@
 # Editing Windows Terminal JSON Settings
 
 One way (currently the only way) to configure Windows Terminal is by editing the
-`profiles.json` settings file. At the time of writing you can open the settings
+`settings.json` settings file. At the time of writing you can open the settings
 file in your default editor by selecting `Settings` from the WT pull down menu.
 
-The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\profiles.json`.
+The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`.
 
 As of [#2515](https://github.com/microsoft/terminal/pull/2515), the settings are
-split into _two_ files: a hardcoded `defaults.json`, and `profiles.json`, which
+split into _two_ files: a hardcoded `defaults.json`, and `settings.json`, which
 contains the user settings. Users should only be concerned with the contents of
-the `profiles.json`, which contains their customizations. The `defaults.json`
+the `settings.json`, which contains their customizations. The `defaults.json`
 file is only provided as a reference of what the default settings are. For more
 details on how these two files work, see [Settings
 Layering](#settings-layering). To view the default settings file, click on the
@@ -38,24 +38,25 @@ not affect a particular terminal instance.
 Example settings include
 
 ```json
+{
     "defaultProfile" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "initialCols" : 120,
     "initialRows" : 50,
-    "requestedTheme" : "system",
+    "theme" : "system",
     "keybindings" : []
     ...
+}
 ```
 
-These global properties can exist either in the root json object, or in an
-object under a root property `"globals"`.
+These global properties should exist in the root json object.
 
 ## Key Bindings
 
 This is an array of key chords and shortcuts to invoke various commands.
 Each command can have more than one key binding.
 
-NOTE: Key bindings is a subfield of the global settings and
-key bindings apply to all profiles in the same manner.
+> 👉 **Note**: Key bindings is a subfield of the global settings and
+> key bindings apply to all profiles in the same manner.
 
 For example, here's a sample of the default keybindings:
 
@@ -69,7 +70,22 @@ For example, here's a sample of the default keybindings:
         // etc.
     ]
 }
+```
 
+You can also use a single key chord string as the value of `"keys"`.
+It will be treated as a chord of length one.
+This will allow you to simplify the above snippet as follows:
+
+```json
+{
+    "keybindings":
+    [
+        { "command": "closePane", "keys": "ctrl+shift+w" },
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "newTab", "keys": "ctrl+shift+t" },
+        // etc.
+    ]
+}
 ```
 
 A list of default key bindings is available [here](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/defaults.json#L204).
@@ -91,6 +107,22 @@ add the following to your keybindings:
 
 This will _unbind_ <kbd>Ctrl+Shift+6</kbd>, allowing vim to use the keystroke
 instead of the terminal.
+
+### Binding multiple keys
+
+You can have multiple key chords bound to the same action. To do this, simply
+add multiple bindings for the same action. For example:
+
+```json
+    "keybindings" :
+    [
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "copy", "keys": "ctrl+c" },
+        { "command": "copy", "keys": "enter" }
+    ]
+```
+
+In this snippet, all three of <kbd>ctrl+shift+c</kbd>, <kbd>ctrl+c</kbd> and <kbd>enter</kbd> are bound to `copy`.
 
 ## Profiles
 
@@ -133,12 +165,12 @@ The values for background image stretch mode are documented [here](https://docs.
 ### Hiding a profile
 
 If you want to remove a profile from the list of profiles in the new tab
-dropdown, but keep the profile around in your `profiles.json` file, you can add
+dropdown, but keep the profile around in your `settings.json` file, you can add
 the property `"hidden": true` to the profile's json. This can also be used to
 remove the default `cmd` and PowerShell profiles, if the user does not wish to
 see them.
 
-##  Color Schemes
+## Color Schemes
 
 Each scheme defines the color values to be used for various terminal escape sequences.
 Each schema is identified by the name field. Examples include
@@ -161,15 +193,16 @@ The schema name can then be referenced in one or more profiles.
 ## Settings layering
 
 The runtime settings are actually constructed from _three_ sources:
+
 * The default settings, which are hardcoded into the application, and available
   in `defaults.json`. This includes the default keybindings, color schemes, and
   profiles for both Windows PowerShell and Command Prompt (`cmd.exe`).
 * Dynamic Profiles, which are generated at runtime. These include Powershell
   Core, the Azure Cloud Shell connector, and profiles for and WSL distros.
-* The user settings from `profiles.json`.
+* The user settings from `settings.json`.
 
 Settings from each of these sources are "layered" upon the settings from
-previous sources. In this manner, the user settings in `profiles.json` can
+previous sources. In this manner, the user settings in `settings.json` can
 contain _only the changes from the default settings_. For example, if a user
 would like to only change the color scheme of the default `cmd` profile to
 "Solarized Dark", you could change your cmd profile to the following:
@@ -188,19 +221,19 @@ with that GUID will all be treated as the same object. Any changes in that
 profile will overwrite those from the defaults.
 
 Similarly, you can overwrite settings from a color scheme by defining a color
-scheme in `profiles.json` with the same name as a default color scheme.
+scheme in `settings.json` with the same name as a default color scheme.
 
 If you'd like to unbind a keystroke that's bound to an action in the default
 keybindings, you can set the `"command"` to `"unbound"` or `null`. This will
-allow the keystroke to fallthough to the commandline application instead of
+allow the keystroke to fallthrough to the commandline application instead of
 performing the default action.
 
 ### Dynamic Profiles
 
 When dynamic profiles are created at runtime, they'll be added to the
-`profiles.json` file. You can identify these profiles by the presence of a
+`settings.json` file. You can identify these profiles by the presence of a
 `"source"` property. These profiles are tied to their source - if you uninstall
-a linux distro, then the profile will remain in your `profiles.json` file, but
+a linux distro, then the profile will remain in your `settings.json` file, but
 the profile will be hidden.
 
 The Windows Terminal uses the `guid` property of these dynamically-generated
@@ -214,10 +247,16 @@ like to hide all the WSL profiles, you could add the following setting:
 
 ```json
 
-    "disabledProfileSources": ["Microsoft.Terminal.WSL"],
+    "disabledProfileSources": ["Windows.Terminal.WSL"],
     ...
 
 ```
+
+> 👉 **NOTE**: On launch, if a dynamic profile generator is enabled, it will
+> always add new profiles it detects to your list of profiles. If you delete a
+> dynamically generated profile from your list of profiles, it will just get
+> re-added the next time the Terminal is launched! To remove a dynamic profile
+> from your list of profiles, make sure to set `"hidden": true` in the profile.
 
 ### Default settings
 
@@ -271,7 +310,7 @@ properties for all your profiles, like so:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -283,12 +322,13 @@ properties for all your profiles, like so:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 Note that the `profiles` property has changed in this example from a _list_ of
 profiles, to an _object_ with two properties:
+
 * a `list` that contains the list of all the profiles
 * the new `defaults` object, which contains all the settings that should apply to
   every profile.
@@ -311,7 +351,7 @@ could achieve that with the following:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -324,40 +364,42 @@ could achieve that with the following:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
 `"fontFace"` from the `defaults`.
 
-
-## Configuration Examples:
+## Configuration Examples
 
 ### Add a custom background to the WSL Debian terminal profile
 
-1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
+1. Download the [Debian JPG logo](https://www.debian.org/logos/openlogo-100.jpg)
 2. Put the image in the
  `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\`
- directory (same directory as your `profiles.json` file).
+ directory (same directory as your `settings.json` file).
 
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
+
 ```json
     "backgroundImage": "ms-appdata:///Local/openlogo-100.jpg",
     "backgroundImageOpacity": 1,
     "backgroundImageStretchMode" : "none",
     "backgroundImageAlignment" : "topRight",
 ```
+
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
 7. Jump over to WT and verify your changes.
 
 Notes:
+
 1. You will need to experiment with different color settings
 and schemes to make your terminal text visible on top of your image
-2. If you store the image in the UWP directory (the same directory as your profiles.json file),
+2. If you store the image in the UWP directory (the same directory as your settings.json file),
 then you should use the URI style path name given in the above example.
 More information about UWP URI schemes [here](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes).
 3. Instead of using a UWP URI you can use a:
@@ -379,7 +421,7 @@ following objects into your `globals.keybindings` array:
 { "command": "paste", "keys": ["ctrl+shift+v"] }
 ```
 
-> 👉 **Note**: you can also add a keybinding for the `copyTextWithoutNewlines` command. This removes newlines as the text is copied to your clipboard.
+> 👉 **Note**: you can also add a keybinding for the `copy` command with the argument `"trimWhitespace": true`. This removes newlines as the text is copied to your clipboard.
 
 This will add copy and paste on <kbd>ctrl+shift+c</kbd>
 and <kbd>ctrl+shift+v</kbd> respectively.
@@ -415,7 +457,6 @@ an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,
 we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
-
 
 ### Setting the `startingDirectory` of WSL Profiles to `~`
 

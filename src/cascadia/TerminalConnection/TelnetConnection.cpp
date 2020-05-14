@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _transitionToState(ConnectionState::Connecting);
 
-        // Set initial winodw title.
+        // Set initial window title.
         _TerminalOutputHandlers(L"\x1b]0;Telnet\x7");
     }
     catch (...)

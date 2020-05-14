@@ -1,0 +1,17 @@
+<details>
+<summary>
+:pencil2: Contributor please read this
+</summary>
+
+* If the items listed above are names, please add them to `.github/actions/spell-check/dictionary/names.txt`.
+* If they're APIs, you can add them to a file in `.github/actions/spell-check/dictionary/`.
+* If they're just things you're using, please add them to an appropriate file in `.github/actions/spell-check/whitelist/`.
+* If you need to use a specific token in one place and it shouldn't generally be used, you can
+add an item in an appropriate file in `.github/actions/spell-check/patterns/`.
+
+See the `README.md` in each directory for more information.
+</details>
+
+#### :warning: Reviewers
+At present, the action that triggered this message will not show its :x: in this PR unless the branch is within this repository.
+Thus, you **should** make sure that this comment has been addressed before encouraging the merge bot to merge this PR.

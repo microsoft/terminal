@@ -17,6 +17,7 @@ public:
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
+    bool OnF7Pressed();
 
 private:
     bool _useNonClientArea;
@@ -34,4 +35,5 @@ private:
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
+    void _WindowMouseWheeled(const til::point coord, const int32_t delta);
 };

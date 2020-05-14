@@ -185,19 +185,40 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 6> s_simpleModifiedKeyMapping{
+static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
     TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
     TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
+
+    // GH#3507 - We should also be encoding Ctrl+# according to the following table:
+    // https://vt100.net/docs/vt220-rm/table3-5.html
+    // * 1 and 9 do not send any special characters, but they _should_ send
+    //   through the character unmodified.
+    // * 0 doesn't seem to send even an unmodified '0' through.
+    // * Ctrl+2 is already special-cased below in `HandleKey`, so it's not
+    //   included here.
+    TermKeyMap{ static_cast<WORD>('1'), CTRL_PRESSED, L"1" },
+    // TermKeyMap{ static_cast<WORD>('2'), CTRL_PRESSED, L"\x00" },
+    TermKeyMap{ static_cast<WORD>('3'), CTRL_PRESSED, L"\x1B" },
+    TermKeyMap{ static_cast<WORD>('4'), CTRL_PRESSED, L"\x1C" },
+    TermKeyMap{ static_cast<WORD>('5'), CTRL_PRESSED, L"\x1D" },
+    TermKeyMap{ static_cast<WORD>('6'), CTRL_PRESSED, L"\x1E" },
+    TermKeyMap{ static_cast<WORD>('7'), CTRL_PRESSED, L"\x1F" },
+    TermKeyMap{ static_cast<WORD>('8'), CTRL_PRESSED, L"\x7F" },
+    TermKeyMap{ static_cast<WORD>('9'), CTRL_PRESSED, L"9" },
+
     // These two are not implemented here, because they are system keys.
     // TermKeyMap{ VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
     // TermKeyMap{ VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
 };
 
 const wchar_t* const CTRL_SLASH_SEQUENCE = L"\x1f";
+const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
+const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
+const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
 void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
 {
@@ -323,13 +344,73 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         }
         else
         {
-            // One last check: C-/ is supposed to be C-_
-            // But '/' is not the same VKEY on all keyboards. So we have to
-            //      figure out the vkey at runtime.
-            const BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
-            if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
+            // One last check:
+            // * C-/ is supposed to be ^_ (the C0 character US)
+            // * C-? is supposed to be DEL
+            // * C-M-/ is supposed to be ^[^_
+            // * C-M-? is supposed to be ^[^?
+            //
+            // But this whole scenario is tricky. '/' is not the same VKEY on
+            // all keyboards. On USASCII keyboards, '/' and '?' share the _same_
+            // key. So we have to figure out the vkey at runtime, and we have to
+            // determine if the key that was pressed was '?' with some
+            // modifiers, or '/' with some modifiers.
+            //
+            // These translations are not in s_simpleModifiedKeyMapping, because
+            // the aforementioned fact that they aren't the same VKEY on all
+            // keyboards.
+            //
+            // See GH#3079 for details.
+            // Also see https://github.com/microsoft/terminal/pull/4947#issuecomment-600382856
+
+            // VkKeyScan will give us both the Vkey of the key needed for this
+            // character, and the modifiers the user might need to press to get
+            // this character.
+            const auto slashKeyScan = VkKeyScan(L'/'); // On USASCII: 0x00bf
+            const auto questionMarkKeyScan = VkKeyScan(L'?'); //On USASCII: 0x01bf
+
+            const auto slashVkey = LOBYTE(slashKeyScan);
+            const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
+
+            const auto ctrl = keyEvent.IsCtrlPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const bool shift = keyEvent.IsShiftPressed();
+
+            // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
+            const auto vkey = keyEvent.GetVirtualKeyCode();
+            const short keyScanFromEvent = vkey |
+                                           (shift ? 0x100 : 0) |
+                                           (ctrl ? 0x200 : 0) |
+                                           (alt ? 0x400 : 0);
+
+            // Make sure the VKEY is an _exact_ match, and that the modifier
+            // bits also match. This handles the hypothetical case we get a
+            // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
+            // has bits that are a superset of the bits set for question mark.
+            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+
+            // If the key pressed was exactly the ? key, then try to send the
+            // appropriate sequence for a modified '?'. Otherwise, check if this
+            // was a modified '/' keypress. These mappings don't need to be
+            // changed at all.
+            if ((ctrl && alt) && wasQuestionMark)
             {
-                // This mapping doesn't need to be changed at all.
+                sender(CTRL_ALT_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasQuestionMark)
+            {
+                sender(CTRL_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if ((ctrl && alt) && wasSlash)
+            {
+                sender(CTRL_ALT_SLASH_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasSlash)
+            {
                 sender(CTRL_SLASH_SEQUENCE);
                 success = true;
             }
@@ -359,120 +440,150 @@ static bool _translateDefaultMapping(const KeyEvent& keyEvent,
     return match.has_value();
 }
 
-bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
+// Routine Description:
+// - Sends the given input event to the shell.
+// - The caller should attempt to fill the char data in pInEvent if possible.
+//   The char data should already be translated in accordance to Ctrl/Alt/Shift
+//   modifiers, like the characters given by the WM_CHAR event.
+// - The caller doesn't need to fill in any char data for:
+//   - Tab key
+//   - Alt+key combinations
+// - This method will alias Ctrl+Space as a synonym for Ctrl+@ - the null byte.
+// Arguments:
+// - keyEvent - Key event to translate
+// Return Value:
+// - True if the event was handled.
+bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 {
-    // By default, we fail to handle the key
-    bool keyHandled = false;
-
-    // On key presses, prepare to translate to VT compatible sequences
-    if (pInEvent->EventType() == InputEventType::KeyEvent)
-    {
-        const auto senderFunc = [this](const std::wstring_view seq) { _SendInputSequence(seq); };
-
-        auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
-
-        // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
-        if (keyEvent.IsKeyDown())
-        {
-            // For AltGr enabled keyboards, the Windows system will
-            // emit Left Ctrl + Right Alt as the modifier keys and
-            // will have pretranslated the UnicodeChar to the proper
-            // alternative value.
-            // Through testing with Ubuntu, PuTTY, and Emacs for
-            // Windows, it was discovered that any instance of Left
-            // Ctrl + Right Alt will strip out those two modifiers and
-            // send the unicode value straight through to the system.
-            // Holding additional modifiers in addition to Left Ctrl +
-            // Right Alt will then light those modifiers up again for
-            // the unicode value.
-            // Therefore to handle AltGr properly, our first step
-            // needs to be to check if both Left Ctrl + Right Alt are
-            // pressed...
-            // ... and if they are both pressed, strip them out of the control key state.
-            if (keyEvent.IsAltGrPressed())
-            {
-                keyEvent.DeactivateModifierKey(ModifierKeyState::LeftCtrl);
-                keyEvent.DeactivateModifierKey(ModifierKeyState::RightAlt);
-            }
-
-            if (keyEvent.IsAltPressed() &&
-                keyEvent.IsCtrlPressed() &&
-                (keyEvent.GetCharData() == 0 || keyEvent.GetCharData() == 0x20) &&
-                ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
-                 keyEvent.GetVirtualKeyCode() == VK_SPACE))
-            {
-                // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
-                //      So we need to get the char from the vKey.
-                //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                auto wchPressedChar = gsl::narrow_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
-                // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
-                wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
-                if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)
-                {
-                    //shift the char to the ctrl range
-                    wchPressedChar -= 0x40;
-                    _SendEscapedInputSequence(wchPressedChar);
-                    keyHandled = true;
-                }
-            }
-
-            // If a modifier key was pressed, then we need to try and send the modified sequence.
-            if (!keyHandled && keyEvent.IsModifierPressed())
-            {
-                // Translate the key using the modifier table
-                keyHandled = _searchWithModifier(keyEvent, senderFunc);
-            }
-            // ALT is a sequence of ESC + KEY.
-            if (!keyHandled && keyEvent.GetCharData() != 0 && keyEvent.IsAltPressed())
-            {
-                _SendEscapedInputSequence(keyEvent.GetCharData());
-                keyHandled = true;
-            }
-            if (!keyHandled && keyEvent.IsCtrlPressed())
-            {
-                if ((keyEvent.GetCharData() == UNICODE_SPACE) || // Ctrl+Space
-                    // when Ctrl+@ comes through, the unicodechar
-                    // will be '\x0' (UNICODE_NULL), and the vkey will be
-                    // VkKeyScanW(0), the vkey for null
-                    (keyEvent.GetCharData() == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
-                {
-                    _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
-                    keyHandled = true;
-                }
-            }
-
-            if (!keyHandled)
-            {
-                // For perf optimization, filter out any typically printable Virtual Keys (e.g. A-Z)
-                // This is in lieu of an O(1) sparse table or other such less-maintainable methods.
-                // VK_CANCEL is an exception and we want to send the associated uChar as is.
-                if ((keyEvent.GetVirtualKeyCode() < '0' || keyEvent.GetVirtualKeyCode() > 'Z') &&
-                    keyEvent.GetVirtualKeyCode() != VK_CANCEL)
-                {
-                    keyHandled = _translateDefaultMapping(keyEvent, _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode), senderFunc);
-                }
-                else
-                {
-                    WCHAR rgwchSequence[2];
-                    rgwchSequence[0] = keyEvent.GetCharData();
-                    rgwchSequence[1] = UNICODE_NULL;
-                    _SendInputSequence(rgwchSequence);
-                    keyHandled = true;
-                }
-            }
-        }
-    }
-
-    return keyHandled;
-}
-
-bool TerminalInput::HandleChar(const wchar_t ch)
-{
-    if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
+    if (!pInEvent)
     {
         return false;
     }
-    else if (Utf16Parser::IsLeadingSurrogate(ch))
+
+    // On key presses, prepare to translate to VT compatible sequences
+    if (pInEvent->EventType() != InputEventType::KeyEvent)
+    {
+        return false;
+    }
+
+    auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
+
+    // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
+    if (!keyEvent.IsKeyDown())
+    {
+        return false;
+    }
+
+    // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.
+    // For instance on a German keyboard layout "[" is written by pressing AltGr+8.
+    // Furthermore Ctrl+Alt is traditionally treated as an alternative way to AltGr by Windows.
+    // When AltGr is pressed, the caller needs to make sure to send us a pretranslated character in GetCharData().
+    // --> Strip out the AltGr flags, in order for us to not step into the Alt/Ctrl conditions below.
+    if (keyEvent.IsAltGrPressed())
+    {
+        keyEvent.DeactivateModifierKey(ModifierKeyState::LeftCtrl);
+        keyEvent.DeactivateModifierKey(ModifierKeyState::RightAlt);
+    }
+
+    // The Alt modifier initiates a so called "escape sequence".
+    // See: https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
+    // See: ECMA-48, section 5.3, http://www.ecma-international.org/publications/standards/Ecma-048.htm
+    //
+    // This section in particular handles Alt+Ctrl combinations though.
+    // The Ctrl modifier causes all of the char code's bits except
+    // for the 5 least significant ones to be zeroed out.
+    if (keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
+    {
+        auto ch = keyEvent.GetCharData();
+        if (ch == UNICODE_NULL)
+        {
+            // For Alt+Ctrl+Key messages GetCharData() returns 0.
+            // The values of the ASCII characters and virtual key codes
+            // of <Space>, A-Z (as used below) are numerically identical.
+            // -> Get the char from the virtual key.
+            ch = keyEvent.GetVirtualKeyCode();
+        }
+        // Alt+Ctrl acts as a substitute for AltGr on Windows.
+        // For instance using a German keyboard both AltGr+< and Alt+Ctrl+< produce a | (pipe) character.
+        // The below condition primitively ensures that we allow all common Alt+Ctrl combinations
+        // while preserving most of the functionality of Alt+Ctrl as a substitute for AltGr.
+        if (ch == UNICODE_SPACE || (ch > 0x40 && ch <= 0x5A))
+        {
+            // Pressing the control key causes all bits but the 5 least
+            // significant ones to be zeroed out (when using ASCII).
+            ch &= 0b11111;
+            _SendEscapedInputSequence(ch);
+            return true;
+        }
+    }
+
+    const auto senderFunc = [this](const std::wstring_view seq) noexcept
+    {
+        _SendInputSequence(seq);
+    };
+
+    // If a modifier key was pressed, then we need to try and send the modified sequence.
+    if (keyEvent.IsModifierPressed() && _searchWithModifier(keyEvent, senderFunc))
+    {
+        return true;
+    }
+
+    // This section is similar to the Alt modifier section above,
+    // but handles cases without Ctrl modifiers.
+    if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
+    {
+        _SendEscapedInputSequence(keyEvent.GetCharData());
+        return true;
+    }
+
+    // Pressing the control key causes all bits but the 5 least
+    // significant ones to be zeroed out (when using ASCII).
+    // This results in Ctrl+Space and Ctrl+@ being equal to a null byte.
+    // Normally the C0 control code set only defines Ctrl+@,
+    // but Ctrl+Space is also widely accepted by most terminals.
+    // -> Send a "null input sequence" in that case.
+    // We don't need to handle other kinds of Ctrl combinations,
+    // as we rely on the caller to pretranslate those to characters for us.
+    if (!keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
+    {
+        const auto ch = keyEvent.GetCharData();
+        const auto vkey = keyEvent.GetVirtualKeyCode();
+
+        // Currently, when we're called with Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
+        // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
+        // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
+        if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0))))
+        {
+            _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
+            return true;
+        }
+    }
+
+    // Check any other key mappings (like those for the F1-F12 keys).
+    const auto mapping = _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode);
+    if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
+    {
+        return true;
+    }
+
+    // If all else fails we can finally try to send the character itself if there is any.
+    if (keyEvent.GetCharData() != 0)
+    {
+        _SendChar(keyEvent.GetCharData());
+        return true;
+    }
+
+    return false;
+}
+
+// Routine Description:
+// - Sends the given character to the shell.
+// - Surrogate pairs are being aggregated by this function before being sent.
+// Arguments:
+// - ch: The UTF-16 character to send.
+void TerminalInput::_SendChar(const wchar_t ch)
+{
+    if (Utf16Parser::IsLeadingSurrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {
@@ -486,20 +597,14 @@ bool TerminalInput::HandleChar(const wchar_t ch)
     }
     else if (_leadingSurrogate.has_value())
     {
-        std::wstring wstr;
-        wstr.reserve(2);
-        wstr.push_back(_leadingSurrogate.value());
-        wstr.push_back(ch);
+        std::array<wchar_t, 2> wstr{ { _leadingSurrogate.value(), ch } };
         _leadingSurrogate.reset();
-
-        _SendInputSequence(wstr);
+        _SendInputSequence({ wstr.data(), wstr.size() });
     }
     else
     {
         _SendInputSequence({ &ch, 1 });
     }
-
-    return true;
 }
 
 // Routine Description:
@@ -543,7 +648,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const
+void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
 {
     if (!sequence.empty())
     {

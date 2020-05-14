@@ -31,6 +31,12 @@ namespace TerminalApp
         Horizontal = 2
     };
 
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -50,7 +56,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
-        Boolean TrimWhitespace { get; };
+        Boolean SingleLine { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -82,5 +88,6 @@ namespace TerminalApp
     {
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
+        SplitType SplitMode { get; };
     };
 }

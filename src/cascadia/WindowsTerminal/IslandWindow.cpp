@@ -179,8 +179,14 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // If this fails, we'll use the default of 96.
     GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
+    const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
+    const long minWidthScaled = minimumWidth * widthScale;
+
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
+
     auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
+    clientWidth = std::max(minWidthScaled, clientWidth);
+
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
@@ -254,7 +260,7 @@ void IslandWindow::Initialize()
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0, 0, 0, width, height, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW);
 
     if (_rootGrid)
     {
@@ -326,6 +332,40 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         _windowCloseButtonClickedHandler();
         return 0;
     }
+    case WM_MOUSEWHEEL:
+        try
+        {
+            // This whole handler is a hack for GH#979.
+            //
+            // On some laptops, their trackpads won't scroll inactive windows
+            // _ever_. With our entire window just being one giant XAML Island, the
+            // touchpad driver thinks our entire window is inactive, and won't
+            // scroll the XAML island. On those types of laptops, we'll get a
+            // WM_MOUSEWHEEL here, in our root window, when the trackpad scrolls.
+            // We're going to take that message and manually plumb it through to our
+            // TermControl's, or anything else that implements IMouseWheelListener.
+
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+            // Important! Do not use the LOWORD or HIWORD macros to extract the x-
+            // and y- coordinates of the cursor position because these macros return
+            // incorrect results on systems with multiple monitors. Systems with
+            // multiple monitors can have negative x- and y- coordinates, and LOWORD
+            // and HIWORD treat the coordinates as unsigned quantities.
+            const til::point eventPoint{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+            // This mouse event is relative to the display origin, not the window. Convert here.
+            const til::rectangle windowRect{ GetWindowRect() };
+            const auto origin = windowRect.origin();
+            const auto relative = eventPoint - origin;
+            // Convert to logical scaling before raising the event.
+            const auto real = relative / GetCurrentDpiScale();
+
+            const short wheelDelta = static_cast<short>(HIWORD(wparam));
+
+            // Raise an event, so any listeners can handle the mouse wheel event manually.
+            _MouseScrolledHandlers(real, wheelDelta);
+            return 0;
+        }
+        CATCH_LOG();
     }
 
     // TODO: handle messages here...
