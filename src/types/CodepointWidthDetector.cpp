@@ -192,7 +192,7 @@ namespace
         UnicodeRange{ 0x25ce, 0x25d1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25e2, 0x25e5, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25ef, 0x25ef, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25fb, 0x25fe, CodepointWidth::Wide }, // OVR 5fb-5fc
+        UnicodeRange{ 0x25fd, 0x25fe, CodepointWidth::Wide },
         UnicodeRange{ 0x2600, 0x2604, CodepointWidth::Wide }, // OVR
         UnicodeRange{ 0x2605, 0x2606, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
