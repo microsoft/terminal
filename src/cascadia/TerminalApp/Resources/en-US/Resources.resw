@@ -342,6 +342,14 @@
     <value>Default Keybindings</value>
     <comment></comment>
   </data>
+  <data name="ShortcutsDialog_ChangeFocusLabel.Text" xml:space="preserve">
+    <value>Change Focus:</value>
+    <comment></comment>
+  </data>
+  <data name="ShortcutsDialog_CloseApplicationLabel.Text" xml:space="preserve">
+    <value>Quit:</value>
+    <comment></comment>
+  </data>
   <data name="ShortcutsDialog_ClosePaneLabel.Text" xml:space="preserve">
     <value>Close Pane:</value>
     <comment></comment>
