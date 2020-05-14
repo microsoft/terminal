@@ -75,6 +75,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Run Text="Alt+Shift+Up, Alt+Shift+Down, Alt+Shift+Left, Alt+Shift+Right"/> <LineBreak/>
                     <Run x:Uid="ShortcutsDialog_ChangeFocusLabel"/>
                     <Run Text="Alt+Up, Alt+Down, Alt+Left, Alt+Right"/> <LineBreak/>
+                    <Run x:Uid="ShortcutsDialog_CloseApplicationLabel"/>
+                    <Run Text="Alt+F4"/> <LineBreak/>
                 </TextBlock>
             </StackPanel>
         </ContentDialog>
