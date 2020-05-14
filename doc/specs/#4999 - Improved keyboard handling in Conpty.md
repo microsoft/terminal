@@ -421,7 +421,7 @@ Notably looking at
 
 #### Cons:
 * Doesn't differentiate between keydowns and keyups
-* Unsure who implements this - not extensivly investigated
+* Unsure who implements this - not extensively investigated
 
 
 ## Resources

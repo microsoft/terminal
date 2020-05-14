@@ -8,3 +8,6 @@ freedesktop
 ycombinator
 robertelder
 kovidgoyal
+leonerd
+fixterms
+uk
