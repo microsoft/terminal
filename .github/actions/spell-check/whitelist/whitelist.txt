@@ -540,6 +540,7 @@ DECAWM
 DECCKM
 DECCOLM
 decf
+DECEKBD
 DECKPAM
 DECKPM
 DECKPNM
@@ -568,6 +569,7 @@ DECSEL
 DECSET
 DECSLRM
 DECSMBV
+DECSMKR
 DECSR
 decstandar
 DECSTBM
@@ -1212,6 +1214,7 @@ kcub
 kcud
 kcuf
 kcuu
+Kd
 keith
 kernelbase
 kernelbasestaging
@@ -1259,6 +1262,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libtickit
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1370,6 +1374,7 @@ MAKELONG
 MAKELPARAM
 MAKELRESULT
 malloc
+manpage
 MAPBITMAP
 MAPVIRTUALKEY
 MAPVK

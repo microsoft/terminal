@@ -33,7 +33,7 @@ Some of these issues include, but are not limited to:
 
 This spec covers a mechanism by which we can add support to ConPTY so that a
 terminal application could send `INPUT_RECORD`-like key events to conpty,
-enabling client applications to recieve the full range of keys once again.
+enabling client applications to receive the full range of keys once again.
 Included at the bottom of this document is a collection of [options that were
 investigated](#options-considered) as a part of preparing this document.
 
@@ -111,7 +111,7 @@ the Windows Terminal - future WT-specific sequences could also be placed as `OSC
 1000;2`, `OSC 1000;3`, etc. This pattern is also similar to the way iTerm2
 defines their own sequences.
 
-When a terminal recieves a `^[]1000;1;1ST` sequence, they should switch into
+When a terminal receives a `^[]1000;1;1ST` sequence, they should switch into
 `win32-input-mode`. In `win32-input-mode`, the terminal will send keyboard input
 to the connected client application in the following format:
 
@@ -135,12 +135,12 @@ typedef struct _KEY_EVENT_RECORD {
 ```
 
 To encode all of this information, I propose the following sequence. This is a
-CSI sequence with a final terminator character of `!`. This character appears
+CSI sequence with a final terminator character of `_`. This character appears
 unused as a terminator by sequences _output_ by a client application, and
 doesn't seem to be used as an _input_ sequence terminator either.
 
 ```
-  ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs !
+  ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs _
 
        Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
 
@@ -160,7 +160,7 @@ doesn't seem to be used as an _input_ sequence terminator either.
 > input sequences. This was changed to a CSI for stylistic reasons. There's not
 > a great body of reference anywhere that lists APC sequences in use, so there's
 > no way to know if the sequence would collide with another terminal emulator's
-> usage. Furthermore, useing an APC seems to give a distinct impression that
+> usage. Furthermore, using an APC seems to give a distinct impression that
 > this is some "Windows Terminal" specific sequence, which is not intended. This
 > is a Windows-specific sequence, but one that any Terminal/application could
 > use.
@@ -179,10 +179,10 @@ send 4 input records to the client application:
 
 Encoded in `win32-input-mode`, this would look like the following:
 ```
-^[[1;1;17;29;0;8!
-^[[1;1;112;59;0;8!
-^[[0;1;112;59;0;8!
-^[[0;1;17;29;0;0!
+^[[1;1;17;29;0;8_
+^[[1;1;112;59;0;8_
+^[[0;1;112;59;0;8_
+^[[0;1;17;29;0;0_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
@@ -192,12 +192,12 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Similarly, for a keypress like <kbd>Ctrl+Alt+A</kbd>, which is 6 key events:
 ```
-^[[1;1;17;29;0;8!
-^[[1;1;18;56;0;10!
-^[[1;1;65;30;0;10!
-^[[0;1;65;30;0;10!
-^[[0;1;18;56;0;8!
-^[[0;1;17;29;0;0!
+^[[1;1;17;29;0;8_
+^[[1;1;18;56;0;10_
+^[[1;1;65;30;0;10_
+^[[0;1;65;30;0;10_
+^[[0;1;18;56;0;8_
+^[[0;1;17;29;0;0_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x2a
@@ -209,10 +209,10 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Or, for something simple like <kbd>A</kbd> (which is 4 key events):
 ```
-^[[1;1;16;42;0;16!
-^[[1;1;65;30;65;16!
-^[[0;1;16;42;0;0!
-^[[0;1;65;30;97;0!
+^[[1;1;16;42;0;16_
+^[[1;1;65;30;65;16_
+^[[0;1;16;42;0;0_
+^[[0;1;65;30;97;0_
 
 Down: 1 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x30
 Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
@@ -320,7 +320,7 @@ _(no change expected)_
     - Consider sending a ctrl down, '^A', ctrl up. We wouldn't want to send this
       as three sequences, because conpty will take the '^A' and synthesize
       _another_ ctrl down, ctrl up pair.
-* With conpty passthrough mode, we'd still need the `InpustStateMachineEngine`
+* With conpty passthrough mode, we'd still need the `InputStateMachineEngine`
   to convert these sequences into INPUT_RECORDs to translate back to VT
 * Wouldn't really expect client apps to ever _need_ this format, but it could
   always be possible for them to need it in the future.
@@ -396,9 +396,9 @@ Notably looking at
       scancodes for these are different for up and down. That would seem to
       imply we couldn't just shove the Win32 scancode in those bits
 
-### `DECPKM`, `DECSKMR`
-[DECPKM](https://vt100.net/docs/vt510-rm/DECKPM.html)
-[DECSKMR](https://vt100.net/docs/vt510-rm/DECSKMR.html)
+### `DECKPM`, `DECSMKR`
+[DECKPM](https://vt100.net/docs/vt510-rm/DECKPM.html)
+[DECSMKR](https://vt100.net/docs/vt510-rm/DECSMKR.html)
 [DECEKBD](https://vt100.net/docs/vt510-rm/DECEKBD.html)
 
 #### Pros:
@@ -421,7 +421,7 @@ Notably looking at
 
 #### Cons:
 * Doesn't differentiate between keydowns and keyups
-* Unsure who implements this - not extensivly investigated
+* Unsure who implements this - not extensively investigated
 
 
 ## Resources
@@ -434,7 +434,7 @@ Notably looking at
 * [iterm2 specific sequences](https://www.iterm2.com/documentation-escape-codes.html)
 * [terminal-wg draft list of OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10)
 
-<!-- Footnotes -->
+<_-- Footnotes -->
 [#530]: https://github.com/microsoft/terminal/issues/530
 [#879]: https://github.com/microsoft/terminal/issues/879
 [#1119]: https://github.com/microsoft/terminal/issues/1119
