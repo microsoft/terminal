@@ -1071,9 +1071,10 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 }
 
 // Method Description:
-// - TODO
+// - win32-input-mode: Enable sending full input records encoded as a string of
+//   characters to the client application.
 // Arguments:
-// - win32InputMode - TODO
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)

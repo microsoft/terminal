@@ -473,6 +473,8 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
+    // GH#4999 - If we're in win32-input mode, skip straight to doing that.
+    // Since this mode handles all types of key events, do nothing else.
     if (_win32InputMode)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
@@ -680,8 +682,25 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
     }
 }
 
+// Method Description:
+// - Synthesize a win32-input-mode sequence for the given keyevent.
+// Arguments:
+// - key: the KeyEvent to serialize.
+// Return Value:
+// - the formatted string representation of this key
 std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
 {
+    // Sequences are formatted as follows:
+    //
+    // ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs _
+    //
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+    //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+    //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+    //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+    //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     return fmt::format(L"\x1b[{};{};{};{};{};{}_",
                        key.IsKeyDown() ? 1 : 0,
                        key.GetRepeatCount(),

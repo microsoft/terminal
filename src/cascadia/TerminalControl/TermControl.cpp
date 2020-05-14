@@ -740,14 +740,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // mark event as handled and do nothing if...
-        //   - closing
-        //   - key modifier is pressed
-        // NOTE: for key combos like CTRL + C, two events are fired (one for CTRL, one for 'C'). We care about the 'C' event and then check for key modifiers below.
+        // Mark the event as handled and do nothing if we're closing, or the key
+        // was the Windows key.
+        //
+        // NOTE: for key combos like CTRL + C, two events are fired (one for
+        // CTRL, one for 'C'). Since it's possible the terminal is in
+        // win32-input-mode, then we'll send all these keystrokes to the
+        // terminal - it's smart enough to ignore the keys it doesn't care
+        // about.
         if (_closing ||
-            // e.OriginalKey() == VirtualKey::Control ||
-            // e.OriginalKey() == VirtualKey::Shift ||
-            // e.OriginalKey() == VirtualKey::Menu ||
             e.OriginalKey() == VirtualKey::LeftWindows ||
             e.OriginalKey() == VirtualKey::RightWindows)
 
@@ -761,10 +762,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
-        // Alt-Numpad# input will send us a character once the user releases Alt, so we should be ignoring the individual keydowns.
-        // The character will be sent through the TSFInputControl.
-        // See GH#1401 for more details
-        if (modifiers.IsAltPressed() && (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
+        // Alt-Numpad# input will send us a character once the user releases
+        // Alt, so we should be ignoring the individual keydowns. The character
+        // will be sent through the TSFInputControl. See GH#1401 for more
+        // details
+        if (modifiers.IsAltPressed() &&
+            (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
 
         {
             e.Handled(true);
@@ -774,6 +777,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // GH#2235: Terminal::Settings hasn't been modified to differentiate
         // between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
+        //
+        // GH#4999: Only process keybindings on the keydown. If we don't check
+        // this at all, we'll process the keybinding twice. If we only process
+        // keybindings on the keyUp, then we'll still sand the keydown to the
+        // connected terminal application, and something like ctrl+shift+T will
+        // emit a ^T to the pipe.
         if (!modifiers.IsAltGrPressed() && keyDown)
         {
             auto bindings = _settings.KeyBindings();

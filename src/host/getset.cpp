@@ -1222,6 +1222,13 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     return STATUS_SUCCESS;
 }
 
+// Function Description:
+// - A private API call which enables/disables sending full input records
+//   encoded as a string of characters to the client application.
+// Parameters:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return value:
+// - <none>
 void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

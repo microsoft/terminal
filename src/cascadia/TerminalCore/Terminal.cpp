@@ -410,6 +410,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - keyDown: If true, the key was pressed, otherwise the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
@@ -442,11 +443,6 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     {
         return false;
     }
-
-    // if (vkey == 0x43 && ch == UNICODE_ETX && keyDown)
-    // {
-    //     return false;
-    // }
 
     KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
@@ -508,14 +504,13 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     {
         vkey = _VirtualKeyFromCharacter(ch);
     }
-    // const bool isCtrlC = (vkey == 0x43 && ch == UNICODE_ETX);
 
-    // KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
-    // return _terminalInput->HandleKey(&keyEv);
-
+    // Unfortunately, the UI doesn't give us both a character down and a
+    // character up event, only a character received event. So fake sending both
+    // to the terminal input translator. Unless it's in win32-input-mode, it'll
+    // ignore the keyup.
     KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
     KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
-    // const auto handledDown = isCtrlC ? false : _terminalInput->HandleKey(&keyDown);
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;

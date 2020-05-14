@@ -792,7 +792,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             break;
         case OscActionCodes::WindowsTerminal:
             success = _DispatchWindowsCommand(windowsTerminalOpcode, windowsTerminalParams);
-            // TODO: TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWIN);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1754,6 +1754,25 @@ void OutputStateMachineEngine::_ClearLastChar() noexcept
     _lastPrintedChar = AsciiChars::NUL;
 }
 
+// Method Description:
+// - Gets the opcode and remaining parameters for a Windows-specifc OSC. These
+//   sequences are in the format
+//
+//    ^[ ] 1000 ; Op ; <string> ST
+//
+//   where:
+//      * Op is the opcode as a decimal number, used to identify which
+//        windows-specific function should be called.
+//      * <string> can be any string of characters to pass to the specified
+//        function.
+// Arguments:
+// - str: An OSC string to parse for an opcode.
+// - opcode: receives a number value identifying the function to call.
+// - remainingParams: receives the rest of the string following the opcode and
+//   the `;` that separates them
+// Return Value:
+// - true if we successfully found an opcode and ';' separating the remaining
+//   params from the opcode.
 bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
                                                     size_t& opcode,
                                                     std::wstring_view& remainingParams) const
@@ -1795,12 +1814,22 @@ bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
 
     return true;
 }
+
+// Method Description:
+// - Handles dispatching a windows-specific OSC function. The function to be
+//   exectued should be identified with `opcode`. Each individual function can
+//   determine how to deal with `remainingParams` on it's own.
+// Arguments:
+// - opcode: identifies the function to call.
+// - remainingParams: a string of characters used as parameters to the specified function.
+// Return Value:
+// - true if we successfully handled the given function, otherwise false.
 bool OutputStateMachineEngine::_DispatchWindowsCommand(const size_t opcode,
                                                        const std::wstring_view remainingParams) const
 {
     switch (opcode)
     {
-    case 1:
+    case WindowsOSCFunctions::SetWin32InputMode:
         if (remainingParams.size() == 1)
         {
             const auto wch = remainingParams.at(0);

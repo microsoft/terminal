@@ -471,11 +471,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             break;
         case CsiActionCodes::Win32KeyboardInput:
         {
-            // auto event = std::make_unique<KeyEvent>(key);
-            // auto dumb = key.ToInputRecord();
-            // std::deque<std::unique_ptr<IInputEvent>> input = IInputEvent::Create(gsl::make_span(&dumb, 1));
-            // success = _pDispatch->WriteInput(input);
-
+            // Use WriteCtrlKey here, because that will take extra steps to make
+            // sure things like Ctrl+C, Ctrl+Break are handled correctly.
             success = _pDispatch->WriteCtrlKey(key);
             break;
         }
