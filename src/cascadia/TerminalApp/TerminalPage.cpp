@@ -854,12 +854,16 @@ namespace winrt::TerminalApp::implementation
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-        else if (_isFullscreen)
+        else if (_isFullscreen || _rearranging)
         {
             // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
             // not Visible, it's _not_ going to raise a SelectionChanged event,
             // which is what we usually use to focus another tab. Instead, we'll
             // have to do it manually here.
+            //
+            // GH#5559 Similarly, we suppress _OnTabItemsChanged events during a
+            // rearrange, so if a tab is closed while we're rearranging tabs, do
+            // this manually.
             //
             // We can't use
             //   auto selectedIndex = _tabView.SelectedIndex();
@@ -884,6 +888,15 @@ namespace winrt::TerminalApp::implementation
             // work correctly.
             auto newSelectedTab{ _GetStrongTabImpl(newSelectedIndex) };
             _tabView.SelectedItem(newSelectedTab->GetTabViewItem());
+        }
+
+        // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
+        // out our state.
+        if (_rearranging)
+        {
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
         }
     }
 
