@@ -370,9 +370,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
-            Media::ImageBrush imageBrush{};
-            Media::Imaging::BitmapImage image(imageUri);
-            imageBrush.ImageSource(image);
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = _backgroundImageBrush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr ||
+                imageSource.UriSource() == nullptr ||
+                imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                _backgroundImageBrush.ImageSource(image);
+            }
 
             // Apply stretch, opacity and alignment settings
             switch (_settings.BackgroundImageStretchMode())
@@ -385,10 +398,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             case Settings::ImageStretchMode::Fill:
             case Settings::ImageStretchMode::Uniform:
             case Settings::ImageStretchMode::UniformToFill:
-                imageBrush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
-                imageBrush.AlignmentX(static_cast<Media::AlignmentX>(_settings.BackgroundImageHorizontalAlignment()));
-                imageBrush.AlignmentY(static_cast<Media::AlignmentY>(_settings.BackgroundImageVerticalAlignment()));
-                BackgroundImage().Background(imageBrush);
+                _backgroundImageBrush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
+                _backgroundImageBrush.AlignmentX(static_cast<Media::AlignmentX>(_settings.BackgroundImageHorizontalAlignment()));
+                _backgroundImageBrush.AlignmentY(static_cast<Media::AlignmentY>(_settings.BackgroundImageVerticalAlignment()));
+                BackgroundImage().Background(_backgroundImageBrush);
                 break;
             }
             BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
@@ -396,6 +409,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         else
         {
             BackgroundImage().Background(nullptr);
+            _backgroundImageBrush = {};
         }
     }
 
