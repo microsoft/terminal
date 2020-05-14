@@ -1285,20 +1285,21 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
     return true;
 }
 
+// Method Description:
+// - Attempt to parse our parameters into a win32-input-mode serialized KeyEvent.
+// Arguments:
+// - parameters: the list of numbers to parse into values for the KeyEvent.
+// - key: receives the values of the deserialized KeyEvent.
+// Return Value:
+// - true if we successfully parsed the key event.
 bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<size_t> parameters,
                                                 KeyEvent& key)
 {
-    // return fmt::format(L"\x1b[{};{};{};{};{};{}!",
-    //                    key.IsKeyDown() ? 1 : 0,
-    //                    key.GetRepeatCount(),
-    //                    key.GetVirtualKeyCode(),
-    //                    key.GetVirtualScanCode(),
-    //                    static_cast<int>(key.GetCharData()),
-    //                    key.GetActiveModifierKeys());
     if (parameters.size() != 6)
     {
         return false;
     }
+
     key = KeyEvent(static_cast<bool>(parameters.at(0)),
                    ::base::saturated_cast<WORD>(parameters.at(1)),
                    ::base::saturated_cast<WORD>(parameters.at(2)),

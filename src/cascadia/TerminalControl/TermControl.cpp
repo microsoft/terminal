@@ -821,7 +821,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers, const bool keyDown)
+    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    bool TermControl::_TrySendKeyEvent(const WORD vkey,
+                                       const WORD scanCode,
+                                       const ControlKeyStates modifiers,
+                                       const bool keyDown)
     {
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
