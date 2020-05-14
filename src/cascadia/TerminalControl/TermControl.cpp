@@ -404,7 +404,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 BackgroundImage().Background(_backgroundImageBrush);
                 break;
             }
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
+            _backgroundImageBrush.Opacity(_settings.BackgroundImageOpacity());
         }
         else
         {
