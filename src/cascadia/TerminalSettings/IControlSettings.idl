@@ -19,6 +19,15 @@ namespace Microsoft.Terminal.Settings
         Aliased
     };
 
+    enum ImageStretchMode
+    {
+        None = 0,
+        Fill,
+        Uniform,
+        UniformToFill,
+        Tile
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -46,7 +55,7 @@ namespace Microsoft.Terminal.Settings
 
         String BackgroundImage;
         Double BackgroundImageOpacity;
-        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+        ImageStretchMode BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 

@@ -71,6 +71,7 @@ static constexpr std::string_view ImageStretchModeNone{ "none" };
 static constexpr std::string_view ImageStretchModeFill{ "fill" };
 static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
 static constexpr std::string_view ImageStretchModeUniformTofill{ "uniformToFill" };
+static constexpr std::string_view ImageStretchModeTile{ "tile" };
 
 // Possible values for Image Alignment
 static constexpr std::string_view ImageAlignmentCenter{ "center" };
@@ -567,7 +568,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // - json: the Json::Value object to parse.
 // Return Value:
 // - An appropriate value from Windows.UI.Xaml.Media.Stretch
-Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
+ImageStretchMode Profile::_ConvertJsonToStretchMode(const Json::Value& json)
 {
     return Profile::ParseImageStretchMode(json.asString());
 }
@@ -1000,23 +1001,27 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The value from the settings.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
-Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
+ImageStretchMode Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
 {
     if (imageStretchMode == ImageStretchModeNone)
     {
-        return Media::Stretch::None;
+        return ImageStretchMode::None;
     }
     else if (imageStretchMode == ImageStretchModeFill)
     {
-        return Media::Stretch::Fill;
+        return ImageStretchMode::Fill;
     }
     else if (imageStretchMode == ImageStretchModeUniform)
     {
-        return Media::Stretch::Uniform;
+        return ImageStretchMode::Uniform;
+    }
+    else if (imageStretchMode == ImageStretchModeTile)
+    {
+        return ImageStretchMode::Tile;
     }
     else // Fall through to default behavior
     {
-        return Media::Stretch::UniformToFill;
+        return ImageStretchMode::UniformToFill;
     }
 }
 
@@ -1027,18 +1032,20 @@ Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretc
 // - imageStretchMode: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
+std::string_view Profile::SerializeImageStretchMode(const ImageStretchMode imageStretchMode)
 {
     switch (imageStretchMode)
     {
-    case Media::Stretch::None:
+    case ImageStretchMode::None:
         return ImageStretchModeNone;
-    case Media::Stretch::Fill:
+    case ImageStretchMode::Fill:
         return ImageStretchModeFill;
-    case Media::Stretch::Uniform:
+    case ImageStretchMode::Uniform:
         return ImageStretchModeUniform;
+    case ImageStretchMode::Tile:
+        return ImageStretchModeTile;
     default:
-    case Media::Stretch::UniformToFill:
+    case ImageStretchMode::UniformToFill:
         return ImageStretchModeUniformTofill;
     }
 }

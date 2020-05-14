@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t CursorColor() noexcept;
         void CursorColor(uint32_t value) noexcept;
         CursorStyle CursorShape() const noexcept;
-        void CursorShape(winrt::Microsoft::Terminal::Settings::CursorStyle const& value) noexcept;
+        void CursorShape(CursorStyle const& value) noexcept;
         uint32_t CursorHeight() noexcept;
         void CursorHeight(uint32_t value) noexcept;
         hstring WordDelimiters();
@@ -73,8 +73,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void BackgroundImage(hstring const& value);
         double BackgroundImageOpacity() noexcept;
         void BackgroundImageOpacity(double value) noexcept;
-        winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode() noexcept;
-        void BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value) noexcept;
+        ImageStretchMode BackgroundImageStretchMode() noexcept;
+        void BackgroundImageStretchMode(ImageStretchMode value) noexcept;
         winrt::Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() noexcept;
         void BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value) noexcept;
         winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() noexcept;
@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _padding;
         hstring _backgroundImage;
         double _backgroundImageOpacity;
-        winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
+        Settings::ImageStretchMode _backgroundImageStretchMode;
         winrt::Windows::UI::Xaml::HorizontalAlignment _backgroundImageHorizontalAlignment;
         winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
         bool _copyOnSelect;

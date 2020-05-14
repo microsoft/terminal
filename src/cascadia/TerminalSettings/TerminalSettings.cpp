@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontSize{ DEFAULT_FONT_SIZE },
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
-        _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
+        _backgroundImageStretchMode{ ImageStretchMode::UniformToFill },
         _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
         _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
@@ -278,12 +278,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         return _backgroundImageOpacity;
     }
 
-    winrt::Windows::UI::Xaml::Media::Stretch TerminalSettings::BackgroundImageStretchMode() noexcept
+    ImageStretchMode TerminalSettings::BackgroundImageStretchMode() noexcept
     {
         return _backgroundImageStretchMode;
     }
 
-    void TerminalSettings::BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value) noexcept
+    void TerminalSettings::BackgroundImageStretchMode(ImageStretchMode value) noexcept
     {
         _backgroundImageStretchMode = value;
     }

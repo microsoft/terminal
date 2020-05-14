@@ -110,9 +110,9 @@ private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
-    static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
-    static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
-    static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
+    static winrt::Microsoft::Terminal::Settings::ImageStretchMode ParseImageStretchMode(const std::string_view imageStretchMode);
+    static winrt::Microsoft::Terminal::Settings::ImageStretchMode _ConvertJsonToStretchMode(const Json::Value& json);
+    static std::string_view SerializeImageStretchMode(const winrt::Microsoft::Terminal::Settings::ImageStretchMode imageStretchMode);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
 
@@ -159,7 +159,7 @@ private:
 
     std::optional<std::wstring> _backgroundImage;
     std::optional<double> _backgroundImageOpacity;
-    std::optional<winrt::Windows::UI::Xaml::Media::Stretch> _backgroundImageStretchMode;
+    std::optional<winrt::Microsoft::Terminal::Settings::ImageStretchMode> _backgroundImageStretchMode;
     std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
     std::optional<std::wstring> _scrollbarState;

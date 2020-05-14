@@ -29,31 +29,30 @@
     -->
 
     <Grid x:Name="RootGrid">
-        <Image x:Name="BackgroundImage"
-               AutomationProperties.AccessibilityView="Raw" />
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0">
-                <SwapChainPanel x:Name="SwapChainPanel"
-                                SizeChanged="_SwapChainSizeChanged"
-                                CompositionScaleChanged="_SwapChainScaleChanged"
-                                PointerPressed="_PointerPressedHandler"
-                                PointerMoved="_PointerMovedHandler"
-                                PointerReleased="_PointerReleasedHandler" />
-
-                <!-- Putting this in a grid w/ the SwapChainPanel
-                ensures that it's always aligned w/ the scrollbar -->
-                <local:SearchBoxControl x:Name="SearchBox"
-                                        x:Load="False"
-                                        Visibility="Collapsed"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        Search="_Search"
-                                        Closed="_CloseSearchBoxControl" />
+            <Grid x:Name="BackgroundImage"
+                  Grid.Column="0">
+                  <SwapChainPanel x:Name="SwapChainPanel"
+                                  SizeChanged="_SwapChainSizeChanged"
+                                  CompositionScaleChanged="_SwapChainScaleChanged"
+                                  PointerPressed="_PointerPressedHandler"
+                                  PointerMoved="_PointerMovedHandler"
+                                  PointerReleased="_PointerReleasedHandler" />
+                  
+                  <!-- Putting this in a grid w/ the SwapChainPanel
+                  ensures that it's always aligned w/ the scrollbar -->
+                  <local:SearchBoxControl x:Name="SearchBox"
+                                          x:Load="False"
+                                          Visibility="Collapsed"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Search="_Search"
+                                          Closed="_CloseSearchBoxControl" />
             </Grid>
 
             <ScrollBar Grid.Column="1"

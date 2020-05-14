@@ -370,32 +370,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
+            Media::ImageBrush imageBrush{};
+            Media::Imaging::BitmapImage image(imageUri);
+            imageBrush.ImageSource(image);
 
             // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
+            switch (_settings.BackgroundImageStretchMode())
+            {
+            case Settings::ImageStretchMode::Tile:
+                THROW_HR(E_NOTIMPL);
+                break;
+            default:
+            case Settings::ImageStretchMode::None:
+            case Settings::ImageStretchMode::Fill:
+            case Settings::ImageStretchMode::Uniform:
+            case Settings::ImageStretchMode::UniformToFill:
+                imageBrush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
+                imageBrush.AlignmentX(static_cast<Media::AlignmentX>(_settings.BackgroundImageHorizontalAlignment()));
+                imageBrush.AlignmentY(static_cast<Media::AlignmentY>(_settings.BackgroundImageVerticalAlignment()));
+                BackgroundImage().Background(imageBrush);
+                break;
+            }
             BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
         }
         else
         {
-            BackgroundImage().Source(nullptr);
+            BackgroundImage().Background(nullptr);
         }
     }
 
