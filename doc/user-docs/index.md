@@ -87,4 +87,5 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
 2. Terminal zoom can be changed by holding <kbd>Ctrl</kbd> and scrolling with mouse.
 3. Background opacity can be changed by holding <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and scrolling with mouse. Note that acrylic transparency is limited by the OS only to focused windows.
 4. Open Windows Terminal in current directory by typing `wt -d .` in the address bar.
-5. Please add more Tips and Tricks.
+5. Pin the Windows Terminal to the taskbar. Now it can be launched using the Windows shortcut <kbd>Win</kbd>+<kbd>Number</kbd> (e.g. <kbd>Win</kbd>+<kbd>1</kbd> or any other number based on the position in the taskbar!). Press <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>Number</kbd> to always launch a new window.
+6. Please add more Tips and Tricks.
