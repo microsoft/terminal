@@ -4,3 +4,7 @@ www
 ecma
 rapidtables
 WCAG
+freedesktop
+ycombinator
+robertelder
+kovidgoyal
