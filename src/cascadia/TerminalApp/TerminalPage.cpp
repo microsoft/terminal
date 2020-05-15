@@ -349,7 +349,12 @@ namespace winrt::TerminalApp::implementation
                     const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-                    if (altPressed)
+                    // Check for DebugTap
+                    bool debugTap = _settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                    WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                    WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    if (altPressed && !debugTap)
                     {
                         page->_SplitPane(TerminalApp::SplitState::Automatic,
                                          TerminalApp::SplitType::Manual,
