@@ -22,6 +22,7 @@ Once the Settings UI is created, we can expect users to want to access the follo
 - Settings UI: keybindings page
 - settings.json
 - defaults.json
+These are provided as non-comprehensive examples of pages that might be in a future Settings UI. The rest of the doc assumes these are the pages in the Settings UI.
 
 
 ## Solution Design
@@ -33,8 +34,8 @@ Originally, #2557 was intended to allow for a keybinding arg to access defaults.
 Instead, what if we introduced a new `target` keybinding argument, that could be used as follows:
 | Keybinding Command | Behavior |
 |--|--|
-| `"command": { "action": "openSettings", "target": "jsonSettings" }`   | opens "settings.json" in your default text editor |
-| `"command": { "action": "openSettings", "target": "jsonDefaults" }`   | opens "defaults.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "settingsFile" }`   | opens "settings.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "defaultsFile" }`   | opens "defaults.json" in your default text editor |
 | `"command": { "action": "openSettings", "target": "uiSettings" }`     | opens the Settings UI |
 | `"command": { "action": "openSettings", "target": "uiGlobals" }`      | opens the Settings UI to the Globals page |
 | `"command": { "action": "openSettings", "target": "uiProfiles" }`     | opens the Settings UI to the Profiles page |
@@ -43,6 +44,16 @@ Instead, what if we introduced a new `target` keybinding argument, that could be
 If the Settings UI does not have a home page, `uiGlobals` and `uiSettings` will do the same thing.
 
 This provides the user with more flexibility to decide what settings page to open and how to access it.
+
+### Proposition 1.1: the minimal `target` arg
+If we wanted to remove the ability to open to a specific settings page, proposition 1 would look something like this:
+| Keybinding Command | Behavior |
+|--|--|
+| `"command": { "action": "openSettings", "target": "settingsFile" }`   | opens "settings.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "defaultsFile" }`   | opens "defaults.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "settingsUI" }`     | opens the Settings UI |
+
+
 
 ### Proposition 2: the `format` and `page` args
 Another approach would be to break up `target` into `format` and `page`.
