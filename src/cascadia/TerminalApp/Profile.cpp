@@ -551,17 +551,17 @@ void Profile::SetUseAcrylic(bool useAcrylic) noexcept
     _useAcrylic = useAcrylic;
 }
 
-void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
+void Profile::SetDefaultForeground(til::color defaultForeground) noexcept
 {
     _defaultForeground = defaultForeground;
 }
 
-void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
+void Profile::SetDefaultBackground(til::color defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
 }
 
-void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
+void Profile::SetSelectionBackground(til::color selectionBackground) noexcept
 {
     _selectionBackground = selectionBackground;
 }

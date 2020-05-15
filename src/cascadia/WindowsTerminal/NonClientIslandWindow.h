@@ -53,7 +53,7 @@ private:
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
-    COLORREF _backgroundBrushColor;
+    til::color _backgroundBrushColor;
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hwnd _dragBarWindow;
