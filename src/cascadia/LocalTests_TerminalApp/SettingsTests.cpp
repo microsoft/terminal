@@ -783,7 +783,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_IS_FALSE(profile0._guid.has_value());
 
-        const auto serialized0Profile = profile0.ToJson();
+        const auto serialized0Profile = profile0.GenerateStub();
         const auto profile1 = Profile::FromJson(serialized0Profile);
         VERIFY_IS_FALSE(profile0._guid.has_value());
         VERIFY_ARE_EQUAL(profile1._guid.has_value(), profile0._guid.has_value());
@@ -794,7 +794,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
 
-        const auto serialized1Profile = settings._profiles.at(0).ToJson();
+        const auto serialized1Profile = settings._profiles.at(0).GenerateStub();
 
         const auto profile2 = Profile::FromJson(serialized1Profile);
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());

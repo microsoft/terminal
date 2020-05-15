@@ -40,7 +40,6 @@ public:
 
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
 
-    Json::Value ToJson() const;
     static ColorScheme FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
