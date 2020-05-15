@@ -1081,17 +1081,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Close the currently focused tab. Focus will move to the left, if possible.
-    void TerminalPage::_CloseFocusedTabPane()
+    winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl()
     {
-        if (_panes.Size() > 1)
+        if (auto index{ _GetFocusedTabIndex() })
         {
-            _ShowCloseTabDialog();
-        }
-        else
-        {
-            _CloseFocusedTab();
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            if (focusedTab->GetLeafPaneCount() > 1)
+            {
+                _ShowCloseTabWarningDialog();
+            }
+            else
+            {
+                _CloseFocusedTab();
+            }
         }
     }
     
