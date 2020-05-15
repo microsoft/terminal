@@ -3,9 +3,6 @@
 
 #include "precomp.h"
 
-#include <winrt/Windows.Security.Cryptography.h>
-#include <winrt/Windows.Storage.Streams.h>
-
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
 
@@ -1762,10 +1759,10 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    bool& queryClipboard) const noexcept
 {
     bool success = false;
-    size_t pos = string.find(';');
+    const size_t pos = string.find(';');
     if (pos != std::wstring_view::npos)
     {
-        std::wstring_view substr = string.substr(pos + 1);
+        const std::wstring_view substr = string.substr(pos + 1);
         if (substr == L"?")
         {
             queryClipboard = true;

@@ -98,7 +98,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
-        bool SetClipboard(const std::wstring_view content) override; // OscSetClipboard
+        bool SetClipboard(const std::wstring_view content) noexcept override; // OscSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OscColorTable
