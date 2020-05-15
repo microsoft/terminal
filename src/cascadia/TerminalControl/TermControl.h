@@ -23,19 +23,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, int formats) :
             _text(text),
             _html(html),
-            _rtf(rtf) {}
+            _rtf(rtf),
+            _formats(formats) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
         hstring Rtf() { return _rtf; };
+        int Formats() { return _formats; };
 
     private:
         hstring _text;
         hstring _html;
         hstring _rtf;
+        int _formats;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -64,7 +67,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool collapseText = false);
+        bool CopySelectionToClipboard(bool singleLine = false, int formats = -1);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;

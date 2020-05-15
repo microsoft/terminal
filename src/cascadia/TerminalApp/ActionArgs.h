@@ -96,7 +96,7 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
-        GETSET_PROPERTY(short, CopyFormatting, static_cast<short>(CopyFormat::Plain) | static_cast<short>(CopyFormat::HTML) | static_cast<short>(CopyFormat::RTF));
+        GETSET_PROPERTY(int, CopyFormatting, -1);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
@@ -138,25 +138,25 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view PlainKey{ "plain" };
         static constexpr std::string_view HtmlKey{ "html" };
         static constexpr std::string_view RtfKey{ "rtf" };
-        static short _ParseCopyFormatting(const Json::Value& json) noexcept
+        static int _ParseCopyFormatting(const Json::Value& json) noexcept
         {
             if (json.isArray())
             {
-                short result = 0;
+                int result = 0;
                 for (const auto value : json)
                 {
                     const auto format = value.asString();
                     if (format == PlainKey)
                     {
-                        result |= static_cast<short>(CopyFormat::Plain);
+                        result |= static_cast<int>(CopyFormat::Plain);
                     }
                     else if (format == HtmlKey)
                     {
-                        result |= static_cast<short>(CopyFormat::HTML);
+                        result |= static_cast<int>(CopyFormat::HTML);
                     }
                     if (format == RtfKey)
                     {
-                        result |= static_cast<short>(CopyFormat::RTF);
+                        result |= static_cast<int>(CopyFormat::RTF);
                     }
                 }
                 return result;
@@ -165,18 +165,16 @@ namespace winrt::TerminalApp::implementation
             {
                 if (json.asBool())
                 {
-                    return static_cast<short>(CopyFormat::Plain) |
-                           static_cast<short>(CopyFormat::HTML) |
-                           static_cast<short>(CopyFormat::RTF);
+                    return static_cast<int>(CopyFormat::Plain) |
+                           static_cast<int>(CopyFormat::HTML) |
+                           static_cast<int>(CopyFormat::RTF);
                 }
                 else
                 {
-                    return static_cast<short>(CopyFormat::Plain);
+                    return static_cast<int>(CopyFormat::Plain);
                 }
             }
-            return static_cast<short>(CopyFormat::Plain) |
-                   static_cast<short>(CopyFormat::HTML) |
-                   static_cast<short>(CopyFormat::RTF);
+            return -1;
         }
     };
 

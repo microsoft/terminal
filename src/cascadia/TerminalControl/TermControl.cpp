@@ -2077,7 +2077,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool singleLine)
+    bool TermControl::CopySelectionToClipboard(bool singleLine, int formats)
     {
         if (_closing)
         {
@@ -2127,7 +2127,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // send data up for clipboard
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData));
+                                                                   winrt::to_hstring(rtfData),
+                                                                   formats);
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }

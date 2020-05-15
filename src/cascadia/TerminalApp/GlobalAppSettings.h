@@ -100,7 +100,7 @@ private:
 
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
 
-    static short _ParseCopyFormatting(const Json::Value& value) noexcept;
+    static int _ParseCopyFormatting(const Json::Value& value) noexcept;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;

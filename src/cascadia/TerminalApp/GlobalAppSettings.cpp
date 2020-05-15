@@ -334,25 +334,25 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
 // - json: The string value from the settings file to parse
 // Return Value:
 // - The serialized enum values which map to the bool or array of strings provided by the user
-short GlobalAppSettings::_ParseCopyFormatting(const Json::Value& json) noexcept
+int GlobalAppSettings::_ParseCopyFormatting(const Json::Value& json) noexcept
 {
     if (json.isArray())
     {
-        short result = 0;
+        int result = 0;
         for (const auto value : json)
         {
             const auto format = value.asString();
             if (format == PlainKey)
             {
-                result |= static_cast<short>(CopyFormat::Plain);
+                result |= static_cast<int>(CopyFormat::Plain);
             }
             else if (format == HtmlKey)
             {
-                result |= static_cast<short>(CopyFormat::HTML);
+                result |= static_cast<int>(CopyFormat::HTML);
             }
             if (format == RtfKey)
             {
-                result |= static_cast<short>(CopyFormat::RTF);
+                result |= static_cast<int>(CopyFormat::RTF);
             }
         }
         return result;
@@ -361,18 +361,18 @@ short GlobalAppSettings::_ParseCopyFormatting(const Json::Value& json) noexcept
     {
         if (json.asBool())
         {
-            return static_cast<short>(CopyFormat::Plain) |
-                   static_cast<short>(CopyFormat::HTML) |
-                   static_cast<short>(CopyFormat::RTF);
+            return static_cast<int>(CopyFormat::Plain) |
+                   static_cast<int>(CopyFormat::HTML) |
+                   static_cast<int>(CopyFormat::RTF);
         }
         else
         {
             return static_cast<short>(CopyFormat::Plain);
         }
     }
-    return static_cast<short>(CopyFormat::Plain) |
-           static_cast<short>(CopyFormat::HTML) |
-           static_cast<short>(CopyFormat::RTF);
+    return static_cast<int>(CopyFormat::Plain) |
+           static_cast<int>(CopyFormat::HTML) |
+           static_cast<int>(CopyFormat::RTF);
 }
 
 // Method Description:

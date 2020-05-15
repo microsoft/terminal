@@ -1444,15 +1444,21 @@ namespace winrt::TerminalApp::implementation
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-        auto copyFormats = _settings->GlobalSettings().GetCopyFormatting();
+        // The EventArgs.Formats() is an override for the global setting "copyFormatting"
+        //   if and only if it is not set
+        // Since 'Formats' cannot be represented as an optional in the EventArgs,
+        //   a sentinel value of -1 represents that "Formats" was not set.
+        auto copyFormats = copiedData.Formats() == -1 ?
+                                _settings->GlobalSettings().GetCopyFormatting() :
+                                copiedData.Formats();
 
-        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::Plain)))
+        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::Plain)))
         {
             // copy text to dataPack
             dataPack.SetText(copiedData.Text());
         }
 
-        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::HTML)))
+        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::HTML)))
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1462,7 +1468,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::RTF)))
+        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::RTF)))
         {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();
@@ -1536,10 +1542,10 @@ namespace winrt::TerminalApp::implementation
     // - singleLine: if enabled, copy contents as a single line of text
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine)
+    bool TerminalPage::_CopyText(const bool singleLine, const int formats)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(singleLine);
+        return control.CopySelectionToClipboard(singleLine, formats);
     }
 
     // Method Description:
