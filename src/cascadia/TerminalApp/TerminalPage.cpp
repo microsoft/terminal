@@ -1444,10 +1444,15 @@ namespace winrt::TerminalApp::implementation
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-        // copy text to dataPack
-        dataPack.SetText(copiedData.Text());
+        auto copyFormats = _settings->GlobalSettings().GetCopyFormatting();
 
-        if (_settings->GlobalSettings().CopyFormatting())
+        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::Plain)))
+        {
+            // copy text to dataPack
+            dataPack.SetText(copiedData.Text());
+        }
+
+        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::HTML)))
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1455,7 +1460,10 @@ namespace winrt::TerminalApp::implementation
             {
                 dataPack.SetHtmlFormat(htmlData);
             }
+        }
 
+        if (WI_IsFlagSet(copyFormats, static_cast<short>(CopyFormat::RTF)))
+        {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();
             if (!rtfData.empty())

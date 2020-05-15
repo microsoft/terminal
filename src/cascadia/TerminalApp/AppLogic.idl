@@ -14,6 +14,13 @@ namespace TerminalApp
         FullscreenMode,
     };
 
+    enum CopyFormat
+    {
+        Plain = 0x1,
+        HTML = 0x2,
+        RTF = 0x4
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener
     {
         AppLogic();
