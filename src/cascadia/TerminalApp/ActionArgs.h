@@ -96,8 +96,10 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
+        GETSET_PROPERTY(short, CopyFormatting, static_cast<short>(CopyFormat::Plain) | static_cast<short>(CopyFormat::HTML) | static_cast<short>(CopyFormat::RTF));
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
+        static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -105,7 +107,8 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SingleLine == _SingleLine;
+                return otherAsUs->_SingleLine == _SingleLine &&
+                       otherAsUs->_CopyFormatting == _CopyFormatting;
             }
             return false;
         };
@@ -117,7 +120,63 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SingleLine = singleLine.asBool();
             }
+            if (auto copyFormatting{ json[JsonKey(CopyFormattingKey)] })
+            {
+                args->_CopyFormatting = _ParseCopyFormatting(copyFormatting);
+            }
             return { *args, {} };
+        }
+
+        // Method Description:
+        // - Helper function for converting the user-specified copyFormatting value(s)
+        //   to a set of CopyFormat enum values
+        // Arguments:
+        // - json: The string value from the settings file to parse
+        // Return Value:
+        // - The serialized enum values which map to the bool or array of strings provided by the user
+        // copyFormatting values
+        static constexpr std::string_view PlainKey{ "plain" };
+        static constexpr std::string_view HtmlKey{ "html" };
+        static constexpr std::string_view RtfKey{ "rtf" };
+        static short _ParseCopyFormatting(const Json::Value& json) noexcept
+        {
+            if (json.isArray())
+            {
+                short result = 0;
+                for (const auto value : json)
+                {
+                    const auto format = value.asString();
+                    if (format == PlainKey)
+                    {
+                        result |= static_cast<short>(CopyFormat::Plain);
+                    }
+                    else if (format == HtmlKey)
+                    {
+                        result |= static_cast<short>(CopyFormat::HTML);
+                    }
+                    if (format == RtfKey)
+                    {
+                        result |= static_cast<short>(CopyFormat::RTF);
+                    }
+                }
+                return result;
+            }
+            else if (json.isBool())
+            {
+                if (json.asBool())
+                {
+                    return static_cast<short>(CopyFormat::Plain) |
+                           static_cast<short>(CopyFormat::HTML) |
+                           static_cast<short>(CopyFormat::RTF);
+                }
+                else
+                {
+                    return static_cast<short>(CopyFormat::Plain);
+                }
+            }
+            return static_cast<short>(CopyFormat::Plain) |
+                   static_cast<short>(CopyFormat::HTML) |
+                   static_cast<short>(CopyFormat::RTF);
         }
     };
 

@@ -328,12 +328,12 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
 }
 
 // Method Description:
-// - Helper function for converting the user-specified copyFormatting value
-//   to an array of CopyFormat enum values
+// - Helper function for converting the user-specified copyFormatting value(s)
+//   to a set of CopyFormat enum values
 // Arguments:
-// - launchModeString: The string value from the settings file to parse
+// - json: The string value from the settings file to parse
 // Return Value:
-// - The corresponding enum values which map to the bool or array of strings provided by the user
+// - The serialized enum values which map to the bool or array of strings provided by the user
 short GlobalAppSettings::_ParseCopyFormatting(const Json::Value& json) noexcept
 {
     if (json.isArray())
