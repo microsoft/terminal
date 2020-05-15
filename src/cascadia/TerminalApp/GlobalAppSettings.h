@@ -88,7 +88,7 @@ private:
     static void _ParseInitialPosition(const std::wstring& initialPosition,
                                       LaunchPosition& ret) noexcept;
 
-    static std::string _SerializeInitialPosition(const LaunchPosition& position) noexcept;,
+    static std::string _SerializeInitialPosition(const LaunchPosition& position) noexcept;
 
     static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
