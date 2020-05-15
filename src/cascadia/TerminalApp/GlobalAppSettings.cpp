@@ -250,40 +250,6 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 }
 
 // Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value GlobalAppSettings::ToJson() const
-{
-    Json::Value jsonObject;
-
-    jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
-    jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
-    jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-    jsonObject[JsonKey(RowsToScrollKey)] = _rowsToScroll;
-    jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
-    jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
-    jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
-    jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
-    jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
-    jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
-    jsonObject[JsonKey(CopyFormattingKey)] = _copyFormatting;
-    jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
-    jsonObject[JsonKey(ThemeKey)] = winrt::to_string(_SerializeTheme(_theme));
-    jsonObject[JsonKey(TabWidthModeKey)] = winrt::to_string(_SerializeTabWidthMode(_tabWidthMode));
-    jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
-    jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
-    jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
-    jsonObject[JsonKey(ForceFullRepaintRenderingKey)] = _forceFullRepaintRendering;
-    jsonObject[JsonKey(SoftwareRenderingKey)] = _softwareRendering;
-    jsonObject[JsonKey(DebugFeaturesKey)] = _debugFeatures;
-
-    return jsonObject;
-}
-
-// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a GlobalAppSettings object.

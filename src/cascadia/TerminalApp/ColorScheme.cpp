@@ -83,32 +83,6 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 }
 
 // Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value ColorScheme::ToJson() const
-{
-    Json::Value root;
-    root[JsonKey(NameKey)] = winrt::to_string(_schemeName);
-    root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground);
-    root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground);
-    root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground);
-    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
-
-    int i = 0;
-    for (const auto& colorName : TableColors)
-    {
-        auto& colorValue = _table.at(i);
-        root[JsonKey(colorName)] = Utils::ColorToHexString(colorValue);
-        i++;
-    }
-
-    return root;
-}
-
-// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a ColorScheme object.

@@ -54,8 +54,6 @@ public:
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
 
-    Json::Value ToJson() const;
-    Json::Value DiffToJson(const Profile& other) const;
     Json::Value GenerateStub() const;
     static Profile FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;
