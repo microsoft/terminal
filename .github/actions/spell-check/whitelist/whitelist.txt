@@ -710,6 +710,7 @@ Elems
 elif
 elseif
 emacs
+Emoji
 Emojis
 emptybox
 enabledelayedexpansion
@@ -729,6 +730,7 @@ ENUMLOGFONTEX
 enumranges
 envvar
 eol
+EPres
 ERASEBKGND
 errno
 errorlevel
@@ -2432,6 +2434,7 @@ uap
 uapadmin
 ubuntu
 ucd
+UCD
 uch
 UCHAR
 ucs
