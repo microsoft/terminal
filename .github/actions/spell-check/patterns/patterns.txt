@@ -9,5 +9,5 @@ Scro\&ll
 # selectionInput.cpp
  :\\windows\\syste\b
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
-hostSm\.ProcessString\(L"[^"]+"
+(?:hostSm|mach)\.ProcessString\(L"[^"]+"
 \b([A-Za-z])\1{3,}\b
