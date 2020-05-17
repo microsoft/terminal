@@ -729,6 +729,7 @@ ENUMLOGFONTEX
 enumranges
 envvar
 eol
+EPres
 ERASEBKGND
 errno
 errorlevel
@@ -1566,6 +1567,7 @@ NOTRACK
 NOTSUPPORTED
 notypeopt
 nouicompat
+nounihan
 NOUPDATE
 NOWAIT
 NOYIELD

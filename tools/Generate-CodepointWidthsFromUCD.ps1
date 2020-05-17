@@ -169,6 +169,6 @@ ForEach($_ in $ranges) {
         # We only vend comments when we aren't packing tightly
         $comment = " // {0}" -f $_.Comment
     }
-    "        UnicodeRange{{ 0x{0:x}, 0x{1:x}, CodepointWidth::{2} }},{3}" -f $_.Start, $_.End, $_.Width, $sstr
+"        UnicodeRange{{ 0x{0:x}, 0x{1:x}, CodepointWidth::{2} }},{3}" -f $_.Start, $_.End, $_.Width, $comment
 }
 "    };"
