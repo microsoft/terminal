@@ -32,6 +32,10 @@ Windows Terminal has implemented a rich set of command-line options in part as r
 Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
 default shell is displayed (default shortcut: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
 
+## Multiple Panes Within a Tab
+
+Additional shells (panes) within the active tab can be created, sharing the area previously taken up by the active pane. On the creation of a pane, the active pane's area will be split into two equal parts, spawning a new session using the active pane's profile by default. Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>+</kbd> to create a vertical split, and <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> to create a horizontal one. Additionally, a default example keybinding of <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> is included in the configuration with the `auto` split type; an alternative to `vertical` or `horizontal` which always splits the longest axis.
+
 ## Running a Different Shell
 
 Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed. For more information, see [the installation guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
