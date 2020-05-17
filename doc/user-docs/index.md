@@ -36,6 +36,11 @@ default shell is displayed (default shortcut: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<
 
 Additional shells (panes) within the active tab can be created, sharing the area previously taken up by the active pane. On the creation of a pane, the active pane's area will be split into two equal parts, spawning a new session using the active pane's profile by default. Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>+</kbd> to create a vertical split, and <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> to create a horizontal one. Additionally, a default example keybinding of <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> is included in the configuration with the `auto` split type; an alternative to `vertical` or `horizontal` which always splits the longest axis.
 
+Focus can be moved from the active pane to an adjacent one with <kbd>Alt</kbd> in combination with the arrow keys, e.g. <kbd>Alt</kbd>+<kbd>Up</kbd> to move focus up. The size of the active pane can be altered using <kbd>Alt</kbd>+<kbd>Shift</kbd> in combination with the arrow keys, e.g. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>, expanding or contracting based on context.
+
+<!-- Whether a pane expands or contracts is intuitive but difficult to describe. Here are 3 options I _think_ are all equivelant (and fit my tests): A binary-tree-esq hirarchy exists of pane creation order and panes are expanded only in the direction of adjacent panes of equal or greater depth in such a tree; panes are expanded preferentially to the right and down, unless the edge in that direction is shared by a pane with a longer corresponding edge; a pane is expanded such that the change to total perimeter length is minimised. -->
+<!-- I've the above paragraph commented because I'm not sure which, if any, options are accurate, but mostly: it's prolix. -->
+
 ## Running a Different Shell
 
 Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed. For more information, see [the installation guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
