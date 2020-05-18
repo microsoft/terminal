@@ -45,7 +45,7 @@ To customize the shell list, see the _Configuring Windows Terminal_ section belo
 
 ## Starting a new PowerShell tab with admin privilege
 
-There is no current plan to support this feature for security reasons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
+There is no current plan to support this feature for security reasons. See issue [#632](https://github.com/microsoft/terminal/issues/632)
 
 ## Selecting and Copying Text in Windows Terminal
 
