@@ -55,7 +55,7 @@ public:
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
-    bool ResizePane(const winrt::TerminalApp::Direction& direction);
+    bool ResizePane(const winrt::TerminalApp::Direction& direction, const float amount = 0.05f);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     bool CanSplit(winrt::TerminalApp::SplitState splitType);
@@ -114,7 +114,7 @@ private:
     void _ApplySplitDefinitions();
     void _UpdateBorders();
 
-    bool _Resize(const winrt::TerminalApp::Direction& direction);
+    bool _Resize(const winrt::TerminalApp::Direction& direction, float amount = 0.05f);
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
@@ -135,8 +135,6 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
-
-    std::optional<winrt::TerminalApp::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

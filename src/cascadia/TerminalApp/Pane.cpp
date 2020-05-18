@@ -114,14 +114,13 @@ void Pane::Relayout()
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const Direction& direction)
+bool Pane::_Resize(const Direction& direction, float amount)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    float amount = .05f;
     if (direction == Direction::Right || direction == Direction::Down)
     {
         amount = -amount;
@@ -153,9 +152,10 @@ bool Pane::_Resize(const Direction& direction)
 //   couldn't handle the resize.
 // Arguments:
 // - direction: The direction to move the separator in.
+// - amount: The percentage to resize by (between 0 and 1)
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const Direction& direction)
+bool Pane::ResizePane(const Direction& direction, const float amount)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -172,7 +172,7 @@ bool Pane::ResizePane(const Direction& direction)
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
-        return _Resize(direction);
+        return _Resize(direction, amount);
     }
 
     // If neither of our children were the focused leaf, then recurse into
@@ -186,12 +186,12 @@ bool Pane::ResizePane(const Direction& direction)
     // either.
     if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
     {
-        return _firstChild->ResizePane(direction) || _Resize(direction);
+        return _firstChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
     {
-        return _secondChild->ResizePane(direction) || _Resize(direction);
+        return _secondChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     return false;
@@ -867,31 +867,94 @@ void Pane::_UpdateBorders()
 // - <none>
 void Pane::_ApplySplitDefinitions()
 {
-    if (_splitState == SplitState::Vertical)
+    if (_splitState == SplitState::Vertical || _splitState == SplitState::Horizontal)
     {
-        Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
+        if (_splitState == SplitState::Vertical)
+        {
+            Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
+            Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
 
-        _firstChild->_borders = _borders | Borders::Right;
-        _secondChild->_borders = _borders | Borders::Left;
-        _borders = Borders::None;
+            _firstChild->_borders = _borders | Borders::Right;
+            _secondChild->_borders = _borders | Borders::Left;
+            _borders = Borders::None;
 
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
-    }
-    else if (_splitState == SplitState::Horizontal)
-    {
-        Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
+            _UpdateBorders();
+            _firstChild->_UpdateBorders();
+            _secondChild->_UpdateBorders();
 
-        _firstChild->_borders = _borders | Borders::Bottom;
-        _secondChild->_borders = _borders | Borders::Top;
-        _borders = Borders::None;
+            // Only allow x-axis resizing
+            _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
+            Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
 
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+            _firstChild->_borders = _borders | Borders::Bottom;
+            _secondChild->_borders = _borders | Borders::Top;
+            _borders = Borders::None;
+
+            _UpdateBorders();
+            _firstChild->_UpdateBorders();
+            _secondChild->_UpdateBorders();
+
+            // Only allow y-axis resizing
+            _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
+        }
+
+        // define mouse resize for this split
+        _root.ManipulationDelta([this](auto&&, auto& args) {
+            auto delta = args.Delta().Translation;
+
+            // Decide on direction based on delta
+            Direction dir = Direction::None;
+            if (_splitState == SplitState::Vertical)
+            {
+                if (delta.X < 0)
+                {
+                    dir = Direction::Left;
+                }
+                else if (delta.X > 0)
+                {
+                    dir = Direction::Right;
+                }
+            }
+            else if (_splitState == SplitState::Horizontal)
+            {
+                if (delta.Y < 0)
+                {
+                    dir = Direction::Up;
+                }
+                else if (delta.Y > 0)
+                {
+                    dir = Direction::Down;
+                }
+            }
+
+            // Resize in the given direction
+            if (dir != Direction::None)
+            {
+                // turn delta into a percentage
+                base::ClampedNumeric<float> amount;
+                base::ClampedNumeric<float> actualDimension;
+                if (dir == Direction::Left || dir == Direction::Right)
+                {
+                    amount = delta.X;
+                    // TODO CARLOS: something is wrong here
+                    actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
+                }
+                else if (dir == Direction::Up || dir == Direction::Down)
+                {
+                    amount = delta.Y;
+                    // TODO CARLOS: something is wrong here
+                    actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
+                }
+
+                amount /= actualDimension;
+
+                ResizePane(dir, amount.Abs());
+            }
+        });
     }
 }
 
