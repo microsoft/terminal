@@ -239,8 +239,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
-    // if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
-    // {
+
     // Find nearest monitor.
     HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
@@ -293,7 +292,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
     adjustedWidth = islandWidth + nonClientSize.cx;
     adjustedHeight = islandHeight + nonClientSize.cy;
-    // }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };

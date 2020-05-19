@@ -192,16 +192,8 @@ namespace winrt::TerminalApp::implementation
             if (_appArgs.GetStartupActions().empty())
             {
                 _OpenNewTab(nullptr);
-                if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
-                {
-                    // if (_tabs.Size() == 1)
-                    // {
-                    //     _UpdatedSelectedTab(0);
-                    // }
-                    _ToggleFullscreen();
-                }
-                _startupState = StartupState::Initialized;
-                _InitializedHandlers(*this, nullptr);
+
+                _CompleteInitialization();
             }
             else
             {
@@ -235,17 +227,30 @@ namespace winrt::TerminalApp::implementation
                 _actionDispatch->DoAction(action);
             }
 
-            if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
-            {
-                // if (_tabs.Size() == 1)
-                // {
-                //     _UpdatedSelectedTab(0);
-                // }
-                _ToggleFullscreen();
-            }
-            _startupState = StartupState::Initialized;
-            _InitializedHandlers(*this, nullptr);
+            _CompleteInitialization();
         }
+    }
+
+    // Method Description:
+    // - Perform and steps that need to be done once our initial state is all
+    //   set up. This includes entering fullscreen mode and firing our
+    //   Initialized event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_CompleteInitialization()
+    {
+        // GH#288 - When we finish initialization, if the user wanted us
+        // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        // that the window size is _first_ set up as something sensible, so
+        // leaving fullscreen returns to a reasonable size.
+        if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+        {
+            _ToggleFullscreen();
+        }
+        _startupState = StartupState::Initialized;
+        _InitializedHandlers(*this, nullptr);
     }
 
     // Method Description:
