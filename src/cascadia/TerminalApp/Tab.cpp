@@ -604,8 +604,9 @@ namespace winrt::TerminalApp::implementation
         // Make the margin (0, -8, 0, -8), to counteract the padding that
         // the TabViewItem has.
         //
-        // TODO: Probably should look this value up from the TabViewItem's
-        // resources using TabViewItemHeaderPadding
+        // This is maybe a bit fragile, as the actual value might not be exactly
+        // (0, 8, 0, 8), but using TabViewItemHeaderPadding to look up the real
+        // value at runtime didn't work. So this is good enough for now.
         Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
         tabTextBox.Margin(negativeMargins);
 
