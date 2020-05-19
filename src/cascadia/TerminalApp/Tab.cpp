@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Set the text on the TabViewItem for this tab, and bubbles the new title
-    //   value up to anyone listenting for changes to our title. Callers can
+    //   value up to anyone listening for changes to our title. Callers can
     //   listen for the title change with a PropertyChanged even handler.
     // Arguments:
     // - <none>
