@@ -1400,8 +1400,9 @@ void ScreenBufferTests::VtNewlinePastViewport()
 
     // Set the attributes that will be used to initialize new rows.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -1476,8 +1477,9 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
 
     // Set the attributes that will be used to initialize new rows.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -2408,9 +2410,9 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(false, attrB.IsLegacy());
     VERIFY_ARE_EQUAL(false, attrC.IsLegacy());
 
-    VERIFY_ARE_EQUAL(false, WI_IsFlagSet(attrA.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
-    VERIFY_ARE_EQUAL(true, WI_IsFlagSet(attrB.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
-    VERIFY_ARE_EQUAL(false, WI_IsFlagSet(attrC.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
+    VERIFY_ARE_EQUAL(false, attrA.IsReverseVideo());
+    VERIFY_ARE_EQUAL(true, attrB.IsReverseVideo());
+    VERIFY_ARE_EQUAL(false, attrC.IsReverseVideo());
 
     VERIFY_ARE_EQUAL(expectedDefaults, attrA);
     VERIFY_ARE_EQUAL(expectedReversed, attrB);
@@ -3389,8 +3391,9 @@ void ScreenBufferTests::ScrollOperations()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3509,8 +3512,9 @@ void ScreenBufferTests::InsertChars()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3668,8 +3672,9 @@ void ScreenBufferTests::DeleteChars()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3899,8 +3904,9 @@ void ScreenBufferTests::EraseTests()
 
     // Set the attributes that will be used to fill the erased area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
-    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderline(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -5189,33 +5195,32 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     auto& cursor = tbi.GetCursor();
 
     TextAttribute expectedAttr{ si.GetAttributes() };
-    ExtendedAttributes expectedExtendedAttrs{ ExtendedAttributes::Normal };
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
     if (bold)
     {
-        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Bold);
+        expectedAttr.SetBold(true);
         vtSeq += L"\x1b[1m";
     }
     if (italics)
     {
-        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Italics);
+        expectedAttr.SetItalics(true);
         vtSeq += L"\x1b[3m";
     }
     if (blink)
     {
-        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Blinking);
+        expectedAttr.SetBlinking(true);
         vtSeq += L"\x1b[5m";
     }
     if (invisible)
     {
-        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Invisible);
+        expectedAttr.SetInvisible(true);
         vtSeq += L"\x1b[8m";
     }
     if (crossedOut)
     {
-        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::CrossedOut);
+        expectedAttr.SetCrossedOut(true);
         vtSeq += L"\x1b[9m";
     }
 
@@ -5227,7 +5232,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     else if (setForegroundType == Use16Color)
     {
-        expectedAttr.SetIndexedAttributes({ static_cast<BYTE>(2) }, std::nullopt);
+        expectedAttr.SetIndexedForeground(2);
         vtSeq += L"\x1b[32m";
     }
     else if (setForegroundType == Use256Color)
@@ -5249,7 +5254,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     else if (setBackgroundType == Use16Color)
     {
-        expectedAttr.SetIndexedAttributes(std::nullopt, { static_cast<BYTE>(2) });
+        expectedAttr.SetIndexedBackground(2);
         vtSeq += L"\x1b[42m";
     }
     else if (setBackgroundType == Use256Color)
@@ -5262,8 +5267,6 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
         expectedAttr.SetBackground(RGB(1, 2, 3));
         vtSeq += L"\x1b[48;2;1;2;3m";
     }
-
-    expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
 
     // Helper lambda to write a VT sequence, then an "X", then check that the
     // attributes of the "X" match what we think they should be.
@@ -5303,36 +5306,31 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     // state matched.
     if (bold)
     {
-        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Bold);
-        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        expectedAttr.SetBold(false);
         vtSeq = L"\x1b[22m";
         validate(expectedAttr, vtSeq);
     }
     if (italics)
     {
-        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Italics);
-        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        expectedAttr.SetItalics(false);
         vtSeq = L"\x1b[23m";
         validate(expectedAttr, vtSeq);
     }
     if (blink)
     {
-        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Blinking);
-        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        expectedAttr.SetBlinking(false);
         vtSeq = L"\x1b[25m";
         validate(expectedAttr, vtSeq);
     }
     if (invisible)
     {
-        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Invisible);
-        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        expectedAttr.SetInvisible(false);
         vtSeq = L"\x1b[28m";
         validate(expectedAttr, vtSeq);
     }
     if (crossedOut)
     {
-        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::CrossedOut);
-        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        expectedAttr.SetCrossedOut(false);
         vtSeq = L"\x1b[29m";
         validate(expectedAttr, vtSeq);
     }
@@ -5787,7 +5785,8 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     // Set the initial attributes.
     auto initialAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
-    initialAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    initialAttr.SetReverseVideo(true);
+    initialAttr.SetUnderline(true);
     si.SetAttributes(initialAttr);
 
     // Set some margins.
@@ -5818,7 +5817,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     Log::Comment(L"Meta/rendition attributes should be reset.");
     auto expectedAttr = initialAttr;
-    expectedAttr.SetMetaAttributes(0);
+    expectedAttr.SetStandardErase();
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 }
 

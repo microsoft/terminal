@@ -47,7 +47,7 @@ ColorScheme::ColorScheme() :
 {
 }
 
-ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor) :
+ColorScheme::ColorScheme(std::wstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor) :
     _schemeName{ name },
     _table{},
     _defaultForeground{ defaultFg },
@@ -70,42 +70,16 @@ ColorScheme::~ColorScheme()
 // - <none>
 void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 {
-    terminalSettings.DefaultForeground(_defaultForeground);
-    terminalSettings.DefaultBackground(_defaultBackground);
-    terminalSettings.SelectionBackground(_selectionBackground);
-    terminalSettings.CursorColor(_cursorColor);
+    terminalSettings.DefaultForeground(static_cast<COLORREF>(_defaultForeground));
+    terminalSettings.DefaultBackground(static_cast<COLORREF>(_defaultBackground));
+    terminalSettings.SelectionBackground(static_cast<COLORREF>(_selectionBackground));
+    terminalSettings.CursorColor(static_cast<COLORREF>(_cursorColor));
 
     auto const tableCount = gsl::narrow_cast<int>(_table.size());
     for (int i = 0; i < tableCount; i++)
     {
-        terminalSettings.SetColorTableEntry(i, _table[i]);
+        terminalSettings.SetColorTableEntry(i, static_cast<COLORREF>(_table[i]));
     }
-}
-
-// Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value ColorScheme::ToJson() const
-{
-    Json::Value root;
-    root[JsonKey(NameKey)] = winrt::to_string(_schemeName);
-    root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground);
-    root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground);
-    root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground);
-    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
-
-    int i = 0;
-    for (const auto& colorName : TableColors)
-    {
-        auto& colorValue = _table.at(i);
-        root[JsonKey(colorName)] = Utils::ColorToHexString(colorValue);
-        i++;
-    }
-
-    return root;
 }
 
 // Method Description:
@@ -193,27 +167,27 @@ std::wstring_view ColorScheme::GetName() const noexcept
     return { _schemeName };
 }
 
-std::array<COLORREF, COLOR_TABLE_SIZE>& ColorScheme::GetTable() noexcept
+std::array<til::color, COLOR_TABLE_SIZE>& ColorScheme::GetTable() noexcept
 {
     return _table;
 }
 
-COLORREF ColorScheme::GetForeground() const noexcept
+til::color ColorScheme::GetForeground() const noexcept
 {
     return _defaultForeground;
 }
 
-COLORREF ColorScheme::GetBackground() const noexcept
+til::color ColorScheme::GetBackground() const noexcept
 {
     return _defaultBackground;
 }
 
-COLORREF ColorScheme::GetSelectionBackground() const noexcept
+til::color ColorScheme::GetSelectionBackground() const noexcept
 {
     return _selectionBackground;
 }
 
-COLORREF ColorScheme::GetCursorColor() const noexcept
+til::color ColorScheme::GetCursorColor() const noexcept
 {
     return _cursorColor;
 }

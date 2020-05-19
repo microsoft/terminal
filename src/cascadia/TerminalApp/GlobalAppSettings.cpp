@@ -42,6 +42,9 @@ static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
+static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
+static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
+
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 #ifdef _DEBUG
@@ -70,6 +73,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _copyOnSelect{ false },
     _copyFormatting{ false },
     _launchMode{ LaunchMode::DefaultMode },
+    _forceFullRepaintRendering{ false },
+    _softwareRendering{ false },
     _debugFeatures{ debugFeaturesDefault }
 {
 }
@@ -187,6 +192,16 @@ void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) n
     _confirmCloseAllTabs = confirmCloseAllTabs;
 }
 
+bool GlobalAppSettings::GetForceFullRepaintRendering() noexcept
+{
+    return _forceFullRepaintRendering;
+}
+
+bool GlobalAppSettings::GetSoftwareRendering() noexcept
+{
+    return _softwareRendering;
+}
+
 bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
 {
     return _debugFeatures;
@@ -230,38 +245,8 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
-}
-
-// Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value GlobalAppSettings::ToJson() const
-{
-    Json::Value jsonObject;
-
-    jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
-    jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
-    jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-    jsonObject[JsonKey(RowsToScrollKey)] = _rowsToScroll;
-    jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
-    jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
-    jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
-    jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
-    jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
-    jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
-    jsonObject[JsonKey(CopyFormattingKey)] = _copyFormatting;
-    jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
-    jsonObject[JsonKey(ThemeKey)] = winrt::to_string(_SerializeTheme(_theme));
-    jsonObject[JsonKey(TabWidthModeKey)] = winrt::to_string(_SerializeTabWidthMode(_tabWidthMode));
-    jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
-    jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
-    jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
-    jsonObject[JsonKey(DebugFeaturesKey)] = _debugFeatures;
-
-    return jsonObject;
+    settings.ForceFullRepaintRendering(_forceFullRepaintRendering);
+    settings.SoftwareRendering(_softwareRendering);
 }
 
 // Method Description:
@@ -349,6 +334,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+
+    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);
+
+    JsonUtils::GetBool(json, SoftwareRenderingKey, _softwareRendering);
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);

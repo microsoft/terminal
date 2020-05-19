@@ -51,15 +51,15 @@ GUID Utils::CreateGuid()
 // - color: the COLORREF to create the string for
 // Return Value:
 // - a string representation of the color
-std::string Utils::ColorToHexString(const COLORREF color)
+std::string Utils::ColorToHexString(const til::color color)
 {
     std::stringstream ss;
     ss << "#" << std::uppercase << std::setfill('0') << std::hex;
     // Force the compiler to promote from byte to int. Without it, the
     // stringstream will try to write the components as chars
-    ss << std::setw(2) << static_cast<int>(GetRValue(color));
-    ss << std::setw(2) << static_cast<int>(GetGValue(color));
-    ss << std::setw(2) << static_cast<int>(GetBValue(color));
+    ss << std::setw(2) << static_cast<int>(color.r);
+    ss << std::setw(2) << static_cast<int>(color.g);
+    ss << std::setw(2) << static_cast<int>(color.b);
     return ss.str();
 }
 
@@ -70,7 +70,7 @@ std::string Utils::ColorToHexString(const COLORREF color)
 // Return Value:
 // - A COLORREF if the string could successfully be parsed. If the string is not
 //      the correct format, throws E_INVALIDARG
-COLORREF Utils::ColorFromHexString(const std::string str)
+til::color Utils::ColorFromHexString(const std::string_view str)
 {
     THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
@@ -96,7 +96,7 @@ COLORREF Utils::ColorFromHexString(const std::string str)
     const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
     const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
 
-    return RGB(r, g, b);
+    return til::color{ r, g, b };
 }
 
 // Routine Description:

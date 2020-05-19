@@ -206,9 +206,10 @@ void Window::_UpdateSystemMetrics() const
 
     const bool useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
-    DxEngine* pDxEngine = nullptr;
+    [[maybe_unused]] DxEngine* pDxEngine = nullptr;
     try
     {
+#ifndef __INSIDE_WINDOWS
         if (useDx)
         {
             pDxEngine = new DxEngine();
@@ -221,6 +222,7 @@ void Window::_UpdateSystemMetrics() const
             g.pRender->AddRenderEngine(pDxEngine);
         }
         else
+#endif
         {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -308,6 +310,7 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
+#ifndef __INSIDE_WINDOWS
             if (useDx)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
@@ -318,6 +321,7 @@ void Window::_UpdateSystemMetrics() const
                 }
             }
             else
+#endif
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }

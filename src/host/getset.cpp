@@ -919,123 +919,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
-void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
-                                     const WORD Attribute,
-                                     const bool fForeground,
-                                     const bool fBackground,
-                                     const bool fMeta)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    const TextAttribute OldAttributes = buffer.GetAttributes();
-    TextAttribute NewAttributes = OldAttributes;
-
-    NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
-
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
-                                      const bool fForeground,
-                                      const bool fBackground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    if (fForeground)
-    {
-        NewAttributes.SetDefaultForeground();
-    }
-    if (fBackground)
-    {
-        NewAttributes.SetDefaultBackground();
-    }
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                              const int iXtermTableEntry,
-                                              const bool fIsForeground)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-
-    COLORREF rgbColor;
-    if (iXtermTableEntry < COLOR_TABLE_SIZE)
-    {
-        //Convert the xterm index to the win index
-        WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
-
-        rgbColor = gci.GetColorTableEntry(iWinEntry);
-    }
-    else
-    {
-        rgbColor = gci.GetColorTableEntry(iXtermTableEntry);
-    }
-
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                            const COLORREF rgbColor,
-                                            const bool fIsForeground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    if (bolded)
-    {
-        attrs.Embolden();
-    }
-    else
-    {
-        attrs.Debolden();
-    }
-    buffer.SetAttributes(attrs);
-}
-
-// Method Description:
-// - Retrieves the active ExtendedAttributes (italic, underline, etc.) of the
-//   given screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to get the extended attrs from.
-// Return Value:
-// - the currently active ExtendedAttributes.
-ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    return attrs.GetExtendedAttributes();
-}
-
-// Method Description:
-// - Sets the active ExtendedAttributes (italic, underline, etc.) of the given
-//   screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to set the extended attrs for.
-// - extendedAttrs: The new ExtendedAttributes to use
-// Return Value:
-// - <none>
-void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
-                                           const ExtendedAttributes extendedAttrs)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    attrs.SetExtendedAttributes(extendedAttrs);
-    buffer.SetAttributes(attrs);
-}
-
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
@@ -1659,23 +1542,6 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
-// - A private API call to get only the default color attributes of the screen buffer.
-// - This is used as a performance optimization by the VT adapter in SGR (Set Graphics Rendition) instead
-//   of calling for this information through the public API GetConsoleScreenBufferInfoEx which returns a lot
-//   of extra unnecessary data and takes a lot of extra processing time.
-// Parameters
-// - screenInfo - The screen buffer to retrieve default color attributes information from
-// - attributes - Space that will receive color attributes data
-// Return Value:
-// - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo, WORD& attributes)
-{
-    attributes = screenInfo.GetActiveBuffer().GetAttributes().GetLegacyAttributes();
-
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
 // - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only
 //      want to redraw the screen buffer that requested the repaint, and
@@ -2108,6 +1974,28 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 }
 
 // Method Description:
+// - Retrieve the color table value at the specified index.
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept
+{
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Method Description:
 // - Sets the color table value in index to the color specified in value.
 //      Can be used to set the 256-color table as well as the 16-color table.
 // Arguments:
@@ -2118,7 +2006,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Notes:
 //  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
@@ -2126,7 +2014,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(index, value);
+        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.

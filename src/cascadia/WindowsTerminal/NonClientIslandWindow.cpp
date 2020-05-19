@@ -20,7 +20,7 @@ static constexpr int AutohideTaskbarSize = 2;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
-    _backgroundBrushColor{ RGB(0, 0, 0) },
+    _backgroundBrushColor{ 0, 0, 0 },
     _theme{ requestedTheme },
     _isMaximized{ false }
 {
@@ -735,13 +735,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
         const auto backgroundBrush = _titlebar.Background();
         const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const auto backgroundColor = backgroundSolidBrush.Color();
-        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+        const til::color backgroundColor = backgroundSolidBrush.Color();
 
-        if (!_backgroundBrush || color != _backgroundBrushColor)
+        if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
             // Create brush for titlebar color.
-            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(backgroundColor));
         }
 
         // To hide the original title bar, we have to paint on top of it with
