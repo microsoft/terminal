@@ -570,91 +570,110 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            Controls::TextBox tabTextBox;
-            tabTextBox.Text(tabText);
+            _ConstructTabRenameBox(tabText);
+        }
+    }
 
-            // The TextBox has a MinHeight already set by default, which is
-            // larger than we want. Get rid of it.
-            tabTextBox.MinHeight(0);
-            // Also get rid of the internal padding on the text box, between the
-            // border and the text content, on the top and bottom. This will
-            // help the box fit within the bounds of the tab.
-            Thickness internalPadding = ThicknessHelper::FromLengths(4, 0, 4, 0);
-            tabTextBox.Padding(internalPadding);
+    // Method Description:
+    // - Create a new TextBox to use as the control for renaming the tab text.
+    //   If the text box is already created, then this will do nothing, and
+    //   leave the current box unmodified.
+    // Arguments:
+    // - tabText: This should be the text to initialize the rename text box with.
+    // Return Value:
+    // - <none>
+    void Tab::_ConstructTabRenameBox(const winrt::hstring& tabText)
+    {
+        if (_tabViewItem.Header().try_as<Controls::TextBox>())
+        {
+            return;
+        }
 
-            // Make the margin (0, -8, 0, -8), to counteract the padding that
-            // the TabViewItem has.
-            //
-            // TODO: Probably should look this value up from the TabViewItem's
-            // resources using TabViewItemHeaderPadding
-            Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
-            tabTextBox.Margin(negativeMargins);
+        Controls::TextBox tabTextBox;
+        tabTextBox.Text(tabText);
 
-            // Set up some event handlers on the text box. We need three of them:
-            // * A LostFocus event, so when the TextBox loses focus, we'll
-            //   remove it and return to just the text on the tab.
-            // * A KeyUp event, to be able to submit the tab text on Enter or
-            //   dismiss the text box on Escape
-            // * A LayoutUpdated event, so that we can auto-focus the text box
-            //   when it's added to the tree.
-            auto weakThis{ get_weak() };
+        // The TextBox has a MinHeight already set by default, which is
+        // larger than we want. Get rid of it.
+        tabTextBox.MinHeight(0);
+        // Also get rid of the internal padding on the text box, between the
+        // border and the text content, on the top and bottom. This will
+        // help the box fit within the bounds of the tab.
+        Thickness internalPadding = ThicknessHelper::FromLengths(4, 0, 4, 0);
+        tabTextBox.Padding(internalPadding);
 
-            // When the text box loses focus, update the tab title of our tab.
-            // - If there are any contents in the box, we'll use that value as
-            //   the new "runtime text", which will override any text set by the
-            //   application.
-            // - If the text box is empty, we'll reset the "runtime text", and
-            //   return to using the active terminal's title.
-            tabTextBox.LostFocus([weakThis](const IInspectable& sender, auto&&) {
-                auto tab{ weakThis.get() };
-                auto textBox{ sender.try_as<Controls::TextBox>() };
-                if (tab && textBox)
+        // Make the margin (0, -8, 0, -8), to counteract the padding that
+        // the TabViewItem has.
+        //
+        // TODO: Probably should look this value up from the TabViewItem's
+        // resources using TabViewItemHeaderPadding
+        Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
+        tabTextBox.Margin(negativeMargins);
+
+        // Set up some event handlers on the text box. We need three of them:
+        // * A LostFocus event, so when the TextBox loses focus, we'll
+        //   remove it and return to just the text on the tab.
+        // * A KeyUp event, to be able to submit the tab text on Enter or
+        //   dismiss the text box on Escape
+        // * A LayoutUpdated event, so that we can auto-focus the text box
+        //   when it's added to the tree.
+        auto weakThis{ get_weak() };
+
+        // When the text box loses focus, update the tab title of our tab.
+        // - If there are any contents in the box, we'll use that value as
+        //   the new "runtime text", which will override any text set by the
+        //   application.
+        // - If the text box is empty, we'll reset the "runtime text", and
+        //   return to using the active terminal's title.
+        tabTextBox.LostFocus([weakThis](const IInspectable& sender, auto&&) {
+            auto tab{ weakThis.get() };
+            auto textBox{ sender.try_as<Controls::TextBox>() };
+            if (tab && textBox)
+            {
+                tab->_runtimeTabText = textBox.Text();
+                tab->_inRename = false;
+                tab->_UpdateTitle();
+            }
+        });
+
+        // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
+        // remove the TextBox from the UI tree, then the following KeyUp
+        // will bubble to the NewTabButton, which we don't want to have
+        // happen.
+        tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
+            auto tab{ weakThis.get() };
+            auto textBox{ sender.try_as<Controls::TextBox>() };
+            if (tab && textBox)
+            {
+                switch (e.OriginalKey())
                 {
+                case VirtualKey::Enter:
                     tab->_runtimeTabText = textBox.Text();
+                    [[fallthrough]];
+                case VirtualKey::Escape:
+                    e.Handled(true);
+                    textBox.Text(tab->_runtimeTabText);
                     tab->_inRename = false;
                     tab->_UpdateTitle();
+                    break;
                 }
-            });
+            }
+        });
 
-            // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
-            // remove the TextBox from the UI tree, then the following KeyUp
-            // will bubble to the NewTabButton, which we don't want to have
-            // happen.
-            tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
-                auto tab{ weakThis.get() };
-                auto textBox{ sender.try_as<Controls::TextBox>() };
-                if (tab && textBox)
-                {
-                    switch (e.OriginalKey())
-                    {
-                    case VirtualKey::Enter:
-                        tab->_runtimeTabText = textBox.Text();
-                        [[fallthrough]];
-                    case VirtualKey::Escape:
-                        e.Handled(true);
-                        tab->_inRename = false;
-                        tab->_UpdateTitle();
-                        break;
-                    }
-                }
-            });
+        // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
+        _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
+            // Curiously, the sender for this event is null, so we have to
+            // get the TextBox from the Tab's Header().
+            auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
+            if (textBox)
+            {
+                textBox.SelectAll();
+                textBox.Focus(FocusState::Programmatic);
+            }
+            // Only let this succeed once.
+            _tabRenameBoxLayoutUpdatedRevoker.revoke();
+        });
 
-            // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
-            _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
-                // Curiously, the sender for this event is null, so we have to
-                // get the TextBox from the Tab's Header().
-                auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
-                if (textBox)
-                {
-                    textBox.SelectAll();
-                    textBox.Focus(FocusState::Programmatic);
-                }
-                // Only let this succeed once.
-                _tabRenameBoxLayoutUpdatedRevoker.revoke();
-            });
-
-            _tabViewItem.Header(tabTextBox);
-        }
+        _tabViewItem.Header(tabTextBox);
     }
 
     // Method Description:

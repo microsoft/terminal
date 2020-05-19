@@ -921,11 +921,12 @@ namespace winrt::TerminalApp::implementation
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
+        auto weakTab{ hostingTab.get_weak() };
+        auto weakThis{ get_weak() };
         // PropertyChanged is the generic mechanism by which the Tab
         // communicates changes to any of its observable properties, including
         // the Title
-        hostingTab.PropertyChanged([weakTab{ hostingTab.get_weak() },
-                                    weakThis{ get_weak() }](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+        hostingTab.PropertyChanged([weakTab, weakThis](auto&&, const WUX::Data::PropertyChangedEventArgs& args) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
             if (page && tab)
@@ -938,7 +939,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         // react on color changed events
-        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -948,7 +949,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+        hostingTab.ColorCleared([weakTab, weakThis]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 

@@ -94,6 +94,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateTabHeader();
         winrt::fire_and_forget _UpdateTitle();
+        void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
