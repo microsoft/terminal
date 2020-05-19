@@ -130,6 +130,11 @@ namespace winrt::TerminalApp::implementation
             _setTitleBarContentHandlers(*this, _tabRow);
         }
 
+        // if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+        // {
+        //     _isFullscreen = true;
+        // }
+
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
@@ -187,6 +192,14 @@ namespace winrt::TerminalApp::implementation
             if (_appArgs.GetStartupActions().empty())
             {
                 _OpenNewTab(nullptr);
+                if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+                {
+                    // if (_tabs.Size() == 1)
+                    // {
+                    //     _UpdatedSelectedTab(0);
+                    // }
+                    _ToggleFullscreen();
+                }
                 _startupState = StartupState::Initialized;
                 _InitializedHandlers(*this, nullptr);
             }
@@ -220,6 +233,15 @@ namespace winrt::TerminalApp::implementation
             for (const auto& action : _appArgs.GetStartupActions())
             {
                 _actionDispatch->DoAction(action);
+            }
+
+            if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+            {
+                // if (_tabs.Size() == 1)
+                // {
+                //     _UpdatedSelectedTab(0);
+                // }
+                _ToggleFullscreen();
             }
             _startupState = StartupState::Initialized;
             _InitializedHandlers(*this, nullptr);

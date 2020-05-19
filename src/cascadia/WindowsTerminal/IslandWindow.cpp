@@ -143,7 +143,13 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     }
 
     ShowWindow(_window.get(), nCmdShow);
+
     UpdateWindow(_window.get());
+
+    // if (launchMode == winrt::TerminalApp::LaunchMode::FullscreenMode)
+    // {
+    //     _SetIsFullscreen(true);
+    // }
 }
 
 // Method Description:
