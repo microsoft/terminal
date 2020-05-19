@@ -231,24 +231,23 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Set the text on the TabViewItem for this tab.
+    // - Set the text on the TabViewItem for this tab, and bubbles the new title
+    //   value up to anyone listenting for changes to our title. Callers can
+    //   listen for the title change with a PropertyChanged even handler.
     // Arguments:
-    // - text: The new text string to use as the Header for our TabViewItem
+    // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
+    winrt::fire_and_forget Tab::_UpdateTitle()
     {
-        // Copy the hstring, so we don't capture a dead reference
-        winrt::hstring textCopy{ text };
         auto weakThis{ get_weak() };
-
         co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
-
         if (auto tab{ weakThis.get() })
         {
             // Bubble our current tab text to anyone who's listening for changes.
             Title(GetActiveTitle());
 
+            // Update the UI to reflect the changed
             _UpdateTabHeader();
         }
     }
@@ -398,7 +397,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
-                tab->SetTabText(tab->GetActiveTitle());
+                tab->_UpdateTitle();
             }
         });
 
@@ -433,7 +432,7 @@ namespace winrt::TerminalApp::implementation
         _activePane->SetActive();
 
         // Update our own title text to match the newly-active pane.
-        SetTabText(GetActiveTitle());
+        _UpdateTitle();
 
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
@@ -613,7 +612,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     tab->_runtimeTabText = textBox.Text();
                     tab->_inRename = false;
-                    tab->_UpdateTabHeader();
+                    tab->_UpdateTitle();
                 }
             });
 
@@ -634,7 +633,7 @@ namespace winrt::TerminalApp::implementation
                     case VirtualKey::Escape:
                         e.Handled(true);
                         tab->_inRename = false;
-                        tab->_UpdateTabHeader();
+                        tab->_UpdateTitle();
                         break;
                     }
                 }
