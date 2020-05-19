@@ -127,6 +127,11 @@ namespace winrt::TerminalApp::implementation
             return { *args, {} };
         }
 
+        // accepted copyFormatting values
+        static constexpr std::string_view PlainKey{ "plain" };
+        static constexpr std::string_view HtmlKey{ "html" };
+        static constexpr std::string_view RtfKey{ "rtf" };
+
         // Method Description:
         // - Helper function for converting the user-specified copyFormatting value(s)
         //   to a set of CopyFormat enum values
@@ -134,10 +139,7 @@ namespace winrt::TerminalApp::implementation
         // - json: The string value from the settings file to parse
         // Return Value:
         // - The serialized enum values which map to the bool or array of strings provided by the user
-        // copyFormatting values
-        static constexpr std::string_view PlainKey{ "plain" };
-        static constexpr std::string_view HtmlKey{ "html" };
-        static constexpr std::string_view RtfKey{ "rtf" };
+        // - -1 represents parsing failure or null. Behavior fallsback to the global setting.
         static int _ParseCopyFormatting(const Json::Value& json) noexcept
         {
             if (json.isArray())
