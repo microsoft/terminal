@@ -1449,8 +1449,8 @@ namespace winrt::TerminalApp::implementation
         // Since 'Formats' cannot be represented as an optional in the EventArgs,
         //   a sentinel value of -1 represents that "Formats" was not set.
         auto copyFormats = copiedData.Formats() == -1 ?
-                                _settings->GlobalSettings().GetCopyFormatting() :
-                                copiedData.Formats();
+                               _settings->GlobalSettings().GetCopyFormatting() :
+                               copiedData.Formats();
 
         if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::Plain)))
         {
