@@ -350,7 +350,7 @@ namespace winrt::TerminalApp::implementation
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
                     // Check for DebugTap
-                    bool debugTap = _settings->GlobalSettings().DebugFeaturesEnabled() &&
+                    bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
                                     WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                                     WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
