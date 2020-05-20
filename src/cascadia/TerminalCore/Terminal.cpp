@@ -803,38 +803,34 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
+        // scrollToOutput:
+        //   - true: we want the visible viewport to show the new output
+        //   - false: keep the visible viewport in its current position
+        bool scrollToOutput = true;
+
         // modify scrollOffset based on SnapOnOutput value
         if (_snapOnOutput == SnapOnOutput::Always)
         {
-            _scrollOffset = 0;
+            scrollToOutput = true;
         }
         else if (_snapOnOutput == SnapOnOutput::Never)
         {
-            _scrollOffset += scrollAmount;
+            scrollToOutput = false;
         }
 
+        // IMPORTANT: we need to use && below. This allows multiple of these flags to be set
         if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::NoSelection))
         {
-            if (IsSelectionActive())
-            {
-                _scrollOffset += scrollAmount;
-            }
-            else
-            {
-                _scrollOffset = 0;
-            }
+            // scroll if no selection is active
+            scrollToOutput = scrollToOutput && !IsSelectionActive();
         }
         if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::AtBottom))
         {
-            if (!viewportAtBottom)
-            {
-                _scrollOffset += scrollAmount;
-            }
-            else
-            {
-                _scrollOffset = 0;
-            }
+            scrollToOutput = scrollToOutput && viewportAtBottom;
         }
+
+        // use scrollToOutput to enforce SnapOnInput
+        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount;
 
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)

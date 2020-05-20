@@ -114,6 +114,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _snapOnOutput{ DEFAULT_SNAP_ON_OUTPUT },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
