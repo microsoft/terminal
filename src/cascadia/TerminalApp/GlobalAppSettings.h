@@ -85,7 +85,7 @@ private:
     static std::wstring_view _SerializeTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode) noexcept;
     static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
-    static void _ParseInitialPosition(const std::wstring& initialPosition,
+    static void _ParseInitialPosition(const std::string& initialPosition,
                                       LaunchPosition& ret) noexcept;
 
     static std::string _SerializeInitialPosition(const LaunchPosition& position) noexcept;
