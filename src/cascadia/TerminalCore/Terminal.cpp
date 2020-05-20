@@ -44,6 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
+    _snapOnOutput{ SnapOnOutput::NoSelection | SnapOnOutput::AtBottom },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -140,6 +141,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _snapOnInput = settings.SnapOnInput();
+
+    _snapOnOutput = settings.SnapOnOutput();
 
     _wordDelimiters = settings.WordDelimiters();
 
@@ -772,10 +775,19 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         notifyScroll = true;
     }
 
+    // detect if viewport was already at the bottom of the scroll history
+    // This is used for SnapOnOutput::AtBottom
+    bool viewportAtBottom = false;
+    if (cursor.GetPosition().Y <= _mutableViewport.BottomInclusive() - _scrollOffset)
+    {
+        viewportAtBottom = true;
+    }
+
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
     const COORD cursorPosAfter = cursor.GetPosition();
+    const auto scrollAmount = std::max(0, cursorPosAfter.Y - _mutableViewport.BottomInclusive());
 
     // Move the viewport down if the cursor moved below the viewport.
     if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
@@ -791,11 +803,45 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
+        // modify scrollOffset based on SnapOnOutput value
+        if (_snapOnOutput == SnapOnOutput::Always)
+        {
+            _scrollOffset = 0;
+        }
+        else if (_snapOnOutput == SnapOnOutput::Never)
+        {
+            _scrollOffset += scrollAmount;
+        }
+
+        if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::NoSelection))
+        {
+            if (IsSelectionActive())
+            {
+                _scrollOffset += scrollAmount;
+            }
+            else
+            {
+                _scrollOffset = 0;
+            }
+        }
+        if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::AtBottom))
+        {
+            if (!viewportAtBottom)
+            {
+                _scrollOffset += scrollAmount;
+            }
+            else
+            {
+                _scrollOffset = 0;
+            }
+        }
+
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
         COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
+
         _NotifyScrollEvent();
     }
 

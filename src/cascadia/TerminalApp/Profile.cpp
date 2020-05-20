@@ -28,6 +28,7 @@ static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view SnapOnOutputKey{ "snapOnOutput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
@@ -87,6 +88,12 @@ static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 static constexpr std::wstring_view AntialiasingModeGrayscale{ L"grayscale" };
 static constexpr std::wstring_view AntialiasingModeCleartype{ L"cleartype" };
 static constexpr std::wstring_view AntialiasingModeAliased{ L"aliased" };
+
+// Possible values for TextAntialiasingMode
+static constexpr std::string_view SnapOnOutputNever{ "never" };
+static constexpr std::string_view SnapOnOutputNoSelection{ "noSelection" };
+static constexpr std::string_view SnapOnOutputAtBottom{ "atBottom" };
+static constexpr std::string_view SnapOnOutputAlways{ "always" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -170,6 +177,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.SnapOnOutput(_snapOnOutput);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -455,6 +463,12 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetInt(json, HistorySizeKey, _historySize);
 
     JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
+
+    if (json.isMember(JsonKey(SnapOnOutputKey)))
+    {
+        auto snapOnOutput{ json[JsonKey(SnapOnOutputKey)] };
+        _snapOnOutput = ParseSnapOnOutput(snapOnOutput);
+    }
 
     JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
 
@@ -792,6 +806,77 @@ std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeO
     default:
         return CloseOnExitGraceful;
     }
+}
+
+int32_t Profile::ParseSnapOnOutput(const Json::Value& json)
+{
+    const int32_t defaultValue = static_cast<int32_t>(SnapOnOutputFlag::AtBottom) | static_cast<int32_t>(SnapOnOutputFlag::NoSelection);
+
+    if (json.isString())
+    {
+        auto snapOnOutput = json.asString();
+        if (snapOnOutput == SnapOnOutputNever)
+        {
+            return static_cast<int32_t>(SnapOnOutputFlag::Never);
+        }
+        else if (snapOnOutput == SnapOnOutputNoSelection)
+        {
+            return static_cast<int32_t>(SnapOnOutputFlag::NoSelection);
+        }
+        else if (snapOnOutput == SnapOnOutputAtBottom)
+        {
+            return static_cast<int32_t>(SnapOnOutputFlag::AtBottom);
+        }
+        else if (snapOnOutput == SnapOnOutputAlways)
+        {
+            return static_cast<int32_t>(SnapOnOutputFlag::Always);
+        }
+    }
+    else if (json.isArray())
+    {
+        int32_t result = 0;
+        for (const auto value : json)
+        {
+            const auto snapOnOutput = value.asString();
+            if (snapOnOutput == SnapOnOutputNever || snapOnOutput == SnapOnOutputAlways)
+            {
+                // these values are not accepted
+                // this is considered a failure to parse and we fallback to the default value instead
+                return defaultValue;
+            }
+            else if (snapOnOutput == SnapOnOutputNoSelection)
+            {
+                result |= static_cast<int32_t>(SnapOnOutputFlag::NoSelection);
+            }
+            else if (snapOnOutput == SnapOnOutputAtBottom)
+            {
+                result |= static_cast<int32_t>(SnapOnOutputFlag::AtBottom);
+            }
+        }
+    }
+
+    return defaultValue;
+}
+
+std::string_view Profile::_SerializeSnapOnOutput(SnapOnOutputFlag snapOnOutput)
+{
+    if (snapOnOutput == SnapOnOutputFlag::Never)
+    {
+        return SnapOnOutputNever;
+    }
+    else if (snapOnOutput == SnapOnOutputFlag::Always)
+    {
+        return SnapOnOutputAlways;
+    }
+    else if (snapOnOutput == SnapOnOutputFlag::AtBottom)
+    {
+        return SnapOnOutputAtBottom;
+    }
+    else if (snapOnOutput == SnapOnOutputFlag::NoSelection)
+    {
+        return SnapOnOutputNoSelection;
+    }
+    return "";
 }
 
 // Method Description:
