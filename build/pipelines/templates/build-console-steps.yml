@@ -74,7 +74,7 @@ steps:
   inputs:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
-    arguments: -MatchPattern '*Local*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -SearchPath '.\$(RationalizedBuildPlatform)\$(Configuration)\TestHostApp'
+    arguments: -MatchPattern '*Local*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -SearchPath '.\$(RationalizedBuildPlatform)\$(BuildConfiguration)\TestHostApp'
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
