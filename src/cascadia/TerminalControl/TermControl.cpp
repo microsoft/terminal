@@ -253,7 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _InitializeBackgroundBrush();
 
-        uint32_t bg = _settings.DefaultBackground();
+        COLORREF bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -274,7 +274,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
@@ -405,37 +405,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const uint32_t color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
     {
+        til::color newBgColor{ color };
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto R = GetRValue(color);
-            const auto G = GetGValue(color);
-            const auto B = GetBValue(color);
-
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = R;
-            bgColor.G = G;
-            bgColor.B = B;
-            bgColor.A = 255;
-
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
             {
-                acrylic.FallbackColor(bgColor);
-                acrylic.TintColor(bgColor);
+                acrylic.FallbackColor(newBgColor);
+                acrylic.TintColor(newBgColor);
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
-                solidColor.Color(bgColor);
+                solidColor.Color(newBgColor);
             }
 
             // Set the default background as transparent to prevent the
             // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(ARGB(0, R, G, B));
+            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -1309,7 +1301,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    uint32_t bg = _settings.DefaultBackground();
+                    COLORREF bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
