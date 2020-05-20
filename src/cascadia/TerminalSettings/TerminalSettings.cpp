@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
+        _fontWeight{ DEFAULT_FONT_WEIGHT },
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
         _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
@@ -256,6 +257,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::FontSize(int32_t value) noexcept
     {
         _fontSize = value;
+    }
+
+    winrt::Windows::UI::Text::FontWeight TerminalSettings::FontWeight() noexcept
+    {
+        return _fontWeight;
+    }
+
+    void TerminalSettings::FontWeight(winrt::Windows::UI::Text::FontWeight value) noexcept
+    {
+        _fontWeight = value;
     }
 
     void TerminalSettings::BackgroundImage(hstring const& value)
