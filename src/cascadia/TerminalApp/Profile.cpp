@@ -146,7 +146,6 @@ Profile::Profile(const std::optional<GUID>& guid) :
     winrt::Windows::UI::Text::FontWeight weight;
     weight.Weight = DEFAULT_FONT_WEIGHT;
     _fontWeight = weight;
-
 }
 
 Profile::~Profile()
