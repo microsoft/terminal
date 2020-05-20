@@ -7,8 +7,8 @@ Param(
 )
 
 $testdlls = Get-ChildItem -Path $SearchPath -Recurse -Filter $MatchPattern
-$testdlls
-# &".\bin\$Platform\$Configuration\te.exe" $testdlls.FullName
+
+&".\bin\$Platform\$Configuration\te.exe" $testdlls.FullName
 
 if ($lastexitcode -Ne 0) { Exit $lastexitcode }
 
