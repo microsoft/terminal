@@ -88,7 +88,7 @@ This will allow you to simplify the above snippet as follows:
 }
 ```
 
-
+A list of default key bindings is available [here](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/defaults.json#L204).
 
 ### Unbinding keys
 
@@ -160,7 +160,7 @@ Example settings include
 
 The profile GUID is used to reference the default profile in the global settings.
 
-The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch)
+The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch).
 
 ### Hiding a profile
 

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "TerminalPage.h"
+#include "TerminalPropsheetPage.h"
 #include "OptionsPage.h" // For InitializeCursorSize
 #include "ColorControl.h"
 #include <functional>

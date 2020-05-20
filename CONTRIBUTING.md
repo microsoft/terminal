@@ -125,7 +125,7 @@ Team members will be happy to help review specs and guide them to completion.
 
 ### Help Wanted
 
-Once the team have approved an issue/spec, development can proceed. If no developers are immediately available, the spec can be parked ready for a developer to get started. Parked specs' issues will be labeled "Help Wanted". To find a list of development opportunities waiting for developer involvement, visit the Issues and filter on [the Help-Wanted label](https://github.com/microsoft/terminal/labels/Help-Wanted).
+Once the team have approved an issue/spec, development can proceed. If no developers are immediately available, the spec can be parked ready for a developer to get started. Parked specs' issues will be labeled "Help Wanted". To find a list of development opportunities waiting for developer involvement, visit the Issues and filter on [the Help-Wanted label](https://github.com/microsoft/terminal/labels/Help%20Wanted).
 
 ---
 
@@ -155,4 +155,4 @@ Once your code has been reviewed and approved by the requisite number of team me
 
 ## Thank you
 
-Thank you in advance for your contribution! Now, [what's next on the list](https://github.com/microsoft/terminal/labels/Help-Wanted)? 😜
+Thank you in advance for your contribution! Now, [what's next on the list](https://github.com/microsoft/terminal/labels/Help%20Wanted)? 😜
