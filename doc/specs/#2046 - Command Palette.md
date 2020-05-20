@@ -1,11 +1,9 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2020-04-30
+last updated: 2020-05-20
 issue id: 2046
 ---
-
-_This is a draft spec. It should be considered a work-in-progress._
 
 # Command Palette
 
@@ -486,6 +484,7 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
 * [#1571] is a request for customizing the "new tab dropdown" menu. When we get
   to discussing that design, we should consider also enabling users to add
   commands from their list of commands to that menu as well.
+  - This is included in the spec in [#5888].
 * I think it would be cool if there was a small timeout as the user was typing
   in commandline mode before we try to auto-parse their commandline, to check
   for errors. Might be useful to help sanity check users. We can always parse
@@ -501,6 +500,20 @@ The `{ "key": "resourceName" }` solution proposed here was also touched on in
 * Perhaps users will want the ability to configure which side of the window the
   palette appears on?
   - This might fit in better with [#3327].
+* [#3753] is a pull request that covers the addition of an "Advanced Tab
+  Switcher". In an application like VsCode, their advanced tab switcher UI is
+  similar to their command palette UI. It might make sense that the user could
+  use the command palette UI to also navigate to active tabs or panes within the
+  terminal, by control name. We've already outlined how the Command Palette
+  could operate in "Action Mode" or "Commandline Mode" - we could also add
+  "Navigate Mode" on `@`, for navigating between tabs or panes.
+  - The tab switcher could probably largely re-use the command palette UI, but
+    maybe hide the input box by default.
+* We should make sure to add a setting in the future that lets the user opt-in
+  to showing most-recently used commands _first_ in the search order, and
+  possibly even pre-populating the search box with whatever their last entry
+  was.
+  - I'm thinking these are two _separate_ settings.
 
 ### Nested Commands
 
@@ -675,3 +688,5 @@ Spec: Introduce a mini-specification for localized resource use from JSON [#5280
 [#5280]: https://github.com/microsoft/terminal/pull/5280
 [#4472]: https://github.com/microsoft/terminal/issues/4472
 [#3327]: https://github.com/microsoft/terminal/issues/3327
+[#3753]: https://github.com/microsoft/terminal/pulls/3753
+[#5888]: https://github.com/microsoft/terminal/pulls/5888
