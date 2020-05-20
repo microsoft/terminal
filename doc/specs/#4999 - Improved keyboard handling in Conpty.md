@@ -61,13 +61,18 @@ The goal we're trying to achieve is communicating `INPUT_RECORD`s from the
 terminal to the client app via conpty. This isn't supposed to be a \*nix
 terminal compatible communication, it's supposed to be fundamentally Win32-like.
 
-
 Keys that we definitely need to support, that don't have unique VT sequences:
 * <kbd>Ctrl+Space</kbd> ([#879], [#2865])
 * <kbd>Shift+Enter</kbd> ([#530])
 * <kbd>Ctrl+Break</kbd> ([#1119])
 * <kbd>Ctrl+Alt+?</kbd> ([#3079])
 * <kbd>Ctrl</kbd>, <kbd>Alt</kbd>, <kbd>Shift</kbd>,  (without another keydown/up) ([#3608], [#4334], [#4446])
+
+> 👉 NOTE: There are actually 5 types of events that can all be encoded as an
+> `INPUT_RECORD`. This spec primarily focuses on the encoding of
+> `KEY_EVENT_RECORD`s. It is left as a Future Consideration to add support for
+> the other types of `INPUT_RECORD` as other sequences, which could be done
+> trivially similarly to the following proposal.
 
 ## Solution Design
 
