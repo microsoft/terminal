@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-5-13
+last updated: 2020-5-20
 issue id: 1571
 ---
 
@@ -126,3 +126,13 @@ confusing.
   items manually, to override the value from the profile
     - This would be especially useful for the `"folder"` or aforementioned
       `"action"` menu entry
+* [#2046] covers the addition of a "Command Palette", and commands that the user
+  can run using that UI. Once that's added, we should make sure that we also
+  support either:
+  - A `ShortcutAction` for running a `command` from the command palette
+  - A `{ "type": "command", "command": "<command name>" }` type of entry, that
+    automatically uses the command's name and icon for the entry in the entry.
+
+
+<!-- Footnotes -->
+[#2046]: https://github.com/microsoft/terminal/issues/2046
