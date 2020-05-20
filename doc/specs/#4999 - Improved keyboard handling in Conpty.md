@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-05-07
-last updated: 2020-05-13
+last updated: 2020-05-20
 issue id: 4999
 ---
 
@@ -302,7 +302,8 @@ _(no change expected)_
 * We could also hypothetically use this same mechanism to send Win32-like mouse
   events to conpty, since similar to VT keyboard events, VT mouse events don't
   have the same fidelity that Win32 mouse events do.
-  - We could enable this with a different terminating character, like `"`
+  - We could enable this with a different terminating character, to identify
+    which type of `INPUT_RECORD` event we're encoding.
 * Client applications that want to be able to read full Win32 keyboard input
   from `conhost` _using VT_ will also be able to use OSC 1000;1 to do this. If
   they emit OSC 1000;1, then conhost will switch itself into `win32-input-mode`,
@@ -434,7 +435,7 @@ Notably looking at
 * [iterm2 specific sequences](https://www.iterm2.com/documentation-escape-codes.html)
 * [terminal-wg draft list of OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10)
 
-<_-- Footnotes -->
+<!-- Footnotes -->
 [#530]: https://github.com/microsoft/terminal/issues/530
 [#879]: https://github.com/microsoft/terminal/issues/879
 [#1119]: https://github.com/microsoft/terminal/issues/1119
