@@ -1,9 +1,0 @@
-namespace TerminalSettings
-{
-    [default_interface]
-    runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
-    {
-        ColorSchemes();
-        Int32 MyProperty;
-    }
-}

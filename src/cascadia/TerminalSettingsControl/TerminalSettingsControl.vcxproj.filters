@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>accd3aa8-1ba0-4223-9bbe-0c431709210b</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{926ab91d-31b4-48c3-b9a4-e681349f27f0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ColorSchemes.cpp" />
+    <ClCompile Include="Globals.cpp" />
+    <ClCompile Include="Keybindings.cpp" />
+    <ClCompile Include="MainPage.cpp" />
+    <ClCompile Include="Profiles.cpp" />
+    <ClCompile Include="init.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="ColorSchemes.h" />
+    <ClInclude Include="Globals.h" />
+    <ClInclude Include="Keybindings.h" />
+    <ClInclude Include="MainPage.h" />
+    <ClInclude Include="Profiles.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ColorSchemes.idl" />
+    <Midl Include="Globals.idl" />
+    <Midl Include="Keybindings.idl" />
+    <Midl Include="MainPage.idl" />
+    <Midl Include="Profiles.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TerminalSettingsControl.def" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="ColorSchemes.xaml" />
+    <Page Include="Globals.xaml" />
+    <Page Include="Keybindings.xaml" />
+    <Page Include="MainPage.xaml" />
+    <Page Include="Profiles.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\*\Resources.resw">
+      <Filter>Resources</Filter>
+    </PRIResource>
+  </ItemGroup>
+</Project>
