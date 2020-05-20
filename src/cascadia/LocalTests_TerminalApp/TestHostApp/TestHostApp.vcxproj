@@ -44,11 +44,11 @@
     "taef.png" is actually in the package. taef.png will get copied to the
     OutputPath when taef is run, but if this isn't set to false, then the CI
     will try and make sure taef.png is in the OutputPath at build time.-->
-
+  
   <PropertyGroup Label="UserMacros">
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
   </PropertyGroup>
-
+  
   <ItemDefinitionGroup>
     <ClCompile>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -158,86 +158,5 @@
     <Copy SourceFiles="@(TerminalConnectionDlls)"
           DestinationFiles="@(TerminalConnectionDlls->'$(TargetDir)\%(Filename).dll')" />
 
-    <Copy SourceFiles="@(_OpenConsoleVCLibToCopy)"
-          DestinationFiles="@(_OpenConsoleVCLibToCopy->'$(TargetDir)\%(Filename).dll')" />
-
   </Target>
-
-  <!-- **BEGIN VC LIBS HACK** -->
-  <!--
-    For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
-    It's very difficult for users who do not have access to the store to get our dependency packages, and we want to be robust
-    and deployable everywhere. Since these libraries can be redistributed, it's easiest if we simply redistribute them.
-    See also the "VC LIBS HACK" section in WindowsTerminal.vcxproj.
-  -->
-  <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
-       This is part of the generic machinery that applies to every AppX. -->
-  <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
-    <!-- <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'"> -->
-    <ItemGroup>
-      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
-    </ItemGroup>
-  </Target>
-
-  <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
-  <!-- <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="AfterBuild" DependsOnTargets="_ResolveVCLibDependencies">
-    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
-      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" />
-    </ItemGroup>
-  </Target> -->
-  <!-- **END VC LIBS HACK** -->
-
-  <!-- **BEGIN VC LIBS HACK** -->
-  <PropertyGroup>
-    <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
-    <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Add all the CRT libs as content -->
-    <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
-      <TargetPath>%(Filename)%(Extension)</TargetPath>
-    </_OpenConsoleVCLibToCopy>
-  </ItemGroup>
-
-  <PropertyGroup>
-    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
-    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
-  </PropertyGroup>
-
-<!--
-  <ItemGroup>
-    <Content Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
-      <DeploymentContent>true</DeploymentContent>
-      <Link>%(FileName)%(Extension)</Link>
-    </Content>
-  </ItemGroup>
-  <! Reprint all content as Nones for Universal project type to include it in the resources >
-  <ItemGroup>
-    <None Include="@(Content)" />
-  </ItemGroup> -->
-
-  <!-- <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
-    <MSBuild
-      Projects="@(ProjectReferenceWithConfiguration)"
-      Targets="GetPackagingOutputs"
-      BuildInParallel="$(BuildInParallel)"
-      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
-      Condition="'@(ProjectReferenceWithConfiguration)' != ''
-                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
-                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
-      ContinueOnError="$(_ContinueOnError)">
-      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
-    </MSBuild>
-
-    <ItemGroup>
-      <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
-      <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
-        <ProjectName>$(ProjectName)</ProjectName>
-        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
-      </PackagingOutputs>
-    </ItemGroup>
-
-  </Target> -->
-  <!-- **END VC LIBS HACK** -->
 </Project>
