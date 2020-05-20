@@ -1504,7 +1504,8 @@ namespace winrt::TerminalApp::implementation
         openDefaults;
 
         auto settingsPage = winrt::make_self<::winrt::Microsoft::Terminal::Settings::Control::MainPage>();
-        _tabView.TabItems().append(settingsPage);
+        auto tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+        _tabView.TabItems().Append(tabViewItem);
         _tabView.SelectedItem(settingsPage);
 
 

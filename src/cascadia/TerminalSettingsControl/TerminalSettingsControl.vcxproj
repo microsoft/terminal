@@ -4,7 +4,6 @@
     <ProjectGuid>{CA5CAD1A-0A1E-4F38-8704-9BFF1C37AA92}</ProjectGuid>
     <ProjectName>TerminalSettingsControl</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Control</RootNamespace>
-    <TargetName>$(RootNamespace)</TargetName>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -32,6 +31,13 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- Without this, the TerminalSettingsControl will forward the Microsoft.UI.XAML dependency upward and cause MDMerge to see the same type twicehttps
+       https://github.com/microsoft/microsoft-ui-xaml/issues/1573 -->
+  <ItemDefinitionGroup>
+    <Reference>
+        <Private Condition="'$(ConfigurationType)' != 'Application'">false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ColorSchemes.h">
