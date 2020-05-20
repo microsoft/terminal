@@ -848,7 +848,7 @@ uint16_t Profile::_ParseFontWeight(const Json::Value& json)
 // - Helper function for converting a FontWeight to its corresponding string
 //   value.
 // Arguments:
-// - closeOnExitMode: The enum value to convert to a string.
+// - fontWeight: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given FontWeight
 std::string_view Profile::_SerializeFontWeight(const uint16_t fontWeight)
