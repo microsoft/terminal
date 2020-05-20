@@ -36,6 +36,7 @@
       <DependentUpon>Foo.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="MyShellExt.cpp" />
+    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
