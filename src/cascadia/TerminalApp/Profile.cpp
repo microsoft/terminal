@@ -775,33 +775,13 @@ winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value
 {
     if (json.isUInt())
     {
-        auto fontWeight = json.asUInt();
+        winrt::Windows::UI::Text::FontWeight weight;
+        weight.Weight = json.asUInt();
 
-        // If it's a valid fontWeight, pass it through. Otherwise, ignore it.
-        switch (fontWeight)
+        // We're only accepting variable values between 100 and 990 so we don't go too crazy.
+        if (weight.Weight >= 100 && weight.Weight <= 990)
         {
-        case 100:
-            return winrt::Windows::UI::Text::FontWeights::Thin();
-        case 200:
-            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
-        case 300:
-            return winrt::Windows::UI::Text::FontWeights::Light();
-        case 350:
-            return winrt::Windows::UI::Text::FontWeights::SemiLight();
-        case 400:
-            return winrt::Windows::UI::Text::FontWeights::Normal();
-        case 500:
-            return winrt::Windows::UI::Text::FontWeights::Medium();
-        case 600:
-            return winrt::Windows::UI::Text::FontWeights::SemiBold();
-        case 700:
-            return winrt::Windows::UI::Text::FontWeights::Bold();
-        case 800:
-            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
-        case 900:
-            return winrt::Windows::UI::Text::FontWeights::Black();
-        case 950:
-            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
+            return weight;
         }
     }
 
