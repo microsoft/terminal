@@ -845,43 +845,6 @@ uint16_t Profile::_ParseFontWeight(const Json::Value& json)
 }
 
 // Method Description:
-// - Helper function for converting a FontWeight to its corresponding string
-//   value.
-// Arguments:
-// - fontWeight: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given FontWeight
-std::string_view Profile::_SerializeFontWeight(const uint16_t fontWeight)
-{
-    switch (fontWeight)
-    {
-    case 100:
-        return FontWeightThin;
-    case 200:
-        return FontWeightExtraLight;
-    case 300:
-        return FontWeightLight;
-    case 350:
-        return FontWeightSemiLight;
-    case 400:
-    default:
-        return FontWeightNormal;
-    case 500:
-        return FontWeightMedium;
-    case 600:
-        return FontWeightSemiBold;
-    case 700:
-        return FontWeightBold;
-    case 800:
-        return FontWeightExtraBold;
-    case 900:
-        return FontWeightBlack;
-    case 950:
-        return FontWeightExtraBlack;
-    }
-}
-
-// Method Description:
 // - Helper function for converting a user-specified closeOnExit value to its corresponding enum
 // Arguments:
 // - The value from the settings.json file

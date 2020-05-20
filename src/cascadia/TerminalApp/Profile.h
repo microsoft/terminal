@@ -115,7 +115,6 @@ private:
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
 
     static uint16_t _ParseFontWeight(const Json::Value& json);
-    static std::string_view _SerializeFontWeight(const uint16_t fontWeight);
 
     static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
     static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
