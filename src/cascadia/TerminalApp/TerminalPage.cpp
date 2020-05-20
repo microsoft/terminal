@@ -19,6 +19,8 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 
+#include <winrt/Microsoft.Terminal.Settings.Control.h>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -1499,20 +1501,28 @@ namespace winrt::TerminalApp::implementation
     //   a background thread, as to not hang/crash the UI thread.
     fire_and_forget TerminalPage::_LaunchSettings(const bool openDefaults)
     {
-        // This will switch the execution of the function to a background (not
-        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
-        // (used for retrieving the path to the file) will crash on the UI
-        // thread, because the main thread is a STA.
-        co_await winrt::resume_background();
+        openDefaults;
 
-        const auto settingsPath = openDefaults ? CascadiaSettings::GetDefaultSettingsPath() :
-                                                 CascadiaSettings::GetSettingsPath();
+        auto settingsPage = winrt::make_self<::winrt::Microsoft::Terminal::Settings::Control::MainPage>();
+        _tabView.TabItems().append(settingsPage);
+        _tabView.SelectedItem(settingsPage);
 
-        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
-        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
-        {
-            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
-        }
+
+
+        //// This will switch the execution of the function to a background (not
+        //// UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        //// (used for retrieving the path to the file) will crash on the UI
+        //// thread, because the main thread is a STA.
+        //co_await winrt::resume_background();
+
+        //const auto settingsPath = openDefaults ? CascadiaSettings::GetDefaultSettingsPath() :
+        //                                         CascadiaSettings::GetSettingsPath();
+
+        //HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        //if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        //{
+        //    ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        //}
     }
 
     // Method Description:

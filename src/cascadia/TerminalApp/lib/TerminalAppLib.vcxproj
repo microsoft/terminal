@@ -274,6 +274,12 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Control">
+      <HintPath>$(_BinRoot)TerminalSettingsControl\Microsoft.Terminal.Settings.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>

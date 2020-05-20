@@ -4,6 +4,7 @@
     <ProjectGuid>{CA5CAD1A-0A1E-4F38-8704-9BFF1C37AA92}</ProjectGuid>
     <ProjectName>TerminalSettingsControl</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Control</RootNamespace>
+    <TargetName>$(RootNamespace)</TargetName>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -26,6 +27,8 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
