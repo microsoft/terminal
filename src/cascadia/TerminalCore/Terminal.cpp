@@ -830,7 +830,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
 
         // use scrollToOutput to enforce SnapOnInput
-        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount;
+        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
