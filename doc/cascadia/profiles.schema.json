@@ -300,6 +300,14 @@
           },
           "type": "array"
         },
+        "experimental.rendering.forceFullRepaint": {
+          "description": "When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames.",
+          "type": "boolean"
+        },
+        "experimental.rendering.software": {
+          "description": "When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one.",
+          "type": "boolean"
+        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load.",
@@ -332,7 +340,7 @@
           "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
           "maximum": 999,
           "minimum": 0,
-          "type": ["integer", "string"]
+          "type": [ "integer", "string" ]
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
@@ -383,7 +391,7 @@
         "confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
-          "type":"boolean"
+          "type": "boolean"
         }
       },
       "required": [

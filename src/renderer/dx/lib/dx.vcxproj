@@ -8,8 +8,14 @@
     <TargetName>ConRenderDx</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Midl>
+      <OutputDirectory>$(SolutionDir)src\renderer\dx\</OutputDirectory>
+    </Midl>
+  </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\BoxDrawingEffect.cpp" />
     <ClCompile Include="..\CustomTextLayout.cpp" />
     <ClCompile Include="..\CustomTextRenderer.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -18,12 +24,16 @@
     <ClCompile Include="..\DxRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\BoxDrawingEffect.h" />
     <ClInclude Include="..\CustomTextLayout.h" />
     <ClInclude Include="..\CustomTextRenderer.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\DxRenderer.hpp" />
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\IBoxDrawingEffect.idl" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
