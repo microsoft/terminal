@@ -99,24 +99,25 @@ The design we've settled upon is one that's highly inspired by a few precedents:
 
 ### Requesting `win32-input-mode`
 
-An application can request `win32-input-mode` with the following OSC sequence
+An application can request `win32-input-mode` with the following private mode sequence:
 
 ```
-  ^[ ] 1000 ; 1 ; Ps ST
-
-         Ps: Whether to enable or disable win32-input-mode. If omitted, defaults to '0'.
-             0: Disable win32-input-mode
-             1: Enable win32-input-mode
+  ^[ [ ? 9001 h/l
+              l: Disable win32-input-mode
+              h: Enable win32-input-mode
 ```
 
-OSC 1000 seemed to be unused according to [this discussion of used
-OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10).
-This seems like a reasonable place to stake a claim for sequences used by the
-the Windows Terminal - future WT-specific sequences could also be placed as `OSC
-1000;2`, `OSC 1000;3`, etc. This pattern is also similar to the way iTerm2
-defines their own sequences.
+Private mode `9001` seems unused according to the [xterm
+documentation](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html). This is
+stylistically similar to how `DECKPM`, `DECCKM`, and `kitty`'s ["full mode"] are
+enabled.
 
-When a terminal receives a `^[]1000;1;1ST` sequence, they should switch into
+> 👉 NOTE: an earlier draft of this spec used an OSC sequence for enabling these
+> sequences. This was abandoned in favor of the more stylistically consistent
+> private mode params proposed above. Additionally, if implemented as a private
+> mode, then a client app could query if this setting was set with `DECRQM`
+
+When a terminal receives a `^[[?9001h` sequence, they should switch into
 `win32-input-mode`. In `win32-input-mode`, the terminal will send keyboard input
 to the connected client application in the following format:
 
@@ -310,11 +311,11 @@ _(no change expected)_
   - We could enable this with a different terminating character, to identify
     which type of `INPUT_RECORD` event we're encoding.
 * Client applications that want to be able to read full Win32 keyboard input
-  from `conhost` _using VT_ will also be able to use OSC 1000;1 to do this. If
-  they emit OSC 1000;1, then conhost will switch itself into `win32-input-mode`,
-  and the client will read `win32-input-mode` encoded sequences as input. This
-  could enable other cross-platform applications to also use win32-like input in
-  the future.
+  from `conhost` _using VT_ will also be able to use `^[[?9001h` to do this. If
+  they emit `^[[?9001h`, then conhost will switch itself into
+  `win32-input-mode`, and the client will read `win32-input-mode` encoded
+  sequences as input. This could enable other cross-platform applications to
+  also use win32-like input in the future.
 
 ## Options Considered
 
