@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.ShellExtension
+{
+    [default_interface] runtimeclass Foo {
+        Foo();
+        Int32 Bar
+        {
+            get;
+            set;
+        };
+    };
+
+}
