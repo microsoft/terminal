@@ -224,6 +224,8 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 catid
+carlos
+zamora
 cazamor
 CBash
 cbb
