@@ -259,12 +259,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontSize = value;
     }
 
-    uint16_t TerminalSettings::FontWeight() noexcept
+    winrt::Windows::UI::Text::FontWeight TerminalSettings::FontWeight() noexcept
     {
         return _fontWeight;
     }
 
-    void TerminalSettings::FontWeight(uint16_t value) noexcept
+    void TerminalSettings::FontWeight(winrt::Windows::UI::Text::FontWeight value) noexcept
     {
         _fontWeight = value;
     }

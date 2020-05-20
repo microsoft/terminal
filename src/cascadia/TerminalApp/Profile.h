@@ -114,7 +114,7 @@ private:
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
 
-    static uint16_t _ParseFontWeight(const Json::Value& json);
+    static winrt::Windows::UI::Text::FontWeight _ParseFontWeight(const Json::Value& json);
 
     static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
     static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
@@ -154,7 +154,7 @@ private:
     std::wstring _fontFace;
     std::optional<std::wstring> _startingDirectory;
     int32_t _fontSize;
-    uint16_t _fontWeight;
+    winrt::Windows::UI::Text::FontWeight _fontWeight;
     double _acrylicTransparency;
     bool _useAcrylic;
 

@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings
 
         String FontFace;
         Int32 FontSize;
-        UInt16 FontWeight;
+        Windows.UI.Text.FontWeight FontWeight;
         String Padding;
 
         IKeyBindings KeyBindings;

@@ -129,7 +129,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
-    _fontWeight{ DEFAULT_FONT_WEIGHT },
+    /* _fontWeight is initialized below because the structure won't accept a uint16_t directly */
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
@@ -143,6 +143,10 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _retroTerminalEffect{},
     _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
+    winrt::Windows::UI::Text::FontWeight weight;
+    weight.Weight = DEFAULT_FONT_WEIGHT;
+    _fontWeight = weight;
+
 }
 
 Profile::~Profile()
@@ -768,7 +772,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 // - The value from the settings.json file
 // Return Value:
 // - The corresponding value which maps to the string provided by the user
-uint16_t Profile::_ParseFontWeight(const Json::Value& json)
+winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value& json)
 {
     if (json.isUInt())
     {
@@ -778,17 +782,27 @@ uint16_t Profile::_ParseFontWeight(const Json::Value& json)
         switch (fontWeight)
         {
         case 100:
+            return winrt::Windows::UI::Text::FontWeights::Thin();
         case 200:
+            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
         case 300:
+            return winrt::Windows::UI::Text::FontWeights::Light();
         case 350:
+            return winrt::Windows::UI::Text::FontWeights::SemiLight();
         case 400:
+            return winrt::Windows::UI::Text::FontWeights::Normal();
         case 500:
+            return winrt::Windows::UI::Text::FontWeights::Medium();
         case 600:
+            return winrt::Windows::UI::Text::FontWeights::SemiBold();
         case 700:
+            return winrt::Windows::UI::Text::FontWeights::Bold();
         case 800:
+            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
         case 900:
+            return winrt::Windows::UI::Text::FontWeights::Black();
         case 950:
-            return static_cast<uint16_t>(fontWeight);
+            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
         }
     }
 
@@ -797,51 +811,51 @@ uint16_t Profile::_ParseFontWeight(const Json::Value& json)
         auto fontWeight = json.asString();
         if (fontWeight == FontWeightThin)
         {
-            return 100;
+            return winrt::Windows::UI::Text::FontWeights::Thin();
         }
         else if (fontWeight == FontWeightExtraLight)
         {
-            return 200;
+            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
         }
         else if (fontWeight == FontWeightLight)
         {
-            return 300;
+            return winrt::Windows::UI::Text::FontWeights::Light();
         }
         else if (fontWeight == FontWeightSemiLight)
         {
-            return 350;
+            return winrt::Windows::UI::Text::FontWeights::SemiLight();
         }
         else if (fontWeight == FontWeightNormal)
         {
-            return 400;
+            return winrt::Windows::UI::Text::FontWeights::Normal();
         }
         else if (fontWeight == FontWeightMedium)
         {
-            return 500;
+            return winrt::Windows::UI::Text::FontWeights::Medium();
         }
         else if (fontWeight == FontWeightSemiBold)
         {
-            return 600;
+            return winrt::Windows::UI::Text::FontWeights::SemiBold();
         }
         else if (fontWeight == FontWeightBold)
         {
-            return 700;
+            return winrt::Windows::UI::Text::FontWeights::Bold();
         }
         else if (fontWeight == FontWeightExtraBold)
         {
-            return 800;
+            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
         }
         else if (fontWeight == FontWeightBlack)
         {
-            return 900;
+            return winrt::Windows::UI::Text::FontWeights::Black();
         }
         else if (fontWeight == FontWeightExtraBlack)
         {
-            return 950;
+            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
         }
     }
 
-    return DEFAULT_FONT_WEIGHT;
+    return winrt::Windows::UI::Text::FontWeights::Normal();
 }
 
 // Method Description:
