@@ -130,11 +130,6 @@ namespace winrt::TerminalApp::implementation
             _setTitleBarContentHandlers(*this, _tabRow);
         }
 
-        // if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
-        // {
-        //     _isFullscreen = true;
-        // }
-
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 

@@ -13,6 +13,96 @@
   <ItemGroup>
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resources">
@@ -20,15 +110,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources.devicefamily-core.resw">
-      <Filter>Resources</Filter>
-    </PRIResource>
-    <PRIResource Include="Resources\*\Resources.resw">
-      <Filter>Resources</Filter>
-    </PRIResource>
-    <PRIResource Include="Resources.resw">
-      <Filter>Resources</Filter>
-    </PRIResource>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\Resources.resw" />
+    <PRIResource Include="Resources\Resources.devicefamily-core.resw" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="internal-background.png" />

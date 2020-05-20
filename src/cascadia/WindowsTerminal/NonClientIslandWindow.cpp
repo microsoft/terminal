@@ -210,8 +210,6 @@ void NonClientIslandWindow::Initialize()
     // then make sure to update it's visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
-
-    // _titlebar.Visibility(!_fullscreen ? Visibility::Visible : Visibility::Collapsed);
 }
 
 // Method Description:

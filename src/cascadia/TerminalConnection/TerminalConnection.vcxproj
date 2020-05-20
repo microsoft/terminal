@@ -59,7 +59,6 @@
     <Midl Include="TelnetConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\*\Resources.resw" />
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -79,6 +78,9 @@
     <ProjectReference Include="..\..\winconpty\lib\winconptylib.vcxproj">
       <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" />
