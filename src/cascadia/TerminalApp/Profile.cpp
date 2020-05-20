@@ -776,7 +776,7 @@ winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value
     if (json.isUInt())
     {
         winrt::Windows::UI::Text::FontWeight weight;
-        weight.Weight = json.asUInt();
+        weight.Weight = static_cast<uint16_t>(json.asUInt());
 
         // We're only accepting variable values between 100 and 990 so we don't go too crazy.
         if (weight.Weight >= 100 && weight.Weight <= 990)
