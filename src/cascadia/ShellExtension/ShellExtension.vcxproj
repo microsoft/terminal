@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="MyShellExt.h" />
     <ClInclude Include="Foo.h">
       <DependentUpon>Foo.idl</DependentUpon>
     </ClInclude>
@@ -34,6 +35,7 @@
     <ClCompile Include="Foo.cpp">
       <DependentUpon>Foo.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MyShellExt.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
