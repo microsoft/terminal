@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "OpenTerminalHere.h"
 
@@ -12,6 +15,16 @@ static std::wstring VerbName{ L"WindowsTerminalOpenHere" };
 //   https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/
 //   Win7Samples/winui/shell/appshellintegration/ExplorerCommandVerb/ExplorerCommandVerb.cpp
 
+// Function Description:
+// - This is a helper to determine if we're running as a part of the Dev Build
+//   Package or the release package. We'll need to return different text, icons,
+//   and use different commandlines depending on which one the user requested.
+// - Uses a C++11 "magic static" to make sure this is only computed once.
+// - If we can't determine if it's the dev build or not, we'll default to true
+// Arguments:
+// - <none>
+// Return Value:
+// - true if we believe this extension is being run in hte dev build package.
 bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
@@ -31,6 +44,14 @@ bool IsDevBuild()
     return isDevBuild;
 }
 
+// Method Description:
+// - This method is called when the user activates the context menu item. We'll
+//   launch the Terminal using the current working directory.
+// Arguments:
+// - psiItemArray: a IShellItemArray which contains the item that's selected.
+// Return Value:
+// - S_OK if we successfully attempted to launch the Terminal, otherwise a
+//   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pbc*/)
 {

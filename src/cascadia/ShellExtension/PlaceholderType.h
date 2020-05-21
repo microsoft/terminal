@@ -6,6 +6,12 @@ Module Name:
 - PlaceholderType.h
 
 Abstract:
+- This class is just here to make our .wapproj play nicely with this project. If
+  we don't define any winrt types, then we won't generate a .winmd, and the
+  .wapproj will become _very_ mad at this project. So we'll use this placeholder
+  class just to trick cppwinrt into generating a winmd for us. If we ever _do_
+  add a real winrt type to this project, this can be removed.
+
 Author(s):
 - Mike Griese - May 2020
 

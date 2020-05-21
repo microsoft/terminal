@@ -1,8 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "OpenTerminalHere.h"
 // NOTE: All this file is pretty egregiously taken from PowerToys's PowerRename,
 // specifically:
-// https://github.com/microsoft/PowerToys/blob/d16ebba9e0f06e7a0d41d981aeb1fd0a78192dc0/src/modules/powerrename/dll/dllmain.cpp
+//
+// https://github.com/microsoft/PowerToys/blob/d16ebba9e0f06e7a0d41d981aeb1fd0a78192dc0/
+//   src/modules/powerrename/dll/dllmain.cpp
 //
 // I'm not positive how much of it we need, but we definitely need:
 // * a ClassFactory that can create our implementation of IExplorerCommand

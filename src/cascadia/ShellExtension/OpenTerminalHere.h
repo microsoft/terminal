@@ -3,9 +3,16 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- Foo.h
+- OpenTerminalHere.h
 
 Abstract:
+- This is the class that implements our Explorer Context Menu item. By
+  implementing IExplorerCommand, we can provide an entry to the context menu to
+  allow the user to open the Terminal in the current working directory.
+- Importantly, we need to make sure to declare the GUID of this implementation
+  class explicitly, so we can refer to it in our manifest, and use it to create
+  instances of this class when the shell asks for one.
+
 Author(s):
 - Mike Griese - May 2020
 
@@ -18,6 +25,7 @@ Author(s):
 struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
     OpenTerminalHere : winrt::implements<OpenTerminalHere, IExplorerCommand>
 {
+#pragma region IExplorerCommand
     HRESULT Invoke(IShellItemArray* psiItemArray,
                    IBindCtx* pbc);
     HRESULT GetToolTip(IShellItemArray* psiItemArray,
@@ -32,4 +40,5 @@ struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
     HRESULT GetFlags(EXPCMDFLAGS* pFlags);
     HRESULT GetCanonicalName(GUID* pguidCommandName);
     HRESULT EnumSubCommands(IEnumExplorerCommand** ppEnum);
+#pragma endregion
 };
