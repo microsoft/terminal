@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "MyShellExt.h"
+#include "OpenTerminalHere.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
@@ -11,35 +11,24 @@ static WCHAR const c_szVerbName[] = L"WindowsTerminalOpenHere";
 //   https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/
 //   Win7Samples/winui/shell/appshellintegration/ExplorerCommandVerb/ExplorerCommandVerb.cpp
 
-HRESULT MyShellExt::Invoke(IShellItemArray* psiItemArray,
-                           IBindCtx* /*pbc*/)
+HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
+                                 IBindCtx* /*pbc*/)
 {
-    // DebugBreak();
     DWORD count;
     psiItemArray->GetCount(&count);
 
-    IShellItem* psi;
-    // RETURN_IF_FAILED(psiItemArray->GetItemAt(0, IID_PPV_ARGS(&psi)));
-    RETURN_IF_FAILED(psiItemArray->GetItemAt(0, &psi));
-
-    // IShellItem2* psi2;
+    winrt::com_ptr<IShellItem> psi;
+    RETURN_IF_FAILED(psiItemArray->GetItemAt(0, psi.put()));
 
     PWSTR pszName;
-    RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_PARENTRELATIVEPARSING, &pszName));
-    WCHAR szMsg[128];
-    StringCchPrintf(szMsg, ARRAYSIZE(szMsg), L"%d item(s), first item is named %s", count, pszName);
-
+    RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
     {
         wil::unique_process_information _piClient;
 
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
-        std::wstring mutableTitle{ pszName };
 
-        siEx.StartupInfo.lpTitle = mutableTitle.data();
-
-        // MessageBox((HWND)0x0, szMsg, L"ExplorerCommand Sample Verb", MB_OK);
-        std::wstring cmdline = fmt::format(L"cmd.exe /k echo {}", pszName);
+        std::wstring cmdline = fmt::format(L"wtd.exe -d \"{}\"", pszName);
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
@@ -56,29 +45,27 @@ HRESULT MyShellExt::Invoke(IShellItemArray* psiItemArray,
 
     CoTaskMemFree(pszName);
 
-    psi->Release();
-
     return S_OK;
 }
 
-HRESULT MyShellExt::GetToolTip(IShellItemArray* /*psiItemArray*/,
-                               LPWSTR* ppszInfotip)
+HRESULT OpenTerminalHere::GetToolTip(IShellItemArray* /*psiItemArray*/,
+                                     LPWSTR* ppszInfotip)
 {
     // tooltip provided here, in this case none is provieded
     *ppszInfotip = NULL;
     return E_NOTIMPL;
 }
 
-HRESULT MyShellExt::GetTitle(IShellItemArray* /*psiItemArray*/,
-                             LPWSTR* ppszName)
+HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
+                                   LPWSTR* ppszName)
 {
     // the verb name can be computed here, in this example it is static
     return SHStrDup(c_szVerbDisplayName, ppszName);
 }
 
-HRESULT MyShellExt::GetState(IShellItemArray* /*psiItemArray*/,
-                             BOOL /*fOkToBeSlow*/,
-                             EXPCMDSTATE* pCmdState)
+HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
+                                   BOOL /*fOkToBeSlow*/,
+                                   EXPCMDSTATE* pCmdState)
 {
     // compute the visibility of the verb here, respect "fOkToBeSlow" if this is
     // slow (does IO for example) when called with fOkToBeSlow == FALSE return
@@ -91,27 +78,27 @@ HRESULT MyShellExt::GetState(IShellItemArray* /*psiItemArray*/,
     return S_OK;
 }
 
-HRESULT MyShellExt::GetIcon(IShellItemArray* /*psiItemArray*/,
-                            LPWSTR* ppszIcon)
+HRESULT OpenTerminalHere::GetIcon(IShellItemArray* /*psiItemArray*/,
+                                  LPWSTR* ppszIcon)
 {
     // the icon ref ("dll,-<resid>") is provied here, in this case none is provieded
     *ppszIcon = NULL;
     return E_NOTIMPL;
 }
 
-HRESULT MyShellExt::GetFlags(EXPCMDFLAGS* pFlags)
+HRESULT OpenTerminalHere::GetFlags(EXPCMDFLAGS* pFlags)
 {
     *pFlags = ECF_DEFAULT;
     return S_OK;
 }
 
-HRESULT MyShellExt::GetCanonicalName(GUID* pguidCommandName)
+HRESULT OpenTerminalHere::GetCanonicalName(GUID* pguidCommandName)
 {
     *pguidCommandName = __uuidof(this);
     return S_OK;
 }
 
-HRESULT MyShellExt::EnumSubCommands(IEnumExplorerCommand** ppEnum)
+HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
 {
     *ppEnum = NULL;
     return E_NOTIMPL;

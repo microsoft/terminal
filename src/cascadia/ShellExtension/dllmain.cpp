@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "MyShellExt.h"
+#include "OpenTerminalHere.h"
 // NOTE: All this file is pretty egregiously taken from PowerToys's PowerRename,
 // specifically:
 // https://github.com/microsoft/PowerToys/blob/d16ebba9e0f06e7a0d41d981aeb1fd0a78192dc0/src/modules/powerrename/dll/dllmain.cpp
@@ -39,9 +39,9 @@ public:
         {
             hr = CLASS_E_NOAGGREGATION;
         }
-        else if (m_clsid == __uuidof(MyShellExt))
+        else if (m_clsid == __uuidof(OpenTerminalHere))
         {
-            hr = winrt::make<MyShellExt>()->QueryInterface(riid, ppv);
+            hr = winrt::make<OpenTerminalHere>()->QueryInterface(riid, ppv);
         }
         else
         {

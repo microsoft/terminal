@@ -3,9 +3,9 @@
 
 namespace Microsoft.Terminal.ShellExtension
 {
-    [default_interface] runtimeclass Foo {
-        Foo();
-        Int32 Bar
+    [default_interface] runtimeclass PlaceholderType {
+        PlaceholderType();
+        Int32 Placeholder
         {
             get;
             set;

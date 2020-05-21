@@ -23,24 +23,24 @@
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="MyShellExt.h" />
-    <ClInclude Include="Foo.h">
-      <DependentUpon>Foo.idl</DependentUpon>
+    <ClInclude Include="OpenTerminalHere.h" />
+    <ClInclude Include="PlaceholderType.h">
+      <DependentUpon>PlaceholderType.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Foo.cpp">
-      <DependentUpon>Foo.idl</DependentUpon>
+    <ClCompile Include="PlaceholderType.cpp">
+      <DependentUpon>PlaceholderType.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="MyShellExt.cpp" />
+    <ClCompile Include="OpenTerminalHere.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Foo.idl" />
+    <Midl Include="PlaceholderType.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

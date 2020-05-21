@@ -16,7 +16,7 @@ Author(s):
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
-    MyShellExt : winrt::implements<MyShellExt, IExplorerCommand>
+    OpenTerminalHere : winrt::implements<OpenTerminalHere, IExplorerCommand>
 {
     HRESULT Invoke(IShellItemArray* psiItemArray,
                    IBindCtx* pbc);
