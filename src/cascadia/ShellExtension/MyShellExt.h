@@ -15,11 +15,6 @@ Author(s):
 #include <conattrs.hpp>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-struct __declspec(uuid("8eb80de0-e1ff-442c-956a-c5f2b54ca274")) IMyShellExt : ::IUnknown
-{
-    virtual HRESULT __stdcall Call() = 0;
-};
-
 struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
     MyShellExt : winrt::implements<MyShellExt, IExplorerCommand>
 {

@@ -1,5 +1,12 @@
 #include "pch.h"
 #include "MyShellExt.h"
+// NOTE: All this file is pretty egregiously taken from PowerToys's PowerRename,
+// specifically:
+// https://github.com/microsoft/PowerToys/blob/d16ebba9e0f06e7a0d41d981aeb1fd0a78192dc0/src/modules/powerrename/dll/dllmain.cpp
+//
+// I'm not positive how much of it we need, but we definitely need:
+// * a ClassFactory that can create our implementation of IExplorerCommand
+// * a DllGetClassObject that will return the afformentioned class factory.
 
 std::atomic<DWORD> g_dwModuleRefCount = 0;
 HINSTANCE g_hInst = 0;
@@ -15,14 +22,16 @@ void ModuleRelease()
     g_dwModuleRefCount--;
 }
 
-struct MyClassFactory : winrt::implements<MyClassFactory, IClassFactory>
+struct ShellExtClassFactory : winrt::implements<ShellExtClassFactory, IClassFactory>
 {
 public:
-    MyClassFactory(_In_ REFCLSID clsid) :
+    ShellExtClassFactory(_In_ REFCLSID clsid) :
         m_clsid{ clsid } {};
 
     // IClassFactory methods
-    IFACEMETHODIMP CreateInstance(_In_opt_ IUnknown* punkOuter, _In_ REFIID riid, _Outptr_ void** ppv)
+    IFACEMETHODIMP CreateInstance(_In_opt_ IUnknown* punkOuter,
+                                  _In_ REFIID riid,
+                                  _Outptr_ void** ppv)
     {
         *ppv = NULL;
         HRESULT hr;
@@ -32,7 +41,6 @@ public:
         }
         else if (m_clsid == __uuidof(MyShellExt))
         {
-            // hr = CPowerRenameMenu::s_CreateInstance(punkOuter, riid, ppv);
             hr = winrt::make<MyShellExt>()->QueryInterface(riid, ppv);
         }
         else
@@ -59,28 +67,15 @@ private:
     CLSID m_clsid;
 };
 
+// !IMPORTANT! Make sure that DllGetClassObject is exported in <dllname>.def!
 HRESULT __stdcall DllGetClassObject(GUID const& clsid, GUID const& iid, void** result)
 {
-    // DebugBreak();
-    // try
-    // {
-    //     *result = nullptr;
-
-    //     if (clsid == __uuidof(MyShellExt))
-    //     {
-    //         return winrt::make<MyShellExt>()->QueryInterface(iid, result);
-    //     }
-
-    //     return winrt::hresult_class_not_available().to_abi();
-    // }
-    // catch (...)
-    // {
-    //     return winrt::to_hresult();
-    // }
-
-    *result = NULL;
-    auto pClassFactory = winrt::make<MyClassFactory>(clsid);
-    HRESULT hr = pClassFactory->QueryInterface(iid, result);
-    // pClassFactory->Release();
-    return hr;
+    *result = nullptr;
+    // !IMPORTANT! Explorer is going to call DllGetClassObject with the clsid of
+    // the class it wants to create, and the iid of IClassFactory. First we must
+    // return the ClassFactory here - later on, the ClassFactory will have
+    // CreateInstance called, where we can actually create the thing it
+    // requested in clsid.
+    auto pClassFactory = winrt::make<ShellExtClassFactory>(clsid);
+    return pClassFactory->QueryInterface(iid, result);
 }
