@@ -11,7 +11,7 @@ This repository contains the source code for:
 
 Related repositories include:
 
-* [Windows Terminal Documentation](https://github.com/MicrosoftDocs/terminal)
+* [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal) ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
