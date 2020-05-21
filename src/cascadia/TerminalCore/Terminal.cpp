@@ -44,7 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _snapOnOutput{ SnapOnOutput::NoSelection | SnapOnOutput::AtBottom },
+    _snapOnOutput{ static_cast<int>(SnapOnOutputFlag::NoSelection) | static_cast<int>(SnapOnOutputFlag::AtBottom) },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -809,22 +809,22 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         bool scrollToOutput = true;
 
         // modify scrollOffset based on SnapOnOutput value
-        if (_snapOnOutput == SnapOnOutput::Always)
+        if (_snapOnOutput == static_cast<int>(SnapOnOutputFlag::Always))
         {
             scrollToOutput = true;
         }
-        else if (_snapOnOutput == SnapOnOutput::Never)
+        else if (_snapOnOutput == static_cast<int>(SnapOnOutputFlag::Never))
         {
             scrollToOutput = false;
         }
 
         // IMPORTANT: we need to use && below. This allows multiple of these flags to be set
-        if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::NoSelection))
+        if (WI_IsFlagSet(_snapOnOutput, static_cast<int>(SnapOnOutputFlag::NoSelection)))
         {
             // scroll if no selection is active
             scrollToOutput = scrollToOutput && !IsSelectionActive();
         }
-        if (WI_IsFlagSet(_snapOnOutput, SnapOnOutput::AtBottom))
+        if (WI_IsFlagSet(_snapOnOutput, static_cast<int>(SnapOnOutputFlag::AtBottom)))
         {
             scrollToOutput = scrollToOutput && viewportAtBottom;
         }

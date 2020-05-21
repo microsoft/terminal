@@ -42,14 +42,6 @@ namespace TerminalApp
         Graceful,
         Always
     };
-
-    enum class SnapOnOutputFlag
-    {
-        Never = -1,
-        NoSelection = 0x1,
-        AtBottom = 0x2,
-        Always = 0x4
-    };
 };
 
 class TerminalApp::Profile final
@@ -126,7 +118,7 @@ private:
     static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
 
     static int32_t ParseSnapOnOutput(const Json::Value& json);
-    static std::string_view _SerializeSnapOnOutput(SnapOnOutputFlag snapOnOutput);
+    static std::string_view _SerializeSnapOnOutput(winrt::Microsoft::Terminal::Settings::SnapOnOutputFlag snapOnOutput);
 
     static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);

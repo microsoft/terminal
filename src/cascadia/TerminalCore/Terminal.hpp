@@ -209,15 +209,6 @@ private:
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
-    // TODO CARLOS: right now, this is just copied over from ICoreSettings.
-    // This is to make my life easier.
-    enum SnapOnOutput
-    {
-        Never = -1,
-        NoSelection = 0x1,
-        AtBottom = 0x2,
-        Always = 0x4
-    };
     bool _snapOnInput;
     int _snapOnOutput;
     bool _suppressApplicationTitle;
