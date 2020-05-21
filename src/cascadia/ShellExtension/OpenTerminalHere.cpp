@@ -24,7 +24,7 @@ static std::wstring VerbName{ L"WindowsTerminalOpenHere" };
 // Arguments:
 // - <none>
 // Return Value:
-// - true if we believe this extension is being run in hte dev build package.
+// - true if we believe this extension is being run in the dev build package.
 bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
@@ -53,7 +53,7 @@ bool IsDevBuild()
 // - S_OK if we successfully attempted to launch the Terminal, otherwise a
 //   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
-                                 IBindCtx* /*pbc*/)
+                                 IBindCtx* /*pBindContext*/)
 {
     DWORD count;
     psiItemArray->GetCount(&count);
@@ -93,7 +93,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
 HRESULT OpenTerminalHere::GetToolTip(IShellItemArray* /*psiItemArray*/,
                                      LPWSTR* ppszInfotip)
 {
-    // tooltip provided here, in this case none is provieded
+    // tooltip provided here, in this case none is provided
     *ppszInfotip = NULL;
     return E_NOTIMPL;
 }
@@ -126,7 +126,7 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
 HRESULT OpenTerminalHere::GetIcon(IShellItemArray* /*psiItemArray*/,
                                   LPWSTR* ppszIcon)
 {
-    // the icon ref ("dll,-<resid>") is provied here, in this case none is provieded
+    // the icon ref ("dll,-<resid>") is provided here, in this case none is provided
     *ppszIcon = NULL;
     return E_NOTIMPL;
 }

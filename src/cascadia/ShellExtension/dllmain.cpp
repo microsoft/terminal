@@ -6,12 +6,12 @@
 // NOTE: All this file is pretty egregiously taken from PowerToys's PowerRename,
 // specifically:
 //
-// https://github.com/microsoft/PowerToys/blob/d16ebba9e0f06e7a0d41d981aeb1fd0a78192dc0/
+// https://github.com/microsoft/PowerToys/blob/master/
 //   src/modules/powerrename/dll/dllmain.cpp
 //
 // I'm not positive how much of it we need, but we definitely need:
 // * a ClassFactory that can create our implementation of IExplorerCommand
-// * a DllGetClassObject that will return the afformentioned class factory.
+// * a DllGetClassObject that will return the aforementioned class factory.
 
 std::atomic<DWORD> g_dwModuleRefCount = 0;
 HINSTANCE g_hInst = 0;
@@ -72,7 +72,7 @@ private:
     CLSID m_clsid;
 };
 
-// !IMPORTANT! Make sure that DllGetClassObject is exported in <dllname>.def!
+// !IMPORTANT! Make sure that DllGetClassObject is exported in <dllName>.def!
 HRESULT __stdcall DllGetClassObject(GUID const& clsid, GUID const& iid, void** result)
 {
     *result = nullptr;
