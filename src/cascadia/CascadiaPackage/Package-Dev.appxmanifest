@@ -72,12 +72,23 @@
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
             <desktop4:FileExplorerContextMenus>
+                <desktop5:ItemType Type="Directory">
+                    <desktop5:Verb Id="Command1" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
+                </desktop5:ItemType>
+                <desktop5:ItemType Type="Directory\Background">
+                    <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
+                </desktop5:ItemType>
                 <desktop4:ItemType Type=".txt">
-                    <desktop4:Verb Id="Command1" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
+                    <desktop4:Verb Id="Command3" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
+                </desktop4:ItemType>
+                <!-- <desktop4:ItemType Type=".md">
+                    <desktop4:Verb Id="Command4" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
+                </desktop4:ItemType> -->
+                <desktop4:ItemType Type="*">
+                    <desktop4:Verb Id="Command4" Clsid="9f156763-7844-4dc4-bbb1-901f640f5155" />
                 </desktop4:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
-
 
       </Extensions>
 
