@@ -25,6 +25,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     {
         TerminalSettings() = default;
 
+// TECHNICALLY, the hstring copy assignment can throw, but the GETSET_PROPERTY
+// macro defines the operator as `noexcept`. We're not really worried about it,
+// because the only time it will throw is when we're out of memory, and then
+// we've got much worse problems. So just suppress that warning for now.
+#pragma warning(push)
+#pragma warning(disable : 26447)
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
 
@@ -91,6 +97,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         GETSET_PROPERTY(bool, SoftwareRendering, false);
 
         GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode, TextAntialiasingMode::Grayscale);
+
+#pragma warning(pop)
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
