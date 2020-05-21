@@ -56,7 +56,7 @@ HRESULT MyShellExt::GetState(IShellItemArray* /*psiItemArray*/,
     // slow (does IO for example) when called with fOkToBeSlow == FALSE return
     // E_PENDING and this object will be called back on a background thread with
     // fOkToBeSlow == TRUE
-
+    fOkToBeSlow;
     *pCmdState = ECS_ENABLED;
     return S_OK;
 

@@ -64,7 +64,7 @@
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>
-                <com:SurrogateServer AppId="9f156763-7844-4dc4-bbb1-901f640f5155" DisplayName="WTShellExt">
+                <com:SurrogateServer DisplayName="ShellExtension">
                     <com:Class Id="9f156763-7844-4dc4-bbb1-901f640f5155" Path="ShellExtension.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
