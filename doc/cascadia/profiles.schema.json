@@ -588,6 +588,33 @@
           "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
           "type": "boolean"
         },
+        "snapOnOutput": {
+          "default": [ "noSelection", "atBottom"],
+          "description": "Controls the terminal's scroll response to new output. Possible values include:\n -\"always\"\n -\"atBottom\"\n -\"noSelection\"\n -\"never\"\nMultiple can be enforced in an array format.",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "always",
+                "atBottom",
+                "noSelection",
+                "never"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "always",
+                  "atBottom",
+                  "noSelection",
+                  "never"
+                ]
+              }
+            }
+          ]
+        },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
           "type": ["string", "null"]
