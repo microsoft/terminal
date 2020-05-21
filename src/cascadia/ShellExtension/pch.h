@@ -21,6 +21,7 @@
 #include <unknwn.h>
 #include <wil/cppwinrt.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.ApplicationModel.h>
 
 #include <Shobjidl.h>
 #include <shlwapi.h>
