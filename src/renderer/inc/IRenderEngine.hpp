@@ -101,6 +101,7 @@ namespace Microsoft::Console::Render
                                                            const COORD coordTarget) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(const SMALL_RECT rect) noexcept = 0;
 
+        [[nodiscard]] virtual HRESULT PrePaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; };
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,

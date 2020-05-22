@@ -110,7 +110,7 @@ namespace Microsoft::Console::Render
                                               const COORD coordTarget);
 
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
-        void _PaintCursor(_In_ IRenderEngine* const pEngine);
+        void _PaintCursor(_In_ IRenderEngine* const pEngine, const bool prePaint = false);
 
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);

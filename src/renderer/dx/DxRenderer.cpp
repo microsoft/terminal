@@ -1420,6 +1420,11 @@ enum class CursorPaintType
     Outline
 };
 
+[[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Draws a block at the given position to represent the cursor
 // - May be a styled cursor at the character cell location that is less than a full block
@@ -1427,7 +1432,7 @@ enum class CursorPaintType
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT DxEngine::PrePaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 try
 {
     // if the cursor is off, do nothing - it should not be visible.

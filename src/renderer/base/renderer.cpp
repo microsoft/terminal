@@ -142,6 +142,8 @@ try
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
+    _PaintCursor(pEngine, true);
+
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
@@ -845,7 +847,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine, const bool prePaint)
 {
     if (_pData->IsCursorVisible())
     {
@@ -878,7 +880,14 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             options.isOn = _pData->IsCursorOn();
 
             // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(options));
+            if (prePaint)
+            {
+                LOG_IF_FAILED(pEngine->PrePaintCursor(options));
+            }
+            else
+            {
+                LOG_IF_FAILED(pEngine->PaintCursor(options));
+            }
         }
     }
 }
