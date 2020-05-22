@@ -424,7 +424,9 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusNextTab = false;
     _focusPrevTab = false;
 
-    // _launchMode = std::nullopt;
+    // DON'T clear _launchMode here! This will get called once for every
+    // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
+    // the "global" fullscreen flag (-F).
 }
 
 // Function Description:
