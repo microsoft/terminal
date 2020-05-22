@@ -537,12 +537,10 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
+        // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
+        // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings->GlobalSettings().GetLaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
-        // if (valueFromCommandlineArgs.has_value())
-        // {
-        //     _settings->GlobalSettings().SetLaunchMode(valueFromCommandlineArgs.value())
-        // }
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
                    valueFromSettings;
@@ -912,13 +910,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Sets the initial commandline to process on startup, and attempts to
+    //   parse it. Commands will be parsed into a list of ShortcutActions that
+    //   will be processed on TerminalPage::Create().
+    // - This function will have no effective result after Create() is called.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
     int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> args)
     {
-        // if (_root)
-        // {
-        //     return _root->SetStartupCommandline(actions);
-        // }
-
         const auto result = _ParseArgs(args);
         if (result == 0)
         {
@@ -976,24 +983,34 @@ namespace winrt::TerminalApp::implementation
         return 0;
     }
 
+    // Method Description:
+    // - If there were any errors parsing the commandline that was used to
+    //   initialize the terminal, this will return a string containing that
+    //   message. If there were no errors, this message will be blank.
+    // - If the user requested help on any command (using --help), this will
+    //   contain the help message.
+    // - If the user requested the version number (using --version), this will
+    //   contain the version string.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the help text or error message for the provided commandline, if one
+    //   exists, otherwise the empty string.
     winrt::hstring AppLogic::ParseCommandlineMessage()
     {
-        // if (_root)
-        // {
-        //     return _root->ParseCommandlineMessage();
-        // }
-        // return { L"" };
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
+    // Method Description:
+    // - Returns true if we should exit the application before even starting the
+    //   window. We might want to do this if we're displaying an error message or
+    //   the version string, or if we want to open the settings file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff we should exit the application before even starting the window
     bool AppLogic::ShouldExitEarly()
     {
-        // if (_root)
-        // {
-        //     return _root->ShouldExitEarly();
-        // }
-        // return false;
-
         return _appArgs.ShouldExitEarly();
     }
 
