@@ -49,6 +49,8 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
+        void ToggleFullscreen();
+
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
         // int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
         // winrt::hstring ParseCommandlineMessage();
@@ -167,8 +169,6 @@ namespace winrt::TerminalApp::implementation
         void _Find();
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
-
-        void _ToggleFullscreen();
 
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
         void _ClearNonClientAreaColors();

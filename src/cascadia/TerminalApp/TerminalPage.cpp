@@ -236,14 +236,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_CompleteInitialization()
     {
-        // GH#288 - When we finish initialization, if the user wanted us
-        // launched _fullscreen_, toggle fullscreen mode. This will make sure
-        // that the window size is _first_ set up as something sensible, so
-        // leaving fullscreen returns to a reasonable size.
-        if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
-        {
-            _ToggleFullscreen();
-        }
+        // // GH#288 - When we finish initialization, if the user wanted us
+        // // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        // // that the window size is _first_ set up as something sensible, so
+        // // leaving fullscreen returns to a reasonable size.
+        // if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+        // {
+        //     _ToggleFullscreen();
+        // }
         _startupState = StartupState::Initialized;
         _InitializedHandlers(*this, nullptr);
     }
@@ -1847,7 +1847,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ToggleFullscreen()
+    void TerminalPage::ToggleFullscreen()
     {
         _toggleFullscreenHandlers(*this, nullptr);
 

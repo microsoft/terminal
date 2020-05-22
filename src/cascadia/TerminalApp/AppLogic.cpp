@@ -240,6 +240,17 @@ namespace winrt::TerminalApp::implementation
 
         _root->SetSettings(_settings, false);
         _root->Loaded({ this, &AppLogic::_OnLoaded });
+        _root->Initialized([this](auto&&, auto&&) {
+            // GH#288 - When we finish initialization, if the user wanted us
+            // launched _fullscreen_, toggle fullscreen mode. This will make sure
+            // that the window size is _first_ set up as something sensible, so
+            // leaving fullscreen returns to a reasonable size.
+            const auto launchMode = this->GetLaunchMode();
+            if (launchMode == LaunchMode::FullscreenMode)
+            {
+                _root->ToggleFullscreen();
+            }
+        });
         _root->Create();
 
         _ApplyTheme(_settings->GlobalSettings().GetTheme());
@@ -526,7 +537,15 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetLaunchMode();
+        const auto valueFromSettings = _settings->GlobalSettings().GetLaunchMode();
+        const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
+        // if (valueFromCommandlineArgs.has_value())
+        // {
+        //     _settings->GlobalSettings().SetLaunchMode(valueFromCommandlineArgs.value())
+        // }
+        return valueFromCommandlineArgs.has_value() ?
+                   valueFromCommandlineArgs.value() :
+                   valueFromSettings;
     }
 
     // Method Description:
