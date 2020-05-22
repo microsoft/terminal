@@ -126,7 +126,14 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
             auto WSLDistro{ CreateDefaultProfile(distName) };
 
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
-            WSLDistro.SetColorScheme({ L"Campbell" });
+
+            if (distName.rfind("Ubuntu", 0) == 0) {
+                WSLDistro.SetColorScheme({ L"Tango Dark" });
+                WSLDistro.SetDefaultBackground({ L"#300a24" });
+            } else {
+                WSLDistro.SetColorScheme({ L"Campbell" });
+            }
+
             WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
             WSLDistro.SetIconPath(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
             profiles.emplace_back(WSLDistro);
