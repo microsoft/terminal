@@ -205,6 +205,11 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.Children().Append(_titlebar);
 
     Controls::Grid::SetRow(_titlebar, 0);
+
+    // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
+    // then make sure to update it's visual state to reflect if we're in the
+    // maximized state on launch.
+    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
 
 // Method Description:
