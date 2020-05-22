@@ -29,6 +29,57 @@ Enum CodepointWidth {
     Invalid;
 }
 
+Class UnicodeRange : System.IComparable {
+    [int]$Start
+    [int]$End
+    [CodepointWidth]$Width
+    [string]$Flags
+    [string]$Comment
+
+    UnicodeRange([System.Xml.XmlElement]$ucdEntry) {
+        $this.Start, $this.End = Get-EntryRange $ucdEntry
+        $this.Width = Get-EntryWidth $ucdEntry
+        $this.Flags = Get-EntryFlags $ucdEntry
+
+        If (-Not $script:Pack -And $ucdEntry.Emoji -Eq "Y" -And $ucdEntry.EPres -Eq "Y") {
+            $this.Comment = "Emoji=Y EPres=Y"
+        }
+
+        If ($null -Ne $ucdEntry.comment) {
+            $this.Comment = $ucdEntry.comment
+        }
+    }
+
+    # Make a single-codepoint range (primarily used for comparison)
+    UnicodeRange([int]$Codepoint) {
+        $this.Start = $this.End = $Codepoint
+    }
+
+    [int] CompareTo([object]$Other) {
+        If ($Other -Is [int]) {
+            Return $this.Start - $Other
+        }
+        Return $this.Start - $Other.Start
+    }
+
+    [bool] Merge([UnicodeRange]$Other) {
+        If (($Other.Start - $this.End) -Gt 1) { # If there's more than one char between them
+            Return $false
+        }
+
+        If ($this.Flags -Ne $Other.Flags) { # Flags are different: do not merge
+            Return $false
+        }
+
+        $this.End = $Other.End
+        Return $true
+    }
+
+    [int] Length() {
+        return $this.End - $this.Start + 1
+    }
+}
+
 # UCD Functions
 Function Get-EntryRange($entry) {
     $s = $e = 0
@@ -78,52 +129,15 @@ Function Get-EntryFlags($entry) {
     "{0}{1}{2}" -f $normalizedEAWidth, $EPres, $EPres
 }
 
-# Range Functions
-Function Initialize-Range($s, $e, $entry) {
-    $Width = Get-EntryWidth $entry
-    $Comment = $null
-
-    If (-Not $script:Pack -And $entry.Emoji -Eq "Y" -And $entry.EPres -Eq "Y") {
-        $Comment = "Emoji=Y EPres=Y"
-    }
-
-    $Flags = Get-EntryFlags $entry
-
-    [PSCustomObject]@{
-        Start=$s;
-        End=$e;
-        Width=$Width;
-        Comment=$Comment;
-        Flags=$Flags;
-    }
-}
-
-Function Discontinuous($range, $s, $entry) {
-    If (($s - $range.End) -gt 1) {
-        # More than one codepoint between end of last and start of this
-        $True
-        Return
-    } Else {
-        $newFlags = Get-EntryFlags $entry
-        If ($newFlags -Ne $range.Flags) {
-            # Continuous, but the flags don't match
-            $True
-            Return
-        }
-    }
-    $False
-    Return
-}
-
-Class RangeStartComparer: System.Collections.Generic.IComparer[PSCustomObject] {
-    [int]Compare([PSCustomObject]$a, [PSCustomObject]$b) { # $b is actually int
+Class RangeStartComparer: System.Collections.Generic.IComparer[UnicodeRange] {
+    [int]Compare([UnicodeRange]$a, [UnicodeRange]$b) { # $b is actually int
         Return $a.Start - $b
     }
 }
 
-Function Find-InsertionPointForCodepoint([System.Collections.Generic.List[PSCustomObject]]$list, $codepoint) {
-    $comparer = [RangeStartComparer]::new()
-    $l = $list.BinarySearch($codepoint, $comparer)
+Function Find-InsertionPointForCodepoint([System.Collections.Generic.List[Object]]$list, $codepoint) {
+    #$comparer = [RangeStartComparer]::new()
+    $l = $list.BinarySearch($codepoint)#, $comparer)
     If ($l -Lt 0) {
         # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
         Return -Bnot $l
@@ -131,8 +145,8 @@ Function Find-InsertionPointForCodepoint([System.Collections.Generic.List[PSCust
     Return $l
 }
 
-Function Insert-RangeBreak([System.Collections.Generic.List[PSCustomObject]]$list, [PSCustomObject]$newRange) {
-    $subset = [System.Collections.Generic.List[PSCustomObject]]::New(3)
+Function Insert-RangeBreak([System.Collections.Generic.List[Object]]$list, [UnicodeRange]$newRange) {
+    $subset = [System.Collections.Generic.List[Object]]::New(3)
     $subset.Add($newRange)
 
     $i = Find-InsertionPointForCodepoint $list $newRange.Start
@@ -182,10 +196,6 @@ If ($null -eq $InputObject) {
     $InputObject = [xml](Get-Content $Path)
 }
 
-If ($null -eq $OverrideObject) {
-    $OverrideObject = [xml](Get-Content $OverridePath)
-}
-
 $UCDRepertoire = $InputObject.ucd.repertoire.ChildNodes | Sort-Object {
     # Sort by either cp or first-cp (for ranges)
     if ($null -Ne $_.cp) {
@@ -202,60 +212,53 @@ If (-Not $Full) {
     }
 }
 
-$ranges = [System.Collections.Generic.List[PSCustomObject]]::New(1024)
+$ranges = [System.Collections.Generic.List[Object]]::New(1024)
 $last = $null
 
-Function Vend() {
-    if ($null -Ne $Script:last) {
-        $Script:ranges.Add($Script:last)
-    }
-    $Script:last=$null
-}
-
-Function Accumulate($s, $e, $entry) {
-    if ($null -Eq $Script:last) {
-        $Script:last = Initialize-Range $s $e $entry
+$c = 0
+ForEach($v in $UCDRepertoire) {
+    $range = [UnicodeRange]::new($v)
+    $c += $range.Length()
+    if ($null -Eq $last) {
+        $last = $range
         # Made a new range, done
-        Return
+        Continue
     }
 
     # Updating an existing range
-    If (Discontinuous $Script:last $s $entry) {
-        # start point is discontinuous with last end
-        Vend
-        # Re-run accumulate so that we register the new entry
-        Accumulate $s $e $entry
-        Return
+    If (-Not $last.Merge($range)) {
+        # Didn't update, we should break this into two ranges
+        $ranges.Add([object]$last)
+        $last = $range
+        Continue
     }
-
-    # Expand last range to encompass this entry
-    $Script:last.End = $e
 }
-
-ForEach($v in $UCDRepertoire) {
-    $s, $e = Get-EntryRange $v
-    Accumulate $s $e $v
-}
-Vend
+$ranges.Add([object]$last)
 
 If (-Not $NoOverrides) {
+    If ($null -eq $OverrideObject) {
+        $OverrideObject = [xml](Get-Content $OverridePath)
+    }
+
+    $overrideCount
     Write-Verbose "Inserting Overrides"
     $OverrideRepertoire = $OverrideObject.ucd.repertoire.ChildNodes
     ForEach($v in $OverrideRepertoire) {
-        $s, $e = Get-EntryRange $v
-        Write-Verbose ("Inserting Override {0} - {1}" -f $s, $e)
-        $range = Initialize-Range $s $e $v
-        $range.Comment = $v.comment ?? "overridden without comment"
+        $range = [UnicodeRange]::new($v)
+        $overrideCount += $range.Length()
+        Write-Verbose ("Inserting Override {0}" -f $range)
+        $range.Comment = $range.Comment ?? "overridden without comment"
         Insert-RangeBreak $ranges $range
     }
 }
 
 # Emit Code
-$c = 0
-ForEach($_ in $ranges) { $c += ($_.End - $_.Start) + 1 }
 "    // Generated by {0} -Pack:{1} -Full:{2} -NoOverrides:{3}" -f $MyInvocation.MyCommand.Name, $Pack, $Full, $NoOverrides
 "    // on {0} (UTC) from {1}." -f (Get-Date -AsUTC), $InputObject.ucd.description
 "    // {0} (0x{0:X}) codepoints covered." -f $c
+If (-Not $NoOverrides) {
+"    // {0} (0x{0:X}) overrides." -f $overrideCount
+}
 "    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Count
 ForEach($_ in $ranges) {
     $comment = ""
