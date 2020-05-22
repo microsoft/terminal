@@ -49,9 +49,10 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
-        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
-        winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
+        void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
+        // int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
+        // winrt::hstring ParseCommandlineMessage();
+        // bool ShouldExitEarly();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -92,8 +93,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
+        // ::TerminalApp::AppCommandlineArgs _appArgs;
+        // int _ParseArgs(winrt::array_view<const hstring>& args);
+        std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
         winrt::fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();
