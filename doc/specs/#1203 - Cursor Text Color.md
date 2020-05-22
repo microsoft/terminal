@@ -140,6 +140,16 @@ N/A
 ## Future considerations
 
 * This whole scenario feels a lot like how `selectionForeground` ([#3580]) should work.
+* One could also imagine adding a `textForeground` value to `cursorColor`. This
+  would automatically draw the cursor in the _same_ color as the text in the
+  cell the cursor is on. This is a bit trickier, because we'd want to draw that
+  color in the pre-paint phase, but the renderer won't know what color the cell
+  under the cursor is until after the pre-paint, when the text is drawn. Maybe
+  the renderer could know "ah, this text is where I thought the cursor should
+  have been, I'll just draw that real quick now".
+  - Adding `textBackground` to `cursorColor` seems silly - the use case would be
+    "I want the cursor to be totally invisible", or "I want the cursor to be
+    invisible, but change the color of the character it's on", which is weird.
 
 ## Resources
 
