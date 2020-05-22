@@ -11,6 +11,7 @@
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
+#include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
@@ -1467,6 +1468,16 @@ namespace winrt::TerminalApp::implementation
             if (data.Contains(StandardDataFormats::Text()))
             {
                 text = co_await data.GetTextAsync();
+            }
+            // Windows Explorer's "Copy address" menu item stores a StorageItem in the clipboard, and no text.
+            else if (data.Contains(StandardDataFormats::StorageItems()))
+            {
+                Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items = co_await data.GetStorageItemsAsync();
+                if (items.Size() > 0)
+                {
+                    Windows::Storage::IStorageItem item = items.GetAt(0);
+                    text = item.Path();
+                }
             }
             eventArgs.HandleClipboardData(text);
         }
