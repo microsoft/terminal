@@ -8,10 +8,17 @@ Param(
     [Parameter(Position=0, ValueFromPipeline=$true, ParameterSetName="Parsed")]
     [System.Xml.XmlDocument]$InputObject,
 
+    [Parameter(Position=1, ValueFromPipeline=$true, ParameterSetName="Parsed")]
+    [System.Xml.XmlDocument]$OverrideObject,
+
     [Parameter(Position=0, ValueFromPipelineByPropertyName=$true, ParameterSetName="Unparsed")]
     [string]$Path = "ucd.nounihan.flat.xml",
 
+    [Parameter(Position=1, ValueFromPipelineByPropertyName=$true, ParameterSetName="Unparsed")]
+    [string]$OverridePath = "overrides.xml",
+
     [switch]$Pack, # Pack tightly based on width
+    [switch]$NoOverrides, # Do not include overrides
     [switch]$Full = $False # Include Narrow codepoints
 )
 
@@ -22,24 +29,19 @@ Enum CodepointWidth {
     Invalid;
 }
 
-If ($null -eq $InputObject) {
-    $InputObject = [xml](Get-Content $Path)
-}
-
-$UCDRepertoire = $InputObject.ucd.repertoire.ChildNodes | Sort-Object {
-    # Sort by either cp or first-cp (for ranges)
-    if ($null -Ne $_.cp) {
-        [int]("0x"+$_.cp)
-    } ElseIf ($null -Ne $_."first-cp") {
-        [int]("0x"+$_."first-cp")
+# UCD Functions
+Function Get-EntryRange($entry) {
+    $s = $e = 0
+    if ($null -Ne $v.cp) {
+        # Individual Codepoint
+        $s = $e = [int]("0x"+$v.cp)
+    } ElseIf ($null -Ne $v."first-cp") {
+        # Range of Codepoints
+        $s = [int]("0x"+$v."first-cp")
+        $e = [int]("0x"+$v."last-cp")
     }
-}
-
-If (-Not $Full) {
-    $UCDRepertoire = $UCDRepertoire | Where-Object {
-        # Select everything Wide/Ambiguous/Full OR Emoji w/ Emoji Presentation
-        ($_.ea -NotIn "N", "Na", "H") -Or ($_.Emoji -Eq "Y" -And $_.EPres -Eq "Y")
-    }
+    $s
+    $e
 }
 
 Function Get-EntryWidth($entry) {
@@ -76,11 +78,12 @@ Function Get-EntryFlags($entry) {
     "{0}{1}{2}" -f $normalizedEAWidth, $EPres, $EPres
 }
 
+# Range Functions
 Function Initialize-Range($s, $e, $entry) {
     $Width = Get-EntryWidth $entry
     $Comment = $null
 
-    If ($entry.Emoji -Eq "Y" -And $entry.EPres -Eq "Y") {
+    If (-Not $script:Pack -And $entry.Emoji -Eq "Y" -And $entry.EPres -Eq "Y") {
         $Comment = "Emoji=Y EPres=Y"
     }
 
@@ -112,12 +115,99 @@ Function Discontinuous($range, $s, $entry) {
     Return
 }
 
-$ranges = @()
+Class RangeStartComparer: System.Collections.Generic.IComparer[PSCustomObject] {
+    [int]Compare([PSCustomObject]$a, [PSCustomObject]$b) { # $b is actually int
+        Return $a.Start - $b
+    }
+}
+
+Function Find-InsertionPointForCodepoint([System.Collections.Generic.List[PSCustomObject]]$list, $codepoint) {
+    $comparer = [RangeStartComparer]::new()
+    $l = $list.BinarySearch($codepoint, $comparer)
+    If ($l -Lt 0) {
+        # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
+        Return -Bnot $l
+    }
+    Return $l
+}
+
+Function Insert-RangeBreak([System.Collections.Generic.List[PSCustomObject]]$list, [PSCustomObject]$newRange) {
+    $subset = [System.Collections.Generic.List[PSCustomObject]]::New(3)
+    $subset.Add($newRange)
+
+    $i = Find-InsertionPointForCodepoint $list $newRange.Start
+
+    # Left overlap can only ever be one (because the ranges are contiguous)
+    $prev = $null
+    If($i -Gt 0 -And $list[$i - 1].End -Ge $newRange.Start) {
+        $prev = $i - 1
+    }
+
+    # Right overlap can be Infinite (because we didn't account for End)
+    # Find extent of right overlap
+    For($next = $i; ($next -Lt $list.Count - 1) -And ($list[$next+1].Start -Le $newRange.End); $next++) {
+        ;
+    }
+    If ($list[$next].Start -Gt $newRange.End) {
+        # It turns out we didn't damage the following index; clear it
+        $next = $null
+    }
+
+    If ($null -Ne $next) {
+        # Replace damaged elements after I with a truncated range
+        $last = $list[$next]
+        $list.RemoveRange($i, $next - $i + 1) # Remove damaged elements after I
+        $last.Start = $newRange.End + 1
+        If ($last.Start -Le $last.End) {
+            $subset.Add($last)
+        }
+    }
+
+    If ($null -Ne $prev) {
+        # Replace damaged elements before I with a truncated range
+        $first = $list[$prev]
+        $list.RemoveRange($prev, $i - $prev) # Remove damaged elements (b/c we may not need to re-add them!)
+        $first.End = $newRange.Start - 1
+        If ($first.End -Ge $first.Start) {
+            $subset.Insert(0, $first)
+        }
+        $i = $prev # Update the insertion cursor
+    }
+
+    $list.InsertRange($i, $subset)
+}
+
+# Ingest UCD
+If ($null -eq $InputObject) {
+    $InputObject = [xml](Get-Content $Path)
+}
+
+If ($null -eq $OverrideObject) {
+    $OverrideObject = [xml](Get-Content $OverridePath)
+}
+
+$UCDRepertoire = $InputObject.ucd.repertoire.ChildNodes | Sort-Object {
+    # Sort by either cp or first-cp (for ranges)
+    if ($null -Ne $_.cp) {
+        [int]("0x"+$_.cp)
+    } ElseIf ($null -Ne $_."first-cp") {
+        [int]("0x"+$_."first-cp")
+    }
+}
+
+If (-Not $Full) {
+    $UCDRepertoire = $UCDRepertoire | Where-Object {
+        # Select everything Wide/Ambiguous/Full OR Emoji w/ Emoji Presentation
+        ($_.ea -NotIn "N", "Na", "H") -Or ($_.Emoji -Eq "Y" -And $_.EPres -Eq "Y")
+    }
+}
+
+$ranges = [System.Collections.Generic.List[PSCustomObject]]::New(1024)
 $last = $null
 
 Function Vend() {
     if ($null -Ne $Script:last) {
-        $Script:ranges += $Script:last
+        $Script:ranges.Add($Script:last)
     }
     $Script:last=$null
 }
@@ -143,29 +233,33 @@ Function Accumulate($s, $e, $entry) {
 }
 
 ForEach($v in $UCDRepertoire) {
-    $s = $e = 0
-    if ($null -Ne $v.cp) {
-        # Individual Codepoint
-        $s = $e = [int]("0x"+$v.cp)
-    } ElseIf ($null -Ne $v."first-cp") {
-        # Range of Codepoints
-        $s = [int]("0x"+$v."first-cp")
-        $e = [int]("0x"+$v."last-cp")
-    }
+    $s, $e = Get-EntryRange $v
     Accumulate $s $e $v
 }
 Vend
 
+If (-Not $NoOverrides) {
+    Write-Verbose "Inserting Overrides"
+    $OverrideRepertoire = $OverrideObject.ucd.repertoire.ChildNodes
+    ForEach($v in $OverrideRepertoire) {
+        $s, $e = Get-EntryRange $v
+        Write-Verbose ("Inserting Override {0} - {1}" -f $s, $e)
+        $range = Initialize-Range $s $e $v
+        $range.Comment = $v.comment ?? "overridden without comment"
+        Insert-RangeBreak $ranges $range
+    }
+}
+
 # Emit Code
 $c = 0
 ForEach($_ in $ranges) { $c += ($_.End - $_.Start) + 1 }
-"    // Generated by Generate-CodepointWidthsFromUCD -Pack:{0} -Full:{1}" -f $Pack, $Full
+"    // Generated by {0} -Pack:{1} -Full:{2} -NoOverrides:{3}" -f $MyInvocation.MyCommand.Name, $Pack, $Full, $NoOverrides
 "    // on {0} (UTC) from {1}." -f (Get-Date -AsUTC), $InputObject.ucd.description
 "    // {0} (0x{0:X}) codepoints covered." -f $c
-"    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Length
+"    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Count
 ForEach($_ in $ranges) {
-	$comment = ""
-    if (-Not $Pack -And $null -Ne $_.Comment) {
+    $comment = ""
+    if ($null -Ne $_.Comment) {
         # We only vend comments when we aren't packing tightly
         $comment = " // {0}" -f $_.Comment
     }
