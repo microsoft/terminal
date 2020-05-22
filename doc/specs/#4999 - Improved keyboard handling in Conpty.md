@@ -146,11 +146,7 @@ unused as a terminator by sequences _output_ by a client application, and
 doesn't seem to be used as an _input_ sequence terminator either.
 
 ```
-  ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs _
-
-       Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
-
-       Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+  ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
 
        Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
 
@@ -159,7 +155,12 @@ doesn't seem to be used as an _input_ sequence terminator either.
        Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
            "10", the character 'A' is "65". If omitted, defaults to '0'.
 
+       Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+
        Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+
+       Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
+
 ```
 
 > 👉 NOTE: an earlier draft of this spec used an APC sequence for encoding the
@@ -185,10 +186,10 @@ send 4 input records to the client application:
 
 Encoded in `win32-input-mode`, this would look like the following:
 ```
-^[[1;1;17;29;0;8_
-^[[1;1;112;59;0;8_
-^[[0;1;112;59;0;8_
-^[[0;1;17;29;0;0_
+^[[17;29;0;1;8;1_
+^[[112;59;0;1;8;1_
+^[[112;59;0;0;8;1_
+^[[17;29;0;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
@@ -198,12 +199,12 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Similarly, for a keypress like <kbd>Ctrl+Alt+A</kbd>, which is 6 key events:
 ```
-^[[1;1;17;29;0;8_
-^[[1;1;18;56;0;10_
-^[[1;1;65;30;0;10_
-^[[0;1;65;30;0;10_
-^[[0;1;18;56;0;8_
-^[[0;1;17;29;0;0_
+^[[17;29;0;1;8;1_
+^[[18;56;0;1;10;1_
+^[[65;30;0;1;10;1_
+^[[65;30;0;0;10;1_
+^[[18;56;0;0;8;1_
+^[[17;29;0;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x2a
@@ -215,10 +216,10 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Or, for something simple like <kbd>A</kbd> (which is 4 key events):
 ```
-^[[1;1;16;42;0;16_
-^[[1;1;65;30;65;16_
-^[[0;1;16;42;0;0_
-^[[0;1;65;30;97;0_
+^[[16;42;0;1;16;1_
+^[[65;30;65;1;16;1_
+^[[16;42;0;0;0;1_
+^[[65;30;97;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x30
 Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
@@ -229,6 +230,46 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 > 👉 NOTE: In all the above examples, I had my NumLock key off. If I had the
 > NumLock key instead pressed, all the KeyState parameters would have bits 0x20
 > set. To get these keys with a NumLock, add 32 to the value.
+
+These parameters are ordered based on how likely they are to be used. Most of
+the time, the repeat count is not needed (it's almost always `1`), so it can be
+left off when not required. Similarly, the control key state is probably going
+to be 0 a lot of the time too, so that is second last. Even keydown will be 0 at
+least half the time, so that can be omitted some of the time.
+
+Given the default values, the above sequences could each be shortened:
+
+* <kbd>Ctrl+F1</kbd>
+```
+^[[17;29;0;1;8_
+^[[112;59;0;1;8_
+^[[112;59;0;0;8_
+^[[17;29_
+```
+
+* <kbd>Ctrl+Alt+A</kbd>
+```
+^[[17;29;0;1;8_
+^[[18;56;0;1;10_
+^[[65;30;0;1;10_
+^[[65;30;0;0;10_
+^[[18;56;0;0;8_
+^[[17;29;0;0_
+```
+
+* <kbd>A</kbd> (which is <kbd>shift+a</kbd>)
+```
+^[[16;42;0;1;16_
+^[[65;30;65;1;16_
+^[[16;42_
+^[[65;30;97_
+```
+
+* Or even easier, just <kbd>a</kbd>
+```
+^[[65;30;97;1_
+^[[65;30;97_
+```
 
 ### Scenarios
 
