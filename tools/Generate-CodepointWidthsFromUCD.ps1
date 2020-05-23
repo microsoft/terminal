@@ -29,59 +29,8 @@ Enum CodepointWidth {
     Invalid;
 }
 
-Class UnicodeRange : System.IComparable {
-    [int]$Start
-    [int]$End
-    [CodepointWidth]$Width
-    [string]$Flags
-    [string]$Comment
-
-    UnicodeRange([System.Xml.XmlElement]$ucdEntry) {
-        $this.Start, $this.End = Get-EntryRange $ucdEntry
-        $this.Width = Get-EntryWidth $ucdEntry
-        $this.Flags = Get-EntryFlags $ucdEntry
-
-        If (-Not $script:Pack -And $ucdEntry.Emoji -Eq "Y" -And $ucdEntry.EPres -Eq "Y") {
-            $this.Comment = "Emoji=Y EPres=Y"
-        }
-
-        If ($null -Ne $ucdEntry.comment) {
-            $this.Comment = $ucdEntry.comment
-        }
-    }
-
-    # Make a single-codepoint range (primarily used for comparison)
-    UnicodeRange([int]$Codepoint) {
-        $this.Start = $this.End = $Codepoint
-    }
-
-    [int] CompareTo([object]$Other) {
-        If ($Other -Is [int]) {
-            Return $this.Start - $Other
-        }
-        Return $this.Start - $Other.Start
-    }
-
-    [bool] Merge([UnicodeRange]$Other) {
-        If (($Other.Start - $this.End) -Gt 1) { # If there's more than one char between them
-            Return $false
-        }
-
-        If ($this.Flags -Ne $Other.Flags) { # Flags are different: do not merge
-            Return $false
-        }
-
-        $this.End = $Other.End
-        Return $true
-    }
-
-    [int] Length() {
-        return $this.End - $this.Start + 1
-    }
-}
-
-# UCD Functions
-Function Get-EntryRange($entry) {
+# UCD Functions {{{
+Function Get-UCDEntryRange($entry) {
     $s = $e = 0
     if ($null -Ne $v.cp) {
         # Individual Codepoint
@@ -95,7 +44,7 @@ Function Get-EntryRange($entry) {
     $e
 }
 
-Function Get-EntryWidth($entry) {
+Function Get-UCDEntryWidth($entry) {
     If ($entry.Emoji -Eq "Y" -And $entry.EPres -Eq "Y") {
         [CodepointWidth]::Wide
         Return
@@ -112,83 +61,123 @@ Function Get-EntryWidth($entry) {
     [CodepointWidth]::Invalid
 }
 
-Function Get-EntryFlags($entry) {
-    If ($Pack) {
+Function Get-UCDEntryFlags($entry) {
+    If ($script:Pack) {
         # If we're "pack"ing entries, only the width matters for telling them apart
-        Get-EntryWidth $entry
+        Get-UCDEntryWidth $entry
         Return
     }
 
     $normalizedEAWidth = $entry.ea
     $normalizedEAWidth = $normalizedEAWidth -Eq "F" ? "W" : $normalizedEAWidth;
-    $EPres = $entry.EPres
-    If ($normalizedEAWidth -Eq "W" -And $entry.Emoji -Eq "Y") {
-        # Pretend wide glyphs that are emoji are already using EPres
-        $EPres = "Y"
-    }
-    "{0}{1}{2}" -f $normalizedEAWidth, $EPres, $EPres
+    "{0}{1}{2}" -f $normalizedEAWidth, $entry.Emoji, $entry.EPres
 }
+# }}}
 
-Class RangeStartComparer: System.Collections.Generic.IComparer[UnicodeRange] {
-    [int]Compare([UnicodeRange]$a, [UnicodeRange]$b) { # $b is actually int
-        Return $a.Start - $b
-    }
-}
+Class UnicodeRange : System.IComparable {
+    [int]$Start
+    [int]$End
+    [CodepointWidth]$Width
+    [string]$Flags
+    [string]$Comment
 
-Function Find-InsertionPointForCodepoint([System.Collections.Generic.List[Object]]$list, $codepoint) {
-    #$comparer = [RangeStartComparer]::new()
-    $l = $list.BinarySearch($codepoint)#, $comparer)
-    If ($l -Lt 0) {
-        # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
-        Return -Bnot $l
-    }
-    Return $l
-}
+    UnicodeRange([System.Xml.XmlElement]$ucdEntry) {
+        $this.Start, $this.End = Get-UCDEntryRange $ucdEntry
+        $this.Width = Get-UCDEntryWidth $ucdEntry
+        $this.Flags = Get-UCDEntryFlags $ucdEntry
 
-Function Insert-RangeBreak([System.Collections.Generic.List[Object]]$list, [UnicodeRange]$newRange) {
-    $subset = [System.Collections.Generic.List[Object]]::New(3)
-    $subset.Add($newRange)
+        If (-Not $script:Pack -And $ucdEntry.Emoji -Eq "Y" -And $ucdEntry.EPres -Eq "Y") {
+            $this.Comment = "Emoji=Y EPres=Y"
+        }
 
-    $i = Find-InsertionPointForCodepoint $list $newRange.Start
-
-    # Left overlap can only ever be one (because the ranges are contiguous)
-    $prev = $null
-    If($i -Gt 0 -And $list[$i - 1].End -Ge $newRange.Start) {
-        $prev = $i - 1
-    }
-
-    # Right overlap can be Infinite (because we didn't account for End)
-    # Find extent of right overlap
-    For($next = $i; ($next -Lt $list.Count - 1) -And ($list[$next+1].Start -Le $newRange.End); $next++) {
-        ;
-    }
-    If ($list[$next].Start -Gt $newRange.End) {
-        # It turns out we didn't damage the following index; clear it
-        $next = $null
-    }
-
-    If ($null -Ne $next) {
-        # Replace damaged elements after I with a truncated range
-        $last = $list[$next]
-        $list.RemoveRange($i, $next - $i + 1) # Remove damaged elements after I
-        $last.Start = $newRange.End + 1
-        If ($last.Start -Le $last.End) {
-            $subset.Add($last)
+        If ($null -Ne $ucdEntry.comment) {
+            $this.Comment = $ucdEntry.comment
         }
     }
 
-    If ($null -Ne $prev) {
-        # Replace damaged elements before I with a truncated range
-        $first = $list[$prev]
-        $list.RemoveRange($prev, $i - $prev) # Remove damaged elements (b/c we may not need to re-add them!)
-        $first.End = $newRange.Start - 1
-        If ($first.End -Ge $first.Start) {
-            $subset.Insert(0, $first)
+    [int] CompareTo([object]$Other) {
+        If ($Other -Is [int]) {
+            Return $this.Start - $Other
         }
-        $i = $prev # Update the insertion cursor
+        Return $this.Start - $Other.Start
     }
 
-    $list.InsertRange($i, $subset)
+    [bool] Merge([UnicodeRange]$Other) {
+        # If there's more than one codepoint between them, don't merge
+        If (($Other.Start - $this.End) -Gt 1) {
+            Return $false
+        }
+
+        # Flags are different: do not merge
+        If ($this.Flags -Ne $Other.Flags) {
+            Return $false
+        }
+
+        $this.End = $Other.End
+        Return $true
+    }
+
+    [int] Length() {
+        return $this.End - $this.Start + 1
+    }
+}
+
+Class UnicodeRangeList : System.Collections.Generic.List[Object] {
+    UnicodeRangeList([int]$Capacity) : base($Capacity) { }
+
+    [int] hidden _FindInsertionPoint([int]$codepoint) {
+        $l = $this.BinarySearch($codepoint)
+        If ($l -Lt 0) {
+            # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
+            Return -Bnot $l
+        }
+        Return $l
+    }
+
+    ReplaceUnicodeRange([UnicodeRange]$newRange) {
+        $subset = [System.Collections.Generic.List[Object]]::New(3)
+        $subset.Add($newRange)
+
+        $i = $this._FindInsertionPoint($newRange.Start)
+
+        # Left overlap can only ever be one (_FindInsertionPoint always returns the
+        # index immediately after the range whose Start is <= than ours).
+        $prev = $null
+        If($i -Gt 0 -And $this[$i - 1].End -Ge $newRange.Start) {
+            $prev = $i - 1
+        }
+
+        # Right overlap can be Infinite (because we didn't account for End)
+        # Find extent of right overlap
+        For($next = $i; ($next -Lt $this.Count - 1) -And ($this[$next+1].Start -Le $newRange.End); $next++) { }
+        If ($this[$next].Start -Gt $newRange.End) {
+            # It turns out we didn't damage the following range; clear it
+            $next = $null
+        }
+
+        If ($null -Ne $next) {
+            # Replace damaged elements after I with a truncated range
+            $last = $this[$next]
+            $this.RemoveRange($i, $next - $i + 1) # Remove damaged elements after I
+            $last.Start = $newRange.End + 1
+            If ($last.Start -Le $last.End) {
+                $subset.Add($last)
+            }
+        }
+
+        If ($null -Ne $prev) {
+            # Replace damaged elements before I with a truncated range
+            $first = $this[$prev]
+            $this.RemoveRange($prev, $i - $prev) # Remove damaged elements (b/c we may not need to re-add them!)
+            $first.End = $newRange.Start - 1
+            If ($first.End -Ge $first.Start) {
+                $subset.Insert(0, $first)
+            }
+            $i = $prev # Update the insertion cursor
+        }
+
+        $this.InsertRange($i, $subset)
+    }
 }
 
 # Ingest UCD
@@ -212,43 +201,32 @@ If (-Not $Full) {
     }
 }
 
-$ranges = [System.Collections.Generic.List[Object]]::New(1024)
-$last = $null
+$ranges = [UnicodeRangeList]::New(1024)
 
 $c = 0
 ForEach($v in $UCDRepertoire) {
     $range = [UnicodeRange]::new($v)
     $c += $range.Length()
-    if ($null -Eq $last) {
-        $last = $range
-        # Made a new range, done
-        Continue
-    }
 
-    # Updating an existing range
-    If (-Not $last.Merge($range)) {
-        # Didn't update, we should break this into two ranges
-        $ranges.Add([object]$last)
-        $last = $range
+    If ($ranges.Count -Gt 0 -and $ranges[$ranges.Count - 1].Merge($range)) {
+        # Merged into last entry
         Continue
     }
+    $ranges.Add([object]$range)
 }
-$ranges.Add([object]$last)
 
 If (-Not $NoOverrides) {
     If ($null -eq $OverrideObject) {
         $OverrideObject = [xml](Get-Content $OverridePath)
     }
 
-    $overrideCount
-    Write-Verbose "Inserting Overrides"
     $OverrideRepertoire = $OverrideObject.ucd.repertoire.ChildNodes
+    $overrideCount = 0
     ForEach($v in $OverrideRepertoire) {
         $range = [UnicodeRange]::new($v)
         $overrideCount += $range.Length()
-        Write-Verbose ("Inserting Override {0}" -f $range)
         $range.Comment = $range.Comment ?? "overridden without comment"
-        Insert-RangeBreak $ranges $range
+        $ranges.ReplaceUnicodeRange($range)
     }
 }
 
@@ -257,7 +235,7 @@ If (-Not $NoOverrides) {
 "    // on {0} (UTC) from {1}." -f (Get-Date -AsUTC), $InputObject.ucd.description
 "    // {0} (0x{0:X}) codepoints covered." -f $c
 If (-Not $NoOverrides) {
-"    // {0} (0x{0:X}) overrides." -f $overrideCount
+"    // {0} (0x{0:X}) codepoints overridden." -f $overrideCount
 }
 "    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Count
 ForEach($_ in $ranges) {
