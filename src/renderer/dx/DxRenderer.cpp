@@ -84,6 +84,8 @@ DxEngine::DxEngine() :
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
+    _forceFullRepaintRendering{ false },
+    _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
     _defaultTextBackgroundOpacity{ 1.0f },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -387,16 +389,23 @@ try
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
     // for Windows 7 in a VM.
-    const auto hardwareResult = D3D11CreateDevice(nullptr,
-                                                  D3D_DRIVER_TYPE_HARDWARE,
-                                                  nullptr,
-                                                  DeviceFlags,
-                                                  FeatureLevels.data(),
-                                                  gsl::narrow_cast<UINT>(FeatureLevels.size()),
-                                                  D3D11_SDK_VERSION,
-                                                  &_d3dDevice,
-                                                  nullptr,
-                                                  &_d3dDeviceContext);
+    HRESULT hardwareResult = E_NOT_SET;
+
+    // If we're not forcing software rendering, try hardware first.
+    // Otherwise, let the error state fall down and create with the software renderer directly.
+    if (!_softwareRendering)
+    {
+        hardwareResult = D3D11CreateDevice(nullptr,
+                                           D3D_DRIVER_TYPE_HARDWARE,
+                                           nullptr,
+                                           DeviceFlags,
+                                           FeatureLevels.data(),
+                                           gsl::narrow_cast<UINT>(FeatureLevels.size()),
+                                           D3D11_SDK_VERSION,
+                                           &_d3dDevice,
+                                           nullptr,
+                                           &_d3dDeviceContext);
+    }
 
     if (FAILED(hardwareResult))
     {
@@ -676,6 +685,16 @@ void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
     _retroTerminalEffects = enable;
 }
 
+void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
+{
+    _forceFullRepaintRendering = enable;
+}
+
+void DxEngine::SetSoftwareRendering(bool enable) noexcept
+{
+    _softwareRendering = enable;
+}
+
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     if (_dxgiSwapChain.Get() == nullptr)
@@ -897,11 +916,14 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
+    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // so the entire frame is repainted.
+    //
     // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
     // Yes, this will further impact the performance of retro terminal effects.
     // But we're talking about running the entire display pipeline through a shader for
     // cosmetic effect, so performance isn't likely the top concern with this feature.
-    if (_retroTerminalEffects)
+    if (_forceFullRepaintRendering || _retroTerminalEffects)
     {
         _invalidMap.set_all();
     }
@@ -1177,7 +1199,12 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 try
 {
-    D2D1_COLOR_F nothing = { 0 };
+    D2D1_COLOR_F nothing{ 0 };
+    if (_chainMode == SwapChainMode::ForHwnd)
+    {
+        // When we're drawing over an HWND target, we need to fully paint the background color.
+        nothing = _backgroundColor;
+    }
 
     // If the entire thing is invalid, just use one big clear operation.
     if (_invalidMap.all())
@@ -1976,7 +2003,7 @@ CATCH_RETURN();
     try
     {
         std::wstring fontName(desired.GetFaceName());
-        DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_NORMAL;
+        DWRITE_FONT_WEIGHT weight = static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight());
         DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
         DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
         std::wstring localeName = _GetLocaleName();

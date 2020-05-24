@@ -68,6 +68,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void FontFace(hstring const& value);
         int32_t FontSize() noexcept;
         void FontSize(int32_t value) noexcept;
+        winrt::Windows::UI::Text::FontWeight FontWeight() noexcept;
+        void FontWeight(winrt::Windows::UI::Text::FontWeight value) noexcept;
 
         hstring BackgroundImage();
         void BackgroundImage(hstring const& value);
@@ -104,6 +106,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         bool RetroTerminalEffect() noexcept;
         void RetroTerminalEffect(bool value) noexcept;
 
+        bool ForceFullRepaintRendering() noexcept;
+        void ForceFullRepaintRendering(bool value) noexcept;
+
+        bool SoftwareRendering() noexcept;
+        void SoftwareRendering(bool value) noexcept;
+
         TextAntialiasingMode AntialiasingMode() const noexcept;
         void AntialiasingMode(winrt::Microsoft::Terminal::Settings::TextAntialiasingMode const& value) noexcept;
 
@@ -127,6 +135,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
+        winrt::Windows::UI::Text::FontWeight _fontWeight;
         hstring _padding;
         hstring _backgroundImage;
         double _backgroundImageOpacity;
@@ -143,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         Settings::ScrollbarState _scrollbarState;
 
         bool _retroTerminalEffect;
+        bool _forceFullRepaintRendering;
+        bool _softwareRendering;
 
         Settings::TextAntialiasingMode _antialiasingMode;
     };

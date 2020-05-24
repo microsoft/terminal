@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
+        _fontWeight{ DEFAULT_FONT_WEIGHT },
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
         _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
@@ -41,8 +42,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible },
-        _antialiasingMode{ TextAntialiasingMode::Grayscale }
-
+        _antialiasingMode{ TextAntialiasingMode::Grayscale },
+        _forceFullRepaintRendering{ false },
+        _softwareRendering{ false }
     {
     }
 
@@ -257,6 +259,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontSize = value;
     }
 
+    winrt::Windows::UI::Text::FontWeight TerminalSettings::FontWeight() noexcept
+    {
+        return _fontWeight;
+    }
+
+    void TerminalSettings::FontWeight(winrt::Windows::UI::Text::FontWeight value) noexcept
+    {
+        _fontWeight = value;
+    }
+
     void TerminalSettings::BackgroundImage(hstring const& value)
     {
         _backgroundImage = value;
@@ -385,6 +397,26 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::RetroTerminalEffect(bool value) noexcept
     {
         _retroTerminalEffect = value;
+    }
+
+    bool TerminalSettings::ForceFullRepaintRendering() noexcept
+    {
+        return _forceFullRepaintRendering;
+    }
+
+    void TerminalSettings::ForceFullRepaintRendering(bool value) noexcept
+    {
+        _forceFullRepaintRendering = value;
+    }
+
+    bool TerminalSettings::SoftwareRendering() noexcept
+    {
+        return _softwareRendering;
+    }
+
+    void TerminalSettings::SoftwareRendering(bool value) noexcept
+    {
+        _softwareRendering = value;
     }
 
     Settings::TextAntialiasingMode TerminalSettings::AntialiasingMode() const noexcept

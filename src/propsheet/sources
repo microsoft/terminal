@@ -50,24 +50,24 @@ PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
 
 SOURCES = \
-    dll.cpp              \
-    util.cpp             \
-    console.cpp          \
-    globals.cpp          \
-    fontdlg.cpp          \
-    OptionsPage.cpp      \
-    ColorsPage.cpp       \
-    ColorControl.cpp     \
-    ColorsPage.cpp       \
-    LayoutPage.cpp       \
-    TerminalPage.cpp     \
-    init.cpp             \
-    misc.cpp             \
-    preview.cpp          \
-    registry.cpp         \
-    dbcs.cpp             \
-    strid.mc             \
-    PropSheetHandler.cpp \
+    dll.cpp                   \
+    util.cpp                  \
+    console.cpp               \
+    globals.cpp               \
+    fontdlg.cpp               \
+    OptionsPage.cpp           \
+    ColorsPage.cpp            \
+    ColorControl.cpp          \
+    ColorsPage.cpp            \
+    LayoutPage.cpp            \
+    TerminalPropsheetPage.cpp \
+    init.cpp                  \
+    misc.cpp                  \
+    preview.cpp               \
+    registry.cpp              \
+    dbcs.cpp                  \
+    strid.mc                  \
+    PropSheetHandler.cpp      \
     console.rc
 
 INCLUDES = \

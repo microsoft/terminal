@@ -22,6 +22,8 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
 | `disabledProfileSources` | Optional | Array[String] | `[]` | Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup. This array can contain any combination of `Windows.Terminal.Wsl`, `Windows.Terminal.Azure`, or `Windows.Terminal.PowershellCore`. For more information, see [UsingJsonSettings.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#dynamic-profiles) |
+| `experimental.rendering.forceFullRepaint` | Optional | Boolean | `false` | When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames. |
+| `experimental.rendering.software` | Optional | Boolean | `false` | When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one. |
 
 ## Profiles
 Properties listed below are specific to each unique profile.
@@ -45,6 +47,7 @@ Properties listed below are specific to each unique profile.
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
 | `fontFace` | Optional | String | `Cascadia Mono` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
+| `fontWeight` | Optional | String | `normal` | Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values: `"thin"`, `"extra-light"`, `"light"`, `"semi-light"`, `"normal"`, `"medium"`, `"semi-bold"`, `"bold"`, `"extra-bold"`, `"black"`, `"extra-black"`, or the corresponding numeric representation of OpenType font weight. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
 | `historySize` | Optional | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |

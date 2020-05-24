@@ -33,8 +33,8 @@ namespace Microsoft::Console::Utils
     GUID GuidFromString(const std::wstring wstr);
     GUID CreateGuid();
 
-    std::string ColorToHexString(const COLORREF color);
-    COLORREF ColorFromHexString(const std::string wstr);
+    std::string ColorToHexString(const til::color color);
+    til::color ColorFromHexString(const std::string_view wstr);
 
     void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
     void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
