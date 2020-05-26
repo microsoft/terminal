@@ -132,7 +132,7 @@ Class UnicodeRangeList : System.Collections.Generic.List[Object] {
         $l = $this.BinarySearch($codepoint)
         If ($l -Lt 0) {
             # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
-            Return -Bnot $l
+            Return -BNot $l
         }
         Return $l
     }
