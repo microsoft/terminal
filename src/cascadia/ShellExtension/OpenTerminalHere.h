@@ -22,8 +22,11 @@ Author(s):
 #include <conattrs.hpp>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+using namespace Microsoft::WRL;
+
 struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
-    OpenTerminalHere : winrt::implements<OpenTerminalHere, IExplorerCommand>
+    // OpenTerminalHere : winrt::implements<OpenTerminalHere, IExplorerCommand>
+    OpenTerminalHere : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IExplorerCommand>
 {
 #pragma region IExplorerCommand
     HRESULT Invoke(IShellItemArray* psiItemArray,
@@ -42,3 +45,5 @@ struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
     HRESULT EnumSubCommands(IEnumExplorerCommand** ppEnum);
 #pragma endregion
 };
+
+CoCreatableClass(OpenTerminalHere);

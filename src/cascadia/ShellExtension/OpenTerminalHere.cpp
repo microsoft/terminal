@@ -4,8 +4,8 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 
-using namespace winrt;
-using namespace winrt::Windows::Foundation;
+// using namespace winrt;
+// using namespace winrt::Windows::Foundation;
 
 static std::wstring VerbDisplayName{ L"Open in Windows Terminal" };
 static std::wstring VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
@@ -70,6 +70,14 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
         const bool isDevBuild = IsDevBuild();
+
+        // TODO: Instead, try the lookup of our package ID. If we get one, then
+        // I believe %windowsapps%\pack_id\wt.exe is the one to use. That'll
+        // work for dev, preview, and release. If we _don't_ find one, then
+        // we're unpackaged, and use {module_path}\windowsTerminal.exe
+        //
+        // Though, I suppose this won't work at all for unpackaged...
+
         std::wstring cmdline = fmt::format(L"{}.exe -d \"{}\"", isDevBuild ? L"wtd" : L"wt", pszName);
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,

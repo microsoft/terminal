@@ -63,8 +63,8 @@
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>
-                <com:SurrogateServer DisplayName="ShellExtension">
-                    <com:Class Id="9f156763-7844-4dc4-bbb1-901f640f5155" Path="ShellExtension.dll" ThreadingModel="STA"/>
+                <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
+                    <com:Class Id="9f156763-7844-4dc4-bbb1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
         </com:Extension>
