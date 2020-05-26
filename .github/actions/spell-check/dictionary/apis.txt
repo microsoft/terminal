@@ -2,6 +2,7 @@ bitfield
 bitfields
 href
 IBox
+IComparable
 ICustom
 IMap
 IObject
