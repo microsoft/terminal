@@ -35,10 +35,10 @@ Enum CodepointWidth {
 # UCD Functions {{{
 Function Get-UCDEntryRange($entry) {
     $s = $e = 0
-    if ($null -Ne $v.cp) {
+    if ($null -ne $v.cp) {
         # Individual Codepoint
         $s = $e = [int]("0x"+$v.cp)
-    } ElseIf ($null -Ne $v."first-cp") {
+    } ElseIf ($null -ne $v."first-cp") {
         # Range of Codepoints
         $s = [int]("0x"+$v."first-cp")
         $e = [int]("0x"+$v."last-cp")
@@ -48,7 +48,7 @@ Function Get-UCDEntryRange($entry) {
 }
 
 Function Get-UCDEntryWidth($entry) {
-    If ($entry.Emoji -Eq "Y" -And $entry.EPres -Eq "Y") {
+    If ($entry.Emoji -eq "Y" -and $entry.EPres -eq "Y") {
         [CodepointWidth]::Wide
         Return
     }
@@ -72,7 +72,7 @@ Function Get-UCDEntryFlags($entry) {
     }
 
     $normalizedEAWidth = $entry.ea
-    $normalizedEAWidth = $normalizedEAWidth -Eq "F" ? "W" : $normalizedEAWidth;
+    $normalizedEAWidth = $normalizedEAWidth -eq "F" ? "W" : $normalizedEAWidth;
     "{0}{1}{2}" -f $normalizedEAWidth, $entry.Emoji, $entry.EPres
 }
 # }}}
@@ -89,17 +89,17 @@ Class UnicodeRange : System.IComparable {
         $this.Width = Get-UCDEntryWidth $ucdEntry
         $this.Flags = Get-UCDEntryFlags $ucdEntry
 
-        If (-Not $script:Pack -And $ucdEntry.Emoji -Eq "Y" -And $ucdEntry.EPres -Eq "Y") {
+        If (-not $script:Pack -and $ucdEntry.Emoji -eq "Y" -and $ucdEntry.EPres -eq "Y") {
             $this.Comment = "Emoji=Y EPres=Y"
         }
 
-        If ($null -Ne $ucdEntry.comment) {
+        If ($null -ne $ucdEntry.comment) {
             $this.Comment = $ucdEntry.comment
         }
     }
 
     [int] CompareTo([object]$Other) {
-        If ($Other -Is [int]) {
+        If ($Other -is [int]) {
             Return $this.Start - $Other
         }
         Return $this.Start - $Other.Start
@@ -107,12 +107,12 @@ Class UnicodeRange : System.IComparable {
 
     [bool] Merge([UnicodeRange]$Other) {
         # If there's more than one codepoint between them, don't merge
-        If (($Other.Start - $this.End) -Gt 1) {
+        If (($Other.Start - $this.End) -gt 1) {
             Return $false
         }
 
         # Flags are different: do not merge
-        If ($this.Flags -Ne $Other.Flags) {
+        If ($this.Flags -ne $Other.Flags) {
             Return $false
         }
 
@@ -130,9 +130,9 @@ Class UnicodeRangeList : System.Collections.Generic.List[Object] {
 
     [int] hidden _FindInsertionPoint([int]$codepoint) {
         $l = $this.BinarySearch($codepoint)
-        If ($l -Lt 0) {
+        If ($l -lt 0) {
             # Return value <0: value was not found, return value is bitwise complement the index of the first >= value
-            Return -BNot $l
+            Return -bNOT $l
         }
         Return $l
     }
@@ -146,34 +146,34 @@ Class UnicodeRangeList : System.Collections.Generic.List[Object] {
         # Left overlap can only ever be one (_FindInsertionPoint always returns the
         # index immediately after the range whose Start is <= than ours).
         $prev = $null
-        If($i -Gt 0 -And $this[$i - 1].End -Ge $newRange.Start) {
+        If($i -gt 0 -and $this[$i - 1].End -ge $newRange.Start) {
             $prev = $i - 1
         }
 
         # Right overlap can be Infinite (because we didn't account for End)
         # Find extent of right overlap
-        For($next = $i; ($next -Lt $this.Count - 1) -And ($this[$next+1].Start -Le $newRange.End); $next++) { }
-        If ($this[$next].Start -Gt $newRange.End) {
+        For($next = $i; ($next -lt $this.Count - 1) -and ($this[$next+1].Start -le $newRange.End); $next++) { }
+        If ($this[$next].Start -gt $newRange.End) {
             # It turns out we didn't damage the following range; clear it
             $next = $null
         }
 
-        If ($null -Ne $next) {
+        If ($null -ne $next) {
             # Replace damaged elements after I with a truncated range
             $last = $this[$next]
             $this.RemoveRange($i, $next - $i + 1) # Remove damaged elements after I
             $last.Start = $newRange.End + 1
-            If ($last.Start -Le $last.End) {
+            If ($last.Start -le $last.End) {
                 $subset.Add($last)
             }
         }
 
-        If ($null -Ne $prev) {
+        If ($null -ne $prev) {
             # Replace damaged elements before I with a truncated range
             $first = $this[$prev]
             $this.RemoveRange($prev, $i - $prev) # Remove damaged elements (b/c we may not need to re-add them!)
             $first.End = $newRange.Start - 1
-            If ($first.End -Ge $first.Start) {
+            If ($first.End -ge $first.Start) {
                 $subset.Insert(0, $first)
             }
             $i = $prev # Update the insertion cursor
@@ -190,17 +190,17 @@ If ($null -eq $InputObject) {
 
 $UCDRepertoire = $InputObject.ucd.repertoire.ChildNodes | Sort-Object {
     # Sort by either cp or first-cp (for ranges)
-    if ($null -Ne $_.cp) {
+    if ($null -ne $_.cp) {
         [int]("0x"+$_.cp)
-    } ElseIf ($null -Ne $_."first-cp") {
+    } ElseIf ($null -ne $_."first-cp") {
         [int]("0x"+$_."first-cp")
     }
 }
 
-If (-Not $Full) {
+If (-not $Full) {
     $UCDRepertoire = $UCDRepertoire | Where-Object {
         # Select everything Wide/Ambiguous/Full OR Emoji w/ Emoji Presentation
-        ($_.ea -NotIn "N", "Na", "H") -Or ($_.Emoji -Eq "Y" -And $_.EPres -Eq "Y")
+        ($_.ea -notin "N", "Na", "H") -or ($_.Emoji -eq "Y" -and $_.EPres -eq "Y")
     }
 }
 
@@ -211,14 +211,14 @@ ForEach($v in $UCDRepertoire) {
     $range = [UnicodeRange]::new($v)
     $c += $range.Length()
 
-    If ($ranges.Count -Gt 0 -and $ranges[$ranges.Count - 1].Merge($range)) {
+    If ($ranges.Count -gt 0 -and $ranges[$ranges.Count - 1].Merge($range)) {
         # Merged into last entry
         Continue
     }
     $ranges.Add([object]$range)
 }
 
-If (-Not $NoOverrides) {
+If (-not $NoOverrides) {
     If ($null -eq $OverrideObject) {
         $OverrideObject = [xml](Get-Content $OverridePath)
     }
@@ -237,13 +237,13 @@ If (-Not $NoOverrides) {
 "    // Generated by {0} -Pack:{1} -Full:{2} -NoOverrides:{3}" -f $MyInvocation.MyCommand.Name, $Pack, $Full, $NoOverrides
 "    // on {0} (UTC) from {1}." -f (Get-Date -AsUTC), $InputObject.ucd.description
 "    // {0} (0x{0:X}) codepoints covered." -f $c
-If (-Not $NoOverrides) {
+If (-not $NoOverrides) {
 "    // {0} (0x{0:X}) codepoints overridden." -f $overrideCount
 }
 "    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Count
 ForEach($_ in $ranges) {
     $comment = ""
-    if ($null -Ne $_.Comment) {
+    if ($null -ne $_.Comment) {
         # We only vend comments when we aren't packing tightly
         $comment = " // {0}" -f $_.Comment
     }
