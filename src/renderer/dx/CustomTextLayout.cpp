@@ -63,6 +63,19 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         _text += text;
     }
+
+    const auto textLength = gsl::narrow<UINT32>(_text.size());
+
+    BOOL isTextSimple = FALSE;
+    UINT32 uiLengthRead = 0;
+    UINT32 glyphStart = 0;
+
+    HRESULT hr = S_OK;
+
+    _glyphIndices.resize(textLength);
+
+    hr = _analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, &_glyphIndices.at(glyphStart));
+    _isEntireTextSimple = isTextSimple && uiLengthRead == textLength;
 }
 
 // Routine Description:
@@ -149,11 +162,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        BOOL isTextSimple = FALSE;
-        UINT32 uiLengthRead = 0;
-        RETURN_IF_FAILED(_analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, NULL));
-
-        if (!(isTextSimple && uiLengthRead == _text.size()))
+        if (!_isEntireTextSimple)
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
@@ -274,6 +283,39 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
+        if (_isEntireTextSimple)
+        {
+            // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
+            // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
+            // advances without the need of GetGlyphPlacements. This shortcut will significantly reduce the time
+            // needed for text analysis.
+            DWRITE_FONT_METRICS1 metrics;
+            run.fontFace->GetMetrics(&metrics);
+
+            // With simple text, there's only one run. The actual glyph count is the same as textLength.
+            _glyphDesignUnitAdvances.resize(textLength);
+            _glyphAdvances.resize(textLength);
+            _glyphOffsets.resize(textLength);
+
+            USHORT designUnitsPerEm = metrics.designUnitsPerEm;
+
+            RETURN_IF_FAILED(_font->GetDesignGlyphAdvances(
+                textLength,
+                &_glyphIndices.at(glyphStart),
+                &_glyphDesignUnitAdvances.at(glyphStart),
+                run.isSideways));
+
+            for (size_t i = glyphStart; i < _glyphAdvances.size(); i++)
+            {
+                _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
+            }
+
+            run.glyphCount = textLength;
+            glyphStart += textLength;
+
+            return S_OK;
+        }
+
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
@@ -369,6 +411,11 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 // - S_OK or suitable DirectWrite or STL error code
 [[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
 {
+    if (_isEntireTextSimple)
+    {
+        return S_OK;
+    }
+
     try
     {
         // Correct each run separately. This is needed whenever script, locale,
@@ -507,9 +554,6 @@ try
     }
 
     // We're going to walk through and check for advances that don't match the space that we expect to give out.
-
-    DWRITE_FONT_METRICS1 metrics;
-    run.fontFace->GetMetrics(&metrics);
 
     // Glyph Indices represents the number inside the selected font where the glyph image/paths are found.
     // Text represents the original text we gave in.
