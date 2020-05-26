@@ -66,7 +66,7 @@ Function Get-UCDEntryWidth($entry) {
 
 Function Get-UCDEntryFlags($entry) {
     If ($script:Pack) {
-        # If we're "pack"ing entries, only the width matters for telling them apart
+        # If we're "pack"ing entries, only the computed width matters for telling them apart
         Get-UCDEntryWidth $entry
         Return
     }
