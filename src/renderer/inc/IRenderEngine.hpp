@@ -20,6 +20,12 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
+    struct BackgroundRun
+    {
+        til::rectangle pos;
+        COLORREF color;
+    };
+
     class IRenderEngine
     {
     public:
@@ -91,6 +97,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintBufferBackground(std::basic_string_view<BackgroundRun> const backgrounds) = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                       const COORD coord,
                                                       const bool fTrimLeft,

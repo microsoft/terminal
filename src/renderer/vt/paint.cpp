@@ -111,6 +111,10 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
+[[nodiscard]] HRESULT VtEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> /*backgrounds*/) {
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe. If the characters are outside the ASCII range (0-0x7f), then

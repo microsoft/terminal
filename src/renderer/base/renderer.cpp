@@ -142,6 +142,8 @@ try
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
+    _PaintBufferBackground(pEngine);
+
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
@@ -589,6 +591,82 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 [[nodiscard]] HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->PaintBackground();
+}
+
+void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
+{
+    // This is the subsection of the entire screen buffer that is currently being presented.
+    // It can move left/right or top/bottom depending on how the viewport is scrolled
+    // relative to the entire buffer.
+    const auto view = _pData->GetViewport();
+
+    // This is effectively the number of cells on the visible screen that need to be redrawn.
+    // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
+    const auto dirtyAreas = pEngine->GetDirtyArea();
+
+    for (const auto dirtyRect : dirtyAreas)
+    {
+        auto dirty = Viewport::FromInclusive(dirtyRect);
+
+        // Shift the origin of the dirty region to match the underlying buffer so we can
+        // compare the two regions directly for intersection.
+        dirty = Viewport::Offset(dirty, view.Origin());
+
+        // The intersection between what is dirty on the screen (in need of repaint)
+        // and what is supposed to be visible on the screen (the viewport) is what
+        // we need to walk through line-by-line and repaint onto the screen.
+        const auto redraw = Viewport::Intersect(dirty, view);
+
+        // Shortcut: don't bother redrawing if the width is 0.
+        if (redraw.Width() > 0)
+        {
+            auto globalInvert{ _pData->IsScreenReversed() };
+
+            // Retrieve the text buffer so we can read information out of it.
+            const auto& buffer = _pData->GetTextBuffer();
+
+            std::vector<BackgroundRun> backgroundRuns;
+            backgroundRuns.reserve(1024);
+
+            // Now walk through each row of text that we need to redraw.
+            for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
+            {
+                const auto r{ buffer.GetRowByOffset(row) };
+                auto a{ r.GetAttrRow() };
+
+                size_t distance{ 0 };
+                auto begin{ a.cbegin() };
+                begin += redraw.Left(); // workaround missing operator+
+                auto end{ begin };
+                end += redraw.Width(); // workaround missing operator+
+                std::optional<COLORREF> last{ std::nullopt };
+                til::point posLastChange{redraw.Left(), row};
+                for (auto ait{ begin }; ait != end; ++ait, ++distance)
+                {
+                    const COLORREF rgb = globalInvert ? _pData->GetForegroundColor(*ait) : _pData->GetBackgroundColor(*ait);
+                    if (last != rgb)
+                    {
+                        if (last)
+                        {
+                            backgroundRuns.emplace_back(BackgroundRun{
+                                til::rectangle{ posLastChange, til::size{ distance, 1u } },
+                                *last });
+                        }
+                        last = rgb;
+                        posLastChange += til::point{ distance, 0u };
+                        distance = 0;
+                    }
+                }
+                backgroundRuns.emplace_back(BackgroundRun{
+                    til::rectangle{ posLastChange, til::size{ distance, 1u } },
+                    *last });
+            }
+            if (backgroundRuns.size() > 0)
+            {
+                THROW_IF_FAILED(pEngine->PaintBufferBackground({ backgroundRuns.data(), backgroundRuns.size() }));
+            }
+        }
+    }
 }
 
 // Routine Description:

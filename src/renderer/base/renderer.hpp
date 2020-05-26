@@ -95,6 +95,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
+        void _PaintBufferBackground(IRenderEngine* const pEngine);
+
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,

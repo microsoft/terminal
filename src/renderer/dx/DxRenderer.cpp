@@ -1235,6 +1235,11 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] HRESULT DxEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> backgrounds) {
+    (void)backgrounds;
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Places one line of text onto the screen at the given position
 // Arguments:

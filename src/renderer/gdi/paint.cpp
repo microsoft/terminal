@@ -266,6 +266,10 @@ using namespace Microsoft::Console::Render;
     return S_OK;
 }
 
+[[nodiscard]] HRESULT GdiEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> /*backgrounds*/) {
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Draws one line of the buffer to the screen.
 // - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
