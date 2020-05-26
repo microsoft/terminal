@@ -86,6 +86,7 @@ namespace Microsoft::Console::Render
 
         std::unique_ptr<IRenderThread> _pThread;
         bool _destructing = false;
+        std::optional<til::point> _cursorPos{ std::nullopt };
 
         void _NotifyPaintFrame();
 

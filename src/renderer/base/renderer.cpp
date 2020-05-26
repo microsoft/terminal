@@ -700,12 +700,25 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // when we go to draw gridlines for the length of the run.
             const auto currentRunColor = color;
 
-            // Update the drawing brushes with our color.
-            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
-
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
+
+            const bool isCursorRun = _cursorPos.has_value() && _cursorPos.value() == til::point{ screenPoint };
+            if (isCursorRun)
+            {
+                auto fakedAttrs = color;
+                THROW_IF_FAILED(pEngine->UpdateDrawingBrushes(_pData->GetForegroundColor(fakedAttrs),
+                                                              0, // ARGB(0, 0, 0, 0),
+                                                              fakedAttrs.GetLegacyAttributes(),
+                                                              fakedAttrs.GetExtendedAttributes(),
+                                                              false));
+            }
+            else
+            {
+                // Update the drawing brushes with our color.
+                THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+            }
 
             // Ensure that our cluster vector is clear.
             clusters.clear();
@@ -719,7 +732,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // When the color changes, it will save the new color off and break.
             do
             {
-                if (color != it->TextAttr())
+                if (!isCursorRun && color != it->TextAttr())
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
@@ -727,7 +740,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
                     {
                         color = newAttr;
-                        break; // vend this run
+                        break; // end this run
                     }
                 }
 
@@ -767,6 +780,13 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Advance the cluster and column counts.
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
                 cols += columnCount;
+
+                til::point newRunEnd{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+                if (isCursorRun ||
+                    (_cursorPos.has_value() && newRunEnd  == _cursorPos.value()))
+                {
+                    break;
+                }
 
             } while (it);
 
@@ -882,11 +902,17 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine, const bool prePai
             // Draw it within the viewport
             if (prePaint)
             {
-                LOG_IF_FAILED(pEngine->PrePaintCursor(options));
+                auto result = pEngine->PrePaintCursor(options);
+                LOG_IF_FAILED(result);
+                if (result != S_FALSE)
+                {
+                    _cursorPos = coordCursor;
+                }
             }
             else
             {
                 LOG_IF_FAILED(pEngine->PaintCursor(options));
+                _cursorPos = std::nullopt;
             }
         }
     }
