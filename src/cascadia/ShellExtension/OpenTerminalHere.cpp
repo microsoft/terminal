@@ -4,9 +4,6 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 
-// using namespace winrt;
-// using namespace winrt::Windows::Foundation;
-
 static std::wstring VerbDisplayName{ L"Open in Windows Terminal" };
 static std::wstring VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
 static std::wstring VerbName{ L"WindowsTerminalOpenHere" };

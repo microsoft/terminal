@@ -12,6 +12,9 @@ Abstract:
 - Importantly, we need to make sure to declare the GUID of this implementation
   class explicitly, so we can refer to it in our manifest, and use it to create
   instances of this class when the shell asks for one.
+- This is defined as a WRL type, so that we can use WRL's CoCreatableClass magic
+  to create the class factory and module management for us. See more details in
+  dllmain.cpp.
 
 Author(s):
 - Mike Griese - May 2020
@@ -25,8 +28,7 @@ Author(s):
 using namespace Microsoft::WRL;
 
 struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
-    // OpenTerminalHere : winrt::implements<OpenTerminalHere, IExplorerCommand>
-    OpenTerminalHere : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IExplorerCommand>
+    OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IExplorerCommand>
 {
 #pragma region IExplorerCommand
     HRESULT Invoke(IShellItemArray* psiItemArray,
