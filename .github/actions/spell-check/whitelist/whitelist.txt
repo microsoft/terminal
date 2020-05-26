@@ -224,6 +224,8 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 catid
+carlos
+zamora
 cazamor
 CBash
 cbb
@@ -710,6 +712,7 @@ Elems
 elif
 elseif
 emacs
+Emoji
 Emojis
 emptybox
 enabledelayedexpansion
@@ -1673,7 +1676,6 @@ OUTPATHROOT
 Outptr
 Ov
 OVERLAPPEDWINDOW
-OVR
 OWNDC
 OWNERDRAWFIXED
 packageuwp
@@ -2435,6 +2437,7 @@ uap
 uapadmin
 ubuntu
 ucd
+UCD
 uch
 UCHAR
 ucs
@@ -2634,7 +2637,6 @@ wfdopen
 WFill
 wfopen
 wfstream
-WGL
 WHelper
 whitelisting
 WIDTHSCROLL
