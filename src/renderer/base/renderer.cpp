@@ -783,8 +783,10 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+            // We're only allowed to draw the grid lines under certain circumstances.
             if (_pData->IsGridLineDrawingAllowed())
             {
+                // See GH: 803
                 // If we found a wide character while we looped above, it's possible we skipped over the right half
                 // attribute that could have contained different line information than the left half.
                 if (containsWideCharacter)
@@ -805,7 +807,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     {
                         auto lines = lineIt->TextAttr();
 
-                        // We're only allowed to draw the grid lines under certain circumstances.
                         _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
                     }
                 }
