@@ -55,6 +55,9 @@ public:
 
     void RedrawCompMessage();
 
+    void SaveCursorVisibility();
+    void RestoreCursorVisibility();
+
 private:
     [[nodiscard]] HRESULT _AddConversionArea();
 
@@ -80,8 +83,6 @@ private:
                                                                  const Microsoft::Console::Types::Viewport view,
                                                                  SCREEN_INFORMATION& screenInfo);
 
-    void _SaveCursorVisibility();
-    void _RestoreCursorVisibility();
     bool _isSavedCursorVisible;
 
     std::wstring _text;

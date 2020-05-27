@@ -2659,6 +2659,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+winget
 WINDIR
 windll
 WINDOWALPHA
