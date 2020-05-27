@@ -5,6 +5,7 @@ IBox
 ICustom
 IMap
 IObject
+IStorage
 LCID
 NCHITTEST
 NCLBUTTONDBLCLK
