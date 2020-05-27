@@ -11,6 +11,7 @@ IClass
 IExplorer
 IMap
 IObject
+IStorage
 LCID
 NCHITTEST
 NCLBUTTONDBLCLK

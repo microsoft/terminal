@@ -5,9 +5,15 @@
 #include "OpenTerminalHere.h"
 
 // TODO GH#6112: Localize these strings
-static std::wstring VerbDisplayName{ L"Open in Windows Terminal" };
-static std::wstring VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
-static std::wstring VerbName{ L"WindowsTerminalOpenHere" };
+static constexpr std::wstring_view VerbDisplayName{ L"Open in Windows Terminal" };
+static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
+static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
+
+static constexpr std::wstring_view WtExe{ L"wt.exe" };
+static constexpr std::wstring_view WtdExe{ L"wtd.exe" };
+static constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
+
+static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 
 // This code is aggressively copied from
 //   https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/
@@ -72,8 +78,8 @@ static std::wstring _getExePath()
             const std::wstring pfn{ id.FamilyName() };
             if (!pfn.empty())
             {
-                const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\") };
-                const std::filesystem::path wtPath = windowsAppsPath / pfn / (IsDevBuild() ? L"wtd.exe" : L"wt.exe");
+                const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
+                const std::filesystem::path wtPath = windowsAppsPath / pfn / (IsDevBuild() ? WtdExe : WtExe);
                 return wtPath;
             }
         }
@@ -90,7 +96,7 @@ static std::wstring _getExePath()
             THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, dllPathString));
             const std::filesystem::path dllPath{ dllPathString };
             const std::filesystem::path rootDir = dllPath.parent_path();
-            std::filesystem::path wtPath = rootDir / "WindowsTerminal.exe";
+            std::filesystem::path wtPath = rootDir / WindowsTerminalExe;
             return wtPath;
         }
         CATCH_LOG();
@@ -158,7 +164,7 @@ HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
     // Change the string we return depending on if we're running from the dev
     // build package or not.
     const bool isDevBuild = IsDevBuild();
-    return SHStrDup(isDevBuild ? VerbDevBuildDisplayName.c_str() : VerbDisplayName.c_str(), ppszName);
+    return SHStrDup(isDevBuild ? VerbDevBuildDisplayName.data() : VerbDisplayName.data(), ppszName);
 }
 
 HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
