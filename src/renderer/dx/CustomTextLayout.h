@@ -194,7 +194,7 @@ namespace Microsoft::Console::Render
         // This appears to be the index of the glyph inside each font.
         std::vector<UINT16> _glyphIndices;
 
-        // This is used when the entire text is simple.
+        // This is for calculating glyph advances when the entire text is simple.
         std::vector<INT32> _glyphDesignUnitAdvances;
 
         std::vector<float> _glyphAdvances;

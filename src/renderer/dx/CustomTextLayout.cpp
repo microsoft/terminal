@@ -68,14 +68,19 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
     BOOL isTextSimple = FALSE;
     UINT32 uiLengthRead = 0;
-    UINT32 glyphStart = 0;
-
-    HRESULT hr = S_OK;
+    const UINT32 glyphStart = 0;
 
     _glyphIndices.resize(textLength);
 
-    hr = _analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, &_glyphIndices.at(glyphStart));
-    _isEntireTextSimple = isTextSimple && uiLengthRead == textLength;
+    HRESULT hr = _analyzer->GetTextComplexity(
+        _text.c_str(),
+        textLength,
+        _font.Get(),
+        &isTextSimple,
+        &uiLengthRead,
+        &_glyphIndices.at(glyphStart));
+
+    _isEntireTextSimple = SUCCEEDED(hr) && isTextSimple && uiLengthRead == textLength;
 }
 
 // Routine Description:
