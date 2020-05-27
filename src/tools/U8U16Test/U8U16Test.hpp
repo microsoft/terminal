@@ -13,6 +13,7 @@
 #include <string_view>
 #include <array>
 #include <algorithm>
+#include <stdexcept>
 #include <windows.h>
 #include <intsafe.h>
 
