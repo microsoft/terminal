@@ -29,6 +29,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam) noexcept
+try
 {
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
     HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -84,6 +85,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+CATCH_LOG()
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
@@ -686,6 +688,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
 HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+try
 {
     std::wstring finalString;
 
@@ -742,6 +745,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Copies the given string onto the global system clipboard in the specified format
