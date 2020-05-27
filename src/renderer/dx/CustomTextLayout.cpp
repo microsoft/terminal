@@ -72,7 +72,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
     _glyphIndices.resize(textLength);
 
-    HRESULT hr = _analyzer->GetTextComplexity(
+    const HRESULT hr = _analyzer->GetTextComplexity(
         _text.c_str(),
         textLength,
         _font.Get(),
