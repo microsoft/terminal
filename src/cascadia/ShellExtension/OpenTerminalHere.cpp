@@ -23,7 +23,7 @@ static std::wstring VerbName{ L"WindowsTerminalOpenHere" };
 // - <none>
 // Return Value:
 // - true if we believe this extension is being run in the dev build package.
-bool IsDevBuild()
+static bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
     static bool isDevBuild = []() -> bool {
@@ -53,7 +53,7 @@ bool IsDevBuild()
 // - <none>
 // Return Value:
 // - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
-std::wstring _getExePath()
+static std::wstring _getExePath()
 {
     // use C++11 magic statics to make sure we only do this once.
     static const std::wstring exePath = []() -> std::wstring {
@@ -117,7 +117,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
     winrt::com_ptr<IShellItem> psi;
     RETURN_IF_FAILED(psiItemArray->GetItemAt(0, psi.put()));
 
-    PWSTR pszName;
+    wil::unique_cotaskmem_string pszName;
     RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
 
     {
@@ -125,7 +125,8 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
-        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\"", _getExePath(), pszName);
+        // Append a "\." to the given path, so that this will work in "C:\"
+        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\\.\"", _getExePath(), pszName.get());
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
@@ -139,8 +140,6 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
             &_piClient // lpProcessInformation
             ));
     }
-
-    CoTaskMemFree(pszName);
 
     return S_OK;
 }
