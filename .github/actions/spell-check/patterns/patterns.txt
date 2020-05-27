@@ -1,4 +1,4 @@
-https://(?:(?:[-a-zA-Z0-9?&=]*\.|)microsoft\.com)/[-a-zA-Z0-9?&=_\/.]*
+https://(?:(?:[-a-zA-Z0-9?&=]*\.|)microsoft\.com)/[-a-zA-Z0-9?&=_#\/.]*
 https://aka\.ms/[-a-zA-Z0-9?&=\/_]*
 https://www.w3.org/[-a-zA-Z0-9?&=\/_#]*
 https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*

@@ -2145,7 +2145,7 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
-shlobjidl
+shobjidl
 shlwapi
 SHORTPATH
 SHOWCURSOR
