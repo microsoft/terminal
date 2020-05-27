@@ -56,7 +56,7 @@ bool IsDevBuild()
 std::wstring _getExePath()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static const std::wstring exepath = []() -> std::wstring {
+    static const std::wstring exePath = []() -> std::wstring {
         // First, check a packaged location for the exe. If we've got a package
         // family name, that means we're one of the packaged Dev build, packaged
         // Release build, or packaged Preview build.
@@ -97,7 +97,7 @@ std::wstring _getExePath()
 
         return L"wt.exe";
     }();
-    return exepath;
+    return exePath;
 }
 
 // Method Description:
