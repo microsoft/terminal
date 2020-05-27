@@ -689,6 +689,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // And hold the point where we should start drawing.
         auto screenPoint = target;
 
+        // We might need the original iterator to draw lines later.
+        const auto originalIt = it;
+
         // This outer loop will continue until we reach the end of the text we are trying to draw.
         while (it)
         {
@@ -774,8 +777,25 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
             {
-                // We're only allowed to draw the grid lines under certain circumstances.
-                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                // Start from the original position.
+                auto lineIt = originalIt;
+                // Start from the original target.
+                auto lineTarget = target;
+
+                // We need to go through the iterators again to ensure we get the lines associated with each
+                // exact column. The code above will condense two-column characters into one, but it is possible
+                // (like with the IME) that the line drawing characters will vary from the left to right half
+                // of a wider character.
+                // We could theoretically pre-pass for this in the loop above to be more efficient about walking
+                // the iterator, but I fear it would make the code even more confusing than it already is.
+                // Do that in the future if some WPR trace points you to this spot as super bad.
+                for (auto colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                {
+                    auto lines = lineIt->TextAttr();
+
+                    // We're only allowed to draw the grid lines under certain circumstances.
+                    _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
+                }
             }
         }
     }
