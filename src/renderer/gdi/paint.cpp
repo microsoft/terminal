@@ -36,6 +36,8 @@ using namespace Microsoft::Console::Render;
     // Prepare our in-memory bitmap for double-buffered composition.
     RETURN_IF_FAILED(_PrepareMemoryBitmap(_hwndTargetWindow));
 
+    SetBkMode(_hdcMemoryContext, TRANSPARENT);
+
     // We must use Get and Release DC because BeginPaint/EndPaint can only be called in response to a WM_PAINT message (and may hang otherwise)
     // We'll still use the PAINTSTRUCT for information because it's convenient.
     _psInvalidData.hdc = GetDC(_hwndTargetWindow);
@@ -266,8 +268,16 @@ using namespace Microsoft::Console::Render;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT GdiEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> /*backgrounds*/) {
-    return S_FALSE;
+[[nodiscard]] HRESULT GdiEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> backgrounds) {
+    for (const auto& brun : backgrounds)
+    {
+        wil::unique_hbrush hbr{ CreateSolidBrush(brun.col) };
+        COORD const coordFontSize = _GetFontSize();
+        til::size fsz{ coordFontSize.X, coordFontSize.Y };
+        RECT rect{ static_cast<RECT>(brun.pos.scale_up(fsz)) };
+        FillRect(_hdcMemoryContext, &rect, hbr.get());
+    }
+    return S_OK;
 }
 
 // Routine Description:
@@ -372,7 +382,7 @@ using namespace Microsoft::Console::Render;
         pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
-        pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
+        pPolyTextLine->uiFlags = ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y;
         pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
@@ -409,10 +419,12 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
+        SetBkMode(_hdcMemoryContext, TRANSPARENT);
         if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
         {
             hr = E_FAIL;
         }
+        SetBkMode(_hdcMemoryContext, OPAQUE);
 
         for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
         {

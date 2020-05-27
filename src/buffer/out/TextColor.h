@@ -120,6 +120,7 @@ private:
     template<typename TextColor>
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
+    friend struct fmt::formatter<TextColor>;
 };
 
 #pragma pack(pop)

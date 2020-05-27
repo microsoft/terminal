@@ -17,13 +17,15 @@ Author(s):
 #include "../../inc/conattrs.hpp"
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
+#include "../buffer/out/TextAttribute.hpp"
 
 namespace Microsoft::Console::Render
 {
     struct BackgroundRun
     {
         til::rectangle pos;
-        COLORREF color;
+        TextAttribute attr;
+        COLORREF col;
     };
 
     class IRenderEngine

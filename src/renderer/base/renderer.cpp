@@ -104,6 +104,51 @@ Renderer::~Renderer()
     return S_OK;
 }
 
+template<>
+struct fmt::formatter<TextColor>
+{
+    constexpr auto parse(format_parse_context& ctx) {
+        auto it{ ctx.begin() };
+        while (it != ctx.end() && *it != '}')
+            ;
+        return it;
+    }
+    template<typename FormatContext>
+    auto format(const TextColor& color, FormatContext& ctx)
+    {
+        if (color.IsDefault())
+        {
+            return format_to(ctx.out(), "[default]");
+        }
+        else if (color.IsRgb())
+        {
+            return format_to(ctx.out(), "[RGB:0x{:6X}]", color._GetRGB());
+        }
+        return format_to(ctx.out(), "[index:{:4X}]", color._red);
+    }
+};
+
+template<>
+struct fmt::formatter<TextAttribute>
+{
+    constexpr auto parse(format_parse_context& ctx) {
+        auto it{ ctx.begin() };
+        while (it != ctx.end() && *it != '}')
+            ;
+        return it;
+    }
+    template<typename FormatContext>
+    auto format(const TextAttribute& attr, FormatContext& ctx)
+    {
+        return format_to(ctx.out(),
+                         "[FG:{0},BG:{1},bold:{2},wLegacy:(0x{3:4X})]",
+                         attr._foreground,
+                         attr._background,
+                         attr.IsBold(),
+                         attr._wAttrLegacy);
+    }
+};
+
 [[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept
 try
 {
@@ -142,10 +187,51 @@ try
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
-    _PaintBufferBackground(pEngine);
+    auto f{ _ProcessDirtyLines(pEngine) };
+    #if 0
+    OutputDebugStringA(fmt::format("DTL {0} DIRTY LINES\n", f.size()).c_str());
+    for (const auto& dl : f)
+    {
+        OutputDebugStringA(fmt::format("DTL DIRTY LINE AT {0} (wrapped {1} trimLeft {2})\nDTL Backgrounds: {3}\n", til::u16u8(dl.origin.to_string()), dl.wrapped, dl.trimLeft, dl.backgrounds.size()).c_str());
+        for (const auto& bg : dl.backgrounds)
+        {
+            OutputDebugStringA(fmt::format("DTL `- BACKGROUND AT {0} ATTR {1}\n", til::u16u8(bg.pos.to_string()), bg.attr).c_str());
+        }
+        OutputDebugStringA(fmt::format("DTL ClusterRuns: {0}\n", dl.clusters.size()).c_str());
+        for (const auto& bg : dl.clusters)
+        {
+            OutputDebugStringA(fmt::format("DTL `- COLOR CLUSTER ATTR {0}\n", bg.attribute).c_str());
+            for (const auto& cl : bg.clusters)
+            {
+                OutputDebugStringA(fmt::format("DTL   `- CLUSTER `{0}` COLS {1}\n", til::u16u8(cl.GetText()), cl.GetColumns()).c_str());
+            }
+        }
+    }
+    OutputDebugStringA("DTL \n");
+    #endif
+    //_PaintBufferBackground(pEngine);
+    auto gridLines = _pData->IsGridLineDrawingAllowed();
+    for (const auto& dl : f)
+    {
+        //auto globalInvert{ _pData->IsScreenReversed() };
+
+        RETURN_IF_FAILED(pEngine->PaintBufferBackground({ dl.backgrounds.data(), dl.backgrounds.size() }));
+        auto org{ dl.origin };
+        for (const auto& ccl : dl.clusters)
+        {
+            RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, ccl.attribute, false));
+            RETURN_IF_FAILED(pEngine->PaintBufferLine({ ccl.clusters.data(), ccl.clusters.size() }, org, dl.trimLeft, dl.wrapped));
+            if (gridLines)
+            {
+                _PaintBufferOutputGridLineHelper(pEngine, ccl.attribute, ccl.columns, dl.origin);
+            }
+            // and shift
+            org += til::point{ ccl.columns, 0u };
+        }
+    }
 
     // 2. Paint Rows of Text
-    _PaintBufferOutput(pEngine);
+    //_PaintBufferOutput(pEngine);
 
     // 3. Paint overlays that reside above the text buffer
     _PaintOverlays(pEngine);
@@ -593,7 +679,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     return pEngine->PaintBackground();
 }
 
-void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
+std::vector<Line> Microsoft::Console::Render::Renderer::_ProcessDirtyLines(_In_ IRenderEngine* const pEngine)
 {
     // This is the subsection of the entire screen buffer that is currently being presented.
     // It can move left/right or top/bottom depending on how the viewport is scrolled
@@ -604,8 +690,12 @@ void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
     const auto dirtyAreas = pEngine->GetDirtyArea();
 
+    std::vector<Line> lines;
+    lines.reserve(dirtyAreas.size());
+
     for (const auto dirtyRect : dirtyAreas)
     {
+        auto globalInvert{ _pData->IsScreenReversed() };
         auto dirty = Viewport::FromInclusive(dirtyRect);
 
         // Shift the origin of the dirty region to match the underlying buffer so we can
@@ -620,53 +710,106 @@ void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
         // Shortcut: don't bother redrawing if the width is 0.
         if (redraw.Width() > 0)
         {
-            auto globalInvert{ _pData->IsScreenReversed() };
-
             // Retrieve the text buffer so we can read information out of it.
             const auto& buffer = _pData->GetTextBuffer();
-
-            std::vector<BackgroundRun> backgroundRuns;
-            backgroundRuns.reserve(1024);
 
             // Now walk through each row of text that we need to redraw.
             for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
             {
-                const auto r{ buffer.GetRowByOffset(row) };
-                auto a{ r.GetAttrRow() };
+                til::rectangle region{ til::point{ redraw.Left(), row }, til::size{ redraw.Width(), 1 } };
+                Viewport vp{ Viewport::FromInclusive(region) };
+                til::point screenPoint{ region.origin() - til::point{ view.Origin() } };
+                Line l;
+                l.origin = screenPoint;
 
-                size_t distance{ 0 };
-                auto begin{ a.cbegin() };
-                begin += redraw.Left(); // workaround missing operator+
-                auto end{ begin };
-                end += redraw.Width(); // workaround missing operator+
-                std::optional<COLORREF> last{ std::nullopt };
-                til::point posLastChange{redraw.Left(), row};
-                for (auto ait{ begin }; ait != end; ++ait, ++distance)
+                // accumulate backgrounds and clusters...
+                auto it{ buffer.GetCellDataAt(region.origin(), vp) };
+
+                // Calculate if two things are true:
+                // 1. this row wrapped
+                // 2. We're painting the last col of the row.
+                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+                const auto lineWrapped = (buffer.GetRowByOffset(region.top()).GetCharRow().WasWrapForced()) &&
+                                         (region.right() == buffer.GetSize().Width());
+
+                // Cache this in the current renderline
+                l.wrapped = lineWrapped;
+                l.trimLeft = false;
+
+                auto gbgcol = [this](const TextAttribute& attr) {
+                    return _pData->GetBackgroundColor(attr);
+                };
+
+                auto lastBg{ &l.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, it->TextAttr() }) };
+                lastBg->col = gbgcol(lastBg->attr);
+                auto lastCcl{ &l.clusters.emplace_back(ColorCluster{ it->TextAttr(), 0, std::vector<Cluster>{} }) };
+                do
                 {
-                    const COLORREF rgb = globalInvert ? _pData->GetForegroundColor(*ait) : _pData->GetBackgroundColor(*ait);
-                    if (last != rgb)
+                    const auto attr{ it->TextAttr() };
+                    // accumulate background, break off background run if it is different
+                    if (!attr.HasIdenticalBackground(lastBg->attr, globalInvert))
                     {
-                        if (last)
-                        {
-                            backgroundRuns.emplace_back(BackgroundRun{
-                                til::rectangle{ posLastChange, til::size{ distance, 1u } },
-                                *last });
-                        }
-                        last = rgb;
-                        posLastChange += til::point{ distance, 0u };
-                        distance = 0;
+                        // if there was a last bg split, and we are _different_, emit the split
+                        lastBg = &l.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, attr });
+                        lastBg->col = gbgcol(attr);
                     }
-                }
-                backgroundRuns.emplace_back(BackgroundRun{
-                    til::rectangle{ posLastChange, til::size{ distance, 1u } },
-                    *last });
-            }
-            if (backgroundRuns.size() > 0)
-            {
-                THROW_IF_FAILED(pEngine->PaintBufferBackground({ backgroundRuns.data(), backgroundRuns.size() }));
+
+                    // accumulate text clusters; break off cluster run if it is different
+                    if (!attr.HasIdenticalForeground(lastCcl->attribute, globalInvert))
+                    {
+                        lastCcl = &l.clusters.emplace_back(ColorCluster{ attr, 0, std::vector<Cluster>{} });
+                    }
+
+                    // Walk through the text data and turn it into rendering clusters.
+                    // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+                    size_t columnCount = 0;
+
+                    // If we're on the first cluster to be added and it's marked as "trailing"
+                    // (a.k.a. the right half of a two column character), then we need some special handling.
+                    if (lastCcl->clusters.empty() && it->DbcsAttr().IsTrailing())
+                    {
+                        // If we have room to move to the left to start drawing...
+                        if (screenPoint.x() > 0)
+                        {
+                            // Move left to the one so the whole character can be struck correctly.
+                            screenPoint -= til::point{ 1, 0 };
+                            // And tell the next function to trim off the left half of it.
+                            l.trimLeft = true;
+                            // And add one to the number of columns we expect it to take as we insert it.
+                            columnCount = it->Columns() + 1;
+                            lastCcl->clusters.emplace_back(it->Chars(), columnCount);
+                        }
+                        else
+                        {
+                            // If we didn't have room, move to the right one and just skip this one.
+                            screenPoint += til::point{ 1, 0 };
+                            continue;
+                        }
+                    }
+                    // Otherwise if it's not a special case, just insert it as is.
+                    else
+                    {
+                        columnCount = it->Columns();
+                        lastCcl->clusters.emplace_back(it->Chars(), columnCount);
+                    }
+
+                    // Advance the cluster and column counts.
+                    it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                    lastBg->pos += til::size{ columnCount, 0u };
+                    lastCcl->columns += columnCount;
+                    screenPoint += til::point{ columnCount, 0u };
+                } while (it);
+
+                lines.emplace_back(std::move(l));
             }
         }
     }
+    return lines;
+}
+
+void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
+{
+    (void)pEngine;
 }
 
 // Routine Description:
@@ -679,77 +822,28 @@ void Renderer::_PaintBufferBackground(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 {
-    // This is the subsection of the entire screen buffer that is currently being presented.
-    // It can move left/right or top/bottom depending on how the viewport is scrolled
-    // relative to the entire buffer.
-    const auto view = _pData->GetViewport();
-
-    // This is effectively the number of cells on the visible screen that need to be redrawn.
-    // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    const auto dirtyAreas = pEngine->GetDirtyArea();
-
-    for (const auto dirtyRect : dirtyAreas)
-    {
-        auto dirty = Viewport::FromInclusive(dirtyRect);
-
-        // Shift the origin of the dirty region to match the underlying buffer so we can
-        // compare the two regions directly for intersection.
-        dirty = Viewport::Offset(dirty, view.Origin());
-
-        // The intersection between what is dirty on the screen (in need of repaint)
-        // and what is supposed to be visible on the screen (the viewport) is what
-        // we need to walk through line-by-line and repaint onto the screen.
-        const auto redraw = Viewport::Intersect(dirty, view);
-
-        // Shortcut: don't bother redrawing if the width is 0.
-        if (redraw.Width() > 0)
-        {
-            // Retrieve the text buffer so we can read information out of it.
-            const auto& buffer = _pData->GetTextBuffer();
-
-            // Now walk through each row of text that we need to redraw.
-            for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
-            {
-                // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
-                // area in width and exactly 1 tall.
-                const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
-
-                // Find where on the screen we should place this line information. This requires us to re-map
-                // the buffer-based origin of the line back onto the screen-based origin of the line
-                // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
-                // at 13,26 relative to the buffer.
-                // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
-                const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
-
-                // Retrieve the cell information iterator limited to just this line we want to redraw.
-                auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
-
-                // Calculate if two things are true:
-                // 1. this row wrapped
-                // 2. We're painting the last col of the row.
-                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
-                                         (bufferLine.RightExclusive() == buffer.GetSize().Width());
-
-                // Ask the helper to paint through this specific line.
-                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
-            }
-        }
-    }
+    (void)pEngine;
 }
 
+#if 0
 static bool _IsAllSpaces(const std::wstring_view v)
 {
     // first non-space char is not found (is npos)
     return v.find_first_not_of(L" ") == decltype(v)::npos;
 }
+#endif
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
                                         const COORD target,
                                         const bool lineWrapped)
 {
-    auto globalInvert{ _pData->IsScreenReversed() };
+    (void)lineWrapped;
+    (void)target;
+    (void)it;
+    (void)pEngine;
+#if 0
+    //auto globalInvert{ _pData->IsScreenReversed() };
 
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -800,7 +894,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    //if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
                     {
                         color = newAttr;
                         break; // vend this run
@@ -857,6 +951,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             }
         }
     }
+#endif
 }
 
 // Method Description:
@@ -1175,7 +1270,7 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 
 // Method Description:
 // - Registers a callback that will be called when this renderer gives up.
-//   An application consuming a renderer can use this to display auxiliary Retry UI
+//   An application consuming a renderer can use this to display auxiliary Re, globalInverttry UI
 // Arguments:
 // - pfn: the callback
 // Return Value:

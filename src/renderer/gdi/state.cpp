@@ -199,7 +199,8 @@ GdiEngine::~GdiEngine()
     }
     if (colorBackground != _lastBg)
     {
-        RETURN_HR_IF(E_FAIL, CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+        //RETURN_HR_IF(E_FAIL, CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+        // try to hork it up
         _lastBg = colorBackground;
     }
 

@@ -27,6 +27,20 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
+    struct ColorCluster
+    {
+        TextAttribute attribute;
+        size_t columns;
+        std::vector<Cluster> clusters;
+    };
+    struct Line
+    {
+        til::point origin;
+        bool wrapped;
+        bool trimLeft;
+        std::vector<BackgroundRun> backgrounds;
+        std::vector<ColorCluster> clusters;
+    };
     class Renderer sealed : public IRenderer
     {
     public:
@@ -94,6 +108,8 @@ namespace Microsoft::Console::Render
         bool _CheckViewportAndScroll();
 
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
+
+        std::vector<Line> _ProcessDirtyLines(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferBackground(IRenderEngine* const pEngine);
 

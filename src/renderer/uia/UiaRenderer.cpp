@@ -296,6 +296,11 @@ CATCH_RETURN();
     return S_FALSE;
 }
 
+[[nodiscard]] HRESULT UiaEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun>)
+{
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Places one line of text onto the screen at the given position
 //  For UIA, this doesn't mean anything. So do nothing.
