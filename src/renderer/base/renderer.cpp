@@ -107,7 +107,8 @@ Renderer::~Renderer()
 template<>
 struct fmt::formatter<TextColor>
 {
-    constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto parse(format_parse_context& ctx)
+    {
         auto it{ ctx.begin() };
         while (it != ctx.end() && *it != '}')
             ;
@@ -131,7 +132,8 @@ struct fmt::formatter<TextColor>
 template<>
 struct fmt::formatter<TextAttribute>
 {
-    constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto parse(format_parse_context& ctx)
+    {
         auto it{ ctx.begin() };
         while (it != ctx.end() && *it != '}')
             ;
@@ -188,7 +190,7 @@ try
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
     auto f{ _ProcessDirtyLines(pEngine) };
-    #if 0
+#if 0
     OutputDebugStringA(fmt::format("DTL {0} DIRTY LINES\n", f.size()).c_str());
     for (const auto& dl : f)
     {
@@ -208,25 +210,37 @@ try
         }
     }
     OutputDebugStringA("DTL \n");
-    #endif
-    //_PaintBufferBackground(pEngine);
-    auto gridLines = _pData->IsGridLineDrawingAllowed();
-    for (const auto& dl : f)
+#endif
+
+    for (auto& dl : f)
     {
         //auto globalInvert{ _pData->IsScreenReversed() };
 
-        RETURN_IF_FAILED(pEngine->PaintBufferBackground({ dl.backgrounds.data(), dl.backgrounds.size() }));
-        auto org{ dl.origin };
-        for (const auto& ccl : dl.clusters)
+        for (auto& bg : dl.backgrounds)
         {
-            RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, ccl.attribute, false));
-            RETURN_IF_FAILED(pEngine->PaintBufferLine({ ccl.clusters.data(), ccl.clusters.size() }, org, dl.trimLeft, dl.wrapped));
-            if (gridLines)
+            // HAX HAX HAX HAX HAX
+            bg.color = _pData->GetBackgroundColor(bg.attribute);
+        }
+        RETURN_IF_FAILED(pEngine->PaintBufferBackground({ dl.backgrounds.data(), dl.backgrounds.size() }));
+    }
+
+    //if (!WI_IsFlagSet(pEngine->GetFlags(), RenderEngineFlags::SupportsBackgroundAtlas))
+    {
+        auto gridLines = _pData->IsGridLineDrawingAllowed();
+        for (auto& dl : f)
+        {
+            auto org{ dl.origin };
+            for (const auto& ccl : dl.clusters)
             {
-                _PaintBufferOutputGridLineHelper(pEngine, ccl.attribute, ccl.columns, dl.origin);
+                RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, ccl.attribute, false));
+                RETURN_IF_FAILED(pEngine->PaintBufferLine({ ccl.clusters.data(), ccl.clusters.size() }, org, dl.trimLeft, dl.wrapped));
+                if (gridLines)
+                {
+                    _PaintBufferOutputGridLineHelper(pEngine, ccl.attribute, ccl.columns, dl.origin);
+                }
+                // and shift
+                org += til::point{ ccl.columns, 0u };
             }
-            // and shift
-            org += til::point{ ccl.columns, 0u };
         }
     }
 
@@ -679,7 +693,93 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     return pEngine->PaintBackground();
 }
 
-std::vector<Line> Microsoft::Console::Render::Renderer::_ProcessDirtyLines(_In_ IRenderEngine* const pEngine)
+static PreparedDirtyRegion _GenerateDirtyScreenRow(const TextBuffer& buffer, til::rectangle row, til::point viewportOrigin, bool shouldPrepareBackgroundAtlas = false)
+{
+    Viewport viewport{ Viewport::FromInclusive(row) };
+    til::point screenPoint{ row.origin() - viewportOrigin };
+    PreparedDirtyRegion preparedRegion;
+    preparedRegion.origin = screenPoint;
+
+    // accumulate backgrounds and clusters...
+    auto it{ buffer.GetCellDataAt(row.origin(), viewport) };
+
+    // Calculate if two things are true:
+    // 1. this row wrapped
+    // 2. We're painting the last col of the row.
+    // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+    const auto lineWrapped = (buffer.GetRowByOffset(row.top()).GetCharRow().WasWrapForced()) &&
+                             (row.right() == buffer.GetSize().Width());
+
+    // Cache this in the current renderline
+    preparedRegion.wrapped = lineWrapped;
+    preparedRegion.trimLeft = false;
+
+    auto lastBg{ &preparedRegion.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, it->TextAttr() }) };
+    //lastBg->color = gbgcol(lastBg->attribute);
+    auto lastCcl{ &preparedRegion.clusters.emplace_back(ForegroundRun{ it->TextAttr(), 0, std::vector<Cluster>{} }) };
+    bool globalInvert{ false };
+    do
+    {
+        const auto attr{ it->TextAttr() };
+        // accumulate background, break off background run if it is different
+        if (shouldPrepareBackgroundAtlas && !attr.HasIdenticalBackground(lastBg->attribute, globalInvert))
+        {
+            // if there was a last bg split, and we are _different_, emit the split
+            lastBg = &preparedRegion.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, attr });
+            //lastBg->color = gbgcol(attr);
+        }
+
+        // accumulate text clusters; break off cluster run if it is different
+        if ((shouldPrepareBackgroundAtlas && !attr.HasIdenticalForeground(lastCcl->attribute, globalInvert)) ||
+            (!shouldPrepareBackgroundAtlas && attr != lastCcl->attribute))
+        {
+            lastCcl = &preparedRegion.clusters.emplace_back(ForegroundRun{ attr, 0, std::vector<Cluster>{} });
+        }
+
+        // Walk through the text data and turn it into rendering clusters.
+        // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+        size_t columnCount = 0;
+
+        // If we're on the first cluster to be added and it's marked as "trailing"
+        // (a.k.a. the right half of a two column character), then we need some special handling.
+        if (lastCcl->clusters.empty() && it->DbcsAttr().IsTrailing())
+        {
+            // If we have room to move to the left to start drawing...
+            if (screenPoint.x() > 0)
+            {
+                // Move left to the one so the whole character can be struck correctly.
+                screenPoint -= til::point{ 1, 0 };
+                // And tell the next function to trim off the left half of it.
+                preparedRegion.trimLeft = true;
+                // And add one to the number of columns we expect it to take as we insert it.
+                columnCount = it->Columns() + 1;
+                lastCcl->clusters.emplace_back(it->Chars(), columnCount);
+            }
+            else
+            {
+                // If we didn't have room, move to the right one and just skip this one.
+                screenPoint += til::point{ 1, 0 };
+                continue;
+            }
+        }
+        // Otherwise if it's not a special case, just insert it as is.
+        else
+        {
+            columnCount = it->Columns();
+            lastCcl->clusters.emplace_back(it->Chars(), columnCount);
+        }
+
+        // Advance the cluster and column counts.
+        it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+        lastBg->rect += til::size{ columnCount, 0u };
+        lastCcl->columns += columnCount;
+        screenPoint += til::point{ columnCount, 0u };
+    } while (it);
+
+    return preparedRegion;
+}
+
+std::vector<PreparedDirtyRegion> Microsoft::Console::Render::Renderer::_ProcessDirtyLines(_In_ IRenderEngine* const pEngine)
 {
     // This is the subsection of the entire screen buffer that is currently being presented.
     // It can move left/right or top/bottom depending on how the viewport is scrolled
@@ -690,12 +790,15 @@ std::vector<Line> Microsoft::Console::Render::Renderer::_ProcessDirtyLines(_In_ 
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
     const auto dirtyAreas = pEngine->GetDirtyArea();
 
-    std::vector<Line> lines;
+    const auto shouldPrepareBackgroundAtlas{ WI_IsFlagSet(pEngine->GetFlags(), RenderEngineFlags::SupportsBackgroundAtlas) };
+
+    std::vector<PreparedDirtyRegion> lines;
     lines.reserve(dirtyAreas.size());
 
     for (const auto dirtyRect : dirtyAreas)
     {
         auto globalInvert{ _pData->IsScreenReversed() };
+        (void)globalInvert;
         auto dirty = Viewport::FromInclusive(dirtyRect);
 
         // Shift the origin of the dirty region to match the underlying buffer so we can
@@ -716,91 +819,8 @@ std::vector<Line> Microsoft::Console::Render::Renderer::_ProcessDirtyLines(_In_ 
             // Now walk through each row of text that we need to redraw.
             for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
             {
-                til::rectangle region{ til::point{ redraw.Left(), row }, til::size{ redraw.Width(), 1 } };
-                Viewport vp{ Viewport::FromInclusive(region) };
-                til::point screenPoint{ region.origin() - til::point{ view.Origin() } };
-                Line l;
-                l.origin = screenPoint;
-
-                // accumulate backgrounds and clusters...
-                auto it{ buffer.GetCellDataAt(region.origin(), vp) };
-
-                // Calculate if two things are true:
-                // 1. this row wrapped
-                // 2. We're painting the last col of the row.
-                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-                const auto lineWrapped = (buffer.GetRowByOffset(region.top()).GetCharRow().WasWrapForced()) &&
-                                         (region.right() == buffer.GetSize().Width());
-
-                // Cache this in the current renderline
-                l.wrapped = lineWrapped;
-                l.trimLeft = false;
-
-                auto gbgcol = [this](const TextAttribute& attr) {
-                    return _pData->GetBackgroundColor(attr);
-                };
-
-                auto lastBg{ &l.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, it->TextAttr() }) };
-                lastBg->col = gbgcol(lastBg->attr);
-                auto lastCcl{ &l.clusters.emplace_back(ColorCluster{ it->TextAttr(), 0, std::vector<Cluster>{} }) };
-                do
-                {
-                    const auto attr{ it->TextAttr() };
-                    // accumulate background, break off background run if it is different
-                    if (!attr.HasIdenticalBackground(lastBg->attr, globalInvert))
-                    {
-                        // if there was a last bg split, and we are _different_, emit the split
-                        lastBg = &l.backgrounds.emplace_back(BackgroundRun{ til::rectangle{ screenPoint, til::size{ 0, 1 } }, attr });
-                        lastBg->col = gbgcol(attr);
-                    }
-
-                    // accumulate text clusters; break off cluster run if it is different
-                    if (!attr.HasIdenticalForeground(lastCcl->attribute, globalInvert))
-                    {
-                        lastCcl = &l.clusters.emplace_back(ColorCluster{ attr, 0, std::vector<Cluster>{} });
-                    }
-
-                    // Walk through the text data and turn it into rendering clusters.
-                    // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
-                    size_t columnCount = 0;
-
-                    // If we're on the first cluster to be added and it's marked as "trailing"
-                    // (a.k.a. the right half of a two column character), then we need some special handling.
-                    if (lastCcl->clusters.empty() && it->DbcsAttr().IsTrailing())
-                    {
-                        // If we have room to move to the left to start drawing...
-                        if (screenPoint.x() > 0)
-                        {
-                            // Move left to the one so the whole character can be struck correctly.
-                            screenPoint -= til::point{ 1, 0 };
-                            // And tell the next function to trim off the left half of it.
-                            l.trimLeft = true;
-                            // And add one to the number of columns we expect it to take as we insert it.
-                            columnCount = it->Columns() + 1;
-                            lastCcl->clusters.emplace_back(it->Chars(), columnCount);
-                        }
-                        else
-                        {
-                            // If we didn't have room, move to the right one and just skip this one.
-                            screenPoint += til::point{ 1, 0 };
-                            continue;
-                        }
-                    }
-                    // Otherwise if it's not a special case, just insert it as is.
-                    else
-                    {
-                        columnCount = it->Columns();
-                        lastCcl->clusters.emplace_back(it->Chars(), columnCount);
-                    }
-
-                    // Advance the cluster and column counts.
-                    it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
-                    lastBg->pos += til::size{ columnCount, 0u };
-                    lastCcl->columns += columnCount;
-                    screenPoint += til::point{ columnCount, 0u };
-                } while (it);
-
-                lines.emplace_back(std::move(l));
+                const til::rectangle region{ til::point{ redraw.Left(), row }, til::size{ redraw.Width(), 1 } };
+                lines.emplace_back(_GenerateDirtyScreenRow(buffer, region, view.Origin(), shouldPrepareBackgroundAtlas));
             }
         }
     }

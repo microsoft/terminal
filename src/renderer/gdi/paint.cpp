@@ -271,10 +271,10 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT GdiEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> backgrounds) {
     for (const auto& brun : backgrounds)
     {
-        wil::unique_hbrush hbr{ CreateSolidBrush(brun.col) };
+        wil::unique_hbrush hbr{ CreateSolidBrush(brun.color) };
         COORD const coordFontSize = _GetFontSize();
         til::size fsz{ coordFontSize.X, coordFontSize.Y };
-        RECT rect{ static_cast<RECT>(brun.pos.scale_up(fsz)) };
+        RECT rect{ static_cast<RECT>(brun.rect.scale_up(fsz)) };
         FillRect(_hdcMemoryContext, &rect, hbr.get());
     }
     return S_OK;

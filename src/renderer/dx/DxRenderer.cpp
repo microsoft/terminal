@@ -1236,8 +1236,15 @@ try
 CATCH_RETURN()
 
 [[nodiscard]] HRESULT DxEngine::PaintBufferBackground(std::basic_string_view<BackgroundRun> backgrounds) {
-    (void)backgrounds;
-    return S_FALSE;
+    WRL::ComPtr<ID2D1SolidColorBrush> solidBrush;
+    RETURN_IF_FAILED(_d2dBrushBackground.As(&solidBrush));
+    for (const auto& background : backgrounds)
+    {
+        const auto inflatedRect{ background.rect.scale_up(_glyphCell) };
+        solidBrush->SetColor(_ColorFFromColorRef(background.color));
+        _d2dRenderTarget->FillRectangle(inflatedRect, solidBrush.Get());
+    }
+    return S_OK;
 }
 
 // Routine Description:

@@ -290,8 +290,6 @@ using namespace Microsoft::Console::Render;
         d2dContext->PopAxisAlignedClip();
     });
 
-    d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
-
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
     // to use grayscale AA for this run of text.

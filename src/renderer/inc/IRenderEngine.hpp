@@ -23,9 +23,15 @@ namespace Microsoft::Console::Render
 {
     struct BackgroundRun
     {
-        til::rectangle pos;
-        TextAttribute attr;
-        COLORREF col;
+        til::rectangle rect;
+        TextAttribute attribute;
+        COLORREF color;
+    };
+
+    enum class RenderEngineFlags : uint32_t
+    {
+        None = 0,
+        SupportsBackgroundAtlas = 1u << 0,
     };
 
     class IRenderEngine
@@ -80,6 +86,8 @@ namespace Microsoft::Console::Render
         IRenderEngine& operator=(IRenderEngine&&) = default;
 
     public:
+        [[nodiscard]] virtual RenderEngineFlags GetFlags() const noexcept { return RenderEngineFlags::None; }
+
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
@@ -136,3 +144,4 @@ namespace Microsoft::Console::Render
 }
 
 DEFINE_ENUM_FLAG_OPERATORS(Microsoft::Console::Render::IRenderEngine::GridLines)
+DEFINE_ENUM_FLAG_OPERATORS(Microsoft::Console::Render::RenderEngineFlags);

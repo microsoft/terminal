@@ -27,19 +27,19 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-    struct ColorCluster
+    struct ForegroundRun
     {
         TextAttribute attribute;
         size_t columns;
         std::vector<Cluster> clusters;
     };
-    struct Line
+    struct PreparedDirtyRegion
     {
         til::point origin;
         bool wrapped;
         bool trimLeft;
         std::vector<BackgroundRun> backgrounds;
-        std::vector<ColorCluster> clusters;
+        std::vector<ForegroundRun> clusters;
     };
     class Renderer sealed : public IRenderer
     {
@@ -109,7 +109,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
-        std::vector<Line> _ProcessDirtyLines(_In_ IRenderEngine* const pEngine);
+        std::vector<PreparedDirtyRegion> _ProcessDirtyLines(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferBackground(IRenderEngine* const pEngine);
 

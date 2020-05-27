@@ -62,6 +62,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
+        [[nodiscard]] RenderEngineFlags GetFlags() const noexcept override { return RenderEngineFlags::SupportsBackgroundAtlas; }
+
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
