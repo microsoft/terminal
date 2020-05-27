@@ -27,7 +27,7 @@ Author(s):
 
 using namespace Microsoft::WRL;
 
-struct __declspec(uuid("9f156763-7844-4dc4-bbb1-901f640f5155"))
+struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
     OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand>
 {
 #pragma region IExplorerCommand
