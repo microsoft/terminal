@@ -151,6 +151,16 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
+        // TODO: Update the command palette when settings reload
+        auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        for (auto& action : _settings->GlobalSettings().GetCommands())
+        {
+            commandsCollection.Append(action);
+        }
+        CommandPalette().SetActions(commandsCollection);
+        CommandPalette().SetDispatch(*_actionDispatch);
+        CommandPalette().Closed({ this, &TerminalPage::_CommandPaletteClosed });
+
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.
@@ -719,6 +729,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
     }
 
     // Method Description:
@@ -2047,6 +2058,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ClearNonClientAreaColors()
     {
         // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
+    }
+
+    void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
+                                             const RoutedEventArgs& /*eventArgs*/)
+    {
+        // TODO return focus to the active control
+        // const int focusedTabIndex = _GetFocusedTabIndex();
+        // auto focusedTab = _tabs[focusedTabIndex];
+        // focusedTab->SetFocused(true);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

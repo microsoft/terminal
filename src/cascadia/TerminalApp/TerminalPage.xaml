@@ -53,5 +53,12 @@ the MIT License. See LICENSE in the project root for license information. -->
             DefaultButton="Primary"
             PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
         </ContentDialog>
+
+
+        <local:CommandPalette
+            x:Name="CommandPalette"
+            Grid.Row="1"
+            Visibility="Collapsed"
+            VerticalAlignment="Top" />
     </Grid>
 </Page>

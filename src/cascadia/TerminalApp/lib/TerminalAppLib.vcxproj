@@ -124,6 +124,7 @@
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="../DebugTapConnection.h" />
+    <ClInclude Include="../CommandSerialization.h" />
     <ClInclude Include="../AppKeyBindings.h">
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClInclude>
@@ -181,6 +182,7 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
+    <ClCompile Include="../CommandSerialization.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

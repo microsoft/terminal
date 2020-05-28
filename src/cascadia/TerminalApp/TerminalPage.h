@@ -173,6 +173,8 @@ namespace winrt::TerminalApp::implementation
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
+        void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -198,6 +200,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;

@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
+#include "Command.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -89,6 +90,8 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
+    const std::vector<winrt::TerminalApp::Command>& GetCommands() const noexcept;
+
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
 
 private:
@@ -97,6 +100,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
+    std::vector<winrt::TerminalApp::Command> _commands;
 
     int32_t _initialRows;
     int32_t _initialCols;

@@ -35,7 +35,8 @@ namespace TerminalApp
         MoveFocus,
         Find,
         ToggleFullscreen,
-        OpenSettings
+        OpenSettings,
+        ToggleCommandPalette
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -73,5 +74,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> Find;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> MoveFocus;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleCommandPalette;
     }
 }

@@ -12,14 +12,10 @@ namespace winrt::TerminalApp::implementation
     {
         Command() = default;
 
-        // DECLARE_GETSET_PROPERTY(winrt::hstring, Name);
-
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        // OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _propertyChanged);
-        // OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action, _propertyChanged);
-        GETSET_PROPERTY(winrt::hstring, IconPath);
-        GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action, _PropertyChangedHandlers);
     };
 }
 

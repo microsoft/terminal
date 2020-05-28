@@ -8,6 +8,7 @@
 #include "Utils.h"
 #include "JsonUtils.h"
 #include <sstream>
+#include "CommandSerialization.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -18,6 +19,7 @@ using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
@@ -341,6 +343,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
+
+    if (auto commandsArray{ json[JsonKey(CommandsKey)] })
+    {
+        CommandSerialization::LayerJson(_commands, commandsArray);
+    }
 }
 
 // Method Description:
@@ -554,4 +561,9 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
 {
     return _keybindingsWarnings;
+}
+
+const std::vector<winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
 }

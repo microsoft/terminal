@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //
 // Module Name:
-// - ActionSerialization.h
+// - CommandSerialization.h
 //
 // Abstract:
 // - A couple helper functions for serializing/deserializing an Actions
@@ -18,11 +18,13 @@
 // - Mike Griese - July 2019
 
 #pragma once
-#include "Action.h"
+#include "Command.h"
 
-class ActionSerialization final
+class CommandSerialization final
 {
 public:
-    static winrt::TerminalApp::Action FromJson(const Json::Value& json);
-    static Json::Value ToJson(const winrt::TerminalApp::Action& action);
+    static winrt::TerminalApp::Command FromJson(const Json::Value& json);
+    static void LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
+                          const Json::Value& json);
+    // static Json::Value ToJson(const winrt::TerminalApp::Command& action);
 };
