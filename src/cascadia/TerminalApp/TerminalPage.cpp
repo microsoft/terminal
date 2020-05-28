@@ -944,23 +944,25 @@ namespace winrt::TerminalApp::implementation
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        term.TitleChanged([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto newTitle) {
+        auto weakTab{ hostingTab.get_weak() };
+        auto weakThis{ get_weak() };
+        // PropertyChanged is the generic mechanism by which the Tab
+        // communicates changes to any of its observable properties, including
+        // the Title
+        hostingTab.PropertyChanged([weakTab, weakThis](auto&&, const WUX::Data::PropertyChangedEventArgs& args) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
-
             if (page && tab)
             {
-                // The title of the control changed, but not necessarily the title
-                // of the tab. Get the title of the focused pane of the tab, and set
-                // the tab's text to the focused panes' text.
-                page->_UpdateTitle(*tab);
+                if (args.PropertyName() == L"Title")
+                {
+                    page->_UpdateTitle(*tab);
+                }
             }
         });
 
         // react on color changed events
-        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -970,7 +972,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+        hostingTab.ColorCleared([weakTab, weakThis]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
