@@ -3,13 +3,21 @@
 :pencil2: Contributor please read this
 </summary>
 
-* If the items listed above are names, please add them to `.github/actions/spell-check/dictionary/names.txt`.
-* If they're APIs, you can add them to a file in `.github/actions/spell-check/dictionary/`.
-* If they're just things you're using, please add them to an appropriate file in `.github/actions/spell-check/whitelist/`.
-* If you need to use a specific token in one place and it shouldn't generally be used, you can
-add an item in an appropriate file in `.github/actions/spell-check/patterns/`.
+By default the command suggestion will generate a file named based on your commit. That's generally ok as long as you add the file to your commit. Someone can reorganize it later.
+
+:warning: The command is written for posix shells. You can copy the contents of each `perl` command excluding the outer `'` marks and dropping any `'"`/`"'` quotation mark pairs into a file and then run `perl file.pl` from the root of the repository to run the code. Alternatively, you can manually insert the items...
+
+If the listed items are:
+* ... **misspelled**, then please *correct* them instead of using the command.
+* ... *names*, please add them to `.github/actions/spell-check/dictionary/names.txt`.
+* ... APIs, you can add them to a file in `.github/actions/spell-check/dictionary/`.
+* ... just things you're using, please add them to an appropriate file in `.github/actions/spell-check/expect/`.
+* ... tokens you only need in one place and shouldn't *generally be used*, you can add an item in an appropriate file in `.github/actions/spell-check/patterns/`.
 
 See the `README.md` in each directory for more information.
+
+:microscope: You can test your commits **without** *appending* to a PR by creating a new branch with that extra change and pushing it to your fork. The [:check-spelling](https://github.com/marketplace/actions/check-spelling) action will run in response to your **push** -- it doesn't require an open pull request. By using such a branch, you can limit the number of typos your peers see you make. :wink:
+
 </details>
 
 #### :warning: Reviewers

@@ -360,7 +360,10 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
-    memmove(lpColorTable, gci.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
+    for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
+    {
+        lpColorTable[i] = gci.GetColorTableEntry(i);
+    }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();
 }

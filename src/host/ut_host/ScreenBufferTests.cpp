@@ -1844,7 +1844,9 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"Change the colors to dark_red on bright_blue, then execute a Erase All.\n"
         L"The viewport should be full of dark_red on bright_blue"));
 
-    auto expectedAttr = TextAttribute(XtermToLegacy(1, 12));
+    auto expectedAttr = TextAttribute{};
+    expectedAttr.SetIndexedForeground((BYTE)XtermToWindowsIndex(1));
+    expectedAttr.SetIndexedBackground((BYTE)XtermToWindowsIndex(12));
     stateMachine.ProcessString(L"\x1b[31;104m");
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
@@ -2222,12 +2224,14 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     // See the log comment above for description of these values.
     TextAttribute expectedDefaults{};
-    TextAttribute expectedTwo{ FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE };
-    TextAttribute expectedThree{ FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE };
+    TextAttribute expectedTwo;
+    expectedTwo.SetIndexedForeground((BYTE)XtermToWindowsIndex(10));
+    expectedTwo.SetIndexedBackground((BYTE)XtermToWindowsIndex(4));
+    TextAttribute expectedThree = expectedTwo;
     expectedThree.SetDefaultForeground();
     // Four is the same as Defaults
     // Five is the same as two
-    TextAttribute expectedSix{ FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE };
+    TextAttribute expectedSix = expectedTwo;
     expectedSix.SetDefaultBackground();
 
     COORD expectedCursor{ 6, 0 };
@@ -2324,7 +2328,7 @@ void ScreenBufferTests::SetDefaultsTogether()
     // See the log comment above for description of these values.
     TextAttribute expectedDefaults{};
     TextAttribute expectedTwo{};
-    expectedTwo.SetBackground(color250);
+    expectedTwo.SetIndexedBackground256(250);
 
     COORD expectedCursor{ 3, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
@@ -4503,14 +4507,14 @@ void ScreenBufferTests::ScrollLines256Colors()
     auto& cursor = si.GetTextBuffer().GetCursor();
 
     TextAttribute expectedAttr{ si.GetAttributes() };
-    std::wstring_view sgrSeq = L"\x1b[48;5;2m";
+    std::wstring_view sgrSeq = L"\x1b[42m";
     if (colorStyle == Use16Color)
     {
-        expectedAttr.SetBackground(gci.GetColorTableEntry(2));
+        expectedAttr.SetIndexedBackground(2);
     }
     else if (colorStyle == Use256Color)
     {
-        expectedAttr.SetBackground(gci.GetColorTableEntry(20));
+        expectedAttr.SetIndexedBackground256(20);
         sgrSeq = L"\x1b[48;5;20m";
     }
     else if (colorStyle == UseRGBColor)
@@ -5237,7 +5241,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     else if (setForegroundType == Use256Color)
     {
-        expectedAttr.SetForeground(gci.GetColorTableEntry(20));
+        expectedAttr.SetIndexedForeground256(20);
         vtSeq += L"\x1b[38;5;20m";
     }
     else if (setForegroundType == UseRGBColor)
@@ -5259,7 +5263,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     else if (setBackgroundType == Use256Color)
     {
-        expectedAttr.SetBackground(gci.GetColorTableEntry(20));
+        expectedAttr.SetIndexedBackground256(20);
         vtSeq += L"\x1b[48;5;20m";
     }
     else if (setBackgroundType == UseRGBColor)

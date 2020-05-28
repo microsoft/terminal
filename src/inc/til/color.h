@@ -101,6 +101,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        constexpr color with_alpha(uint8_t alpha) const
+        {
+            return color{
+                r,
+                g,
+                b,
+                alpha
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {
@@ -108,10 +118,61 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Windows_UI_H
+        constexpr color(const winrt::Windows::UI::Color& winUIColor) :
+            color(winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A)
+        {
+        }
+
+        operator winrt::Windows::UI::Color() const
+        {
+            winrt::Windows::UI::Color ret;
+            ret.R = r;
+            ret.G = g;
+            ret.B = b;
+            ret.A = a;
+            return ret;
+        }
+#endif
+
         constexpr bool operator==(const til::color& other) const
         {
             return r == other.r && g == other.g && b == other.b && a == other.a;
         }
+
+        constexpr bool operator!=(const til::color& other) const
+        {
+            return !(*this == other);
+        }
+
+        std::wstring to_string() const
+        {
+            std::wstringstream wss;
+            wss << L"Color #" << std::uppercase << std::setfill(L'0') << std::hex;
+            // Force the compiler to promote from byte to int. Without it, the
+            // stringstream will try to write the components as chars
+            wss << std::setw(2) << static_cast<int>(a);
+            wss << std::setw(2) << static_cast<int>(r);
+            wss << std::setw(2) << static_cast<int>(g);
+            wss << std::setw(2) << static_cast<int>(b);
+
+            return wss.str();
+        }
     };
 #pragma warning(pop)
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::color>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::color& color)
+        {
+            return WEX::Common::NoThrowString(color.to_string().c_str());
+        }
+    };
+};
+#endif

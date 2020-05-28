@@ -63,8 +63,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClickTimestamp{},
@@ -253,7 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _InitializeBackgroundBrush();
 
-        uint32_t bg = _settings.DefaultBackground();
+        COLORREF bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -263,18 +263,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
+        const auto fontWeight = _settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
@@ -405,37 +406,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const uint32_t color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
     {
+        til::color newBgColor{ color };
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto R = GetRValue(color);
-            const auto G = GetGValue(color);
-            const auto B = GetBValue(color);
-
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = R;
-            bgColor.G = G;
-            bgColor.B = B;
-            bgColor.A = 255;
-
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
             {
-                acrylic.FallbackColor(bgColor);
-                acrylic.TintColor(bgColor);
+                acrylic.FallbackColor(newBgColor);
+                acrylic.TintColor(newBgColor);
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
-                solidColor.Color(bgColor);
+                solidColor.Color(newBgColor);
             }
 
             // Set the default background as transparent to prevent the
             // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(ARGB(0, R, G, B));
+            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -1309,7 +1302,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    uint32_t bg = _settings.DefaultBackground();
+                    COLORREF bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -1686,7 +1679,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Make sure we have a non-zero font size
             const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
             const auto fontFace = _settings.FontFace();
-            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            const auto fontWeight = _settings.FontWeight();
+            _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
             auto lock = _terminal->LockForWriting();
@@ -2205,13 +2199,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Initialize our font information.
         const auto fontFace = settings.FontFace();
         const short fontHeight = gsl::narrow_cast<short>(settings.FontSize());
+        const auto fontWeight = settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
         // If the settings have negative or zero row or column counts, ignore those counts.
@@ -2505,6 +2500,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         eventArgs.FontSize(CharacterDimensions());
         eventArgs.FontFace(_actualFont.GetFaceName());
+        ::winrt::Windows::UI::Text::FontWeight weight;
+        weight.Weight = static_cast<uint16_t>(_actualFont.GetWeight());
+        eventArgs.FontWeight(weight);
     }
 
     // Method Description:

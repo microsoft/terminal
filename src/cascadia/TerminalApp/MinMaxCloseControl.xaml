@@ -62,6 +62,18 @@ the MIT License. See LICENSE in the project root for license information. -->
             <x:String x:Key="CaptionButtonPath"></x:String>
             <x:String x:Key="CaptionButtonPathWindowMaximized"></x:String>
 
+            <!-- "CaptionButtonHeightWindowed" and
+                 "CaptionButtonHeightMaximized" define the size we should use
+                 for the caption buttons height for the windowed and maximized
+                 states, respectively.
+
+                 32 was chosen for the Maximized height to match the height of
+                 the TabRowControl. This way, when the window is maximized, the
+                 tabs will be flush with the top of the window. See GH#2541 for
+                 details.-->
+            <x:Double x:Key="CaptionButtonHeightWindowed">36.0</x:Double>
+            <x:Double x:Key="CaptionButtonHeightMaximized">32.0</x:Double>
+
             <Style x:Key="CaptionButton" TargetType="Button">
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Background" Value="{ThemeResource CaptionButtonBackground}" />
@@ -69,6 +81,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
+
                             <Border x:Name="ButtonBaseElement"
                                 Background="{TemplateBinding Background}"
                                 BackgroundSizing="{TemplateBinding BackgroundSizing}"
@@ -123,6 +136,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     StrokeEndLineCap="Square"
                                     StrokeStartLineCap="Square" />
                             </Border>
+
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -131,7 +145,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </StackPanel.Resources>
 
-    <Button Height="36.0" MinWidth="46.0" Width="46.0"
+    <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="MinimizeButton"
             x:Uid="WindowMinimizeButton"
             Style="{StaticResource CaptionButton}"
@@ -143,7 +157,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" MinWidth="46.0" Width="46.0"
+    <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="MaximizeButton"
             x:Uid="WindowMaximizeButton"
             Style="{StaticResource CaptionButton}"
@@ -156,7 +170,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" MinWidth="46.0" Width="46.0"
+    <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="CloseButton"
             x:Uid="WindowCloseButton"
             Style="{StaticResource CaptionButton}"

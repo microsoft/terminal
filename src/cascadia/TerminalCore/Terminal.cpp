@@ -875,7 +875,7 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 // - Allows setting a callback for when the background color is changed
 // Arguments:
 // - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
 {
     _pfnBackgroundColorChanged.swap(pfn);
 }

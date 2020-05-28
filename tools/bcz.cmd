@@ -97,9 +97,8 @@ set MSBuildEmitSolution=1
 set MSBuildEmitSolution=
 
 rem Use bx.ps1 to figure out which target we're looking at
-set _BX_SCRIPT=powershell bx.ps1
 set _OUTPUT=
-FOR /F "tokens=* USEBACKQ" %%F IN (`powershell bx.ps1 2^> NUL`) DO (
+FOR /F "tokens=* USEBACKQ" %%F IN (`powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive bx.ps1 2^> NUL`) DO (
     set _OUTPUT=%%F
 )
 if "!_OUTPUT!" == "" (
