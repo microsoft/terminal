@@ -31,20 +31,20 @@ struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
     OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand>
 {
 #pragma region IExplorerCommand
-    HRESULT Invoke(IShellItemArray* psiItemArray,
-                   IBindCtx* pBindContext);
-    HRESULT GetToolTip(IShellItemArray* psiItemArray,
-                       LPWSTR* ppszInfoTip);
-    HRESULT GetTitle(IShellItemArray* psiItemArray,
-                     LPWSTR* ppszName);
-    HRESULT GetState(IShellItemArray* psiItemArray,
-                     BOOL fOkToBeSlow,
-                     EXPCMDSTATE* pCmdState);
-    HRESULT GetIcon(IShellItemArray* psiItemArray,
-                    LPWSTR* ppszIcon);
-    HRESULT GetFlags(EXPCMDFLAGS* pFlags);
-    HRESULT GetCanonicalName(GUID* pguidCommandName);
-    HRESULT EnumSubCommands(IEnumExplorerCommand** ppEnum);
+    STDMETHODIMP Invoke(IShellItemArray* psiItemArray,
+                        IBindCtx* pBindContext);
+    STDMETHODIMP GetToolTip(IShellItemArray* psiItemArray,
+                            LPWSTR* ppszInfoTip);
+    STDMETHODIMP GetTitle(IShellItemArray* psiItemArray,
+                          LPWSTR* ppszName);
+    STDMETHODIMP GetState(IShellItemArray* psiItemArray,
+                          BOOL fOkToBeSlow,
+                          EXPCMDSTATE* pCmdState);
+    STDMETHODIMP GetIcon(IShellItemArray* psiItemArray,
+                         LPWSTR* ppszIcon);
+    STDMETHODIMP GetFlags(EXPCMDFLAGS* pFlags);
+    STDMETHODIMP GetCanonicalName(GUID* pguidCommandName);
+    STDMETHODIMP EnumSubCommands(IEnumExplorerCommand** ppEnum);
 #pragma endregion
 };
 
