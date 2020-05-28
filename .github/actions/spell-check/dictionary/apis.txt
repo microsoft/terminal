@@ -1,3 +1,5 @@
+ACCEPTFILES
+ACCESSDENIED
 bitfield
 bitfields
 href
@@ -5,6 +7,7 @@ IBox
 ICustom
 IMap
 IObject
+IStorage
 LCID
 NCHITTEST
 NCLBUTTONDBLCLK
@@ -15,3 +18,4 @@ ocidl
 rfind
 roundf
 SIZENS
+tmp
