@@ -8,6 +8,8 @@
 // #include "ShortcutActionSerializationKeys.h"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
+#include <LibraryResources.h>
+
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 
@@ -62,7 +64,22 @@ winrt::TerminalApp::Command CommandSerialization::FromJson(const Json::Value& js
 
     if (auto name{ json[JsonKey(NameKey)] })
     {
-        result.Name(winrt::to_hstring(name.asString()));
+        if (name.isObject())
+        {
+            try
+            {
+                if (auto keyJson{ name[JsonKey("key")] })
+                {
+                    auto resourceKey = GetWstringFromJson(keyJson);
+                    result.Name(GetLibraryResourceString(resourceKey));
+                }
+            }
+            CATCH_LOG();
+        }
+        else if (name.isString())
+        {
+            result.Name(winrt::to_hstring(name.asString()));
+        }
     }
     if (auto iconPath{ json[JsonKey(IconPathKey)] })
     {
