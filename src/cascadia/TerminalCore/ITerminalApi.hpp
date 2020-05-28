@@ -21,6 +21,8 @@ namespace Microsoft::Terminal::Core
         virtual bool SetTextToDefaults(bool foreground, bool background) noexcept = 0;
         virtual bool SetTextForegroundIndex(BYTE colorIndex) noexcept = 0;
         virtual bool SetTextBackgroundIndex(BYTE colorIndex) noexcept = 0;
+        virtual bool SetTextForegroundIndex256(BYTE colorIndex) noexcept = 0;
+        virtual bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept = 0;
         virtual bool SetTextRgbColor(COLORREF color, bool foreground) noexcept = 0;
         virtual bool BoldText(bool boldOn) noexcept = 0;
         virtual bool UnderlineText(bool underlineOn) noexcept = 0;

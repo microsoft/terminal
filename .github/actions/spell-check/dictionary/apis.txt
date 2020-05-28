@@ -1,3 +1,5 @@
+ACCEPTFILES
+ACCESSDENIED
 bitfield
 bitfields
 CLASSNOTAVAILABLE
@@ -23,3 +25,4 @@ ocidl
 rfind
 roundf
 SIZENS
+tmp
