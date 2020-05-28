@@ -54,18 +54,21 @@ winrt::TerminalApp::Command CommandSerialization::FromJson(const Json::Value& js
         result.IconPath(winrt::to_hstring(iconPath.asString()));
     }
 
-    // Ask the keybinding serializer to turn us into a ActionAndArgs
-    std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
-    auto actionAndArgs = winrt::TerminalApp::implementation::ActionAndArgs::FromJson(json, warnings);
-
-    if (actionAndArgs)
+    if (auto actionJson{ json[JsonKey(ActionKey)] })
     {
-        result.Action(*actionAndArgs);
+        // Ask the keybinding serializer to turn us into a ActionAndArgs
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        auto actionAndArgs = winrt::TerminalApp::implementation::ActionAndArgs::FromJson(actionJson, warnings);
+
+        if (actionAndArgs)
+        {
+            result.Action(*actionAndArgs);
+        }
+        // else
+        // {
+        //     ClearKeyBinding(chord);
+        // }
     }
-    // else
-    // {
-    //     ClearKeyBinding(chord);
-    // }
 
     return result;
 }
