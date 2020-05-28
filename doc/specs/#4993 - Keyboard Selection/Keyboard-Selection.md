@@ -80,7 +80,7 @@ If a selection is active, `markMode` leaves the selection untouched, all subsequ
 
 Pressing `markMode` again, will then anchor "start". Subsequent `moveSelectionPoint` calls move the "end" selection point.
 
-Pressing `markMode` essentially cycles between which selection point is targetted.
+Pressing `markMode` essentially cycles between which selection point is targeted.
 
 #### Block Selection
 A user can normally create a block selection by holding <kbd>alt</kbd> then creating a selection.
@@ -131,7 +131,7 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 |                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
 |                       | `Enum expansionMode { cell, word, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectEntireBuffer`  | | Select the entire text buffer.
-| `markMode`      | | Cycle the selection point targetted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
+| `markMode`      | | Cycle the selection point targeted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
 | `toggleBlockSelection`      | | Transform the existing selection between a block selection and a line selection.  |
 
 
