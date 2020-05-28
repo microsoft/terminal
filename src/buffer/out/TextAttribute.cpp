@@ -10,6 +10,11 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
+bool TextAttribute::IsHighColor() const noexcept
+{
+    return _foreground.IsHighColor() || _background.IsHighColor();
+}
+
 // Arguments:
 // - None
 // Return Value:
@@ -72,12 +77,22 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
 {
-    _foreground = TextColor(fgIndex);
+    _foreground = TextColor(fgIndex, false);
 }
 
 void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
 {
-    _background = TextColor(bgIndex);
+    _background = TextColor(bgIndex, false);
+}
+
+void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
+{
+    _foreground = TextColor(fgIndex, true);
+}
+
+void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
+{
+    _background = TextColor(bgIndex, true);
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
