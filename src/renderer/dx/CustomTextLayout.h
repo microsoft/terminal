@@ -134,6 +134,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
 
+        [[nodiscard]] HRESULT _AnalyzeTextComplexity() noexcept;
         [[nodiscard]] HRESULT _AnalyzeRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;

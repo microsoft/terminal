@@ -63,24 +63,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         _text += text;
     }
-
-    const auto textLength = gsl::narrow<UINT32>(_text.size());
-
-    BOOL isTextSimple = FALSE;
-    UINT32 uiLengthRead = 0;
-    const UINT32 glyphStart = 0;
-
-    _glyphIndices.resize(textLength);
-
-    const HRESULT hr = _analyzer->GetTextComplexity(
-        _text.c_str(),
-        textLength,
-        _font.Get(),
-        &isTextSimple,
-        &uiLengthRead,
-        &_glyphIndices.at(glyphStart));
-
-    _isEntireTextSimple = SUCCEEDED(hr) && isTextSimple && uiLengthRead == textLength;
 }
 
 // Routine Description:
@@ -94,6 +76,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
+    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
 
@@ -124,6 +107,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
 {
+    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
     RETURN_IF_FAILED(_CorrectGlyphRuns());
@@ -134,6 +118,44 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
     RETURN_IF_FAILED(_DrawGlyphRuns(clientDrawingContext, renderer, { originX, originY }));
 
+    return S_OK;
+}
+
+// Routine Description:
+// - Uses the internal text information and the analyzers/font information from construction
+//   to determine the complexity of the text. If the text is determined to be entirely simple,
+//   we'll have more chances to optimize the layout process.
+// Arguments:
+// - <none> - Uses internal state
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeTextComplexity() noexcept
+{
+    try
+    {
+        const auto textLength = gsl::narrow<UINT32>(_text.size());
+
+        BOOL isTextSimple = FALSE;
+        UINT32 uiLengthRead = 0;
+
+        // Start from the beginning.
+        const UINT32 glyphStart = 0;
+
+        _glyphIndices.resize(textLength);
+
+        const HRESULT hr = _analyzer->GetTextComplexity(
+            _text.c_str(),
+            textLength,
+            _font.Get(),
+            &isTextSimple,
+            &uiLengthRead,
+            &_glyphIndices.at(glyphStart));
+
+        RETURN_IF_FAILED(hr);
+
+        _isEntireTextSimple = isTextSimple && uiLengthRead == textLength;
+    }
+    CATCH_RETURN();
     return S_OK;
 }
 
@@ -416,13 +438,14 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 // - S_OK or suitable DirectWrite or STL error code
 [[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
 {
-    if (_isEntireTextSimple)
-    {
-        return S_OK;
-    }
-
     try
     {
+        // For simple text, there is no need to correct runs.
+        if (_isEntireTextSimple)
+        {
+            return S_OK;
+        }
+
         // Correct each run separately. This is needed whenever script, locale,
         // or reading direction changes.
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
