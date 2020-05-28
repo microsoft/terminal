@@ -173,6 +173,8 @@ namespace winrt::TerminalApp::implementation
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
+        void _CompleteInitialization();
+
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
 #pragma region ActionHandlers

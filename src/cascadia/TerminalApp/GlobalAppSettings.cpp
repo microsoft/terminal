@@ -40,6 +40,7 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
+static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
@@ -480,6 +481,10 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
     {
         return LaunchMode::MaximizedMode;
     }
+    else if (launchModeString == FullscreenLaunchModeValue)
+    {
+        return LaunchMode::FullscreenMode;
+    }
 
     return LaunchMode::DefaultMode;
 }
@@ -497,6 +502,8 @@ std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launc
     {
     case LaunchMode::MaximizedMode:
         return MaximizedLaunchModeValue;
+    case LaunchMode::FullscreenMode:
+        return FullscreenLaunchModeValue;
     default:
         return DefaultLaunchModeValue;
     }
