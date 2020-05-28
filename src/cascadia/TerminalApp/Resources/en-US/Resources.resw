@@ -334,4 +334,22 @@
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
   </data>
+  <data name="NewTabCommandName" xml:space="preserve">
+    <value>Open New Tab</value>
+  </data>
+  <data name="CloseTabCommandKey" xml:space="preserve">
+    <value>Close Tab</value>
+  </data>
+  <data name="ClosePaneCommandKey" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="NextTabCommandKey" xml:space="preserve">
+    <value>Next Tab</value>
+  </data>
+  <data name="PrevTabCommandKey" xml:space="preserve">
+    <value>Previous Tab</value>
+  </data>
+  <data name="OpenSettingsCommandKey" xml:space="preserve">
+    <value>Open Settings</value>
+  </data>
 </root>
