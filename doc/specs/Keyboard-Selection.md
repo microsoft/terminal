@@ -70,40 +70,48 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 
 
 ### Mark Mode
-Mark Mode is a mode where the user can begin a selection using only the keyboard. It can be cycled into an enabled/disabled state through a user keybinding (`toggleMarkMode`).
+Mark Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `markMode` keybinding works:
 
-Upon being enabled, the current cursor position becomes the selection endpoint. The user can move the selection anchor using the same keybindings defined for keyboard selection (`moveSelectionPoint` action).
+![Mark Mode Flowchart][MarkModeFlowchart.jpg]
 
-#### `toggleMarkMode`
-`toggleMarkMode` has two keybinding arguments:
-| Parameter | Accepted Values | Default Value | Description |
-|--|--|--|--|
-| `anchorModifier` | regular keybindings and plain modifier keys | `Shift` | The keybinding used to anchor the selection endpoint to its current text buffer position. While holding down that keybinding, any `moveSelectionPoint` actions will move the other selection anchor (`endSelectionPosition`). |
-| `anchorMode` | `Hold`, `Toggle` | `Hold` | If `Hold`, the user needs to hold the `anchorModifier` key to anchor the 'start' selection endpoint and move the second selection endpoint (like Mark Mode). If `Toggle`, the user switches between selection endpoints when they press it (like Copy Mode). |
+If a selection is not active, a "start" selection point is created at the cursor position. `moveSelectionPoint` calls then move "start".
+
+If a selection is active, `markMode` leaves the selection untouched, all subsequent `moveSelectionPoint` calls move "start".
+
+Pressing `markMode` again, will then anchor "start". Subsequent `moveSelectionPoint` calls move the "end" selection point.
+
+Pressing `markMode` essentially cycles between which selection point is targetted.
+
+#### Block Selection
+A user can normally create a block selection by holding <kbd>alt</kbd> then creating a selection.
+
+If the user is in Mark Mode, and desires to make a block selection, they can use the `toggleBlockSelection` keybinding. `toggleBlockSelection` takes an existing selection, and transforms it into a block selection.
+
+All selections created in Mark Mode will have block selection disabled by default.
 
 #### Rendering during Mark Mode
-Since we are just moving the selection anchors, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection anchor past the top/bottom of the viewport.
+Since we are just moving the selection points, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection point past the top/bottom of the viewport.
 
 In ConHost, output would be paused when a selection was present. This is a completely separate issue that is being tracked in (#2529)[https://github.com/microsoft/terminal/pull/2529].
 
 #### Interaction with CopyOnSelect
-If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". If `anchorMode=Hold`, the user has to use the `copy` keybinding to signify that they have finished creating a selection. If `anchorMode=Toggle`, the selection is copied either when the `copy` keybinding is used, or when the user presses the `anchorModifier` key and the 'end' endpoint is set.
+If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". Thus, the selection is copied when the `copy` keybinding is used or the selection is copied using the mouse.
 
 #### Interaction with Mouse Selection
-If a selection exists prior to entering Mark Mode, upon entering Mark Mode, the user should be modifying the "end" endpoint of the selection, instead of the cursor. The existing selection should not be cleared (contrary to prior behavior).
+If a selection exists, the user is already in Mark Mode. The user should be modifying the "end" endpoint of the selection. The existing selection should not be cleared (contrary to prior behavior).
 
-During Mark Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Mark Mode. The target endpoint being modified in Mark Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier).
+During Mark Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Mark Mode. The target endpoint being modified in Mark Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier in the flowchart).
 
 
 #### Exiting Mark Mode
-There are multiple ways to exit mark mode. The user can press...
-- the `toggleMarkMode` keybinding
+The user exits mark mode when the selection is cleared. Thus, the user can press...
 - the `ESC` key
 - the `copy` keybinding (which also copies the contents of the selection to the user's clipboard)
+- keys that generate input and clear a selection
 
-In all three cases, the selection will be cleared.
+In all of these cases, the selection will be cleared.
 
-If `copyOnSelect` is enabled, `ESC` is interpreted as "cancelling" the selection, so nothing is copied. Whereas the other two operations count as "completing" the selection, and copying the content to the clipboard.
+If `copyOnSelect` is enabled, `ESC` is interpreted as "cancelling" the selection, so nothing is copied. Keys that generate input are also interpreted as "cancelling" the selection. Only the `copy` keybinding or copying using the mouse is considered "completing" the selection operation, and copying the content to the clipboard.
 
 NOTE - Related to #3884:
     If the user has chosen to have selections persist after a copy operation, the selection created by Mark Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation. However, if the user exits Mark Mode in any of the other situations, the selection is cleared.
@@ -123,7 +131,8 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 |                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
 |                       | `Enum expansionMode { cell, word, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectEntireBuffer`  | | Select the entire text buffer.
-| `toggleMarkMode`      | | Enter or exit mark mode. This allows you to create an entire selection using only the keyboard. |
+| `markMode`      | | Cycle the selection point targetted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
+| `toggleBlockSelection`      | | Transform the existing selection between a block selection and a line selection.  |
 
 
 By default, the following keybindings will be set:
@@ -152,7 +161,8 @@ By default, the following keybindings will be set:
 { "command": "selectEntireBuffer", "keys": "ctrl+shift+a" },
 
 // Mark Mode
-{ "command": { "action": "toggleMarkMode", "anchorModifier": "shift", "anchorMode": "toggle" }, "keys": "ctrl+shift+m" },
+{ "command": "markMode", "keys": "ctrl+shift+m" },
+{ "command": "toggleBlockSelection", "keys": "alt+shift+m" },
 ```
 
 ## Capabilities
