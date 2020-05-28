@@ -49,7 +49,7 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // - The number of options consumed, not including the initial 38/48.
 size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
                                           TextAttribute& attr,
-                                          const bool isForeground)
+                                          const bool isForeground) noexcept
 {
     size_t optionsConsumed = 0;
     if (options.size() >= 1)
@@ -73,11 +73,17 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchT
         {
             optionsConsumed = 2;
             const size_t tableIndex = til::at(options, 1);
-            COLORREF rgbColor;
-            if (_pConApi->PrivateGetColorTableEntry(tableIndex, rgbColor))
+            if (tableIndex <= 255)
             {
-                // TODO GH#1223: Decouple xterm-256color indexed storage from RGB storage
-                attr.SetColor(rgbColor, isForeground);
+                const auto adjustedIndex = gsl::narrow_cast<BYTE>(::Xterm256ToWindowsIndex(tableIndex));
+                if (isForeground)
+                {
+                    attr.SetIndexedForeground256(adjustedIndex);
+                }
+                else
+                {
+                    attr.SetIndexedBackground256(adjustedIndex);
+                }
             }
         }
     }

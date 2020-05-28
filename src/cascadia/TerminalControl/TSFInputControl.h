@@ -27,6 +27,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         GETSET_PROPERTY(Windows::Foundation::Size, FontSize);
 
         GETSET_PROPERTY(winrt::hstring, FontFace);
+
+        GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>

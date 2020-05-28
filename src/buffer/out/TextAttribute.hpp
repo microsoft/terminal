@@ -42,8 +42,8 @@ public:
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
-        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
+        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS), true },
+        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4), true },
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
@@ -59,12 +59,13 @@ public:
     {
     }
 
-    constexpr WORD GetLegacyAttributes() const noexcept
+    WORD GetLegacyAttributes() const noexcept
     {
         const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
         const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
+        const bool brighten = _foreground.IsIndex16() && IsBold();
+        return (fg | bg | meta) | (brighten ? FOREGROUND_INTENSITY : 0);
     }
 
     // Method Description:
@@ -79,15 +80,16 @@ public:
     //      the background not be a legacy style attribute.
     // Return Value:
     // - a WORD with legacy-style attributes for this textattribute.
-    constexpr WORD GetLegacyAttributes(const BYTE defaultFgIndex,
-                                       const BYTE defaultBgIndex) const noexcept
+    WORD GetLegacyAttributes(const BYTE defaultFgIndex,
+                             const BYTE defaultBgIndex) const noexcept
     {
         const BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
         const BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
         const BYTE fg = (fgIndex & FG_ATTRS);
         const BYTE bg = (bgIndex << 4) & BG_ATTRS;
         const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
+        const bool brighten = _foreground.IsIndex16() && IsBold();
+        return (fg | bg | meta) | (brighten ? FOREGROUND_INTENSITY : 0);
     }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
@@ -117,6 +119,7 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
+    bool IsHighColor() const noexcept;
     bool IsBold() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -139,6 +142,8 @@ public:
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
     void SetIndexedBackground(const BYTE bgIndex) noexcept;
+    void SetIndexedForeground256(const BYTE fgIndex) noexcept;
+    void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
 
     void SetDefaultForeground() noexcept;
@@ -148,11 +153,6 @@ public:
     bool BackgroundIsDefault() const noexcept;
 
     void SetStandardErase() noexcept;
-
-    constexpr bool IsRgb() const noexcept
-    {
-        return _foreground.IsRgb() || _background.IsRgb();
-    }
 
     // This returns whether this attribute, if printed directly next to another attribute, for the space
     // character, would look identical to the other one.
@@ -222,26 +222,6 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return !(a == b);
-}
-
-constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return attr.GetLegacyAttributes() == legacyAttr;
-}
-
-constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return !(attr == legacyAttr);
-}
-
-constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return attr == legacyAttr;
-}
-
-constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return !(attr == legacyAttr);
 }
 
 #ifdef UNIT_TESTING

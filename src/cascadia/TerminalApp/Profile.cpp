@@ -36,6 +36,7 @@ static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
 static constexpr std::string_view FontSizeKey{ "fontSize" };
+static constexpr std::string_view FontWeightKey{ "fontWeight" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -65,6 +66,19 @@ static constexpr std::wstring_view CursorShapeBar{ L"bar" };
 static constexpr std::wstring_view CursorShapeUnderscore{ L"underscore" };
 static constexpr std::wstring_view CursorShapeFilledbox{ L"filledBox" };
 static constexpr std::wstring_view CursorShapeEmptybox{ L"emptyBox" };
+
+// Possible values for Font Weight
+static constexpr std::string_view FontWeightThin{ "thin" };
+static constexpr std::string_view FontWeightExtraLight{ "extra-light" };
+static constexpr std::string_view FontWeightLight{ "light" };
+static constexpr std::string_view FontWeightSemiLight{ "semi-light" };
+static constexpr std::string_view FontWeightNormal{ "normal" };
+static constexpr std::string_view FontWeightMedium{ "medium" };
+static constexpr std::string_view FontWeightSemiBold{ "semi-bold" };
+static constexpr std::string_view FontWeightBold{ "bold" };
+static constexpr std::string_view FontWeightExtraBold{ "extra-bold" };
+static constexpr std::string_view FontWeightBlack{ "black" };
+static constexpr std::string_view FontWeightExtraBlack{ "extra-black" };
 
 // Possible values for Image Stretch Mode
 static constexpr std::string_view ImageStretchModeNone{ "none" };
@@ -115,6 +129,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
+    /* _fontWeight is initialized below because the structure won't accept a uint16_t directly */
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
@@ -128,6 +143,9 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _retroTerminalEffect{},
     _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
+    winrt::Windows::UI::Text::FontWeight weight;
+    weight.Weight = DEFAULT_FONT_WEIGHT;
+    _fontWeight = weight;
 }
 
 Profile::~Profile()
@@ -180,6 +198,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
+    terminalSettings.FontWeight(_fontWeight);
     terminalSettings.Padding(_padding);
 
     terminalSettings.Commandline(_commandline);
@@ -474,6 +493,12 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetInt(json, FontSizeKey, _fontSize);
 
+    if (json.isMember(JsonKey(FontWeightKey)))
+    {
+        auto fontWeight{ json[JsonKey(FontWeightKey)] };
+        _fontWeight = _ParseFontWeight(fontWeight);
+    }
+
     JsonUtils::GetDouble(json, AcrylicTransparencyKey, _acrylicTransparency);
 
     JsonUtils::GetBool(json, UseAcrylicKey, _useAcrylic);
@@ -738,6 +763,78 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 
         return std::wstring(defaultPath.get(), numCharsDefault);
     }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified font weight value to its corresponding enum
+// Arguments:
+// - The value from the settings.json file
+// Return Value:
+// - The corresponding value which maps to the string provided by the user
+winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value& json)
+{
+    if (json.isUInt())
+    {
+        winrt::Windows::UI::Text::FontWeight weight;
+        weight.Weight = static_cast<uint16_t>(json.asUInt());
+
+        // We're only accepting variable values between 100 and 990 so we don't go too crazy.
+        if (weight.Weight >= 100 && weight.Weight <= 990)
+        {
+            return weight;
+        }
+    }
+
+    if (json.isString())
+    {
+        auto fontWeight = json.asString();
+        if (fontWeight == FontWeightThin)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Thin();
+        }
+        else if (fontWeight == FontWeightExtraLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
+        }
+        else if (fontWeight == FontWeightLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Light();
+        }
+        else if (fontWeight == FontWeightSemiLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::SemiLight();
+        }
+        else if (fontWeight == FontWeightNormal)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Normal();
+        }
+        else if (fontWeight == FontWeightMedium)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Medium();
+        }
+        else if (fontWeight == FontWeightSemiBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::SemiBold();
+        }
+        else if (fontWeight == FontWeightBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Bold();
+        }
+        else if (fontWeight == FontWeightExtraBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
+        }
+        else if (fontWeight == FontWeightBlack)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Black();
+        }
+        else if (fontWeight == FontWeightExtraBlack)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
+        }
+    }
+
+    return winrt::Windows::UI::Text::FontWeights::Normal();
 }
 
 // Method Description:

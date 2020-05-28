@@ -178,6 +178,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
                                    TextAttribute& attr,
-                                   const bool isForeground);
+                                   const bool isForeground) noexcept;
     };
 }
