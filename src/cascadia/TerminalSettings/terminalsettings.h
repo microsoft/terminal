@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         GETSET_PROPERTY(int32_t, InitialCols, 80);
 
         GETSET_PROPERTY(bool, SnapOnInput, true);
+        GETSET_PROPERTY(bool, AltGrAliasing, true);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
         GETSET_PROPERTY(CursorStyle, CursorShape, CursorStyle::Vintage);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
