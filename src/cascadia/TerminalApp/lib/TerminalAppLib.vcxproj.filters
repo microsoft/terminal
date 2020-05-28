@@ -63,6 +63,9 @@
     <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
+    <ClCompile Include="../CommandSerialization.cpp">
+      <Filter>settings</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -116,6 +119,9 @@
     <ClInclude Include="../ColorHelper.h" />
     <ClInclude Include="../TelnetGenerator.h">
       <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="../CommandSerialization.h">
+      <Filter>settings</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
