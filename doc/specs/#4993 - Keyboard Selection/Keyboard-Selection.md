@@ -72,7 +72,7 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 ### Mark Mode
 Mark Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `markMode` keybinding works:
 
-![Mark Mode Flowchart][MarkModeFlowchart.jpg]
+![Mark Mode Flowchart][images/MarkModeFlowchart.png]
 
 If a selection is not active, a "start" selection point is created at the cursor position. `moveSelectionPoint` calls then move "start".
 
