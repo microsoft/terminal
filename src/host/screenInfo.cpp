@@ -2082,12 +2082,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
 
-    auto& commandLine = CommandLine::Instance();
-    if (commandLine.HasPopup())
-    {
-        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
-    }
-
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just
     // because the text attributes changed.
