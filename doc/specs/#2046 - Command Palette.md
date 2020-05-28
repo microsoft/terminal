@@ -343,7 +343,7 @@ character for the end of the default `cmd` `%PROMPT%`.
 towards the VsCode style (where Action='>', Commandline='') currently.
 
 Enabling the user to configure this prefix is discussed below in "[Future
-Considerations](#configuring-the-actioncommandline-mode-prefix)".
+Considerations](#Configuring-The-ActionCommandline-Mode-Prefix)".
 
 ## Capabilities
 
