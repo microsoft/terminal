@@ -603,6 +603,7 @@ dllexport
 DLLGETVERSIONPROC
 dllimport
 dllinit
+dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
@@ -2088,6 +2089,7 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
+shobjidl
 shlwapi
 SHORTPATH
 SHOWCURSOR
