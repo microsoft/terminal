@@ -59,9 +59,4 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>$(OutDir)\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
 </Project>
