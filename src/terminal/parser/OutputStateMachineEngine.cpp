@@ -1777,9 +1777,7 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                 content = reader.ReadString(buffer.Length());
                 success = true;
             }
-            catch (...)
-            {
-            }
+            CATCH_LOG();
         }
     }
 
