@@ -63,21 +63,21 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
     Json::Value bindingsArray;
 
     // TODO: Fix later
-    // // Iterate over all the possible actions in the names list, and see if
-    // // it has a binding.
-    // for (auto& actionName : commandNames)
-    // {
-    //     const auto searchedForName = actionName.first;
-    //     const auto searchedForAction = actionName.second;
+    // Iterate over all the possible actions in the names list, and see if
+    // it has a binding.
+    for (auto& actionName : ActionAndArgs::ActionNamesMap)
+    {
+        const auto searchedForName = actionName.first;
+        const auto searchedForAction = actionName.second;
 
-    //     if (const auto chord{ GetKeyBindingForAction(searchedForAction) })
-    //     {
-    //         if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
-    //         {
-    //             bindingsArray.append(serialization);
-    //         }
-    //     }
-    // }
+        if (const auto chord{ GetKeyBindingForAction(searchedForAction) })
+        {
+            if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
+            {
+                bindingsArray.append(serialization);
+            }
+        }
+    }
 
     return bindingsArray;
 }
@@ -86,9 +86,9 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 // - Deserialize an AppKeyBindings from the key mappings that are in the array
 //   `json`. The json array should contain an array of objects with both a
 //   `command` string and a `keys` array, where `command` is one of the names
-//   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
-//   the array should contain a single string, which can be deserialized into a
-//   KeyChord.
+//   listed in `ActionAndArgs::ActionNamesMap`, and `keys` is an array of
+//   keypresses. Currently, the array should contain a single string, which can
+//   be deserialized into a KeyChord.
 // - Applies the deserialized keybindings to the provided `bindings` object. If
 //   a key chord in `json` is already bound to an action, that chord will be
 //   overwritten with the new action. If a chord is bound to `null` or

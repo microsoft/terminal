@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
     // the actual strings being pointed to. However, since both these strings and
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
-    static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames{
+    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionNamesMap{
         { CopyTextKey, ShortcutAction::CopyText },
         { PasteTextKey, ShortcutAction::PasteText },
         { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
@@ -115,8 +115,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = commandNames.find(actionString);
-        return found != commandNames.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionAndArgs::ActionNamesMap.find(actionString);
+        return found != ActionAndArgs::ActionNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
