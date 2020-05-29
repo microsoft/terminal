@@ -12,9 +12,10 @@
 # This script supports a quasi-mandatory "overrides" file, overrides.xml.
 # If you do not have overrides, supply the -NoOverrides parameter. This was
 # developed for use with the CodepointWidthDetector, which has some override
-# randes.
+# ranges.
 #
-# This script was developed against the flat "no unihan" UCD "ucd.nounihan.flat"
+# This script was developed against the flat "no han unification" UCD
+# "ucd.nounihan.flat.xml".
 # It does not support the grouped database format.
 # significantly smaller, which would provide a performance win on the admittedly
 # extremely rare occasion that we should need to regenerate our table.

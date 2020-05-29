@@ -2378,9 +2378,11 @@ typeparam
 TYUI
 uap
 uapadmin
+UAX
 ubuntu
 ucd
 UCD
+ucdxml
 uch
 UCHAR
 ucs
