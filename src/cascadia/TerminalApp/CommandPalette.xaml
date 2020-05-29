@@ -8,7 +8,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Margin="0, 8, 0, 0"
+    Margin="8"
     mc:Ignorable="d">
 
     <Grid.ColumnDefinitions>
@@ -22,13 +22,20 @@ the MIT License. See LICENSE in the project root for license information. -->
         <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
+
+    <Grid.Resources>
+        <ThemeShadow x:Name="SharedShadow" />
+    </Grid.Resources>
+
     <Grid
+        x:Name="Backdrop"
         Background="{ThemeResource SystemChromeMediumLowColor}"
         Grid.Column="1"
         Grid.Row="0"
         MaxWidth="400"
         MaxHeight="400"
         CornerRadius="{ThemeResource ControlCornerRadius}"
+        Shadow="{StaticResource SharedShadow}"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
 
@@ -56,6 +63,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             SelectionMode="Single"
             CanReorderItems="False"
             AllowDrop="False"
+
             ItemsSource="{x:Bind FilteredActions}">
 
             <ItemsControl.ItemTemplate>
