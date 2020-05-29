@@ -15,6 +15,7 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
+#include "rtpsocket.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -242,6 +243,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Unbounded main dispatcher use leads to massive memory leaks and intense slowdowns
         // on the UI thread.
         std::atomic<bool> _coroutineDispatchStateUpdateInProgress{ false };
+
+        // Socket and callbacks used for MJPEG background on terminal control.
+        std::unique_ptr<mjpeg::RtpSocket> _rtpSocket{ nullptr };
+        void _OnRtpFrameReady(std::vector<uint8_t>& jpeg);
+        winrt::fire_and_forget _SetBackgroundImage(std::vector<uint8_t> jpeg);
     };
 }
 

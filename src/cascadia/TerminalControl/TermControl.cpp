@@ -11,9 +11,14 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
+#include <regex>
+#include <string>
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
+#include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Storage.Pickers.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -369,7 +374,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!_settings.BackgroundImage().empty())
         {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+            // Check if an MJPEG path has been requested.
+            std::string backgroundPath = to_string(_settings.BackgroundImage());
+            std::string regexInput = backgroundPath;
+            const std::regex pathRegex("(.*);mjpeg:(\\d+)$", std::regex_constants::icase);
+            std::smatch pathMatch;
+
+            if (std::regex_match(regexInput, pathMatch, pathRegex))
+            {
+                if (pathMatch.size() == 3)
+                {
+                    backgroundPath = pathMatch[1].str();
+                    int listenPort = std::stoi(pathMatch[2].str());
+
+                    _rtpSocket = std::make_unique<mjpeg::RtpSocket>(listenPort);
+                    auto fp = std::bind(&TermControl::_OnRtpFrameReady, this, std::placeholders::_1);
+                    _rtpSocket->SetFrameReadyCallback(fp);
+                }
+            }
+
+            // TODO: CHeck the MJPEG string checking doesn't lose Unicode chars.
+            Windows::Foundation::Uri imageUri{ to_hstring(backgroundPath) };
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
@@ -393,6 +418,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
             BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
             BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
+
+            if (_rtpSocket != nullptr)
+            {
+                _rtpSocket->Start();
+            }
         }
         else
         {
@@ -1529,6 +1559,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // Callback function for MJPEG receiver when a full JPEG frame is ready.
+    void TermControl::_OnRtpFrameReady(std::vector<uint8_t>& jpeg)
+    {
+        _SetBackgroundImage(jpeg);
+    }
+
+    // Method Description:
+    // Sets the terminal control background to the JPEG image contained in the supplied
+    // vector.
+    winrt::fire_and_forget TermControl::_SetBackgroundImage(std::vector<uint8_t> jpeg)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+
+        Windows::Storage::Streams::InMemoryRandomAccessStream jpegStream;
+        auto writer = Windows::Storage::Streams::DataWriter(jpegStream.GetOutputStreamAt(0));
+        writer.WriteBytes(jpeg);
+        co_await writer.StoreAsync();
+
+        auto decoder = co_await Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(jpegStream);
+
+        auto bmp = co_await decoder.GetSoftwareBitmapAsync();
+
+        if (bmp.BitmapPixelFormat() != Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8 ||
+            bmp.BitmapAlphaMode() == Windows::Graphics::Imaging::BitmapAlphaMode::Straight)
+        {
+            bmp = Windows::Graphics::Imaging::SoftwareBitmap::Convert(bmp,
+                Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8,
+                Windows::Graphics::Imaging::BitmapAlphaMode::Premultiplied);
+        }
+
+        Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource source;
+        co_await source.SetBitmapAsync(bmp);
+        BackgroundImage().Source(source);
+    }
+
+    // Method Description:
     // - Event handler for the GotFocus event. This is used to...
     //   - enable accessibility notifications for this TermControl
     //   - start blinking the cursor when the window is focused
@@ -2134,6 +2200,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
+
+            if (_rtpSocket != nullptr)
+            {
+                _rtpSocket->Close();
+            }
 
             // GH#1996 - Close the connection asynchronously on a background
             // thread.
