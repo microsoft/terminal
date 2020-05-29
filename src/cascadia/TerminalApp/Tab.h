@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
+        TYPED_EVENT(RequestFocusActiveControl, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

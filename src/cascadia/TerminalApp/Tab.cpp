@@ -49,6 +49,8 @@ namespace winrt::TerminalApp::implementation
         // If the tab _itself_ gains focus, instead pass it straight on through
         // to the focused control. We don't want focus to silently land on the
         // tab.
+        // TerminalPage will handle RequestFocusActiveControl to pass focus to
+        // the active control in the active tab.
         auto weakThis{ get_weak() };
         _tabViewItem.GotFocus([weakThis](Windows::Foundation::IInspectable const& sender,
                                          RoutedEventArgs const& /*args*/) {
@@ -56,13 +58,9 @@ namespace winrt::TerminalApp::implementation
             auto c = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>();
             if (c && tab)
             {
-                if (c.FocusState() != FocusState::Unfocused && tab->_focused)
+                if (c.FocusState() != FocusState::Unfocused)
                 {
-                    auto lastFocusedControl = tab->GetActiveTerminalControl();
-                    if (lastFocusedControl)
-                    {
-                        lastFocusedControl.Focus(FocusState::Programmatic);
-                    }
+                    tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
                 }
             }
         });
@@ -680,14 +678,9 @@ namespace winrt::TerminalApp::implementation
                     // Manually pass the focus on to our focused control.
                     // Otherwise, the focus will just be lost when we're removed
                     // from the tree.
-                    if (tab->_focused)
-                    {
-                        auto lastFocusedControl = tab->GetActiveTerminalControl();
-                        if (lastFocusedControl)
-                        {
-                            lastFocusedControl.Focus(FocusState::Programmatic);
-                        }
-                    }
+                    // TerminalPage will handle RequestFocusActiveControl to
+                    // pass focus to the active control in the active tab.
+                    tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
                     break;
                 }
             }

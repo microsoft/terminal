@@ -988,6 +988,17 @@ namespace winrt::TerminalApp::implementation
         // newly created tab).
         // remove any colors left by other colored tabs
         // _ClearNewTabButtonColor();
+
+        hostingTab.RequestFocusActiveControl([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                // Return focus to the active control
+                if (auto index{ page->_GetFocusedTabIndex() })
+                {
+                    page->_GetStrongTabImpl(index.value())->SetFocused(true);
+                }
+            }
+        });
     }
 
     // Method Description:
