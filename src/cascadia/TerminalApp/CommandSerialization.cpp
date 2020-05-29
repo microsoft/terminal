@@ -6,10 +6,6 @@
 #include "Utils.h"
 #include "ActionAndArgs.h"
 #include <LibraryResources.h>
-#include <winrt/Windows.ApplicationModel.Resources.Core.h>
-#include "../WinRTUtils/ScopedResourceLoader.h"
-
-extern const wchar_t* g_WinRTUtilsLibraryResourceScope;
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
@@ -37,8 +33,6 @@ namespace winrt::TerminalApp::implementation
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json)
     {
-        // static auto loader{ GetLibraryResourceLoader() };
-        static ScopedResourceLoader loader{ g_WinRTUtilsLibraryResourceScope };
         auto result = winrt::make_self<Command>();
 
         if (const auto name{ json[JsonKey(NameKey)] })
@@ -52,9 +46,9 @@ namespace winrt::TerminalApp::implementation
                         // Make sure the key is present before we try
                         // loading it. Otherwise we'll crash
                         const auto resourceKey = GetWstringFromJson(keyJson);
-                        if (loader.HasResourceWithName(resourceKey))
+                        if (HasLibraryResourceWithName(resourceKey))
                         {
-                            result->_setName(loader.GetLocalizedString(resourceKey));
+                            result->_setName(GetLibraryResourceString(resourceKey));
                         }
                     }
                 }
