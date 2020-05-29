@@ -4,6 +4,22 @@
 #Requires -Version 7
 # (we use the null coalescing operator)
 
+################################################################################
+# This script generates the an array suitable for replacing the body of
+# src/types/CodepointWidthDetector.cpp from a Unicode UCD XML document[1]
+# compliant with UAX#42[2].
+#
+# This script was developed against the flat "no unihan" UCD "ucd.nounihan.flat"
+# It does not support the grouped database format.
+# significantly smaller, which would provide a performance win on the admittedly
+# extremely rare occasion that we should need to regenerate our table.
+#
+# Invoke as ./Generate-xxx ucd.nounihan.flat.xml -Pack | Out-File -Encoding
+#           UTF-8 Temporary.cpp
+#
+# [1]: https://www.unicode.org/Public/UCD/latest/ucdxml/
+# [2]: http://unicode.org/reports/tr42/
+
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPositionalParameters', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseProcessBlockForPipelineCommand', '')]
 [CmdletBinding()]
