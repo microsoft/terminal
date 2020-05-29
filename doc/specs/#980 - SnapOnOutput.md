@@ -23,10 +23,11 @@ Typical Unix terminals work differently. Rather than disabling the output, they 
 
 ## Solution Design
 
-`SnapOnOutput` will be a profile-level `ICoreSettings` setting of type enum or enum array. It can be set to one or multiple of the following values:
+`SnapOnOutput` will be a profile-level `ICoreSettings` setting of type enum. It can be set to one of the following values:
 - `never`: new output does not cause the viewport to update to the bottom of the scroll region
-- `noSelection`: (**default**) new output causes the viewport to update to the bottom of the scroll region **IF** no selection is active
+- `noSelection`: new output causes the viewport to update to the bottom of the scroll region **IF** no selection is active
 - `atBottom`: new output causes the viewport to update **IF** the viewport is already at the virtual bottom
+- `noSelection|atBottom`: (**default**) new output causes the viewport to update **IF** no selection is active or the viewport is already at the virtual bottom
 - `always`: new output causes the viewport to update to the bottom of the scroll region
 
 The `TerminalCore` is responsible for moving the viewport on a scroll event. All of the logic for this feature should be handled here.
@@ -37,7 +38,7 @@ A new private enum array `_snapOnOutput` will be introduced to save which of the
 
 The `snapOnOutput` setting is done at a profile-level to be near `snapOnInput`. Additionally, the `never` value seems more valuable when the user can dedicate a specific task to the profile. Such a scenario would be a shell that frequently generates new output (i.e.: a live-generating log), but the user is not necessarily interested in what the latest output is.
 
-The default `snapOnOutput` value will be `[ "noSelection", "atBottom" ]`.
+The default `snapOnOutput` value will be `"noSelection|atBottom"`.
 
 ## Capabilities
 
