@@ -779,7 +779,7 @@ namespace winrt::TerminalApp::implementation
         }
         case StartupTaskState::DisabledByUser:
         {
-            // TODO: how should we handle this?
+            // TODO: GH#6254: define UX for other StartupTaskStates
             break;
         }
         case StartupTaskState::Enabled:

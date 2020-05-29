@@ -75,7 +75,6 @@ GlobalAppSettings::GlobalAppSettings() :
     _copyOnSelect{ false },
     _copyFormatting{ false },
     _launchMode{ LaunchMode::DefaultMode },
-    _StartOnUserLogin{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _debugFeatures{ debugFeaturesDefault }
