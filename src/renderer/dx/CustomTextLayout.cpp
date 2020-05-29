@@ -42,7 +42,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _breakpoints{},
     _runIndex{ 0 },
     _width{ width },
-    _isEntireTextSimple { false }
+    _isEntireTextSimple{ false }
 {
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
