@@ -9,8 +9,11 @@
 namespace mjpeg
 {
     RtpSocket::RtpSocket(int listenPort) :
-        _listenPort(listenPort), _listenAddr(), _timeout()
-    { }
+        _listenPort(listenPort),
+        _listenAddr(),
+        _timeout()
+    {
+    }
 
     RtpSocket::~RtpSocket()
     {
@@ -46,7 +49,7 @@ namespace mjpeg
         _listenAddr.sin_family = AF_INET;
         _listenAddr.sin_addr.s_addr = htonl(LISTEN_ADDRESS);
         _listenAddr.sin_port = htons((short)_listenPort);
-        
+
         // Bind the socket.
         iResult = bind(_rtpSocket, (SOCKADDR*)&_listenAddr, sizeof(_listenAddr));
         if (iResult == SOCKET_ERROR)

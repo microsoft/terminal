@@ -54,7 +54,7 @@ namespace mjpeg
     {
         auto data = buf.data();
         return (uint16_t)data[posn] << 8 & 0xff00 |
-                (uint16_t)data[posn + 1] & 0x00ff;
+               (uint16_t)data[posn + 1] & 0x00ff;
     }
 
     /**

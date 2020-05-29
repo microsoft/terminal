@@ -1585,8 +1585,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             bmp.BitmapAlphaMode() == Windows::Graphics::Imaging::BitmapAlphaMode::Straight)
         {
             bmp = Windows::Graphics::Imaging::SoftwareBitmap::Convert(bmp,
-                Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8,
-                Windows::Graphics::Imaging::BitmapAlphaMode::Premultiplied);
+                                                                      Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8,
+                                                                      Windows::Graphics::Imaging::BitmapAlphaMode::Premultiplied);
         }
 
         Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource source;
