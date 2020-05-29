@@ -9,6 +9,11 @@
 # src/types/CodepointWidthDetector.cpp from a Unicode UCD XML document[1]
 # compliant with UAX#42[2].
 #
+# This script supports a quasi-mandatory "overrides" file, overrides.xml.
+# If you do not have overrides, supply the -NoOverrides parameter. This was
+# developed for use with the CodepointWidthDetector, which has some override
+# randes.
+#
 # This script was developed against the flat "no unihan" UCD "ucd.nounihan.flat"
 # It does not support the grouped database format.
 # significantly smaller, which would provide a performance win on the admittedly
