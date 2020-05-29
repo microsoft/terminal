@@ -338,6 +338,7 @@
     "commands": [
         { "icon": null, "name": { "key": "NewTabCommandKey" }, "action": "newTab" },
         { "icon": null, "name": { "key": "DuplicateTabCommandKey" }, "action": "duplicateTab" },
+        { "icon": null, "name": { "key": "DuplicatePaneCommandKey" }, "action": { "action": "splitPane", "split":"auto", "splitMode": "duplicate" } },
         { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": { "action": "splitPane", "split": "horizontal" } },
         { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": { "action": "splitPane", "split": "vertical" } },
 

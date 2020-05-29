@@ -359,6 +359,9 @@
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>Duplicate Tab</value>
   </data>
+  <data name="DuplicateTabCommandKey" xml:space="preserve">
+    <value>Duplicate Pane</value>
+  </data>
   <data name="NextTabCommandKey" xml:space="preserve">
     <value>Next Tab</value>
   </data>
@@ -369,10 +372,10 @@
     <value>Close Pane</value>
   </data>
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
-    <value>Split Horizontal</value>
+    <value>Split Pane Horizontally</value>
   </data>
   <data name="SplitVerticalCommandKey" xml:space="preserve">
-    <value>Split Vertical</value>
+    <value>Split Pane Vertically</value>
   </data>
   <data name="CopyTextCommandKey" xml:space="preserve">
     <value>Copy Text</value>
