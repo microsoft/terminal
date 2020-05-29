@@ -22,6 +22,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Grid.RowDefinitions>
 
 
+    <!-- TODO: ThemeShadow is only on 18362. I'm sure there's a way of doing this conditionally. -->
     <Grid.Resources>
         <ThemeShadow x:Name="CommandPaletteShadow" />
     </Grid.Resources>
