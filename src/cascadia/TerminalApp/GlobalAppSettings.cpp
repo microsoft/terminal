@@ -340,18 +340,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
     }
 
-    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
-    {
-        auto warnings = _keybindings->LayerJson(keybindings);
-        // It's possible that the user provided keybindings have some warnings
-        // in them - problems that we should alert the user to, but we can
-        // recover from. Most of these warnings cannot be detected later in the
-        // Validate settings phase, so we'll collect them now. If there were any
-        // warnings generated from parsing these keybindings, add them to our
-        // list of warnings.
-        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    }
-
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);
