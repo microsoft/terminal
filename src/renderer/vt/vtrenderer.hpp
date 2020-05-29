@@ -212,13 +212,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                                        const COLORREF colorBackground,
                                                        const bool isBold,
-                                                       _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                       const WORD cColorTable) noexcept;
+                                                       const std::basic_string_view<COLORREF> colorTable) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const bool isBold,
-                                                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                           const WORD cColorTable) noexcept;
+                                                           const std::basic_string_view<COLORREF> colorTable) noexcept;
 
         bool _WillWriteSingleChar() const;
 
