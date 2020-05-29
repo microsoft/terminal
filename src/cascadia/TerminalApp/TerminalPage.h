@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
         void Create();
 

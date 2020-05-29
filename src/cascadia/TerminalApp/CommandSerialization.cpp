@@ -2,10 +2,14 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "CommandSerialization.h"
+#include "Command.h"
 #include "Utils.h"
 #include "ActionAndArgs.h"
 #include <LibraryResources.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include "../WinRTUtils/ScopedResourceLoader.h"
+
+extern const wchar_t* g_WinRTUtilsLibraryResourceScope;
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
@@ -15,76 +19,100 @@ static constexpr std::string_view IconPathKey{ "iconPath" };
 static constexpr std::string_view ActionKey{ "action" };
 static constexpr std::string_view ArgsKey{ "args" };
 
-// Method Description:
-// - Deserialize an AppKeyBindings from the key mappings that are in the array
-//   `json`. The json array should contain an array of objects with both a
-//   `command` string and a `keys` array, where `command` is one of the names
-//   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
-//   the array should contain a single string, which can be deserialized into a
-//   KeyChord.
-// Arguments:
-// - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-// Return Value:
-// - the newly constructed AppKeyBindings object.
-winrt::TerminalApp::Command CommandSerialization::FromJson(const Json::Value& json)
+namespace winrt::TerminalApp::implementation
 {
-    winrt::TerminalApp::Command result{};
-
-    if (auto name{ json[JsonKey(NameKey)] })
+    // Method Description:
+    // - Deserialize an Command from the `json` object. The json object should
+    //   contain a "name" and "action", and optionally an "icon".
+    //   * "name": string|object - the name of the command to display in the
+    //     command palette. If this is an object, look for the "key" property,
+    //     and try to load the string from our resources instead.
+    //   * "action": string|object - A ShortcutAction, either as a name or as an
+    //     ActionAndArgs serialization. See ActionAndArgs::FromJson for details.
+    //     If this is null, we'll remove this command from the list of commands.
+    //   * "icon": string? - the path to an icon to use with this command entry
+    // Arguments:
+    // - json: the Json::Value to deserialize into a Command
+    // Return Value:
+    // - the newly constructed Command object.
+    winrt::com_ptr<Command> Command::FromJson(const Json::Value& json)
     {
-        if (name.isObject())
+        // static auto loader{ GetLibraryResourceLoader() };
+        static ScopedResourceLoader loader{ g_WinRTUtilsLibraryResourceScope };
+        auto result = winrt::make_self<Command>();
+
+        if (const auto name{ json[JsonKey(NameKey)] })
         {
-            try
+            if (name.isObject())
             {
-                if (auto keyJson{ name[JsonKey("key")] })
+                try
                 {
-                    auto resourceKey = GetWstringFromJson(keyJson);
-                    result.Name(GetLibraryResourceString(resourceKey));
+                    if (const auto keyJson{ name[JsonKey("key")] })
+                    {
+                        // Make sure the key is present before we try
+                        // loading it. Otherwise we'll crash
+                        const auto resourceKey = GetWstringFromJson(keyJson);
+                        if (loader.HasResourceWithName(resourceKey))
+                        {
+                            result->_setName(loader.GetLocalizedString(resourceKey));
+                        }
+                    }
                 }
+                CATCH_LOG();
             }
-            CATCH_LOG();
-        }
-        else if (name.isString())
-        {
-            result.Name(winrt::to_hstring(name.asString()));
-        }
-    }
-    if (auto iconPath{ json[JsonKey(IconPathKey)] })
-    {
-        result.IconPath(winrt::to_hstring(iconPath.asString()));
-    }
-
-    if (auto actionJson{ json[JsonKey(ActionKey)] })
-    {
-        // Ask the keybinding serializer to turn us into a ActionAndArgs
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
-        auto actionAndArgs = winrt::TerminalApp::implementation::ActionAndArgs::FromJson(actionJson, warnings);
-
-        if (actionAndArgs)
-        {
-            result.Action(*actionAndArgs);
-        }
-        // else
-        // {
-        //     ClearKeyBinding(chord);
-        // }
-    }
-
-    return result;
-}
-
-void CommandSerialization::LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
-                                     const Json::Value& json)
-{
-    for (const auto& value : json)
-    {
-        if (value.isObject())
-        {
-            try
+            else if (name.isString())
             {
-                commands.push_back(CommandSerialization::FromJson(value));
+                result->_setName(winrt::to_hstring(name.asString()));
             }
-            CATCH_LOG();
+        }
+
+        if (result->_Name.empty())
+        {
+            return nullptr;
+        }
+
+        if (const auto iconPath{ json[JsonKey(IconPathKey)] })
+        {
+            result->_setIconPath(winrt::to_hstring(iconPath.asString()));
+        }
+
+        if (const auto actionJson{ json[JsonKey(ActionKey)] })
+        {
+            std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+            auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
+
+            if (actionAndArgs)
+            {
+                result->_setAction(*actionAndArgs);
+            }
+            else
+            {
+                // TODO: { name: "foo", action: null } should _remove_ the "foo" command.
+                return nullptr;
+            }
+        }
+
+        return result;
+    }
+
+    void Command::LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
+                            const Json::Value& json)
+    {
+        // TODO: Be smart about layering. Override commands with the same name.
+        for (const auto& value : json)
+        {
+            if (value.isObject())
+            {
+                try
+                {
+                    auto result = Command::FromJson(value);
+                    if (result)
+                    {
+                        commands.push_back(*result);
+                    }
+                }
+                CATCH_LOG();
+            }
         }
     }
 }

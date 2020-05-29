@@ -124,7 +124,6 @@
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="../DebugTapConnection.h" />
-    <ClInclude Include="../CommandSerialization.h" />
     <ClInclude Include="../AppKeyBindings.h">
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClInclude>

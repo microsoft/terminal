@@ -7,8 +7,6 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include <sstream>
-#include "CommandSerialization.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -347,7 +345,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto commandsArray{ json[JsonKey(CommandsKey)] })
     {
-        CommandSerialization::LayerJson(_commands, commandsArray);
+        winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
     }
 }
 

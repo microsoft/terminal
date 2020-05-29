@@ -359,7 +359,7 @@
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>Duplicate Tab</value>
   </data>
-  <data name="DuplicateTabCommandKey" xml:space="preserve">
+  <data name="DuplicatePaneCommandKey" xml:space="preserve">
     <value>Duplicate Pane</value>
   </data>
   <data name="NextTabCommandKey" xml:space="preserve">

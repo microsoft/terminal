@@ -49,12 +49,25 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    void TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
     {
         _settings = settings;
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
+        }
+
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // Update the command palette when settings reload
+            auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+            for (auto& action : _settings->GlobalSettings().GetCommands())
+            {
+                commandsCollection.Append(action);
+            }
+            CommandPalette().SetActions(commandsCollection);
         }
     }
 
@@ -151,13 +164,6 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        // TODO: Update the command palette when settings reload
-        auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        for (auto& action : _settings->GlobalSettings().GetCommands())
-        {
-            commandsCollection.Append(action);
-        }
-        CommandPalette().SetActions(commandsCollection);
         CommandPalette().SetDispatch(*_actionDispatch);
         CommandPalette().Closed({ this, &TerminalPage::_CommandPaletteClosed });
 
