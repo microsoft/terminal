@@ -49,6 +49,7 @@ namespace winrt::TerminalApp::implementation
             auto selected = _FilteredActionsView().SelectedIndex();
             selected = (selected - 1) % _FilteredActionsView().Items().Size();
             _FilteredActionsView().SelectedIndex(selected);
+            _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
@@ -56,6 +57,7 @@ namespace winrt::TerminalApp::implementation
             auto selected = _FilteredActionsView().SelectedIndex();
             selected = (selected + 1) % _FilteredActionsView().Items().Size();
             _FilteredActionsView().SelectedIndex(selected);
+            _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
