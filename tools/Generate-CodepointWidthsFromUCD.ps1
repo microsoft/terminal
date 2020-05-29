@@ -23,7 +23,7 @@
 #           UTF-8 Temporary.cpp
 #
 # [1]: https://www.unicode.org/Public/UCD/latest/ucdxml/
-# [2]: http://unicode.org/reports/tr42/
+# [2]: https://www.unicode.org/reports/tr42/
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPositionalParameters', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseProcessBlockForPipelineCommand', '')]
