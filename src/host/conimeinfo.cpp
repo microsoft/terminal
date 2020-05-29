@@ -148,7 +148,7 @@ void ConsoleImeInfo::ClearAllAreas()
 
     const TextAttribute fill = gci.GetActiveOutputBuffer().GetAttributes();
 
-    const TextAttribute popupFill = *gci.GetActiveOutputBuffer().GetPopupAttributes();
+    const TextAttribute popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
 
     const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 
