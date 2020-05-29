@@ -2091,10 +2091,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
-        // TODO return focus to the active control
-        // const int focusedTabIndex = _GetFocusedTabIndex();
-        // auto focusedTab = _tabs[focusedTabIndex];
-        // focusedTab->SetFocused(true);
+        // Return focus to the active control
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            _GetStrongTabImpl(index.value())->SetFocused(true);
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------
