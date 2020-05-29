@@ -8,7 +8,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Margin="8"
     mc:Ignorable="d">
 
     <Grid.ColumnDefinitions>
@@ -24,18 +23,29 @@ the MIT License. See LICENSE in the project root for license information. -->
 
 
     <Grid.Resources>
-        <ThemeShadow x:Name="SharedShadow" />
+        <ThemeShadow x:Name="CommandPaletteShadow" />
     </Grid.Resources>
+
+
+    <Grid
+        x:Name="ShadowBackdrop"
+        Background="Transparent"
+        Grid.Column="1"
+        Grid.Row="0"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
+        </Grid>
 
     <Grid
         x:Name="Backdrop"
         Background="{ThemeResource SystemChromeMediumLowColor}"
+        CornerRadius="{ThemeResource ControlCornerRadius}"
+        Margin="8"
         Grid.Column="1"
         Grid.Row="0"
         MaxWidth="400"
         MaxHeight="400"
-        CornerRadius="{ThemeResource ControlCornerRadius}"
-        Shadow="{StaticResource SharedShadow}"
+        Shadow="{StaticResource CommandPaletteShadow}"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
 
@@ -85,4 +95,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ListView>
 
     </Grid>
+
+
 </Grid>
