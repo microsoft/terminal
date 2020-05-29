@@ -19,9 +19,6 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-
-        _SearchBox().TextChanged({ this, &CommandPalette::_FilterTextChanged });
-        _SearchBox().KeyDown({ this, &CommandPalette::_KeyDownHandler });
     }
 
     void CommandPalette::ToggleVisibility()
@@ -36,28 +33,34 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _Close();
+            _close();
         }
     }
 
-    void CommandPalette::_KeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void CommandPalette::_selectNextItem(const bool moveDown)
+    {
+        const auto selected = _FilteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_FilteredActionsView().Items().Size());
+        // Wraparound math. By adding numItems and then calculating modulo numItems,
+        // we clamp the values to the range [0, numItems) while still supporting moving
+        // upward from 0 to numItems - 1.
+        const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
+        _FilteredActionsView().SelectedIndex(newIndex);
+        _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
+    }
+
+    void CommandPalette::_keyDownHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
         if (key == VirtualKey::Up)
         {
-            auto selected = _FilteredActionsView().SelectedIndex();
-            selected = (selected - 1) % _FilteredActionsView().Items().Size();
-            _FilteredActionsView().SelectedIndex(selected);
-            _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
+            _selectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
-            auto selected = _FilteredActionsView().SelectedIndex();
-            selected = (selected + 1) % _FilteredActionsView().Items().Size();
-            _FilteredActionsView().SelectedIndex(selected);
-            _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
+            _selectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
@@ -70,21 +73,21 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto actionAndArgs = data.Action();
                     _dispatch.DoAction(actionAndArgs);
-                    _Close();
+                    _close();
                 }
             }
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
-            _Close();
+            _close();
         }
     }
 
-    void CommandPalette::_FilterTextChanged(Windows::Foundation::IInspectable const& /*sender*/,
+    void CommandPalette::_filterTextChanged(Windows::Foundation::IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
-        _UpdateFilteredActions();
+        _updateFilteredActions();
         _FilteredActionsView().SelectedIndex(0);
     }
 
@@ -96,10 +99,10 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions)
     {
         _allActions = actions;
-        _UpdateFilteredActions();
+        _updateFilteredActions();
     }
 
-    void CommandPalette::_UpdateFilteredActions()
+    void CommandPalette::_updateFilteredActions()
     {
         _filteredActions.Clear();
         auto searchText = _SearchBox().Text();
@@ -107,14 +110,14 @@ namespace winrt::TerminalApp::implementation
 
         for (auto action : _allActions)
         {
-            if (addAll || CommandPalette::_FilterMatchesName(searchText, action.Name()))
+            if (addAll || CommandPalette::_filterMatchesName(searchText, action.Name()))
             {
                 _filteredActions.Append(action);
             }
         }
     }
 
-    bool CommandPalette::_FilterMatchesName(winrt::hstring searchText, winrt::hstring name)
+    bool CommandPalette::_filterMatchesName(winrt::hstring searchText, winrt::hstring name)
     {
         std::wstring lowercaseSearchText{ searchText.c_str() };
         std::wstring lowercaseName{ name.c_str() };
@@ -144,10 +147,15 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void CommandPalette::_Close()
+    void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);
-        _SearchBox().Text(L"");
+        // TODO: Do we want to clear the text box each time we close the dialog? Or leave it?
+        // I think if we decide to leave it, we should auto-select all the text
+        // in it, so a user can start typing right away, or continue with the
+        // current selection.
+
+        // _SearchBox().Text(L"");
         _closeHandlers(*this, RoutedEventArgs{});
     }
 

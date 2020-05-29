@@ -8,6 +8,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Margin="0, 8, 0, 0"
     mc:Ignorable="d">
 
     <Grid.ColumnDefinitions>
@@ -25,9 +26,9 @@ the MIT License. See LICENSE in the project root for license information. -->
         Background="{ThemeResource SystemChromeMediumLowColor}"
         Grid.Column="1"
         Grid.Row="0"
-        Padding="8"
         MaxWidth="400"
         MaxHeight="400"
+        CornerRadius="{ThemeResource ControlCornerRadius}"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
 
@@ -40,6 +41,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             Grid.Row="0"
             x:Uid="CommandPalette_SearchBox"
             x:Name="_SearchBox"
+            Margin="8"
+            TextChanged="_filterTextChanged"
+            KeyDown="_keyDownHandler"
             Text="">
 
         </TextBox>
@@ -56,7 +60,18 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="local:Command">
-                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                    <StackPanel Orientation="Horizontal" >
+                        <!-- TODO: Add Icon to command palette entries -->
+                        <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                    </StackPanel>
+
+                    <!-- This worked _alright_, but the icon didn't appear, and
+                    there was some weird hover behavior -->
+                    <!-- <MenuFlyoutItem Text="{x:Bind Name, Mode=OneWay}">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE72D;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem> -->
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ListView>

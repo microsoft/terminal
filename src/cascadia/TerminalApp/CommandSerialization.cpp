@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
     //   * "action": string|object - A ShortcutAction, either as a name or as an
     //     ActionAndArgs serialization. See ActionAndArgs::FromJson for details.
     //     If this is null, we'll remove this command from the list of commands.
-    //   * "icon": string? - the path to an icon to use with this command entry
+    //   * "iconPath": string? - the path to an icon to use with this command entry
     // Arguments:
     // - json: the Json::Value to deserialize into a Command
     // Return Value:
@@ -65,9 +65,10 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        if (const auto iconPath{ json[JsonKey(IconPathKey)] })
+        // TODO: iconPath not implemented quite yet. Can't seem to get the binding quite right.
+        if (const auto iconPathJson{ json[JsonKey(IconPathKey)] })
         {
-            result->_setIconPath(winrt::to_hstring(iconPath.asString()));
+            result->_setIconPath(winrt::to_hstring(iconPathJson.asString()));
         }
 
         if (const auto actionJson{ json[JsonKey(ActionKey)] })
