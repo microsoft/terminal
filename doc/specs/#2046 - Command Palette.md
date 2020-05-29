@@ -54,7 +54,6 @@ following schema:
     "name": string|object,
     "action": string|object,
     "icon": string
-    "args": object?,
 }
 ```
 
@@ -266,8 +265,8 @@ For example, consider the following list of commands:
         { "icon": null, "name": "New Tab", "action": "newTab" },
         { "icon": null, "name": "Close Tab", "action": "closeTab" },
         { "icon": null, "name": "Close Pane", "action": "closePane" },
-        { "icon": null, "name": "[-] Split Horizontal", "action": "splitHorizontal" },
-        { "icon": null, "name": "[ | ] Split Vertical", "action": "splitVertical" },
+        { "icon": null, "name": "[-] Split Horizontal", "action": { "action": "splitPane", "split": "horizontal" } },
+        { "icon": null, "name": "[ | ] Split Vertical", "action": { "action": "splitPane", "split": "vertical" } },
         { "icon": null, "name": "Next Tab", "action": "nextTab" },
         { "icon": null, "name": "Prev Tab", "action": "prevTab" },
         { "icon": null, "name": "Open Settings", "action": "openSettings" },
@@ -287,6 +286,9 @@ For example, consider the following list of commands:
 
 As the user types, we should **bold** each matching character in the command
 name, to show how their input correlates to the results on screen.
+
+Additionally, it will be important for commands in the action list to display
+the keybinding that's bound to them, if there is one.
 
 ### Commandline Mode
 
@@ -344,6 +346,36 @@ towards the VsCode style (where Action='>', Commandline='') currently.
 
 Enabling the user to configure this prefix is discussed below in "[Future
 Considerations](#Configuring-The-ActionCommandline-Mode-Prefix)".
+
+### Layering and "Unbinding" Commands
+
+As we'll be providing a list of default commands, the user will inevitably want
+to change or remove some of these default commands.
+
+Commands should be layered based upon the _evaluated_ value of the "name"
+property. Since the default commands will all use localized strings in the
+`"name": { "key": "KeyName" }` format, the user should be able to override the
+command based on the localized string for that command.
+
+So, assuming that `NewTabCommandName` is evaluated as "Open New Tab", the
+following command
+```json
+{ "icon": null, "name": { "key": "NewTabCommandName" }, "action": "newTab" },
+```
+
+Could be overriden with the command:
+```json
+{ "icon": null, "name": "Open New Tab", "action": "splitPane" },
+```
+
+Similarly, if the user wants to remove that command from the command palette,
+they could set the action to `null`:
+
+```json
+{ "icon": null, "name": "Open New Tab", "action": null },
+```
+
+This will remove the command from the command list.
 
 ## Capabilities
 
@@ -415,8 +447,8 @@ value from the file:
         { "icon": null, "name": { "key": "NewTabCommandName" }, "action": "newTab" },
         { "icon": null, "name": { "key": "CloseTabCommandKey" }, "action": "closeTab" },
         { "icon": null, "name": { "key": "ClosePaneCommandKey" }, "action": "closePane" },
-        { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": "splitHorizontal" },
-        { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": "splitVertical" },
+        { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": { "action": "splitPane", "split": "horizontal" } },
+        { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": { "action": "splitPane", "split": "vertical" } },
         { "icon": null, "name": { "key": "NextTabCommandKey" }, "action": "nextTab" },
         { "icon": null, "name": { "key": "PrevTabCommandKey" }, "action": "prevTab" },
         { "icon": null, "name": { "key": "OpenSettingsCommandKey" }, "action": "openSettings" },
@@ -439,6 +471,46 @@ platform.
 
 The `{ "key": "resourceName" }` solution proposed here was also touched on in
 [#5280].
+
+### Proposed Defaults
+
+These are the following commands I'm proposing adding to the command palette by
+default. These are largely the actions that are bound by default.
+
+```json
+"commands": [
+    { "icon": null, "name": { "key": "NewTabCommandKey" }, "action": "newTab" },
+    { "icon": null, "name": { "key": "DuplicateTabCommandKey" }, "action": "duplicateTab" },
+    { "icon": null, "name": { "key": "DuplicatePaneCommandKey" }, "action": { "action": "splitPane", "split":"auto", "splitMode": "duplicate" } },
+    { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": { "action": "splitPane", "split": "horizontal" } },
+    { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": { "action": "splitPane", "split": "vertical" } },
+
+    { "icon": null, "name": { "key": "CloseWindowCommandKey" }, "action": "closeWindow" },
+    { "icon": null, "name": { "key": "ClosePaneCommandKey" }, "action": "closePane" },
+
+    { "icon": null, "name": { "key": "OpenNewTabDropdownCommandKey" }, "action": "openNewTabDropdown" },
+    { "icon": null, "name": { "key": "OpenSettingsCommandKey" }, "action": "openSettings" },
+
+    { "icon": null, "name": { "key": "FindCommandKey" }, "action": "find" },
+
+    { "icon": null, "name": { "key": "NextTabCommandKey" }, "action": "nextTab" },
+    { "icon": null, "name": { "key": "PrevTabCommandKey" }, "action": "prevTab" },
+
+    { "icon": null, "name": { "key": "ToggleFullscreenCommandKey" }, "action": "toggleFullscreen" },
+
+    { "icon": null, "name": { "key": "CopyTextCommandKey" }, "action": { "action": "copy", "singleLine": false } },
+    { "icon": null, "name": { "key": "PasteCommandKey" }, "action": "paste" },
+
+    { "icon": null, "name": { "key": "IncreaseFontSizeCommandKey" }, "action": { "action": "adjustFontSize", "delta": 1 } },
+    { "icon": null, "name": { "key": "DecreaseFontSizeCommandKey" }, "action": { "action": "adjustFontSize", "delta": -1 } },
+    { "icon": null, "name": { "key": "ResetFontSizeCommandKey" }, "action": "resetFontSize"  },
+
+    { "icon": null, "name": { "key": "ScrollDownCommandKey" }, "action": "scrollDown" },
+    { "icon": null, "name": { "key": "ScrollDownPageCommandKey" }, "action": "scrollDownPage" },
+    { "icon": null, "name": { "key": "ScrollUpCommandKey" }, "action": "scrollUp" },
+    { "icon": null, "name": { "key": "ScrollUpPageCommandKey" }, "action": "scrollUpPage" }
+]
+```
 
 ## Future considerations
 
@@ -649,7 +721,7 @@ So, you could imagine the entire tree as follows:
 
 As always, I'm also on board with the "this should be configurable by the user"
 route, so they can change what mode the command palette is in by default, and
-what the prefixes for differen modes are, but I'm not sure how we'd define that
+what the prefixes for different modes are, but I'm not sure how we'd define that
 cleanly in the settings.
 
 ```json
