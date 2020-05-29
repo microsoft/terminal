@@ -45,6 +45,27 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+
+        // If the tab _itself_ gains focus, instead pass it straight on through
+        // to the focused control. We don't want focus to silently land on the
+        // tab.
+        auto weakThis{ get_weak() };
+        _tabViewItem.GotFocus([weakThis](Windows::Foundation::IInspectable const& sender,
+                                         RoutedEventArgs const& /*args*/) {
+            auto tab{ weakThis.get() };
+            auto c = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>();
+            if (c && tab)
+            {
+                if (c.FocusState() != FocusState::Unfocused && tab->_focused)
+                {
+                    auto lastFocusedControl = tab->GetActiveTerminalControl();
+                    if (lastFocusedControl)
+                    {
+                        lastFocusedControl.Focus(FocusState::Programmatic);
+                    }
+                }
+            }
+        });
     }
 
     // Method Description:
@@ -655,6 +676,18 @@ namespace winrt::TerminalApp::implementation
                     textBox.Text(tab->_runtimeTabText);
                     tab->_inRename = false;
                     tab->_UpdateTitle();
+
+                    // Manually pass the focus on to our focused control.
+                    // Otherwise, the focus will just be lost when we're removed
+                    // from the tree.
+                    if (tab->_focused)
+                    {
+                        auto lastFocusedControl = tab->GetActiveTerminalControl();
+                        if (lastFocusedControl)
+                        {
+                            lastFocusedControl.Focus(FocusState::Programmatic);
+                        }
+                    }
                     break;
                 }
             }
