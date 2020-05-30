@@ -231,9 +231,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetRepeatCount(const std::basic_string_view<size_t> parameters,
                              size_t& repeatCount) const noexcept;
 
-        bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view string,
-                                                           std::wstring& title,
-                                                           bool& queryClipboard) const noexcept;
+        bool _GetOscSetClipboard(const std::wstring_view string,
+                                 std::wstring& title,
+                                 bool& queryClipboard) const noexcept;
 
         void _ClearLastChar() noexcept;
     };
