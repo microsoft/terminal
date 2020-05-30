@@ -384,7 +384,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 
     // However, if the character is null and we were given a null attribute (represented as legacy 0),
     // then we'll just fill with spaces and whatever the buffer's default colors are.
-    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven.IsLegacy() && fillAttrsGiven.GetLegacyAttributes() == 0)
+    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven == TextAttribute{ 0 })
     {
         fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
     }
