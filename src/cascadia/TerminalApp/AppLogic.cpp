@@ -761,39 +761,38 @@ namespace winrt::TerminalApp::implementation
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-        if (!auto page{ weakThis.get() })
+        co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
+        if (auto page{ weakThis.get() })
         {
-            return;
-        }
-        StartupTaskState state;
-        bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
-        StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
+            StartupTaskState state;
+            bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
+            StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
 
-        state = task.State();
-        switch (state)
-        {
-        case StartupTaskState::Disabled:
-        {
-            if (tryEnableStartupTask)
+            state = task.State();
+            switch (state)
             {
-                co_await task.RequestEnableAsync();
-            }
-            break;
-        }
-        case StartupTaskState::DisabledByUser:
-        {
-            // TODO: GH#6254: define UX for other StartupTaskStates
-            break;
-        }
-        case StartupTaskState::Enabled:
-        {
-            if (!tryEnableStartupTask)
+            case StartupTaskState::Disabled:
             {
-                task.Disable();
+                if (tryEnableStartupTask)
+                {
+                    co_await task.RequestEnableAsync();
+                }
+                break;
             }
-            break;
-        }
+            case StartupTaskState::DisabledByUser:
+            {
+                // TODO: GH#6254: define UX for other StartupTaskStates
+                break;
+            }
+            case StartupTaskState::Enabled:
+            {
+                if (!tryEnableStartupTask)
+                {
+                    task.Disable();
+                }
+                break;
+            }
+            }
         }
     }
     // Method Description:
