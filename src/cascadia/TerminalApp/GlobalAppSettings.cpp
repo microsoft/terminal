@@ -335,11 +335,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 
-    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
-    {
-        _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
-    }
-
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);

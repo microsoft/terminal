@@ -760,8 +760,12 @@ namespace winrt::TerminalApp::implementation
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        if (!auto page{ weakThis.get() })
+        {
+            return; 
+        }
         StartupTaskState state;
         bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
         StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
@@ -789,9 +793,6 @@ namespace winrt::TerminalApp::implementation
                 task.Disable();
             }
             break;
-        }
-        default:
-        {
         }
         }
     }
