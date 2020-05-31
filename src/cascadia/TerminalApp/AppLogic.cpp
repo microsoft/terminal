@@ -764,7 +764,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (!auto page{ weakThis.get() })
         {
-            return; 
+            return;
         }
         StartupTaskState state;
         bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
