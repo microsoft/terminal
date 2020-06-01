@@ -315,6 +315,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
                                                                            RS_A(L"CmdStartingDirArgDesc"));
+    subcommand.titleOption = subcommand.subcommand->add_option("--title",
+                                                               _startingTitle,
+                                                               RS_A(L"CmdTitleArgDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -372,6 +375,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
+    if (*subcommand.titleOption)
+    {
+        args->TabTitle(winrt::to_hstring(_startingTitle));
+    }
+
     return *args;
 }
 
@@ -402,6 +410,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
     _startingDirectory.clear();
+    _startingTitle.clear();
     _commandline.clear();
 
     _splitVertical = false;
