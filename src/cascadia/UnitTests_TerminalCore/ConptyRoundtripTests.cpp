@@ -119,8 +119,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
                                                                gci,
                                                                initialViewport,
-                                                               gci.GetColorTable(),
-                                                               static_cast<WORD>(gci.GetColorTableSize()));
+                                                               gci.Get16ColorTable());
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         vtRenderEngine->SetTestCallback(pfn);
 
