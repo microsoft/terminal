@@ -91,6 +91,8 @@ public:
 
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
 
+    GETSET_PROPERTY(bool, StartOnUserLogin, false);
+
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;

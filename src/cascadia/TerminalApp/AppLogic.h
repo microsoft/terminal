@@ -83,6 +83,7 @@ namespace winrt::TerminalApp::implementation
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
         fire_and_forget _RefreshThemeRoutine();
+        fire_and_forget _ApplyStartupTaskStateChange();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 

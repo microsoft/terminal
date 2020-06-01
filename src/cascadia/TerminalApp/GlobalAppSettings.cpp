@@ -42,6 +42,7 @@ static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
@@ -342,6 +343,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
+
+    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 
 // Method Description:

@@ -7,6 +7,7 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:uap7="http://schemas.microsoft.com/appx/manifest/uap/windows10/7"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
@@ -63,6 +64,12 @@
             <desktop:ExecutionAlias Alias="wt.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="StartTerminalOnLoginTask"
+            Enabled="false"
+            DisplayName="ms-resource:AppName" />
+        </uap5:Extension>
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>
