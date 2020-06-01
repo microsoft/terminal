@@ -60,9 +60,6 @@ void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
                                       const std::basic_string_view<BYTE> attributes,
                                       const std::basic_string_view<WORD> colorArray)
 {
-    // Backup the cursor visibility state and turn it off for drawing.
-    _SaveCursorVisibility();
-
     ClearAllAreas();
 
     // Save copies of the composition message in case we need to redraw it as things scroll/resize
@@ -80,8 +77,6 @@ void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
 // - text - The actual text of what the user would like to insert (UTF-16)
 void ConsoleImeInfo::WriteResultMessage(const std::wstring_view text)
 {
-    _RestoreCursorVisibility();
-
     ClearAllAreas();
 
     _InsertConvertedString(text);
@@ -471,7 +466,7 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
 // Routine Description:
 // - Backs up the global cursor visibility state if it is shown and disables
 //   it while we work on the conversion areas.
-void ConsoleImeInfo::_SaveCursorVisibility()
+void ConsoleImeInfo::SaveCursorVisibility()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
@@ -487,7 +482,7 @@ void ConsoleImeInfo::_SaveCursorVisibility()
 
 // Routine Description:
 // - Restores the global cursor visibility state if it was on when it was backed up.
-void ConsoleImeInfo::_RestoreCursorVisibility()
+void ConsoleImeInfo::RestoreCursorVisibility()
 {
     if (_isSavedCursorVisible)
     {
