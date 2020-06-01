@@ -58,6 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
+        bool Vt52DeviceAttributes() override; // VT52 Identify
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
@@ -68,6 +69,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
+        bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM

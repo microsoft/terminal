@@ -82,6 +82,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum PrivateModeParams : unsigned short
     {
         DECCKM_CursorKeysMode = 1,
+        DECANM_AnsiMode = 2,
         DECCOLM_SetNumberOfColumns = 3,
         DECSCNM_ScreenMode = 5,
         DECOM_OriginMode = 6,

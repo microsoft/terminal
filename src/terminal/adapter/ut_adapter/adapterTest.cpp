@@ -162,6 +162,18 @@ public:
         return _privateSetKeypadModeResult;
     }
 
+    bool PrivateSetAnsiMode(const bool ansiMode) override
+    {
+        Log::Comment(L"PrivateSetAnsiMode MOCK called...");
+
+        if (_privateSetAnsiModeResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedAnsiMode, ansiMode);
+        }
+
+        return _privateSetAnsiModeResult;
+    }
+
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
     {
         Log::Comment(L"PrivateSetScreenMode MOCK called...");
@@ -744,6 +756,8 @@ public:
     bool _privateSetKeypadModeResult = false;
     bool _cursorKeysApplicationMode = false;
     bool _keypadApplicationMode = false;
+    bool _privateSetAnsiModeResult = false;
+    bool _expectedAnsiMode = false;
     bool _privateAllowCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
     bool _privateSetScrollingRegionResult = false;
@@ -1689,6 +1703,26 @@ public:
         _testGetSet->_keypadApplicationMode = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(true));
+    }
+
+    TEST_METHOD(AnsiModeTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        // success cases
+        // set ansi mode = true
+        Log::Comment(L"Test 1: ansi mode = true");
+        _testGetSet->_privateSetAnsiModeResult = true;
+        _testGetSet->_expectedAnsiMode = true;
+
+        VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(true));
+
+        // set ansi mode = false
+        Log::Comment(L"Test 2: ansi mode = false.");
+        _testGetSet->_privateSetAnsiModeResult = true;
+        _testGetSet->_expectedAnsiMode = false;
+
+        VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(false));
     }
 
     TEST_METHOD(AllowBlinkingTest)
