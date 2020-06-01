@@ -157,7 +157,7 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
-    // -v,--version
+    // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
         if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
         {
@@ -175,6 +175,8 @@ void AppCommandlineArgs::_buildParser()
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
     // Maximized and Fullscreen flags
+    //   -M,--maximized: Maximizes the window on launch
+    //   -F,--fullscreen: Fullscreens the window on launch
     auto maximizedCallback = [this](int64_t /*count*/) {
         _launchMode = winrt::TerminalApp::LaunchMode::MaximizedMode;
     };
