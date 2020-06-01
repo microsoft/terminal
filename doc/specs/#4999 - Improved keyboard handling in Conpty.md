@@ -237,29 +237,30 @@ left off when not required. Similarly, the control key state is probably going
 to be 0 a lot of the time too, so that is second last. Even keydown will be 0 at
 least half the time, so that can be omitted some of the time.
 
-Given the default values, the above sequences could each be shortened:
+Furthermore, considering omitted values in CSI parameters default to the values
+specified above, the above sequences could each be shortened to the following.
 
 * <kbd>Ctrl+F1</kbd>
 ```
-^[[17;29;0;1;8_
-^[[112;59;0;1;8_
-^[[112;59;0;0;8_
+^[[17;29;;1;8_
+^[[112;59;;1;8_
+^[[112;59;;;8_
 ^[[17;29_
 ```
 
 * <kbd>Ctrl+Alt+A</kbd>
 ```
-^[[17;29;0;1;8_
-^[[18;56;0;1;10_
-^[[65;30;0;1;10_
-^[[65;30;0;0;10_
-^[[18;56;0;0;8_
-^[[17;29;0;0_
+^[[17;29;;1;8_
+^[[18;56;;1;10_
+^[[65;30;;1;10_
+^[[65;30;;;10_
+^[[18;56;;;8_
+^[[17;29;;_
 ```
 
 * <kbd>A</kbd> (which is <kbd>shift+a</kbd>)
 ```
-^[[16;42;0;1;16_
+^[[16;42;;1;16_
 ^[[65;30;65;1;16_
 ^[[16;42_
 ^[[65;30;97_
@@ -278,12 +279,18 @@ Given the default values, the above sequences could each be shortened:
 `WT -> conpty[1] -> wsl`
 
 * Conpty[1] will ask for `win32-input-mode` from the Windows Terminal when
-  conpty[1] first boots up.
+  conpty[1] first boots up. Conpty will _always_ as for win32-input-mode -
+  Terminals that _don't_ support this mode will ignore this sequence on startup.
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
-* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
-* When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences corresponding to whatever input mode the linux app is in.
+* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s.
+  - When those `INPUT_RECORD`s are written to the input buffer, they'll be
+    converted into VT sequences corresponding to whatever input mode the linux
+    app is in.
+* When WSL reads the input, it'll read (using `ReadConsoleInput`) a stream of
+  `INPUT_RECORD`s that contain only character information, which it will then
+  pass to the linux application.
+  - This is how `wsl.exe` behaves today, before this change.
 
 #### User is typing into `cmd.exe` running in WSL interop
 
@@ -293,12 +300,19 @@ Given the default values, the above sequences could each be shortened:
 
 * Conpty[2] will ask for `win32-input-mode` from conpty[1] when conpty[2] first
   boots up.
+    - As conpty[1] is just a conhost that knows how to handle
+      `win32-input-mode`, it will switch its own VT input handling into
+      `win32-input-mode`
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
-* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
-* When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences for the `win32-input-mode`, because it believes the client (in this
-  case, the conpty[2] running attached to `wsl`) wants `win32-input-mode`.
+* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s. When
+  conpty[1] writes these to its buffer, it will translate the `INPUT_RECORD`s
+  into VT sequences for the `win32-input-mode`. This is because it believes the
+  client (in this case, the conpty[2] running attached to `wsl`) wants
+  `win32-input-mode`.
+* When WSL reads the input, it'll read (using `ReadConsoleInput`) a stream of
+  `INPUT_RECORD`s that contain only character information, which it will then
+  use to pass a stream of characters to conpty[2].
 * Conpty[2] will get those sequences, and will translate those win32 sequences
   into `INPUT_RECORD`s
 * When `cmd.exe` reads the input, they'll receive the full `INPUT_RECORD`s
@@ -403,17 +417,17 @@ _(no change expected)_
      hit `SendChar`) would still just come through as the normal char.
 
 #### Cons:
-* Their encoding table is _mad_. [Look at
+* Their encoding table is _odd_. [Look at
   this](https://sw.kovidgoyal.net/kitty/key-encoding.html). What order is that
   in? Obviously the first column is sorted alphabetically, but the mapping of
-  key->char is in a seemingly bonkers order.
+  key->char is in a certainly hard to decipher order.
 * I can't get it working locally, so hard to test 😐
 * They do declare the `fullkbd` terminfo capability to identify that they
   support this mode, but I'm not sure anyone else uses it.
   - I'm also not sure that any _client_ apps are reading this currently.
 * This isn't designed to be full `KEY_EVENT`s - where would we put the scancode
   (for apps that think that's important)?
-  - We'd have  to extend this protocol _anyways_
+  - We'd have to extend this protocol _anyways_
 
 ### `xterm` "Set key modifier options"
 Notably looking at
