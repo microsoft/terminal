@@ -2236,6 +2236,7 @@ void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMo
 // Return Value:
 // - <none>
 void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+try
 {
     _defaultTextBackgroundOpacity = opacity;
 
@@ -2244,3 +2245,4 @@ void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
     // We don't terribly care if this fails.
     LOG_IF_FAILED(InvalidateAll());
 }
+CATCH_LOG()
