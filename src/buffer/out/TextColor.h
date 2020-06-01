@@ -92,6 +92,8 @@ public:
                       const COLORREF defaultColor,
                       const bool brighten) const noexcept;
 
+    BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
+
     constexpr BYTE GetIndex() const noexcept
     {
         return _index;
