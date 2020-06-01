@@ -231,6 +231,32 @@
         }
       ]
     },
+    "OpenSettingsAction": {
+      "description": "Arguments corresponding to a Open Settings Action",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "pattern": "openSettings"
+            },
+            "target": {
+              "type": "string",
+              "default": "settingsFile",
+              "description": "The settings file to open.",
+              "enum": [
+                "settingsFile",
+                "defaultsFile",
+                "allFiles"
+              ]
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -245,6 +271,7 @@
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
+              { "$ref": "#/definitions/OpenSettingsAction" },
               { "type": "null" }
             ]
         },
