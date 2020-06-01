@@ -364,7 +364,29 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
                     newTerminalArgs->ProfileIndex(profileIndex);
-                    page->_OpenNewTab(*newTerminalArgs);
+
+                    // if alt is pressed, open a pane
+                    const CoreWindow window = CoreWindow::GetForCurrentThread();
+                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                    const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    // Check for DebugTap
+                    bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                    WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                    WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    if (altPressed && !debugTap)
+                    {
+                        page->_SplitPane(TerminalApp::SplitState::Automatic,
+                                         TerminalApp::SplitType::Manual,
+                                         *newTerminalArgs);
+                    }
+                    else
+                    {
+                        page->_OpenNewTab(*newTerminalArgs);
+                    }
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
