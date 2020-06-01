@@ -717,7 +717,7 @@ try
     RETURN_LAST_ERROR_IF(!OpenClipboard(_hwnd.get()));
 
     { // Clipboard Scope
-        auto clipboardCloser = wil::scope_exit([]() noexcept {
+        auto clipboardCloser = wil::scope_exit([]() {
             LOG_LAST_ERROR_IF(!CloseClipboard());
         });
 
