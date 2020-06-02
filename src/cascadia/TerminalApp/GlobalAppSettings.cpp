@@ -42,6 +42,7 @@ static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
@@ -58,6 +59,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _keybindingsWarnings{},
     _colorSchemes{},
+    _unparsedDefaultProfile{ std::nullopt },
     _defaultProfile{},
     _alwaysShowTabs{ true },
     _confirmCloseAllTabs{ true },
@@ -96,12 +98,20 @@ const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColor
 
 void GlobalAppSettings::SetDefaultProfile(const GUID defaultProfile) noexcept
 {
+    _unparsedDefaultProfile.reset();
     _defaultProfile = defaultProfile;
 }
 
-GUID GlobalAppSettings::GetDefaultProfile() const noexcept
+GUID GlobalAppSettings::GetDefaultProfile() const
 {
+    // If we have an unresolved default profile, we should likely explode.
+    THROW_HR_IF(E_INVALIDARG, _unparsedDefaultProfile.has_value());
     return _defaultProfile;
+}
+
+std::wstring GlobalAppSettings::GetUnparsedDefaultProfile() const
+{
+    return _unparsedDefaultProfile.value();
 }
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
@@ -267,8 +277,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
     if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
-        auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
-        _defaultProfile = guid;
+        _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
     }
 
     JsonUtils::GetBool(json, AlwaysShowTabsKey, _alwaysShowTabs);
@@ -342,6 +351,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
+
+    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 
 // Method Description:

@@ -259,6 +259,12 @@
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Launch the window maximized</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>Launch the window in fullscreen mode</value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>

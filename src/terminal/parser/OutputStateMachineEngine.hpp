@@ -36,6 +36,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionEscDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates) override;
 
+        bool ActionVt52EscDispatch(const wchar_t wch,
+                                   const std::basic_string_view<wchar_t> intermediates,
+                                   const std::basic_string_view<size_t> parameters) override;
+
         bool ActionCsiDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
@@ -124,6 +128,25 @@ namespace Microsoft::Console::VirtualTerminal
             DTTERM_WindowManipulation = L't',
             REP_RepeatCharacter = L'b',
             DECALN_ScreenAlignmentPattern = L'8'
+        };
+
+        enum Vt52ActionCodes : wchar_t
+        {
+            CursorUp = L'A',
+            CursorDown = L'B',
+            CursorRight = L'C',
+            CursorLeft = L'D',
+            EnterGraphicsMode = L'F',
+            ExitGraphicsMode = L'G',
+            CursorToHome = L'H',
+            ReverseLineFeed = L'I',
+            EraseToEndOfScreen = L'J',
+            EraseToEndOfLine = L'K',
+            DirectCursorAddress = L'Y',
+            Identify = L'Z',
+            EnterAlternateKeypadMode = L'=',
+            ExitAlternateKeypadMode = L'>',
+            ExitVt52Mode = L'<'
         };
 
         enum OscActionCodes : unsigned int

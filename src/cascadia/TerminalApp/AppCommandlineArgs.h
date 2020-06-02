@@ -38,6 +38,8 @@ public:
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
+    std::optional<winrt::TerminalApp::LaunchMode> GetLaunchMode() const noexcept;
+
 private:
     static const std::wregex _commandDelimiterRegex;
 
@@ -76,6 +78,8 @@ private:
     int _focusTabIndex{ -1 };
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
+
+    std::optional<winrt::TerminalApp::LaunchMode> _launchMode{ std::nullopt };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;

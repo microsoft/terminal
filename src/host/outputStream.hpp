@@ -75,6 +75,7 @@ public:
     bool PrivateSetKeypadMode(const bool applicationMode) override;
     bool PrivateEnableWin32InputMode(const bool win32InputMode) override;
 
+    bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 

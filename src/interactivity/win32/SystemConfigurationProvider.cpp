@@ -63,6 +63,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _In_ PCWSTR pwszAppName)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    WCHAR wszLinkTarget[MAX_PATH] = { 0 };
     WCHAR wszIconLocation[MAX_PATH] = { 0 };
     int iIconIndex = 0;
 
@@ -96,6 +97,8 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                                                                      &fReadConsoleProperties,
                                                                      wszShortcutTitle,
                                                                      ARRAYSIZE(wszShortcutTitle),
+                                                                     wszLinkTarget,
+                                                                     ARRAYSIZE(wszLinkTarget),
                                                                      wszIconLocation,
                                                                      ARRAYSIZE(wszIconLocation),
                                                                      &iIconIndex,
@@ -110,6 +113,12 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
             dwHotKey = wHotKey;
             pLinkSettings->SetHotKey(dwHotKey);
+
+            if (wszLinkTarget[0] != L'\0')
+            {
+                // guarantee null termination to make OACR happy.
+                wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
+            }
 
             // if we got a title, use it. even on overall link value load failure, the title will be correct if
             // filled out.
@@ -152,21 +161,28 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Go get the icon
     if (wszIconLocation[0] == L'\0')
     {
-        // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
-        // the shortcut)
-        const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
-
-        // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
-        if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
+        if (PathFileExists(wszLinkTarget))
         {
-            if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < sizeof(wszIconLocation)))
+            StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), wszLinkTarget);
+        }
+        else
+        {
+            // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
+            // the shortcut)
+            const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
+
+            // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
+            if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
             {
-                StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszTitle);
-            }
-            else
-            {
-                // If all else fails, just stick the app name into the path and try to resolve just the app name.
-                StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszAppName);
+                if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < sizeof(wszIconLocation)))
+                {
+                    StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszTitle);
+                }
+                else
+                {
+                    // If all else fails, just stick the app name into the path and try to resolve just the app name.
+                    StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszAppName);
+                }
             }
         }
     }

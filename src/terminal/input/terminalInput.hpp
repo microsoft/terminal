@@ -34,6 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
+        void ChangeAnsiMode(const bool ansiMode) noexcept;
         void ChangeKeypadMode(const bool applicationMode) noexcept;
         void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
@@ -69,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
+        bool _ansiMode{ true };
         bool _keypadApplicationMode{ false };
         bool _cursorApplicationMode{ false };
         bool _win32InputMode{ false };
