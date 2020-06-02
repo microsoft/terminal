@@ -30,7 +30,8 @@ namespace TerminalApp
 
     struct LaunchPosition
     {
-        std::optional<int> x, y;
+        std::optional<int> x;
+        std::optional<int> y;
     };
 };
 
