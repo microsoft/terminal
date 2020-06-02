@@ -239,61 +239,59 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
-    if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
+
+    // Find nearest monitor.
+    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+
+    // Get nearest monitor information
+    MONITORINFO monitorInfo;
+    monitorInfo.cbSize = sizeof(MONITORINFO);
+    GetMonitorInfo(hmon, &monitorInfo);
+
+    // This API guarantees that dpix and dpiy will be equal, but neither is an
+    // optional parameter so give two UINTs.
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96.
+    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+    // We need to check if the top left point of the titlebar of the window is within any screen
+    RECT offScreenTestRect;
+    offScreenTestRect.left = proposedRect.left;
+    offScreenTestRect.top = proposedRect.top;
+    offScreenTestRect.right = offScreenTestRect.left + 1;
+    offScreenTestRect.bottom = offScreenTestRect.top + 1;
+
+    bool isTitlebarIntersectWithMonitors = false;
+    EnumDisplayMonitors(
+        nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+            auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+            *intersectWithMonitor = true;
+            // Continue the enumeration
+            return FALSE;
+        },
+        reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+
+    if (!isTitlebarIntersectWithMonitors)
     {
-        // Find nearest monitor.
-        HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
-
-        // Get nearest monitor information
-        MONITORINFO monitorInfo;
-        monitorInfo.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfo(hmon, &monitorInfo);
-
-        // This API guarantees that dpix and dpiy will be equal, but neither is an
-        // optional parameter so give two UINTs.
-        UINT dpix = USER_DEFAULT_SCREEN_DPI;
-        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-        // If this fails, we'll use the default of 96.
-        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
-
-        // We need to check if the top left point of the titlebar of the window is within any screen
-        RECT offScreenTestRect;
-        offScreenTestRect.left = proposedRect.left;
-        offScreenTestRect.top = proposedRect.top;
-        offScreenTestRect.right = offScreenTestRect.left + 1;
-        offScreenTestRect.bottom = offScreenTestRect.top + 1;
-
-        bool isTitlebarIntersectWithMonitors = false;
-        EnumDisplayMonitors(
-            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
-                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
-                *intersectWithMonitor = true;
-                // Continue the enumeration
-                return FALSE;
-            },
-            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
-
-        if (!isTitlebarIntersectWithMonitors)
-        {
-            // If the title bar is out-of-screen, we set the initial position to
-            // the top left corner of the nearest monitor
-            proposedRect.left = monitorInfo.rcWork.left;
-            proposedRect.top = monitorInfo.rcWork.top;
-        }
-
-        auto initialSize = _logic.GetLaunchDimensions(dpix);
-
-        const short islandWidth = Utils::ClampToShortMax(
-            static_cast<long>(ceil(initialSize.X)), 1);
-        const short islandHeight = Utils::ClampToShortMax(
-            static_cast<long>(ceil(initialSize.Y)), 1);
-
-        // Get the size of a window we'd need to host that client rect. This will
-        // add the titlebar space.
-        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
-        adjustedWidth = islandWidth + nonClientSize.cx;
-        adjustedHeight = islandHeight + nonClientSize.cy;
+        // If the title bar is out-of-screen, we set the initial position to
+        // the top left corner of the nearest monitor
+        proposedRect.left = monitorInfo.rcWork.left;
+        proposedRect.top = monitorInfo.rcWork.top;
     }
+
+    auto initialSize = _logic.GetLaunchDimensions(dpix);
+
+    const short islandWidth = Utils::ClampToShortMax(
+        static_cast<long>(ceil(initialSize.X)), 1);
+    const short islandHeight = Utils::ClampToShortMax(
+        static_cast<long>(ceil(initialSize.Y)), 1);
+
+    // Get the size of a window we'd need to host that client rect. This will
+    // add the titlebar space.
+    const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    adjustedWidth = islandWidth + nonClientSize.cx;
+    adjustedHeight = islandHeight + nonClientSize.cy;
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };

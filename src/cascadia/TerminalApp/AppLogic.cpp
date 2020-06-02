@@ -8,6 +8,7 @@
 
 #include <LibraryResources.h>
 
+using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -23,6 +24,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
 // clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
@@ -240,9 +242,21 @@ namespace winrt::TerminalApp::implementation
 
         _root->SetSettings(_settings, false);
         _root->Loaded({ this, &AppLogic::_OnLoaded });
+        _root->Initialized([this](auto&&, auto&&) {
+            // GH#288 - When we finish initialization, if the user wanted us
+            // launched _fullscreen_, toggle fullscreen mode. This will make sure
+            // that the window size is _first_ set up as something sensible, so
+            // leaving fullscreen returns to a reasonable size.
+            const auto launchMode = this->GetLaunchMode();
+            if (launchMode == LaunchMode::FullscreenMode)
+            {
+                _root->ToggleFullscreen();
+            }
+        });
         _root->Create();
 
         _ApplyTheme(_settings->GlobalSettings().GetTheme());
+        _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -526,7 +540,13 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetLaunchMode();
+        // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
+        // commandline, then use that to override the value from the settings.
+        const auto valueFromSettings = _settings->GlobalSettings().GetLaunchMode();
+        const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
+        return valueFromCommandlineArgs.has_value() ?
+                   valueFromCommandlineArgs.value() :
+                   valueFromSettings;
     }
 
     // Method Description:
@@ -755,6 +775,43 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings->GlobalSettings().GetTheme());
     }
 
+    fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
+        if (auto page{ weakThis.get() })
+        {
+            StartupTaskState state;
+            bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
+            StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
+
+            state = task.State();
+            switch (state)
+            {
+            case StartupTaskState::Disabled:
+            {
+                if (tryEnableStartupTask)
+                {
+                    co_await task.RequestEnableAsync();
+                }
+                break;
+            }
+            case StartupTaskState::DisabledByUser:
+            {
+                // TODO: GH#6254: define UX for other StartupTaskStates
+                break;
+            }
+            case StartupTaskState::Enabled:
+            {
+                if (!tryEnableStartupTask)
+                {
+                    task.Disable();
+                }
+                break;
+            }
+            }
+        }
+    }
     // Method Description:
     // - Reloads the settings from the profile.json.
     void AppLogic::_ReloadSettings()
@@ -783,6 +840,7 @@ namespace winrt::TerminalApp::implementation
         _root->SetSettings(_settings, true);
 
         _RefreshThemeRoutine();
+        _ApplyStartupTaskStateChange();
     }
 
     // Method Description:
@@ -893,31 +951,108 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> actions)
+    // Method Description:
+    // - Sets the initial commandline to process on startup, and attempts to
+    //   parse it. Commands will be parsed into a list of ShortcutActions that
+    //   will be processed on TerminalPage::Create().
+    // - This function will have no effective result after Create() is called.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
+    int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> args)
     {
-        if (_root)
+        const auto result = _ParseArgs(args);
+        if (result == 0)
         {
-            return _root->SetStartupCommandline(actions);
+            _appArgs.ValidateStartupCommands();
+            _root->SetStartupActions(_appArgs.GetStartupActions());
         }
+
+        return result;
+    }
+
+    // Method Description:
+    // - Attempts to parse an array of commandline args into a list of
+    //   commands to execute, and then parses these commands. As commands are
+    //   successfully parsed, they will generate ShortcutActions for us to be
+    //   able to execute. If we fail to parse any commands, we'll return the
+    //   error code from the failure to parse that command, and stop processing
+    //   additional commands.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0 if the commandline was successfully parsed
+    int AppLogic::_ParseArgs(winrt::array_view<const hstring>& args)
+    {
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
+
+        for (auto& cmdBlob : commands)
+        {
+            // On one hand, it seems like we should be able to have one
+            // AppCommandlineArgs for parsing all of them, and collect the
+            // results one at a time.
+            //
+            // On the other hand, re-using a CLI::App seems to leave state from
+            // previous parsings around, so we could get mysterious behavior
+            // where one command affects the values of the next.
+            //
+            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
+            // > If that option is not given, CLI11 will not touch the initial
+            // > value. This allows you to set up defaults by simply setting
+            // > your value beforehand.
+            //
+            // So we pretty much need the to either manually reset the state
+            // each command, or build new ones.
+            const auto result = _appArgs.ParseCommand(cmdBlob);
+
+            // If this succeeded, result will be 0. Otherwise, the caller should
+            // exit(result), to exit the program.
+            if (result != 0)
+            {
+                return result;
+            }
+        }
+
+        // If all the args were successfully parsed, we'll have some commands
+        // built in _appArgs, which we'll use when the application starts up.
         return 0;
     }
 
+    // Method Description:
+    // - If there were any errors parsing the commandline that was used to
+    //   initialize the terminal, this will return a string containing that
+    //   message. If there were no errors, this message will be blank.
+    // - If the user requested help on any command (using --help), this will
+    //   contain the help message.
+    // - If the user requested the version number (using --version), this will
+    //   contain the version string.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the help text or error message for the provided commandline, if one
+    //   exists, otherwise the empty string.
     winrt::hstring AppLogic::ParseCommandlineMessage()
     {
-        if (_root)
-        {
-            return _root->ParseCommandlineMessage();
-        }
-        return { L"" };
+        return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
+    // Method Description:
+    // - Returns true if we should exit the application before even starting the
+    //   window. We might want to do this if we're displaying an error message or
+    //   the version string, or if we want to open the settings file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff we should exit the application before even starting the window
     bool AppLogic::ShouldExitEarly()
     {
-        if (_root)
-        {
-            return _root->ShouldExitEarly();
-        }
-        return false;
+        return _appArgs.ShouldExitEarly();
     }
 
     winrt::hstring AppLogic::ApplicationDisplayName() const

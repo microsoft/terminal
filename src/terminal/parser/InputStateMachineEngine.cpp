@@ -334,6 +334,24 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 }
 
 // Method Description:
+// - Triggers the Vt52EscDispatch action to indicate that the listener should handle
+//      a VT52 escape sequence. These sequences start with ESC and a single letter,
+//      sometimes followed by parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediates - Intermediate characters in the sequence.
+// - parameters - Set of parameters collected while parsing the sequence.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionVt52EscDispatch(const wchar_t /*wch*/,
+                                                    const std::basic_string_view<wchar_t> /*intermediates*/,
+                                                    const std::basic_string_view<size_t> /*parameters*/) noexcept
+{
+    // VT52 escape sequences are not used in the input state machine.
+    return false;
+}
+
+// Method Description:
 // - Triggers the CsiDispatch action to indicate that the listener should handle
 //      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.

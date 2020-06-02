@@ -11,6 +11,7 @@ namespace TerminalApp
     {
         DefaultMode,
         MaximizedMode,
+        FullscreenMode,
     };
 
     [default_interface] runtimeclass AppLogic : IF7Listener
