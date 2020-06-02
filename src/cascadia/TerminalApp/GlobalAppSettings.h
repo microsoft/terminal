@@ -54,7 +54,7 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
-    // These are implemented manually to handle the string/GUID switchoff
+    // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.
     void DefaultProfile(const GUID defaultProfile) noexcept;
     GUID DefaultProfile() const;
