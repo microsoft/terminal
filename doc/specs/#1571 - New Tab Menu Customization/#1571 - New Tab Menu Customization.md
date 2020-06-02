@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-5-20
+last updated: 2020-6-02
 issue id: 1571
 ---
 
@@ -74,6 +74,14 @@ There are three `type`s of objects in this menu:
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as
     well!
+* `"type":"action"`: This represents a menu entry that should execute a specific
+  `ShortcutAction`.
+  - The `"name"` property provides a string of text to display for the action.
+  - The `"icon"` property provides a path to a image to use as the icon. This
+    property is optional.
+  - The `"name"` property specifies a shortcut action similar to the "command"
+    property in keybindings. If this is a string, we'll treat it as a name of a
+    `ShortcutAction`. If it's an object, we'll treat it like an `ActionAndArgs`
 
 ## UI/UX Design
 
@@ -112,16 +120,51 @@ _(no change expected)_
 
 ## Potential Issues
 
-I want to make sure that the "new tab with profile index N" shortcut actions
-still use the profiles _in the order specified in the user's settings_, not the
-order they appear in this dropdown. Since a user might have nested profiles in
-this dropdown, picking either a depth-first or breadth-first ordering would be
-confusing.
+Currently, the `openTab` and `splitPane` keybindings will accept a `index`
+parameter to say "create a new tab/pane with the profile at index N in the new
+tab dropdown". With this change, the N'th entry in the menu won't always be a
+profile. It might be a folder with more options, or it might be an action (that
+might not be opening a new tab/pane at all).
+
+Given all the above scenarios, I'm proposing the following behavior:
+
+For a `newTab` or `splitPane` action with an `"index":N` parameter, if the Nth
+top-level entry in the new tab menu is a:
+* `"type":"profile"`: perform the `newTab` or `splitPane` action with that profile.
+* `"type":"folder"`: Focus the first element in the sub menu, so the user could
+  navigate it with the keyboard.
+* `"type":"separator"`: Ignore these when counting top-level entries.
+* `"type":"action"`: Do nothing. During settings validation, display a warning
+  to the user that the keybinding in question won't do anything.
+
+So for example:
+
+```
+New Tab Button
+├─ Folder 1
+│  └─ Profile A
+│  └─ Action B
+├─ Separator
+├─ Folder 2
+│  └─ Profile C
+│  └─ Profile D
+├─ Action E
+└─ Profile F
+```
+
+* <kbd>ctrl+shift+1</kbd> focuses "Profile A", but the user needs to press enter/space to creates a new tab/split
+* <kbd>ctrl+shift+2</kbd> focuses "Profile C", but the user needs to press enter/space to creates a new tab/split
+* <kbd>ctrl+shift+3</kbd> performs Action E
+* <kbd>ctrl+shift+4</kbd> Creates a new tab/split with Profile F
+
+> 👉 NOTE: A previous version of this spec considered leaving the `index`
+> parameter to work with  profiles _in the order specified in the user's
+> settings_, not the order they appear in this dropdown. Since a user might have
+> nested profiles in this dropdown, picking either a depth-first or
+> breadth-first ordering would be confusing.
 
 ## Future considerations
 
-* `ShortcutAction`s could be added to this dialog in the future, with `{ "type":
-  "action", "action": {...} }`
 * The user could set a `"name"`/`"text"`, or `"icon"` property to these menu
   items manually, to override the value from the profile
     - This would be especially useful for the `"folder"` or aforementioned
