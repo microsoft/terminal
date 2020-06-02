@@ -407,6 +407,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
+    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        success = EnableWin32InputMode(enable);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

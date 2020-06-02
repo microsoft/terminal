@@ -744,20 +744,20 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
 {
     // Sequences are formatted as follows:
     //
-    // ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs _
+    // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
     //
-    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
-    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
     //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
     //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
     //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
     //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
     return fmt::format(L"\x1b[{};{};{};{};{};{}_",
-                       key.IsKeyDown() ? 1 : 0,
-                       key.GetRepeatCount(),
                        key.GetVirtualKeyCode(),
                        key.GetVirtualScanCode(),
                        static_cast<int>(key.GetCharData()),
-                       key.GetActiveModifierKeys());
+                       key.IsKeyDown() ? 1 : 0,
+                       key.GetActiveModifierKeys(),
+                       key.GetRepeatCount());
 }

@@ -1015,6 +1015,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
+    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        success = EnableWin32InputMode(enable);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

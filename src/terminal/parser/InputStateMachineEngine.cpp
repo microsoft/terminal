@@ -1313,16 +1313,45 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
 bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<size_t> parameters,
                                                 KeyEvent& key)
 {
-    if (parameters.size() != 6)
+    // Sequences are formatted as follows:
+    //
+    // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
+    //
+    //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+    //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+    //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+    //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+    //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+
+    if (parameters.size() > 6)
     {
         return false;
     }
 
-    key = KeyEvent(static_cast<bool>(parameters.at(0)),
-                   ::base::saturated_cast<WORD>(parameters.at(1)),
-                   ::base::saturated_cast<WORD>(parameters.at(2)),
-                   ::base::saturated_cast<WORD>(parameters.at(3)),
-                   static_cast<wchar_t>(parameters.at(4)),
-                   ::base::saturated_cast<DWORD>(parameters.at(5)));
+    key = KeyEvent();
+    switch (parameters.size())
+    {
+    case 6:
+        key.SetRepeatCount(::base::saturated_cast<WORD>(parameters.at(5)));
+        [[fallthrough]];
+    case 5:
+        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(parameters.at(4)));
+        [[fallthrough]];
+    case 4:
+        key.SetKeyDown(static_cast<bool>(parameters.at(3)));
+        [[fallthrough]];
+    case 3:
+        key.SetCharData(static_cast<wchar_t>(parameters.at(2)));
+        [[fallthrough]];
+    case 2:
+        key.SetVirtualScanCode(::base::saturated_cast<WORD>(parameters.at(1)));
+        [[fallthrough]];
+    case 1:
+        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(parameters.at(0)));
+        break;
+    }
+
     return true;
 }

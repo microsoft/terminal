@@ -812,8 +812,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     std::wstring title;
     size_t tableIndex = 0;
     DWORD color = 0;
-    size_t windowsTerminalOpcode = 0;
-    std::wstring_view windowsTerminalParams;
 
     switch (parameter)
     {
@@ -834,9 +832,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         // the console uses 0xffffffff as an "invalid color" value
         color = 0xffffffff;
         success = true;
-        break;
-    case OscActionCodes::WindowsTerminal:
-        success = _GetWindowsOperation(string, windowsTerminalOpcode, windowsTerminalParams);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -872,10 +867,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
-            break;
-        case OscActionCodes::WindowsTerminal:
-            success = _DispatchWindowsCommand(windowsTerminalOpcode, windowsTerminalParams);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWIN);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1835,93 +1826,4 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
 void OutputStateMachineEngine::_ClearLastChar() noexcept
 {
     _lastPrintedChar = AsciiChars::NUL;
-}
-
-// Method Description:
-// - Gets the opcode and remaining parameters for a Windows-specifc OSC. These
-//   sequences are in the format
-//
-//    ^[ ] 1000 ; Op ; <string> ST
-//
-//   where:
-//      * Op is the opcode as a decimal number, used to identify which
-//        windows-specific function should be called.
-//      * <string> can be any string of characters to pass to the specified
-//        function.
-// Arguments:
-// - str: An OSC string to parse for an opcode.
-// - opcode: receives a number value identifying the function to call.
-// - remainingParams: receives the rest of the string following the opcode and
-//   the `;` that separates them
-// Return Value:
-// - true if we successfully found an opcode and ';' separating the remaining
-//   params from the opcode.
-bool OutputStateMachineEngine::_GetWindowsOperation(const std::wstring_view str,
-                                                    size_t& opcode,
-                                                    std::wstring_view& remainingParams) const
-{
-    // First try to get the table index, a number between [0,256]
-    size_t opcodeResult = 0;
-    size_t current = 0;
-    bool foundTableIndex = false;
-    for (size_t i = 0; i < str.size(); i++)
-    {
-        const wchar_t wch = str.at(current);
-        if (_isNumber(wch))
-        {
-            opcodeResult *= 10;
-            opcodeResult += wch - L'0';
-
-            ++current;
-        }
-        else if (wch == L';' && i > 0)
-        {
-            // We need to explicitly pass in a number, we can't default to 0 if
-            //  there's no param
-            ++current;
-            foundTableIndex = true;
-            break;
-        }
-        else
-        {
-            // Found an unexpected character, fail.
-            break;
-        }
-    }
-    if (!foundTableIndex)
-    {
-        return false;
-    }
-    opcode = opcodeResult;
-    remainingParams = str.substr(current);
-
-    return true;
-}
-
-// Method Description:
-// - Handles dispatching a windows-specific OSC function. The function to be
-//   exectued should be identified with `opcode`. Each individual function can
-//   determine how to deal with `remainingParams` on it's own.
-// Arguments:
-// - opcode: identifies the function to call.
-// - remainingParams: a string of characters used as parameters to the specified function.
-// Return Value:
-// - true if we successfully handled the given function, otherwise false.
-bool OutputStateMachineEngine::_DispatchWindowsCommand(const size_t opcode,
-                                                       const std::wstring_view remainingParams) const
-{
-    switch (opcode)
-    {
-    case WindowsOSCFunctions::SetWin32InputMode:
-        if (remainingParams.size() == 1)
-        {
-            const auto wch = remainingParams.at(0);
-            if (wch == L'0' || wch == L'1')
-            {
-                return _dispatch->EnableWin32InputMode(wch == L'1');
-            }
-        }
-        break;
-    }
-    return false;
 }
