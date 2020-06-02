@@ -173,6 +173,8 @@ namespace winrt::TerminalApp::implementation
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
+        void _CompleteInitialization();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

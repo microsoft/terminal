@@ -11,3 +11,5 @@ kovidgoyal
 leonerd
 fixterms
 uk
+winui
+appshellintegration

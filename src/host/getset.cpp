@@ -572,7 +572,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
-        gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
+        for (size_t i = 0; i < std::size(data.ColorTable); i++)
+        {
+            gci.SetColorTableEntry(i, data.ColorTable[i]);
+        }
 
         context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
 

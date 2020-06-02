@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-05-07
-last updated: 2020-05-13
+last updated: 2020-05-20
 issue id: 4999
 ---
 
@@ -61,13 +61,18 @@ The goal we're trying to achieve is communicating `INPUT_RECORD`s from the
 terminal to the client app via conpty. This isn't supposed to be a \*nix
 terminal compatible communication, it's supposed to be fundamentally Win32-like.
 
-
 Keys that we definitely need to support, that don't have unique VT sequences:
 * <kbd>Ctrl+Space</kbd> ([#879], [#2865])
 * <kbd>Shift+Enter</kbd> ([#530])
 * <kbd>Ctrl+Break</kbd> ([#1119])
 * <kbd>Ctrl+Alt+?</kbd> ([#3079])
 * <kbd>Ctrl</kbd>, <kbd>Alt</kbd>, <kbd>Shift</kbd>,  (without another keydown/up) ([#3608], [#4334], [#4446])
+
+> 👉 NOTE: There are actually 5 types of events that can all be encoded as an
+> `INPUT_RECORD`. This spec primarily focuses on the encoding of
+> `KEY_EVENT_RECORD`s. It is left as a Future Consideration to add support for
+> the other types of `INPUT_RECORD` as other sequences, which could be done
+> trivially similarly to the following proposal.
 
 ## Solution Design
 
@@ -94,24 +99,25 @@ The design we've settled upon is one that's highly inspired by a few precedents:
 
 ### Requesting `win32-input-mode`
 
-An application can request `win32-input-mode` with the following OSC sequence
+An application can request `win32-input-mode` with the following private mode sequence:
 
 ```
-  ^[ ] 1000 ; 1 ; Ps ST
-
-         Ps: Whether to enable or disable win32-input-mode. If omitted, defaults to '0'.
-             0: Disable win32-input-mode
-             1: Enable win32-input-mode
+  ^[ [ ? 9001 h/l
+              l: Disable win32-input-mode
+              h: Enable win32-input-mode
 ```
 
-OSC 1000 seemed to be unused according to [this discussion of used
-OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10).
-This seems like a reasonable place to stake a claim for sequences used by the
-the Windows Terminal - future WT-specific sequences could also be placed as `OSC
-1000;2`, `OSC 1000;3`, etc. This pattern is also similar to the way iTerm2
-defines their own sequences.
+Private mode `9001` seems unused according to the [xterm
+documentation](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html). This is
+stylistically similar to how `DECKPM`, `DECCKM`, and `kitty`'s ["full mode"] are
+enabled.
 
-When a terminal receives a `^[]1000;1;1ST` sequence, they should switch into
+> 👉 NOTE: an earlier draft of this spec used an OSC sequence for enabling these
+> sequences. This was abandoned in favor of the more stylistically consistent
+> private mode params proposed above. Additionally, if implemented as a private
+> mode, then a client app could query if this setting was set with `DECRQM`
+
+When a terminal receives a `^[[?9001h` sequence, they should switch into
 `win32-input-mode`. In `win32-input-mode`, the terminal will send keyboard input
 to the connected client application in the following format:
 
@@ -140,11 +146,7 @@ unused as a terminator by sequences _output_ by a client application, and
 doesn't seem to be used as an _input_ sequence terminator either.
 
 ```
-  ^[ [ Kd ; Rc ; Vk ; Sc ; Uc ; Cs _
-
-       Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
-
-       Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+  ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
 
        Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
 
@@ -153,7 +155,12 @@ doesn't seem to be used as an _input_ sequence terminator either.
        Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
            "10", the character 'A' is "65". If omitted, defaults to '0'.
 
+       Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+
        Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+
+       Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
+
 ```
 
 > 👉 NOTE: an earlier draft of this spec used an APC sequence for encoding the
@@ -179,10 +186,10 @@ send 4 input records to the client application:
 
 Encoded in `win32-input-mode`, this would look like the following:
 ```
-^[[1;1;17;29;0;8_
-^[[1;1;112;59;0;8_
-^[[0;1;112;59;0;8_
-^[[0;1;17;29;0;0_
+^[[17;29;0;1;8;1_
+^[[112;59;0;1;8;1_
+^[[112;59;0;0;8;1_
+^[[17;29;0;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x70 ScanCode: 0x3b Char: \0 (0x0) KeyState: 0x28
@@ -192,12 +199,12 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Similarly, for a keypress like <kbd>Ctrl+Alt+A</kbd>, which is 6 key events:
 ```
-^[[1;1;17;29;0;8_
-^[[1;1;18;56;0;10_
-^[[1;1;65;30;0;10_
-^[[0;1;65;30;0;10_
-^[[0;1;18;56;0;8_
-^[[0;1;17;29;0;0_
+^[[17;29;0;1;8;1_
+^[[18;56;0;1;10;1_
+^[[65;30;0;1;10;1_
+^[[65;30;0;0;10;1_
+^[[18;56;0;0;8;1_
+^[[17;29;0;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x28
 Down: 1 Repeat: 1 KeyCode: 0x12 ScanCode: 0x38 Char: \0 (0x0) KeyState: 0x2a
@@ -209,10 +216,10 @@ Down: 0 Repeat: 1 KeyCode: 0x11 ScanCode: 0x1d Char: \0 (0x0) KeyState: 0x20
 
 Or, for something simple like <kbd>A</kbd> (which is 4 key events):
 ```
-^[[1;1;16;42;0;16_
-^[[1;1;65;30;65;16_
-^[[0;1;16;42;0;0_
-^[[0;1;65;30;97;0_
+^[[16;42;0;1;16;1_
+^[[65;30;65;1;16;1_
+^[[16;42;0;0;0;1_
+^[[65;30;97;0;0;1_
 
 Down: 1 Repeat: 1 KeyCode: 0x10 ScanCode: 0x2a Char: \0 (0x0) KeyState: 0x30
 Down: 1 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: A  (0x41) KeyState: 0x30
@@ -224,6 +231,47 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 > NumLock key instead pressed, all the KeyState parameters would have bits 0x20
 > set. To get these keys with a NumLock, add 32 to the value.
 
+These parameters are ordered based on how likely they are to be used. Most of
+the time, the repeat count is not needed (it's almost always `1`), so it can be
+left off when not required. Similarly, the control key state is probably going
+to be 0 a lot of the time too, so that is second last. Even keydown will be 0 at
+least half the time, so that can be omitted some of the time.
+
+Furthermore, considering omitted values in CSI parameters default to the values
+specified above, the above sequences could each be shortened to the following.
+
+* <kbd>Ctrl+F1</kbd>
+```
+^[[17;29;;1;8_
+^[[112;59;;1;8_
+^[[112;59;;;8_
+^[[17;29_
+```
+
+* <kbd>Ctrl+Alt+A</kbd>
+```
+^[[17;29;;1;8_
+^[[18;56;;1;10_
+^[[65;30;;1;10_
+^[[65;30;;;10_
+^[[18;56;;;8_
+^[[17;29;;_
+```
+
+* <kbd>A</kbd> (which is <kbd>shift+a</kbd>)
+```
+^[[16;42;;1;16_
+^[[65;30;65;1;16_
+^[[16;42_
+^[[65;30;97_
+```
+
+* Or even easier, just <kbd>a</kbd>
+```
+^[[65;30;97;1_
+^[[65;30;97_
+```
+
 ### Scenarios
 
 #### User is typing into WSL from the Windows Terminal
@@ -231,12 +279,18 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 `WT -> conpty[1] -> wsl`
 
 * Conpty[1] will ask for `win32-input-mode` from the Windows Terminal when
-  conpty[1] first boots up.
+  conpty[1] first boots up. Conpty will _always_ as for win32-input-mode -
+  Terminals that _don't_ support this mode will ignore this sequence on startup.
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
-* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
-* When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences corresponding to whatever input mode the linux app is in.
+* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s.
+  - When those `INPUT_RECORD`s are written to the input buffer, they'll be
+    converted into VT sequences corresponding to whatever input mode the linux
+    app is in.
+* When WSL reads the input, it'll read (using `ReadConsoleInput`) a stream of
+  `INPUT_RECORD`s that contain only character information, which it will then
+  pass to the linux application.
+  - This is how `wsl.exe` behaves today, before this change.
 
 #### User is typing into `cmd.exe` running in WSL interop
 
@@ -246,12 +300,19 @@ Down: 0 Repeat: 1 KeyCode: 0x41 ScanCode: 0x1e Char: a  (0x61) KeyState: 0x20
 
 * Conpty[2] will ask for `win32-input-mode` from conpty[1] when conpty[2] first
   boots up.
+    - As conpty[1] is just a conhost that knows how to handle
+      `win32-input-mode`, it will switch its own VT input handling into
+      `win32-input-mode`
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
-* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s
-* When WSL reads the input, conpty[1] will translate the `INPUT_RECORD`s into VT
-  sequences for the `win32-input-mode`, because it believes the client (in this
-  case, the conpty[2] running attached to `wsl`) wants `win32-input-mode`.
+* Conpty[1] will translate those win32 sequences into `INPUT_RECORD`s. When
+  conpty[1] writes these to its buffer, it will translate the `INPUT_RECORD`s
+  into VT sequences for the `win32-input-mode`. This is because it believes the
+  client (in this case, the conpty[2] running attached to `wsl`) wants
+  `win32-input-mode`.
+* When WSL reads the input, it'll read (using `ReadConsoleInput`) a stream of
+  `INPUT_RECORD`s that contain only character information, which it will then
+  use to pass a stream of characters to conpty[2].
 * Conpty[2] will get those sequences, and will translate those win32 sequences
   into `INPUT_RECORD`s
 * When `cmd.exe` reads the input, they'll receive the full `INPUT_RECORD`s
@@ -302,13 +363,14 @@ _(no change expected)_
 * We could also hypothetically use this same mechanism to send Win32-like mouse
   events to conpty, since similar to VT keyboard events, VT mouse events don't
   have the same fidelity that Win32 mouse events do.
-  - We could enable this with a different terminating character, like `"`
+  - We could enable this with a different terminating character, to identify
+    which type of `INPUT_RECORD` event we're encoding.
 * Client applications that want to be able to read full Win32 keyboard input
-  from `conhost` _using VT_ will also be able to use OSC 1000;1 to do this. If
-  they emit OSC 1000;1, then conhost will switch itself into `win32-input-mode`,
-  and the client will read `win32-input-mode` encoded sequences as input. This
-  could enable other cross-platform applications to also use win32-like input in
-  the future.
+  from `conhost` _using VT_ will also be able to use `^[[?9001h` to do this. If
+  they emit `^[[?9001h`, then conhost will switch itself into
+  `win32-input-mode`, and the client will read `win32-input-mode` encoded
+  sequences as input. This could enable other cross-platform applications to
+  also use win32-like input in the future.
 
 ## Options Considered
 
@@ -355,17 +417,17 @@ _(no change expected)_
      hit `SendChar`) would still just come through as the normal char.
 
 #### Cons:
-* Their encoding table is _mad_. [Look at
+* Their encoding table is _odd_. [Look at
   this](https://sw.kovidgoyal.net/kitty/key-encoding.html). What order is that
   in? Obviously the first column is sorted alphabetically, but the mapping of
-  key->char is in a seemingly bonkers order.
+  key->char is in a certainly hard to decipher order.
 * I can't get it working locally, so hard to test 😐
 * They do declare the `fullkbd` terminfo capability to identify that they
   support this mode, but I'm not sure anyone else uses it.
   - I'm also not sure that any _client_ apps are reading this currently.
 * This isn't designed to be full `KEY_EVENT`s - where would we put the scancode
   (for apps that think that's important)?
-  - We'd have  to extend this protocol _anyways_
+  - We'd have to extend this protocol _anyways_
 
 ### `xterm` "Set key modifier options"
 Notably looking at
@@ -434,7 +496,7 @@ Notably looking at
 * [iterm2 specific sequences](https://www.iterm2.com/documentation-escape-codes.html)
 * [terminal-wg draft list of OSCs](https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/10)
 
-<_-- Footnotes -->
+<!-- Footnotes -->
 [#530]: https://github.com/microsoft/terminal/issues/530
 [#879]: https://github.com/microsoft/terminal/issues/879
 [#1119]: https://github.com/microsoft/terminal/issues/1119

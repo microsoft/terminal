@@ -161,31 +161,27 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                     gci,
                                                                     initialViewport,
-                                                                    gci.GetColorTable(),
-                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                                                                    gci.Get16ColorTable());
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  true);
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
                                                                      gci,
                                                                      initialViewport,
-                                                                     gci.GetColorTable(),
-                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                                                                     gci.Get16ColorTable());
                 break;
             default:
                 return E_FAIL;

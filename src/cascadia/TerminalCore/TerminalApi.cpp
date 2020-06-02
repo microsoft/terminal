@@ -57,6 +57,22 @@ bool Terminal::SetTextBackgroundIndex(BYTE colorIndex) noexcept
     return true;
 }
 
+bool Terminal::SetTextForegroundIndex256(BYTE colorIndex) noexcept
+{
+    TextAttribute attrs = _buffer->GetCurrentAttributes();
+    attrs.SetIndexedForeground256(colorIndex);
+    _buffer->SetCurrentAttributes(attrs);
+    return true;
+}
+
+bool Terminal::SetTextBackgroundIndex256(BYTE colorIndex) noexcept
+{
+    TextAttribute attrs = _buffer->GetCurrentAttributes();
+    attrs.SetIndexedBackground256(colorIndex);
+    _buffer->SetCurrentAttributes(attrs);
+    return true;
+}
+
 bool Terminal::SetTextRgbColor(COLORREF color, bool foreground) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();

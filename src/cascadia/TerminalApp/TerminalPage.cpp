@@ -11,6 +11,7 @@
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
+#include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
@@ -187,8 +188,8 @@ namespace winrt::TerminalApp::implementation
             if (_appArgs.GetStartupActions().empty())
             {
                 _OpenNewTab(nullptr);
-                _startupState = StartupState::Initialized;
-                _InitializedHandlers(*this, nullptr);
+
+                _CompleteInitialization();
             }
             else
             {
@@ -221,9 +222,31 @@ namespace winrt::TerminalApp::implementation
             {
                 _actionDispatch->DoAction(action);
             }
-            _startupState = StartupState::Initialized;
-            _InitializedHandlers(*this, nullptr);
+
+            _CompleteInitialization();
         }
+    }
+
+    // Method Description:
+    // - Perform and steps that need to be done once our initial state is all
+    //   set up. This includes entering fullscreen mode and firing our
+    //   Initialized event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_CompleteInitialization()
+    {
+        // GH#288 - When we finish initialization, if the user wanted us
+        // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        // that the window size is _first_ set up as something sensible, so
+        // leaving fullscreen returns to a reasonable size.
+        if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
+        {
+            _ToggleFullscreen();
+        }
+        _startupState = StartupState::Initialized;
+        _InitializedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -854,12 +877,16 @@ namespace winrt::TerminalApp::implementation
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-        else if (_isFullscreen)
+        else if (_isFullscreen || _rearranging)
         {
             // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
             // not Visible, it's _not_ going to raise a SelectionChanged event,
             // which is what we usually use to focus another tab. Instead, we'll
             // have to do it manually here.
+            //
+            // GH#5559 Similarly, we suppress _OnTabItemsChanged events during a
+            // rearrange, so if a tab is closed while we're rearranging tabs, do
+            // this manually.
             //
             // We can't use
             //   auto selectedIndex = _tabView.SelectedIndex();
@@ -885,6 +912,15 @@ namespace winrt::TerminalApp::implementation
             auto newSelectedTab{ _GetStrongTabImpl(newSelectedIndex) };
             _tabView.SelectedItem(newSelectedTab->GetTabViewItem());
         }
+
+        // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
+        // out our state.
+        if (_rearranging)
+        {
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+        }
     }
 
     // Method Description:
@@ -908,23 +944,25 @@ namespace winrt::TerminalApp::implementation
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        term.TitleChanged([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto newTitle) {
+        auto weakTab{ hostingTab.get_weak() };
+        auto weakThis{ get_weak() };
+        // PropertyChanged is the generic mechanism by which the Tab
+        // communicates changes to any of its observable properties, including
+        // the Title
+        hostingTab.PropertyChanged([weakTab, weakThis](auto&&, const WUX::Data::PropertyChangedEventArgs& args) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
-
             if (page && tab)
             {
-                // The title of the control changed, but not necessarily the title
-                // of the tab. Get the title of the focused pane of the tab, and set
-                // the tab's text to the focused panes' text.
-                page->_UpdateTitle(*tab);
+                if (args.PropertyName() == L"Title")
+                {
+                    page->_UpdateTitle(*tab);
+                }
             }
         });
 
         // react on color changed events
-        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -934,7 +972,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+        hostingTab.ColorCleared([weakTab, weakThis]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -1454,6 +1492,16 @@ namespace winrt::TerminalApp::implementation
             if (data.Contains(StandardDataFormats::Text()))
             {
                 text = co_await data.GetTextAsync();
+            }
+            // Windows Explorer's "Copy address" menu item stores a StorageItem in the clipboard, and no text.
+            else if (data.Contains(StandardDataFormats::StorageItems()))
+            {
+                Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items = co_await data.GetStorageItemsAsync();
+                if (items.Size() > 0)
+                {
+                    Windows::Storage::IStorageItem item = items.GetAt(0);
+                    text = item.Path();
+                }
             }
             eventArgs.HandleClipboardData(text);
         }

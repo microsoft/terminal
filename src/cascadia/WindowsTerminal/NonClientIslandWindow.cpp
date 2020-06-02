@@ -20,7 +20,7 @@ static constexpr int AutohideTaskbarSize = 2;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
-    _backgroundBrushColor{ RGB(0, 0, 0) },
+    _backgroundBrushColor{ 0, 0, 0 },
     _theme{ requestedTheme },
     _isMaximized{ false }
 {
@@ -205,6 +205,11 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.Children().Append(_titlebar);
 
     Controls::Grid::SetRow(_titlebar, 0);
+
+    // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
+    // then make sure to update it's visual state to reflect if we're in the
+    // maximized state on launch.
+    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
 
 // Method Description:
@@ -735,13 +740,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
         const auto backgroundBrush = _titlebar.Background();
         const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const auto backgroundColor = backgroundSolidBrush.Color();
-        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+        const til::color backgroundColor = backgroundSolidBrush.Color();
 
-        if (!_backgroundBrush || color != _backgroundBrushColor)
+        if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
             // Create brush for titlebar color.
-            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(backgroundColor));
         }
 
         // To hide the original title bar, we have to paint on top of it with
@@ -834,7 +838,10 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    if (_titlebar)
+    {
+        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it

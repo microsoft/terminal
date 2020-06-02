@@ -23,8 +23,6 @@ constexpr COLORREF DEFAULT_FOREGROUND_WITH_ALPHA = OPACITY_OPAQUE | DEFAULT_FORE
 constexpr COLORREF DEFAULT_BACKGROUND = COLOR_BLACK;
 constexpr COLORREF DEFAULT_BACKGROUND_WITH_ALPHA = OPACITY_OPAQUE | DEFAULT_BACKGROUND;
 
-constexpr COLORREF POWERSHELL_BLUE = RGB(1, 36, 86);
-
 constexpr short DEFAULT_HISTORY_SIZE = 9001;
 
 #pragma warning(push)
@@ -32,6 +30,7 @@ constexpr short DEFAULT_HISTORY_SIZE = 9001;
 // TODO GH 2674, don't disable this warning, move to std::wstring_view or something like that.
 const std::wstring DEFAULT_FONT_FACE{ L"Cascadia Mono" };
 constexpr int DEFAULT_FONT_SIZE = 12;
+constexpr uint16_t DEFAULT_FONT_WEIGHT = 400; // normal
 
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;

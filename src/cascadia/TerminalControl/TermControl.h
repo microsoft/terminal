@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
+        winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
         void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
