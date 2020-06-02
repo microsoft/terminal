@@ -174,6 +174,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
             // Use 4 spaces to indent instead of \t
             wbuilder.settings_["indentation"] = "    ";
             wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+            wbuilder.settings_["allowTrailingCommas_"] = true; // Allow trailing comma in objects and arrays
 
             const auto keybindingsString = Json::writeString(wbuilder, value);
 

@@ -78,6 +78,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(ValidateLegacyGlobalsWarning);
 
+        TEST_METHOD(TestTrailingCommas);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2293,5 +2295,40 @@ namespace TerminalAppLocalTests
         settings._ValidateNoGlobalsKey();
         VERIFY_ARE_EQUAL(1u, settings._warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty, settings._warnings.at(0));
+    }
+
+    void SettingsTests::TestTrailingCommas()
+    {
+        const std::string badSettings{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                },
+            ],
+            "keybindings": [],
+        })" };
+
+        // Create the default settings
+        CascadiaSettings settings;
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
+
+        // Now layer on the user's settings
+        try
+        {
+            settings._ParseJsonString(badSettings, false);
+            settings.LayerJson(settings._userSettings);
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to LayerJson should succeed, even with the trailing comma");
+        }
     }
 }
