@@ -172,11 +172,6 @@ namespace Microsoft::Console::VirtualTerminal
             G3
         };
 
-        enum WindowsOSCFunctions : unsigned int
-        {
-            SetWin32InputMode = 1
-        };
-
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
         bool _GetGraphicsOptions(const std::basic_string_view<size_t> parameters,
                                  std::vector<DispatchTypes::GraphicsOptions>& options) const;
