@@ -20,6 +20,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
+    "startOnUserLogin":  false,
     "theme": "system",
     "rowsToScroll": "system",
     "snapToGridOnResize": true,

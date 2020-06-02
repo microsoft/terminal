@@ -9,6 +9,7 @@
 #undef WIN32_LEAN_AND_MEAN
 #undef NOMINMAX
 #define NOMINMAX
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <array>

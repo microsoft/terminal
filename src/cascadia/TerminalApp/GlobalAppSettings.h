@@ -53,7 +53,12 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
-    GETSET_PROPERTY(GUID, DefaultProfile);
+    // These are implemented manually to handle the string/GUID switchoff
+    // by higher layers in the app.
+    void DefaultProfile(const GUID defaultProfile) noexcept;
+    GUID DefaultProfile() const;
+    std::wstring UnparsedDefaultProfile() const;
+
     GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
     GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
     GETSET_PROPERTY(bool, AlwaysShowTabs, true);
@@ -73,7 +78,12 @@ public:
     GETSET_PROPERTY(bool, SoftwareRendering, false);
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
 
+    GETSET_PROPERTY(bool, StartOnUserLogin, false);
+
 private:
+    std::optional<std::wstring> _unparsedDefaultProfile;
+    GUID _defaultProfile;
+
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 

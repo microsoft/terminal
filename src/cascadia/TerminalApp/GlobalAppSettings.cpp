@@ -38,9 +38,11 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
+static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
@@ -57,6 +59,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _keybindingsWarnings{},
     _colorSchemes{},
+    _unparsedDefaultProfile{ std::nullopt },
+    _defaultProfile{},
     _InitialRows{ DEFAULT_ROWS },
     _InitialCols{ DEFAULT_COLS },
     _RowsToScroll{ DEFAULT_ROWSTOSCROLL },
@@ -77,6 +81,24 @@ std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorScheme
 const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
+}
+
+void GlobalAppSettings::DefaultProfile(const GUID defaultProfile) noexcept
+{
+    _unparsedDefaultProfile.reset();
+    _defaultProfile = defaultProfile;
+}
+
+GUID GlobalAppSettings::DefaultProfile() const
+{
+    // If we have an unresolved default profile, we should likely explode.
+    THROW_HR_IF(E_INVALIDARG, _unparsedDefaultProfile.has_value());
+    return _defaultProfile;
+}
+
+std::wstring GlobalAppSettings::UnparsedDefaultProfile() const
+{
+    return _unparsedDefaultProfile.value();
 }
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
@@ -120,8 +142,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
     if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
-        auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
-        _DefaultProfile = guid;
+        _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
     }
 
     JsonUtils::GetBool(json, AlwaysShowTabsKey, _AlwaysShowTabs);
@@ -195,6 +216,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
+
+    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 
 // Method Description:
@@ -323,6 +346,10 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
     {
         return LaunchMode::MaximizedMode;
     }
+    else if (launchModeString == FullscreenLaunchModeValue)
+    {
+        return LaunchMode::FullscreenMode;
+    }
 
     return LaunchMode::DefaultMode;
 }
@@ -340,6 +367,8 @@ std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const ::winrt::Termina
     {
     case LaunchMode::MaximizedMode:
         return MaximizedLaunchModeValue;
+    case LaunchMode::FullscreenMode:
+        return FullscreenLaunchModeValue;
     default:
         return DefaultLaunchModeValue;
     }

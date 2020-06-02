@@ -240,6 +240,23 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 }
 
 // Routine Description:
+// - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+//   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    stateMachine.SetAnsiMode(ansiMode);
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.ChangeAnsiMode(ansiMode);
+    return true;
+}
+
+// Routine Description:
 // - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on our public API surface.
