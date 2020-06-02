@@ -88,7 +88,6 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsHighColor() const noexcept;
     bool IsBold() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -118,7 +117,6 @@ public:
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
 
-    bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
     void SetStandardErase() noexcept;

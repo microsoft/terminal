@@ -25,11 +25,6 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
-bool TextAttribute::IsHighColor() const noexcept
-{
-    return _foreground.IsHighColor() || _background.IsHighColor();
-}
-
 // Arguments:
 // - None
 // Return Value:
@@ -254,21 +249,6 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
-}
-
-// Method Description:
-// - Returns true if this attribute indicates its foreground is the "default"
-//      foreground. Its _rgbForeground will contain the actual value of the
-//      default foreground. If the default colors are ever changed, this method
-//      should be used to identify attributes with the default fg value, and
-//      update them accordingly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff this attribute indicates it's the "default" foreground color.
-bool TextAttribute::ForegroundIsDefault() const noexcept
-{
-    return _foreground.IsDefault();
 }
 
 // Method Description:

@@ -78,7 +78,6 @@ public:
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsHighColor() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
     bool IsDefault() const noexcept;

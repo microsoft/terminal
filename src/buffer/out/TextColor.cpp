@@ -55,11 +55,6 @@ bool TextColor::IsLegacy() const noexcept
     return IsIndex16() || (IsIndex256() && _index < 16);
 }
 
-bool TextColor::IsHighColor() const noexcept
-{
-    return IsRgb() || (IsIndex256() && _index >= 16);
-}
-
 bool TextColor::IsIndex16() const noexcept
 {
     return _meta == ColorType::IsIndex16;
