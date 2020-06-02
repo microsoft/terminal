@@ -53,6 +53,7 @@ private:
         CLI::Option* commandlineOption;
         CLI::Option* profileNameOption;
         CLI::Option* startingDirectoryOption;
+        CLI::Option* titleOption;
     };
 
     // --- Subcommands ---
@@ -66,6 +67,7 @@ private:
 
     std::string _profileName;
     std::string _startingDirectory;
+    std::string _startingTitle;
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
