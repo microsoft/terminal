@@ -1001,12 +1001,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (multiClickMapper == 3)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    }
+                    else
+                    {
+                        _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    }
                     _selectionNeedsToBeCopied = true;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    }
+                    else
+                    {
+                        _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    }
                     _selectionNeedsToBeCopied = true;
                 }
                 else
