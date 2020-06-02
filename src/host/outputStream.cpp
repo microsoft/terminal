@@ -244,7 +244,7 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 //   PrivateEnableWin32InputMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
 // Arguments:
-// - win32InputMode - set to true to enable win32-inpur-mode, false to disable.
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
 // Return Value:
 // - true always
 bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
