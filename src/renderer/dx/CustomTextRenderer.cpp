@@ -257,7 +257,7 @@ try
         return S_FALSE;
     }
 
-    // TODO GH#TODO: Add support for `"cursorTextColor": null` for letting the
+    // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
     // cursor draw on top again.
     if (!firstPass)
     {

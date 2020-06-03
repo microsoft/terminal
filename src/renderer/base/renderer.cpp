@@ -139,7 +139,7 @@ try
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
-    // C.
+    // C. Prepare the engine with additional information before we start drawing.
     RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
 
     // 1. Paint Background
@@ -846,7 +846,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - Retrieves information about the cursor, and pack it into a CursorOptions
 //   that the render engine can use for painting the cursor.
 // - If the cursor is "off", or the cursor is out of bounds of the viewport,
-//   this will return nullopt (indicating the cursor shoudln't be painted this
+//   this will return nullopt (indicating the cursor shouldn't be painted this
 //   frame)
 // Arguments:
 // - <none>
