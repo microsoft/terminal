@@ -5,6 +5,7 @@
 
 #include <wrl/implements.h>
 #include "BoxDrawingEffect.h"
+#include "../../renderer/inc/CursorOptions.h"
 
 namespace Microsoft::Console::Render
 {
@@ -17,6 +18,7 @@ namespace Microsoft::Console::Render
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
+                       const CursorOptions cursorInfo,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
         {
             this->renderTarget = renderTarget;
@@ -26,6 +28,7 @@ namespace Microsoft::Console::Render
             this->dwriteFactory = dwriteFactory;
             this->spacing = spacing;
             this->cellSize = cellSize;
+            this->cursorInfo = cursorInfo;
             this->options = options;
         }
 
@@ -36,6 +39,7 @@ namespace Microsoft::Console::Render
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;
+        CursorOptions cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
     };
 
