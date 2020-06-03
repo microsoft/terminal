@@ -146,7 +146,7 @@ only be used as a terminator for the [SCO input
 sequence](https://vt100.net/docs/vt510-rm/chapter6.html) for
 <kbd>Ctrl+Shift+F10</kbd>. This conflict isn't a real concern for us
 compatibility wise. For more details, see [SCO
-Compatibility](#sco-compatibility) below.
+Compatibility](#SCO-compatibility) below.
 
 ```
   ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
