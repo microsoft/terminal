@@ -689,9 +689,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // And hold the point where we should start drawing.
         auto screenPoint = target;
 
-        // We might need the original iterator to draw lines later.
-        const auto originalIt = it;
-
         // This outer loop will continue until we reach the end of the text we are trying to draw.
         while (it)
         {
@@ -707,6 +704,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
+
+            // Hold onto the start of this run iterator and the target location where we started
+            // in case we need to do some special work to paint the line drawing characters.
+            const auto currentRunItStart = it;
+            const auto currentRunTargetStart = screenPoint;
 
             // Ensure that our cluster vector is clear.
             clusters.clear();
@@ -791,10 +793,10 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // attribute that could have contained different line information than the left half.
                 if (containsWideCharacter)
                 {
-                    // Start from the original position.
-                    auto lineIt = originalIt;
-                    // Start from the original target.
-                    auto lineTarget = target;
+                    // Start from the original position in this run.
+                    auto lineIt = currentRunItStart;
+                    // Start from the original target in this run.
+                    auto lineTarget = currentRunTargetStart;
 
                     // We need to go through the iterators again to ensure we get the lines associated with each
                     // exact column. The code above will condense two-column characters into one, but it is possible
@@ -806,7 +808,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     for (auto colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                     {
                         auto lines = lineIt->TextAttr();
-
                         _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
                     }
                 }
