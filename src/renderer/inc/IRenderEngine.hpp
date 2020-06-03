@@ -20,6 +20,11 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
+    struct RenderFrameInfo
+    {
+        std::optional<CursorOptions> cursorInfo;
+    };
+
     class IRenderEngine
     {
     public:
@@ -59,6 +64,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
+
+        [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept { return S_FALSE; };
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,

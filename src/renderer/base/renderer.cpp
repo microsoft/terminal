@@ -139,6 +139,9 @@ try
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
+    // C.
+    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
+
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
@@ -867,7 +870,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             bool useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
-            IRenderEngine::CursorOptions options;
+            CursorOptions options;
             options.coordCursor = coordCursor;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
             options.cursorPixelWidth = _pData->GetCursorPixelWidth();
@@ -881,6 +884,54 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             LOG_IF_FAILED(pEngine->PaintCursor(options));
         }
     }
+}
+
+// Routine Description:
+// - TODO
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+[[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
+{
+    RenderFrameInfo info;
+    info.cursorInfo = std::nullopt;
+
+    if (_pData->IsCursorVisible())
+    {
+        // Get cursor position in buffer
+        COORD coordCursor = _pData->GetCursorPosition();
+
+        // GH#3166: Only draw the cursor if it's actually in the viewport. It
+        // might be on the line that's in that partially visible row at the
+        // bottom of the viewport, the space that's not quite a full line in
+        // height. Since we don't draw that text, we shouldn't draw the cursor
+        // there either.
+        Viewport view = _pData->GetViewport();
+        if (view.IsInBounds(coordCursor))
+        {
+            // Adjust cursor to viewport
+            view.ConvertToOrigin(&coordCursor);
+
+            COLORREF cursorColor = _pData->GetCursorColor();
+            bool useColor = cursorColor != INVALID_COLOR;
+
+            // Build up the cursor parameters including position, color, and drawing options
+            CursorOptions options;
+            options.coordCursor = coordCursor;
+            options.ulCursorHeightPercent = _pData->GetCursorHeight();
+            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
+            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+            options.cursorType = _pData->GetCursorStyle();
+            options.fUseColor = useColor;
+            options.cursorColor = cursorColor;
+            options.isOn = _pData->IsCursorOn();
+
+            info.cursorInfo = options;
+        }
+    }
+
+    return pEngine->PrepareRenderInfo(info);
 }
 
 // Routine Description:

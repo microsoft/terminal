@@ -5,6 +5,8 @@
 
 #include "CustomTextRenderer.h"
 
+#include "../../inc/DefaultSettings.h"
+
 #include <wrl.h>
 #include <wrl/client.h>
 #include <VersionHelpers.h>
@@ -220,6 +222,106 @@ using namespace Microsoft::Console::Render;
                               clientDrawingEffect);
 }
 
+[[nodiscard]] HRESULT _DrawCursorHelper(::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext,
+                                        const DrawingContext& drawingContext)
+try
+{
+    if (!drawingContext.cursorInfo.has_value())
+    {
+        return S_FALSE;
+    }
+
+    const auto& options = drawingContext.cursorInfo.value();
+    const til::size glyphSize{ til::math::flooring, drawingContext.cellSize.width, drawingContext.cellSize.height };
+    // const til::size glyphSize{ til::math::flooring, drawingContext.cellSize };
+    // if the cursor is off, do nothing - it should not be visible.
+    if (!options.isOn)
+    {
+        return S_FALSE;
+    }
+    // Create rectangular block representing where the cursor can fill.
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(glyphSize);
+
+    // If we're double-width, make it one extra glyph wider
+    if (options.fIsDoubleWidth)
+    {
+        rect.right += glyphSize.width();
+    }
+
+    CursorPaintType paintType = CursorPaintType::Fill;
+
+    switch (options.cursorType)
+    {
+    case CursorType::Legacy:
+    {
+        // Enforce min/max cursor height
+        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
+        ulHeight = (glyphSize.height<ULONG>() * ulHeight) / 100;
+        rect.top = rect.bottom - ulHeight;
+        break;
+    }
+    case CursorType::VerticalBar:
+    {
+        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
+        // It's either the left + the proposed width from the ease of access setting, or
+        // it's the right edge of the block cursor as a maximum.
+        rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
+        break;
+    }
+    case CursorType::Underscore:
+    {
+        rect.top = rect.bottom - 1;
+        break;
+    }
+    case CursorType::EmptyBox:
+    {
+        paintType = CursorPaintType::Outline;
+        break;
+    }
+    case CursorType::FullBox:
+    {
+        break;
+    }
+    default:
+        return E_NOTIMPL;
+    }
+
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush; // = _d2dBrushForeground;
+
+    if (options.fUseColor)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
+
+    switch (paintType)
+    {
+    case CursorPaintType::Fill:
+    {
+        d2dContext->FillRectangle(rect, brush.Get());
+        break;
+    }
+    case CursorPaintType::Outline:
+    {
+        // DrawRectangle in straddles physical pixels in an attempt to draw a line
+        // between them. To avoid this, bump the rectangle around by half the stroke width.
+        rect.top += 0.5f;
+        rect.left += 0.5f;
+        rect.bottom -= 0.5f;
+        rect.right -= 0.5f;
+
+        d2dContext->DrawRectangle(rect, brush.Get());
+        break;
+    }
+    default:
+        return E_NOTIMPL;
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
+
 // Routine Description:
 // - Implementation of IDWriteTextRenderer::DrawInlineObject
 // - Passes drawing control from the outer layout down into the context of an embedded object
@@ -291,6 +393,8 @@ using namespace Microsoft::Console::Render;
     });
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+
+    RETURN_IF_FAILED(_DrawCursorHelper(d2dContext, *drawingContext));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need

@@ -1298,7 +1298,7 @@ try
                            _dwriteFactory.Get(),
                            spacing,
                            _glyphCell,
-                           {},
+                           _frameInfo.cursorInfo,
                            D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
     // Layout then render the text
@@ -1414,109 +1414,107 @@ try
 }
 CATCH_RETURN()
 
-// Helper to choose which Direct2D method to use when drawing the cursor rectangle
-enum class CursorPaintType
+[[nodiscard]] HRESULT DxEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
-    Fill,
-    Outline
-};
-
-// Routine Description:
-// - Draws a block at the given position to represent the cursor
-// - May be a styled cursor at the character cell location that is less than a full block
-// Arguments:
-// - options - Packed options relevant to how to draw the cursor
-// Return Value:
-// - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintCursor(const CursorOptions& options) noexcept
-try
-{
-    // if the cursor is off, do nothing - it should not be visible.
-    if (!options.isOn)
-    {
-        return S_FALSE;
-    }
-    // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(_glyphCell);
-
-    // If we're double-width, make it one extra glyph wider
-    if (options.fIsDoubleWidth)
-    {
-        rect.right += _glyphCell.width();
-    }
-
-    CursorPaintType paintType = CursorPaintType::Fill;
-
-    switch (options.cursorType)
-    {
-    case CursorType::Legacy:
-    {
-        // Enforce min/max cursor height
-        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
-        ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
-        rect.top = rect.bottom - ulHeight;
-        break;
-    }
-    case CursorType::VerticalBar:
-    {
-        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
-        // It's either the left + the proposed width from the ease of access setting, or
-        // it's the right edge of the block cursor as a maximum.
-        rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
-        break;
-    }
-    case CursorType::Underscore:
-    {
-        rect.top = rect.bottom - 1;
-        break;
-    }
-    case CursorType::EmptyBox:
-    {
-        paintType = CursorPaintType::Outline;
-        break;
-    }
-    case CursorType::FullBox:
-    {
-        break;
-    }
-    default:
-        return E_NOTIMPL;
-    }
-
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = _d2dBrushForeground;
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(_ColorFFromColorRef(OPACITY_OPAQUE | options.cursorColor), &brush));
-    }
-
-    switch (paintType)
-    {
-    case CursorPaintType::Fill:
-    {
-        _d2dRenderTarget->FillRectangle(rect, brush.Get());
-        break;
-    }
-    case CursorPaintType::Outline:
-    {
-        // DrawRectangle in straddles physical pixels in an attempt to draw a line
-        // between them. To avoid this, bump the rectangle around by half the stroke width.
-        rect.top += 0.5f;
-        rect.left += 0.5f;
-        rect.bottom -= 0.5f;
-        rect.right -= 0.5f;
-
-        _d2dRenderTarget->DrawRectangle(rect, brush.Get());
-        break;
-    }
-    default:
-        return E_NOTIMPL;
-    }
-
     return S_OK;
 }
-CATCH_RETURN()
+
+// // Routine Description:
+// // - Draws a block at the given position to represent the cursor
+// // - May be a styled cursor at the character cell location that is less than a full block
+// // Arguments:
+// // - options - Packed options relevant to how to draw the cursor
+// // Return Value:
+// // - S_OK or relevant DirectX error.
+// [[nodiscard]] HRESULT DxEngine::PaintCursor(const CursorOptions& options) noexcept
+// try
+// {
+//     // if the cursor is off, do nothing - it should not be visible.
+//     if (!options.isOn)
+//     {
+//         return S_FALSE;
+//     }
+//     // Create rectangular block representing where the cursor can fill.
+//     D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(_glyphCell);
+
+//     // If we're double-width, make it one extra glyph wider
+//     if (options.fIsDoubleWidth)
+//     {
+//         rect.right += _glyphCell.width();
+//     }
+
+//     CursorPaintType paintType = CursorPaintType::Fill;
+
+//     switch (options.cursorType)
+//     {
+//     case CursorType::Legacy:
+//     {
+//         // Enforce min/max cursor height
+//         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
+//         ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
+//         rect.top = rect.bottom - ulHeight;
+//         break;
+//     }
+//     case CursorType::VerticalBar:
+//     {
+//         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
+//         // It's either the left + the proposed width from the ease of access setting, or
+//         // it's the right edge of the block cursor as a maximum.
+//         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
+//         break;
+//     }
+//     case CursorType::Underscore:
+//     {
+//         rect.top = rect.bottom - 1;
+//         break;
+//     }
+//     case CursorType::EmptyBox:
+//     {
+//         paintType = CursorPaintType::Outline;
+//         break;
+//     }
+//     case CursorType::FullBox:
+//     {
+//         break;
+//     }
+//     default:
+//         return E_NOTIMPL;
+//     }
+
+//     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = _d2dBrushForeground;
+
+//     if (options.fUseColor)
+//     {
+//         // Make sure to make the cursor opaque
+//         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(_ColorFFromColorRef(OPACITY_OPAQUE | options.cursorColor), &brush));
+//     }
+
+//     switch (paintType)
+//     {
+//     case CursorPaintType::Fill:
+//     {
+//         _d2dRenderTarget->FillRectangle(rect, brush.Get());
+//         break;
+//     }
+//     case CursorPaintType::Outline:
+//     {
+//         // DrawRectangle in straddles physical pixels in an attempt to draw a line
+//         // between them. To avoid this, bump the rectangle around by half the stroke width.
+//         rect.top += 0.5f;
+//         rect.left += 0.5f;
+//         rect.bottom -= 0.5f;
+//         rect.right -= 0.5f;
+
+//         _d2dRenderTarget->DrawRectangle(rect, brush.Get());
+//         break;
+//     }
+//     default:
+//         return E_NOTIMPL;
+//     }
+
+//     return S_OK;
+// }
+// CATCH_RETURN()
 
 // Routine Description:
 // - Paint terminal effects.
@@ -2247,3 +2245,9 @@ try
     LOG_IF_FAILED(InvalidateAll());
 }
 CATCH_LOG()
+
+[[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+{
+    _frameInfo = info;
+    return S_OK;
+}

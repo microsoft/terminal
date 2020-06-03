@@ -18,7 +18,7 @@ namespace Microsoft::Console::Render
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
-                       const CursorOptions cursorInfo,
+                       const std::optional<CursorOptions> cursorInfo,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
         {
             this->renderTarget = renderTarget;
@@ -39,9 +39,19 @@ namespace Microsoft::Console::Render
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;
-        CursorOptions cursorInfo;
+        std::optional<CursorOptions> cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
     };
+
+    // Helper to choose which Direct2D method to use when drawing the cursor rectangle
+    enum class CursorPaintType
+    {
+        Fill,
+        Outline
+    };
+
+    constexpr const ULONG MinCursorHeightPercent = 25;
+    constexpr const ULONG MaxCursorHeightPercent = 100;
 
     class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextRenderer>
     {
