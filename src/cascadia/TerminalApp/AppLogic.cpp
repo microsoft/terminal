@@ -769,7 +769,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    try
     {
+        // First, make sure we're running in a packaged context. This method
+        // won't work, and will crash mysteriously if we're running unpackaged.
+        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        if (package == nullptr)
+        {
+            return;
+        }
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
@@ -805,6 +814,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+    CATCH_LOG();
+
     // Method Description:
     // - Reloads the settings from the profile.json.
     void AppLogic::_ReloadSettings()

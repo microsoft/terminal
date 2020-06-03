@@ -110,21 +110,16 @@ private:
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
     static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
-    static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
 
     static winrt::Windows::UI::Text::FontWeight _ParseFontWeight(const Json::Value& json);
 
     static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
-    static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
 
-    static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
-    static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
-    static std::wstring_view SerializeTextAntialiasingMode(const winrt::Microsoft::Terminal::Settings::TextAntialiasingMode antialiasingMode);
 
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 

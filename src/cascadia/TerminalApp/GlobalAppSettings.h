@@ -91,17 +91,12 @@ private:
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
-    static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
-    static std::wstring_view _SerializeTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode) noexcept;
     static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
     static void _ParseInitialPosition(const std::string& initialPosition,
                                       LaunchPosition& ret) noexcept;
 
-    static std::string _SerializeInitialPosition(const LaunchPosition& position) noexcept;
-
-    static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
 
     friend class TerminalAppLocalTests::SettingsTests;
