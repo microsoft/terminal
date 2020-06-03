@@ -705,6 +705,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
 
+            // Hold onto the start of this run iterator and the target location where we started
+            // in case we need to do some special work to paint the line drawing characters.
+            const auto currentRunItStart = it;
+            const auto currentRunTargetStart = screenPoint;
+
             // Ensure that our cluster vector is clear.
             clusters.clear();
 
@@ -712,6 +717,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // of attempting to draw only the right-half of a two-column character
             // as the first item in our run.
             bool trimLeft = false;
+
+            // Run contains wide character (>1 columns)
+            bool containsWideCharacter = false;
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
@@ -762,6 +770,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     clusters.emplace_back(it->Chars(), columnCount);
                 }
 
+                if (columnCount > 1)
+                {
+                    containsWideCharacter = true;
+                }
+
                 // Advance the cluster and column counts.
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
                 cols += columnCount;
@@ -772,10 +785,37 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+            // We're only allowed to draw the grid lines under certain circumstances.
             if (_pData->IsGridLineDrawingAllowed())
             {
-                // We're only allowed to draw the grid lines under certain circumstances.
-                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                // See GH: 803
+                // If we found a wide character while we looped above, it's possible we skipped over the right half
+                // attribute that could have contained different line information than the left half.
+                if (containsWideCharacter)
+                {
+                    // Start from the original position in this run.
+                    auto lineIt = currentRunItStart;
+                    // Start from the original target in this run.
+                    auto lineTarget = currentRunTargetStart;
+
+                    // We need to go through the iterators again to ensure we get the lines associated with each
+                    // exact column. The code above will condense two-column characters into one, but it is possible
+                    // (like with the IME) that the line drawing characters will vary from the left to right half
+                    // of a wider character.
+                    // We could theoretically pre-pass for this in the loop above to be more efficient about walking
+                    // the iterator, but I fear it would make the code even more confusing than it already is.
+                    // Do that in the future if some WPR trace points you to this spot as super bad.
+                    for (auto colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                    {
+                        auto lines = lineIt->TextAttr();
+                        _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
+                    }
+                }
+                else
+                {
+                    // If nothing exciting is going on, draw the lines in bulk.
+                    _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                }
             }
         }
     }
