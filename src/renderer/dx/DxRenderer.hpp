@@ -162,9 +162,6 @@ namespace Microsoft::Console::Render
 
         static std::atomic<size_t> _tracelogCount;
 
-        static const ULONG s_ulMinCursorHeightPercent = 25;
-        static const ULONG s_ulMaxCursorHeightPercent = 100;
-
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;

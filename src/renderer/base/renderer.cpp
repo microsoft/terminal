@@ -843,94 +843,83 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 }
 
 // Routine Description:
-// - Paint helper to draw the cursor within the buffer.
+// - Retrieves information about the cursor, and pack it into a CursorOptions
+//   that the render engine can use for painting the cursor.
+// - If the cursor is "off", or the cursor is out of bounds of the viewport,
+//   this will return nullopt (indicating the cursor shoudln't be painted this
+//   frame)
 // Arguments:
 // - <none>
+// Return Value:
+// - nullopt if the cursor is off our out-of-frame, otherwise a CursorOptions
+[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
+{
+    if (_pData->IsCursorVisible())
+    {
+        // Get cursor position in buffer
+        COORD coordCursor = _pData->GetCursorPosition();
+
+        // GH#3166: Only draw the cursor if it's actually in the viewport. It
+        // might be on the line that's in that partially visible row at the
+        // bottom of the viewport, the space that's not quite a full line in
+        // height. Since we don't draw that text, we shouldn't draw the cursor
+        // there either.
+        Viewport view = _pData->GetViewport();
+        if (view.IsInBounds(coordCursor))
+        {
+            // Adjust cursor to viewport
+            view.ConvertToOrigin(&coordCursor);
+
+            COLORREF cursorColor = _pData->GetCursorColor();
+            bool useColor = cursorColor != INVALID_COLOR;
+
+            // Build up the cursor parameters including position, color, and drawing options
+            CursorOptions options;
+            options.coordCursor = coordCursor;
+            options.ulCursorHeightPercent = _pData->GetCursorHeight();
+            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
+            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+            options.cursorType = _pData->GetCursorStyle();
+            options.fUseColor = useColor;
+            options.cursorColor = cursorColor;
+            options.isOn = _pData->IsCursorOn();
+
+            return { options };
+        }
+    }
+    return std::nullopt;
+}
+
+// Routine Description:
+// - Paint helper to draw the cursor within the buffer.
+// Arguments:
+// - engine - The render engine that we're targeting.
 // Return Value:
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    if (_pData->IsCursorVisible())
+    const auto cursorInfo = _GetCursorInfo();
+    if (cursorInfo.has_value())
     {
-        // Get cursor position in buffer
-        COORD coordCursor = _pData->GetCursorPosition();
-
-        // GH#3166: Only draw the cursor if it's actually in the viewport. It
-        // might be on the line that's in that partially visible row at the
-        // bottom of the viewport, the space that's not quite a full line in
-        // height. Since we don't draw that text, we shouldn't draw the cursor
-        // there either.
-        Viewport view = _pData->GetViewport();
-        if (view.IsInBounds(coordCursor))
-        {
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
-
-            COLORREF cursorColor = _pData->GetCursorColor();
-            bool useColor = cursorColor != INVALID_COLOR;
-
-            // Build up the cursor parameters including position, color, and drawing options
-            CursorOptions options;
-            options.coordCursor = coordCursor;
-            options.ulCursorHeightPercent = _pData->GetCursorHeight();
-            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-            options.cursorType = _pData->GetCursorStyle();
-            options.fUseColor = useColor;
-            options.cursorColor = cursorColor;
-            options.isOn = _pData->IsCursorOn();
-
-            // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(options));
-        }
+        LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
     }
 }
 
 // Routine Description:
-// - TODO
+// - Retrieves info from the render data to prepare the engine with, before the
+//   frame is drawn. Some renderers might want to use this information to affect
+//   later drawing decisions.
+//   * Namely, the DX renderer uses this to know the cursor position and state
+//     before PaintCursor is called, so it can draw the cursor underneath the
+//     text.
 // Arguments:
-// - <none>
+// - engine - The render engine that we're targeting.
 // Return Value:
-// - <none>
+// - S_OK if the engine prepared successfully, or a relevant error via HRESULT.
 [[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
-    info.cursorInfo = std::nullopt;
-
-    if (_pData->IsCursorVisible())
-    {
-        // Get cursor position in buffer
-        COORD coordCursor = _pData->GetCursorPosition();
-
-        // GH#3166: Only draw the cursor if it's actually in the viewport. It
-        // might be on the line that's in that partially visible row at the
-        // bottom of the viewport, the space that's not quite a full line in
-        // height. Since we don't draw that text, we shouldn't draw the cursor
-        // there either.
-        Viewport view = _pData->GetViewport();
-        if (view.IsInBounds(coordCursor))
-        {
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
-
-            COLORREF cursorColor = _pData->GetCursorColor();
-            bool useColor = cursorColor != INVALID_COLOR;
-
-            // Build up the cursor parameters including position, color, and drawing options
-            CursorOptions options;
-            options.coordCursor = coordCursor;
-            options.ulCursorHeightPercent = _pData->GetCursorHeight();
-            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-            options.cursorType = _pData->GetCursorStyle();
-            options.fUseColor = useColor;
-            options.cursorColor = cursorColor;
-            options.isOn = _pData->IsCursorOn();
-
-            info.cursorInfo = options;
-        }
-    }
-
+    info.cursorInfo = _GetCursorInfo();
     return pEngine->PrepareRenderInfo(info);
 }
 

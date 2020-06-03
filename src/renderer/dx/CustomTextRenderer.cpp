@@ -222,8 +222,26 @@ using namespace Microsoft::Console::Render;
                               clientDrawingEffect);
 }
 
-[[nodiscard]] HRESULT _DrawCursorHelper(::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext,
-                                        const DrawingContext& drawingContext)
+// Function Description:
+// - Attempt to draw the cursor. If the cursor isn't visible or on, this
+//   function will do nothing. If the cursor isn't within the bounds of the
+//   current run of text, then this function will do nothing.
+// - This function will get called twice during a run, once before the text is
+//   drawn (underneath the text), and again after the text is drawn (above the
+//   text). Depending on if the cursor wants to be drawn above or below the
+//   text, this function will do nothing for the first/second pass
+//   (respectively).
+// Arguments:
+// - d2dContext - Pointer to the current D2D drawing context
+// - textRunBounds - The bounds of the current run of text.
+// - drawingContext - Pointer to structure of information required to draw
+// - firstPass - true if we're being called before the text is drawn, false afterwards.
+// Return Value:
+// - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT _drawCursorHelper(::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext,
+                                        D2D1_RECT_F textRunBounds,
+                                        const DrawingContext& drawingContext,
+                                        const bool firstPass)
 try
 {
     if (!drawingContext.cursorInfo.has_value())
@@ -232,13 +250,24 @@ try
     }
 
     const auto& options = drawingContext.cursorInfo.value();
-    const til::size glyphSize{ til::math::flooring, drawingContext.cellSize.width, drawingContext.cellSize.height };
-    // const til::size glyphSize{ til::math::flooring, drawingContext.cellSize };
+
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
     {
         return S_FALSE;
     }
+
+    // TODO GH#TODO: Add support for `"cursorTextColor": null` for letting the
+    // cursor draw on top again.
+    if (!firstPass)
+    {
+        return S_FALSE;
+    }
+
+    const til::size glyphSize{ til::math::flooring,
+                               drawingContext.cellSize.width,
+                               drawingContext.cellSize.height };
+
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(glyphSize);
 
@@ -246,6 +275,15 @@ try
     if (options.fIsDoubleWidth)
     {
         rect.right += glyphSize.width();
+    }
+
+    // If the cursor isn't within the bounds of this current run of text, do nothing.
+    if (rect.top > textRunBounds.bottom ||
+        rect.bottom <= textRunBounds.top ||
+        rect.left > textRunBounds.right ||
+        rect.right <= textRunBounds.left)
+    {
+        return S_FALSE;
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
@@ -286,7 +324,7 @@ try
         return E_NOTIMPL;
     }
 
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush; // = _d2dBrushForeground;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
 
     if (options.fUseColor)
     {
@@ -394,7 +432,7 @@ CATCH_RETURN()
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
-    RETURN_IF_FAILED(_DrawCursorHelper(d2dContext, *drawingContext));
+    RETURN_IF_FAILED(_drawCursorHelper(d2dContext, rect, *drawingContext, true));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
@@ -583,6 +621,9 @@ CATCH_RETURN()
                                             drawingContext->foregroundBrush,
                                             clientDrawingEffect));
     }
+
+    RETURN_IF_FAILED(_drawCursorHelper(d2dContext, rect, *drawingContext, false));
+
     return S_OK;
 }
 #pragma endregion
