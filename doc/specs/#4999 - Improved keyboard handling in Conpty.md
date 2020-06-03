@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-05-07
-last updated: 2020-05-20
+last updated: 2020-06-03
 issue id: 4999
 ---
 
@@ -141,9 +141,12 @@ typedef struct _KEY_EVENT_RECORD {
 ```
 
 To encode all of this information, I propose the following sequence. This is a
-CSI sequence with a final terminator character of `_`. This character appears
-unused as a terminator by sequences _output_ by a client application, and
-doesn't seem to be used as an _input_ sequence terminator either.
+CSI sequence with a final terminator character of `_`. This character appears to
+only be used as a terminator for the [SCO input
+sequence](https://vt100.net/docs/vt510-rm/chapter6.html) for
+<kbd>Ctrl+Shift+F10</kbd>. This conflict isn't a real concern for us
+compatibility wise. For more details, see [SCO
+Compatibility](#sco-compatibility) below.
 
 ```
   ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
@@ -350,6 +353,46 @@ this ConPTY change. The Terminal will only switch into sending
 `win32-input-mode` sequences when _conpty asks for them_. Otherwise, the
 Terminal will still behave like a normal terminal emulator.
 
+#### Terminals that don't support `?9001h`
+
+Traditionally, whenever a terminal emulator doesn't understand a particular VT
+sequence, they simply ignore the unknown sequence. This assumption is being
+relied upon heavily, as ConPTY will _always_ emit a `^[[?9001h` on
+initialization, to request `win32-input-mode`.
+
+#### SCO Compatibility
+
+As mentioned above, the `_` character is used as a terminator for the [SCO input
+sequence](https://vt100.net/docs/vt510-rm/chapter6.html) for
+<kbd>Ctrl+Shift+F10</kbd>. This conflict would be a problem if a hypothetical
+terminal was connected to conpty that sent input to conpty in SCO format.
+However, if that terminal was only sending input to conpty in SCO mode, it would
+have much worse problems than just <kbd>Ctrl+Shift+F10</kbd> not working. If we
+did want to support SCO mode in the future, I'd even go so far as to say we
+could maybe treat a `win32-input-mode` sequence with no params as
+<kbd>Ctrl+Shift+F10</kbd>, considering that `KEY_EVENT_RECORD{0}` isn't really
+valid anyways.
+
+#### Remoting `INPUT_RECORD`s
+
+A potential area of concern is the fact that VT sequences are often used to
+remote input from one machine to another. For example, a terminal might be
+running on machine A, and the conpty at the end of the pipe (which is running
+the client application) might be running on another machine B.
+
+If these two machines have different keyboard layouts, then it's possible that
+the `INPUT_RECORD`s synthesized by the terminal on machine A won't really be
+valid on machine B. It's possible that machine B has a different mapping of scan
+codes \<-> characters. A client that's running on machine B that uses win32 APIs
+to try and infer the vkey, scancode, or character from the other information in
+the `INPUT_RECORD` might end up synthesizing the wrong values.
+
+At the time of writing, we're not really sure what a good solution to this
+problem would be. Client applications that use `win32-input-mode` should be
+aware of this, and be written with the understanding that these values are
+coming from the terminal's machine, which might not necessarily be the local
+machine.
+
 ### Performance, Power, and Efficiency
 
 _(no change expected)_
@@ -373,6 +416,8 @@ _(no change expected)_
   also use win32-like input in the future.
 
 ## Options Considered
+
+_disclaimer: these notes are verbatim from my research notes in [#4999]_.
 
 ### Create our own format for `INPUT_RECORD`s
 
@@ -398,7 +443,6 @@ _(no change expected)_
 * We'd be defining our own VT sequences for these, which we've never done
   before. This was _inevitable_, however, this is still the first time we'd be
   doing this.
-* Something about Microsoft extending well-defined protocols being bad 😆
 * By having the Terminal send all input as _this protocol_, VT Input passthrough
   to apps that want VT input won't work anymore for the Terminal. That's _okay_
 
@@ -409,11 +453,12 @@ _(no change expected)_
 * Not terribly difficult to decode
 * Unique from anything else we'd be processing, as it's an APC sequence
   (`\x1b_`)
-* From their docs: > All printable key presses without modifier keys are sent
+* From their docs:
+  > All printable key presses without modifier keys are sent
   just as in the normal mode. ... For non printable keys and key combinations
   including one or more modifiers, an escape sequence encoding the key event is
   sent
-   - I think like this. ASCII and other keyboard layout chars (things that would
+   - I think I like this. ASCII and other keyboard layout chars (things that would
      hit `SendChar`) would still just come through as the normal char.
 
 #### Cons:
