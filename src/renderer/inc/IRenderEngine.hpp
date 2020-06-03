@@ -65,7 +65,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept { return S_FALSE; };
+        [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,

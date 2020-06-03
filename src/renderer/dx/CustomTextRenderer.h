@@ -18,7 +18,7 @@ namespace Microsoft::Console::Render
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
-                       const std::optional<CursorOptions> cursorInfo,
+                       const std::optional<CursorOptions>& cursorInfo,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
         {
             this->renderTarget = renderTarget;

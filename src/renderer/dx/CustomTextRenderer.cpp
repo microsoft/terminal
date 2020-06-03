@@ -238,10 +238,10 @@ using namespace Microsoft::Console::Render;
 // - firstPass - true if we're being called before the text is drawn, false afterwards.
 // Return Value:
 // - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
-[[nodiscard]] HRESULT _drawCursorHelper(::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext,
-                                        D2D1_RECT_F textRunBounds,
-                                        const DrawingContext& drawingContext,
-                                        const bool firstPass)
+[[nodiscard]] HRESULT _drawCursor(ID2D1DeviceContext* d2dContext,
+                                  D2D1_RECT_F textRunBounds,
+                                  const DrawingContext& drawingContext,
+                                  const bool firstPass)
 try
 {
     if (!drawingContext.cursorInfo.has_value())
@@ -259,7 +259,14 @@ try
 
     // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
     // cursor draw on top again.
-    if (!firstPass)
+
+    // Only draw the filled box in the first pass. All the other cursors should
+    // be drawn in the second pass.
+    //           | type==FullBox |
+    // firstPass |   T   |   F   |
+    //    T      | draw  |  skip |
+    //    F      | skip  |  draw |
+    if ((options.cursorType == CursorType::FullBox) != firstPass)
     {
         return S_FALSE;
     }
@@ -432,7 +439,7 @@ CATCH_RETURN()
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
-    RETURN_IF_FAILED(_drawCursorHelper(d2dContext, rect, *drawingContext, true));
+    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, true));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
@@ -622,7 +629,7 @@ CATCH_RETURN()
                                             clientDrawingEffect));
     }
 
-    RETURN_IF_FAILED(_drawCursorHelper(d2dContext, rect, *drawingContext, false));
+    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, false));
 
     return S_OK;
 }

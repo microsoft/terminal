@@ -843,15 +843,15 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 }
 
 // Routine Description:
-// - Retrieves information about the cursor, and pack it into a CursorOptions
-//   that the render engine can use for painting the cursor.
+// - Retrieve information about the cursor, and pack it into a CursorOptions
+//   which the render engine can use for painting the cursor.
 // - If the cursor is "off", or the cursor is out of bounds of the viewport,
 //   this will return nullopt (indicating the cursor shouldn't be painted this
 //   frame)
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if the cursor is off our out-of-frame, otherwise a CursorOptions
+// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
 [[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
 {
     if (_pData->IsCursorVisible())
