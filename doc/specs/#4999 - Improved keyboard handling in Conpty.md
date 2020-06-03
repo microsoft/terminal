@@ -79,7 +79,7 @@ Keys that we definitely need to support, that don't have unique VT sequences:
 ### Inspiration
 
 The design we've settled upon is one that's highly inspired by a few precedents:
-* `Application Cursor Keys (DECCKM)` is a long-supported VT sequences which a
+* `Application Cursor Keys (DECCKM)` is a long-supported VT sequence which a
   client application can use to request a different input format from the
   Terminal. This is the DECSET sequence `^[[?1h`/`^[[?1l` (for enable/disable,
   respectively). This changes the sequences sent by keys like the Arrow keys
@@ -90,7 +90,7 @@ The design we've settled upon is one that's highly inspired by a few precedents:
   input. Their "full mode" contains much more information when keys are pressed
   or released (though, less than a full `INPUT_RECORD` worth of data). Instead
   of input being sent to the client as a CSI or SS3 sequence, this `kitty` mode
-  uses "Application Program-Command" (or "APC) sequences , prefixed with `^[_`.
+  uses "Application Program-Command" (or "APC") sequences , prefixed with `^[_`.
 * [iTerm2](https://www.iterm2.com/documentation-escape-codes.html) has a region
   of OSC's that they've carved for themselves all starting with the same initial
   parameter, `1337`. They then have a number of commands that all use the second
@@ -279,7 +279,7 @@ specified above, the above sequences could each be shortened to the following.
 `WT -> conpty[1] -> wsl`
 
 * Conpty[1] will ask for `win32-input-mode` from the Windows Terminal when
-  conpty[1] first boots up. Conpty will _always_ as for win32-input-mode -
+  conpty[1] first boots up. Conpty will _always_ ask for win32-input-mode -
   Terminals that _don't_ support this mode will ignore this sequence on startup.
 * When the user types keys in Windows Terminal, WT will translate them into
   win32 sequences and send them to conpty[1]
