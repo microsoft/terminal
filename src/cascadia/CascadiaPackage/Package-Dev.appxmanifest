@@ -11,6 +11,7 @@
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   IgnorableNamespaces="uap mp rescap">
 
   <Identity
@@ -62,6 +63,12 @@
             <desktop:ExecutionAlias Alias="wtd.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="StartTerminalOnLoginTask"
+            Enabled="false"
+            DisplayName="ms-resource:AppNameDev" />
+        </uap5:Extension>
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>

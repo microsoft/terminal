@@ -715,6 +715,19 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
+//   An actual VT52 terminal would typically identify itself with ESC / K.
+//   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::Vt52DeviceAttributes()
+{
+    return _WriteResponse(L"\x1b/Z");
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>
@@ -956,6 +969,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
+    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        success = SetAnsiMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
@@ -1127,6 +1143,20 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
+{
+    // When an attempt is made to update the mode, the designated character sets
+    // need to be reset to defaults, even if the mode doesn't actually change.
+    _termOutput = {};
+
+    return _pConApi->PrivateSetAnsiMode(ansiMode);
 }
 
 // Routine Description:

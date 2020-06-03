@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {
-        _ToggleFullscreen();
+        ToggleFullscreen();
         args.Handled(true);
     }
 }
