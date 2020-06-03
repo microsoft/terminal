@@ -779,7 +779,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
             }
 
-            // Step 5: Pivot back to (20,10) wtih Shift+Click
+            // Step 5: Pivot back to (20,10) with Shift+Click
             {
                 term.SetSelectionEnd({ 20, 10 }, ::Terminal::SelectionExpansionMode::Cell);
 

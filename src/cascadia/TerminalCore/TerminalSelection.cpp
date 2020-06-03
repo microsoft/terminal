@@ -158,7 +158,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     if (newExpansionMode.has_value())
     {
         // shift-click operations only expand the target side
-        auto &anchorToExpand = targetStart ? _selection->start : _selection->end;
+        auto& anchorToExpand = targetStart ? _selection->start : _selection->end;
         anchorToExpand = targetStart ? expandedAnchors.first : expandedAnchors.second;
 
         // the other anchor should then become the pivot (we don't expand it)
