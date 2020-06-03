@@ -50,9 +50,6 @@
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
-    <ClCompile Include="../JsonUtils.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
