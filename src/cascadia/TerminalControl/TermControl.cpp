@@ -994,19 +994,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
-                // performs a double/triple click selection
-                auto multiClickSelection = [this, terminalPosition, shiftEnabled](::Terminal::SelectionExpansionMode mode) {
-                    if (shiftEnabled && _terminal->IsSelectionActive())
-                    {
-                        _terminal->SetSelectionEnd(terminalPosition, mode);
-                    }
-                    else
-                    {
-                        _terminal->MultiClickSelection(terminalPosition, mode);
-                    }
-                    _selectionNeedsToBeCopied = true;
-                };
-
                 // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
                 // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
                 const unsigned int MAX_CLICK_COUNT = 3;
@@ -1014,11 +1001,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (multiClickMapper == 3)
                 {
-                    multiClickSelection(::Terminal::SelectionExpansionMode::Line);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    }
+                    else
+                    {
+                        _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    }
+                    _selectionNeedsToBeCopied = true;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    multiClickSelection(::Terminal::SelectionExpansionMode::Word);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    }
+                    else
+                    {
+                        _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    }
+                    _selectionNeedsToBeCopied = true;
                 }
                 else
                 {
