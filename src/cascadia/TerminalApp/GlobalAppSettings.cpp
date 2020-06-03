@@ -377,26 +377,6 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to its corresponding string
-//   value.
-// Arguments:
-// - theme: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CursorStyle
-std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
-{
-    switch (theme)
-    {
-    case ElementTheme::Light:
-        return LightThemeValue;
-    case ElementTheme::Dark:
-        return DarkThemeValue;
-    default:
-        return SystemThemeValue;
-    }
-}
-
-// Method Description:
 // - Helper function for converting the initial position string into
 //   2 coordinate values. We allow users to only provide one coordinate,
 //   thus, we use comma as the separator:
@@ -446,33 +426,6 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
 }
 
 // Method Description:
-// - Helper function for converting X/Y initial positions to a string
-//   value.
-// Arguments:
-// - initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
-// Return Value:
-// - The concatenated string for the the current initialX and initialY
-std::string GlobalAppSettings::_SerializeInitialPosition(const std::optional<int32_t>& initialX,
-                                                         const std::optional<int32_t>& initialY) noexcept
-{
-    std::string serializedInitialPos = "";
-    if (initialX.has_value())
-    {
-        serializedInitialPos += std::to_string(initialX.value());
-    }
-
-    serializedInitialPos += ", ";
-
-    if (initialY.has_value())
-    {
-        serializedInitialPos += std::to_string(initialY.value());
-    }
-
-    return serializedInitialPos;
-}
-
-// Method Description:
 // - Helper function for converting the user-specified launch mode
 //   to a LaunchMode enum value
 // Arguments:
@@ -494,26 +447,6 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
 }
 
 // Method Description:
-// - Helper function for converting a LaunchMode to its corresponding string
-//   value.
-// Arguments:
-// - launchMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given LaunchMode
-std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launchMode) noexcept
-{
-    switch (launchMode)
-    {
-    case LaunchMode::MaximizedMode:
-        return MaximizedLaunchModeValue;
-    case LaunchMode::FullscreenMode:
-        return FullscreenLaunchModeValue;
-    default:
-        return DefaultLaunchModeValue;
-    }
-}
-
-// Method Description:
 // - Helper function for converting the user-specified tab width
 //   to a TabViewWidthMode enum value
 // Arguments:
@@ -528,24 +461,6 @@ TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWi
     }
     // default behavior for invalid data or EqualTabWidthValue
     return TabViewWidthMode::Equal;
-}
-
-// Method Description:
-// - Helper function for converting a TabViewWidthMode to its corresponding string
-//   value.
-// Arguments:
-// - tabWidthMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given TabWidthMode
-std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMode tabWidthMode) noexcept
-{
-    switch (tabWidthMode)
-    {
-    case TabViewWidthMode::SizeToContent:
-        return TitleLengthTabWidthModeValue;
-    default:
-        return EqualTabWidthModeValue;
-    }
 }
 
 // Method Description:

@@ -8,8 +8,9 @@ EXPCMDSTATE
 href
 IBox
 IBind
-ICustom
 IClass
+IComparable
+ICustom
 IExplorer
 IMap
 IObject
