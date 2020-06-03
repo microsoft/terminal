@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
         // so this setting is overridden to false no matter what the preference is.
         if (_isUwp)
         {
-            _settings->GlobalSettings().SetShowTabsInTitlebar(false);
+            _settings->GlobalSettings().ShowTabsInTitlebar(false);
         }
 
         _root->SetSettings(_settings, false);
@@ -255,14 +255,14 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
-        _ApplyTheme(_settings->GlobalSettings().GetTheme());
+        _ApplyTheme(_settings->GlobalSettings().Theme());
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
             TraceLoggingDescription("Event emitted when the application is started"),
-            TraceLoggingBool(_settings->GlobalSettings().GetShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingBool(_settings->GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -308,7 +308,7 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings->GlobalSettings().GetTheme() };
+            auto theme{ _settings->GlobalSettings().Theme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
@@ -490,7 +490,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().ShowTabsInTitlebar())
         {
             // If we're showing the tabs in the titlebar, we need to use a
             // TitlebarControl here to calculate how much space to reserve.
@@ -504,7 +504,7 @@ namespace winrt::TerminalApp::implementation
             titlebar.Measure({ SHRT_MAX, SHRT_MAX });
             proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
         }
-        else if (_settings->GlobalSettings().GetAlwaysShowTabs())
+        else if (_settings->GlobalSettings().AlwaysShowTabs())
         {
             // Otherwise, let's use a TabRowControl to calculate how much extra
             // space we'll need.
@@ -542,7 +542,7 @@ namespace winrt::TerminalApp::implementation
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
-        const auto valueFromSettings = _settings->GlobalSettings().GetLaunchMode();
+        const auto valueFromSettings = _settings->GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
@@ -567,18 +567,11 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
-
-        auto initialX = _settings->GlobalSettings().GetInitialX();
-        auto initialY = _settings->GlobalSettings().GetInitialY();
-        if (initialX.has_value())
-        {
-            point.X = gsl::narrow_cast<float>(initialX.value());
-        }
-        if (initialY.has_value())
-        {
-            point.Y = gsl::narrow_cast<float>(initialY.value());
-        }
+        const auto initialPosition{ _settings->GlobalSettings().InitialPosition() };
+        winrt::Windows::Foundation::Point point{
+            /* X */ gsl::narrow_cast<float>(initialPosition.x.value_or(defaultInitialX)),
+            /* Y */ gsl::narrow_cast<float>(initialPosition.y.value_or(defaultInitialY))
+        };
 
         return point;
     }
@@ -591,7 +584,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetTheme();
+        return _settings->GlobalSettings().Theme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -602,7 +595,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetShowTabsInTitlebar();
+        return _settings->GlobalSettings().ShowTabsInTitlebar();
     }
 
     // Method Description:
@@ -772,7 +765,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(_root->Dispatcher());
 
         // Refresh the UI theme
-        _ApplyTheme(_settings->GlobalSettings().GetTheme());
+        _ApplyTheme(_settings->GlobalSettings().Theme());
     }
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()

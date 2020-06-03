@@ -61,24 +61,11 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes{},
     _unparsedDefaultProfile{ std::nullopt },
     _defaultProfile{},
-    _alwaysShowTabs{ true },
-    _confirmCloseAllTabs{ true },
-    _initialRows{ DEFAULT_ROWS },
-    _initialCols{ DEFAULT_COLS },
-    _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
-    _initialX{},
-    _initialY{},
-    _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ true },
-    _theme{ ElementTheme::Default },
-    _tabWidthMode{ TabViewWidthMode::Equal },
-    _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
-    _copyOnSelect{ false },
-    _copyFormatting{ false },
-    _launchMode{ LaunchMode::DefaultMode },
-    _forceFullRepaintRendering{ false },
-    _softwareRendering{ false },
-    _debugFeatures{ debugFeaturesDefault }
+    _InitialRows{ DEFAULT_ROWS },
+    _InitialCols{ DEFAULT_COLS },
+    _RowsToScroll{ DEFAULT_ROWSTOSCROLL },
+    _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
+    _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
 }
 
@@ -96,20 +83,20 @@ const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColor
     return _colorSchemes;
 }
 
-void GlobalAppSettings::SetDefaultProfile(const GUID defaultProfile) noexcept
+void GlobalAppSettings::DefaultProfile(const GUID defaultProfile) noexcept
 {
     _unparsedDefaultProfile.reset();
     _defaultProfile = defaultProfile;
 }
 
-GUID GlobalAppSettings::GetDefaultProfile() const
+GUID GlobalAppSettings::DefaultProfile() const
 {
     // If we have an unresolved default profile, we should likely explode.
     THROW_HR_IF(E_INVALIDARG, _unparsedDefaultProfile.has_value());
     return _defaultProfile;
 }
 
-std::wstring GlobalAppSettings::GetUnparsedDefaultProfile() const
+std::wstring GlobalAppSettings::UnparsedDefaultProfile() const
 {
     return _unparsedDefaultProfile.value();
 }
@@ -118,128 +105,6 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
     return *_keybindings;
 }
-
-bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
-{
-    return _alwaysShowTabs;
-}
-
-void GlobalAppSettings::SetAlwaysShowTabs(const bool showTabs) noexcept
-{
-    _alwaysShowTabs = showTabs;
-}
-
-bool GlobalAppSettings::GetShowTitleInTitlebar() const noexcept
-{
-    return _showTitleInTitlebar;
-}
-
-void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept
-{
-    _showTitleInTitlebar = showTitleInTitlebar;
-}
-
-ElementTheme GlobalAppSettings::GetTheme() const noexcept
-{
-    return _theme;
-}
-
-void GlobalAppSettings::SetTheme(const ElementTheme theme) noexcept
-{
-    _theme = theme;
-}
-
-TabViewWidthMode GlobalAppSettings::GetTabWidthMode() const noexcept
-{
-    return _tabWidthMode;
-}
-
-void GlobalAppSettings::SetTabWidthMode(const TabViewWidthMode tabWidthMode)
-{
-    _tabWidthMode = tabWidthMode;
-}
-
-std::wstring GlobalAppSettings::GetWordDelimiters() const noexcept
-{
-    return _wordDelimiters;
-}
-
-void GlobalAppSettings::SetWordDelimiters(const std::wstring wordDelimiters) noexcept
-{
-    _wordDelimiters = wordDelimiters;
-}
-
-bool GlobalAppSettings::GetCopyOnSelect() const noexcept
-{
-    return _copyOnSelect;
-}
-
-void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
-{
-    _copyOnSelect = copyOnSelect;
-}
-
-bool GlobalAppSettings::GetCopyFormatting() const noexcept
-{
-    return _copyFormatting;
-}
-
-LaunchMode GlobalAppSettings::GetLaunchMode() const noexcept
-{
-    return _launchMode;
-}
-
-void GlobalAppSettings::SetLaunchMode(const LaunchMode launchMode)
-{
-    _launchMode = launchMode;
-}
-bool GlobalAppSettings::GetConfirmCloseAllTabs() const noexcept
-{
-    return _confirmCloseAllTabs;
-}
-
-void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept
-{
-    _confirmCloseAllTabs = confirmCloseAllTabs;
-}
-
-bool GlobalAppSettings::GetForceFullRepaintRendering() noexcept
-{
-    return _forceFullRepaintRendering;
-}
-
-bool GlobalAppSettings::GetSoftwareRendering() noexcept
-{
-    return _softwareRendering;
-}
-
-bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
-{
-    return _debugFeatures;
-}
-
-#pragma region ExperimentalSettings
-bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
-{
-    return _showTabsInTitlebar;
-}
-
-void GlobalAppSettings::SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept
-{
-    _showTabsInTitlebar = showTabsInTitlebar;
-}
-
-std::optional<int32_t> GlobalAppSettings::GetInitialX() const noexcept
-{
-    return _initialX;
-}
-
-std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
-{
-    return _initialY;
-}
-
-#pragma endregion
 
 // Method Description:
 // - Applies appropriate settings from the globals into the given TerminalSettings.
@@ -250,14 +115,14 @@ std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
 void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexcept
 {
     settings.KeyBindings(GetKeybindings());
-    settings.InitialRows(_initialRows);
-    settings.InitialCols(_initialCols);
-    settings.RowsToScroll(_rowsToScroll);
+    settings.InitialRows(_InitialRows);
+    settings.InitialCols(_InitialCols);
+    settings.RowsToScroll(_RowsToScroll);
 
-    settings.WordDelimiters(_wordDelimiters);
-    settings.CopyOnSelect(_copyOnSelect);
-    settings.ForceFullRepaintRendering(_forceFullRepaintRendering);
-    settings.SoftwareRendering(_softwareRendering);
+    settings.WordDelimiters(_WordDelimiters);
+    settings.CopyOnSelect(_CopyOnSelect);
+    settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
+    settings.SoftwareRendering(_SoftwareRendering);
 }
 
 // Method Description:
@@ -280,55 +145,55 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
     }
 
-    JsonUtils::GetBool(json, AlwaysShowTabsKey, _alwaysShowTabs);
+    JsonUtils::GetBool(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
-    JsonUtils::GetBool(json, ConfirmCloseAllKey, _confirmCloseAllTabs);
+    JsonUtils::GetBool(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
 
-    JsonUtils::GetInt(json, InitialRowsKey, _initialRows);
+    JsonUtils::GetInt(json, InitialRowsKey, _InitialRows);
 
-    JsonUtils::GetInt(json, InitialColsKey, _initialCols);
+    JsonUtils::GetInt(json, InitialColsKey, _InitialCols);
 
     if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
     {
         //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
         if (rowsToScroll.isInt())
         {
-            _rowsToScroll = rowsToScroll.asInt();
+            _RowsToScroll = rowsToScroll.asInt();
         }
         else
         {
-            _rowsToScroll = 0;
+            _RowsToScroll = 0;
         }
     }
 
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
-        _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX, _initialY);
+        _ParseInitialPosition(initialPosition.asString(), _InitialPosition);
     }
 
-    JsonUtils::GetBool(json, ShowTitleInTitlebarKey, _showTitleInTitlebar);
+    JsonUtils::GetBool(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
-    JsonUtils::GetBool(json, ShowTabsInTitlebarKey, _showTabsInTitlebar);
+    JsonUtils::GetBool(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
 
-    JsonUtils::GetWstring(json, WordDelimitersKey, _wordDelimiters);
+    JsonUtils::GetWstring(json, WordDelimitersKey, _WordDelimiters);
 
-    JsonUtils::GetBool(json, CopyOnSelectKey, _copyOnSelect);
+    JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
 
-    JsonUtils::GetBool(json, CopyFormattingKey, _copyFormatting);
+    JsonUtils::GetBool(json, CopyFormattingKey, _CopyFormatting);
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
-        _launchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
+        _LaunchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
     }
 
     if (auto theme{ json[JsonKey(ThemeKey)] })
     {
-        _theme = _ParseTheme(GetWstringFromJson(theme));
+        _Theme = _ParseTheme(GetWstringFromJson(theme));
     }
 
     if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
     {
-        _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
+        _TabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
     }
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
@@ -345,12 +210,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
-    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);
+    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
 
-    JsonUtils::GetBool(json, SoftwareRenderingKey, _softwareRendering);
+    JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
 
     // GetBool will only override the current value if the key exists
-    JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
+    JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
@@ -387,17 +252,15 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 //   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
 // Arguments:
 // - initialPosition: the initial position string from json
-//   initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
+//   ret: reference to a struct whose optionals will be populated
 // Return Value:
 // - None
-void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPosition,
-                                              std::optional<int32_t>& initialX,
-                                              std::optional<int32_t>& initialY) noexcept
+void GlobalAppSettings::_ParseInitialPosition(const std::string& initialPosition,
+                                              LaunchPosition& ret) noexcept
 {
-    const wchar_t singleCharDelim = L',';
-    std::wstringstream tokenStream(initialPosition);
-    std::wstring token;
+    static constexpr char singleCharDelim = ',';
+    std::stringstream tokenStream(initialPosition);
+    std::string token;
     uint8_t initialPosIndex = 0;
 
     // Get initial position values till we run out of delimiter separated values in the stream
@@ -410,12 +273,12 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
             int32_t position = std::stoi(token);
             if (initialPosIndex == 0)
             {
-                initialX.emplace(position);
+                ret.x.emplace(position);
             }
 
             if (initialPosIndex == 1)
             {
-                initialY.emplace(position);
+                ret.y.emplace(position);
             }
         }
         catch (...)
