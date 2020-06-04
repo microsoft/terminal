@@ -7,7 +7,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:local="using:TerminalApp"
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
     mc:Ignorable="d">
 
     <Grid.ColumnDefinitions>
@@ -21,12 +21,11 @@ the MIT License. See LICENSE in the project root for license information. -->
         <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
-
-    <!-- TODO: ThemeShadow is only on 18362. I'm sure there's a way of doing this conditionally. -->
+    <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit adds it
+    conditionally -->
     <Grid.Resources>
-        <ThemeShadow x:Name="CommandPaletteShadow" />
+        <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
     </Grid.Resources>
-
 
     <Grid
         x:Name="ShadowBackdrop"
@@ -46,7 +45,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         Grid.Row="0"
         MaxWidth="400"
         MaxHeight="400"
-        Shadow="{StaticResource CommandPaletteShadow}"
+        Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
 
@@ -63,7 +62,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             TextChanged="_filterTextChanged"
             KeyDown="_keyDownHandler"
             Text="">
-
         </TextBox>
 
         <ListView
@@ -74,7 +72,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             SelectionMode="Single"
             CanReorderItems="False"
             AllowDrop="False"
-
             ItemsSource="{x:Bind FilteredActions}">
 
             <ItemsControl.ItemTemplate>
@@ -83,14 +80,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- TODO: Add Icon to command palette entries -->
                         <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
                     </StackPanel>
-
-                    <!-- This worked _alright_, but the icon didn't appear, and
-                    there was some weird hover behavior -->
-                    <!-- <MenuFlyoutItem Text="{x:Bind Name, Mode=OneWay}">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE72D;"/>
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem> -->
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ListView>

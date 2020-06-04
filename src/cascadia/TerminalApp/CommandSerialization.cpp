@@ -17,25 +17,18 @@ static constexpr std::string_view ArgsKey{ "args" };
 
 namespace winrt::TerminalApp::implementation
 {
-    // Method Description:
-    // - Deserialize an Command from the `json` object. The json object should
-    //   contain a "name" and "action", and optionally an "icon".
-    //   * "name": string|object - the name of the command to display in the
-    //     command palette. If this is an object, look for the "key" property,
-    //     and try to load the string from our resources instead.
-    //   * "action": string|object - A ShortcutAction, either as a name or as an
-    //     ActionAndArgs serialization. See ActionAndArgs::FromJson for details.
-    //     If this is null, we'll remove this command from the list of commands.
-    //   * "iconPath": string? - the path to an icon to use with this command entry
+    // Function Description:
+    // - attempt to get the name of this command from the provided json object.
+    //   * If the "name" property is a string, return that value.
+    //   * If the "name" property is an object, attempt to lookup the string
+    //     resource specified by the "key" property, to support localizable
+    //     command names.
     // Arguments:
-    // - json: the Json::Value to deserialize into a Command
+    // - json: The Json::Value representing the command object we should get the name for.
     // Return Value:
-    // - the newly constructed Command object.
-    winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+    // - the empty string if we couldn't find a name, otherwise the command's name.
+    winrt::hstring _nameFromJson(const Json::Value& json)
     {
-        auto result = winrt::make_self<Command>();
-
         if (const auto name{ json[JsonKey(NameKey)] })
         {
             if (name.isObject())
@@ -49,7 +42,7 @@ namespace winrt::TerminalApp::implementation
                         const auto resourceKey = GetWstringFromJson(keyJson);
                         if (HasLibraryResourceWithName(resourceKey))
                         {
-                            result->_setName(GetLibraryResourceString(resourceKey));
+                            return GetLibraryResourceString(resourceKey);
                         }
                     }
                 }
@@ -57,9 +50,35 @@ namespace winrt::TerminalApp::implementation
             }
             else if (name.isString())
             {
-                result->_setName(winrt::to_hstring(name.asString()));
+                return winrt::to_hstring(name.asString());
             }
         }
+
+        return L"";
+    }
+
+    // Method Description:
+    // - Deserialize an Command from the `json` object. The json object should
+    //   contain a "name" and "action", and optionally an "icon".
+    //   * "name": string|object - the name of the command to display in the
+    //     command palette. If this is an object, look for the "key" property,
+    //     and try to load the string from our resources instead.
+    //   * "action": string|object - A ShortcutAction, either as a name or as an
+    //     ActionAndArgs serialization. See ActionAndArgs::FromJson for details.
+    //     If this is null, we'll remove this command from the list of commands.
+    //   * "iconPath": string? - the path to an icon to use with this command entry
+    // Arguments:
+    // - json: the Json::Value to deserialize into a Command
+    // - warnings: If there were any warnings during parsing, they'll be
+    //   appended to this vector.
+    // Return Value:
+    // - the newly constructed Command object.
+    winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
+                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+    {
+        auto result = winrt::make_self<Command>();
+
+        result->_setName(_nameFromJson(json));
 
         if (result->_Name.empty())
         {
@@ -82,7 +101,9 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                // TODO: { name: "foo", action: null } should _remove_ the "foo" command.
+                // Something like
+                //      { name: "foo", action: null }
+                // will _remove_ the "foo" command, by returning null here.
                 return nullptr;
             }
         }
@@ -90,12 +111,22 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
+    // Function Description:
+    // - Attempt to parse all the json objects in `json` into new Command
+    //   objects, and add them to the map of commands.
+    // - If any parsed command has
+    //   the same Name as an existing command in commands, the new one will
+    //   layer on top of the existing one.
+    // Arguments:
+    // - commands: a map of Name->Command which new commands should be layered upon.
+    // - json: A Json::Value containing an array of serialized commands
+    // Return Value:
+    // - A vector containing any warnings detected while parsing
     std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                         const Json::Value& json)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
 
-        // TODO: Be smart about layering. Override commands with the same name.
         for (const auto& value : json)
         {
             if (value.isObject())
@@ -105,11 +136,19 @@ namespace winrt::TerminalApp::implementation
                     auto result = Command::FromJson(value, warnings);
                     if (result)
                     {
+                        // Override commands with the same name
                         commands.insert_or_assign(result->Name(), *result);
                     }
                     else
                     {
-                        commands.erase(result->Name());
+                        // If there wasn't a parsed command, then try to get the
+                        // name from the json blob. If that name currently
+                        // exists in our list of commands, we should remove it.
+                        const auto name = _nameFromJson(json);
+                        if (!name.empty())
+                        {
+                            commands.erase(name);
+                        }
                     }
                 }
                 CATCH_LOG();

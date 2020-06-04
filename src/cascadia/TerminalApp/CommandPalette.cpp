@@ -21,17 +21,21 @@ namespace winrt::TerminalApp::implementation
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
-        // Hook up the shadow on the command palette to the backdrop that will
-        // actually show it. This needs to be done at runtime.
-        CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
-        // "raise" the command palette up by 16 units, so it will cast a shadow.
-        Backdrop().Translation({ 0, 0, 16 });
+        if (CommandPaletteShadow())
+        {
+            // Hook up the shadow on the command palette to the backdrop that
+            // will actually show it. This needs to be done at runtime, and only
+            // if the shadow actually exists. ThemeShadow isn't supported below
+            // version 18362.
+            CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
+            // "raise" the command palette up by 16 units, so it will cast a shadow.
+            Backdrop().Translation({ 0, 0, 16 });
+        }
     }
 
     // Method Description:
     // - Toggles the visibility of the command palette. This will auto-focus the
     //   input box within the palette.
-    //
     // - TODO GH#TODO: When we add support for commandline mode, accept a parameter here
     //   for which mode we should enter in.
     void CommandPalette::ToggleVisibility()
