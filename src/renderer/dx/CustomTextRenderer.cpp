@@ -238,7 +238,7 @@ using namespace Microsoft::Console::Render;
 // - firstPass - true if we're being called before the text is drawn, false afterwards.
 // Return Value:
 // - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
-[[nodiscard]] HRESULT _drawCursor(ID2D1DeviceContext* d2dContext,
+[[nodiscard]] HRESULT _drawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
                                   D2D1_RECT_F textRunBounds,
                                   const DrawingContext& drawingContext,
                                   const bool firstPass)
