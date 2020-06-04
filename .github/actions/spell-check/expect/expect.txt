@@ -509,6 +509,7 @@ DECAWM
 DECCKM
 DECCOLM
 decf
+DECEKBD
 DECKPAM
 DECKPM
 DECKPNM
@@ -525,6 +526,7 @@ deconstructed
 DECPCTERM
 DECRC
 DECRLM
+DECRQM
 DECRST
 DECSASD
 DECSC
@@ -537,6 +539,7 @@ DECSEL
 DECSET
 DECSLRM
 DECSMBV
+DECSMKR
 DECSR
 decstandar
 DECSTBM
@@ -1163,6 +1166,7 @@ kcub
 kcud
 kcuf
 kcuu
+Kd
 keith
 kernelbase
 kernelbasestaging
@@ -1210,6 +1214,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libtickit
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1321,6 +1326,7 @@ MAKELONG
 MAKELPARAM
 MAKELRESULT
 malloc
+manpage
 MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
@@ -1911,6 +1917,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 renderengine
 rendersize
 reparenting
