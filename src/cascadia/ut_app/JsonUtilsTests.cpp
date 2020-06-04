@@ -286,7 +286,7 @@ namespace TerminalAppUnitTests
     // we're going to focus on some type-specific tests and use the returning
     // versions.
 
-    template <typename TExpected, typename TJson>
+    template<typename TExpected, typename TJson>
     static void TryBasicType(TExpected&& expected, TJson&& json)
     {
         Json::Value jsonObject{ json };
@@ -319,7 +319,6 @@ namespace TerminalAppUnitTests
 
         TryBasicType(testGuid, testGuidString);
     }
-
 
     void JsonUtilsTests::BasicTypeWithCustomConverter()
     {
