@@ -164,6 +164,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleCommandPaletteHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ExecuteCommandline:
+        {
+            _ExecuteCommandlineHandlers(*this, *eventArgs);
+            break;
+        }
         default:
             return false;
         }

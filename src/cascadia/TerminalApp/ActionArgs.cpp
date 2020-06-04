@@ -14,3 +14,4 @@
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
+#include "ExecuteCommandlineArgs.g.cpp"

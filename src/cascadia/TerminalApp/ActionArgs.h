@@ -14,6 +14,7 @@
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SplitPaneArgs.g.h"
+#include "ExecuteCommandlineArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -377,6 +378,35 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
             {
                 args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
+            }
+            return { *args, {} };
+        }
+    };
+
+    struct ExecuteCommandlineArgs : public ExecuteCommandlineArgsT<ExecuteCommandlineArgs>
+    {
+        ExecuteCommandlineArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Commandline, false);
+
+        static constexpr std::string_view CommandlineKey{ "commandline" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ExecuteCommandlineArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Commandline == _Commandline;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ExecuteCommandlineArgs>();
+            if (auto cmdline{ json[JsonKey(CommandlineKey)] })
+            {
+                args->_Commandline = cmdline.asString();
             }
             return { *args, {} };
         }
