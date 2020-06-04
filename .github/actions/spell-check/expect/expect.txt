@@ -906,6 +906,7 @@ grep
 Greyscale
 gridline
 groupbox
+gset
 gsl
 GTP
 guc
@@ -1530,6 +1531,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
+NRCS
 NSTATUS
 ntapi
 ntcon
@@ -2030,6 +2032,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
+SCS
 scursor
 sddl
 sdeleted
@@ -2444,6 +2447,7 @@ untimes
 UPDATEDISPLAY
 UPDOWN
 UPKEY
+UPSS
 upvote
 uri
 url

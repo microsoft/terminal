@@ -99,10 +99,16 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ASB_AlternateScreenBuffer = 1049
     };
 
-    enum VTCharacterSets : wchar_t
+    namespace CharacterSets
     {
-        DEC_LineDrawing = L'0',
-        USASCII = L'B'
+        constexpr auto DecSpecialGraphics = std::make_pair(L'0', L'\0');
+        constexpr auto ASCII = std::make_pair(L'B', L'\0');
+    }
+
+    enum CodingSystem : wchar_t
+    {
+        ISO2022 = L'@',
+        UTF8 = L'G'
     };
 
     enum TabClearType : unsigned short

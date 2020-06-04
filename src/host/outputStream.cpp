@@ -554,6 +554,17 @@ bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 }
 
 // Routine Description:
+// - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - codepage - the new output codepage of the console.
+// Return Value:
+// - true if successful (see DoSrvSetConsoleOutputCodePage). false otherwise.
+bool ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+{
+    return SUCCEEDED(DoSrvSetConsoleOutputCodePage(codepage));
+}
+
+// Routine Description:
 // - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - codepage - receives the outputCP of the console.
