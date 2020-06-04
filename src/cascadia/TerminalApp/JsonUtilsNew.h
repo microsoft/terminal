@@ -230,6 +230,61 @@ namespace TerminalApp::JsonUtils
         }
     };
 
+    // FlagMapper is EnumMapper, but it works for bitfields.
+    // It supports a string (single flag) or an array of strings.
+    // Does an O(n*m) search; meant for small search spaces!
+    template<typename T, typename TBase>
+    struct FlagMapper
+    {
+        using pair_type = std::pair<std::string_view, T>;
+        const T* _find(const std::string_view name) const
+        {
+            for (const auto& pair : TBase::mappings)
+            {
+                if (pair.first == name)
+                {
+                    return &pair.second;
+                }
+            }
+            return nullptr;
+        }
+
+        T FromJson(const Json::Value& json)
+        {
+            if (json.isString())
+            {
+                const auto name{ Detail::GetStringView(json) };
+                const auto found{ _find(name) };
+                if (found)
+                {
+                    return *found;
+                }
+            }
+            else if (json.isArray())
+            {
+                T value{};
+                for (const auto& element : json)
+                {
+                    const auto name{ Detail::GetStringView(element) };
+                    const auto found{ _find(name) };
+                    if (found)
+                    {
+                        value |= *found;
+                    }
+                }
+                return value;
+            }
+
+            // If we didn't recognize any flags, the default is _NO FLAGS_
+            return static_cast<T>(0);
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isString() || json.isArray();
+        }
+    };
+
     // Method Description:
     // - Helper that will populate a reference with a value converted from a json object.
     // Arguments:
@@ -369,6 +424,11 @@ namespace TerminalApp::JsonUtils
     template<>                                                      \
     struct ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__> : \
         public ::TerminalApp::JsonUtils::EnumMapper<__VA_ARGS__, ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__>>
+
+#define JSON_FLAG_MAPPER(...)                                       \
+    template<>                                                      \
+    struct ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__> : \
+        public ::TerminalApp::JsonUtils::FlagMapper<__VA_ARGS__, ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__>>
 
 #define JSON_MAPPINGS(Count) \
     static constexpr std::array<pair_type, Count> mappings
