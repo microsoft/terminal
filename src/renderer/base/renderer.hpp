@@ -127,6 +127,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
 
+        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
+        [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
+
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;

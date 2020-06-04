@@ -139,6 +139,9 @@ try
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
+    // C. Prepare the engine with additional information before we start drawing.
+    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
+
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
@@ -880,12 +883,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 }
 
 // Routine Description:
-// - Paint helper to draw the cursor within the buffer.
+// - Retrieve information about the cursor, and pack it into a CursorOptions
+//   which the render engine can use for painting the cursor.
+// - If the cursor is "off", or the cursor is out of bounds of the viewport,
+//   this will return nullopt (indicating the cursor shouldn't be painted this
+//   frame)
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
+[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
 {
     if (_pData->IsCursorVisible())
     {
@@ -907,7 +914,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             bool useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
-            IRenderEngine::CursorOptions options;
+            CursorOptions options;
             options.coordCursor = coordCursor;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
             options.cursorPixelWidth = _pData->GetCursorPixelWidth();
@@ -917,10 +924,43 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             options.cursorColor = cursorColor;
             options.isOn = _pData->IsCursorOn();
 
-            // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(options));
+            return { options };
         }
     }
+    return std::nullopt;
+}
+
+// Routine Description:
+// - Paint helper to draw the cursor within the buffer.
+// Arguments:
+// - engine - The render engine that we're targeting.
+// Return Value:
+// - <none>
+void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+{
+    const auto cursorInfo = _GetCursorInfo();
+    if (cursorInfo.has_value())
+    {
+        LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
+    }
+}
+
+// Routine Description:
+// - Retrieves info from the render data to prepare the engine with, before the
+//   frame is drawn. Some renderers might want to use this information to affect
+//   later drawing decisions.
+//   * Namely, the DX renderer uses this to know the cursor position and state
+//     before PaintCursor is called, so it can draw the cursor underneath the
+//     text.
+// Arguments:
+// - engine - The render engine that we're targeting.
+// Return Value:
+// - S_OK if the engine prepared successfully, or a relevant error via HRESULT.
+[[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
+{
+    RenderFrameInfo info;
+    info.cursorInfo = _GetCursorInfo();
+    return pEngine->PrepareRenderInfo(info);
 }
 
 // Routine Description:
