@@ -123,4 +123,7 @@
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
   </data>
+  <data name="AppDescriptionPre" xml:space="preserve">
+    <value>Windows Terminal with a preview of upcoming features</value>
+  </data>
 </root>

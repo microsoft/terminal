@@ -112,10 +112,10 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalOfficialBuild)'!='true'">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
@@ -131,7 +131,7 @@
     <!-- This is picked up by CascadiaResources.build.items. -->
     <WindowsTerminalAssetSuffix>-Universal</WindowsTerminalAssetSuffix>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+  <PropertyGroup Condition="'$(WindowsTerminalOfficialBuild)'!='true'">
     <!-- This is picked up by CascadiaResources.build.items. -->
     <WindowsTerminalAssetSuffix>$(WindowsTerminalAssetSuffix)Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>

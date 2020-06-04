@@ -290,8 +290,8 @@
           "type": "boolean"
         },
         "defaultProfile": {
-          "$ref": "#/definitions/ProfileGuid",
-          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The \"guid\" of the desired default profile is used as the value."
+          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
+          "type": "string"
         },
         "disabledProfileSources": {
           "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
@@ -299,6 +299,14 @@
             "$ref": "#/definitions/DynamicProfileSource"
           },
           "type": "array"
+        },
+        "experimental.rendering.forceFullRepaint": {
+          "description": "When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames.",
+          "type": "boolean"
+        },
+        "experimental.rendering.software": {
+          "description": "When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one.",
+          "type": "boolean"
         },
         "initialCols": {
           "default": 120,
@@ -332,7 +340,7 @@
           "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
           "maximum": 999,
           "minimum": 0,
-          "type": ["integer", "string"]
+          "type": [ "integer", "string" ]
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
@@ -383,7 +391,7 @@
         "confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
-          "type":"boolean"
+          "type": "boolean"
         }
       },
       "required": [
@@ -522,6 +530,33 @@
           "description": "Size of the font in points.",
           "minimum": 1,
           "type": "integer"
+        },
+        "fontWeight": {
+          "default": "normal",
+          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\" or the corresponding numeric representation of OpenType font weight.",
+          "oneOf": [
+            {
+              "enum": [
+                "thin",
+                "extra-light",
+                "light",
+                "semi-light",
+                "normal",
+                "medium",
+                "semi-bold",
+                "bold",
+                "extra-bold",
+                "black",
+                "extra-black"
+              ],
+              "type": "string"
+            },
+            {
+              "maximum": 990,
+              "minimum": 100,
+              "type": "integer"
+            }
+          ]
         },
         "foreground": {
           "$ref": "#/definitions/Color",

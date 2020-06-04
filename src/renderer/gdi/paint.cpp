@@ -507,7 +507,7 @@ using namespace Microsoft::Console::Render;
 // - options - Parameters that affect the way that the cursor is drawn
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-[[nodiscard]] HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
