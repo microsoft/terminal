@@ -1517,11 +1517,13 @@ NOTHOUSANDS
 nothrow
 NOTICKS
 NOTIMPL
+notin
 NOTNULL
 NOTRACK
 NOTSUPPORTED
 notypeopt
 nouicompat
+nounihan
 NOUPDATE
 NOWAIT
 NOYIELD
@@ -1915,6 +1917,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 renderengine
 rendersize
 reparenting
@@ -2382,9 +2385,11 @@ typeparam
 TYUI
 uap
 uapadmin
+UAX
 ubuntu
 ucd
 UCD
+ucdxml
 uch
 UCHAR
 ucs

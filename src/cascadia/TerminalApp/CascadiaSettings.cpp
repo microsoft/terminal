@@ -225,10 +225,10 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 //   and stores it back to the globals.
 void CascadiaSettings::_ResolveDefaultProfile()
 {
-    const auto unparsedDefaultProfile{ GlobalSettings().GetUnparsedDefaultProfile() };
+    const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
     auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
     auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
-    GlobalSettings().SetDefaultProfile(defaultProfileGuid);
+    GlobalSettings().DefaultProfile(defaultProfileGuid);
 }
 
 // Method Description:
@@ -240,7 +240,7 @@ void CascadiaSettings::_ResolveDefaultProfile()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
+    const auto defaultProfileGuid = GlobalSettings().DefaultProfile();
     const bool nullDefaultProfile = defaultProfileGuid == GUID{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
@@ -259,7 +259,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+        GlobalSettings().DefaultProfile(_profiles[0].GetGuid());
     }
 }
 
@@ -566,7 +566,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.GetDefaultProfile());
+    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
 }
 
 // Method Description:

@@ -65,8 +65,12 @@ if "%_EXCLUSIVE%" == "1" (
     if "%PROJECT_NAME%" == "" ( goto :eof ) else echo Building only %PROJECT_NAME%
 )
 
-echo Performing nuget restore...
-nuget.exe restore %OPENCON%\OpenConsole.sln
+if "%_SKIP_NUGET_RESTORE%" == "1" (
+    echo Skipped nuget restore
+) else (
+    echo Performing nuget restore...
+    nuget.exe restore %OPENCON%\OpenConsole.sln
+)
 
 set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
 

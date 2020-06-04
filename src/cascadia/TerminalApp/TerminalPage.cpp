@@ -117,7 +117,7 @@ namespace winrt::TerminalApp::implementation
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().ShowTabsInTitlebar())
         {
             // Remove the TabView from the page. We'll hang on to it, we need to
             // put it in the titlebar.
@@ -299,7 +299,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
-        const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
+        const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
         auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
@@ -766,7 +766,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.GetActiveTitle();
 
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+        if (_settings->GlobalSettings().ShowTitleInTitlebar() &&
             tab.IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
@@ -800,7 +800,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
+        _tabView.TabWidthMode(_settings->GlobalSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -811,9 +811,9 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const bool isVisible = (!_isFullscreen) &&
-                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                               (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings->GlobalSettings().GetAlwaysShowTabs());
+                                _settings->GlobalSettings().AlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -1148,7 +1148,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
+        if (_tabs.Size() > 1 && _settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }
@@ -1324,7 +1324,7 @@ namespace winrt::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TerminalPage::Title()
     {
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+        if (_settings->GlobalSettings().ShowTitleInTitlebar())
         {
             auto selectedIndex = _tabView.SelectedIndex();
             if (selectedIndex >= 0)
@@ -1446,7 +1446,7 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        if (_settings->GlobalSettings().GetCopyFormatting())
+        if (_settings->GlobalSettings().CopyFormatting())
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();

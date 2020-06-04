@@ -228,7 +228,7 @@ namespace TerminalAppLocalTests
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
         {
             // Case 2: Bad settings
@@ -242,7 +242,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
         {
             // Case 2: Bad settings
@@ -256,7 +256,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
         {
             // Case 4: Good settings, default profile is a string
@@ -268,7 +268,7 @@ namespace TerminalAppLocalTests
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(1).GetGuid());
+            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(1).GetGuid());
         }
     }
 
@@ -450,7 +450,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.at(2));
 
         VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
-        VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+        VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).GetGuid());
         VERIFY_IS_TRUE(settings->_profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings->_profiles.at(1)._guid.has_value());
         VERIFY_IS_TRUE(settings->_profiles.at(2)._guid.has_value());
@@ -478,18 +478,18 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings;
 
         settings.LayerJson(settings0Json);
-        VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
-        VERIFY_ARE_EQUAL(120, settings._globals._initialCols);
-        VERIFY_ARE_EQUAL(30, settings._globals._initialRows);
-        VERIFY_ARE_EQUAL(4, settings._globals._rowsToScroll);
-        VERIFY_ARE_EQUAL(true, settings._globals._showTabsInTitlebar);
+        VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
+        VERIFY_ARE_EQUAL(120, settings._globals._InitialCols);
+        VERIFY_ARE_EQUAL(30, settings._globals._InitialRows);
+        VERIFY_ARE_EQUAL(4, settings._globals._RowsToScroll);
+        VERIFY_ARE_EQUAL(true, settings._globals._ShowTabsInTitlebar);
 
         settings.LayerJson(settings1Json);
-        VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
-        VERIFY_ARE_EQUAL(240, settings._globals._initialCols);
-        VERIFY_ARE_EQUAL(60, settings._globals._initialRows);
-        VERIFY_ARE_EQUAL(8, settings._globals._rowsToScroll);
-        VERIFY_ARE_EQUAL(false, settings._globals._showTabsInTitlebar);
+        VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
+        VERIFY_ARE_EQUAL(240, settings._globals._InitialCols);
+        VERIFY_ARE_EQUAL(60, settings._globals._InitialRows);
+        VERIFY_ARE_EQUAL(8, settings._globals._RowsToScroll);
+        VERIFY_ARE_EQUAL(false, settings._globals._ShowTabsInTitlebar);
     }
 
     void SettingsTests::ValidateProfileOrdering()
@@ -2136,7 +2136,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(2u, settings->_profiles.size());
-        VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+        VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).GetGuid());
         try
         {
             const auto [guid, termSettings] = settings->BuildSettings(nullptr);
