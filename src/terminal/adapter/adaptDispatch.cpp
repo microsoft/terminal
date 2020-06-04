@@ -48,7 +48,10 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
 void AdaptDispatch::Print(const wchar_t wchPrintable)
 {
     const auto wchTranslated = _termOutput.TranslateKey(wchPrintable);
-    // The DEL character will only be output if translated to something else.
+    // By default the DEL character is meant to be ignored in the same way as a
+    // NUL character. However, it's possible that it could be translated to a
+    // printable character in a 96-character set. This condition makes sure that
+    // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
         _pDefaults->Print(wchTranslated);
@@ -1615,9 +1618,11 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 {
     // If we haven't previously saved the initial code page, do so now.
     // This will be used to restore the code page in response to a reset.
-    if (_initialCodePage == 0)
+    if (!_initialCodePage.has_value())
     {
-        _pConApi->GetConsoleOutputCP(_initialCodePage);
+        unsigned int currentCodePage;
+        _pConApi->GetConsoleOutputCP(currentCodePage);
+        _initialCodePage = currentCodePage;
     }
 
     bool success = false;
@@ -1768,10 +1773,10 @@ bool AdaptDispatch::SoftReset()
     if (success)
     {
         _termOutput = {}; // Reset all character set designations.
-        if (_initialCodePage != 0)
+        if (_initialCodePage.has_value())
         {
             // Restore initial code page if previously changed by a DOCS sequence.
-            success = _pConApi->SetConsoleOutputCP(_initialCodePage);
+            success = _pConApi->SetConsoleOutputCP(_initialCodePage.value());
         }
     }
     if (success)
