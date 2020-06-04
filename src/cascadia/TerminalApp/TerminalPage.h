@@ -93,7 +93,7 @@ namespace winrt::TerminalApp::implementation
         StartupState _startupState{ StartupState::NotInitialized };
 
         std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
-        winrt::fire_and_forget _ProcessStartupActions();
+        winrt::fire_and_forget _ProcessStartupActions(const bool initial);
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

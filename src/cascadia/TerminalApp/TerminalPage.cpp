@@ -208,7 +208,7 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions();
+                _ProcessStartupActions(true);
             }
         }
     }
@@ -220,7 +220,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(const bool initial)
     {
         // If there are no actions left, do nothing.
         if (_startupActions.empty())
@@ -238,7 +238,10 @@ namespace winrt::TerminalApp::implementation
                 _actionDispatch->DoAction(action);
             }
 
-            _CompleteInitialization();
+            if (initial)
+            {
+                _CompleteInitialization();
+            }
         }
     }
 
