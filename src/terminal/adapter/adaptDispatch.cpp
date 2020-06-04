@@ -31,9 +31,6 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
-    _changedBackground(false),
-    _changedForeground(false),
-    _changedMetaAttrs(false),
     _termOutput()
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
@@ -588,7 +585,15 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
-        return _EraseAll();
+        // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
+        // make the state machine propagate this ED sequence to the connected
+        // terminal application. While we're in conpty mode, when the client
+        // requests a Erase All operation, we need to manually tell the
+        // connected terminal to do the same thing, so that the terminal will
+        // move it's own buffer contents into the scrollback.
+        const bool eraseAllResult = _EraseAll();
+        const bool isPty = _pConApi->IsConsolePty();
+        return eraseAllResult && (!isPty);
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -707,6 +712,19 @@ bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
     return _WriteResponse(L"\x1b[?1;0c");
+}
+
+// Routine Description:
+// - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
+//   An actual VT52 terminal would typically identify itself with ESC / K.
+//   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::Vt52DeviceAttributes()
+{
+    return _WriteResponse(L"\x1b/Z");
 }
 
 // Routine Description:
@@ -951,6 +969,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
+    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        success = SetAnsiMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
@@ -1122,6 +1143,20 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
+{
+    // When an attempt is made to update the mode, the designated character sets
+    // need to be reset to defaults, even if the mode doesn't actually change.
+    _termOutput = {};
+
+    return _pConApi->PrivateSetAnsiMode(ansiMode);
 }
 
 // Routine Description:
@@ -1750,8 +1785,12 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
         // Reset the meta/extended attributes (but leave the colors unchanged).
-        success = success && _pConApi->PrivateSetLegacyAttributes(0, false, false, true);
-        success = success && _pConApi->PrivateSetExtendedTextAttributes(ExtendedAttributes::Normal);
+        TextAttribute attr;
+        if (_pConApi->PrivateGetTextAttributes(attr))
+        {
+            attr.SetStandardErase();
+            success = success && _pConApi->PrivateSetTextAttributes(attr);
+        }
         // Reset the origin mode to absolute.
         success = success && SetOriginMode(false);
         // Clear the scrolling margins.
@@ -2070,12 +2109,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    bool success = tableIndex < 256;
-    if (success)
-    {
-        const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
-        success = _pConApi->PrivateSetColorTableEntry(realIndex, dwColor);
-    }
+    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

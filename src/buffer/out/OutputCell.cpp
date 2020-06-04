@@ -44,15 +44,6 @@ OutputCell::OutputCell(const std::wstring_view charData,
     _setFromStringView(charData);
 }
 
-OutputCell::OutputCell(const CHAR_INFO& charInfo) :
-    _text{ UNICODE_INVALID },
-    _dbcsAttribute{},
-    _textAttribute{ InvalidTextAttribute },
-    _behavior{ TextAttributeBehavior::Stored }
-{
-    _setFromCharInfo(charInfo);
-}
-
 OutputCell::OutputCell(const OutputCellView& cell)
 {
     _setFromOutputCellView(cell);
@@ -82,23 +73,6 @@ TextAttribute& OutputCell::TextAttr()
 void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
 {
     THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
-}
-
-void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
-{
-    _text = charInfo.Char.UnicodeChar;
-
-    if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
-    {
-        _dbcsAttribute.SetLeading();
-    }
-    else if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_TRAILING_BYTE))
-    {
-        _dbcsAttribute.SetTrailing();
-    }
-    _textAttribute.SetFromLegacy(charInfo.Attributes);
-
-    _behavior = TextAttributeBehavior::Stored;
 }
 
 void OutputCell::_setFromStringView(const std::wstring_view view)

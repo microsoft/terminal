@@ -34,6 +34,7 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="ColorHelperTests.cpp" />
     <ClCompile Include="JsonTests.cpp" />
     <ClCompile Include="DynamicProfileTests.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -42,6 +43,9 @@
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\TerminalApp\ColorHelper.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>

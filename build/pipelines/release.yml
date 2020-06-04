@@ -15,6 +15,14 @@ variables:
 # store publication machinery happy.
 name: 'Terminal_$(date:yyMM).$(date:dd)$(rev:rrr)'
 
+# Build Arguments:
+#   WindowsTerminalOfficialBuild=[true,false]
+#     true - this is running on our build agent
+#     false - running locally
+#   WindowsTerminalBranding=[Dev,Preview,Release]
+#     <none>  - Development build resources (default)
+#     Preview - Preview build resources
+#     Release - regular build resources
 jobs:
   - template: ./templates/build-console-audit-job.yml
     parameters:
@@ -23,17 +31,17 @@ jobs:
   - template: ./templates/build-console-int.yml
     parameters:
       platform: x64
-      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
   - template: ./templates/build-console-int.yml
     parameters:
       platform: x86
-      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
   - template: ./templates/build-console-int.yml
     parameters:
       platform: arm64
-      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
   - template: ./templates/check-formatting.yml
 

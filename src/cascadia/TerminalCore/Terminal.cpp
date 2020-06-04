@@ -757,8 +757,11 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     const Viewport bufferSize = _buffer->GetSize();
     bool notifyScroll = false;
 
-    // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
-    const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
+    // If we're about to scroll past the bottom of the buffer, instead cycle the
+    // buffer.
+    // GH#5540 - Make sure this is a positive number. We can't create a
+    // negative number of new rows.
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (newRows > 0)
     {
         for (auto dy = 0; dy < newRows; dy++)
@@ -780,7 +783,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
         {
-            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
+            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
+                                                        _mutableViewport.Dimensions());
             notifyScroll = true;
         }
     }
@@ -871,7 +875,7 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 // - Allows setting a callback for when the background color is changed
 // Arguments:
 // - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
 {
     _pfnBackgroundColorChanged.swap(pfn);
 }

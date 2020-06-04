@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
+        winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
         void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
@@ -197,7 +197,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
-        void _DoResize(const double newWidth, const double newHeight);
+        void _DoResizeUnderLock(const double newWidth, const double newHeight);
+        void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         winrt::fire_and_forget _TerminalCursorPositionChanged();

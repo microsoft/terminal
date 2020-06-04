@@ -17,7 +17,7 @@ public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
-    void MakeWindow() noexcept;
+    virtual void MakeWindow() noexcept;
     void Close();
     virtual void OnSize(const UINT width, const UINT height);
 
@@ -102,4 +102,8 @@ protected:
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
+
+private:
+    // This minimum width allows for width the tabs fit
+    static constexpr long minimumWidth = 460L;
 };

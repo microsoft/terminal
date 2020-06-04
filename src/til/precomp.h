@@ -35,6 +35,38 @@ Abstract:
 // (before TIL so its support lights up)
 #include <dcommon.h>
 
+// Include some things structs from WinRT without including WinRT
+// because I just want to make sure it fills structs correctly.
+// Adapted from C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\winrt\windows.foundation.h
+#define WINRT_Windows_Foundation_H
+namespace winrt {
+    namespace Windows {
+        namespace Foundation {
+            struct Rect
+            {
+                FLOAT X;
+                FLOAT Y;
+                FLOAT Width;
+                FLOAT Height;
+            };
+
+            struct Point
+            {
+                FLOAT X;
+                FLOAT Y;
+            };
+
+            struct Size
+            {
+                FLOAT Width;
+                FLOAT Height;
+            };
+        } /* Foundation */
+    } /* Windows */
+} /* winrt */
+
+
+
 // Include TIL after Wex to get test comparators.
 #include "til.h"
 

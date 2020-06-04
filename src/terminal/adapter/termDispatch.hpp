@@ -48,6 +48,7 @@ public:
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
+    bool SetAnsiMode(const bool /*ansiMode*/) noexcept override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
@@ -86,6 +87,7 @@ public:
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
+    bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
     bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // SCS
 

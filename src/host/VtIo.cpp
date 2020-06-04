@@ -161,31 +161,27 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                     gci,
                                                                     initialViewport,
-                                                                    gci.GetColorTable(),
-                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                                                                    gci.Get16ColorTable());
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  true);
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
                                                                      gci,
                                                                      initialViewport,
-                                                                     gci.GetColorTable(),
-                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                                                                     gci.Get16ColorTable());
                 break;
             default:
                 return E_FAIL;
@@ -440,12 +436,13 @@ void VtIo::EndResize()
 //   true to `IsUsingVt`, which will cause the console host to act in conpty
 //   mode.
 // Arguments:
-// - <none>
+// - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
-void VtIo::EnableConptyModeForTests()
+void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
     _objectsCreated = true;
+    _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif
 
@@ -463,4 +460,23 @@ void VtIo::EnableConptyModeForTests()
 bool VtIo::IsResizeQuirkEnabled() const
 {
     return _resizeQuirk;
+}
+
+// Method Description:
+// - Manually tell the renderer that it should emit a "Erase Scrollback"
+//   sequence to the connected terminal. We need to do this in certain cases
+//   that we've identified where we believe the client wanted the entire
+//   terminal buffer cleared, not just the viewport. For more information, see
+//   GH#3126.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT VtIo::ManuallyClearScrollback() const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->ManuallyClearScrollback();
+    }
+    return S_OK;
 }

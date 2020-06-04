@@ -64,34 +64,6 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 }
 
 // Method Description:
-// - Finds a GUID associated with the given profile name. If no profile matches
-//      the profile name, returns a std::nullopt.
-// Arguments:
-// - profileName: the name of the profile's GUID to return.
-// Return Value:
-// - the GUID associated with the profile name.
-std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring_view profileName) const noexcept
-{
-    std::optional<GUID> profileGuid{};
-
-    for (const auto& profile : _profiles)
-    {
-        if (profileName == profile.GetName())
-        {
-            try
-            {
-                profileGuid = profile.GetGuid();
-            }
-            CATCH_LOG();
-
-            break;
-        }
-    }
-
-    return profileGuid;
-}
-
-// Method Description:
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
 // Arguments:
@@ -191,6 +163,9 @@ void CascadiaSettings::_ValidateSettings()
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
     _ValidateNoDuplicateProfiles();
+
+    // Resolve the default profile before we validate that it exists.
+    _ResolveDefaultProfile();
     _ValidateDefaultProfileExists();
 
     // Ensure that all the profile's color scheme names are
@@ -211,6 +186,8 @@ void CascadiaSettings::_ValidateSettings()
     // warning if an action didn't have a required arg.
     // This will also catch other keybinding warnings, like from GH#4239
     _ValidateKeybindings();
+
+    _ValidateNoGlobalsKey();
 }
 
 // Method Description:
@@ -244,6 +221,17 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 }
 
 // Method Description:
+// - Resolves the "defaultProfile", which can be a profile name, to a GUID
+//   and stores it back to the globals.
+void CascadiaSettings::_ResolveDefaultProfile()
+{
+    const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
+    auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
+    auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
+    GlobalSettings().DefaultProfile(defaultProfileGuid);
+}
+
+// Method Description:
 // - Checks if the "defaultProfile" is set to one of the profiles we
 //   actually have. If the value is unset, or the value is set to something that
 //   doesn't exist in the list of profiles, we'll arbitrarily pick the first
@@ -252,7 +240,7 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
+    const auto defaultProfileGuid = GlobalSettings().DefaultProfile();
     const bool nullDefaultProfile = defaultProfileGuid == GUID{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
@@ -271,7 +259,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+        GlobalSettings().DefaultProfile(_profiles[0].GetGuid());
     }
 }
 
@@ -567,58 +555,66 @@ TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
 GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
 {
-    std::optional<int> profileIndex{ std::nullopt };
-    if (newTerminalArgs &&
-        newTerminalArgs.ProfileIndex() != nullptr)
-    {
-        profileIndex = newTerminalArgs.ProfileIndex().Value();
-    }
-    GUID profileGuid = _GetProfileForIndex(profileIndex);
-
+    std::optional<GUID> profileByIndex, profileByName;
     if (newTerminalArgs)
     {
-        const auto profileString = newTerminalArgs.Profile();
-
-        // First, try and parse the "profile" argument as a GUID. If it's a
-        // GUID, and the GUID of one of our profiles, then use that as the
-        // profile GUID instead. If it's not, then try looking it up as a
-        // name of a profile. If it's still not that, then just ignore it.
-        if (!profileString.empty())
+        if (newTerminalArgs.ProfileIndex() != nullptr)
         {
-            bool wasGuid = false;
+            profileByIndex = _GetProfileGuidByIndex(newTerminalArgs.ProfileIndex().Value());
+        }
 
-            // Do a quick heuristic check - is the profile 38 chars long (the
-            // length of a GUID string), and does it start with '{'? Because if
-            // it doesn't, it's _definitely_ not a GUID.
-            if (profileString.size() == 38 && profileString[0] == L'{')
-            {
-                try
-                {
-                    const auto newGUID = Utils::GuidFromString(profileString.c_str());
-                    if (FindProfile(newGUID))
-                    {
-                        profileGuid = newGUID;
-                        wasGuid = true;
-                    }
-                }
-                CATCH_LOG();
-            }
+        profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
+    }
 
-            // Here, we were unable to use the profile string as a GUID to
-            // lookup a profile. Instead, try using the string to look the
-            // Profile up by name.
-            if (!wasGuid)
+    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
+}
+
+// Method Description:
+// - Helper to get the GUID of a profile given a name that could be a guid or an actual name.
+// Arguments:
+// - name: a guid string _or_ the name of a profile
+// Return Value:
+// - the GUID of the profile corresponding to this name
+std::optional<GUID> CascadiaSettings::_GetProfileGuidByName(const std::wstring_view name) const
+try
+{
+    // First, try and parse the "name" as a GUID. If it's a
+    // GUID, and the GUID of one of our profiles, then use that as the
+    // profile GUID instead. If it's not, then try looking it up as a
+    // name of a profile. If it's still not that, then just ignore it.
+    if (!name.empty())
+    {
+        // Do a quick heuristic check - is the profile 38 chars long (the
+        // length of a GUID string), and does it start with '{'? Because if
+        // it doesn't, it's _definitely_ not a GUID.
+        if (name.size() == 38 && name[0] == L'{')
+        {
+            const auto newGUID{ Utils::GuidFromString(static_cast<std::wstring>(name)) };
+            if (FindProfile(newGUID))
             {
-                const auto guidFromName = FindGuid(profileString.c_str());
-                if (guidFromName.has_value())
-                {
-                    profileGuid = guidFromName.value();
-                }
+                return newGUID;
             }
+        }
+
+        // Here, we were unable to use the profile string as a GUID to
+        // lookup a profile. Instead, try using the string to look the
+        // Profile up by name.
+        const auto profileIterator{ std::find_if(_profiles.cbegin(), _profiles.cend(), [&](auto&& profile) {
+            return profile.GetName().compare(name) == 0;
+        }) };
+
+        if (profileIterator != _profiles.cend())
+        {
+            return profileIterator->GetGuid();
         }
     }
 
-    return profileGuid;
+    return std::nullopt;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return std::nullopt;
 }
 
 // Method Description:
@@ -631,27 +627,20 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
 //   If omitted, instead return the default profile's GUID
 // Return Value:
 // - the Nth profile's GUID, or the default profile's GUID
-GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
+std::optional<GUID> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> index) const
 {
-    GUID profileGuid;
     if (index)
     {
-        const auto realIndex = index.value();
+        const auto realIndex{ index.value() };
         // If we don't have that many profiles, then do nothing.
-        if (realIndex < 0 ||
-            realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
+        if (realIndex >= 0 &&
+            realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
-            return _globals.GetDefaultProfile();
+            const auto& selectedProfile = _profiles.at(realIndex);
+            return selectedProfile.GetGuid();
         }
-        const auto& selectedProfile = _profiles.at(realIndex);
-        profileGuid = selectedProfile.GetGuid();
     }
-    else
-    {
-        // get Guid for the default profile
-        profileGuid = _globals.GetDefaultProfile();
-    }
-    return profileGuid;
+    return std::nullopt;
 }
 
 // Method Description:
@@ -671,6 +660,25 @@ void CascadiaSettings::_ValidateKeybindings()
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
         _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+    }
+}
+
+// Method Description:
+// - Checks for the presence of the legacy "globals" key in the user's
+//   settings.json. If this key is present, then they've probably got a pre-0.11
+//   settings file that won't work as expected anymore. We should warn them
+//   about that.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::LegacyGlobalsProperty to our list of warnings if
+//   we find any invalid background images.
+void CascadiaSettings::_ValidateNoGlobalsKey()
+{
+    if (auto oldGlobalsProperty{ _userSettings["globals"] })
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
     }
 }
 
@@ -694,7 +702,7 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     } };
 
     std::wstring defaultProfileGuid{ DEFAULT_WINDOWS_POWERSHELL_GUID };
-    if (const auto psCoreProfileGuid{ FindGuid(PowershellCoreProfileGenerator::GetPreferredPowershellProfileName()) })
+    if (const auto psCoreProfileGuid{ _GetProfileGuidByName(PowershellCoreProfileGenerator::GetPreferredPowershellProfileName()) })
     {
         defaultProfileGuid = Utils::GuidToString(*psCoreProfileGuid);
     }

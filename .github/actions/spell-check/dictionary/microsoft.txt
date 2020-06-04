@@ -1,7 +1,10 @@
+LKG
 mfcribbon
 microsoft
 microsoftonline
 osgvsowi
+powerrename
 powershell
 tdbuildteamid
+vcruntime
 visualstudio

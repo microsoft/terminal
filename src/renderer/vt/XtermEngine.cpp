@@ -12,12 +12,10 @@ using namespace Microsoft::Console::Types;
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                          const IDefaultColorProvider& colorProvider,
                          const Viewport initialViewport,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const WORD cColorTable,
+                         const std::basic_string_view<COLORREF> colorTable,
                          const bool fUseAsciiOnly) :
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
-    _ColorTable(ColorTable),
-    _cColorTable(cColorTable),
+    _colorTable(colorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
     _usingUnderLine(false),
     _needToDisableCursor(false),
@@ -192,8 +190,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
                                                   colorBackground,
                                                   WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
-                                                  _ColorTable,
-                                                  _cColorTable);
+                                                  _colorTable);
 }
 
 // Routine Description:
@@ -202,7 +199,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT XtermEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // PaintCursor is only called when the cursor is in fact visible in a single
     // frame. When this is called, mark _nextCursorIsVisible as true. At the end
@@ -234,10 +231,17 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
     //     the last cell anyways
+    //      - GH#5691 - If we're painting the frame because we circled the
+    //        buffer, then the cursor might still be in the position it was
+    //        before the text was written to the buffer to cause the buffer to
+    //        circle. In that case, then we DON'T want to paint the cursor here
+    //        either, because it'll cause us to manually break this line. That's
+    //        okay though, the frame will be painted again, after the circling
+    //        is complete.
     //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
     //     the wrap of a line.
     // If they're all true, DON'T manually paint the cursor this frame.
-    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
+    if (!((cursorIsInDeferredWrap || _circled) && _delayedEolWrap && _wrappedRow.has_value()))
     {
         return VtEngine::PaintCursor(options);
     }
@@ -351,7 +355,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
-
     _delayedEolWrap = false;
 
     return hr;
@@ -468,6 +471,16 @@ try
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
     const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
+
+    // GH#5502 - keep track of the BG color we had when we emitted this new
+    // bottom line. If the color changes by the time we get to printing that
+    // line, we'll need to make sure that we don't do any optimizations like
+    // _removing spaces_, because the background color of the spaces will be
+    // important information to send to the connected Terminal.
+    if (_newBottomLine)
+    {
+        _newBottomLineBG = _LastBG;
+    }
 
     return S_OK;
 }

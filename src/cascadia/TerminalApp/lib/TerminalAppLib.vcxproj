@@ -60,6 +60,9 @@
     <Page Include="../TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../ColorPickupFlyout.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -79,6 +82,9 @@
     <ClInclude Include="../TabRowControl.h">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../ColorPickupFlyout.h">
+      <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Tab.h">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClInclude>
@@ -97,6 +103,7 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="..\ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
@@ -136,6 +143,9 @@
     <ClCompile Include="../TabRowControl.cpp">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ColorPickupFlyout.cpp">
+      <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClCompile>
@@ -154,6 +164,7 @@
     <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp" />
     <ClCompile Include="../Pane.LayoutSizeNode.cpp" />
+    <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -212,6 +223,10 @@
     </Midl>
     <Midl Include="../TabRowControl.idl">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../ColorPickupFlyout.idl">
+      <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../Tab.idl"/>
@@ -326,7 +341,7 @@
   <Target Name="_TerminalAppGenerateDefaultsUniversalH" Inputs="..\defaults-universal.json" Outputs="Generated Files\defaults-universal.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults-universal.json -OutPath '&quot;Generated Files\defaults-universal.h&quot;' -VariableName DefaultUniversalJson" />
   </Target>
-  <!-- Same as above, but for the default profiles.json template -->
+  <!-- Same as above, but for the default settings.json template -->
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="..\userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>

@@ -63,8 +63,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClickTimestamp{},
@@ -224,18 +224,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
-            // Refresh our font with the renderer
-            _UpdateFont();
+            auto lock = _terminal->LockForWriting();
 
-            const auto width = SwapChainPanel().ActualWidth();
-            const auto height = SwapChainPanel().ActualHeight();
-            if (width != 0 && height != 0)
+            // Refresh our font with the renderer
+            const auto actualFontOldSize = _actualFont.GetSize();
+            _UpdateFont();
+            const auto actualFontNewSize = _actualFont.GetSize();
+            if (actualFontNewSize != actualFontOldSize)
             {
-                // If the font size changed, or the _swapchainPanel's size changed
-                // for any reason, we'll need to make sure to also resize the
-                // buffer. _DoResize will invalidate everything for us.
-                auto lock = _terminal->LockForWriting();
-                _DoResize(width, height);
+                _RefreshSizeUnderLock();
             }
         }
     }
@@ -256,7 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _InitializeBackgroundBrush();
 
-        uint32_t bg = _settings.DefaultBackground();
+        COLORREF bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -266,18 +263,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
+        const auto fontWeight = _settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
@@ -350,11 +348,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 RootGrid().Background(acrylic);
             }
+
+            // GH#5098: Inform the engine of the new opacity of the default text background.
+            if (_renderEngine)
+            {
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            }
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             RootGrid().Background(solidColor);
+
+            // GH#5098: Inform the engine of the new opacity of the default text background.
+            if (_renderEngine)
+            {
+                _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
+            }
         }
 
         if (!_settings.BackgroundImage().empty())
@@ -396,37 +406,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const uint32_t color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
     {
+        til::color newBgColor{ color };
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto R = GetRValue(color);
-            const auto G = GetGValue(color);
-            const auto B = GetBValue(color);
-
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = R;
-            bgColor.G = G;
-            bgColor.B = B;
-            bgColor.A = 255;
-
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
             {
-                acrylic.FallbackColor(bgColor);
-                acrylic.TintColor(bgColor);
+                acrylic.FallbackColor(newBgColor);
+                acrylic.TintColor(newBgColor);
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
-                solidColor.Color(bgColor);
+                solidColor.Color(newBgColor);
             }
 
             // Set the default background as transparent to prevent the
             // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(ARGB(0, R, G, B));
+            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -514,8 +516,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 return false;
             }
 
-            const auto windowWidth = SwapChainPanel().ActualWidth(); // Width() and Height() are NaN?
-            const auto windowHeight = SwapChainPanel().ActualHeight();
+            const auto actualWidth = SwapChainPanel().ActualWidth();
+            const auto actualHeight = SwapChainPanel().ActualHeight();
+
+            const auto windowWidth = actualWidth * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
+            const auto windowHeight = actualHeight * SwapChainPanel().CompositionScaleY();
 
             if (windowWidth == 0 || windowHeight == 0)
             {
@@ -574,9 +579,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // TODO:GH#3927 - Make it possible to hot-reload this setting. Right
+            // TODO:GH#3927 - Make it possible to hot-reload these settings. Right
             // here, the setting will only be used when the Terminal is initialized.
             dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
             // TODO:GH#3927 - hot-reload this one too
             // Update DxEngine's AntialiasingMode
@@ -592,6 +599,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             default:
                 dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
                 break;
+            }
+
+            // GH#5098: Inform the engine of the opacity of the default text background.
+            if (_settings.UseAcrylic())
+            {
+                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
             }
 
             THROW_IF_FAILED(dxEngine->Enable());
@@ -1056,8 +1069,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
                     auto& touchdownPoint{ *_singleClickTouchdownPos };
                     auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
-                    const auto fontSize{ _actualFont.GetSize() };
-                    if (distance >= (std::min(fontSize.X, fontSize.Y) / 4.f))
+                    const til::size fontSize{ _actualFont.GetSize() };
+
+                    const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
+                    if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                     {
                         _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
                         // stop tracking the touchdown point
@@ -1097,19 +1112,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
             const auto anchor = _touchAnchor.value();
 
-            // Get the difference between the point we've dragged to and the start of the touch.
-            const float fontHeight = float(_actualFont.GetSize().Y);
+            // Our _actualFont's size is in pixels, convert to DIPs, which the
+            // rest of the Points here are in.
+            const til::size fontSize{ _actualFont.GetSize() };
+            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _renderEngine->GetScaling());
 
+            // Get the difference between the point we've dragged to and the start of the touch.
             const float dy = newTouchPoint.Y - anchor.Y;
 
             // Start viewport scroll after we've moved more than a half row of text
-            if (std::abs(dy) > (fontHeight / 2.0f))
+            if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
             {
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
                 // so we'll need a negative scroll amount (and the inverse for
                 // panning down)
-                const float numRows = -1.0f * (dy / fontHeight);
+                const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
 
                 const auto currentOffset = ::base::ClampedNumeric<double>(ScrollBar().Value());
                 const auto newValue = numRows + currentOffset;
@@ -1277,13 +1295,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             try
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                acrylicBrush.TintOpacity(_settings.TintOpacity());
+
                 if (acrylicBrush.TintOpacity() == 1.0)
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    uint32_t bg = _settings.DefaultBackground();
+                    COLORREF bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
+                }
+                else
+                {
+                    // GH#5098: Inform the engine of the new opacity of the default text background.
+                    if (_renderEngine)
+                    {
+                        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                    }
                 }
             }
             CATCH_LOG();
@@ -1355,6 +1383,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (_terminal->IsSelectionActive() && isLeftButtonPressed)
         {
+            // Have to take the lock or we could change the endpoints out from under the renderer actively rendering.
+            auto lock = _terminal->LockForWriting();
+
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
             _SetEndSelectionPointAtCursor(point);
@@ -1486,6 +1517,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (_autoScrollingPointerPoint.has_value())
                 {
+                    // Have to take the lock because the renderer will not draw correctly if you move its endpoints while it is generating a frame.
+                    auto lock = _terminal->LockForWriting();
+
                     _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint.value().Position());
                 }
             }
@@ -1511,17 +1545,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         InputPane::GetForCurrentView().TryShow();
 
+        // GH#5421: Enable the UiaEngine before checking for the SearchBox
+        // That way, new selections are notified to automation clients.
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Enable());
+        }
+
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
         // terminal's cursor to start blinking. So, we'll just return quickly here.
         if (_searchBox && _searchBox->ContainsFocus())
         {
             return;
-        }
-
-        if (_uiaEngine.get())
-        {
-            THROW_IF_FAILED(_uiaEngine->Enable());
         }
 
         if (TSFInputControl() != nullptr)
@@ -1615,7 +1651,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
     //      to account for the new glyph dimensions. Callers should make sure to
-    //      appropriately call _DoResize after this method is called.
+    //      appropriately call _DoResizeUnderLock after this method is called.
+    // - The write lock should be held when calling this method.
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
@@ -1642,18 +1679,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Make sure we have a non-zero font size
             const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
             const auto fontFace = _settings.FontFace();
-            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            const auto fontWeight = _settings.FontWeight();
+            _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
+
+            auto lock = _terminal->LockForWriting();
 
             // Refresh our font with the renderer
             _UpdateFont();
 
-            auto lock = _terminal->LockForWriting();
             // Resize the terminal's BUFFER to match the new font size. This does
             // NOT change the size of the window, because that can lead to more
             // problems (like what happens when you change the font size while the
             // window is maximized?)
-            _DoResize(SwapChainPanel().ActualWidth(), SwapChainPanel().ActualHeight());
+            _RefreshSizeUnderLock();
         }
         CATCH_LOG();
     }
@@ -1673,22 +1712,86 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        const auto foundationSize = e.NewSize();
+        const auto newSize = e.NewSize();
+        const auto currentScaleX = SwapChainPanel().CompositionScaleX();
+        const auto currentEngineScale = _renderEngine->GetScaling();
+        auto foundationSize = newSize;
 
-        _DoResize(foundationSize.Width, foundationSize.Height);
+        // A strange thing can happen here. If you have two tabs open, and drag
+        // across a DPI boundary, then switch to the other tab, that tab will
+        // receive two events: First, a SizeChanged, then a ScaleChanged. In the
+        // SizeChanged event handler, the SwapChainPanel's CompositionScale will
+        // _already_ be the new scaling, but the engine won't have that value
+        // yet. If we scale by the CompositionScale here, we'll end up in a
+        // weird torn state. I'm not totally sure why.
+        //
+        // Fortunately we will be getting that following ScaleChanged event, and
+        // we'll end up resizing again, so we don't terribly need to worry about
+        // this.
+        foundationSize.Width *= currentEngineScale;
+        foundationSize.Height *= currentEngineScale;
+
+        _DoResizeUnderLock(foundationSize.Width, foundationSize.Height);
     }
 
+    // Method Description:
+    // - Triggered when the swapchain changes DPI. When this happens, we're
+    //   going to receive 3 events:
+    //   - 1. First, a CompositionScaleChanged _for the original scale_. I don't
+    //     know why this event happens first. **It also doesn't always happen.**
+    //     However, when it does happen, it doesn't give us any useful
+    //     information.
+    //   - 2. Then, a SizeChanged. During that SizeChanged, either:
+    //      - the CompositionScale will still be the original DPI. This happens
+    //        when the control is visible as the DPI changes.
+    //      - The CompositionScale will be the new DPI. This happens when the
+    //        control wasn't focused as the window's DPI changed, so it only got
+    //        these messages after XAML updated it's scaling.
+    //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
+    //   - 4. We'll usually get another SizeChanged some time after this last
+    //     ScaleChanged. This usually seems to happen after something triggers
+    //     the UI to re-layout, like hovering over the scrollbar. This event
+    //     doesn't reliably happen immediately after a scale change, so we can't
+    //     depend on it (despite the fact that both the scale and size state is
+    //     definitely correct in it)
+    // - In the 3rd event, we're going to update our font size for the new DPI.
+    //   At that point, we know how big the font should be for the new DPI, and
+    //   how big the SwapChainPanel will be. If these sizes are different, we'll
+    //   need to resize the buffer to fit in the new window.
+    // Arguments:
+    // - sender: The SwapChainPanel who's DPI changed. This is our _swapchainPanel.
+    // - args: This param is unused in the CompositionScaleChanged event.
     void TermControl::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
                                              Windows::Foundation::IInspectable const& /*args*/)
     {
         if (_renderEngine)
         {
-            const auto scale = sender.CompositionScaleX();
-            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+            const auto scaleX = sender.CompositionScaleX();
+            const auto scaleY = sender.CompositionScaleY();
+            const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
+            const auto currentEngineScale = _renderEngine->GetScaling();
 
-            // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
-            THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
-            _renderer->TriggerRedrawAll();
+            // If we're getting a notification to change to the DPI we already
+            // have, then we're probably just beginning the DPI change. Since
+            // we'll get _another_ event with the real DPI, do nothing here for
+            // now. We'll also skip the next resize in _SwapChainSizeChanged.
+            const bool dpiWasUnchanged = currentEngineScale == scaleX;
+            if (dpiWasUnchanged)
+            {
+                return;
+            }
+
+            const auto actualFontOldSize = _actualFont.GetSize();
+
+            auto lock = _terminal->LockForWriting();
+
+            _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi), _desiredFont, _actualFont);
+
+            const auto actualFontNewSize = _actualFont.GetSize();
+            if (actualFontNewSize != actualFontOldSize)
+            {
+                _RefreshSizeUnderLock();
+            }
         }
     }
 
@@ -1713,6 +1816,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
+        if (!_terminal->IsSelectionActive())
+        {
+            return;
+        }
+
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
@@ -1728,6 +1836,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Perform a resize for the current size of the swapchainpanel. If the
+    //   font size changed, we'll need to resize the buffer to fit the existing
+    //   swapchain size. This helper will call _DoResizeUnderLock with the current size
+    //   of the swapchain, accounting for scaling due to DPI.
+    // - Note that a DPI change will also trigger a font size change, and will call into here.
+    // - The write lock should be held when calling this method, we might be changing the buffer size in _DoResizeUnderLock.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_RefreshSizeUnderLock()
+    {
+        const auto currentScaleX = SwapChainPanel().CompositionScaleX();
+        const auto currentScaleY = SwapChainPanel().CompositionScaleY();
+        const auto actualWidth = SwapChainPanel().ActualWidth();
+        const auto actualHeight = SwapChainPanel().ActualHeight();
+
+        const auto widthInPixels = actualWidth * currentScaleX;
+        const auto heightInPixels = actualHeight * currentScaleY;
+
+        _DoResizeUnderLock(widthInPixels, heightInPixels);
+    }
+
+    // Method Description:
     // - Process a resize event that was initiated by the user. This can either
     //   be due to the user resizing the window (causing the swapchain to
     //   resize) or due to the DPI changing (causing us to need to resize the
@@ -1735,7 +1867,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
-    void TermControl::_DoResize(const double newWidth, const double newHeight)
+    void TermControl::_DoResizeUnderLock(const double newWidth, const double newHeight)
     {
         SIZE size;
         size.cx = static_cast<long>(newWidth);
@@ -1762,11 +1894,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
-        //      actually change size. No need to notify the connection of this
-        //      no-op.
-        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-        // I believe we'll need support for CSI 2J, and additionally I think
-        //      we're resetting the viewport to the top
+        // actually change size. No need to notify the connection of this no-op.
         const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
@@ -1935,11 +2063,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // convert text to HTML format
+        // GH#5347 - Don't provide a title for the generated HTML, as many
+        // web applications will paste the title first, followed by the HTML
+        // content, which is unexpected.
         const auto htmlData = TextBuffer::GenHTML(bufferData,
                                                   _actualFont.GetUnscaledSize().Y,
                                                   _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground(),
-                                                  "Windows Terminal");
+                                                  _settings.DefaultBackground());
 
         // convert to RTF format
         const auto rtfData = TextBuffer::GenRTF(bufferData,
@@ -2069,13 +2199,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Initialize our font information.
         const auto fontFace = settings.FontFace();
         const short fontHeight = gsl::narrow_cast<short>(settings.FontSize());
+        const auto fontWeight = settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
         // If the settings have negative or zero row or column counts, ignore those counts.
@@ -2093,23 +2224,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
-        const float scale = dxEngine->GetScaling();
+        const auto scale = dxEngine->GetScaling();
         const auto fontSize = actualFont.GetSize();
-
-        // Manually multiply by the scaling factor. The DX engine doesn't
-        // actually store the scaled font size in the fontInfo.GetSize()
-        // property when the DX engine is in Composition mode (which it is for
-        // the Terminal). At runtime, this is fine, as we'll transform
-        // everything by our scaling, so it'll work out. However, right now we
-        // need to get the exact pixel count.
-        const float fFontWidth = gsl::narrow_cast<float>(fontSize.X * scale);
-        const float fFontHeight = gsl::narrow_cast<float>(fontSize.Y * scale);
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * fFontWidth;
+        double width = cols * fontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (settings.ScrollState() == ScrollbarState::Visible)
@@ -2117,7 +2239,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * fFontHeight;
+        double height = rows * fontSize.Y;
         auto thickness = _ParseThicknessFromPadding(settings.Padding());
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -2311,21 +2433,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - the corresponding viewport terminal position for the given Point parameter
     const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
-        // Exclude padding from cursor position calculation
-        COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - SwapChainPanel().Margin().Left),
-            static_cast<SHORT>(cursorPosition.Y - SwapChainPanel().Margin().Top)
-        };
+        // cursorPosition is DIPs, relative to SwapChainPanel origin
+        const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
+        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
 
-        const auto fontSize = _actualFont.GetSize();
-        FAIL_FAST_IF(fontSize.X == 0);
-        FAIL_FAST_IF(fontSize.Y == 0);
+        // This point is the location of the cursor within the actual grid of characters, in DIPs
+        const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
-        // Normalize to terminal coordinates by using font size
-        terminalPosition.X /= fontSize.X;
-        terminalPosition.Y /= fontSize.Y;
+        // Convert it to pixels
+        const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
 
-        return terminalPosition;
+        // Get the size of the font, which is in pixels
+        const til::size fontSize{ _actualFont.GetSize() };
+
+        // Convert the location in pixels to characters within the current viewport.
+        return til::point{ relativeToMarginInPixels / fontSize };
     }
 
     // Method Description:
@@ -2378,6 +2500,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         eventArgs.FontSize(CharacterDimensions());
         eventArgs.FontFace(_actualFont.GetFaceName());
+        ::winrt::Windows::UI::Text::FontWeight weight;
+        weight.Weight = static_cast<uint16_t>(_actualFont.GetWeight());
+        eventArgs.FontWeight(weight);
     }
 
     // Method Description:
@@ -2471,6 +2596,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _SendInputToConnection(allPaths);
             }
         }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            try
+            {
+                std::wstring text{ co_await e.DataView().GetTextAsync() };
+                _SendPastedTextToConnection(text);
+            }
+            CATCH_LOG();
+        }
     }
 
     // Method Description:
@@ -2491,9 +2625,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        // We can only handle drag/dropping StorageItems (files) and plain Text
+        // currently. If the format on the clipboard is anything else, returning
+        // early here will prevent the drag/drop from doing anything.
+        if (!(e.DataView().Contains(StandardDataFormats::StorageItems()) ||
+              e.DataView().Contains(StandardDataFormats::Text())))
         {
-            // We can't do anything for non-storageitems right now.
             return;
         }
 
@@ -2501,7 +2638,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.AcceptedOperation(DataPackageOperation::Copy);
 
         // Sets custom UI text
-        e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragTextCaption"));
+        }
+
         // Sets if the caption is visible
         e.DragUIOverride().IsCaptionVisible(true);
         // Sets if the dragged content is visible

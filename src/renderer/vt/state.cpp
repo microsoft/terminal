@@ -492,3 +492,20 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
 }
+
+// Method Description:
+// - Manually emit a "Erase Scrollback" sequence to the connected terminal. We
+//   need to do this in certain cases that we've identified where we believe the
+//   client wanted the entire terminal buffer cleared, not just the viewport.
+//   For more information, see GH#3126.
+// - This is unimplemented in the win-telnet, xterm-ascii renderers - inbox
+//   telnet.exe doesn't know how to handle a ^[[3J. This _is_ implemented in the
+//   Xterm256Engine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT VtEngine::ManuallyClearScrollback() noexcept
+{
+    return S_OK;
+}

@@ -1,6 +1,7 @@
-# Profiles.json Documentation
+# Settings.json Documentation
 
 ## Globals
+
 Properties listed below affect the entire window, regardless of the profile settings.
 
 | Property | Necessity | Type | Default | Description |
@@ -21,8 +22,13 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
+| `startOnUserLogin` | Optional | Boolean | `false` | When set to `true` enables the launch of Windows Terminal at startup. Setting to `false` will disable the startup task entry. Note: if the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect. |
+| `disabledProfileSources` | Optional | Array[String] | `[]` | Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup. This array can contain any combination of `Windows.Terminal.Wsl`, `Windows.Terminal.Azure`, or `Windows.Terminal.PowershellCore`. For more information, see [UsingJsonSettings.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#dynamic-profiles) |
+| `experimental.rendering.forceFullRepaint` | Optional | Boolean | `false` | When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames. |
+| `experimental.rendering.software` | Optional | Boolean | `false` | When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one. |
 
 ## Profiles
+
 Properties listed below are specific to each unique profile.
 
 | Property | Necessity | Type | Default | Description |
@@ -42,8 +48,9 @@ Properties listed below are specific to each unique profile.
 | `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | Optional | String | `Cascadia Code` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
+| `fontFace` | Optional | String | `Cascadia Mono` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
+| `fontWeight` | Optional | String | `normal` | Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values: `"thin"`, `"extra-light"`, `"light"`, `"semi-light"`, `"normal"`, `"medium"`, `"semi-bold"`, `"bold"`, `"extra-bold"`, `"black"`, `"extra-black"`, or the corresponding numeric representation of OpenType font weight. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
 | `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
 | `historySize` | Optional | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
@@ -60,6 +67,7 @@ Properties listed below are specific to each unique profile.
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
+
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
 
 | Property | Necessity | Type | Description |
@@ -87,12 +95,13 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `yellow` | _Required_ | String | Sets the color used as ANSI yellow. |
 
 ## Keybindings
+
 Properties listed below are specific to each custom key binding.
 
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
-| `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `keys` | _Required_ | Array[String] or String | Defines the key combinations used to call the command. |
 | `action` | Optional | String | Adds additional functionality to certain commands. |
 
 ### Implemented Commands and Actions
@@ -139,9 +148,10 @@ For commands with arguments:
 ### Accepted Modifiers and Keys
 
 #### Modifiers
-`Ctrl+`, `Shift+`, `Alt+`
+`ctrl+`, `shift+`, `alt+`
 
 #### Keys
+
 | Type | Keys |
 | ---- | ---- |
 | Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
@@ -151,6 +161,7 @@ For commands with arguments:
 | Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 
 ## Background Images and Icons
+
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
 
 The most useful URI schemes to remember when customizing background images and icons are:
@@ -163,6 +174,7 @@ The most useful URI schemes to remember when customizing background images and i
 > ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
 
 ### Icons
+
 Terminal displays icons for each of your profiles which Terminal generates for any built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros. Each profile refers to a stock icon via the `ms-appx` URI Scheme.
 
 > ⚠ Note: Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future.
@@ -176,6 +188,7 @@ You can refer to you own icons if you wish, e.g.:
 > 👉 Tip: Icons should be sized to 32x32px in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime (causing a noticeable delay and loss of quality.)
 
 ### Custom Background Images
+
 You can apply a background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish.
 
 To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image fill the available space using `backgroundImageStretchMode`.

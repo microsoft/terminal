@@ -8,8 +8,6 @@
 #include "../types/inc/utils.hpp"
 #include "TerminalThemeHelpers.h"
 
-extern "C" IMAGE_DOS_HEADER __ImageBase;
-
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -22,7 +20,7 @@ static constexpr int AutohideTaskbarSize = 2;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
-    _backgroundBrushColor{ RGB(0, 0, 0) },
+    _backgroundBrushColor{ 0, 0, 0 },
     _theme{ requestedTheme },
     _isMaximized{ false }
 {
@@ -30,6 +28,135 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 
 NonClientIslandWindow::~NonClientIslandWindow()
 {
+}
+
+static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
+
+[[nodiscard]] LRESULT __stdcall NonClientIslandWindow::_StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+{
+    WINRT_ASSERT(window);
+
+    if (WM_NCCREATE == message)
+    {
+        auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
+        auto nonClientIslandWindow{ reinterpret_cast<NonClientIslandWindow*>(cs->lpCreateParams) };
+        SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(nonClientIslandWindow));
+        // fall through to default window procedure
+    }
+    else if (auto nonClientIslandWindow{ reinterpret_cast<NonClientIslandWindow*>(GetWindowLongPtr(window, GWLP_USERDATA)) })
+    {
+        return nonClientIslandWindow->_InputSinkMessageHandler(message, wparam, lparam);
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
+}
+
+void NonClientIslandWindow::MakeWindow() noexcept
+{
+    IslandWindow::MakeWindow();
+
+    static ATOM dragBarWindowClass{ []() {
+        WNDCLASSEX wcEx{};
+        wcEx.cbSize = sizeof(wcEx);
+        wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+        wcEx.lpszClassName = dragBarClassName;
+        wcEx.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+        wcEx.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wcEx.lpfnWndProc = &NonClientIslandWindow::_StaticInputSinkWndProc;
+        wcEx.hInstance = wil::GetModuleInstanceHandle();
+        wcEx.cbWndExtra = sizeof(NonClientIslandWindow*);
+        return RegisterClassEx(&wcEx);
+    }() };
+
+    // The drag bar window is a child window of the top level window that is put
+    // right on top of the drag bar. The XAML island window "steals" our mouse
+    // messages which makes it hard to implement a custom drag area. By putting
+    // a window on top of it, we prevent it from "stealing" the mouse messages.
+    _dragBarWindow.reset(CreateWindowExW(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+                                         dragBarClassName,
+                                         L"",
+                                         WS_CHILD,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         GetWindowHandle(),
+                                         nullptr,
+                                         wil::GetModuleInstanceHandle(),
+                                         this));
+    THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
+}
+
+// Function Description:
+// - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
+LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+{
+    std::optional<UINT> nonClientMessage{ std::nullopt };
+
+    // translate WM_ messages on the window to WM_NC* on the top level window
+    switch (message)
+    {
+    case WM_LBUTTONDOWN:
+        nonClientMessage = WM_NCLBUTTONDOWN;
+        break;
+    case WM_LBUTTONDBLCLK:
+        nonClientMessage = WM_NCLBUTTONDBLCLK;
+        break;
+    case WM_LBUTTONUP:
+        nonClientMessage = WM_NCLBUTTONUP;
+        break;
+    case WM_RBUTTONDOWN:
+        nonClientMessage = WM_NCRBUTTONDOWN;
+        break;
+    case WM_RBUTTONDBLCLK:
+        nonClientMessage = WM_NCRBUTTONDBLCLK;
+        break;
+    case WM_RBUTTONUP:
+        nonClientMessage = WM_NCRBUTTONUP;
+        break;
+    }
+
+    if (nonClientMessage.has_value())
+    {
+        const POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+        POINT screenPt{ clientPt };
+        if (ClientToScreen(_dragBarWindow.get(), &screenPt))
+        {
+            auto parentWindow{ GetWindowHandle() };
+
+            // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
+            // then pass that click through as an NC click in that location.
+            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
+            SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
+
+            return 0;
+        }
+    }
+
+    return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
+}
+
+// Method Description:
+// - Resizes and shows/hides the drag bar input sink window.
+//   This window is used to capture clicks on the non-client area.
+void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
+{
+    const til::rectangle rect{ _GetDragAreaRect() };
+    if (_IsTitlebarVisible() && rect.size().area() > 0)
+    {
+        SetWindowPos(_dragBarWindow.get(),
+                     HWND_TOP,
+                     rect.left<int>(),
+                     rect.top<int>() + _GetTopBorderHeight(),
+                     rect.width<int>(),
+                     rect.height<int>(),
+                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
+    }
+    else
+    {
+        SetWindowPos(_dragBarWindow.get(), HWND_BOTTOM, 0, 0, 0, 0, SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+    }
 }
 
 // Method Description:
@@ -41,9 +168,9 @@ NonClientIslandWindow::~NonClientIslandWindow()
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
+                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
-    _UpdateIslandRegion();
+    _ResizeDragBarWindow();
 }
 
 void NonClientIslandWindow::OnAppInitialized()
@@ -78,6 +205,11 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.Children().Append(_titlebar);
 
     Controls::Grid::SetRow(_titlebar, 0);
+
+    // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
+    // then make sure to update it's visual state to reflect if we're in the
+    // maximized state on launch.
+    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
 
 // Method Description:
@@ -141,7 +273,7 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
-    if (_dragBar)
+    if (_dragBar && _dragBar.Visibility() == Visibility::Visible)
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
@@ -230,7 +362,6 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
-    // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
                                    newIslandPos.X,
@@ -248,60 +379,9 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
         // NonClientIslandWindow::OnDragBarSizeChanged method because this
         // method is only called when the position of the drag bar changes
         // **inside** the island which is not the case here.
-        _UpdateIslandRegion();
+        _ResizeDragBarWindow();
 
         _oldIslandPos = { newIslandPos };
-    }
-}
-
-// Method Description:
-// - Update the region of our window that is the draggable area. This happens in
-//   response to a OnDragBarSizeChanged event. We'll calculate the areas of the
-//   window that we want to display XAML content in, and set the window region
-//   of our child xaml-island window to that region. That way, the parent window
-//   will still get NCHITTEST'ed _outside_ the XAML content area, for things
-//   like dragging and resizing.
-// - We won't cut this region out if we're fullscreen/borderless. Instead, we'll
-//   make sure to update our region to take the entirety of the window.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_UpdateIslandRegion() const
-{
-    if (!_interopWindowHandle || !_dragBar)
-    {
-        return;
-    }
-
-    // If we're showing the titlebar (when we're not fullscreen/borderless), cut
-    // a region of the window out for the drag bar. Otherwise we want the entire
-    // window to be given to the XAML island
-    if (_IsTitlebarVisible())
-    {
-        RECT rcIsland;
-        winrt::check_bool(::GetWindowRect(_interopWindowHandle, &rcIsland));
-        const auto islandWidth = rcIsland.right - rcIsland.left;
-        const auto islandHeight = rcIsland.bottom - rcIsland.top;
-        const auto totalRegion = wil::unique_hrgn(CreateRectRgn(0, 0, islandWidth, islandHeight));
-
-        const auto rcDragBar = _GetDragAreaRect();
-        const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
-
-        // island region = total region - drag bar region
-        const auto islandRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-        winrt::check_bool(CombineRgn(islandRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
-
-        winrt::check_bool(SetWindowRgn(_interopWindowHandle, islandRegion.get(), true));
-    }
-    else
-    {
-        const auto windowRect = GetWindowRect();
-        const auto width = windowRect.right - windowRect.left;
-        const auto height = windowRect.bottom - windowRect.top;
-
-        auto windowRegion = wil::unique_hrgn(CreateRectRgn(0, 0, width, height));
-        winrt::check_bool(SetWindowRgn(_interopWindowHandle, windowRegion.get(), true));
     }
 }
 
@@ -476,6 +556,46 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 }
 
 // Method Description:
+// - Sets the cursor to the sizing cursor when we hit-test the top sizing border.
+//   We need to do this because we've covered it up with a child window.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept
+{
+    if (LOWORD(lParam) == HTCLIENT)
+    {
+        // Get the cursor position from the _last message_ and not from
+        // `GetCursorPos` (which returns the cursor position _at the
+        // moment_) because if we're lagging behind the cursor's position,
+        // we still want to get the cursor position that was associated
+        // with that message at the time it was sent to handle the message
+        // correctly.
+        const auto screenPtLparam{ GetMessagePos() };
+        const LRESULT hitTest{ SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, screenPtLparam) };
+        if (hitTest == HTTOP)
+        {
+            // We have to set the vertical resize cursor manually on
+            // the top resize handle because Windows thinks that the
+            // cursor is on the client area because it asked the asked
+            // the drag window with `WM_NCHITTEST` and it returned
+            // `HTCLIENT`.
+            // We don't want to modify the drag window's `WM_NCHITTEST`
+            // handling to return `HTTOP` because otherwise, the system
+            // would resize the drag window instead of the top level
+            // window!
+            SetCursor(LoadCursor(nullptr, IDC_SIZENS));
+            return TRUE;
+        }
+        else
+        {
+            // reset cursor
+            SetCursor(LoadCursor(nullptr, IDC_ARROW));
+            return TRUE;
+        }
+    }
+
+    return DefWindowProc(GetWindowHandle(), WM_SETCURSOR, wParam, lParam);
+}
+
+// Method Description:
 // - Gets the difference between window and client area size.
 // Arguments:
 // - dpi: dpi of a monitor on which the window is placed
@@ -558,10 +678,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
+    case WM_SETCURSOR:
+        return _OnSetCursor(wParam, lParam);
     case WM_DISPLAYCHANGE:
         // GH#4166: When the DPI of the monitor changes out from underneath us,
         // resize our drag bar, to reflect its newly scaled size.
-        _UpdateIslandRegion();
+        _ResizeDragBarWindow();
         return 0;
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
@@ -575,10 +697,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 }
 
 // Method Description:
-// - This method is called when the window receives the WM_PAINT message. It
-//   paints the background of the window to the color of the drag bar because
-//   the drag bar cannot be painted on the window by the XAML Island (see
-//   NonClientIslandWindow::_UpdateIslandRegion).
+// - This method is called when the window receives the WM_PAINT message.
+// - It paints the client area with the color of the title bar to hide the
+//   system's title bar behind the XAML Islands window during a resize.
+//   Indeed, the XAML Islands window doesn't resize at the same time than
+//   the top level window
+//   (see https://github.com/microsoft/microsoft-ui-xaml/issues/759).
 // Return Value:
 // - The value returned from the window proc.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnPaint() noexcept
@@ -616,13 +740,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
         const auto backgroundBrush = _titlebar.Background();
         const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const auto backgroundColor = backgroundSolidBrush.Color();
-        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+        const til::color backgroundColor = backgroundSolidBrush.Color();
 
-        if (!_backgroundBrush || color != _backgroundBrushColor)
+        if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
             // Create brush for titlebar color.
-            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(backgroundColor));
         }
 
         // To hide the original title bar, we have to paint on top of it with
@@ -715,12 +838,15 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    if (_titlebar)
+    {
+        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
-    _UpdateIslandRegion();
+    _ResizeDragBarWindow();
 }
 
 // Method Description:

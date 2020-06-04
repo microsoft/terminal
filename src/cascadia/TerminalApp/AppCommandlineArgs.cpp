@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
 #include <LibraryResources.h>
@@ -140,6 +141,11 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
     {
         _exitMessage = err.str();
     }
+
+    // We're displaying an error message - we should always exit instead of
+    // actually starting the Terminal.
+    _shouldExitEarly = true;
+
     return result;
 }
 
@@ -151,6 +157,37 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    // -v,--version: Displays version info
+    auto versionCallback = [this](int64_t /*count*/) {
+        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
+        {
+            // Set our message to display the application name and the current version.
+            _exitMessage = fmt::format("{0}\n{1}",
+                                       til::u16u8(appLogic->ApplicationDisplayName()),
+                                       til::u16u8(appLogic->ApplicationVersion()));
+            // Theoretically, we don't need to exit now, since this isn't really
+            // an error case. However, in practice, it feels weird to have `wt
+            // -v` open a new tab, and makes enough sense that `wt -v ;
+            // split-pane` (or whatever) just displays the version and exits.
+            _shouldExitEarly = true;
+        }
+    };
+    _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
+
+    // Maximized and Fullscreen flags
+    //   -M,--maximized: Maximizes the window on launch
+    //   -F,--fullscreen: Fullscreens the window on launch
+    auto maximizedCallback = [this](int64_t /*count*/) {
+        _launchMode = winrt::TerminalApp::LaunchMode::MaximizedMode;
+    };
+    auto fullscreenCallback = [this](int64_t /*count*/) {
+        _launchMode = winrt::TerminalApp::LaunchMode::FullscreenMode;
+    };
+    auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
+    auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
+    maximized->excludes(fullscreen);
+
+    // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
@@ -293,6 +330,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
                                                                            RS_A(L"CmdStartingDirArgDesc"));
+    subcommand.titleOption = subcommand.subcommand->add_option("--title",
+                                                               _startingTitle,
+                                                               RS_A(L"CmdTitleArgDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -350,6 +390,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
+    if (*subcommand.titleOption)
+    {
+        args->TabTitle(winrt::to_hstring(_startingTitle));
+    }
+
     return *args;
 }
 
@@ -380,6 +425,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
     _startingDirectory.clear();
+    _startingTitle.clear();
     _commandline.clear();
 
     _splitVertical = false;
@@ -388,6 +434,10 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
+
+    // DON'T clear _launchMode here! This will get called once for every
+    // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
+    // the "global" fullscreen flag (-F).
 }
 
 // Function Description:
@@ -541,6 +591,19 @@ const std::string& AppCommandlineArgs::GetExitMessage()
 }
 
 // Method Description:
+// - Returns true if we should exit the application before even starting the
+//   window. We might want to do this if we're displaying an error message or
+//   the version string, or if we want to open the settings file.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we should exit the application before even starting the window
+bool AppCommandlineArgs::ShouldExitEarly() const noexcept
+{
+    return _shouldExitEarly;
+}
+
+// Method Description:
 // - Ensure that the first command in our list of actions is a NewTab action.
 //   This makes sure that if the user passes a commandline like "wt split-pane
 //   -H", we _first_ create a new tab, so there's always at least one tab.
@@ -568,4 +631,9 @@ void AppCommandlineArgs::ValidateStartupCommands()
         newTabAction->Args(*args);
         _startupActions.push_front(*newTabAction);
     }
+}
+
+std::optional<winrt::TerminalApp::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
+{
+    return _launchMode;
 }

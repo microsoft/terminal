@@ -34,6 +34,7 @@ namespace Microsoft.Terminal.Settings
 
         String FontFace;
         Int32 FontSize;
+        Windows.UI.Text.FontWeight FontWeight;
         String Padding;
 
         IKeyBindings KeyBindings;
@@ -52,6 +53,8 @@ namespace Microsoft.Terminal.Settings
 
         UInt32 SelectionBackground;
         Boolean RetroTerminalEffect;
+        Boolean ForceFullRepaintRendering;
+        Boolean SoftwareRendering;
 
         TextAntialiasingMode AntialiasingMode;
     };

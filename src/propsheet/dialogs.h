@@ -28,9 +28,9 @@ Revision History:
 // unused 102
 #define IDD_QUICKEDIT               103
 #define IDD_INSERT                  104
-#define IDD_CURSOR_SMALL            105
-#define IDD_CURSOR_MEDIUM           106
-#define IDD_CURSOR_LARGE            107
+// unused 105, moved to 150
+// unused 106, moved to 151
+// unused 107, moved to 152
 #define IDD_HISTORY_SIZE            108
 #define IDD_HISTORY_SIZESCROLL      109
 #define IDD_HISTORY_NUM             110
@@ -43,7 +43,12 @@ Revision History:
 #define IDD_LANGUAGE_GROUPBOX       116
 #define DID_SETTINGS_COMCTL5        117
 #define DID_SETTINGS2_COMCTL5       118
-#define IDD_CURSOR_ADVANCED         119
+// unused 119, moved to 153
+
+#define IDD_CURSOR_SMALL            150
+#define IDD_CURSOR_MEDIUM           151
+#define IDD_CURSOR_LARGE            152
+#define IDD_CURSOR_ADVANCED         153
 
 #define DID_FONTDLG                 200
 #define IDD_STATIC                  201

@@ -36,6 +36,7 @@ namespace TerminalCoreUnitTests
     class TerminalBufferTests;
     class TerminalApiTest;
     class ConptyRoundtripTests;
+    class TerminalAndRendererTests;
 };
 #endif
 
@@ -80,6 +81,8 @@ public:
     bool SetTextToDefaults(bool foreground, bool background) noexcept override;
     bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
     bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;
+    bool SetTextForegroundIndex256(BYTE colorIndex) noexcept override;
+    bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept override;
     bool SetTextRgbColor(COLORREF color, bool foreground) noexcept override;
     bool BoldText(bool boldOn) noexcept override;
     bool UnderlineText(bool underlineOn) noexcept override;
@@ -170,7 +173,7 @@ public:
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
-    void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
+    void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -195,7 +198,7 @@ private:
     std::function<void(std::wstring&)> _pfnWriteInput;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
-    std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
+    std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -296,5 +299,6 @@ private:
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
+    friend class TerminalCoreUnitTests::TerminalAndRendererTests;
 #endif
 };

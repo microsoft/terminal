@@ -1,17 +1,12 @@
 AAAAAABBBBBBCCC
 AAAAABBBBBBBCCC
-AAD
+AAAAABCCCCCCCCC
+AAAAADCCCCCCCCC
 ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
-abe
-abec
 abf
 abi
-acb
-accd
-ACCEPTFILES
-ACCESSDENIED
 acec
 acf
 acidev
@@ -27,10 +22,7 @@ ADDREF
 addressof
 ADDSTRING
 ADDTOOL
-aeed
 AEnd
-afae
-afceeeaa
 AFew
 AFill
 AFX
@@ -129,7 +121,6 @@ awch
 azuredevopspodcast
 azurewebsites
 azzle
-baac
 backend
 backgrounded
 Backgrounder
@@ -140,23 +131,15 @@ Batang
 baz
 Bazz
 BBBBCCCCC
-bbc
-bbd
 BBDM
-bbe
 bbwe
 bc
-bca
-bcb
-bcc
 bcount
 bcrypt
 bcx
 bcz
-bda
 BEFOREPARENT
 beginthread
-bfb
 bgcolor
 bgfx
 bgidx
@@ -170,7 +153,6 @@ binplace
 binplaced
 bitcoin
 bitcrazed
-bitfield
 bitflag
 bitmask
 BITOPERATION
@@ -213,7 +195,6 @@ BValue
 byref
 bytearray
 bytebuffer
-caa
 Cac
 callee
 cang
@@ -224,7 +205,6 @@ cascadia
 catid
 cazamor
 CBash
-cbb
 cbegin
 cbiex
 CBN
@@ -245,12 +225,9 @@ CConversion
 CCRT
 cctype
 CDATA
-CDBA
 cdd
-CDE
 cdecl
 CDeclaration
-cebb
 CEdit
 CELLSIZE
 cend
@@ -498,14 +475,10 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
-dba
 DBatch
-dbb
 dbcs
 DBCSCHAR
 DBCSFONT
-dbd
-DBDCF
 dbg
 DBGALL
 DBGCHARS
@@ -516,13 +489,11 @@ dblclk
 DBlob
 dbproj
 DBUILD
-dcf
 DColor
 DCOLORVALUE
 dcommon
 DCompile
 dcompiler
-ddb
 dde
 DDESHARE
 DDevice
@@ -538,6 +509,7 @@ DECAWM
 DECCKM
 DECCOLM
 decf
+DECEKBD
 DECKPAM
 DECKPM
 DECKPNM
@@ -554,6 +526,7 @@ deconstructed
 DECPCTERM
 DECRC
 DECRLM
+DECRQM
 DECRST
 DECSASD
 DECSC
@@ -566,6 +539,7 @@ DECSEL
 DECSET
 DECSLRM
 DECSMBV
+DECSMKR
 DECSR
 decstandar
 DECSTBM
@@ -594,6 +568,7 @@ Delt
 demoable
 depersist
 deprioritized
+deps
 deque
 deref
 deserialization
@@ -611,7 +586,6 @@ devicefamily
 devops
 Dext
 df
-dfa
 DFactory
 dh
 dialogbox
@@ -632,6 +606,7 @@ dllexport
 DLLGETVERSIONPROC
 dllimport
 dllinit
+dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
@@ -649,7 +624,6 @@ DPICHANGE
 DPICHANGED
 dpix
 dpiy
-draggable
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -680,14 +654,9 @@ dxgidwm
 dxinterop
 dxttbmp
 eachother
-EAEC
 eaf
 EASTEUROPE
 eb
-eba
-ebce
-EBFB
-ECFB
 ECH
 echokey
 ecount
@@ -697,8 +666,6 @@ EDITTEXT
 EDITUPDATE
 edputil
 edu
-eeb
-eee
 Efast
 EHsc
 EJO
@@ -708,7 +675,6 @@ Elems
 elif
 elseif
 emacs
-Emojis
 emptybox
 enabledelayedexpansion
 endian
@@ -727,6 +693,7 @@ ENUMLOGFONTEX
 enumranges
 envvar
 eol
+EPres
 ERASEBKGND
 errno
 errorlevel
@@ -765,27 +732,17 @@ failfast
 FAILIFTHERE
 fallthrough
 FARPROC
-fba
-fbb
-fbd
-fbdc
-FBE
 fcb
-fcc
 fcharset
 fclose
 fcntl
-fd
-fdb
 fdc
-fdd
+FDD
 fde
 fdopen
-fdpi
 fdw
 fea
 fesb
-ffc
 FFDE
 FFF
 FFrom
@@ -931,7 +888,6 @@ Gfun
 gfx
 gh
 github
-githubusercontent
 gitlab
 gle
 globals
@@ -1024,9 +980,7 @@ hpp
 HPR
 HPROPSHEETPAGE
 HREDRAW
-HREF
 hresult
-hrgn
 HRSRC
 hscroll
 hsl
@@ -1212,6 +1166,7 @@ kcub
 kcud
 kcuf
 kcuu
+Kd
 keith
 kernelbase
 kernelbasestaging
@@ -1259,6 +1214,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libtickit
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1370,6 +1326,7 @@ MAKELONG
 MAKELPARAM
 MAKELRESULT
 malloc
+manpage
 MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
@@ -1393,7 +1350,6 @@ memallocator
 memcmp
 memcopy
 memcpy
-memcpying
 memmove
 memset
 MENUCHAR
@@ -1489,7 +1445,6 @@ nbsp
 Nc
 NCCALCSIZE
 NCCREATE
-NCHITTEST'ed
 NCLBUTTONDOWN
 NCLBUTTONUP
 NCMBUTTONDOWN
@@ -1562,10 +1517,13 @@ NOTHOUSANDS
 nothrow
 NOTICKS
 NOTIMPL
+notin
 NOTNULL
 NOTRACK
 NOTSUPPORTED
+notypeopt
 nouicompat
+nounihan
 NOUPDATE
 NOWAIT
 NOYIELD
@@ -1667,7 +1625,6 @@ Outof
 OUTOFCONTEXT
 OUTOFMEMORY
 outout
-OUTPATHROOT
 Outptr
 Ov
 OVERLAPPEDWINDOW
@@ -1960,6 +1917,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 renderengine
 rendersize
 reparenting
@@ -2140,6 +2098,7 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
+shobjidl
 shlwapi
 SHORTPATH
 SHOWCURSOR
@@ -2227,7 +2186,6 @@ stgm
 stl
 stoi
 stol
-storageitems
 storelogo
 stoul
 stoutapot
@@ -2333,7 +2291,6 @@ TEXCOORD
 texel
 textattribute
 TEXTATTRIBUTEID
-textblock
 Textbox
 textboxes
 textbuffer
@@ -2361,7 +2318,6 @@ TLEN
 Tlg
 Tlgdata
 TMAE
-tmp
 TMPF
 TMult
 tmultiple
@@ -2394,7 +2350,6 @@ TRACKCOMPOSITION
 trackpad
 transcoder
 transitioning
-trc
 Trd
 TREX
 triaged
@@ -2430,8 +2385,11 @@ typeparam
 TYUI
 uap
 uapadmin
+UAX
 ubuntu
 ucd
+UCD
+ucdxml
 uch
 UCHAR
 ucs
@@ -2514,7 +2472,6 @@ USESHOWWINDOW
 USESIZE
 USESTDHANDLES
 ushort
-usr
 USRDLL
 utf
 utils
@@ -2556,7 +2513,6 @@ vkey
 VKKEYSCAN
 VMs
 VPA
-vpack
 VPATH
 VPR
 VPrintf
@@ -2652,6 +2608,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+winget
 WINDIR
 windll
 WINDOWALPHA
@@ -2736,7 +2693,6 @@ WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
 wrl
-wrn
 wrp
 WRunoff
 WScript

@@ -10,9 +10,6 @@ namespace TerminalApp
     {
         TerminalPage();
 
-        Int32 SetStartupCommandline(String[] commands);
-        String EarlyExitMessage { get; };
-
         // XAML bound properties
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };

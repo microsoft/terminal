@@ -139,6 +139,9 @@ try
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
+    // C. Prepare the engine with additional information before we start drawing.
+    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
+
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
@@ -705,6 +708,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
 
+            // Hold onto the start of this run iterator and the target location where we started
+            // in case we need to do some special work to paint the line drawing characters.
+            const auto currentRunItStart = it;
+            const auto currentRunTargetStart = screenPoint;
+
             // Ensure that our cluster vector is clear.
             clusters.clear();
 
@@ -712,6 +720,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // of attempting to draw only the right-half of a two-column character
             // as the first item in our run.
             bool trimLeft = false;
+
+            // Run contains wide character (>1 columns)
+            bool containsWideCharacter = false;
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
@@ -730,6 +741,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
+                // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+                size_t columnCount = 0;
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
@@ -743,7 +756,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         // And tell the next function to trim off the left half of it.
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
-                        clusters.emplace_back(it->Chars(), it->Columns() + 1);
+                        columnCount = it->Columns() + 1;
+                        clusters.emplace_back(it->Chars(), columnCount);
                     }
                     else
                     {
@@ -755,11 +769,16 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    clusters.emplace_back(it->Chars(), it->Columns());
+                    columnCount = it->Columns();
+                    clusters.emplace_back(it->Chars(), columnCount);
+                }
+
+                if (columnCount > 1)
+                {
+                    containsWideCharacter = true;
                 }
 
                 // Advance the cluster and column counts.
-                const auto columnCount = clusters.back().GetColumns();
                 it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
                 cols += columnCount;
 
@@ -769,10 +788,37 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+            // We're only allowed to draw the grid lines under certain circumstances.
             if (_pData->IsGridLineDrawingAllowed())
             {
-                // We're only allowed to draw the grid lines under certain circumstances.
-                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                // See GH: 803
+                // If we found a wide character while we looped above, it's possible we skipped over the right half
+                // attribute that could have contained different line information than the left half.
+                if (containsWideCharacter)
+                {
+                    // Start from the original position in this run.
+                    auto lineIt = currentRunItStart;
+                    // Start from the original target in this run.
+                    auto lineTarget = currentRunTargetStart;
+
+                    // We need to go through the iterators again to ensure we get the lines associated with each
+                    // exact column. The code above will condense two-column characters into one, but it is possible
+                    // (like with the IME) that the line drawing characters will vary from the left to right half
+                    // of a wider character.
+                    // We could theoretically pre-pass for this in the loop above to be more efficient about walking
+                    // the iterator, but I fear it would make the code even more confusing than it already is.
+                    // Do that in the future if some WPR trace points you to this spot as super bad.
+                    for (auto colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                    {
+                        auto lines = lineIt->TextAttr();
+                        _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
+                    }
+                }
+                else
+                {
+                    // If nothing exciting is going on, draw the lines in bulk.
+                    _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                }
             }
         }
     }
@@ -837,12 +883,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 }
 
 // Routine Description:
-// - Paint helper to draw the cursor within the buffer.
+// - Retrieve information about the cursor, and pack it into a CursorOptions
+//   which the render engine can use for painting the cursor.
+// - If the cursor is "off", or the cursor is out of bounds of the viewport,
+//   this will return nullopt (indicating the cursor shouldn't be painted this
+//   frame)
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
+[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
 {
     if (_pData->IsCursorVisible())
     {
@@ -864,7 +914,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             bool useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
-            IRenderEngine::CursorOptions options;
+            CursorOptions options;
             options.coordCursor = coordCursor;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
             options.cursorPixelWidth = _pData->GetCursorPixelWidth();
@@ -874,10 +924,43 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             options.cursorColor = cursorColor;
             options.isOn = _pData->IsCursorOn();
 
-            // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(options));
+            return { options };
         }
     }
+    return std::nullopt;
+}
+
+// Routine Description:
+// - Paint helper to draw the cursor within the buffer.
+// Arguments:
+// - engine - The render engine that we're targeting.
+// Return Value:
+// - <none>
+void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+{
+    const auto cursorInfo = _GetCursorInfo();
+    if (cursorInfo.has_value())
+    {
+        LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
+    }
+}
+
+// Routine Description:
+// - Retrieves info from the render data to prepare the engine with, before the
+//   frame is drawn. Some renderers might want to use this information to affect
+//   later drawing decisions.
+//   * Namely, the DX renderer uses this to know the cursor position and state
+//     before PaintCursor is called, so it can draw the cursor underneath the
+//     text.
+// Arguments:
+// - engine - The render engine that we're targeting.
+// Return Value:
+// - S_OK if the engine prepared successfully, or a relevant error via HRESULT.
+[[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
+{
+    RenderFrameInfo info;
+    info.cursorInfo = _GetCursorInfo();
+    return pEngine->PrepareRenderInfo(info);
 }
 
 // Routine Description:

@@ -58,6 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
+        bool Vt52DeviceAttributes() override; // VT52 Identify
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
@@ -68,6 +69,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
+        bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
@@ -135,13 +137,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                     const DispatchTypes::EraseType eraseType,
                                     const size_t lineId) const;
-        void _SetGraphicsOptionHelper(const DispatchTypes::GraphicsOptions opt, WORD& attr);
         bool _EraseScrollback();
         bool _EraseAll();
         bool _InsertDeleteHelper(const size_t count, const bool isInsert) const;
         bool _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
-        static void s_DisableAllColors(WORD& attr, const bool isForeground) noexcept;
-        static void s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept;
 
         bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
@@ -179,17 +178,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isDECCOLMAllowed;
 
-        bool _changedForeground;
-        bool _changedBackground;
-        bool _changedMetaAttrs;
-
-        bool _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
-                                 COLORREF& rgbColor,
-                                 bool& isForeground,
-                                 size_t& optionsConsumed);
-
-        bool _SetBoldColorHelper(const DispatchTypes::GraphicsOptions option);
-        bool _SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option);
-        bool _SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions option);
+        size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+                                   TextAttribute& attr,
+                                   const bool isForeground) noexcept;
     };
 }
