@@ -199,7 +199,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT XtermEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // PaintCursor is only called when the cursor is in fact visible in a single
     // frame. When this is called, mark _nextCursorIsVisible as true. At the end

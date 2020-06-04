@@ -1492,7 +1492,7 @@ void VtRendererTest::TestCursorVisibility()
 
     VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
 
-    IRenderEngine::CursorOptions options{};
+    CursorOptions options{};
     options.coordCursor = origin;
 
     // Frame 1: Paint the cursor at the home position. At the end of the frame,

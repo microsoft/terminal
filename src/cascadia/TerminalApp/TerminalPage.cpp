@@ -130,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().ShowTabsInTitlebar())
         {
             // Remove the TabView from the page. We'll hang on to it, we need to
             // put it in the titlebar.
@@ -200,8 +200,7 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            _appArgs.ValidateStartupCommands();
-            if (_appArgs.GetStartupActions().empty())
+            if (_startupActions.empty())
             {
                 _OpenNewTab(nullptr);
 
@@ -224,7 +223,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
     {
         // If there are no actions left, do nothing.
-        if (_appArgs.GetStartupActions().empty())
+        if (_startupActions.empty())
         {
             return;
         }
@@ -234,7 +233,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : _appArgs.GetStartupActions())
+            for (const auto& action : _startupActions)
             {
                 _actionDispatch->DoAction(action);
             }
@@ -253,14 +252,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_CompleteInitialization()
     {
-        // GH#288 - When we finish initialization, if the user wanted us
-        // launched _fullscreen_, toggle fullscreen mode. This will make sure
-        // that the window size is _first_ set up as something sensible, so
-        // leaving fullscreen returns to a reasonable size.
-        if (_settings->GlobalSettings().GetLaunchMode() == winrt::TerminalApp::LaunchMode::FullscreenMode)
-        {
-            _ToggleFullscreen();
-        }
         _startupState = StartupState::Initialized;
         _InitializedHandlers(*this, nullptr);
     }
@@ -324,7 +315,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
-        const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
+        const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
         auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
@@ -380,7 +371,29 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
                     newTerminalArgs->ProfileIndex(profileIndex);
-                    page->_OpenNewTab(*newTerminalArgs);
+
+                    // if alt is pressed, open a pane
+                    const CoreWindow window = CoreWindow::GetForCurrentThread();
+                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                    const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    // Check for DebugTap
+                    bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                    WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                    WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    if (altPressed && !debugTap)
+                    {
+                        page->_SplitPane(TerminalApp::SplitState::Automatic,
+                                         TerminalApp::SplitType::Manual,
+                                         *newTerminalArgs);
+                    }
+                    else
+                    {
+                        page->_OpenNewTab(*newTerminalArgs);
+                    }
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -770,7 +783,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.GetActiveTitle();
 
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+        if (_settings->GlobalSettings().ShowTitleInTitlebar() &&
             tab.IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
@@ -804,7 +817,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
+        _tabView.TabWidthMode(_settings->GlobalSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -815,9 +828,9 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const bool isVisible = (!_isFullscreen) &&
-                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                               (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings->GlobalSettings().GetAlwaysShowTabs());
+                                _settings->GlobalSettings().AlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -961,23 +974,25 @@ namespace winrt::TerminalApp::implementation
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        term.TitleChanged([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto newTitle) {
+        auto weakTab{ hostingTab.get_weak() };
+        auto weakThis{ get_weak() };
+        // PropertyChanged is the generic mechanism by which the Tab
+        // communicates changes to any of its observable properties, including
+        // the Title
+        hostingTab.PropertyChanged([weakTab, weakThis](auto&&, const WUX::Data::PropertyChangedEventArgs& args) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
-
             if (page && tab)
             {
-                // The title of the control changed, but not necessarily the title
-                // of the tab. Get the title of the focused pane of the tab, and set
-                // the tab's text to the focused panes' text.
-                page->_UpdateTitle(*tab);
+                if (args.PropertyName() == L"Title")
+                {
+                    page->_UpdateTitle(*tab);
+                }
             }
         });
 
         // react on color changed events
-        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -987,7 +1002,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+        hostingTab.ColorCleared([weakTab, weakThis]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -1150,7 +1165,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
+        if (_tabs.Size() > 1 && _settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }
@@ -1326,7 +1341,7 @@ namespace winrt::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TerminalPage::Title()
     {
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+        if (_settings->GlobalSettings().ShowTitleInTitlebar())
         {
             auto selectedIndex = _tabView.SelectedIndex();
             if (selectedIndex >= 0)
@@ -1448,7 +1463,7 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        if (_settings->GlobalSettings().GetCopyFormatting())
+        if (_settings->GlobalSettings().CopyFormatting())
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1769,69 +1784,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets the initial commandline to process on startup, and attempts to
-    //   parse it. Commands will be parsed into a list of ShortcutActions that
-    //   will be processed on TerminalPage::Create().
+    // - Sets the initial actions to process on startup. We'll make a copy of
+    //   this list, and process these actions when we're loaded.
     // - This function will have no effective result after Create() is called.
-    // - This function returns 0, unless a there was a non-zero result from
-    //   trying to parse one of the commands provided. In that case, no commands
-    //   after the failing command will be parsed, and the non-zero code
-    //   returned.
     // Arguments:
-    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - actions: a list of Actions to process on startup.
     // Return Value:
-    // - the result of the first command who's parsing returned a non-zero code,
-    //   or 0. (see TerminalPage::_ParseArgs)
-    int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
+    // - <none>
+    void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
     {
-        return _ParseArgs(args);
-    }
-
-    // Method Description:
-    // - Attempts to parse an array of commandline args into a list of
-    //   commands to execute, and then parses these commands. As commands are
-    //   successfully parsed, they will generate ShortcutActions for us to be
-    //   able to execute. If we fail to parse any commands, we'll return the
-    //   error code from the failure to parse that command, and stop processing
-    //   additional commands.
-    // Arguments:
-    // - args: an array of strings to process as a commandline. These args can contain spaces
-    // Return Value:
-    // - 0 if the commandline was successfully parsed
-    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
-    {
-        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
-
-        for (auto& cmdBlob : commands)
-        {
-            // On one hand, it seems like we should be able to have one
-            // AppCommandlineArgs for parsing all of them, and collect the
-            // results one at a time.
-            //
-            // On the other hand, re-using a CLI::App seems to leave state from
-            // previous parsings around, so we could get mysterious behavior
-            // where one command affects the values of the next.
-            //
-            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
-            // > If that option is not given, CLI11 will not touch the initial
-            // > value. This allows you to set up defaults by simply setting
-            // > your value beforehand.
-            //
-            // So we pretty much need the to either manually reset the state
-            // each command, or build new ones.
-            const auto result = _appArgs.ParseCommand(cmdBlob);
-
-            // If this succeeded, result will be 0. Otherwise, the caller should
-            // exit(result), to exit the program.
-            if (result != 0)
-            {
-                return result;
-            }
-        }
-
-        // If all the args were successfully parsed, we'll have some commands
-        // built in _appArgs, which we'll use when the application starts up.
-        return 0;
+        _startupActions = actions;
     }
 
     // Method Description:
@@ -1870,44 +1832,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ToggleFullscreen()
+    void TerminalPage::ToggleFullscreen()
     {
         _toggleFullscreenHandlers(*this, nullptr);
 
         _isFullscreen = !_isFullscreen;
 
         _UpdateTabView();
-    }
-
-    // Method Description:
-    // - If there were any errors parsing the commandline that was used to
-    //   initialize the terminal, this will return a string containing that
-    //   message. If there were no errors, this message will be blank.
-    // - If the user requested help on any command (using --help), this will
-    //   contain the help message.
-    // - If the user requested the version number (using --version), this will
-    //   contain the version string.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the help text or error message for the provided commandline, if one
-    //   exists, otherwise the empty string.
-    winrt::hstring TerminalPage::ParseCommandlineMessage()
-    {
-        return winrt::to_hstring(_appArgs.GetExitMessage());
-    }
-
-    // Method Description:
-    // - Returns true if we should exit the application before even starting the
-    //   window. We might want to do this if we're displaying an error message or
-    //   the version string, or if we want to open the settings file.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff we should exit the application before even starting the window
-    bool TerminalPage::ShouldExitEarly()
-    {
-        return _appArgs.ShouldExitEarly();
     }
 
     // Method Description:

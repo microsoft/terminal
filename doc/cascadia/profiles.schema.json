@@ -290,8 +290,8 @@
           "type": "boolean"
         },
         "defaultProfile": {
-          "$ref": "#/definitions/ProfileGuid",
-          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\". The \"guid\" of the desired default profile is used as the value."
+          "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
+          "type": "string"
         },
         "disabledProfileSources": {
           "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
@@ -534,7 +534,7 @@
         "fontWeight": {
           "default": "normal",
           "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\" or the corresponding numeric representation of OpenType font weight.",
-           "oneOf": [
+          "oneOf": [
             {
               "enum": [
                 "thin",
@@ -556,7 +556,8 @@
               "minimum": 100,
               "type": "integer"
             }
-        }
+          ]
+        },
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#cccccc",

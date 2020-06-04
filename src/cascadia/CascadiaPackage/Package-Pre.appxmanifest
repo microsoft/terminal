@@ -3,11 +3,15 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:uap7="http://schemas.microsoft.com/appx/manifest/uap/windows10/7"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap mp rescap">
 
@@ -47,7 +51,7 @@
           ShortName="ms-resource:AppShortNamePre">
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo"/>
-	    <uap:ShowOn Tile="wide310x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
             <uap:ShowOn Tile="square310x310Logo"/>
           </uap:ShowNameOnTiles>
         </uap:DefaultTile>
@@ -60,7 +64,12 @@
             <desktop:ExecutionAlias Alias="wt.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
-
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="StartTerminalOnLoginTask"
+            Enabled="false"
+            DisplayName="ms-resource:AppNamePre" />
+        </uap5:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">

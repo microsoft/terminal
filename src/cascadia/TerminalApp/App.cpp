@@ -6,7 +6,6 @@
 #include "App.g.cpp"
 
 using namespace winrt;
-using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::Activation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
