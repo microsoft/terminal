@@ -33,6 +33,7 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view ExecuteCommandlineKey{ "execute" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -69,7 +70,8 @@ namespace winrt::TerminalApp::implementation
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { UnboundKey, ShortcutAction::Invalid },
-        { FindKey, ShortcutAction::Find }
+        { FindKey, ShortcutAction::Find },
+        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -96,6 +98,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::ExecuteCommandline, winrt::TerminalApp::implementation::ExecuteCommandlineArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };

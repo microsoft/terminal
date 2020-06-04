@@ -237,4 +237,16 @@ namespace winrt::TerminalApp::implementation
         ToggleFullscreen();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleExecuteCommandline(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
+        {
+            realArgs;
+
+            args.Handled(true);
+        }
+    }
+
 }

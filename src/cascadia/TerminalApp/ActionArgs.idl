@@ -102,4 +102,9 @@ namespace TerminalApp
     {
         SettingsTarget Target { get; };
     };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        String Commandline;
+    };
 }

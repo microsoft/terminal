@@ -159,6 +159,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ExecuteCommandline:
+        {
+            _ExecuteCommandlineHandlers(*this, *eventArgs);
+            break;
+        }
         default:
             return false;
         }
