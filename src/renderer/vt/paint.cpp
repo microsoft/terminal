@@ -156,7 +156,7 @@ using namespace Microsoft::Console::Types;
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     _trace.TracePaintCursor(options.coordCursor);
 
