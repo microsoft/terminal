@@ -44,13 +44,13 @@ namespace TerminalApp::JsonUtils
         template<typename T>
         struct DeduceOptional
         {
-            using Type = T;
+            using Type = typename std::decay<T>::type;
         };
 
         template<typename TOpt>
         struct DeduceOptional<std::optional<TOpt>>
         {
-            using Type = TOpt;
+            using Type = typename std::decay<TOpt>::type;
         };
     }
 
@@ -177,7 +177,7 @@ namespace TerminalApp::JsonUtils
     {
         GUID FromJson(const Json::Value& json)
         {
-            return ::Microsoft::Console::Utils::GuidFromString(Detail::GetStringView(json));
+            return ::Microsoft::Console::Utils::GuidFromString(til::u8u16(Detail::GetStringView(json)));
         }
 
         bool CanConvert(const Json::Value& json)
@@ -276,7 +276,7 @@ namespace TerminalApp::JsonUtils
             return true; // null is valid for optionals
         }
 
-        TOpt local{};
+        std::decay_t<TOpt> local{};
         if (GetValue(json, local, std::forward<Converter>(conv)))
         {
             target = std::move(local);
@@ -287,9 +287,9 @@ namespace TerminalApp::JsonUtils
 
     // GetValue, forced return type, manual converter
     template<typename T, typename Converter>
-    T GetValue(const Json::Value& json, Converter&& conv)
+    std::decay_t<T> GetValue(const Json::Value& json, Converter&& conv)
     {
-        T local{};
+        std::decay_t<T> local{};
         GetValue(json, local, std::forward<Converter>(conv));
         return local; // returns zero-initialized or value
     }
@@ -315,9 +315,9 @@ namespace TerminalApp::JsonUtils
 
     // GetValueForKey, forced return type, manual converter
     template<typename T, typename Converter>
-    T GetValueForKey(const Json::Value& json, std::string_view key, Converter&& conv)
+    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key, Converter&& conv)
     {
-        T local{};
+        std::decay_t<T> local{};
         GetValueForKey(json, key, local, std::forward<Converter>(conv));
         return local; // returns zero-initialized?
     }
@@ -331,9 +331,9 @@ namespace TerminalApp::JsonUtils
 
     // GetValue, forced return type, with automatic converter
     template<typename T>
-    T GetValue(const Json::Value& json)
+    std::decay_t<T> GetValue(const Json::Value& json)
     {
-        T local{};
+        std::decay_t<T> local{};
         GetValue(json, local, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
         return local; // returns zero-initialized or value
     }
@@ -347,7 +347,7 @@ namespace TerminalApp::JsonUtils
 
     // GetValueForKey, forced return type, with automatic converter
     template<typename T>
-    T GetValueForKey(const Json::Value& json, std::string_view key)
+    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
     {
         return GetValueForKey<T>(json, key, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
     }
@@ -364,3 +364,11 @@ namespace TerminalApp::JsonUtils
         GetValuesForKeys(json, std::forward<Args>(args)...);
     }
 };
+
+#define JSON_ENUM_MAPPER(...)                                       \
+    template<>                                                      \
+    struct ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__> : \
+        public ::TerminalApp::JsonUtils::EnumMapper<__VA_ARGS__, ::TerminalApp::JsonUtils::ConversionTrait<__VA_ARGS__>>
+
+#define JSON_MAPPINGS(Count) \
+    static constexpr std::array<pair_type, Count> mappings
