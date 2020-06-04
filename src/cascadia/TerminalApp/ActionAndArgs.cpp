@@ -119,22 +119,43 @@ namespace winrt::TerminalApp::implementation
         return found != ActionAndArgs::ActionNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
+    // Method Description:
+    // - Deserialize an ActionAndArgs from the provided json object or string `json`.
+    //   * If json is a string, we'll attempt to treat it as an action name,
+    //     without arguments.
+    //   * If json is an object, we'll attempt to retrieve the action name from
+    //     its "action" property, and we'll use that name to fine a deserializer
+    //     to precess the rest of the arguments in the json object.
+    // - If the action name is null or "unbound", or we don't understand the
+    //   action name, or we failed to parse the arguments to this action, we'll
+    //   return null. This should indicate to the caller that the action should
+    //   be unbound.
+    // - If there were any warnings while parsing arguments for the action,
+    //   they'll be appended to the warnings parameter.
+    // Arguments:
+    // - json: The Json::Value to attempt to parse as an ActionAndArgs
+    // - warnings: If there were any warnings during parsing, they'll be
+    //   appended to this vector.
+    // Return Value:
+    // - a deserialized ActionAndArgs corresponding to the values in json, or
+    //   null if we failed to deserialize an action.
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
                                                           std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         // Invalid is our placeholder that the action was not parsed.
         ShortcutAction action = ShortcutAction::Invalid;
 
-        // Keybindings can be serialized in two styles:
-        // { "command": "switchToTab0", "keys": ["ctrl+1"] },
-        // { "command": { "action": "switchToTab", "index": 0 }, "keys": ["ctrl+alt+1"] },
+        // Actions can be serialized in two styles:
+        //   "action": "switchToTab0",
+        //   "action": { "action": "switchToTab", "index": 0 },
+        // NOTE: For keybindings, the "action" param is actually "command"
 
-        // 1. In the first case, the "command" is a string, that's the
+        // 1. In the first case, the json is a string, that's the
         //    action name. There are no provided args, so we'll pass
         //    Json::Value::null to the parse function.
-        // 2. In the second case, the "command" is an object. We'll use the
+        // 2. In the second case, the json is an object. We'll use the
         //    "action" in that object as the action name. We'll then pass
-        //    the "command" object to the arg parser, for further parsing.
+        //    the json object to the arg parser, for further parsing.
 
         auto argsVal = Json::Value::null;
 
@@ -183,6 +204,7 @@ namespace winrt::TerminalApp::implementation
             auto actionAndArgs = winrt::make_self<ActionAndArgs>();
             actionAndArgs->Action(action);
             actionAndArgs->Args(args);
+
             return actionAndArgs;
         }
         else
