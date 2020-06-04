@@ -55,7 +55,7 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
-    const std::vector<winrt::TerminalApp::Command>& GetCommands() const noexcept;
+    const std::map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
 
     // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.
@@ -91,7 +91,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
-    std::vector<winrt::TerminalApp::Command> _commands;
+    std::map<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
 

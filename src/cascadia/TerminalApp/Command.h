@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Command.g.h"
+#include "TerminalWarnings.h"
 #include "..\inc\cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -12,8 +13,8 @@ namespace winrt::TerminalApp::implementation
     {
         Command() = default;
 
-        static winrt::com_ptr<Command> FromJson(const Json::Value& json, std::vector<::TerminalApp::SettingsLoadWarnings>);
-        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
+        static winrt::com_ptr<Command> FromJson(const Json::Value& json, std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);

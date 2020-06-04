@@ -360,7 +360,7 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
-const std::vector<winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+const std::map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
 {
     return _commands;
 }

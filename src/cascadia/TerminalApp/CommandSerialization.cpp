@@ -74,7 +74,6 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto actionJson{ json[JsonKey(ActionKey)] })
         {
-            std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
             auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
 
             if (actionAndArgs)
@@ -91,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
+    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                         const Json::Value& json)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
@@ -106,7 +105,11 @@ namespace winrt::TerminalApp::implementation
                     auto result = Command::FromJson(value, warnings);
                     if (result)
                     {
-                        commands.push_back(*result);
+                        commands.insert_or_assign(result->Name(), *result);
+                    }
+                    else
+                    {
+                        commands.erase(result->Name());
                     }
                 }
                 CATCH_LOG();

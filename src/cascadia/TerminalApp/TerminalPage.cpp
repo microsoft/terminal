@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
             auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
             for (auto& action : _settings->GlobalSettings().GetCommands())
             {
-                commandsCollection.Append(action);
+                commandsCollection.Append(action.second);
             }
             CommandPalette().SetActions(commandsCollection);
         }
