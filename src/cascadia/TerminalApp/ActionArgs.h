@@ -464,9 +464,9 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ExecuteCommandlineArgs>();
-            if (auto cmdline{ json[JsonKey(CommandlineKey)] })
+            if (auto commandline{ json[JsonKey(CommandlineKey)] })
             {
-                args->_Commandline = cmdline.asString();
+                args->_Commandline = winrt::to_hstring(commandline.asString());
             }
             return { *args, {} };
         }

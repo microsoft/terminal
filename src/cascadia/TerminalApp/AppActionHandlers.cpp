@@ -244,8 +244,41 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
             realArgs;
+            ::TerminalApp::AppCommandlineArgs appArgs;
 
-            args.Handled(true);
+            // copied from AppLogic::_ParseArgs
+            auto parseArgs = [this, &realArgs, &appArgs]() -> int {
+                std::vector<winrt::hstring> argv;
+                argv.push_back(L"wt.exe"); // { realArgs.Commandline() };
+                argv.push_back(realArgs.Commandline()); // { realArgs.Commandline() };
+                winrt::array_view<const winrt::hstring> actions{ argv };
+                auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(actions);
+                for (auto& cmdBlob : commands)
+                {
+                    const auto result = appArgs.ParseCommand(cmdBlob);
+
+                    // If this succeeded, result will be 0. Otherwise, the caller should
+                    // exit(result), to exit the program.
+                    if (result != 0)
+                    {
+                        return result;
+                    }
+                }
+
+                // If all the args were successfully parsed, we'll have some commands
+                // built in appArgs, which we'll use when the application starts up.
+                return 0;
+            };
+
+            bool handled = parseArgs() == 0;
+
+            if (handled)
+            {
+                _startupActions = appArgs.GetStartupActions();
+                _ProcessStartupActions(false);
+            }
+
+            args.Handled(handled);
         }
     }
 
