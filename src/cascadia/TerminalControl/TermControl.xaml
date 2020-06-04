@@ -38,8 +38,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Grid x:Name="TerminalArea"
-                  Grid.Column="0"
+            <Grid Grid.Column="0"
                   Visibility="Visible"
                   Background="Transparent"
                   PointerPressed="_PointerPressedHandler"
