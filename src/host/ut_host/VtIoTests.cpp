@@ -9,10 +9,13 @@
 #include "..\..\renderer\vt\Xterm256Engine.hpp"
 #include "..\..\renderer\vt\XtermEngine.hpp"
 #include "..\..\renderer\vt\WinTelnetEngine.hpp"
-#include "..\..\renderer\dx\DxRenderer.hpp"
 #include "..\..\renderer\base\Renderer.hpp"
 #include "..\Settings.hpp"
 #include "..\VtIo.hpp"
+
+#ifndef __INSIDE_WINDOWS
+#include "..\..\renderer\dx\DxRenderer.hpp"
+#endif
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
