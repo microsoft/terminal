@@ -1976,6 +1976,7 @@ robomac
 roundtrip
 ROWSTOSCROLL
 RRF
+RRRGGGBB
 rtcore
 RTEXT
 rtf
