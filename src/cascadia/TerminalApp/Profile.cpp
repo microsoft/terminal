@@ -437,7 +437,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-	// TODO DH [JU-DH]
+    // TODO DH [JU-DH]
     if (json.isMember(JsonKey(FontWeightKey)))
     {
         auto fontWeight{ json[JsonKey(FontWeightKey)] };

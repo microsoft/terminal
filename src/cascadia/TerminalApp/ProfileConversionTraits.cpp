@@ -1,6 +1,5 @@
 ﻿// Explicit specializations for JSON conversion
-template<>
-struct JsonUtils::ConversionTrait<CursorStyle> : public JsonUtils::KeyValueMapper<CursorStyle, JsonUtils::ConversionTrait<CursorStyle>>
+JSON_ENUM_MAPPER(CursorStyle)
 {
     static constexpr std::array<pair_type, 5> mappings = {
         pair_type{ CursorShapeBar, CursorStyle::Bar }, // DEFAULT
@@ -11,8 +10,7 @@ struct JsonUtils::ConversionTrait<CursorStyle> : public JsonUtils::KeyValueMappe
     };
 };
 
-template<>
-struct JsonUtils::ConversionTrait<Media::Stretch> : public JsonUtils::KeyValueMapper<Media::Stretch, JsonUtils::ConversionTrait<Media::Stretch>>
+JSON_ENUM_MAPPER(Media::Stretch)
 {
     static constexpr std::array<pair_type, 4> mappings = {
         pair_type{ ImageStretchModeUniformToFill, Media::Stretch::UniformToFill }, // DEFAULT
@@ -22,8 +20,7 @@ struct JsonUtils::ConversionTrait<Media::Stretch> : public JsonUtils::KeyValueMa
     };
 };
 
-template<>
-struct JsonUtils::ConversionTrait<ScrollbarState> : public JsonUtils::KeyValueMapper<ScrollbarState, JsonUtils::ConversionTrait<ScrollbarState>>
+JSON_ENUM_MAPPER(ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ AlwaysVisible, ScrollbarState::Visible }, // DEFAULT
@@ -31,8 +28,7 @@ struct JsonUtils::ConversionTrait<ScrollbarState> : public JsonUtils::KeyValueMa
     };
 };
 
-template<>
-struct JsonUtils::ConversionTrait<std::tuple<HorizontalAlignment, VerticalAlignment>> : public JsonUtils::KeyValueMapper<std::tuple<HorizontalAlignment, VerticalAlignment>, JsonUtils::ConversionTrait<std::tuple<HorizontalAlignment, VerticalAlignment>>>
+JSON_ENUM_MAPPER(std::tuple<HorizontalAlignment, VerticalAlignment>)
 {
     static constexpr std::array<pair_type, 9> mappings = {
         pair_type{ ImageAlignmentCenter, std::make_tuple(HorizontalAlignment::Center, VerticalAlignment::Center) }, // DEFAULT
@@ -47,8 +43,7 @@ struct JsonUtils::ConversionTrait<std::tuple<HorizontalAlignment, VerticalAlignm
     };
 };
 
-template<>
-struct JsonUtils::ConversionTrait<TextAntialiasingMode> : public JsonUtils::KeyValueMapper<TextAntialiasingMode, JsonUtils::ConversionTrait<TextAntialiasingMode>>
+JSON_ENUM_MAPPER(TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ AntialiasingModeGrayscale, TextAntialiasingMode::Grayscale }, // DEFAULT
