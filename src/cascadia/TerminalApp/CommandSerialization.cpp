@@ -31,7 +31,8 @@ namespace winrt::TerminalApp::implementation
     // - json: the Json::Value to deserialize into a Command
     // Return Value:
     // - the newly constructed Command object.
-    winrt::com_ptr<Command> Command::FromJson(const Json::Value& json)
+    winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
+                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         auto result = winrt::make_self<Command>();
 
@@ -65,7 +66,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        // TODO: iconPath not implemented quite yet. Can't seem to get the binding quite right.
+        // TODO GH#TODO: iconPath not implemented quite yet. Can't seem to get the binding quite right.
         if (const auto iconPathJson{ json[JsonKey(IconPathKey)] })
         {
             result->_setIconPath(winrt::to_hstring(iconPathJson.asString()));
@@ -90,9 +91,11 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    void Command::LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
-                            const Json::Value& json)
+    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::vector<winrt::TerminalApp::Command>& commands,
+                                                                        const Json::Value& json)
     {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
         // TODO: Be smart about layering. Override commands with the same name.
         for (const auto& value : json)
         {
@@ -100,7 +103,7 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    auto result = Command::FromJson(value);
+                    auto result = Command::FromJson(value, warnings);
                     if (result)
                     {
                         commands.push_back(*result);
@@ -109,5 +112,6 @@ namespace winrt::TerminalApp::implementation
                 CATCH_LOG();
             }
         }
+        return warnings;
     }
 }

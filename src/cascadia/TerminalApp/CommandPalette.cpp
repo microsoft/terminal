@@ -10,6 +10,7 @@ using namespace winrt;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
+using namespace winrt::Windows::Foundation;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -19,11 +20,20 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
 
-        Backdrop().Translation({ 0, 0, 32 });
+        // Hook up the shadow on the command palette to the backdrop that will
+        // actually show it. This needs to be done at runtime.
+        CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
+        // "raise" the command palette up by 16 units, so it will cast a shadow.
+        Backdrop().Translation({ 0, 0, 16 });
     }
 
+    // Method Description:
+    // - Toggles the visibility of the command palette. This will auto-focus the
+    //   input box within the palette.
+    //
+    // - TODO GH#TODO: When we add support for commandline mode, accept a parameter here
+    //   for which mode we should enter in.
     void CommandPalette::ToggleVisibility()
     {
         const bool isVisible = Visibility() == Visibility::Visible;
@@ -36,10 +46,19 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
+            // Raise an event to return control to the Terminal.
             _close();
         }
     }
 
+    // Method Description:
+    // - Moves the focus up or down the list of commands. If we're att the top,
+    //   we'll loop around to the bottom, and vice-versa.
+    // Arguments:
+    // - moveDown: if true, we're attempting to move to the next item in the
+    //   list. Otherwise, we're attempting to move to the previous.
+    // Return Value:
+    // - <none>
     void CommandPalette::_selectNextItem(const bool moveDown)
     {
         const auto selected = _FilteredActionsView().SelectedIndex();
@@ -52,59 +71,87 @@ namespace winrt::TerminalApp::implementation
         _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
     }
 
-    void CommandPalette::_keyDownHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    // Method Description:
+    // - Process keystrokes in the input box. This is used for moving focus up
+    //   and down the list of commands in Action mode, and for executing
+    //   commands in both Action mode and Commandline mode.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs containing info about the keystroke.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_keyDownHandler(IInspectable const& /*sender*/,
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+
         if (key == VirtualKey::Up)
         {
+            // Action Mode: Move focus to the next item in the list.
             _selectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
+            // Action Mode: Move focus to the previous item in the list.
             _selectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
         {
-            auto selectedItem = _FilteredActionsView().SelectedItem();
-            if (selectedItem)
+            // Action Mode: Dispatch the action of the selected command.
+
+            if (const auto selectedItem = _FilteredActionsView().SelectedItem())
             {
-                auto data = selectedItem.try_as<Command>();
-                if (data)
+                if (const auto data = selectedItem.try_as<Command>())
                 {
-                    auto actionAndArgs = data.Action();
+                    const auto actionAndArgs = data.Action();
                     _dispatch.DoAction(actionAndArgs);
                     _close();
                 }
             }
+
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
+            // Action Mode: Dismiss the palette.
             _close();
         }
     }
 
-    void CommandPalette::_filterTextChanged(Windows::Foundation::IInspectable const& /*sender*/,
+    // Method Description:
+    // - Event handler for when the text in the input box changes. In Action
+    //   Mode, we'll update the list of displayed commands, and select the first one.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
         _updateFilteredActions();
         _FilteredActionsView().SelectedIndex(0);
     }
 
-    Windows::Foundation::Collections::IObservableVector<Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
 
-    void CommandPalette::SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions)
+    void CommandPalette::SetActions(Collections::IVector<TerminalApp::Command> const& actions)
     {
         _allActions = actions;
         _updateFilteredActions();
     }
 
+    // Method Description:
+    // - Update our list of filtered actions to reflect the current contents of
+    //   the input box. For more details on which commands will be displayed,
+    //   see `_filterMatchesName`.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void CommandPalette::_updateFilteredActions()
     {
         _filteredActions.Clear();
@@ -115,11 +162,45 @@ namespace winrt::TerminalApp::implementation
         {
             if (addAll || CommandPalette::_filterMatchesName(searchText, action.Name()))
             {
+                // TODO GH#TODO: Show these actions in a weighted order.
+                // - Longer consecutive matches seems like a good start
+                // - Matching the first character of a word, then the first char
+                //   of a subsequent word also seems useful
+                // - TODO GH#TODO:"Recently used commands" ordering also seems valuable.
                 _filteredActions.Append(action);
             }
         }
     }
 
+    // Function Description:
+    // - Determine if a command with the given `name` should be shown if the
+    //   input box contains the string `searchText`. If all the characters of
+    //   search text appear in order in `name`, then this fuction will return
+    //   true. There can be any number of characters separating consecutive
+    //   characters in searchText.
+    //   * For example:
+    //      "name": "New Tab"
+    //      "name": "Close Tab"
+    //      "name": "Close Pane"
+    //      "name": "[-] Split Horizontal"
+    //      "name": "[ | ] Split Vertical"
+    //      "name": "Next Tab"
+    //      "name": "Prev Tab"
+    //      "name": "Open Settings"
+    //      "name": "Open Media Controls"
+    //   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
+    //   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
+    //     **Tab**".
+    //   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
+    //     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
+    //     Controls".
+    //   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
+    //     "Split", then the **V** in "Vertical").
+    // Arguments:
+    // - searchText: the string of text to search for in `name`
+    // - name: the name to check
+    // Return Value:
+    // - true if name contained all the characters of searchText
     bool CommandPalette::_filterMatchesName(winrt::hstring searchText, winrt::hstring name)
     {
         std::wstring lowercaseSearchText{ searchText.c_str() };
@@ -150,6 +231,15 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
+    // Method Description:
+    // - Dismiss the command palette. This will:
+    //   * select all the current text in the input box
+    //   * set our visibility to Hidden
+    //   * raise our Closed event, so the page can return focus to the active Terminal
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);

@@ -221,7 +221,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto commandsArray{ json[JsonKey(CommandsKey)] })
     {
-        winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
+        auto warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
+        // It's possible that the user provided commands have some warnings
+        // in them, similar to the keybindings.
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 }
 

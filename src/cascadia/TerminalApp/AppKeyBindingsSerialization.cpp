@@ -62,7 +62,6 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 {
     Json::Value bindingsArray;
 
-    // TODO: Fix later
     // Iterate over all the possible actions in the names list, and see if
     // it has a binding.
     for (auto& actionName : ActionAndArgs::ActionNamesMap)
