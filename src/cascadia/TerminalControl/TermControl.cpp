@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _initializedTerminal{ false },
         _settings{ settings },
         _closing{ false },
-        _isTerminalInitiatedScroll{ false },
+        _scrollBarUpdater{ std::make_shared<ScrollBarUpdater>() },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -1395,8 +1395,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        if (_isTerminalInitiatedScroll || _closing)
+        if (_scrollBarUpdater->IsInternalUpdate() || _closing)
         {
+            // The update comes from ourselves, more specifically from the
+            // terminal. So we don't have to update the terminal because it
+            // already knows.
             return;
         }
 
@@ -1406,9 +1409,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(newValue);
 
-        // We've just told the terminal to update its viewport to reflect the
-        // new scroll value so the scroll bar matches the viewport now.
-        _willUpdateScrollBarToMatchViewport.store(false);
+        // User input takes priority over terminal events so cancel
+        // any pending scroll bar update if the user scrolls.
+        _scrollBarUpdater->CancelPendingValueChange();
     }
 
     // Method Description:
@@ -1910,35 +1913,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
-    //   The change will be actually handled in _ScrollbarChangeHandler.
-    //   This should be done on the UI thread. Make sure the caller is calling
-    //      us in a RunAsync block.
-    // Arguments:
-    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
-    //      of the buffer.
-    // - viewHeight: the height of the viewport in rows.
-    // - bufferSize: the length of the buffer, in rows
-    void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
-                                        const int viewTop,
-                                        const int viewHeight,
-                                        const int bufferSize)
-    {
-        // The terminal is already in the scroll position it wants, so no need
-        // to tell it to scroll.
-        _isTerminalInitiatedScroll = true;
-
-        const auto hiddenContent = bufferSize - viewHeight;
-        scrollBar.Maximum(hiddenContent);
-        scrollBar.Minimum(0);
-        scrollBar.ViewportSize(viewHeight);
-        scrollBar.Value(viewTop);
-
-        _isTerminalInitiatedScroll = false;
-    }
-
-    // Method Description:
-    // - Update the position and size of the scrollbar to match the given
-    //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
     //      registered an event handler for us.
     // Arguments:
@@ -1946,9 +1920,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    winrt::fire_and_forget TermControl::_TerminalScrollPositionChanged(const int viewTop,
-                                                                       const int viewHeight,
-                                                                       const int bufferSize)
+    void TermControl::_TerminalScrollPositionChanged(const int viewTop,
+                                                     const int viewHeight,
+                                                     const int bufferSize)
     {
         // Since this callback fires from non-UI thread, we might be already
         // closed/closing.
@@ -1959,21 +1933,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
 
-        auto weakThis{ get_weak() };
+        ScrollBarUpdate update;
 
-        co_await winrt::resume_foreground(Dispatcher());
+        const auto hiddenContent = bufferSize - viewHeight;
+        update.NewMaximum = hiddenContent;
 
-        // Even if we weren't closed/closing few lines above, we might be
-        // while waiting for this block of code to be dispatched.
-        // If 'weakThis' is locked, then we can safely work with 'this'
-        if (auto control{ weakThis.get() })
-        {
-            if (!_closing.load())
-            {
-                // Update our scrollbar
-                _ScrollbarUpdater(ScrollBar(), viewTop, viewHeight, bufferSize);
-            }
-        }
+        update.NewMinimum = 0;
+        update.NewViewportSize = viewHeight;
+        update.NewValue = viewTop;
+
+        _scrollBarUpdater->DoUpdate(ScrollBar(), update);
     }
 
     // Method Description:

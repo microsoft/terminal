@@ -755,7 +755,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     auto proposedCursorPosition = proposedPosition;
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
-    bool notifyScroll = false;
+
+    bool scrollBarDirty = false;
+    bool scrolled = false;
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
@@ -764,39 +766,52 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (newRows > 0)
     {
+        const auto originalBufferHeight = GetBufferHeight();
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
         }
-        notifyScroll = true;
+
+        // If we're at the end of the buffer and we go one or multiple lines
+        // below, it will move all of the contents up and put the cursor at the
+        // end of the buffer.
+        // So in that case, the cursor's position and the viewport don't even
+        // change. But the buffer height might have changed if we haven't
+        // filled up the whole buffer yet.
+        scrollBarDirty |= originalBufferHeight != GetBufferHeight();
+
+        scrolled |= true;
     }
 
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
-    const COORD cursorPosAfter = cursor.GetPosition();
-
     // Move the viewport down if the cursor moved below the viewport.
-    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
     {
-        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
         {
             _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
                                                         _mutableViewport.Dimensions());
-            notifyScroll = true;
+            scrollBarDirty |= true;
+            scrolled |= true;
         }
     }
 
-    if (notifyScroll)
+    if (scrollBarDirty)
+    {
+        _NotifyScrollEvent();
+    }
+
+    if (scrolled)
     {
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
         COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
-        _NotifyScrollEvent();
     }
 
     _NotifyTerminalCursorPositionChanged();

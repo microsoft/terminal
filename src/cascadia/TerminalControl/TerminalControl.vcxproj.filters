@@ -16,9 +16,11 @@
     <ClCompile Include="TermControlAutomationPeer.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
     <ClCompile Include="TermControlUiaProvider.cpp" />
+    <ClCompile Include="TimeThrottle.cpp" />
     <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="SearchBoxControl.cpp" />
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="ScrollBarUpdater.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -26,7 +28,9 @@
     <ClInclude Include="TermControlAutomationPeer.h" />
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="TermControlUiaProvider.hpp" />
+    <ClInclude Include="TimeThrottle.h" />
     <ClInclude Include="UiaTextRange.hpp" />
+    <ClInclude Include="ScrollBarUpdater.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
