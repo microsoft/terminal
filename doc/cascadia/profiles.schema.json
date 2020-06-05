@@ -376,8 +376,9 @@
         },
         "tabWidthMode": {
           "default": "equal",
-          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title",
+          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title\n -\"compact\" sizes each tab to the length of its title when focused, and shrinks to the size of only the icon when the tab is unfocused.",
           "enum": [
+            "compact",
             "equal",
             "titleLength"
           ],
