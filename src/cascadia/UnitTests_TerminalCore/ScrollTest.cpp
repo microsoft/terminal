@@ -29,7 +29,7 @@ namespace
     class MockScrollRenderTarget final : public ::Microsoft::Console::Render::IRenderTarget
     {
     public:
-        ~MockScrollRenderTarget() override {};
+        ~MockScrollRenderTarget() override{};
 
         std::optional<COORD> TriggerScrollDelta() const
         {
@@ -41,19 +41,19 @@ namespace
             _triggerScrollDelta.reset();
         }
 
-        virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport&) {};
-        virtual void TriggerRedraw(const COORD* const) {};
-        virtual void TriggerRedrawCursor(const COORD* const) {};
-        virtual void TriggerRedrawAll() {};
-        virtual void TriggerTeardown() {};
-        virtual void TriggerSelection() {};
-        virtual void TriggerScroll() {};
+        virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport&){};
+        virtual void TriggerRedraw(const COORD* const){};
+        virtual void TriggerRedrawCursor(const COORD* const){};
+        virtual void TriggerRedrawAll(){};
+        virtual void TriggerTeardown(){};
+        virtual void TriggerSelection(){};
+        virtual void TriggerScroll(){};
         virtual void TriggerScroll(const COORD* const delta)
         {
             _triggerScrollDelta = { *delta };
         };
-        virtual void TriggerCircling() {};
-        void TriggerTitleChange() {};
+        virtual void TriggerCircling(){};
+        void TriggerTitleChange(){};
 
     private:
         std::optional<COORD> _triggerScrollDelta;
@@ -168,17 +168,16 @@ void ScrollTest::TestNotifyScrolling()
         {
             VERIFY_IS_TRUE(_renderTarget->TriggerScrollDelta().has_value(),
                            fmt::format(L"Expected a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
-            
+
             COORD expectedDelta;
             expectedDelta.X = 0;
             expectedDelta.Y = -1;
-            VERIFY_ARE_EQUAL(expectedDelta, _renderTarget->TriggerScrollDelta().value(),
-                           fmt::format(L"Wrong value in 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+            VERIFY_ARE_EQUAL(expectedDelta, _renderTarget->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
         }
         else
         {
             VERIFY_IS_FALSE(_renderTarget->TriggerScrollDelta().has_value(),
-                           fmt::format(L"Expected to not see a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+                            fmt::format(L"Expected to not see a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
         }
 
         if (_scrollBarNotification->has_value())
