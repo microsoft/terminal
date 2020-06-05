@@ -36,8 +36,8 @@ public:
 
     size_t size() const noexcept;
 
-    const CharRow& GetCharRow() const;
-    CharRow& GetCharRow();
+    const CharRow& GetCharRow() const noexcept;
+    CharRow& GetCharRow() noexcept;
 
     const ATTR_ROW& GetAttrRow() const noexcept;
     ATTR_ROW& GetAttrRow() noexcept;
@@ -46,8 +46,7 @@ public:
     void SetId(const SHORT id) noexcept;
 
     bool Reset(const TextAttribute Attr);
-    [[nodiscard]]
-    HRESULT Resize(const size_t width);
+    [[nodiscard]] HRESULT Resize(const size_t width);
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;
@@ -55,10 +54,10 @@ public:
     RowCellIterator AsCellIter(const size_t startIndex) const;
     RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
 
-    UnicodeStorage& GetUnicodeStorage();
-    const UnicodeStorage& GetUnicodeStorage() const;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight = std::nullopt);
+    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 

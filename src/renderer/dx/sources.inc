@@ -28,9 +28,12 @@ INCLUDES = \
     ..\..\..\inc; \
     ..\..\..\host; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
+    $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
 
 SOURCES = \
     $(SOURCES) \
     ..\DxRenderer.cpp \
     ..\CustomTextRenderer.cpp \
     ..\CustomTextLayout.cpp \
+
+C_DEFINES=$(C_DEFINES) -D__INSIDE_WINDOWS

@@ -18,12 +18,6 @@ class OutputTests
 {
     BEGIN_TEST_CLASS(OutputTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS()
 
     TEST_CLASS_SETUP(TestSetup);
@@ -202,7 +196,7 @@ void OutputTests::WriteConsoleOutputWOutsideBuffer()
 void OutputTests::WriteConsoleOutputWWithClipping()
 {
     SetVerifyOutput vf(VerifyOutputSettings::LogOnlyFailures);
-    
+
     // Get output buffer information.
     const auto consoleOutputHandle = GetStdOutputHandle();
 
@@ -243,10 +237,10 @@ void OutputTests::WriteConsoleOutputWWithClipping()
     adjustedRegion.Bottom += bufferSize.Y / 2;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     auto affected = adjustedRegion;
@@ -330,10 +324,10 @@ void OutputTests::WriteConsoleOutputWNegativePositions()
     adjustedRegion.Bottom -= 10;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     auto affected = adjustedRegion;
@@ -389,7 +383,7 @@ void OutputTests::WriteConsoleOutputCharacterWRunoff()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
     const auto bufferSize = sbiex.dwSize;
 
-    COORD target{ bufferSize.X - 1, bufferSize.Y - 1};
+    COORD target{ bufferSize.X - 1, bufferSize.Y - 1 };
 
     const std::wstring text = L"hello";
     DWORD charsWritten = 0;
@@ -454,11 +448,10 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     const DWORD size = width * height;
     std::unique_ptr<WORD[]> attrs = std::make_unique<WORD[]>(size);
 
-    std::generate(attrs.get(), attrs.get() + size, [=]()
-                  {
-                      static int i = 0;
-                      return i++ % 2 == 0 ? red : green;
-                  });
+    std::generate(attrs.get(), attrs.get() + size, [=]() {
+        static int i = 0;
+        return i++ % 2 == 0 ? red : green;
+    });
 
     // write text
     const COORD coord{ 0, 0 };
@@ -498,12 +491,11 @@ void OutputTests::WriteBackspaceTest()
     // Get output buffer information.
     const auto hOut = GetStdOutputHandle();
     Log::Comment(NoThrowString().Format(
-        L"Outputing \"\\b \\b\" should behave the same as \"\b\", \" \", \"\b\" in seperate WriteConsoleW calls."
-    ));
+        L"Outputting \"\\b \\b\" should behave the same as \"\b\", \" \", \"\b\" in separate WriteConsoleW calls."));
 
     DWORD n = 0;
-    CONSOLE_SCREEN_BUFFER_INFO csbi = {0};
-    COORD c = {0, 0};
+    CONSOLE_SCREEN_BUFFER_INFO csbi = { 0 };
+    COORD c = { 0, 0 };
     VERIFY_SUCCEEDED(SetConsoleCursorPosition(hOut, c));
     VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"GoodX", 5, &n, nullptr));
 
@@ -536,7 +528,6 @@ void OutputTests::WriteBackspaceTest()
     VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
     VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 3);
     VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 1);
-
 }
 
 void OutputTests::BasicReadConsoleOutputATest()
@@ -767,10 +758,10 @@ void OutputTests::ReadConsoleOutputWWithClipping()
     adjustedRegion.Bottom += bufferSize.Y / 2;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     // NOTE: We expect this to be broken for v1. It's always been wrong there (returning a clipped count of bytes instead of the whole rectangle).
@@ -861,10 +852,10 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     adjustedRegion.Bottom -= 10;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API
     // NOTE: Due to the same reason as the ReadConsoleOutputWWithClipping test (the v1 buffer told the driver the wrong return buffer byte length)
@@ -1000,7 +991,8 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
 }
 
 // Send "Select All", then spawn a thread to hit ESC a moment later.
-static void WinPtyTestStartSelection() {
+static void WinPtyTestStartSelection()
+{
     const HWND hwnd = GetConsoleWindow();
     const int SC_CONSOLE_SELECT_ALL = 0xFFF5;
     SendMessage(hwnd, WM_SYSCOMMAND, SC_CONSOLE_SELECT_ALL, 0);
@@ -1011,23 +1003,31 @@ static void WinPtyTestStartSelection() {
     press_escape.detach();
 }
 
-template <typename T>
+template<typename T>
 static void WinPtyDoWriteTest(
-    const wchar_t *api_name,
-    T *api_ptr,
-    bool use_selection) {
+    const wchar_t* api_name,
+    T* api_ptr,
+    bool use_selection)
+{
     if (use_selection)
         WinPtyTestStartSelection();
     char buf[] = "1234567890567890567890567890\n";
     DWORD actual = 0;
     const BOOL ret = api_ptr(
         GetStdHandle(STD_OUTPUT_HANDLE),
-        buf, static_cast<DWORD>(strlen(buf)), &actual, NULL);
+        buf,
+        static_cast<DWORD>(strlen(buf)),
+        &actual,
+        NULL);
     const DWORD last_error = GetLastError();
-    VERIFY_IS_TRUE(ret && actual == strlen(buf), String().Format(L"%s: %s returned %d: actual=%u LastError=%u (%s)\n",
-        ((ret && actual == strlen(buf)) ? L"SUCCESS" : L"ERROR"),
-        api_name, ret, actual, last_error,
-        use_selection ? L"select" : L"no-select"));
+    VERIFY_IS_TRUE(ret && actual == strlen(buf),
+                   String().Format(L"%s: %s returned %d: actual=%u LastError=%u (%s)\n",
+                                   ((ret && actual == strlen(buf)) ? L"SUCCESS" : L"ERROR"),
+                                   api_name,
+                                   ret,
+                                   actual,
+                                   last_error,
+                                   use_selection ? L"select" : L"no-select"));
 }
 
 void OutputTests::WinPtyWrite()
@@ -1061,5 +1061,4 @@ void OutputTests::WinPtyWrite()
         VERIFY_FAIL(L"Unknown test type.");
         break;
     }
-
 }

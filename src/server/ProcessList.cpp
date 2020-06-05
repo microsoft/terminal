@@ -27,12 +27,11 @@ using namespace Microsoft::Console::Interactivity;
 // - S_OK if the process was recorded in the list successfully or already existed.
 // - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
 // - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
-[[nodiscard]]
-HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
-                                             const DWORD dwThreadId,
-                                             const ULONG ulProcessGroupId,
-                                             _In_opt_ ConsoleProcessHandle* const pParentProcessData,
-                                             _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
+[[nodiscard]] HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
+                                                           const DWORD dwThreadId,
+                                                           const ULONG ulProcessGroupId,
+                                                           _In_opt_ ConsoleProcessHandle* const pParentProcessData,
+                                                           _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
     FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
@@ -166,9 +165,8 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 // Return Value:
 // - S_OK if buffer was filled successfully and resulting count of items is in pcProcessList.
 // - E_NOT_SUFFICIENT_BUFFER if the buffer given was too small. Refer to pcProcessList for size requirement.
-[[nodiscard]]
-HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
-                                           _Inout_ size_t* const pcProcessList) const
+[[nodiscard]] HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
+                                                         _Inout_ size_t* const pcProcessList) const
 {
     HRESULT hr = S_OK;
 
@@ -210,11 +208,10 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
 // Return Value:
 // - S_OK if prgRecords was filled successfully or if no records were found that matched.
 // - E_OUTOFMEMORY in a low memory situation.
-[[nodiscard]]
-HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
-                                                           const bool fCtrlClose,
-                                                           _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
-                                                           _Out_ size_t* const pcRecords) const
+[[nodiscard]] HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
+                                                                         const bool fCtrlClose,
+                                                                         _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
+                                                                         _Out_ size_t* const pcRecords) const
 {
     *pcRecords = 0;
 
@@ -297,7 +294,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetFirstProcess() const
 // Routine Description:
 // - Requests that the OS change the process priority for the console and all attached client processes
 // Arguments:
-// - fForeground - True if console is in foreground and related processes should be prioritied. False if they can be backgrounded/deprioritized.
+// - fForeground - True if console is in foreground and related processes should be prioritized. False if they can be backgrounded/deprioritized.
 // Return Value:
 // - <none>
 // - NOTE: Will attempt to request a change, but it's non fatal if it doesn't work. Failures will be logged to debug channel.

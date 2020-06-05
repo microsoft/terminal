@@ -26,8 +26,7 @@ static const WORD leftShiftScanCode = 0x2A;
 // Return Value:
 // - The UTF-16 wide string.
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]]
-std::wstring ConvertToW(const UINT codePage, const std::string_view source)
+[[nodiscard]] std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 {
     // If there's nothing to convert, bail early.
     if (source.empty())
@@ -40,20 +39,20 @@ std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 
     // Ask how much space we will need.
     int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
-    THROW_LAST_ERROR_IF(0 == iTarget);
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == iTarget);
 
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer.
-    std::unique_ptr<wchar_t[]> pwsOut = std::make_unique<wchar_t[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(pwsOut);
+    // Allocate ourselves some space
+    std::wstring out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, pwsOut.get(), iTarget));
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
 
     // Return as a string
-    return std::wstring(pwsOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
@@ -65,36 +64,39 @@ std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 // Return Value:
 // - The multibyte string encoded in the given codepage
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]]
-std::string ConvertToA(const UINT codepage, const std::wstring_view source)
+[[nodiscard]] std::string ConvertToA(const UINT codepage, const std::wstring_view source)
 {
     // If there's nothing to convert, bail early.
     if (source.empty())
     {
         return {};
     }
-    
+
     int iSource; // convert to int because Wc2Mb requires it.
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
     // Ask how much space we will need.
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer
-    std::unique_ptr<char[]> psOut = std::make_unique<char[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(psOut.get());
+    // Allocate ourselves some space
+    std::string out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
-    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, out.data(), iTarget, nullptr, nullptr));
 
     // Return as a string
-    return std::string(psOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
@@ -105,8 +107,7 @@ std::string ConvertToA(const UINT codepage, const std::wstring_view source)
 // Return Value:
 // - Length in characters of multibyte buffer that would be required to hold this text after conversion
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
-[[nodiscard]]
-size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
+[[nodiscard]] size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
 {
     // If there's no bytes, bail early.
     if (source.empty())
@@ -118,7 +119,9 @@ size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
     // Ask how many bytes this string consumes in the other codepage
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
@@ -164,7 +167,6 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
     return convertedEvents;
 }
 
-
 // Routine Description:
 // - converts a wchar_t into a series of KeyEvents as if it was typed
 // using the keyboard
@@ -204,7 +206,8 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    const auto vk = LOBYTE(keyState);
+    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -282,7 +285,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
         // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
         // We need to treat it as unsigned because we're going to pretend it was a keypad entry
         // and you don't enter negative numbers on the keypad.
-        unsigned char const uch = static_cast<unsigned char>(convertedChars[0]);
+        unsigned char const uch = static_cast<unsigned char>(convertedChars.at(0));
 
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)
@@ -340,7 +343,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 //                      is not reliable for calculating half/full width. Must use current
 //                      display font data (cached) instead.
 // May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
-// Jan-16-2018 migrie   Seperated core lookup from asking the renderer the width
+// Jan-16-2018 migrie   Separated core lookup from asking the renderer the width
 // May-01-2019 MiNiksa  Forced lookup-via-renderer for retroactively recategorized emoji
 //                      that used to be narrow but now might be wide. (approx x2194-x2b55, not inclusive)
 //                      Also forced block characters segment (x2580-x259F) to narrow
@@ -380,97 +383,6 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
     else if (0x2580 <= wch && wch <= 0x259F)
     {
         return CodepointWidth::Narrow;
-    }
-    // 0x2010 - 0x2B59 varies between narrow, ambiguous, and wide by character and font (Unicode 9.0)
-    // However, there are a bunch of retroactive-emoji in this range. Things that weren't emoji and then they became
-    // "emoji" later. As a result, they jumped from a fixed narrow definition to a now ambiguous definition.
-    // There are others in this range already defined as wide or ambiguous, but we're just going to 
-    // implicitly say they're all ambiguous here to force a font lookup.
-    // I picked the ones that looked like color double-wide emoji in my browser that weren't already
-    // covered easily by the half-width/full-width table (see CodepointWidthDetector.cpp)
-    // See https://unicode.org/Public/emoji/12.0/emoji-data.txt
-    else if ((0x2194 <= wch && wch <= 0x2199) ||
-             (0x21A9 <= wch && wch <= 0x21AA) ||
-             (0x231A <= wch && wch <= 0x231B) ||
-             0x2328 == wch ||
-             0x23CF == wch ||
-             (0x23E9 <= wch && wch <= 0x23F3) ||
-             (0x23F8 <= wch && wch <= 0x23FA) ||
-             0x24C2 == wch ||
-             (0x25AA <= wch && wch <= 0x25AB) ||
-             0x25B6 == wch ||
-             0x25C0 == wch ||
-             (0x25FB <= wch && wch <= 0x25FE) ||
-             (0x2600 <= wch && wch <= 0x2604) ||
-             0x260E == wch ||
-             0x2611 == wch ||
-             (0x2614 <= wch && wch <= 0x2615) ||
-             0x2618 == wch ||
-             0x261D == wch ||
-             0x2620 == wch ||
-             (0x2622 <= wch && wch <= 0x2623) ||
-             0x2626 == wch ||
-             0x262A == wch ||
-             (0x262E <= wch && wch <= 0x262F) ||
-             (0x2638 <= wch && wch <= 0x263A) ||
-             0x2640 == wch ||
-             0x2642 == wch ||
-             (0x2648 <= wch && wch <= 0x2653) ||
-             (0x265F <= wch && wch <= 0x2660) ||
-             0x2663 == wch ||
-             (0x2665 <= wch && wch <= 0x2666) ||
-             0x2668 == wch ||
-             0x267B == wch ||
-             (0x267E <= wch && wch <= 0x267F) ||
-             (0x2692 <= wch && wch <= 0x2697) ||
-             0x2699 == wch ||
-             (0x269B <= wch && wch <= 0x269C) ||
-             (0x26A0 <= wch && wch <= 0x26A1) ||
-             (0x26AA <= wch && wch <= 0x26AB) ||
-             (0x26B0 <= wch && wch <= 0x26B1) ||
-             (0x26BD <= wch && wch <= 0x26BE) ||
-             (0x26C4 <= wch && wch <= 0x26C5) ||
-             0x26C8 == wch ||
-             0x26CE == wch ||
-             0x26CF == wch ||
-             0x26D1 == wch ||
-             (0x26D3 <= wch && wch <= 0x26D4) ||
-             (0x26E9 <= wch && wch <= 0x26EA) ||
-             (0x26F0 <= wch && wch <= 0x26F5) ||
-             (0x26F7 <= wch && wch <= 0x26FA) ||
-             0x26FD == wch ||
-             0x2702 == wch ||
-             0x2705 == wch ||
-             (0x2708 <= wch && wch <= 0x2709) ||
-             (0x270A <= wch && wch <= 0x270B) ||
-             (0x270C <= wch && wch <= 0x270D) ||
-             0x270F == wch ||
-             0x2712 == wch ||
-             0x2714 == wch ||
-             0x2716 == wch ||
-             0x271D == wch ||
-             0x2721 == wch ||
-             0x2728 == wch ||
-             (0x2733 <= wch && wch <= 0x2734) ||
-             0x2744 == wch ||
-             0x2747 == wch ||
-             0x274C == wch ||
-             0x274E == wch ||
-             (0x2753 <= wch && wch <= 0x2755) ||
-             0x2757 == wch ||
-             (0x2763 <= wch && wch <= 0x2764) ||
-             (0x2795 <= wch && wch <= 0x2797) ||
-             0x27A1 == wch ||
-             0x27B0 == wch ||
-             0x27BF == wch ||
-             (0x2934 <= wch && wch <= 0x2935) ||
-             (0x2B05 <= wch && wch <= 0x2B07) ||
-             (0x2B1B <= wch && wch <= 0x2B1C) ||
-             0x2B50 == wch ||
-             0x2B55 == wch
-             )
-    {
-        return CodepointWidth::Ambiguous;
     }
     else if (0x2B5A <= wch && wch <= 0x2E44)
     {
@@ -595,7 +507,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
              (0xffd2 <= wch && wch <= 0xffd7) ||
              (0xffda <= wch && wch <= 0xffdc))
     {
-        /* Halfwidth Hangule variants */
+        /* Halfwidth Hangul variants */
         return CodepointWidth::Narrow;
     }
     else if (0xffe0 <= wch && wch <= 0xffe6)

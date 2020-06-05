@@ -21,56 +21,69 @@ Author(s):
 #include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
-#include <windowsx.h>
+#include <wil/resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    NonClientIslandWindow() noexcept;
+    // this is the same for all DPIs
+    static constexpr const int topBorderVisibleHeight = 1;
+
+    NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    virtual void OnSize() override;
+    void MakeWindow() noexcept override;
+    virtual void OnSize(const UINT width, const UINT height) override;
 
-    [[nodiscard]]
-    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
-    virtual void Initialize() override;
+    void Initialize() override;
 
-    MARGINS GetFrameMargins() const noexcept;
-
-    void SetNonClientHeight(const int contentHeight) noexcept;
+    void OnAppInitialized() override;
+    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
+    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
+    void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
+    std::optional<COORD> _oldIslandPos;
 
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
+    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
+    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
-    HWND _nonClientInteropWindowHandle;
-    winrt::Windows::UI::Xaml::Controls::Grid _nonClientRootGrid;
+    wil::unique_hbrush _backgroundBrush;
+    til::color _backgroundBrushColor;
 
-    int _windowMarginBottom = 2;
-    int _windowMarginSides = 2;
-    int _titlebarMarginRight = 0;
-    int _titlebarMarginTop = 2;
-    int _titlebarMarginBottom = 0;
+    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
+    wil::unique_hwnd _dragBarWindow;
 
-    int _titlebarUnscaledContentHeight = 0;
+    winrt::Windows::UI::Xaml::ElementTheme _theme;
 
-    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea() const noexcept;
-    ::Microsoft::Console::Types::Viewport GetClientContentArea() const noexcept;
-
-    MARGINS _maximizedMargins;
     bool _isMaximized;
 
-    [[nodiscard]]
-    LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
-    [[nodiscard]]
-    HRESULT _UpdateFrameMargins() const noexcept;
+    void _ResizeDragBarWindow() noexcept;
 
-    void _HandleActivateWindow();
-    bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+    int _GetResizeHandleHeight() const noexcept;
+    RECT _GetDragAreaRect() const noexcept;
+    int _GetTopBorderHeight() const noexcept;
 
-    RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+    [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT _OnPaint() noexcept;
+    [[nodiscard]] LRESULT _OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept;
+    void _OnMaximizeChange() noexcept;
+    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
+
+    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    bool _IsTitlebarVisible() const;
+
+    void _UpdateFrameMargins() const noexcept;
+    void _UpdateMaximizedState();
+    void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+    void _UpdateFrameTheme() const;
 };

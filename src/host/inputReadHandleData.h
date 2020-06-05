@@ -18,8 +18,7 @@ Revision History:
 - Adapted from original items in handle.h
 --*/
 
-
-#pragma once 
+#pragma once
 
 class INPUT_READ_HANDLE_DATA
 {
@@ -47,7 +46,6 @@ public:
     std::wstring_view GetPendingInput() const;
 
 private:
-
     bool _isInputPending;
     bool _isMultilineInput;
 

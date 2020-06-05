@@ -12,13 +12,13 @@ Abstract:
 
 #pragma once
 
-// CommandHistory Flags
-#define CLE_ALLOCATED 0x00000001
-#define CLE_RESET     0x00000002
-
 class CommandHistory
 {
 public:
+    // CommandHistory Flags
+    static constexpr int CLE_ALLOCATED = 0x00000001;
+    static constexpr int CLE_RESET = 0x00000002;
+
     static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
     static CommandHistory* s_Find(const HANDLE processHandle);
     static CommandHistory* s_FindByExe(const std::wstring_view appName);
@@ -46,19 +46,16 @@ public:
                              const MatchOptions options);
     bool IsAppNameMatch(const std::wstring_view other) const;
 
-    [[nodiscard]]
-    HRESULT Add(const std::wstring_view command,
-                const bool suppressDuplicates);
+    [[nodiscard]] HRESULT Add(const std::wstring_view command,
+                              const bool suppressDuplicates);
 
-    [[nodiscard]]
-    HRESULT Retrieve(const SearchDirection searchDirection,
-                     const gsl::span<wchar_t> buffer,
-                     size_t& commandSize);
+    [[nodiscard]] HRESULT Retrieve(const SearchDirection searchDirection,
+                                   const gsl::span<wchar_t> buffer,
+                                   size_t& commandSize);
 
-    [[nodiscard]]
-    HRESULT RetrieveNth(const SHORT index,
-                        const gsl::span<wchar_t> buffer,
-                        size_t& commandSize);
+    [[nodiscard]] HRESULT RetrieveNth(const SHORT index,
+                                      const gsl::span<wchar_t> buffer,
+                                      size_t& commandSize);
 
     size_t GetNumberOfCommands() const;
     std::wstring_view GetNth(const SHORT index) const;
@@ -85,7 +82,6 @@ private:
     void _Next(SHORT& ind) const;
     void _Dec(SHORT& ind) const;
     void _Inc(SHORT& ind) const;
-
 
     std::vector<std::wstring> _commands;
     SHORT _maxCommands;

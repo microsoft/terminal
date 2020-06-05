@@ -5,7 +5,6 @@
 #include "UnicodeStorage.hpp"
 #include "CharRow.hpp"
 
-
 // Routine Description:
 // - assignment operator. will store extended glyph data in a separate storage location
 // Arguments:
@@ -92,11 +91,13 @@ CharRowCellReference::const_iterator CharRowCellReference::begin() const
 // - get read-only iterator to the end of the glyph data
 // Return Value:
 // - end iterator of the glyph data
+#pragma warning(push)
+#pragma warning(disable : 26481)
+// TODO GH 2672: eliminate using pointers raw as begin/end markers in this class
 CharRowCellReference::const_iterator CharRowCellReference::end() const
 {
     if (_cellData().DbcsAttr().IsGlyphStored())
     {
-
         const auto& chars = _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
         return chars.data() + chars.size();
     }
@@ -105,6 +106,7 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
         return &_cellData().Char() + 1;
     }
 }
+#pragma warning(pop)
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph)
 {

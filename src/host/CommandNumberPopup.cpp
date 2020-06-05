@@ -102,7 +102,7 @@ void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcep
 void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
 {
     const short commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
-                                                             cookedReadData.History().GetNumberOfCommands() - 1));
+                                                            cookedReadData.History().GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);
@@ -113,15 +113,14 @@ void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcep
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS CommandNumberPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CommandNumberPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
     WCHAR wch = UNICODE_NULL;
     bool popupKeys = false;
     DWORD modifiers = 0;
 
-    for(;;)
+    for (;;)
     {
         Status = _getUserInput(cookedReadData, popupKeys, modifiers, wch);
         if (!NT_SUCCESS(Status))

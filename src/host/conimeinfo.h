@@ -31,7 +31,7 @@ class SCREEN_INFORMATION;
 class ConsoleImeInfo final
 {
 public:
-    // IME compositon string information
+    // IME composition string information
     // There is one "composition string" per line that must be rendered on the screen
     std::vector<ConversionAreaInfo> ConvAreaCompStr;
 
@@ -45,8 +45,7 @@ public:
     void RefreshAreaAttributes();
     void ClearAllAreas();
 
-    [[nodiscard]]
-    HRESULT ResizeAllAreas(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeAllAreas(const COORD newSize);
 
     void WriteCompMessage(const std::wstring_view text,
                           const std::basic_string_view<BYTE> attributes,
@@ -56,9 +55,11 @@ public:
 
     void RedrawCompMessage();
 
+    void SaveCursorVisibility();
+    void RestoreCursorVisibility();
+
 private:
-    [[nodiscard]]
-    HRESULT _AddConversionArea();
+    [[nodiscard]] HRESULT _AddConversionArea();
 
     void _ClearComposition();
 
@@ -77,13 +78,11 @@ private:
                                                     const std::basic_string_view<WORD> colorArray);
 
     std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
-                                                                                 const std::vector<OutputCell>::const_iterator end,
-                                                                                 COORD& pos,
-                                                                                 const Microsoft::Console::Types::Viewport view,
-                                                                                 SCREEN_INFORMATION& screenInfo);
+                                                                 const std::vector<OutputCell>::const_iterator end,
+                                                                 COORD& pos,
+                                                                 const Microsoft::Console::Types::Viewport view,
+                                                                 SCREEN_INFORMATION& screenInfo);
 
-    void _SaveCursorVisibility();
-    void _RestoreCursorVisibility();
     bool _isSavedCursorVisible;
 
     std::wstring _text;

@@ -13,7 +13,6 @@
 #include "../CommandNumberPopup.hpp"
 #include "../CommandListPopup.hpp"
 
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -47,7 +46,7 @@ class CommandNumberPopupTests
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
-        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
             return false;
@@ -57,7 +56,7 @@ class CommandNumberPopupTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        CommandHistory::s_Free((HANDLE)0);
+        CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
@@ -69,8 +68,7 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = VK_ESCAPE;
             modifiers = 0;
@@ -106,11 +104,10 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismissAllPopups)
     {
         Log::Comment(L"that that all popups are dismissed when CommandNumberPopup is dismissed");
-        // CommanNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
+        // CommandNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
         // popups when exiting
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = VK_ESCAPE;
             modifiers = 0;
@@ -139,14 +136,12 @@ class CommandNumberPopupTests
 
         VERIFY_ARE_EQUAL(numberPopup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         VERIFY_IS_FALSE(commandLine.HasPopup());
-
     }
 
     TEST_METHOD(EmptyInputCountsAsOldestHistory)
     {
         Log::Comment(L"hitting enter with no input should grab the oldest history item");
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = false;
             wch = UNICODE_CARRIAGERETURN;
             modifiers = 0;
@@ -183,8 +178,7 @@ class CommandNumberPopupTests
             Popup::UserInputFunction fn = [historyIndex](COOKED_READ_DATA& /*cookedReadData*/,
                                                          bool& popupKey,
                                                          DWORD& modifiers,
-                                                         wchar_t& wch)
-            {
+                                                         wchar_t& wch) {
                 static bool needReturn = false;
                 popupKey = false;
                 modifiers = 0;
@@ -229,8 +223,7 @@ class CommandNumberPopupTests
         Log::Comment(L"entering a number larger than the number of history items should grab the most recent history item");
 
         // simulates user pressing 1, 2, 3, 4, 5, enter
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             static int num = 1;
             popupKey = false;
             modifiers = 0;

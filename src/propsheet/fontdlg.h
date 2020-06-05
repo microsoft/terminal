@@ -26,12 +26,11 @@ Revision History:
 
 /* ----- Literals ----- */
 
-#define MAXDIMENSTRING     40  // max text in combo box
-#define DX_TTBITMAP        20
-#define DY_TTBITMAP        12
-#define CCH_RASTERFONTS    24
-#define CCH_SELECTEDFONT   30
-
+#define MAXDIMENSTRING 40 // max text in combo box
+#define DX_TTBITMAP 20
+#define DY_TTBITMAP 12
+#define CCH_RASTERFONTS 24
+#define CCH_SELECTEDFONT 30
 
 /* ----- Macros ----- */
 /*
@@ -47,31 +46,30 @@ Revision History:
  *
  */
 #define lcbRESETCONTENT(hWnd, bLB) \
-        SendMessage(hWnd, bLB ? LB_RESETCONTENT : CB_RESETCONTENT, 0, 0L)
+    SendMessage(hWnd, bLB ? LB_RESETCONTENT : CB_RESETCONTENT, 0, 0L)
 
 #define lcbGETTEXT(hWnd, bLB, w) \
-        SendMessage(hWnd, bLB ? LB_GETTEXT : CB_GETLBTEXT, w, 0L)
+    SendMessage(hWnd, bLB ? LB_GETTEXT : CB_GETLBTEXT, w, 0L)
 
 #define lcbFINDSTRINGEXACT(hWnd, bLB, pwsz) \
-        (LONG)SendMessage(hWnd, bLB ? LB_FINDSTRINGEXACT : CB_FINDSTRINGEXACT, \
-                          (WPARAM)-1, (LPARAM)pwsz)
+    (LONG) SendMessage(hWnd, bLB ? LB_FINDSTRINGEXACT : CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)pwsz)
 
 #define lcbADDSTRING(hWnd, bLB, pwsz) \
-        (LONG)SendMessage(hWnd, bLB ? LB_ADDSTRING : CB_ADDSTRING, 0, (LPARAM)pwsz)
+    (LONG) SendMessage(hWnd, bLB ? LB_ADDSTRING : CB_ADDSTRING, 0, (LPARAM)pwsz)
 
 #define lcbSETITEMDATA(hWnd, bLB, w, nFont) \
-        SendMessage(hWnd, bLB ? LB_SETITEMDATA : CB_SETITEMDATA, w, nFont)
+    SendMessage(hWnd, bLB ? LB_SETITEMDATA : CB_SETITEMDATA, w, nFont)
 
 #define lcbGETITEMDATA(hWnd, bLB, w) \
-        (LONG)SendMessage(hWnd, bLB ? LB_GETITEMDATA : CB_GETITEMDATA, w, 0L)
+    (LONG) SendMessage(hWnd, bLB ? LB_GETITEMDATA : CB_GETITEMDATA, w, 0L)
 
 #define lcbGETCOUNT(hWnd, bLB) \
-        (LONG)SendMessage(hWnd, bLB ? LB_GETCOUNT : CB_GETCOUNT, 0, 0L)
+    (LONG) SendMessage(hWnd, bLB ? LB_GETCOUNT : CB_GETCOUNT, 0, 0L)
 
 #define lcbGETCURSEL(hWnd, bLB) \
-        (LONG)SendMessage(hWnd, bLB ? LB_GETCURSEL : CB_GETCURSEL, 0, 0L)
+    (LONG) SendMessage(hWnd, bLB ? LB_GETCURSEL : CB_GETCURSEL, 0, 0L)
 
 #define lcbSETCURSEL(hWnd, bLB, w) \
-        SendMessage(hWnd, bLB ? LB_SETCURSEL : CB_SETCURSEL, w, 0L)
+    SendMessage(hWnd, bLB ? LB_SETCURSEL : CB_SETCURSEL, w, 0L)
 
 #endif /* #ifndef FONTDLG_H */

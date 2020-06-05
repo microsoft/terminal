@@ -22,11 +22,17 @@ namespace Microsoft.Terminal.Settings
         Int32 HistorySize;
         Int32 InitialRows;
         Int32 InitialCols;
+        Int32 RowsToScroll;
+
         Boolean SnapOnInput;
+        Boolean AltGrAliasing;
 
         UInt32 CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
+        String StartingTitle;
+        Boolean SuppressApplicationTitle;
+        String WordDelimiters;
     };
 
 }

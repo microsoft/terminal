@@ -10,19 +10,19 @@
 
 #pragma hdrstop
 
-void ShortcutSerialization::s_InitPropVarFromBool(_In_ BOOL fVal, _Out_ PROPVARIANT *ppropvar)
+void ShortcutSerialization::s_InitPropVarFromBool(_In_ BOOL fVal, _Out_ PROPVARIANT* ppropvar)
 {
     ppropvar->vt = VT_BOOL;
     ppropvar->boolVal = fVal ? VARIANT_TRUE : VARIANT_FALSE;
 }
 
-void ShortcutSerialization::s_InitPropVarFromByte(_In_ BYTE bVal, _Out_ PROPVARIANT *ppropvar)
+void ShortcutSerialization::s_InitPropVarFromByte(_In_ BYTE bVal, _Out_ PROPVARIANT* ppropvar)
 {
     ppropvar->vt = VT_I2;
     ppropvar->iVal = bVal;
 }
 
-void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPVARIANT *ppropvar)
+void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPVARIANT* ppropvar)
 {
     // A DWORD is a 4-byte unsigned int value, so use the ui4 member.
     // DO NOT use VT_UINT, that doesn't work with PROPVARIANTs.
@@ -32,7 +32,9 @@ void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPV
     ppropvar->ulVal = dwVal;
 }
 
-void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,const BOOL fVal)
+void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore* pps,
+                                                       _In_ REFPROPERTYKEY refPropKey,
+                                                       const BOOL fVal)
 {
     PROPVARIANT propvarBool;
     s_InitPropVarFromBool(fVal, &propvarBool);
@@ -40,7 +42,9 @@ void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps,
     PropVariantClear(&propvarBool);
 }
 
-void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,const BYTE bVal)
+void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore* pps,
+                                                       _In_ REFPROPERTYKEY refPropKey,
+                                                       const BYTE bVal)
 {
     PROPVARIANT propvarByte;
     s_InitPropVarFromByte(bVal, &propvarByte);
@@ -48,7 +52,7 @@ void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps,
     PropVariantClear(&propvarByte);
 }
 
-void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
+void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore* pps,
                                                         _In_ REFPROPERTYKEY refPropKey,
                                                         const DWORD dwVal)
 {
@@ -58,8 +62,9 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *
     PropVariantClear(&propvarDword);
 }
 
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL * const pfValue)
+[[nodiscard]] HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore* const pPropStore,
+                                                                    _In_ REFPROPERTYKEY refPropKey,
+                                                                    _Out_ BOOL* const pfValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -73,8 +78,9 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
     return hr;
 }
 
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE * const pbValue)
+[[nodiscard]] HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore* const pPropStore,
+                                                                    _In_ REFPROPERTYKEY refPropKey,
+                                                                    _Out_ BYTE* const pbValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -97,8 +103,9 @@ HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * cons
     return hr;
 }
 
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue)
+[[nodiscard]] HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore* const pPropStore,
+                                                                     _In_ REFPROPERTYKEY refPropKey,
+                                                                     _Out_ DWORD* const pdwValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -117,15 +124,15 @@ HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * 
     return hr;
 }
 
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo)
+[[nodiscard]] HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink* const pslConsole,
+                                                                    _In_ PCONSOLE_STATE_INFO pStateInfo)
 {
-    IShellLinkDataList *pConsoleLnkDataList;
+    IShellLinkDataList* pConsoleLnkDataList;
     HRESULT hr = pslConsole->QueryInterface(IID_PPV_ARGS(&pConsoleLnkDataList));
     if (SUCCEEDED(hr))
     {
         // get/apply standard console properties
-        NT_CONSOLE_PROPS *pNtConsoleProps = nullptr;
+        NT_CONSOLE_PROPS* pNtConsoleProps = nullptr;
         hr = pConsoleLnkDataList->CopyDataBlock(NT_CONSOLE_PROPS_SIG, reinterpret_cast<void**>(&pNtConsoleProps));
         if (SUCCEEDED(hr))
         {
@@ -155,7 +162,7 @@ HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink * const ps
         // get/apply international console properties
         if (SUCCEEDED(hr))
         {
-            NT_FE_CONSOLE_PROPS *pNtFEConsoleProps;
+            NT_FE_CONSOLE_PROPS* pNtFEConsoleProps;
             if (SUCCEEDED(pConsoleLnkDataList->CopyDataBlock(NT_FE_CONSOLE_PROPS_SIG, reinterpret_cast<void**>(&pNtFEConsoleProps))))
             {
                 pNtFEConsoleProps->uCodePage = pStateInfo->CodePage;
@@ -169,10 +176,10 @@ HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink * const ps
     return hr;
 }
 
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo)
+[[nodiscard]] HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink* const pslConsole,
+                                                                    _In_ PCONSOLE_STATE_INFO pStateInfo)
 {
-    IPropertyStore *pPropStoreLnk;
+    IPropertyStore* pPropStoreLnk;
     HRESULT hr = pslConsole->QueryInterface(IID_PPV_ARGS(&pPropStoreLnk));
     if (SUCCEEDED(hr))
     {
@@ -199,7 +206,7 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
             hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
             if (SUCCEEDED(hr))
             {
-                pStateInfo->CursorType = (unsigned int) placeholder;
+                pStateInfo->CursorType = (unsigned int)placeholder;
             }
         }
         if (SUCCEEDED(hr))
@@ -231,7 +238,9 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
 
 // Given a shortcut filename, determine what title we should use. Under normal circumstances, we rely on the shell to
 // provide the correct title. However, if that fails, we'll just use the shortcut filename minus the extension.
-void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, const size_t cchShortcutTitle)
+void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
+                                           _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle,
+                                           const size_t cchShortcutTitle)
 {
     NTSTATUS Status = (cchShortcutTitle > 0) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER_2;
     if (NT_SUCCESS(Status))
@@ -243,7 +252,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Ou
         if (NT_SUCCESS(Status))
         {
             // Now load the localized title for the shortcut
-            IShellItem *psi;
+            IShellItem* psi;
             HRESULT hrShellItem = SHCreateItemFromParsingName(pwszShortcutFilename, nullptr, IID_PPV_ARGS(&psi));
             if (SUCCEEDED(hrShellItem))
             {
@@ -273,16 +282,18 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Ou
 }
 
 // Given a shortcut filename, retrieve IShellLink and IPersistFile itf ptrs, and ensure that the link is loaded.
-[[nodiscard]]
-HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf)
+[[nodiscard]] HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName,
+                                                                             const DWORD dwMode,
+                                                                             _COM_Outptr_ IShellLink** ppsl,
+                                                                             _COM_Outptr_ IPersistFile** ppPf)
 {
     *ppsl = nullptr;
     *ppPf = nullptr;
-    IShellLink * psl;
-    HRESULT hr = SHCoCreateInstance(NULL, &CLSID_ShellLink, NULL, IID_PPV_ARGS(&psl));
+    IShellLink* psl;
+    HRESULT hr = SHCoCreateInstance(nullptr, &CLSID_ShellLink, nullptr, IID_PPV_ARGS(&psl));
     if (SUCCEEDED(hr))
     {
-        IPersistFile * pPf;
+        IPersistFile* pPf;
         hr = psl->QueryInterface(IID_PPV_ARGS(&pPf));
         if (SUCCEEDED(hr))
         {
@@ -309,11 +320,10 @@ HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszS
 }
 
 // Retrieves console-only properties from the shortcut file specified in pStateInfo. Used by the console properties sheet.
-[[nodiscard]]
-NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STATE_INFO pStateInfo)
+[[nodiscard]] NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STATE_INFO pStateInfo)
 {
-    IShellLink * psl;
-    IPersistFile * ppf;
+    IShellLink* psl;
+    IPersistFile* ppf;
     HRESULT hr = s_GetLoadedShellLinkForShortcut(pStateInfo->LinkTitle, STGM_READ, &psl, &ppf);
     if (SUCCEEDED(hr))
     {
@@ -330,16 +340,17 @@ NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STAT
 }
 
 // Retrieves all shortcut properties from the file specified in pStateInfo. Used by conhostv2.dll
-[[nodiscard]]
-NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pStateInfo,
-                                              _Out_ BOOL * const pfReadConsoleProperties,
-                                              _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
-                                              const size_t cchShortcutTitle,
-                                              _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
-                                              const size_t cchIconLocation,
-                                              _Out_opt_ int * const piIcon,
-                                              _Out_opt_ int * const piShowCmd,
-                                              _Out_opt_ WORD * const pwHotKey)
+[[nodiscard]] NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pStateInfo,
+                                                              _Out_ BOOL* const pfReadConsoleProperties,
+                                                              _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
+                                                              const size_t cchShortcutTitle,
+                                                              _Out_writes_opt_(cchLinkTarget) PWSTR pwszLinkTarget,
+                                                              const size_t cchLinkTarget,
+                                                              _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
+                                                              const size_t cchIconLocation,
+                                                              _Out_opt_ int* const piIcon,
+                                                              _Out_opt_ int* const piShowCmd,
+                                                              _Out_opt_ WORD* const pwHotKey)
 {
     *pfReadConsoleProperties = false;
 
@@ -348,13 +359,18 @@ NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pSta
         pwszShortcutTitle[0] = L'\0';
     }
 
+    if (pwszLinkTarget && cchLinkTarget > 0)
+    {
+        pwszLinkTarget[0] = L'\0';
+    }
+
     if (pwszIconLocation && cchIconLocation > 0)
     {
         pwszIconLocation[0] = L'\0';
     }
 
-    IShellLink * psl;
-    IPersistFile * ppf;
+    IShellLink* psl;
+    IPersistFile* ppf;
     HRESULT hr = s_GetLoadedShellLinkForShortcut(pStateInfo->LinkTitle, STGM_READ, &psl, &ppf);
     if (SUCCEEDED(hr))
     {
@@ -365,7 +381,12 @@ NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pSta
             s_GetLinkTitle(pStateInfo->LinkTitle, pwszShortcutTitle, cchShortcutTitle);
         }
 
-        if (pwszIconLocation && piIcon)
+        if (pwszLinkTarget)
+        {
+            hr = psl->GetPath(pwszLinkTarget, static_cast<int>(cchLinkTarget), NULL, 0);
+        }
+
+        if (SUCCEEDED(hr) && pwszIconLocation && piIcon)
         {
             hr = psl->GetIconLocation(pwszIconLocation, static_cast<int>(cchIconLocation), piIcon);
         }
@@ -400,50 +421,53 @@ NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pSta
     return (SUCCEEDED(hr)) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
-
-/**
-Writes the console properties out to the link it was opened from.
-Arguments:
-    pStateInfo - pointer to structure containing information
-Return Value:
-    A status code if something failed or S_OK
-*/
-[[nodiscard]]
-NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, const BOOL fEastAsianSystem, const BOOL fForceV2)
+// Function Description:
+// - Writes the console properties out to the link it was opened from.
+// Arguments:
+// - pStateInfo: pointer to structure containing information
+// - writeTerminalSettings: If true, persist the "Terminal" properties only
+//   present in the v2 console. This should be false if called from a v11
+//   console. See GH#2319
+// Return Value:
+// - A status code if something failed or S_OK
+[[nodiscard]] NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
+                                                              const BOOL fEastAsianSystem,
+                                                              const BOOL fForceV2,
+                                                              const bool writeTerminalSettings)
 {
-    IShellLinkW * psl;
-    IPersistFile * ppf;
+    IShellLinkW* psl;
+    IPersistFile* ppf;
     HRESULT hr = s_GetLoadedShellLinkForShortcut(pStateInfo->LinkTitle, STGM_READWRITE | STGM_SHARE_EXCLUSIVE, &psl, &ppf);
     if (SUCCEEDED(hr))
     {
-        IShellLinkDataList * psldl;
+        IShellLinkDataList* psldl;
         hr = psl->QueryInterface(IID_PPV_ARGS(&psldl));
         if (SUCCEEDED(hr))
         {
             // Now the link is loaded, generate new console settings section to replace the one in the link.
             NT_CONSOLE_PROPS props;
-            ((LPDBLIST)&props)->cbSize      = sizeof(props);
+            ((LPDBLIST)&props)->cbSize = sizeof(props);
             ((LPDBLIST)&props)->dwSignature = NT_CONSOLE_PROPS_SIG;
-            props.wFillAttribute            = pStateInfo->ScreenAttributes;
-            props.wPopupFillAttribute       = pStateInfo->PopupAttributes;
-            props.dwScreenBufferSize        = pStateInfo->ScreenBufferSize;
-            props.dwWindowSize              = pStateInfo->WindowSize;
-            props.dwWindowOrigin.X          = (SHORT)pStateInfo->WindowPosX;
-            props.dwWindowOrigin.Y          = (SHORT)pStateInfo->WindowPosY;
-            props.nFont                     = 0;
-            props.nInputBufferSize          = 0;
-            props.dwFontSize                = pStateInfo->FontSize;
-            props.uFontFamily               = pStateInfo->FontFamily;
-            props.uFontWeight               = pStateInfo->FontWeight;
+            props.wFillAttribute = pStateInfo->ScreenAttributes;
+            props.wPopupFillAttribute = pStateInfo->PopupAttributes;
+            props.dwScreenBufferSize = pStateInfo->ScreenBufferSize;
+            props.dwWindowSize = pStateInfo->WindowSize;
+            props.dwWindowOrigin.X = (SHORT)pStateInfo->WindowPosX;
+            props.dwWindowOrigin.Y = (SHORT)pStateInfo->WindowPosY;
+            props.nFont = 0;
+            props.nInputBufferSize = 0;
+            props.dwFontSize = pStateInfo->FontSize;
+            props.uFontFamily = pStateInfo->FontFamily;
+            props.uFontWeight = pStateInfo->FontWeight;
             CopyMemory(props.FaceName, pStateInfo->FaceName, sizeof(props.FaceName));
-            props.uCursorSize               = pStateInfo->CursorSize;
-            props.bFullScreen               = pStateInfo->FullScreen;
-            props.bQuickEdit                = pStateInfo->QuickEdit;
-            props.bInsertMode               = pStateInfo->InsertMode;
-            props.bAutoPosition             = pStateInfo->AutoPosition;
-            props.uHistoryBufferSize        = pStateInfo->HistoryBufferSize;
-            props.uNumberOfHistoryBuffers   = pStateInfo->NumberOfHistoryBuffers;
-            props.bHistoryNoDup             = pStateInfo->HistoryNoDup;
+            props.uCursorSize = pStateInfo->CursorSize;
+            props.bFullScreen = pStateInfo->FullScreen;
+            props.bQuickEdit = pStateInfo->QuickEdit;
+            props.bInsertMode = pStateInfo->InsertMode;
+            props.bAutoPosition = pStateInfo->AutoPosition;
+            props.uHistoryBufferSize = pStateInfo->HistoryBufferSize;
+            props.uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
+            props.bHistoryNoDup = pStateInfo->HistoryNoDup;
             CopyMemory(props.ColorTable, pStateInfo->ColorTable, sizeof(props.ColorTable));
 
             // Store the changes back into the link...
@@ -456,9 +480,9 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
             if (SUCCEEDED(hr) && fEastAsianSystem)
             {
                 NT_FE_CONSOLE_PROPS fe_props;
-                ((LPDBLIST)&fe_props)->cbSize      = sizeof(fe_props);
+                ((LPDBLIST)&fe_props)->cbSize = sizeof(fe_props);
                 ((LPDBLIST)&fe_props)->dwSignature = NT_FE_CONSOLE_PROPS_SIG;
-                fe_props.uCodePage                 = pStateInfo->CodePage;
+                fe_props.uCodePage = pStateInfo->CodePage;
 
                 hr = psldl->RemoveDataBlock(NT_FE_CONSOLE_PROPS_SIG);
                 if (SUCCEEDED(hr))
@@ -469,7 +493,7 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
 
             if (SUCCEEDED(hr))
             {
-                IPropertyStore * pps;
+                IPropertyStore* pps;
                 hr = psl->QueryInterface(IID_IPropertyStore, reinterpret_cast<void**>(&pps));
                 if (SUCCEEDED(hr))
                 {
@@ -479,12 +503,21 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
-                    s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+
+                    // Only save the "Terminal" settings if we launched as a v2
+                    // propsheet. The v1 console doesn't know anything about
+                    // these settings, and their value will be incorrectly
+                    // zero'd if we save in this state.
+                    // See microsoft/terminal#2319 for more details.
+                    if (writeTerminalSettings)
+                    {
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
+                        s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+                    }
                     hr = pps->Commit();
                     pps->Release();
                 }
@@ -496,7 +529,7 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
         if (SUCCEEDED(hr))
         {
             // Only persist changes if we've successfully made them.
-            hr = ppf->Save(NULL, TRUE);
+            hr = ppf->Save(nullptr, TRUE);
         }
 
         ppf->Release();

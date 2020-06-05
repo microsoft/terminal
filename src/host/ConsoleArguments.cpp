@@ -18,18 +18,92 @@ const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
+std::wstring EscapeArgument(std::wstring_view ac)
+{
+    if (ac.empty())
+    {
+        return L"\"\"";
+    }
+    bool hasSpace = false;
+    auto n = ac.size();
+    for (auto c : ac)
+    {
+        switch (c)
+        {
+        case L'"':
+        case L'\\':
+            n++;
+            break;
+        case ' ':
+        case '\t':
+            hasSpace = true;
+            break;
+        default:
+            break;
+        }
+    }
+    if (hasSpace)
+    {
+        n += 2;
+    }
+    if (n == ac.size())
+    {
+        return std::wstring{ ac };
+    }
+    std::wstring buf;
+    if (hasSpace)
+    {
+        buf.push_back(L'"');
+    }
+    size_t slashes = 0;
+    for (auto c : ac)
+    {
+        switch (c)
+        {
+        case L'\\':
+            slashes++;
+            buf.push_back(L'\\');
+            break;
+        case L'"':
+        {
+            for (; slashes > 0; slashes--)
+            {
+                buf.push_back(L'\\');
+            }
+            buf.push_back(L'\\');
+            buf.push_back(c);
+        }
+        break;
+        default:
+            slashes = 0;
+            buf.push_back(c);
+            break;
+        }
+    }
+    if (hasSpace)
+    {
+        for (; slashes > 0; slashes--)
+        {
+            buf.push_back(L'\\');
+        }
+        buf.push_back(L'"');
+    }
+    return buf;
+}
+
 ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdIn,
-                                   const HANDLE hStdOut)
-    : _commandline(commandline),
-      _vtInHandle(hStdIn),
-      _vtOutHandle(hStdOut),
-      _recievedEarlySizeChange{ false },
-      _originalWidth{ -1 },
-      _originalHeight{ -1 }
+                                   const HANDLE hStdOut) :
+    _commandline(commandline),
+    _vtInHandle(hStdIn),
+    _vtOutHandle(hStdOut),
+    _receivedEarlySizeChange{ false },
+    _originalWidth{ -1 },
+    _originalHeight{ -1 }
 {
     _clientCommandline = L"";
     _vtMode = L"";
@@ -46,10 +120,9 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
 ConsoleArguments::ConsoleArguments() :
     ConsoleArguments(L"", nullptr, nullptr)
 {
-
 }
 
-ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
+ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
 {
     if (this != &other)
     {
@@ -66,7 +139,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
         _width = other._width;
         _height = other._height;
         _inheritCursor = other._inheritCursor;
-        _recievedEarlySizeChange = other._recievedEarlySizeChange;
+        _receivedEarlySizeChange = other._receivedEarlySizeChange;
     }
 
     return *this;
@@ -106,8 +179,9 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
-[[nodiscard]]
-HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
+[[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                                           _Inout_ size_t& index,
+                                                           _Out_opt_ std::wstring* const pSetting)
 {
     bool hasNext = (index + 1) < args.size();
     if (hasNext)
@@ -136,8 +210,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
-[[nodiscard]]
-HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
+[[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
 {
     HRESULT hr = E_INVALIDARG;
     bool hasNext = (index + 1) < args.size();
@@ -167,10 +240,9 @@ HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>
 // Return Value:
 //  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
-[[nodiscard]]
-HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
-                                             _Inout_ size_t& index,
-                                             _Out_opt_ short* const pSetting)
+[[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                                           _Inout_ size_t& index,
+                                                           _Out_opt_ short* const pSetting)
 {
     bool succeeded = (index + 1) < args.size();
     if (succeeded)
@@ -199,7 +271,6 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
             {
                 succeeded = false;
             }
-
         }
         s_ConsumeArg(args, index);
     }
@@ -215,8 +286,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 // - S_OK if we could successfully parse the given text and store it in the handle value location.
 // - E_INVALIDARG if we couldn't parse the text as a valid hex-encoded handle number OR
 //                if the handle value was already filled.
-[[nodiscard]]
-HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
+[[nodiscard]] HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
 {
     HRESULT hr = S_OK;
 
@@ -259,10 +329,9 @@ HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _In
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //       failure.
-[[nodiscard]]
-HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
+[[nodiscard]] HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
 {
-    auto start = args.begin()+index;
+    auto start = args.begin() + index;
 
     // Erase the first token.
     //  Used to get rid of the explicit commandline token "--"
@@ -277,13 +346,13 @@ HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring
     size_t j = 0;
     for (j = index; j < args.size(); j++)
     {
-        _clientCommandline += args[j];
-        if (j+1 < args.size())
+        _clientCommandline += EscapeArgument(args[j]); // escape commandline
+        if (j + 1 < args.size())
         {
             _clientCommandline += L" ";
         }
     }
-    args.erase(args.begin()+index, args.begin()+j);
+    args.erase(args.begin() + index, args.begin() + j);
 
     return S_OK;
 }
@@ -297,8 +366,7 @@ HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring
 // Return Value:
 //  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG
 //      indicating failure.
-[[nodiscard]]
-HRESULT ConsoleArguments::ParseCommandline()
+[[nodiscard]] HRESULT ConsoleArguments::ParseCommandline()
 {
     // If the commandline was empty, quick return.
     if (_commandline.length() == 0)
@@ -333,7 +401,7 @@ HRESULT ConsoleArguments::ParseCommandline()
         std::wstring arg = args[i];
 
         if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
-                 arg == SERVER_HANDLE_ARG)
+            arg == SERVER_HANDLE_ARG)
         {
             // server handle token accepted two ways:
             // --server 0x4 (new method)
@@ -409,6 +477,12 @@ HRESULT ConsoleArguments::ParseCommandline()
         else if (arg == INHERIT_CURSOR_ARG)
         {
             _inheritCursor = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == RESIZE_QUIRK)
+        {
+            _resizeQuirk = true;
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -544,6 +618,10 @@ bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
 }
+bool ConsoleArguments::IsResizeQuirkEnabled() const
+{
+    return _resizeQuirk;
+}
 
 // Method Description:
 // - Tell us to use a different size than the one parsed as the size of the
@@ -563,11 +641,25 @@ void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
     // Stash away the original values we parsed when this is called.
     // This is to help debugging - if the signal thread DOES change these values,
     //      we can still recover what was given to us on the commandline.
-    if (!_recievedEarlySizeChange)
+    if (!_receivedEarlySizeChange)
     {
         _originalWidth = _width;
         _originalHeight = _height;
         // Mark that we've changed size from what our commandline values were
-        _recievedEarlySizeChange = true;
+        _receivedEarlySizeChange = true;
     }
 }
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick us into thinking
+//   we're headless (in conpty mode), even without parsing any arguments.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleArguments::EnableConptyModeForTests()
+{
+    _headless = true;
+}
+#endif

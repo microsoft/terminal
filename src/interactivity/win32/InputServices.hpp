@@ -24,6 +24,6 @@ namespace Microsoft::Console::Interactivity::Win32
         UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
         SHORT VkKeyScanW(WCHAR ch);
         SHORT GetKeyState(int nVirtKey);
-        BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
+        BOOL TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
     };
 }

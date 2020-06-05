@@ -21,7 +21,7 @@ Revision History:
 #include "../buffer/out/TextAttribute.hpp"
 
 // To prevent invisible windows, set a lower threshold on window alpha channel.
-#define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
+constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
@@ -52,11 +52,14 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
+    bool IsScreenReversed() const;
+    void SetScreenReversed(const bool fScreenReversed);
+
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
-    const WCHAR* const GetLaunchFaceName() const;
-    void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength);
+    const std::wstring_view GetLaunchFaceName() const;
+    void SetLaunchFaceName(const std::wstring_view launchFaceName);
 
     UINT GetCodePage() const;
     void SetCodePage(const UINT uCodePage);
@@ -73,11 +76,11 @@ public:
     bool GetLineSelection() const;
     void SetLineSelection(const bool bLineSelection);
 
-    bool GetWrapText () const;
-    void SetWrapText (const bool bWrapText );
+    bool GetWrapText() const;
+    void SetWrapText(const bool bWrapText);
 
-    bool GetCtrlKeyShortcutsDisabled () const;
-    void SetCtrlKeyShortcutsDisabled (const bool fCtrlKeyShortcutsDisabled );
+    bool GetCtrlKeyShortcutsDisabled() const;
+    void SetCtrlKeyShortcutsDisabled(const bool fCtrlKeyShortcutsDisabled);
 
     BYTE GetWindowAlpha() const;
     void SetWindowAlpha(const BYTE bWindowAlpha);
@@ -130,7 +133,7 @@ public:
 
     const WCHAR* const GetFaceName() const;
     bool IsFaceNameSet() const;
-    void SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength);
+    void SetFaceName(const std::wstring_view faceName);
 
     UINT GetCursorSize() const;
     void SetCursorSize(const UINT uCursorSize);
@@ -156,9 +159,8 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    const COLORREF* const GetColorTable() const;
-    const size_t GetColorTableSize() const;
-    void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize);
+    std::basic_string_view<COLORREF> Get16ColorTable() const;
+    std::basic_string_view<COLORREF> Get256ColorTable() const;
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
 
@@ -214,7 +216,6 @@ private:
     UINT _uHistoryBufferSize;
     UINT _uNumberOfHistoryBuffers;
     BOOL _bHistoryNoDup;
-    COLORREF _ColorTable[COLOR_TABLE_SIZE];
     // END - memcpy
     UINT _uCodePage;
     UINT _uScrollScale;
@@ -226,15 +227,16 @@ private:
     BYTE _bWindowAlpha; // describes the opacity of the window
 
     bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
-    WCHAR _LaunchFaceName[LF_FACESIZE];
+    std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
+    bool _fScreenReversed;
     bool _fUseDx;
     bool _fCopyColor;
 
-    COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
+    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
@@ -252,8 +254,5 @@ private:
     friend class RegistrySerialization;
 
 public:
-
     WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
-    WORD FindNearestTableIndex(const COLORREF Color) const;
-
 };

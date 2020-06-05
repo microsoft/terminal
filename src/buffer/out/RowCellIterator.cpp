@@ -16,7 +16,6 @@ RowCellIterator::RowCellIterator(const ROW& row, const size_t start, const size_
     _pos(start),
     _view(s_GenerateView(row, start))
 {
-
 }
 
 RowCellIterator::operator bool() const noexcept
@@ -29,47 +28,47 @@ RowCellIterator::operator bool() const noexcept
 bool RowCellIterator::operator==(const RowCellIterator& it) const noexcept
 {
     return _row == it._row &&
-        _start == it._start &&
-        _length == it._length &&
-        _pos == it._pos;
+           _start == it._start &&
+           _length == it._length &&
+           _pos == it._pos;
 }
 bool RowCellIterator::operator!=(const RowCellIterator& it) const noexcept
 {
     return !(*this == it);
 }
 
-RowCellIterator& RowCellIterator::operator+=(const ptrdiff_t& movement)
+RowCellIterator& RowCellIterator::operator+=(const ptrdiff_t& movement) noexcept
 {
     _pos += movement;
 
     return (*this);
 }
 
-RowCellIterator& RowCellIterator::operator++()
+RowCellIterator& RowCellIterator::operator++() noexcept
 {
     return this->operator+=(1);
 }
 
-RowCellIterator RowCellIterator::operator++(int)
+RowCellIterator RowCellIterator::operator++(int) noexcept
 {
     auto temp(*this);
     operator++();
     return temp;
 }
 
-RowCellIterator RowCellIterator::operator+(const ptrdiff_t& movement)
+RowCellIterator RowCellIterator::operator+(const ptrdiff_t& movement) noexcept
 {
     auto temp(*this);
     temp += movement;
     return temp;
 }
 
-const OutputCellView& RowCellIterator::operator*() const
+const OutputCellView& RowCellIterator::operator*() const noexcept
 {
     return _view;
 }
 
-const OutputCellView* RowCellIterator::operator->() const
+const OutputCellView* RowCellIterator::operator->() const noexcept
 {
     return &_view;
 }

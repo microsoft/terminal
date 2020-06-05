@@ -17,30 +17,24 @@ Revision History:
 #pragma once
 namespace DeviceHandle
 {
-    [[nodiscard]]
-    NTSTATUS
-        CreateServerHandle(
-            _Out_ PHANDLE Handle,
-            _In_ BOOLEAN Inheritable
-        );
+    [[nodiscard]] NTSTATUS
+    CreateServerHandle(
+        _Out_ PHANDLE Handle,
+        _In_ BOOLEAN Inheritable);
 
-    [[nodiscard]]
-    NTSTATUS
-        CreateClientHandle(
-            _Out_ PHANDLE Handle,
-            _In_ HANDLE ServerHandle,
-            _In_ PCWSTR Name,
-            _In_ BOOLEAN Inheritable
-        );
+    [[nodiscard]] NTSTATUS
+    CreateClientHandle(
+        _Out_ PHANDLE Handle,
+        _In_ HANDLE ServerHandle,
+        _In_ PCWSTR Name,
+        _In_ BOOLEAN Inheritable);
 
-    [[nodiscard]]
-    NTSTATUS
-        _CreateHandle(
-            _Out_ PHANDLE Handle,
-            _In_ PCWSTR DeviceName,
-            _In_ ACCESS_MASK DesiredAccess,
-            _In_opt_ HANDLE Parent,
-            _In_ BOOLEAN Inheritable,
-            _In_ ULONG OpenOptions
-        );
+    [[nodiscard]] NTSTATUS
+    _CreateHandle(
+        _Out_ PHANDLE Handle,
+        _In_ PCWSTR DeviceName,
+        _In_ ACCESS_MASK DesiredAccess,
+        _In_opt_ HANDLE Parent,
+        _In_ BOOLEAN Inheritable,
+        _In_ ULONG OpenOptions);
 };

@@ -50,8 +50,7 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     wchar_t wch = UNICODE_NULL;
     bool popupKey = false;

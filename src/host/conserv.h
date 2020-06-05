@@ -36,7 +36,7 @@ Revision History:
  * bytes.
  */
 
-#define PACKCOORD(pt)   (MAKELONG(((pt).X), ((pt).Y)))
+#define PACKCOORD(pt) (MAKELONG(((pt).X), ((pt).Y)))
 
 typedef struct _CONSOLE_API_CONNECTINFO
 {

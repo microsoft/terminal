@@ -9,6 +9,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization
@@ -24,10 +25,10 @@ std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
 IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
-Globals                      ServiceLocator::s_globals;
+Globals ServiceLocator::s_globals;
 
 bool ServiceLocator::s_pseudoWindowInitialized = false;
-wil::unique_hwnd ServiceLocator::s_pseudoWindow = 0;
+wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 #pragma endregion
 
@@ -71,8 +72,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Creation Methods
 
-[[nodiscard]]
-NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
+[[nodiscard]] NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -104,8 +104,7 @@ NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ 
 
 #pragma region Set Methods
 
-[[nodiscard]]
-NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -129,12 +128,12 @@ NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 
 #pragma region Location Methods
 
-IConsoleWindow *ServiceLocator::LocateConsoleWindow()
+IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 {
     return s_consoleWindow;
 }
 
-IConsoleControl *ServiceLocator::LocateConsoleControl()
+IConsoleControl* ServiceLocator::LocateConsoleControl()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -310,8 +309,7 @@ HWND ServiceLocator::LocatePseudoWindow()
 
 #pragma region Private Methods
 
-[[nodiscard]]
-NTSTATUS ServiceLocator::LoadInteractivityFactory()
+[[nodiscard]] NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
     NTSTATUS status = STATUS_SUCCESS;
 

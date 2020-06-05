@@ -30,14 +30,14 @@ size_t ROW::size() const noexcept
     return _rowWidth;
 }
 
-const CharRow& ROW::GetCharRow() const
+const CharRow& ROW::GetCharRow() const noexcept
 {
     return _charRow;
 }
 
-CharRow& ROW::GetCharRow()
+CharRow& ROW::GetCharRow() noexcept
 {
-    return const_cast<CharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
+    return _charRow;
 }
 
 const ATTR_ROW& ROW::GetAttrRow() const noexcept
@@ -47,7 +47,7 @@ const ATTR_ROW& ROW::GetAttrRow() const noexcept
 
 ATTR_ROW& ROW::GetAttrRow() noexcept
 {
-    return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
+    return _attrRow;
 }
 
 SHORT ROW::GetId() const noexcept
@@ -87,8 +87,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]]
-HRESULT ROW::Resize(const size_t width)
+[[nodiscard]] HRESULT ROW::Resize(const size_t width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -133,12 +132,12 @@ RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) con
     return RowCellIterator(*this, startIndex, count);
 }
 
-UnicodeStorage& ROW::GetUnicodeStorage()
+UnicodeStorage& ROW::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
 
-const UnicodeStorage& ROW::GetUnicodeStorage() const
+const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
@@ -148,14 +147,14 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const
 // Arguments:
 // - it - custom console iterator to use for seeking input data. bool() false when it becomes invalid while seeking.
 // - index - column in row to start writing at
-// - setWrap - set the wrap flags if we hit the end of the row while writing and there's still more data in the iterator.
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data in the iterator.
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
-// - iterator to first cell that was not written to this row. 
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight)
+// - iterator to first cell that was not written to this row.
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
-    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size()); 
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
     size_t currentIndex = index;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
@@ -203,10 +202,15 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 ++it;
             }
 
-            // If we're asked to set the wrap status and we just filled the last column with some text, set wrap status on the row.
-            if (setWrap && fillingLastColumn)
+            // If we're asked to (un)set the wrap status and we just filled the last column with some text...
+            // NOTE:
+            //  - wrap = std::nullopt    --> don't change the wrap value
+            //  - wrap = true            --> we're filling cells as a steam, consider this a wrap
+            //  - wrap = false           --> we're filling cells as a block, unwrap
+            if (wrap.has_value() && fillingLastColumn)
             {
-                _charRow.SetWrapForced(true);
+                // set wrap status on the row to parameter's value.
+                _charRow.SetWrapForced(wrap.value());
             }
         }
         else

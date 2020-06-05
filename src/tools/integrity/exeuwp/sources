@@ -5,7 +5,6 @@ C_DEFINES = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 MSC_WARNING_LEVEL = /W4 /WX
 
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 TEST_CODE=1
 UMTYPE=console
@@ -25,9 +24,9 @@ INCLUDES= \
     ..\lib; \
 
 TARGETLIBS= \
-    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
-    $(MINCORE_SDK_LIB_PATH)\mincore_legacy.lib \
-    $(SDK_LIB_PATH)\onecoreuap.lib \
+    $(MINCORE_EXTERNAL_SDK_LIB_PATH_L)\mincore.lib \
+    $(MINCORE_EXTERNAL_SDK_LIB_PATH_L)\mincore_legacy.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\onecoreuap.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\tools\integrity\lib\$(O)\conintegritylib.lib \
 
 SOURCES= \

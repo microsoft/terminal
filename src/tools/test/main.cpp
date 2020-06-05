@@ -5,7 +5,6 @@
 #include <windows.h>
 #include <wincon.h>
 
-
 int TestSetViewport(HANDLE hIn, HANDLE hOut);
 int TestGetchar(HANDLE hIn, HANDLE hOut);
 
@@ -27,13 +26,13 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     return 0;
 }
 
-
 int TestSetViewport(HANDLE /*hIn*/, HANDLE hOut)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool fSuccess = GetConsoleScreenBufferInfoEx(hOut, &csbiex);
-    if (fSuccess) {
+    if (fSuccess)
+    {
         const SMALL_RECT Screen = csbiex.srWindow;
         const short sWidth = Screen.Right - Screen.Left;
         const short sHeight = Screen.Bottom - Screen.Top;
@@ -44,7 +43,6 @@ int TestSetViewport(HANDLE /*hIn*/, HANDLE hOut)
         csbiex.srWindow.Right = sWidth;
 
         SetConsoleScreenBufferInfoEx(hOut, &csbiex);
-
     }
     return 0;
 }

@@ -21,17 +21,16 @@ Author(s):
 #include "FontInfoBase.hpp"
 #include "FontInfo.hpp"
 
-
 class FontInfoDesired : public FontInfoBase
 {
 public:
-    FontInfoDesired(_In_ PCWSTR const pwszFaceName,
-                    const BYTE bFamily,
-                    const LONG lWeight,
+    FontInfoDesired(const std::wstring_view faceName,
+                    const unsigned char family,
+                    const unsigned int weight,
                     const COORD coordSizeDesired,
-                    const UINT uiCodePage);
+                    const unsigned int uiCodePage);
 
-    FontInfoDesired(const FontInfo &fiFont);
+    FontInfoDesired(const FontInfo& fiFont);
 
     COORD GetEngineSize() const;
     bool IsDefaultRasterFont() const;

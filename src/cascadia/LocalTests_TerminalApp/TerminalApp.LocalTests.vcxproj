@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- A note about this project: We're building the test code dll from this
+    project, but it _MUST_ be run in conjunction with the TestHostApp project.
+    TestHostApp actually will build a TestHost executable and packaging bits
+    that we can use to run our tests. We need TestHostApp so that our
+    dependencies, like MUX, can be aggregated correctly, and resources properly
+    combined into a resources.pri file.
+
+    TestHostApp will manually copy the output of this project into it's own
+    OutDir, so we can run the tests from there. -->
+
+  <PropertyGroup>
+    <ProjectGuid>{CA5CAD1A-b11c-4ddb-a4fe-c3afae9b5506}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalAppLocalTests</RootNamespace>
+    <ProjectName>LocalTests_TerminalApp</ProjectName>
+    <TargetName>TerminalApp.LocalTests</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <!-- We'll manage our own OutDir/IntDir -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+
+  <PropertyGroup>
+  <!-- Manually change our outdir to be in a subdirectory. We don't really want
+    to put our output in the bin root, because if we do, we'll copy
+    TerminalApp.winmd to the bin root, and then every subsequent mdmerge step
+    (in _any_ cppwinrt project) will automatically try to pick up
+    TerminalApp.winmd as a dependency (which is just wrong). This MUST be done
+    before importing common.build.pre.props -->
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="JsonTestClass.h" />
+    <ClInclude Include="CppWinrtTailored.h" />
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="CommandlineTest.cpp" />
+    <ClCompile Include="SettingsTests.cpp" />
+    <ClCompile Include="ProfileTests.cpp" />
+    <ClCompile Include="ColorSchemeTests.cpp" />
+    <ClCompile Include="KeyBindingsTests.cpp" />
+    <ClCompile Include="TabTests.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+
+    <!-- If you don't reference these projects here, the
+    _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+  </ItemGroup>
+
+  <!-- ========================= Globals ======================== -->
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+
+  <PropertyGroup>
+    <_CppWinrtBinRoot>&quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\&quot;</_CppWinrtBinRoot>
+    <!-- From Microsoft.UI.Xaml.targets -->
+    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
+    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+  </PropertyGroup>
+
+<!-- We actually can just straight up reference MUX here, it's fine -->
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+
+</Project>

@@ -21,7 +21,7 @@ Revision History:
 #include "input.h"
 
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "..\types\IConsoleWindow.hpp"
 
 class Selection
 {
@@ -72,24 +72,12 @@ private:
 
     void _PaintSelection() const;
 
-    static SMALL_RECT s_BisectSelection(const short sStringLength,
-                                        const COORD coordTargetPoint,
-                                        const SCREEN_INFORMATION& screenInfo,
-                                        const SMALL_RECT rect);
-
-    static std::vector<SMALL_RECT> s_GetSelectionRects(const SMALL_RECT& selectionRect,
-                                                       const COORD selectionAnchor,
-                                                       const bool lineSelection);
-
     void _CancelMarkSelection();
     void _CancelMouseSelection();
 
-    static std::unique_ptr<Selection> _instance;
-
-// -------------------------------------------------------------------------------------------------------
-// input handling (selectionInput.cpp)
+    // -------------------------------------------------------------------------------------------------------
+    // input handling (selectionInput.cpp)
 public:
-
     // key handling
 
     // N.B.: This enumeration helps push up calling clipboard functions into
@@ -110,8 +98,7 @@ public:
     void CheckAndSetAlternateSelection();
 
     // calculation functions
-    [[nodiscard]]
-    static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
+    [[nodiscard]] static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
     void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
     static bool s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd);
 
@@ -124,9 +111,8 @@ private:
                               const COORD coordAnchor,
                               const COORD coordSelPoint) const;
 
-
-// -------------------------------------------------------------------------------------------------------
-// selection state (selectionState.cpp)
+    // -------------------------------------------------------------------------------------------------------
+    // selection state (selectionState.cpp)
 public:
     bool IsKeyboardMarkSelection() const;
     bool IsMouseInitiatedSelection() const;

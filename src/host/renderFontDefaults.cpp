@@ -17,11 +17,14 @@ RenderFontDefaults::~RenderFontDefaults()
     LOG_IF_FAILED(TrueTypeFontList::s_Destroy());
 }
 
-[[nodiscard]]
-HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
-                                                               _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                               const size_t cchFaceName)
+[[nodiscard]] HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(const unsigned int codePage,
+                                                                             std::wstring& outFaceName)
+try
 {
-    NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(uiCodePage, pwszFaceName, cchFaceName);
+    // GH#3123: Propagate font length changes up through Settings and propsheet
+    wchar_t faceName[LF_FACESIZE]{ 0 };
+    NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(codePage, faceName, ARRAYSIZE(faceName));
+    outFaceName.assign(faceName);
     return HRESULT_FROM_NT(status);
 }
+CATCH_RETURN();

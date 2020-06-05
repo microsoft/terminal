@@ -14,14 +14,13 @@ Author(s):
 - Mike Griese (MiGrie) 2017
 --*/
 
-
 #include <windows.h>
 #include <wil\result.h>
 #include <wil\resource.h>
 
 #include <string>
 
-typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
+typedef void (*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 
 class VtConsole
 {
@@ -57,9 +56,9 @@ private:
     PROCESS_INFORMATION _piPty;
     PROCESS_INFORMATION _piClient;
 
-    HANDLE _outPipe;
-    HANDLE _inPipe;
-    HANDLE _signalPipe;
+    HANDLE _outPipe = INVALID_HANDLE_VALUE;
+    HANDLE _inPipe = INVALID_HANDLE_VALUE;
+    HANDLE _signalPipe = INVALID_HANDLE_VALUE;
 
     HPCON _hPC;
 
@@ -70,8 +69,8 @@ private:
 
     PipeReadCallback _pfnReadCallback;
 
-    DWORD _dwOutputThreadId;
-    HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
+    DWORD _dwOutputThreadId = 0;
+    HANDLE _hOutputThread = nullptr;
 
     void _createPseudoConsole(const std::wstring& command);
     void _createConptyManually(const std::wstring& command);
@@ -80,5 +79,4 @@ private:
     void _spawn(const std::wstring& command);
 
     DWORD _OutputThread();
-
 };

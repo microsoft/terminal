@@ -22,14 +22,12 @@ namespace Microsoft::Console::VirtualTerminal
     class DispatchCommon final
     {
     public:
-
         static bool s_ResizeWindow(ConGetSet& conApi,
-                                   const unsigned short usWidth,
-                                   const unsigned short usHeight);
+                                   const size_t width,
+                                   const size_t height);
 
         static bool s_RefreshWindow(ConGetSet& conApi);
 
         static bool s_SuppressResizeRepaint(ConGetSet& conApi);
-
     };
 }

@@ -19,5 +19,5 @@
 #endif
 
 #include <unknwn.h>
+#include <wil/cppwinrt.h>
 #include <winrt/Windows.Foundation.h>
-

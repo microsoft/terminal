@@ -72,8 +72,7 @@ void TextAttributeTests::TestRoundtripLegacy()
 
 void TextAttributeTests::TestRoundtripMetaBits()
 {
-    WORD metaFlags[] =
-    {
+    WORD metaFlags[] = {
         COMMON_LVB_GRID_HORIZONTAL,
         COMMON_LVB_GRID_LVERTICAL,
         COMMON_LVB_GRID_RVERTICAL,
@@ -102,7 +101,7 @@ void TextAttributeTests::TestRoundtripExhaustive()
     //      each takes a lot longer than checking.
     // Only VERIFY if the comparison actually fails to speed up the test.
     Log::Comment(L"This test will check each possible legacy attribute to make "
-        "sure it roundtrips through the creation of a text attribute.");
+                 "sure it roundtrips through the creation of a text attribute.");
     Log::Comment(L"It will only log if it fails.");
     for (WORD wLegacy = 0; wLegacy < allAttrs; wLegacy++)
     {
@@ -123,8 +122,7 @@ void TextAttributeTests::TestRoundtripExhaustive()
         if (!(isLegacy && areEqual))
         {
             Log::Comment(NoThrowString().Format(
-                L"Failed on wLegacy=0x%x", wLegacy
-            ));
+                L"Failed on wLegacy=0x%x", wLegacy));
             VERIFY_IS_TRUE(attr.IsLegacy());
             VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
         }
@@ -140,7 +138,7 @@ void TextAttributeTests::TestTextAttributeColorGetters()
 
     // verify that calculated foreground/background are the same as the direct
     //      values when reverse video is not set
-    VERIFY_IS_FALSE(attr._IsReverseVideo());
+    VERIFY_IS_FALSE(attr.IsReverseVideo());
 
     VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
     VERIFY_ARE_EQUAL(red, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
@@ -148,9 +146,9 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
     VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 
-    // with reverse video set, calucated foreground/background values should be
+    // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
-    attr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
+    attr.SetReverseVideo(true);
 
     VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
     VERIFY_ARE_EQUAL(green, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
@@ -168,7 +166,7 @@ void TextAttributeTests::TestReverseDefaultColors()
 
     // verify that calculated foreground/background are the same as the direct
     //      values when reverse video is not set
-    VERIFY_IS_FALSE(attr._IsReverseVideo());
+    VERIFY_IS_FALSE(attr.IsReverseVideo());
 
     VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
     VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
@@ -176,10 +174,10 @@ void TextAttributeTests::TestReverseDefaultColors()
     VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
     VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 
-    // with reverse video set, calucated foreground/background values should be
+    // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
-    attr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
-    VERIFY_IS_TRUE(attr._IsReverseVideo());
+    attr.SetReverseVideo(true);
+    VERIFY_IS_TRUE(attr.IsReverseVideo());
 
     VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
     VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
@@ -188,7 +186,7 @@ void TextAttributeTests::TestReverseDefaultColors()
     VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 
     attr.SetForeground(red);
-    VERIFY_IS_TRUE(attr._IsReverseVideo());
+    VERIFY_IS_TRUE(attr.IsReverseVideo());
 
     VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
     VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
@@ -197,7 +195,7 @@ void TextAttributeTests::TestReverseDefaultColors()
     VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 
     attr.Invert();
-    VERIFY_IS_FALSE(attr._IsReverseVideo());
+    VERIFY_IS_FALSE(attr.IsReverseVideo());
     attr.SetDefaultForeground();
     attr.SetBackground(green);
 

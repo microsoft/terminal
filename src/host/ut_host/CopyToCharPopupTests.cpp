@@ -45,7 +45,7 @@ class CopyToCharPopupTests
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
-        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
             return false;
@@ -55,7 +55,7 @@ class CopyToCharPopupTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        CommandHistory::s_Free((HANDLE)0);
+        CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
@@ -67,8 +67,7 @@ class CopyToCharPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = VK_ESCAPE;
             modifiers = 0;
@@ -104,8 +103,7 @@ class CopyToCharPopupTests
     TEST_METHOD(NothingHappensWhenCharNotFound)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L'x';
             modifiers = 0;
@@ -135,8 +133,7 @@ class CopyToCharPopupTests
     TEST_METHOD(CanCopyToEmptyPrompt)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -173,8 +170,7 @@ class CopyToCharPopupTests
     TEST_METHOD(WontCopyTextBeforeCursor)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -208,14 +204,12 @@ class CopyToCharPopupTests
         VERIFY_ARE_EQUAL(resultText, testString);
         // make sure that more wasn't copied
         VERIFY_ARE_EQUAL(buffer[testString.size()], UNICODE_SPACE);
-
     }
 
     TEST_METHOD(CanMergeLine)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -245,5 +239,4 @@ class CopyToCharPopupTests
         // make sure that more wasn't copied
         VERIFY_ARE_EQUAL(buffer[expectedText.size()], UNICODE_SPACE);
     }
-
 };

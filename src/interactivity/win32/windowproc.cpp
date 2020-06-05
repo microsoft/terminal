@@ -25,13 +25,14 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
-#include "../interactivity/win32/windowtheme.hpp"
-#include "../interactivity/win32/windowUiaProvider.hpp"
-#include "../interactivity/win32/CustomWindowMessages.h"
+#include "..\..\inc\conint.h"
+
+#include "..\interactivity\win32\CustomWindowMessages.h"
+
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>
-
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
@@ -39,8 +40,7 @@ using namespace Microsoft::Console::Types;
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
 
-[[nodiscard]]
-LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     // Save the pointer here to the specific window instance when one is created
     if (Message == WM_CREATE)
@@ -62,8 +62,7 @@ LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, 
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
-[[nodiscard]]
-LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
@@ -114,7 +113,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         rc.right = rc.left + pcs->cx;
         rc.bottom = rc.top + pcs->cy;
 
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an optional parameter so give two UINTs.
@@ -132,7 +131,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         RECT rectProposed = { rc.left, rc.top, 0, 0 };
         _CalculateWindowRect(_pSettings->GetWindowSize(), &rectProposed);
 
-        SetWindowPos(hWnd, NULL, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
+        SetWindowPos(hWnd, nullptr, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
 
         // Save the proposed window rect dimensions here so we can adjust if the system comes back and changes them on what we asked for.
         ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rectProposed);
@@ -157,7 +156,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // signal to uia that they can disconnect our uia provider
         if (_pUiaProvider)
         {
-            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            UiaReturnRawElementProvider(hWnd, 0, 0, nullptr);
         }
         break;
     }
@@ -187,14 +186,14 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
         FontInfoDesired fiDesired(fiCurrent);
-        FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
+        FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
 
         const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
         // Just assume that the font is 1x1 in that case.
-        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
+        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({ 1, 1 });
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
@@ -300,7 +299,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // check if we're minimized (iconic) and set our internal state flags accordingly.
         // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162483(v=vs.85).aspx
         // NOTE: We will not get called to paint ourselves when minimized because we set an icon when registering the window class.
-        //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
+        //       That means this CONSOLE_IS_ICONIC is unnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
             WI_SetFlag(gci.Flags, CONSOLE_IS_ICONIC);
@@ -338,16 +337,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        try
-        {
-            WindowTheme theme;
-            LOG_IF_FAILED(theme.TrySetDarkMode(hWnd));
-        }
-        CATCH_LOG();
-
+        LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(hWnd));
         gci.GetCursorBlinker().SettingsChanged();
     }
-    __fallthrough;
+        __fallthrough;
 
     case WM_DISPLAYCHANGE:
     {
@@ -492,7 +485,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
             TrackPopupMenuEx(hHeirMenu,
                              TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
-                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
+                             GET_X_LPARAM(lParam),
+                             GET_Y_LPARAM(lParam),
+                             hWnd,
+                             nullptr);
         }
         else
         {
@@ -649,13 +645,13 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         Status = 1;
 
-        bool isMouseWheel  = Message == WM_MOUSEWHEEL;
+        bool isMouseWheel = Message == WM_MOUSEWHEEL;
         bool isMouseHWheel = Message == WM_MOUSEHWHEEL;
 
         if (isMouseWheel || isMouseHWheel)
         {
             short wheelDelta = (short)HIWORD(wParam);
-            bool hasShift    = (wParam & MK_SHIFT) ? true : false;
+            bool hasShift = (wParam & MK_SHIFT) ? true : false;
 
             Scrolling::s_HandleMouseWheel(isMouseWheel,
                                           isMouseHWheel,
@@ -699,7 +695,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         // Re-read the edit key settings from registry.
         Registry reg(&gci);
-        reg.GetEditKeys(NULL);
+        reg.GetEditKeys(nullptr);
         break;
     }
 
@@ -821,8 +817,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
-[[nodiscard]]
-HRESULT Window::_HandlePaint() const
+[[nodiscard]] HRESULT Window::_HandlePaint() const
 {
     HWND const hwnd = GetWindowHandle();
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
@@ -888,8 +883,7 @@ void Window::_HandleDrop(const WPARAM wParam) const
     }
 }
 
-[[nodiscard]]
-LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
+[[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
 {
     LRESULT retVal = 0;
 

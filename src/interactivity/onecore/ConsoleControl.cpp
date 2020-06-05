@@ -12,20 +12,17 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 #pragma region IConsoleControl Members
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/)
+[[nodiscard]] NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/)
 {
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE /*hProcess*/, _In_ BOOL /*fForeground*/)
+[[nodiscard]] NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE /*hProcess*/, _In_ BOOL /*fForeground*/)
 {
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     USER_API_MSG m;
     PENDTASKMSG a = &m.u.EndTask;

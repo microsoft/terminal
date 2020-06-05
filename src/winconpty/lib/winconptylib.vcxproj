@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>winconpty</RootNamespace>
+    <ProjectName>winconpty.LIB</ProjectName>
+    <TargetName>conptylib</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemGroup>
+    <ClCompile Include="../winconpty.cpp" />
+    <ClCompile Include="../precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../../server/DeviceHandle.cpp" />
+    <ClCompile Include="../../server/WinNTControl.cpp" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+    <!-- Override GetPackagingOutputs to roll up our DLL.	
+       This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.	
+  -->	
+  <PropertyGroup>	
+    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>	
+    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>	
+  </PropertyGroup>	
+  <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">	
+    <CallTarget Targets="BuiltProjectOutputGroup">	
+      <Output TaskParameter="TargetOutputs" ItemName="_BuiltProjectOutputGroupOutput" />	
+    </CallTarget>	
+    <ItemGroup>	
+      <_PackagingOutputsUnexpanded Include="%(_BuiltProjectOutputGroupOutput.FinalOutputPath)">	
+        <TargetPath>%(_BuiltProjectOutputGroupOutput.TargetPath)</TargetPath>	
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>	
+        <ProjectName>$(ProjectName)</ProjectName>	
+      </_PackagingOutputsUnexpanded>	
+    </ItemGroup>	
+    <CallTarget Targets="DebugSymbolsProjectOutputGroup">	
+      <Output TaskParameter="TargetOutputs" ItemName="_DebugSymbolsProjectOutputGroupOutput" />	
+    </CallTarget>	
+    <ItemGroup>	
+      <_PackagingOutputsUnexpanded Include="%(_DebugSymbolsProjectOutputGroupOutput.FinalOutputPath)">	
+        <OutputGroup>DebugSymbolsProjectOutputGroup</OutputGroup>	
+        <ProjectName>$(ProjectName)</ProjectName>	
+      </_PackagingOutputsUnexpanded>	
+    </ItemGroup>	
+    <ItemGroup>	
+      <PackagingOutputs Include="@(_PackagingOutputsUnexpanded)">	
+        <TargetPath>%(Filename)%(Extension)</TargetPath>	
+      </PackagingOutputs>	
+    </ItemGroup>	
+  </Target>
+</Project>

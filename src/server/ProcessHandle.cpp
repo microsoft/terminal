@@ -26,7 +26,8 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     _hProcess(LOG_LAST_ERROR_IF_NULL(OpenProcess(MAXIMUM_ALLOWED,
                                                  FALSE,
                                                  dwProcessId))),
-    _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get()))
+    _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get())),
+    _shimPolicy(ConsoleShimPolicy::s_CreateInstance(_hProcess.get()))
 {
     if (nullptr != _hProcess.get())
     {
@@ -49,4 +50,12 @@ CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation() const
 const ConsoleProcessPolicy ConsoleProcessHandle::GetPolicy() const
 {
     return _policy;
+}
+
+// Routine Description:
+// - Retrieves the policies set on this particular process handle
+// - This specifies compatibility shims that we might need to make for certain applications.
+const ConsoleShimPolicy ConsoleProcessHandle::GetShimPolicy() const
+{
+    return _shimPolicy;
 }

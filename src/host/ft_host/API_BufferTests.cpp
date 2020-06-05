@@ -14,19 +14,16 @@ class BufferTests
 {
     BEGIN_TEST_CLASS(BufferTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS()
 
     TEST_METHOD(TestSetConsoleActiveScreenBufferInvalid);
 
+    TEST_METHOD(TestCookedReadOnNonShareableScreenBuffer);
+
     BEGIN_TEST_METHOD(TestWritingInactiveScreenBuffer)
         TEST_METHOD_PROPERTY(L"Data:UseVtOutput", L"{true, false}")
     END_TEST_METHOD()
-    
+
     TEST_METHOD(ScrollLargeBufferPerformance);
 
     TEST_METHOD(ChafaGifPerformance);
@@ -36,6 +33,54 @@ void BufferTests::TestSetConsoleActiveScreenBufferInvalid()
 {
     VERIFY_WIN32_BOOL_FAILED(SetConsoleActiveScreenBuffer(INVALID_HANDLE_VALUE));
     VERIFY_WIN32_BOOL_FAILED(SetConsoleActiveScreenBuffer(nullptr));
+}
+
+void BufferTests::TestCookedReadOnNonShareableScreenBuffer()
+{
+    Log::Comment(L"Get original handles");
+    const auto in = GetStdInputHandle();
+    const auto out = GetStdOutputHandle();
+
+    Log::Comment(L"Ensure cooked input is on (line input mode) and echoing to the screen.");
+    DWORD inMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &inMode));
+    inMode |= ENABLE_LINE_INPUT;
+    inMode |= ENABLE_ECHO_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, inMode));
+
+    Log::Comment(L"Create alternate buffer that is read/writeable but not shareable.");
+    const auto otherBuffer = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
+                                                       0, // This says non-shareable
+                                                       nullptr,
+                                                       CONSOLE_TEXTMODE_BUFFER,
+                                                       nullptr);
+    VERIFY_WIN32_BOOL_SUCCEEDED(INVALID_HANDLE_VALUE != otherBuffer);
+
+    Log::Comment(L"Set the alternate buffer as active.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleActiveScreenBuffer(otherBuffer));
+
+    // On a cooked read with echoing, the act of reading from the buffer will cause a handle to be
+    // taken to the active output buffer such that the cooked/line reading handler can display
+    // what is being typed on the screen as it is being typed before the enter key is hit.
+    // This should fail because we've denied anyone sharing access with us and we hold the primary
+    // active handle above.
+    Log::Comment(L"Perform a read operation to attempt to take handle to output buffer and hopefully fail.");
+    char buffer[1];
+    DWORD read = 0;
+    SetLastError(S_OK);
+    VERIFY_WIN32_BOOL_FAILED(ReadFile(in, buffer, sizeof(buffer), &read, nullptr));
+    VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_SHARING_VIOLATION), GetLastError());
+
+    Log::Comment(L"Put the buffer back.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleActiveScreenBuffer(out));
+
+    Log::Comment(L"Close the alternate buffer.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(CloseHandle(otherBuffer));
+
+    Sleep(2000);
+
+    Log::Comment(L"Ensure that the console didn't die/crash");
+    VERIFY_IS_TRUE(IsConsoleStillRunning());
 }
 
 void BufferTests::TestWritingInactiveScreenBuffer()
@@ -97,7 +142,6 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(handle, alternativeBuffer.get(), gsl::narrow<DWORD>(alternative.size()), { 0, 0 }, &read));
     VERIFY_ARE_EQUAL(alternative.size(), read);
     VERIFY_ARE_EQUAL(String(alternative.data()), String(alternativeBuffer.get(), gsl::narrow<int>(alternative.size())));
-
 }
 
 void BufferTests::ScrollLargeBufferPerformance()
@@ -127,8 +171,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     // Set this to false to scroll the entire buffer. The issue will disappear!
     const auto ScrollOnlyInvisibleArea = true;
 
-    const SMALL_RECT Rect
-    {
+    const SMALL_RECT Rect{
         0,
         0,
         Info.dwSize.X - 1,
@@ -148,7 +191,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count();
 
     SetConsoleCursorPosition(Out, { 0, Info.dwSize.Y - 1 });
-    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta/count));
+    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta / count));
 }
 
 void BufferTests::ChafaGifPerformance()
@@ -166,7 +209,7 @@ void BufferTests::ChafaGifPerformance()
     Info.dwSize.Y = 9999;
     SetConsoleScreenBufferSize(Out, Info.dwSize);
 
-    SetConsoleCursorPosition(Out, { 0});
+    SetConsoleCursorPosition(Out, { 0 });
 
     DWORD Mode = 0;
     GetConsoleMode(Out, &Mode);
@@ -176,11 +219,11 @@ void BufferTests::ChafaGifPerformance()
     SetConsoleOutputCP(CP_UTF8);
 
     // Taken from: https://blog.kowalczyk.info/article/zy/Embedding-binary-resources-on-Windows.html
-    HGLOBAL     res_handle = NULL;
-    HRSRC       res;
-    char *      res_data;
-    DWORD       res_size;
-    
+    HGLOBAL res_handle = nullptr;
+    HRSRC res;
+    char* res_data;
+    DWORD res_size;
+
     // NOTE: providing g_hInstance is important, NULL might not work
     HMODULE hModule = (HMODULE)&__ImageBase;
 
@@ -207,7 +250,7 @@ void BufferTests::ChafaGifPerformance()
     for (DWORD pos = 0; pos < res_size; pos += 1000)
     {
         DWORD written = 0;
-        WriteConsoleA(Out, res_data + pos, min(1000, res_size-pos), &written, nullptr);
+        WriteConsoleA(Out, res_data + pos, std::min<DWORD>(1000, res_size - pos), &written, nullptr);
         count++;
     }
 

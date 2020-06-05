@@ -1,7 +1,7 @@
 ---
-name: Documentation Issue 📚
+name: "Documentation Issue 📚"
 about: Report issues in our documentation
-title: "Documentation Issue"
+title: ''
 labels: Issue-Docs
 assignees: ''
 

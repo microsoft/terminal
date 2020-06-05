@@ -115,8 +115,8 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     // Don't blink the cursor for remote sessions.
     if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
          _uCaretBlinkTime == -1 ||
-        (!cursor.IsBlinkingAllowed())) &&
-       cursor.IsOn())
+         (!cursor.IsBlinkingAllowed())) &&
+        cursor.IsOn())
     {
         goto DoScroll;
     }
@@ -212,7 +212,7 @@ void CursorBlinker::KillCaretTimer()
 
         bRet = DeleteTimerQueueTimer(_hCaretBlinkTimerQueue,
                                      _hCaretBlinkTimer,
-                                     NULL);
+                                     nullptr);
 
         // According to https://msdn.microsoft.com/en-us/library/windows/desktop/ms682569(v=vs.85).aspx
         // A failure to delete the timer with the LastError being ERROR_IO_PENDING means that the timer is

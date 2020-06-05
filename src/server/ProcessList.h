@@ -31,33 +31,28 @@ struct ConsoleProcessTerminationRecord
 class ConsoleProcessList
 {
 public:
-
     static const DWORD ROOT_PROCESS_ID = 0;
 
-    [[nodiscard]]
-    HRESULT AllocProcessData(const DWORD dwProcessId,
-                             const DWORD dwThreadId,
-                             const ULONG ulProcessGroupId,
-                             _In_opt_ ConsoleProcessHandle* const pParentProcessData,
-                             _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
+    [[nodiscard]] HRESULT AllocProcessData(const DWORD dwProcessId,
+                                           const DWORD dwThreadId,
+                                           const ULONG ulProcessGroupId,
+                                           _In_opt_ ConsoleProcessHandle* const pParentProcessData,
+                                           _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
 
     void FreeProcessData(_In_ ConsoleProcessHandle* const ProcessData);
-
 
     ConsoleProcessHandle* FindProcessInList(const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
 
-    [[nodiscard]]
-    HRESULT GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
-                                           const bool fCtrlClose,
-                                           _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
-                                           _Out_ size_t* const pcRecords) const;
+    [[nodiscard]] HRESULT GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
+                                                         const bool fCtrlClose,
+                                                         _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
+                                                         _Out_ size_t* const pcRecords) const;
 
     ConsoleProcessHandle* GetFirstProcess() const;
 
-    [[nodiscard]]
-    HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
-                           _Inout_ size_t* const pcProcessList) const;
+    [[nodiscard]] HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
+                                         _Inout_ size_t* const pcProcessList) const;
 
     void ModifyConsoleProcessFocus(const bool fForeground);
 

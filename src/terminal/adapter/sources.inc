@@ -34,7 +34,6 @@ SOURCES= \
     ..\DispatchCommon.cpp \
     ..\InteractDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
-    ..\MouseInput.cpp \
     ..\terminalOutput.cpp \
     ..\telemetry.cpp \
     ..\tracing.cpp \
@@ -46,7 +45,7 @@ INCLUDES = \
 
 TARGETLIBS= \
     $(TARGETLIBS) \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-keyboard-l1.lib \
 
 DLOAD_ERROR_HANDLER     = kernelbase

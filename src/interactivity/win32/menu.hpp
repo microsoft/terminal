@@ -26,17 +26,15 @@ namespace Microsoft::Console::Interactivity::Win32
     {
     public:
         Menu(_In_ HMENU hMenu,
-            _In_ HMENU hHeirMenu);
-        [[nodiscard]]
-        static NTSTATUS CreateInstance(_In_ HWND hWnd);
+             _In_ HMENU hHeirMenu);
+        [[nodiscard]] static NTSTATUS CreateInstance(_In_ HWND hWnd);
         static Menu* Instance();
         ~Menu();
 
         void Initialize();
 
         static void s_ShowPropertiesDialog(const HWND hwnd, const BOOL Defaults);
-        [[nodiscard]]
-        static HRESULT s_GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo);
+        [[nodiscard]] static HRESULT s_GetConsoleState(_Out_ CONSOLE_STATE_INFO* const pStateInfo);
 
         static HMENU s_GetMenuHandle();
         static HMENU s_GetHeirMenuHandle();
@@ -46,7 +44,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static Menu* s_Instance;
 
-        HMENU _hMenu;       // handle to system menu
-        HMENU _hHeirMenu;   // handle to menu we append to system menu
+        HMENU _hMenu; // handle to system menu
+        HMENU _hHeirMenu; // handle to menu we append to system menu
     };
 }

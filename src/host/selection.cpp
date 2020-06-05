@@ -10,8 +10,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
-
-std::unique_ptr<Selection> Selection::_instance;
+using namespace Microsoft::Console::Types;
 
 Selection::Selection() :
     _fSelectionVisible(false),
@@ -31,120 +30,12 @@ Selection::Selection() :
 
 Selection& Selection::Instance()
 {
-    if (!_instance)
-    {
-        _instance.reset(new Selection());
-    }
+    static std::unique_ptr<Selection> _instance{ new Selection() };
     return *_instance;
 }
 
 // Routine Description:
-// - Detemines the line-by-line selection rectangles based on global selection state.
-// Arguments:
-// - selectionRect - The selection rectangle outlining the region to be selected
-// - selectionAnchor - The corner of the selection rectangle that selection started from
-// - lineSelection - True to process in line mode. False to process in block mode.
-// Return Value:
-// - Returns a vector where each SMALL_RECT is one Row worth of the area to be selected.
-// - Returns empty vector if no rows are selected.
-// - Throws exceptions for out of memory issues
-std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selectionRect,
-                                                       const COORD selectionAnchor,
-                                                       const bool lineSelection)
-{
-    std::vector<SMALL_RECT> selectionAreas;
-
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-    // if the anchor (start of select) was in the top right or bottom left of the box,
-    // we need to remove rectangular overlap in the middle.
-    // e.g.
-    // For selections with the anchor in the top left (A) or bottom right (B),
-    // it is valid to maintain the inner rectangle (+) as part of the selection
-    //               A+++++++================
-    // ==============++++++++B
-    // + and = are valid highlights in this scenario.
-    // For selections with the anchor in in the top right (A) or bottom left (B),
-    // we must remove a portion of the first/last line that lies within the rectangle (+)
-    //               +++++++A=================
-    // ==============B+++++++
-    // Only = is valid for highlight in this scenario.
-    // This is only needed for line selection. Box selection doesn't need to account for this.
-
-    bool removeRectPortion = false;
-
-    if (lineSelection)
-    {
-        const auto selectionStart = selectionAnchor;
-
-        // only if top and bottom aren't the same line... we need the whole rectangle if we're on the same line.
-        // e.g.         A++++++++++++++B
-        // All the + are valid select points.
-        if (selectionRect.Top != selectionRect.Bottom)
-        {
-            if ((selectionStart.X == selectionRect.Right && selectionStart.Y == selectionRect.Top) ||
-                (selectionStart.X == selectionRect.Left && selectionStart.Y == selectionRect.Bottom))
-            {
-                removeRectPortion = true;
-            }
-        }
-    }
-
-    // for each row within the selection rectangle
-    for (short i = selectionRect.Top; i <= selectionRect.Bottom; i++)
-    {
-        // create a rectangle representing the highlight on one row
-        SMALL_RECT highlightRow;
-        highlightRow.Top = i;
-        highlightRow.Bottom = i;
-        highlightRow.Left = selectionRect.Left;
-        highlightRow.Right = selectionRect.Right;
-
-        // compensate for line selection by extending one or both ends of the rectangle to the edge
-        if (lineSelection)
-        {
-            // if not the first row, pad the left selection to the buffer edge
-            if (i != selectionRect.Top)
-            {
-                highlightRow.Left = 0;
-            }
-
-            // if not the last row, pad the right selection to the buffer edge
-            if (i != selectionRect.Bottom)
-            {
-                highlightRow.Right = screenInfo.GetBufferSize().RightInclusive();
-            }
-
-            // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
-            if (removeRectPortion)
-            {
-                if (i == selectionRect.Top)
-                {
-                    // from the top row, move the left edge of the highlight line to the right edge of the rectangle
-                    highlightRow.Left = selectionRect.Right;
-                }
-                else if (i == selectionRect.Bottom)
-                {
-                    // from the bottom row, move the right edge of the highlight line to the left edge of the rectangle
-                    highlightRow.Right = selectionRect.Left;
-                }
-            }
-        }
-
-        // compensate for double width characters by calling double-width measuring/limiting function
-        const COORD targetPoint{ highlightRow.Left, highlightRow.Top };
-        const SHORT stringLength = highlightRow.Right - highlightRow.Left + 1;
-        highlightRow = s_BisectSelection(stringLength, targetPoint, screenInfo, highlightRow);
-
-        selectionAreas.emplace_back(highlightRow);
-    }
-
-    return selectionAreas;
-}
-
-// Routine Description:
-// - Detemines the line-by-line selection rectangles based on global selection state.
+// - Determines the line-by-line selection rectangles based on global selection state.
 // Arguments:
 // - <none> - Uses internal state to know what area is selected already.
 // Return Value:
@@ -158,65 +49,17 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
         return std::vector<SMALL_RECT>();
     }
 
-    return s_GetSelectionRects(_srSelectionRect, _coordSelectionAnchor, IsLineSelection());
-}
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-// Routine Description:
-// - This routine checks to ensure that clipboard selection isn't trying to cut a double byte character in half.
-//   It will adjust the SmallRect rectangle size to ensure this.
-// Arguments:
-// - sStringLength - The length of the string we're attempting to clip.
-// - coordTargetPoint - The row/column position within the text buffer that we're about to try to clip.
-// - screenInfo - Screen information structure containing relevant text and dimension information.
-// - rect - The region of the text that we want to clip, and then adjusted to the region that should be
-// clipped without splicing double-width characters.
-// Return Value:
-// - the clipped region
-SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
-                                        const COORD coordTargetPoint,
-                                        const SCREEN_INFORMATION& screenInfo,
-                                        const SMALL_RECT rect)
-{
-    SMALL_RECT outRect = rect;
-    try
-    {
-        auto iter = screenInfo.GetCellDataAt(coordTargetPoint);
-        if (iter->DbcsAttr().IsTrailing())
-        {
-            if (coordTargetPoint.X == 0)
-            {
-                outRect.Left++;
-            }
-            else
-            {
-                outRect.Left--;
-            }
-        }
+    // _coordSelectionAnchor is at one of the corners of _srSelectionRects
+    // endSelectionAnchor is at the exact opposite corner
+    COORD endSelectionAnchor;
+    endSelectionAnchor.X = (_coordSelectionAnchor.X == _srSelectionRect.Left) ? _srSelectionRect.Right : _srSelectionRect.Left;
+    endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
 
-        // Check end position of strings
-        if (coordTargetPoint.X + sStringLength < screenInfo.GetBufferSize().Width())
-        {
-            iter += sStringLength;
-            if (iter->DbcsAttr().IsTrailing())
-            {
-                outRect.Right++;
-            }
-        }
-        else
-        {
-            if (coordTargetPoint.Y + 1 < screenInfo.GetBufferSize().Height())
-            {
-                const auto nextLineIter = screenInfo.GetCellDataAt({ 0, coordTargetPoint.Y + 1 });
-                if (nextLineIter->DbcsAttr().IsTrailing())
-                {
-                    outRect.Right--;
-                }
-            }
-        }
-    }
-    CATCH_LOG();
-
-    return outRect;
+    const auto blockSelection = !IsLineSelection();
+    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection);
 }
 
 // Routine Description:
@@ -568,18 +411,13 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
 // - attr - Color to apply to region.
 void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
-    // Make a rectangle for the region as if it were selected by a mouse.
-    // We will use the first one as the "anchor" to represent where the mouse went down.
-    SMALL_RECT srSelection;
-    srSelection.Top = std::min(coordSelectionStart.Y, coordSelectionEnd.Y);
-    srSelection.Bottom = std::max(coordSelectionStart.Y, coordSelectionEnd.Y);
-    srSelection.Left = std::min(coordSelectionStart.X, coordSelectionEnd.X);
-    srSelection.Right = std::max(coordSelectionStart.X, coordSelectionEnd.X);
-
     // Extract row-by-row selection rectangles for the selection area.
     try
     {
-        const auto rectangles = s_GetSelectionRects(srSelection, coordSelectionStart, true);
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
+
+        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd);
         for (const auto& rect : rectangles)
         {
             ColorSelection(rect, attr);
@@ -729,7 +567,7 @@ void Selection::SelectAll()
             // Check if both anchor and opposite corner are exactly the bounds of the input line
             const bool fAllInputSelected =
                 ((Utils::s_CompareCoords(coordInputStart, coordOldAnchor) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchorOpposite) == 0) ||
-                (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
+                 (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
 
             if (fIsOldSelWithinInput && !fAllInputSelected)
             {

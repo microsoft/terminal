@@ -28,7 +28,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
                              const bool inheritCursor) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _utf8Parser{ CP_UTF8 },
+    _u8State{},
     _dwThreadId{ 0 },
     _exitRequested{ false },
     _exitResult{ S_OK }
@@ -38,26 +38,29 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
-    THROW_IF_NULL_ALLOC(pGetSet.get());
 
-    auto engine = std::make_unique<InputStateMachineEngine>(new InteractDispatch(pGetSet.release()), inheritCursor);
-    THROW_IF_NULL_ALLOC(engine.get());
+    auto dispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
 
-    _pInputStateMachine = std::make_unique<StateMachine>(engine.release());
-    THROW_IF_NULL_ALLOC(_pInputStateMachine.get());
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
+
+    auto engineRef = engine.get();
+
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
+
+    // we need this callback to be able to flush an unknown input sequence to the app
+    auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
+    engineRef->SetFlushToInputQueueCallback(flushCallback);
 }
 
 // Method Description:
-// - Processes a buffer of input characters. The characters should be utf-8
-//      encoded, and will get converted to wchar_t's to be processed by the
+// - Processes a string of input characters. The characters should be UTF-8
+//      encoded, and will get converted to wstring to be processed by the
 //      input state machine.
 // Arguments:
-// - charBuffer - the UTF-8 characters recieved.
-// - cch - number of UTF-8 characters in charBuffer
+// - u8Str - the UTF-8 string received.
 // Return Value:
 // - S_OK on success, otherwise an appropriate failure.
-[[nodiscard]]
-HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
+[[nodiscard]] HRESULT VtInputThread::_HandleRunInput(const std::string_view u8Str)
 {
     // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
     // Only the global unlock attempts to dispatch ctrl events. If you use the
@@ -69,16 +72,14 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuf
 
     try
     {
-        std::unique_ptr<wchar_t[]> pwsSequence;
-        unsigned int cchConsumed;
-        unsigned int cchSequence;
-        auto hr = _utf8Parser.Parse(charBuffer, cch, cchConsumed, pwsSequence, cchSequence);
+        std::wstring wstr{};
+        auto hr = til::u8u16(u8Str, wstr, _u8State);
         // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
         if (FAILED(hr))
         {
             return S_FALSE;
         }
-        _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
+        _pInputStateMachine->ProcessString(wstr);
     }
     CATCH_RETURN();
 
@@ -102,12 +103,12 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 //      failed, throw or log, depending on what the caller wants.
 // Arguments:
 // - throwOnFail: If true, throw an exception if there was an error processing
-//      the input recieved. Otherwise, log the error.
+//      the input received. Otherwise, log the error.
 // Return Value:
 // - <none>
 void VtInputThread::DoReadInput(const bool throwOnFail)
 {
-    byte buffer[256];
+    char buffer[256];
     DWORD dwRead = 0;
     bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
@@ -122,7 +123,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         return;
     }
 
-    HRESULT hr = _HandleRunInput(buffer, dwRead);
+    HRESULT hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
     if (FAILED(hr))
     {
         if (throwOnFail)
@@ -157,11 +158,10 @@ DWORD VtInputThread::_InputThread()
 
 // Method Description:
 // - Starts the VT input thread.
-[[nodiscard]]
-HRESULT VtInputThread::Start()
+[[nodiscard]] HRESULT VtInputThread::Start()
 {
     RETURN_HR_IF(E_HANDLE, !_hFile);
-    
+
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
@@ -173,7 +173,7 @@ HRESULT VtInputThread::Start()
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

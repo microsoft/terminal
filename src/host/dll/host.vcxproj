@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>host</RootNamespace>
+    <ProjectName>Host.DLL</ProjectName>
+    <TargetName>ConhostV2</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
@@ -54,13 +62,6 @@
     <ResourceCompile Include="Host.DLL.rc" />
   </ItemGroup>
   <PropertyGroup>
-    <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>host</RootNamespace>
-    <ProjectName>Host.DLL</ProjectName>
-    <TargetName>ConhostV2</TargetName>
-  </PropertyGroup>
-  <PropertyGroup>
     <EmbedManifest>
     </EmbedManifest>
     <GenerateManifest>true</GenerateManifest>
@@ -76,6 +77,5 @@
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.dll.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

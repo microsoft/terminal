@@ -7,8 +7,8 @@
 #include <wil\resource.h>
 #include <wil\wistd_functional.h>
 #include <wil\wistd_memory.h>
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <stdlib.h> /* srand, rand */
+#include <time.h> /* time */
 
 #include <deque>
 #include <memory>
@@ -37,7 +37,7 @@ void printCSI(std::string seq)
 
 void printCUP(int x, int y)
 {
-    printf("\x1b[%d;%dH", y+1, x+1); // save cursor
+    printf("\x1b[%d;%dH", y + 1, x + 1); // save cursor
 }
 
 void print256color(int bg)
@@ -69,32 +69,35 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
         std::string topBorder = std::string(width, '-');
         std::string bottomBorder = std::string(width, '=');
-        
+
         int color = 17;
         int const colorStep = 1;
         printf("Buffer size is wxh=%dx%d\n", width, height);
         printCSI("s"); // save cursor
         printCSI("H"); // Go Home
-        print256color(color); color += colorStep;
+        print256color(color);
+        color += colorStep;
         printf("%s", topBorder.c_str());
-        printCUP(0, height-1);
-        print256color(color); color += colorStep;
+        printCUP(0, height - 1);
+        print256color(color);
+        color += colorStep;
         printf("%s", bottomBorder.c_str());
 
-        for (int y = 1; y < height-1; y++)
+        for (int y = 1; y < height - 1; y++)
         {
             printCUP(0, y);
-            print256color(color); color += colorStep;
+            print256color(color);
+            color += colorStep;
             printf("L");
-    
-            printCUP(width-1, y);
-            print256color(color); color += colorStep;
+
+            printCUP(width - 1, y);
+            print256color(color);
+            color += colorStep;
             printf("R\n");
         }
 
         printCSI("u"); // restore cursor
         printCSI("m"); // restore color
-
     }
 
     return 0;

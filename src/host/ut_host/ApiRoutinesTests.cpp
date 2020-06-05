@@ -149,9 +149,9 @@ class ApiRoutinesTests
     {
         Log::Comment(L"Turn on insert mode with cooked read data.");
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
         m_state->PrepareCookedReadData();
-        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -594,9 +594,12 @@ class ApiRoutinesTests
     TEST_METHOD(ApiScrollConsoleScreenBufferW)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"data:setMargins", L"{false, true}")
             TEST_METHOD_PROPERTY(L"data:checkClipped", L"{false, true}")
-            END_TEST_METHOD_PROPERTIES();
+        END_TEST_METHOD_PROPERTIES();
 
+        bool setMargins;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"setMargins", setMargins), L"Get whether or not we should set the DECSTBM margins.");
         bool checkClipped;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"checkClipped", checkClipped), L"Get whether or not we should check all the options using a clipping rectangle.");
 
@@ -604,6 +607,13 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
+
+        // Tests are run both with and without the DECSTBM margins set. This should not alter
+        // the results, since ScrollConsoleScreenBuffer should not be affected by VT margins.
+        auto& stateMachine = si.GetStateMachine();
+        stateMachine.ProcessString(setMargins ? L"\x1b[2;4r" : L"\x1b[r");
+        // Make sure we clear the margins on exit so they can't break other tests.
+        auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -660,7 +670,7 @@ class ApiRoutinesTests
             // for scrolling left and right, we're going to clip to only modify the top half of the buffer
             COORD clipRectDimensions = bufferSize.Dimensions();
             clipRectDimensions.Y /= 2;
-            
+
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
         }

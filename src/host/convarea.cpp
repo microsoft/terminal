@@ -77,8 +77,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     }
 }
 
-[[nodiscard]]
-HRESULT ConsoleImeResizeCompStrView()
+[[nodiscard]] HRESULT ConsoleImeResizeCompStrView()
 {
     try
     {
@@ -91,8 +90,7 @@ HRESULT ConsoleImeResizeCompStrView()
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
+[[nodiscard]] HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
@@ -100,32 +98,35 @@ HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
     return pIme->ResizeAllAreas(coordNewScreenSize);
 }
 
-[[nodiscard]]
-HRESULT ImeStartComposition()
+[[nodiscard]] HRESULT ImeStartComposition()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->SaveCursorVisibility();
 
     gci.pInputBuffer->fInComposition = true;
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ImeEndComposition()
+[[nodiscard]] HRESULT ImeEndComposition()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->RestoreCursorVisibility();
+
     gci.pInputBuffer->fInComposition = false;
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ImeComposeData(std::wstring_view text,
-                       std::basic_string_view<BYTE> attributes,
-                       std::basic_string_view<WORD> colorArray)
+[[nodiscard]] HRESULT ImeComposeData(std::wstring_view text,
+                                     std::basic_string_view<BYTE> attributes,
+                                     std::basic_string_view<WORD> colorArray)
 {
     try
     {
@@ -140,8 +141,7 @@ HRESULT ImeComposeData(std::wstring_view text,
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ImeClearComposeData()
+[[nodiscard]] HRESULT ImeClearComposeData()
 {
     try
     {
@@ -156,8 +156,7 @@ HRESULT ImeClearComposeData()
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ImeComposeResult(std::wstring_view text)
+[[nodiscard]] HRESULT ImeComposeResult(std::wstring_view text)
 {
     try
     {

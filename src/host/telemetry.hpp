@@ -130,7 +130,7 @@ private:
     Telemetry(Telemetry const&);
     void operator=(Telemetry const&);
 
-    bool FindProcessName(const WCHAR* pszProcessName, _Out_ size_t *iPosition) const;
+    bool FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const;
     void TotalCodesForPreviousProcess();
 
     static const int c_iMaxProcessesConnected = 100;
@@ -143,7 +143,7 @@ private:
     unsigned int _uiFindNextClickedTotal;
     unsigned int _uiColorSelectionUsed;
     time_t _tStartedAt;
-    WCHAR const * const c_pwszBashExeName = L"bash.exe";
+    WCHAR const* const c_pwszBashExeName = L"bash.exe";
 
     // The current recommendation is to keep telemetry events 4KB or less, so let's keep our array at less than 2KB (1000 * 2 bytes).
     WCHAR _wchProcessFileNames[1000];
@@ -152,7 +152,7 @@ private:
     // Index for the currently connected process.
     size_t _iProcessConnectedCurrently;
     // An array of indexes into the _wchProcessFileNames array, which point to the individual process names.
-    size_t _rgiProccessFileNameIndex[c_iMaxProcessesConnected];
+    size_t _rgiProcessFileNameIndex[c_iMaxProcessesConnected];
     // Number of times each process has connected to the console.
     unsigned int _rguiProcessFileNamesCount[c_iMaxProcessesConnected];
     // To speed up searching the Process Names, create an alphabetically sorted index.

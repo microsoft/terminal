@@ -26,6 +26,5 @@ Revision History:
 
 #pragma once
 
-#define CM_SETCOLOR       (WM_USER+1)
-#define CM_PREVIEW_UPDATE (WM_USER+2)
-
+#define CM_SETCOLOR (WM_USER + 1)
+#define CM_PREVIEW_UPDATE (WM_USER + 2)

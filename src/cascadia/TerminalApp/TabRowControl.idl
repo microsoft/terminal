@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.ContentPresenter
+    {
+        TabRowControl();
+        Microsoft.UI.Xaml.Controls.TabView TabView { get; };
+    }
+}

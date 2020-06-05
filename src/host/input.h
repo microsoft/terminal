@@ -28,9 +28,9 @@ Revision History:
 
 // indicates how much to change the opacity at each mouse/key toggle
 // Opacity is defined as 0-255. 12 is therefore approximately 5% per tick.
-#define OPACITY_DELTA_INTERVAL 12
+constexpr unsigned short OPACITY_DELTA_INTERVAL = 12;
 
-#define MAX_CHARS_FROM_1_KEYSTROKE 6
+constexpr unsigned short MAX_CHARS_FROM_1_KEYSTROKE = 6;
 
 #define KEY_TRANSITION_UP 0x80000000
 
@@ -61,7 +61,7 @@ private:
 #define TAB_SIZE 8
 #define TAB_MASK (TAB_SIZE - 1)
 // WHY IS THIS NOT POSITION % TAB_SIZE?!
-#define NUMBER_OF_SPACES_IN_TAB(POSITION) (TAB_SIZE - ((POSITION) & TAB_MASK))
+#define NUMBER_OF_SPACES_IN_TAB(POSITION) (TAB_SIZE - ((POSITION)&TAB_MASK))
 
 // these values are related to GetKeyboardState
 #define KEY_PRESSED 0x8000

@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "UnicodeStorage.hpp"
 
-UnicodeStorage::UnicodeStorage() :
+UnicodeStorage::UnicodeStorage() noexcept :
     _map{}
 {
 }
@@ -35,7 +35,7 @@ void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 // - erases key and its associated data from the storage
 // Arguments:
 // - key - the key to remove
-void UnicodeStorage::Erase(const key_type key) noexcept
+void UnicodeStorage::Erase(const key_type key)
 {
     _map.erase(key);
 }

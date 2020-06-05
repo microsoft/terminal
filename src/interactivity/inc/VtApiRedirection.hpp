@@ -20,9 +20,9 @@ Author:
 
 #pragma once
 
-#define MapVirtualKeyW(x,y)  VTRedirMapVirtualKeyW(x,y)
-#define VkKeyScanW(x)        VTRedirVkKeyScanW(x)
-#define GetKeyState(x)       VTRedirGetKeyState(x)
+#define MapVirtualKeyW(x, y) VTRedirMapVirtualKeyW(x, y)
+#define VkKeyScanW(x) VTRedirVkKeyScanW(x)
+#define GetKeyState(x) VTRedirGetKeyState(x)
 
 UINT VTRedirMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType);
 SHORT VTRedirVkKeyScanW(_In_ WCHAR ch);

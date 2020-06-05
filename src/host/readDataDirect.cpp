@@ -29,7 +29,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
     ReadData(pInputBuffer, pInputReadHandleData),
     _eventReadCount{ eventReadCount },
     _partialEvents{ std::move(partialEvents) },
-    _outEvents{ }
+    _outEvents{}
 {
 }
 

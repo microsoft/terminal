@@ -7,19 +7,14 @@
 // Routine Description:
 // - Creates an instance of the NTDLL method-invoking class.
 // - This class helps maintain a loose coupling on NTDLL without reliance on the driver kit headers/libs.
+#pragma warning(suppress : 26490) // reinterpret_cast is prohibited but it's way more steps to make it happy
+#pragma warning(suppress : 26455) // Default constructors cannot throw, but passing the library in is clumsy.
 WinNTControl::WinNTControl() :
     // NOTE: Use LoadLibraryExW with LOAD_LIBRARY_SEARCH_SYSTEM32 flag below to avoid unneeded directory traversal.
     //       This has triggered CPG boot IO warnings in the past.
     _NtDllDll(THROW_LAST_ERROR_IF_NULL(LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))),
     _NtOpenFile(reinterpret_cast<PfnNtOpenFile>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_NtDllDll.get(), "NtOpenFile"))))
 {
-}
-
-// Routine Description:
-// - Destructs an instance of the NTDLL method-invoking class.
-WinNTControl::~WinNTControl()
-{
-
 }
 
 // Routine Description:
@@ -41,13 +36,12 @@ WinNTControl& WinNTControl::GetInstance()
 // - See definitions at MSDN
 // Return Value:
 // - See definitions at MSDN
-[[nodiscard]]
-NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
-                                  _In_ ACCESS_MASK DesiredAccess,
-                                  _In_ POBJECT_ATTRIBUTES ObjectAttributes,
-                                  _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-                                  _In_ ULONG ShareAccess,
-                                  _In_ ULONG OpenOptions)
+[[nodiscard]] NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
+                                                _In_ ACCESS_MASK DesiredAccess,
+                                                _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+                                                _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+                                                _In_ ULONG ShareAccess,
+                                                _In_ ULONG OpenOptions)
 {
     try
     {

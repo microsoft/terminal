@@ -15,7 +15,6 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
     _ulReadShareCount(0),
     _ulWriteShareCount(0)
 {
-
 }
 
 // Routine Description:
@@ -32,19 +31,16 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 // TODO: MSFT 614400 - Add concurrency SAL to enforce the lock http://osgvsowi/614400
 // - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
 //   lock serializes both threads within the calling process and any other process that shares the console.
-[[nodiscard]]
-HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleType ulHandleType,
-                                              const ACCESS_MASK amDesired,
-                                              const ULONG ulShareMode,
-                                              std::unique_ptr<ConsoleHandleData>& out)
+[[nodiscard]] HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleType ulHandleType,
+                                                            const ACCESS_MASK amDesired,
+                                                            const ULONG ulShareMode,
+                                                            std::unique_ptr<ConsoleHandleData>& out)
 {
     try
     {
         // Allocate all necessary state.
-        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(ulHandleType,
-                                                                                             amDesired,
-                                                                                             ulShareMode,
-                                                                                             this);
+        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
+                                                                                             ulShareMode);
 
         // Check the share mode.
         if (((pHandleData->IsReadAllowed()) && (_ulOpenCount > _ulReadShareCount)) ||
@@ -52,7 +48,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
             ((pHandleData->IsWriteAllowed()) && (_ulOpenCount > _ulWriteShareCount)) ||
             ((!pHandleData->IsWriteShared()) && (_ulWriterCount > 0)))
         {
-            RETURN_WIN32(ERROR_SHARING_VIOLATION);
+            return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
         }
 
         // Update share/open counts and store handle information.
@@ -78,6 +74,10 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
             _ulWriteShareCount++;
         }
 
+        // Commit the object into the handle now that we've determined we have the rights to use it and have counted up appropriately.
+        // This way, the handle will only try to cleanup and decrement its counts after we've validated rights and incremented.
+        pHandleData->Initialize(ulHandleType, this);
+
         out.swap(pHandleData);
     }
     CATCH_RETURN();
@@ -91,8 +91,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
 // - pFree - Pointer to the handle data to be freed
 // Return Value:
 // - HRESULT S_OK or appropriate error.
-[[nodiscard]]
-HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
+[[nodiscard]] HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
 {
     // This absolutely should not happen and our state is corrupt/bad if we try to release past 0.
     THROW_HR_IF(E_NOT_VALID_STATE, !(_ulOpenCount > 0));

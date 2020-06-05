@@ -13,7 +13,6 @@ ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
 
 void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
 {
-
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)

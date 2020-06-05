@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
@@ -112,12 +111,12 @@ HRESULT GdiEngine::InvalidateAll() noexcept
 }
 
 // Method Description:
-// - Notifies us that we're about to circle the buffer, giving us a chance to 
-//      force a repaint before the buffer contents are lost. The GDI renderer 
+// - Notifies us that we're about to circle the buffer, giving us a chance to
+//      force a repaint before the buffer contents are lost. The GDI renderer
 //      doesn't care if we lose text - we're only painting visible text anyways,
 //      so we return false.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
 HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
@@ -127,12 +126,12 @@ HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 }
 
 // Method Description:
-// - Notifies us that we're about to be torn down. This gives us a last chance 
-//      to force a repaint before the buffer contents are lost. The GDI renderer 
+// - Notifies us that we're about to be torn down. This gives us a last chance
+//      to force a repaint before the buffer contents are lost. The GDI renderer
 //      doesn't care if we lose text - we're only painting visible text anyways,
 //      so we return false.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
 HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept

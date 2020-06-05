@@ -50,24 +50,24 @@ PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
 
 SOURCES = \
-    dll.cpp              \
-    util.cpp             \
-    console.cpp          \
-    globals.cpp          \
-    fontdlg.cpp          \
-    OptionsPage.cpp      \
-    ColorsPage.cpp       \
-    ColorControl.cpp     \
-    ColorsPage.cpp       \
-    LayoutPage.cpp       \
-    TerminalPage.cpp     \
-    init.cpp             \
-    misc.cpp             \
-    preview.cpp          \
-    registry.cpp         \
-    dbcs.cpp             \
-    strid.mc             \
-    PropSheetHandler.cpp \
+    dll.cpp                   \
+    util.cpp                  \
+    console.cpp               \
+    globals.cpp               \
+    fontdlg.cpp               \
+    OptionsPage.cpp           \
+    ColorsPage.cpp            \
+    ColorControl.cpp          \
+    ColorsPage.cpp            \
+    LayoutPage.cpp            \
+    TerminalPropsheetPage.cpp \
+    init.cpp                  \
+    misc.cpp                  \
+    preview.cpp               \
+    registry.cpp              \
+    dbcs.cpp                  \
+    strid.mc                  \
+    PropSheetHandler.cpp      \
     console.rc
 
 INCLUDES = \
@@ -77,8 +77,8 @@ INCLUDES = \
     ..\host; \
 
 TARGETLIBS = \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-    $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecoreuap.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
@@ -98,6 +98,7 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
+    $(ONECOREBASE_INTERNAL_LIB_VPATH_L)\ext-ms-win-appmodel-shellexecute-l1.lib \
     $(ONECOREWINDOWS_INTERNAL_LIB_PATH_L)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
 

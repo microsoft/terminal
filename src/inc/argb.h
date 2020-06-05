@@ -17,7 +17,7 @@ Author(s):
 
 constexpr COLORREF ARGB(const BYTE a, const BYTE r, const BYTE g, const BYTE b) noexcept
 {
-    return (a<<24) | (b<<16) | (g<<8) | (r);
+    return (a << 24) | (b << 16) | (g << 8) | (r);
 }
 
 #ifdef RGB

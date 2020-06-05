@@ -2,6 +2,12 @@
 // Licensed under the MIT license.
 #pragma once
 
+// clang-format off
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN // If this is not defined, windows.h includes commdlg.h which defines FindText globally and conflicts with UIAutomation ITextRangeProvider.
+#endif
+
 // Define and then undefine WIN32_NO_STATUS because windows.h has no guard to prevent it from double defing certain statuses
 // when included with ntstatus.h
 #define WIN32_NO_STATUS
@@ -33,8 +39,6 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include <winuser.h>
 
-#include <uxtheme.h>
-
 #include <cwchar>
 
 // Only remaining item from w32gdip.h. There's probably a better way to do this as well.
@@ -46,3 +50,5 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include "conddkrefs.h"
 #include "conwinuserrefs.h"
+
+// clang-format on

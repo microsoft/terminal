@@ -23,22 +23,26 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
+        TerminalOutput() noexcept;
 
-        TerminalOutput();
-        ~TerminalOutput();
-
-        wchar_t TranslateKey(const wchar_t wch) const;
-        bool DesignateCharset(const wchar_t wchNewCharset);
-        bool NeedToTranslate() const;
+        wchar_t TranslateKey(const wchar_t wch) const noexcept;
+        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
+        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
+        bool LockingShift(const size_t gsetNumber);
+        bool LockingShiftRight(const size_t gsetNumber);
+        bool SingleShift(const size_t gsetNumber);
+        bool NeedToTranslate() const noexcept;
+        void EnableGrTranslation(boolean enabled);
 
     private:
-        wchar_t _wchCurrentCharset = DispatchTypes::VTCharacterSets::USASCII;
+        bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
 
-        // The tables only ever change the values x20 - x7f (96 display characters)
-        static const unsigned int s_uiNumDisplayCharacters = 96;
-        static const wchar_t s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters];
-
-        const wchar_t* _GetTranslationTable() const;
-
+        std::array<std::wstring_view, 4> _gsetTranslationTables;
+        size_t _glSetNumber = 0;
+        size_t _grSetNumber = 2;
+        std::wstring_view _glTranslationTable;
+        std::wstring_view _grTranslationTable;
+        mutable std::wstring_view _ssTranslationTable;
+        boolean _grTranslationEnabled = false;
     };
 }

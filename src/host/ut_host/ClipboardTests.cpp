@@ -19,9 +19,7 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
-#include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
-
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -86,13 +84,12 @@ class ClipboardTests
         selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
         selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
 
-        return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
-                                                            fLineSelection,
-                                                            selection).text;
+        const auto& buffer = screenInfo.GetTextBuffer();
+        return buffer.GetText(true, fLineSelection, selection).text;
     }
 
 #pragma prefast(push)
-#pragma prefast(disable:26006, "Specifically trying to check unterminated strings in this test.")
+#pragma prefast(disable : 26006, "Specifically trying to check unterminated strings in this test.")
     TEST_METHOD(TestRetrieveFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -130,7 +127,6 @@ class ClipboardTests
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
 
         std::vector<SMALL_RECT> selection;
         const auto text = SetupRetrieveFromBuffers(true, selection);
@@ -178,7 +174,7 @@ class ClipboardTests
 
                 const short keyState = pInputServices->VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -201,7 +197,6 @@ class ClipboardTests
         std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                                                                 wstr.size());
 
-
         VERIFY_ARE_EQUAL((wstr.size() + uppercaseCount) * 2, events.size());
         IInputServices* pInputServices = ServiceLocator::LocateInputServices();
         VERIFY_IS_NOT_NULL(pInputServices);
@@ -220,7 +215,7 @@ class ClipboardTests
                 const short keyScanError = -1;
                 const short keyState = pInputServices->VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -235,8 +230,8 @@ class ClipboardTests
                     events.pop_front();
 
                     const short keyState2 = pInputServices->VkKeyScanW(wch);
-                    VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                    const WORD virtualScanCode2 = static_cast<WORD>(pInputServices->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+                    VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
+                    const WORD virtualScanCode2 = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {
@@ -317,11 +312,11 @@ class ClipboardTests
         VERIFY_ARE_EQUAL(convertedSize, events.size());
 
         std::deque<KeyEvent> expectedEvents;
-        expectedEvents.push_back({ TRUE, 1,  VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1,  0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1,  0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1,  0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1,  0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ FALSE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ FALSE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
         expectedEvents.push_back({ FALSE, 1, VK_MENU, altScanCode, wstr[0], 0 });
 
         for (size_t i = 0; i < events.size(); ++i)
@@ -330,4 +325,4 @@ class ClipboardTests
             VERIFY_ARE_EQUAL(expectedEvents[i], currentKeyEvent, NoThrowString().Format(L"i == %d", i));
         }
     }
-    };
+};

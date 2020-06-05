@@ -16,16 +16,20 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    struct SomeViewports;
+    class Viewport;
+
+    using SomeViewports = til::some<Viewport, 4>;
 
     class Viewport final
     {
     public:
         ~Viewport() {}
+        constexpr Viewport() noexcept :
+            _sr({ 0, 0, -1, -1 }){};
         Viewport(const Viewport& other) noexcept;
         Viewport(Viewport&&) = default;
-        Viewport& operator=(const Viewport&)& = default;
-        Viewport& operator=(Viewport&&)& = default;
+        Viewport& operator=(const Viewport&) & = default;
+        Viewport& operator=(Viewport&&) & = default;
 
         static Viewport Empty() noexcept;
 
@@ -53,20 +57,21 @@ namespace Microsoft::Console::Types
         SHORT Height() const noexcept;
         SHORT Width() const noexcept;
         COORD Origin() const noexcept;
+        COORD EndExclusive() const noexcept;
         COORD Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;
-        bool IsInBounds(const COORD& pos) const noexcept;
+        bool IsInBounds(const COORD& pos, bool allowEndExclusive = false) const noexcept;
 
         void Clamp(COORD& pos) const;
-        Viewport Clamp(const Viewport& other) const;
+        Viewport Clamp(const Viewport& other) const noexcept;
 
         bool MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept;
-        bool IncrementInBounds(COORD& pos) const noexcept;
+        bool IncrementInBounds(COORD& pos, bool allowEndExclusive = false) const noexcept;
         bool IncrementInBoundsCircular(COORD& pos) const noexcept;
-        bool DecrementInBounds(COORD& pos) const noexcept;
+        bool DecrementInBounds(COORD& pos, bool allowEndExclusive = false) const noexcept;
         bool DecrementInBoundsCircular(COORD& pos) const noexcept;
-        int CompareInBounds(const COORD& first, const COORD& second) const noexcept;
+        int CompareInBounds(const COORD& first, const COORD& second, bool allowEndExclusive = false) const noexcept;
 
         enum class XWalk
         {
@@ -86,20 +91,18 @@ namespace Microsoft::Console::Types
             const YWalk y;
         };
 
-        bool WalkInBounds(COORD& pos, const WalkDir dir) const noexcept;
-        bool WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcept;
+        bool WalkInBounds(COORD& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
+        bool WalkInBoundsCircular(COORD& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
         COORD GetWalkOrigin(const WalkDir dir) const noexcept;
         static WalkDir DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
 
         bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept;
-        [[nodiscard]]
-        Viewport ConvertToOrigin(const Viewport& other) const noexcept;
+        [[nodiscard]] Viewport ConvertToOrigin(const Viewport& other) const noexcept;
         void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertFromOrigin(_Inout_ COORD* const pcoord) const noexcept;
-        [[nodiscard]]
-        Viewport ConvertFromOrigin(const Viewport& other) const noexcept;
+        [[nodiscard]] Viewport ConvertFromOrigin(const Viewport& other) const noexcept;
 
         SMALL_RECT ToExclusive() const noexcept;
         SMALL_RECT ToInclusive() const noexcept;
@@ -109,17 +112,13 @@ namespace Microsoft::Console::Types
 
         bool IsValid() const noexcept;
 
-        [[nodiscard]]
-        static Viewport Offset(const Viewport& original, const COORD delta);
+        [[nodiscard]] static Viewport Offset(const Viewport& original, const COORD delta);
 
-        [[nodiscard]]
-        static Viewport Union(const Viewport& lhs, const Viewport& rhs) noexcept;
+        [[nodiscard]] static Viewport Union(const Viewport& lhs, const Viewport& rhs) noexcept;
 
-        [[nodiscard]]
-        static Viewport Intersect(const Viewport& lhs, const Viewport& rhs) noexcept;
+        [[nodiscard]] static Viewport Intersect(const Viewport& lhs, const Viewport& rhs) noexcept;
 
-        [[nodiscard]]
-        static SomeViewports Subtract(const Viewport& original, const Viewport& removeMe) noexcept;
+        [[nodiscard]] static SomeViewports Subtract(const Viewport& original, const Viewport& removeMe) noexcept;
 
     private:
         Viewport(const SMALL_RECT sr) noexcept;
@@ -130,28 +129,6 @@ namespace Microsoft::Console::Types
 #if UNIT_TESTING
         friend class ViewportTests;
 #endif
-    };
-
-    struct SomeViewports final
-    {
-        unsigned char used{ 0 };
-        std::array<Viewport, 4> viewports { Viewport::Empty(), Viewport::Empty(), Viewport::Empty(), Viewport::Empty() };
-
-        // These two methods are to make this vaguely look like a std::vector.
-
-        // Size is the number of viewports that are valid inside this structure
-        size_t size() const noexcept { return used; }
-
-        // At retrieves a viewport at a particular index. If you retrieve beyond the valid size(),
-        // it will throw std::out_of_range
-        const Viewport& at(size_t index) const
-        {
-            if (index >= used)
-            {
-                throw std::out_of_range("Access attempted beyond valid size.");
-            }
-            return viewports.at(index);
-        }
     };
 }
 

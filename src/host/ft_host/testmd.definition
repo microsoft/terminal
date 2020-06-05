@@ -6,7 +6,7 @@
   },
   "Execution": {
     "Type": "TAEF",
-    "Parameter": "/ScreenCaptureOnError"
+    "Parameter": "/ScreenCaptureOnError /miniDumpOnError /unsupported_miniDumpOnTimeout"
   },
   "Dependencies": {
     "Files": [ 

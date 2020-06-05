@@ -19,30 +19,33 @@ namespace Microsoft::Console::VirtualTerminal
         VtIo();
         virtual ~VtIo() override = default;
 
-        [[nodiscard]]
-        HRESULT Initialize(const ConsoleArguments* const pArgs);
+        [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
-
-        [[nodiscard]]
-        HRESULT CreateAndStartSignalThread() noexcept;
-        [[nodiscard]]
-        HRESULT CreateIoHandlers() noexcept;
+        [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
+        [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
 
-        [[nodiscard]]
-        HRESULT StartIfNeeded();
+        [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]]
-        static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
+        [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
 
-        [[nodiscard]]
-        HRESULT SuppressResizeRepaint();
-        [[nodiscard]]
-        HRESULT SetCursorPosition(const COORD coordCursor);
+        [[nodiscard]] HRESULT SuppressResizeRepaint();
+        [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
         void CloseInput() override;
         void CloseOutput() override;
+
+        void BeginResize();
+        void EndResize();
+
+#ifdef UNIT_TESTING
+        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
+#endif
+
+        bool IsResizeQuirkEnabled() const;
+
+        [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
 
     private:
         // After CreateIoHandlers is called, these will be invalid.
@@ -58,17 +61,18 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForCursorPosition;
         std::mutex _shutdownLock;
 
+        bool _resizeQuirk{ false };
+
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]]
-        HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
         void _ShutdownIfNeeded();
 
-    #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         friend class VtIoTests;
-    #endif
+#endif
     };
 }

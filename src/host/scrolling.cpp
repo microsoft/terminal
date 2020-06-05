@@ -11,6 +11,7 @@
 
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Types;
 
 ULONG Scrolling::s_ucWheelScrollLines = 0;
 ULONG Scrolling::s_ucWheelScrollChars = 0;
@@ -58,7 +59,7 @@ void Scrolling::s_ClearScroll()
 
 void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
     Selection* const pSelection = &Selection::Instance();
@@ -77,7 +78,7 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
             return;
         }
 
-        pWindow->MapPoints((LPPOINT) & ClientRect, 2);
+        pWindow->MapPoints((LPPOINT)&ClientRect, 2);
         if (!(s_IsPointInRectangle(&ClientRect, CursorPos)))
         {
             pWindow->ConvertScreenToClient(&CursorPos);
@@ -202,7 +203,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
 bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
     const WORD VirtualKeyCode = pKeyInfo->GetVirtualKey();

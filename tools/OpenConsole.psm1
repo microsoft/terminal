@@ -3,20 +3,88 @@
 Set-Item -force -path "env:OpenConsoleRoot" -value "$PSScriptRoot\.."
 
 #.SYNOPSIS
+# Finds and imports a module that should be local to the project
+#.PARAMETER ModuleName
+# The name of the module to import
+function Import-LocalModule
+{
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory=$true, Position=0)]
+        [string]$Name
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    $modules_root = "$env:OpenConsoleRoot\.PowershellModules"
+
+    $local = $null -eq (Get-Module -Name $Name)
+
+    if (-not $local)
+    {
+        return
+    }
+
+    if (-not (Test-Path $modules_root)) {
+        New-Item $modules_root -ItemType 'directory' | Out-Null
+    }
+
+    if (-not (Test-Path "$modules_root\$Name")) {
+        Write-Verbose "$Name not downloaded -- downloading now"
+        $module = Find-Module "$Name"
+        $version = $module.Version
+
+        Write-Verbose "Saving $Name to $modules_root"
+        Save-Module -InputObject $module -Path $modules_root
+        Import-Module "$modules_root\$Name\$version\$Name.psd1"
+    } else {
+        Write-Verbose "$Name already downloaded"
+        $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
+
+        Get-ChildItem -Path "$modules_root\$Name\$($versions[0])\$Name.psd1" | Import-Module
+    }
+}
+
+#.SYNOPSIS
 # Grabs all environment variable set after vcvarsall.bat is called and pulls
 # them into the Powershell environment.
-function Set-MsbuildDevEnvironment()
+function Set-MsbuildDevEnvironment
 {
-    $path = "$env:VS140COMNTOOLS\..\.."
-    pushd $path
-    cmd /c "vcvarsall.bat&set" | foreach {
-        if ($_ -match "=")
+    [CmdletBinding()]
+    param(
+        [switch]$Prerelease
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    Import-LocalModule -Name 'VSSetup'
+
+    Write-Verbose 'Searching for VC++ instances'
+    $vsinfo = `
+        Get-VSSetupInstance  -All -Prerelease:$Prerelease `
+        | Select-VSSetupInstance `
+            -Latest -Product * `
+            -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
+
+    $vspath = $vsinfo.InstallationPath
+
+    switch ($env:PROCESSOR_ARCHITECTURE) {
+        "amd64" { $arch = "x64" }
+        "x86" { $arch = "x86" }
+        default { throw "Unknown architecture: $switch" }
+    }
+
+    $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
+
+    Write-Verbose 'Setting up environment variables'
+    cmd /c ("`"$vcvarsall`" $arch & set") | ForEach-Object {
+        if ($_ -match '=')
         {
             $s = $_.Split("=");
             Set-Item -force -path "env:\$($s[0])" -value "$($s[1])"
         }
     }
-    popd
+
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }
 
@@ -91,7 +159,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'types')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -113,14 +181,17 @@ function Invoke-OpenConsoleTests()
         return
     }
     $OpenConsolePlatform = $Platform
+    $TestHostAppPath = "$env:OpenConsoleRoot\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
+        $TestHostAppPath = "$env:OpenConsoleRoot\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
-    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.30.180808002\build\binaries\$Platform\te.exe"
+    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.51.200127004\build\Binaries\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
+
     [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 
     # check if WinAppDriver needs to be started
@@ -154,6 +225,11 @@ function Invoke-OpenConsoleTests()
     {
         if ($t.type -eq "unit")
         {
+            if ($t.runInHostApp -eq "true")
+            {
+                & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
+            }
+
             & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
@@ -238,4 +314,46 @@ function Debug-OpenConsole()
     Debug-Process -Id $process.Id
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole
+#.SYNOPSIS
+# runs clang-format on list of files
+#
+#.PARAMETER Path
+# The full paths to the files to format
+function Invoke-ClangFormat {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string[]]$Path
+    )
+
+    Begin {
+        $BatchSize = [int]64
+        $Paths = @()
+    }
+
+    Process {
+        ForEach($_ in $Path) {
+            $Paths += Get-Item $_ -ErrorAction Stop | Select -Expand FullName
+        }
+    }
+
+    End {
+        For($i = [int]0; $i -Lt $Paths.Length; $i += $BatchSize) {
+            Try {
+                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $Paths[$i .. ($i + $BatchSize - 1)]
+            } Catch {
+                Write-Error $_
+            }
+        }
+    }
+}
+
+#.SYNOPSIS
+# runs code formatting on all c++ files
+function Invoke-CodeFormat() {
+    Get-ChildItem -Recurse "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h |
+      Where FullName -NotLike "*Generated Files*" |
+      Invoke-ClangFormat
+}
+
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat

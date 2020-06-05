@@ -28,7 +28,6 @@ Revision History:
 #include <deque>
 #include <memory>
 
-
 class DirectReadData final : public ReadData
 {
 public:

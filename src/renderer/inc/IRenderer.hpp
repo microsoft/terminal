@@ -6,7 +6,7 @@ Module Name:
 - IRenderer.hpp
 
 Abstract:
-- This serves as the entry point for console rendering activites.
+- This serves as the entry point for console rendering activities.
 
 Author(s):
 - Michael Niksa (MiNiksa) 17-Nov-2015
@@ -24,10 +24,13 @@ namespace Microsoft::Console::Render
     class IRenderer : public IRenderTarget
     {
     public:
-        virtual ~IRenderer() = 0;
+        ~IRenderer() = 0;
+        IRenderer(const IRenderer&) = default;
+        IRenderer(IRenderer&&) = default;
+        IRenderer& operator=(const IRenderer&) = default;
+        IRenderer& operator=(IRenderer&&) = default;
 
-        [[nodiscard]]
-        virtual HRESULT PaintFrame() = 0;
+        [[nodiscard]] virtual HRESULT PaintFrame() = 0;
 
         virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
@@ -47,10 +50,9 @@ namespace Microsoft::Console::Render
                                        const FontInfoDesired& FontInfoDesired,
                                        _Out_ FontInfo& FontInfo) = 0;
 
-        [[nodiscard]]
-        virtual HRESULT GetProposedFont(const int iDpi,
-                                        const FontInfoDesired& FontInfoDesired,
-                                        _Out_ FontInfo& FontInfo) = 0;
+        [[nodiscard]] virtual HRESULT GetProposedFont(const int iDpi,
+                                                      const FontInfoDesired& FontInfoDesired,
+                                                      _Out_ FontInfo& FontInfo) = 0;
 
         virtual bool IsGlyphWideByFont(const std::wstring_view glyph) = 0;
 
@@ -58,8 +60,11 @@ namespace Microsoft::Console::Render
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
+
+    protected:
+        IRenderer() = default;
     };
 
-    inline Microsoft::Console::Render::IRenderer::~IRenderer() { }
+    inline Microsoft::Console::Render::IRenderer::~IRenderer() {}
 
 }

@@ -14,9 +14,14 @@
     "/.vs/",
     "/build/",
     "/src/cascadia/",
+    "/src/winconpty/",
     "/.nuget/",
     "/.github/",
-    "/samples/"
+    "/samples/",
+    "/res/terminal/",
+    "/doc/specs/",
+    "/doc/cascadia/",
+    "/doc/user-docs/"
   ],
   "SuffixFilters": [
     ".dbb",
@@ -31,6 +36,7 @@
     ".db",
     ".wrn",
     ".rec",
-    ".err"
+    ".err",
+    ".xlsx"
   ]    
 }

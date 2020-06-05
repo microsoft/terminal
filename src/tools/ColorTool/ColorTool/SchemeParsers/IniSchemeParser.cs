@@ -13,12 +13,12 @@ using static ColorTool.ConsoleAPI;
 
 namespace ColorTool.SchemeParsers
 {
-    class IniSchemeParser : ISchemeParser
+    class IniSchemeParser : SchemeParserBase
     {
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
-        private const string FileExtension = ".ini";
+        protected override string FileExtension { get; } = ".ini";
 
         // These are in Windows Color table order - BRG, not RGB.
         internal static readonly IReadOnlyList<string> ColorNames = new[]
@@ -41,12 +41,12 @@ namespace ColorTool.SchemeParsers
             "BRIGHT_WHITE"
         };
 
-        public string Name { get; } = "INI File Parser";
+        public override string Name { get; } = "INI File Parser";
 
-        public bool CanParse(string schemeName) => 
+        public override bool CanParse(string schemeName) => 
             string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
+        public override ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             bool success = true;
 
@@ -124,7 +124,7 @@ namespace ColorTool.SchemeParsers
             if (colorTable != null)
             {
                 var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
-                return new ColorScheme(colorTable, consoleAttributes);
+                return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
             }
             else
             {
@@ -185,7 +185,7 @@ namespace ColorTool.SchemeParsers
             }
         }
 
-        private static string FindIniScheme(string schemeName)
+        private string FindIniScheme(string schemeName)
         {
             return SchemeManager.GetSearchPaths(schemeName, FileExtension).FirstOrDefault(File.Exists);
         }

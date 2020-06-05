@@ -29,7 +29,6 @@ class TitleTests
         return false;
     }
 
-
     TEST_METHOD(TestTranslateConsoleTitle)
     {
         BEGIN_TEST_METHOD_PROPERTIES()

@@ -18,7 +18,7 @@ PCWSTR GetIntegrityLevel()
     THROW_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, GetCurrentProcessToken()));
 
     dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,
-        (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
+                                           (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
 
     switch (dwIntegrityLevel)
     {

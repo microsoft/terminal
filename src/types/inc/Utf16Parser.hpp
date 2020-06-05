@@ -18,18 +18,17 @@ Author(s):
 #include <optional>
 #include <bitset>
 
-
 class Utf16Parser final
 {
 private:
     static constexpr unsigned short IndicatorBitCount = 6;
     static constexpr unsigned short WcharShiftAmount = sizeof(wchar_t) * 8 - IndicatorBitCount;
-    static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
+    static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 }; // 110 110 indicates a leading surrogate
     static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
 
 public:
     static std::vector<std::vector<wchar_t>> Parse(std::wstring_view wstr);
-    static std::wstring_view ParseNext(std::wstring_view wstr);
+    static std::wstring_view ParseNext(std::wstring_view wstr) noexcept;
 
     // Routine Description:
     // - checks if wchar is a utf16 leading surrogate

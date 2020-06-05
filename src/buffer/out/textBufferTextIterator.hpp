@@ -22,13 +22,12 @@ class SCREEN_INFORMATION;
 class TextBufferTextIterator final : public TextBufferCellIterator
 {
 public:
-    TextBufferTextIterator(const TextBufferCellIterator& cellIter);
+    TextBufferTextIterator(const TextBufferCellIterator& cellIter) noexcept;
 
-    const std::wstring_view operator*() const;
-    const std::wstring_view* operator->() const;
+    const std::wstring_view operator*() const noexcept;
+    const std::wstring_view* operator->() const noexcept;
 
 protected:
-
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;
 #endif

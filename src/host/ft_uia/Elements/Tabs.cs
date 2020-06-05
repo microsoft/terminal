@@ -33,7 +33,7 @@ namespace Conhost.UIA.Tests.Elements
             this.tabs.Add(new FontTab(this.propDialog));
             this.tabs.Add(new LayoutTab(this.propDialog));
             this.tabs.Add(new ColorsTab(this.propDialog));
-            
+
         }
 
         private Tabs()

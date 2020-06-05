@@ -14,8 +14,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_StopCursorBlinking() noexcept
+[[nodiscard]] HRESULT VtEngine::_StopCursorBlinking() noexcept
 {
     return _Write("\x1b[?12l");
 }
@@ -27,8 +26,7 @@ HRESULT VtEngine::_StopCursorBlinking() noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_StartCursorBlinking() noexcept
+[[nodiscard]] HRESULT VtEngine::_StartCursorBlinking() noexcept
 {
     return _Write("\x1b[?12h");
 }
@@ -39,8 +37,7 @@ HRESULT VtEngine::_StartCursorBlinking() noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_HideCursor() noexcept
+[[nodiscard]] HRESULT VtEngine::_HideCursor() noexcept
 {
     return _Write("\x1b[?25l");
 }
@@ -51,21 +48,19 @@ HRESULT VtEngine::_HideCursor() noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_ShowCursor() noexcept
+[[nodiscard]] HRESULT VtEngine::_ShowCursor() noexcept
 {
     return _Write("\x1b[?25h");
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_EraseLine() noexcept
+[[nodiscard]] HRESULT VtEngine::_EraseLine() noexcept
 {
     // The default no-param action of erase line is erase to the right.
     // telnet client doesn't understand the parameterized version,
@@ -84,11 +79,9 @@ HRESULT VtEngine::_EraseLine() noexcept
 // - chars: a number of characters to erase (by overwriting with space)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
-
     return _WriteFormattedString(&format, chars);
 }
 
@@ -98,26 +91,27 @@ HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 // - chars: a number of characters to move cursor right by.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_CursorForward(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
-
     static const std::string format = "\x1b[%dC";
-
     return _WriteFormattedString(&format, chars);
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_ClearScreen() noexcept
+[[nodiscard]] HRESULT VtEngine::_ClearScreen() noexcept
 {
     return _Write("\x1b[2J");
+}
+
+[[nodiscard]] HRESULT VtEngine::_ClearScrollback() noexcept
+{
+    return _Write("\x1b[3J");
 }
 
 // Method Description:
@@ -128,8 +122,7 @@ HRESULT VtEngine::_ClearScreen() noexcept
 // - fInsertLine: true iff we should insert the lines, false to delete them.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept
 {
     if (sLines <= 0)
     {
@@ -151,8 +144,7 @@ HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) 
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
 {
     return _InsertDeleteLine(sLines, false);
 }
@@ -164,8 +156,7 @@ HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_InsertLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertLine(const short sLines) noexcept
 {
     return _InsertDeleteLine(sLines, true);
 }
@@ -178,8 +169,7 @@ HRESULT VtEngine::_InsertLine(const short sLines) noexcept
 // - coord: Console coordinates to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 {
     static const std::string cursorFormat = "\x1b[%d;%dH";
 
@@ -197,8 +187,7 @@ HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_CursorHome() noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorHome() noexcept
 {
     return _Write("\x1b[H");
 }
@@ -209,10 +198,9 @@ HRESULT VtEngine::_CursorHome() noexcept
 // - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
 {
-    const std::string fmt = isBold ? "\x1b[1m" : "\x1b[22m";
+    const std::string_view fmt = isBold ? "\x1b[1m" : "\x1b[22m";
     return _Write(fmt);
 }
 
@@ -222,8 +210,7 @@ HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
 // <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_SetGraphicsDefault() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsDefault() noexcept
 {
     return _Write("\x1b[m");
 }
@@ -235,9 +222,8 @@ HRESULT VtEngine::_SetGraphicsDefault() noexcept
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
-                                               const bool fIsForeground) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
+                                                             const bool fIsForeground) noexcept
 {
     static const std::string fmt = "\x1b[%dm";
 
@@ -251,14 +237,14 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
     //      dark colors. For conhost as a terminal, it can't draw bold
     //      characters, so it displays "bold" as bright, and in fact most
     //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness seperately, we'll make sure the
+    // By specifying the boldness and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
-    const int vtIndex = 30
-                        + (fIsForeground? 0 : 10)
-                        + ((WI_IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0)
-                        + (WI_IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
-                        + (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
-                        + (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
+    const int vtIndex = 30 +
+                        (fIsForeground ? 0 : 10) +
+                        ((WI_IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0) +
+                        (WI_IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0) +
+                        (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
+                        (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
     return _WriteFormattedString(&fmt, vtIndex);
 }
@@ -271,13 +257,12 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
-                                                const bool fIsForeground) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
+                                                              const bool fIsForeground) noexcept
 {
     const std::string fmt = fIsForeground ?
-        "\x1b[38;2;%d;%d;%dm" :
-        "\x1b[48;2;%d;%d;%dm";
+                                "\x1b[38;2;%d;%d;%dm" :
+                                "\x1b[48;2;%d;%d;%dm";
 
     DWORD const r = GetRValue(color);
     DWORD const g = GetGValue(color);
@@ -293,10 +278,9 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
+    const std::string_view fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
 
     return _Write(fmt);
 }
@@ -308,8 +292,7 @@ HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) no
 // - sHeight: number of rows the terminal should display
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
+[[nodiscard]] HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
 {
     static const std::string resizeFormat = "\x1b[8;%d;%dt";
     if (sWidth < 0 || sHeight < 0)
@@ -327,8 +310,7 @@ HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcep
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_RequestCursor() noexcept
+[[nodiscard]] HRESULT VtEngine::_RequestCursor() noexcept
 {
     return _Write("\x1b[6n");
 }
@@ -339,8 +321,7 @@ HRESULT VtEngine::_RequestCursor() noexcept
 // - title: string to use as the new title of the window.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
+[[nodiscard]] HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 {
     const std::string titleFormat = "\x1b]0;" + title + "\x7";
     return _Write(titleFormat);
@@ -352,8 +333,7 @@ HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_BeginUnderline() noexcept
+[[nodiscard]] HRESULT VtEngine::_BeginUnderline() noexcept
 {
     return _Write("\x1b[4m");
 }
@@ -364,8 +344,95 @@ HRESULT VtEngine::_BeginUnderline() noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_EndUnderline() noexcept
+[[nodiscard]] HRESULT VtEngine::_EndUnderline() noexcept
 {
     return _Write("\x1b[24m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginItalics() noexcept
+{
+    return _Write("\x1b[3m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndItalics() noexcept
+{
+    return _Write("\x1b[23m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginBlink() noexcept
+{
+    return _Write("\x1b[5m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndBlink() noexcept
+{
+    return _Write("\x1b[25m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginInvisible() noexcept
+{
+    return _Write("\x1b[8m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndInvisible() noexcept
+{
+    return _Write("\x1b[28m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginCrossedOut() noexcept
+{
+    return _Write("\x1b[9m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
+{
+    return _Write("\x1b[29m");
 }

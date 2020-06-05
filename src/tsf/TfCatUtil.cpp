@@ -19,7 +19,6 @@ Notes:
 
 --*/
 
-
 #include "precomp.h"
 #include "TfCatUtil.h"
 
@@ -44,8 +43,7 @@ CicCategoryMgr::~CicCategoryMgr()
 //
 //----------------------------------------------------------------------------
 
-[[nodiscard]]
-HRESULT CicCategoryMgr::GetGUIDFromGUIDATOM(TfGuidAtom guidatom, GUID *pguid)
+[[nodiscard]] HRESULT CicCategoryMgr::GetGUIDFromGUIDATOM(TfGuidAtom guidatom, GUID* pguid)
 {
     return m_pcat->GetGUID(guidatom, pguid);
 }
@@ -56,8 +54,7 @@ HRESULT CicCategoryMgr::GetGUIDFromGUIDATOM(TfGuidAtom guidatom, GUID *pguid)
 //
 //----------------------------------------------------------------------------
 
-[[nodiscard]]
-HRESULT CicCategoryMgr::InitCategoryInstance( )
+[[nodiscard]] HRESULT CicCategoryMgr::InitCategoryInstance()
 {
     //
     // Create ITfCategoryMgr instance.

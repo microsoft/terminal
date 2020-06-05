@@ -18,8 +18,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint.
 //      HRESULT error code if painting didn't start successfully.
-[[nodiscard]]
-HRESULT VtEngine::StartPaint() noexcept
+[[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
     if (_pipeBroken)
     {
@@ -27,13 +26,18 @@ HRESULT VtEngine::StartPaint() noexcept
     }
 
     // If there's nothing to do, quick return
-    bool somethingToDo = _fInvalidRectUsed ||
-        (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
-        _cursorMoved ||
-        _titleChanged;
+    bool somethingToDo = _invalidMap.any() ||
+                         _scrollDelta != til::point{ 0, 0 } ||
+                         _cursorMoved ||
+                         _titleChanged;
 
     _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn, _fInvalidRectUsed, _invalidRect, _lastViewport, _scrollDelta, _cursorMoved);
+    _trace.TraceStartPaint(_quickReturn,
+                           _invalidMap,
+                           _lastViewport.ToInclusive(),
+                           _scrollDelta,
+                           _cursorMoved,
+                           _wrappedRow);
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -47,14 +51,13 @@ HRESULT VtEngine::StartPaint() noexcept
 // - <none>
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::EndPaint() noexcept
+[[nodiscard]] HRESULT VtEngine::EndPaint() noexcept
 {
     _trace.TraceEndPaint();
 
-    _invalidRect = Viewport::Empty();
-    _fInvalidRectUsed = false;
-    _scrollDelta = {0};
+    _invalidMap.reset_all();
+
+    _scrollDelta = { 0, 0 };
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
@@ -92,8 +95,7 @@ HRESULT VtEngine::EndPaint() noexcept
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]]
-HRESULT VtEngine::Present() noexcept
+[[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
 }
@@ -104,8 +106,7 @@ HRESULT VtEngine::Present() noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintBackground() noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBackground() noexcept
 {
     return S_OK;
 }
@@ -119,12 +120,15 @@ HRESULT VtEngine::PaintBackground() noexcept
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                  const COORD coord,
-                                  const bool /*trimLeft*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                const COORD coord,
+                                                const bool /*trimLeft*/,
+                                                const bool /*lineWrapped*/) noexcept
 {
     return VtEngine::_PaintAsciiBufferLine(clusters, coord);
 }
@@ -138,11 +142,10 @@ HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
-                                       const COLORREF /*color*/,
-                                       const size_t /*cchLine*/,
-                                       const COORD /*coordTarget*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+                                                     const COLORREF /*color*/,
+                                                     const size_t /*cchLine*/,
+                                                     const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -153,9 +156,10 @@ HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
+    _trace.TracePaintCursor(options.coordCursor);
+
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
 
@@ -172,8 +176,7 @@ HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -186,12 +189,10 @@ HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                           const COLORREF colorBackground,
-                                           const bool isBold,
-                                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                           const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                         const COLORREF colorBackground,
+                                                         const bool isBold,
+                                                         const std::basic_string_view<COLORREF> colorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -230,7 +231,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
             }
-            else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorForeground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
             }
@@ -247,7 +248,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
             }
-            else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorBackground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
             }
@@ -265,7 +266,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. It will try to
 //      find the colors in the color table that are nearest to the input colors,
-//       and write those indicies to the pipe.
+//       and write those indices to the pipe.
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
@@ -273,14 +274,11 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
 // - cColorTable: size of the color table.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                               const COLORREF colorBackground,
-                                               const bool isBold,
-                                               _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                               const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                             const COLORREF colorBackground,
+                                                             const bool isBold,
+                                                             const std::basic_string_view<COLORREF> colorTable) noexcept
 {
-
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
@@ -312,7 +310,7 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 
         if (fgChanged)
         {
-            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
 
             _LastFG = colorForeground;
@@ -320,12 +318,11 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 
         if (bgChanged)
         {
-            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
 
             _LastBG = colorBackground;
         }
-
     }
 
     return S_OK;
@@ -345,9 +342,8 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
-                                        const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                      const COORD coord) noexcept
 {
     try
     {
@@ -381,16 +377,14 @@ HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const cl
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
-                                       const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+                                                     const COORD coord,
+                                                     const bool lineWrapped) noexcept
 {
     if (coord.Y < _virtualTop)
     {
         return S_OK;
     }
-
-    RETURN_IF_FAILED(_MoveCursor(coord));
 
     std::wstring unclusteredString;
     unclusteredString.reserve(clusters.size());
@@ -447,24 +441,76 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
+    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
 
     // If we're not using erase char, but we did erase all at the start of the
-    //      frame, don't add spaces at the end.
-    const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
+    // frame, don't add spaces at the end.
+    //
+    // GH#5161: Only removeSpaces when we're in the _newBottomLine state and the
+    // line we're trying to print right now _actually is the bottom line_
+    //
+    // GH#5291: DON'T remove spaces when the row wrapped. We might need those
+    // spaces to preserve the wrap state of this line, or the cursor position.
+    // For example, vim.exe uses "~    "... to clear the line, and then leaves
+    // the lines _wrapped_. It doesn't care to manually break the lines, but if
+    // we trimmed the spaces off here, we'd print all the "~"s one after another
+    // on the same line.
+    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+                                               _clearedAllThisFrame ||
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
-                                (cchLine - numSpaces) :
-                                cchLine;
+                                 (cchLine - numSpaces) :
+                                 cchLine;
 
     const size_t columnsActual = removeSpaces ?
-                                    (totalWidth - numSpaces) :
-                                    totalWidth;
+                                     (totalWidth - numSpaces) :
+                                     totalWidth;
+
+    if (cchActual == 0)
+    {
+        // If the previous row wrapped, but this line is empty, then we actually
+        // do want to move the cursor down. Otherwise, we'll possibly end up
+        // accidentally erasing the last character from the previous line, as
+        // the cursor is still waiting on that character for the next character
+        // to follow it.
+        //
+        // GH#5839 - If we've emitted a wrapped row, because the cursor is
+        // sitting just past the last cell of the previous row, if we execute a
+        // EraseCharacter or EraseLine here, then the row won't actually get
+        // cleared here. This logic is important to make sure that the cursor is
+        // in the right position before we do that.
+
+        _wrappedRow = std::nullopt;
+        _trace.TraceClearWrapped();
+    }
+
+    // Move the cursor to the start of this run.
+    RETURN_IF_FAILED(_MoveCursor(coord));
 
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
+    // GH#4415, GH#5181
+    // If the renderer told us that this was a wrapped line, then mark
+    // that we've wrapped this line. The next time we attempt to move the
+    // cursor, if we're trying to move it to the start of the next line,
+    // we'll remember that this line was wrapped, and not manually break the
+    // line.
+    if (lineWrapped)
+    {
+        _wrappedRow = coord.Y;
+        _trace.TraceSetWrapped(coord.Y);
+    }
+
     // Update our internal tracker of the cursor's position.
-    // See MSFT:20266233
+    // See MSFT:20266233 (which is also GH#357)
     // If the cursor is at the rightmost column of the terminal, and we write a
     //      space, the cursor won't actually move to the next cell (which would
     //      be {0, _lastText.Y++}). The cursor will stay visibly in that last
@@ -475,9 +521,23 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     //      we'll determine that we need to emit a \b to put the cursor in the
     //      right position. This is wrong, and will cause us to move the cursor
     //      back one character more than we wanted.
-    if (_lastText.X < _lastViewport.RightInclusive())
+    //
+    // GH#1245: This needs to be RightExclusive, _not_ inclusive. Otherwise, we
+    // won't update our internal cursor position tracker correctly at the last
+    // character of the row.
+    if (_lastText.X < _lastViewport.RightExclusive())
     {
         _lastText.X += static_cast<short>(columnsActual);
+    }
+    // GH#1245: If we wrote the exactly last char of the row, then we're in the
+    // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
+    // wt) all behave differently with how the cursor behaves at an end of line.
+    // Mark that we're in the delayed EOL wrap state - we don't want to be
+    // clever about how we move the cursor in this state, since different
+    // terminals will handle a backspace differently in this state.
+    if (_lastText.X >= _lastViewport.RightInclusive())
+    {
+        _delayedEolWrap = true;
     }
 
     short sNumSpaces;
@@ -489,7 +549,6 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
 
     if (useEraseChar)
     {
-        RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         // ECH doesn't actually move the cursor itself. However, we think that
         //   the cursor *should* be at the end of the area we just erased. Stash
         //   that position as our new deferred position. If we don't move the
@@ -497,8 +556,17 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+
+        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
+        {
+            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+        }
+        else
+        {
+            RETURN_IF_FAILED(_EraseLine());
+        }
     }
-    else if (_newBottomLine)
+    else if (_newBottomLine && printingBottomLine)
     {
         // If we're on a new line, then we don't need to erase the line. The
         //      line is already empty.
@@ -506,8 +574,9 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
@@ -515,9 +584,13 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         }
     }
 
-    // If we previously though that this was a new bottom line, it certainly
-    //      isn't new any longer.
-    _newBottomLine = false;
+    // If we printed to the bottom line, and we previously thought that this was
+    // a new bottom line, it certainly isn't new any longer.
+    if (printingBottomLine)
+    {
+        _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
+    }
 
     return S_OK;
 }
@@ -531,8 +604,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
 {
     return S_OK;
 }

@@ -7,7 +7,8 @@ using namespace Microsoft::WRL;
 
 #if !defined(__WRL_WINRT_STRICT__)
 _Check_return_
-STDAPI DllGetClassObject(_In_ REFCLSID rclsid, _In_ REFIID riid, _Outptr_ void** ppv)
+    STDAPI
+    DllGetClassObject(_In_ REFCLSID rclsid, _In_ REFIID riid, _Outptr_ void** ppv)
 {
     return Module<InProc>::GetModule().GetClassObject(rclsid, riid, ppv);
 }

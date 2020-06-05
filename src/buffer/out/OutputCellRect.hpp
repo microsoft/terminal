@@ -29,7 +29,7 @@ Revision History:
 class OutputCellRect final
 {
 public:
-    OutputCellRect();
+    OutputCellRect() noexcept;
     OutputCellRect(const size_t rows, const size_t cols);
 
     gsl::span<OutputCell> GetRow(const size_t row);
@@ -40,7 +40,7 @@ public:
 
 private:
     std::vector<OutputCell> _storage;
-    
+
     OutputCell* _FindRowOffset(const size_t row);
     const OutputCell* _FindRowOffset(const size_t row) const;
 

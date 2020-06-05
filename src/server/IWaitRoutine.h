@@ -29,8 +29,8 @@ enum class ReplyDataType
 class IWaitRoutine
 {
 public:
-    IWaitRoutine(ReplyDataType type)
-        : _ReplyType(type)
+    IWaitRoutine(ReplyDataType type) :
+        _ReplyType(type)
 
     {
     }

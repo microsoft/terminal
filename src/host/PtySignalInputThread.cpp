@@ -34,7 +34,7 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_IF_NULL_ALLOC(_pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -60,7 +60,7 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 
 // Method Description:
 // - Tell us that there's a client attached to the console, so we can actually
-//      do something with the messages we recieve now. Before this is set, there
+//      do something with the messages we receive now. Before this is set, there
 //      is no guarantee that a client has attached, so most parts of the console
 //      (in and screen buffers) haven't yet been initialized.
 // Arguments:
@@ -77,8 +77,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // Return Value:
 // - S_OK if the thread runs to completion.
 // - Otherwise it may cause an application termination another route and never return.
-[[nodiscard]]
-HRESULT PtySignalInputThread::_InputThread()
+[[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;
     while (_GetData(&signalId, sizeof(signalId)))
@@ -102,7 +101,7 @@ HRESULT PtySignalInputThread::_InputThread()
                     SUCCEEDED(UShortToShort(resizeMsg.sy, &sRows)) &&
                     (sColumns > 0 && sRows > 0))
                 {
-                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({sColumns, sRows});
+                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({ sColumns, sRows });
                 }
                 break;
             }
@@ -165,8 +164,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 
 // Method Description:
 // - Starts the PTY Signal input thread.
-[[nodiscard]]
-HRESULT PtySignalInputThread::Start() noexcept
+[[nodiscard]] HRESULT PtySignalInputThread::Start() noexcept
 {
     RETURN_LAST_ERROR_IF(!_hFile);
 
@@ -181,7 +179,7 @@ HRESULT PtySignalInputThread::Start() noexcept
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

@@ -13,13 +13,13 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;
-
 
 DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
     Globals& globals = ServiceLocator::LocateGlobals();
-    ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+    ConIoSrvComm* const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
 
     NTSTATUS Status = Server->Connect();
 
@@ -30,7 +30,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
         if (DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
-            ConsoleWindow * const wnd = new(std::nothrow) ConsoleWindow();
+            ConsoleWindow* const wnd = new (std::nothrow) ConsoleWindow();
             Status = NT_TESTNULL(wnd);
 
             if (NT_SUCCESS(Status))
@@ -53,16 +53,21 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
                 if (NT_SUCCESS(Status))
                 {
-                    globals.ntstatusConsoleInputInitStatus = Status;
-                    globals.hConsoleInputInitEvent.SetEvent();
+                    globals.getConsoleInformation().GetActiveOutputBuffer().RefreshFontWithRenderer();
+                }
 
+                globals.ntstatusConsoleInputInitStatus = Status;
+                globals.hConsoleInputInitEvent.SetEvent();
+
+                if (NT_SUCCESS(Status))
+                {
                     try
                     {
                         // Start listening for input (returns on failure only).
                         // This will never return.
                         Server->ServiceInputPipe();
                     }
-                    catch(...)
+                    catch (...)
                     {
                         // If we couldn't set up the input thread, log and cleanup
                         // and go to headless mode instead.
@@ -121,7 +126,7 @@ HANDLE ConsoleInputThread::Start()
     return hThread;
 }
 
-ConIoSrvComm *ConsoleInputThread::GetConIoSrvComm()
+ConIoSrvComm* ConsoleInputThread::GetConIoSrvComm()
 {
     return _pConIoSrvComm;
 }

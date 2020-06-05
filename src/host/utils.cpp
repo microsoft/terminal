@@ -25,10 +25,10 @@ short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noex
 {
     // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
     // Pretty sure there's not a valid case for negative offsets here.
-    return (short)((sFontSizeY)-(ulSize));
+    return (short)((sFontSizeY) - (ulSize));
 }
 
-WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd) noexcept
+WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept
 {
     WORD val = 0;
 
@@ -54,7 +54,6 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 
     return val;
 }
-
 
 // Routine Description:
 // - Retrieves string resources from our resource files.
@@ -115,20 +114,21 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
             wID &= 0x0F;
             for (;;)
             {
-                cch = *((WCHAR *)lpsz++);   // PASCAL like string count
-                                            // first WCHAR is count of WCHARs
+                // PASCAL like string count
+                // first WCHAR is count of WCHARs
+                cch = *((WCHAR*)lpsz++);
                 if (wID-- == 0)
                 {
                     break;
                 }
 
-                lpsz += cch;    // Step to start if next string
+                lpsz += cch; // Step to start if next string
             }
 
             // chhBufferMax == 0 means return a pointer to the read-only resource buffer.
             if (cchBufferMax == 0)
             {
-                *(LPTSTR *)lpBuffer = lpsz;
+                *(LPTSTR*)lpBuffer = lpsz;
             }
             else
             {

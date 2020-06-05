@@ -93,15 +93,15 @@ void Popup::_DrawBorder()
     _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // draw upper left corner
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_LEFT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT, 1), WriteCoord);
 
     // draw upper bar
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_RIGHT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT, 1), WriteCoord);
 
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -111,10 +111,10 @@ void Popup::_DrawBorder()
         // fill attributes
         _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
-        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
+        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
 
         WriteCoord.X = _region.Right;
-        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
+        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
     }
 
     // Draw bottom line.
@@ -125,15 +125,15 @@ void Popup::_DrawBorder()
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_LEFT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT, 1), WriteCoord);
 
     // Draw lower bar.
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_RIGHT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT, 1), WriteCoord);
 }
 
 // Routine Description:
@@ -253,8 +253,8 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
 {
     // determine popup dimensions
     COORD size = proposedSize;
-    size.X += 2;    // add borders
-    size.Y += 2;    // add borders
+    size.X += 2; // add borders
+    size.Y += 2; // add borders
 
     const COORD viewportSize = screenInfo.GetViewport().Dimensions();
 
@@ -333,8 +333,7 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-[[nodiscard]]
-NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
 {
     return _userInputFunction(cookedReadData, popupKey, modifiers, wch);
 }
@@ -347,11 +346,10 @@ NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, 
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-[[nodiscard]]
-NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
-                                      bool& popupKey,
-                                      DWORD& modifiers,
-                                      wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+                                                    bool& popupKey,
+                                                    DWORD& modifiers,
+                                                    wchar_t& wch) noexcept
 {
     InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
     NTSTATUS Status = GetChar(pInputBuffer,

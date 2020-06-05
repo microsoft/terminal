@@ -17,36 +17,36 @@ public:
     BEGIN_TEST_CLASS(IntegrityTest)
         // We need each method to start it in its own console.
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        END_TEST_CLASS()
+    END_TEST_CLASS()
 
-        TEST_CLASS_SETUP(ClassSetup)
-        TEST_CLASS_CLEANUP(ClassCleanup)
+    TEST_CLASS_SETUP(ClassSetup)
+    TEST_CLASS_CLEANUP(ClassCleanup)
 
-        BEGIN_TEST_METHOD(TestLaunchLowILFromHigh)
+    BEGIN_TEST_METHOD(TestLaunchLowILFromHigh)
         TEST_METHOD_PROPERTY(L"RunAs", L"ElevatedUserOrSystem")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 
-        BEGIN_TEST_METHOD(TestLaunchLowILFromMedium)
+    BEGIN_TEST_METHOD(TestLaunchLowILFromMedium)
         TEST_METHOD_PROPERTY(L"RunAs", L"RestrictedUser")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 
-        BEGIN_TEST_METHOD(TestLaunchAppFromHigh)
+    BEGIN_TEST_METHOD(TestLaunchAppFromHigh)
         TEST_METHOD_PROPERTY(L"RunAs", L"ElevatedUserOrSystem")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 
-        BEGIN_TEST_METHOD(TestLaunchAppFromMedium)
+    BEGIN_TEST_METHOD(TestLaunchAppFromMedium)
         TEST_METHOD_PROPERTY(L"RunAs", L"RestrictedUser")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 
-        BEGIN_TEST_METHOD(TestLaunchAppAlone)
+    BEGIN_TEST_METHOD(TestLaunchAppAlone)
         TEST_METHOD_PROPERTY(L"RunAs", L"RestrictedUser")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 
-        static PCWSTR s_GetMyIntegrityLevel();
-        static void s_LogMyIntegrityLevel(PCWSTR WhoAmI);
-        
+    static PCWSTR s_GetMyIntegrityLevel();
+    static void s_LogMyIntegrityLevel(PCWSTR WhoAmI);
+
 private:
-    Platform::String^ _appAumid;
+    Platform::String ^ _appAumid;
 
     void _RunWin32ConIntegrityLowHelper();
     void _RunUWPConIntegrityAppHelper();

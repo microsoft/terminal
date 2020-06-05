@@ -1,42 +1,36 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include <cwchar>
 
 #include "..\inc\FontInfoBase.hpp"
 
-
 bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 {
-    return (wcscmp(a._wszFaceName, b._wszFaceName) == 0 &&
-            a._lWeight == b._lWeight &&
-            a._bFamily == b._bFamily &&
-            a._uiCodePage == b._uiCodePage &&
-            a._fDefaultRasterSetFromEngine == b._fDefaultRasterSetFromEngine);
+    return a._faceName == b._faceName &&
+           a._weight == b._weight &&
+           a._family == b._family &&
+           a._codePage == b._codePage &&
+           a._fDefaultRasterSetFromEngine == b._fDefaultRasterSetFromEngine;
 }
 
-FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
-                           const BYTE bFamily,
-                           const LONG lWeight,
+FontInfoBase::FontInfoBase(const std::wstring_view faceName,
+                           const unsigned char family,
+                           const unsigned int weight,
                            const bool fSetDefaultRasterFont,
-                           const UINT uiCodePage) :
-                           _bFamily(bFamily),
-                           _lWeight(lWeight),
-                           _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
-                           _uiCodePage(uiCodePage)
+                           const unsigned int codePage) :
+    _faceName(faceName),
+    _family(family),
+    _weight(weight),
+    _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
+    _codePage(codePage)
 {
-    if (nullptr != pwszFaceName)
-    {
-        wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszFaceName);
-    }
-
     ValidateFont();
 }
 
-FontInfoBase::FontInfoBase(const FontInfoBase &fibFont) :
+FontInfoBase::FontInfoBase(const FontInfoBase& fibFont) :
     FontInfoBase(fibFont.GetFaceName(),
                  fibFont.GetFamily(),
                  fibFont.GetWeight(),
@@ -49,9 +43,9 @@ FontInfoBase::~FontInfoBase()
 {
 }
 
-BYTE FontInfoBase::GetFamily() const
+unsigned char FontInfoBase::GetFamily() const
 {
-    return _bFamily;
+    return _family;
 }
 
 // When the default raster font is forced set from the engine, this is how we differentiate it from a simple apply.
@@ -62,30 +56,46 @@ bool FontInfoBase::WasDefaultRasterSetFromEngine() const
     return _fDefaultRasterSetFromEngine;
 }
 
-LONG FontInfoBase::GetWeight() const
+unsigned int FontInfoBase::GetWeight() const
 {
-    return _lWeight;
+    return _weight;
 }
 
-PCWCHAR FontInfoBase::GetFaceName() const
+const std::wstring_view FontInfoBase::GetFaceName() const
 {
-    return (PCWCHAR)_wszFaceName;
+    return _faceName;
 }
 
-UINT FontInfoBase::GetCodePage() const
+unsigned int FontInfoBase::GetCodePage() const
 {
-    return _uiCodePage;
+    return _codePage;
 }
+
+// Method Description:
+// - Populates a fixed-length **null-terminated** buffer with the name of this font, truncating it as necessary.
+//   Positions within the buffer that are not filled by the font name are zeroed.
+// Arguments:
+// - buffer: the buffer into which to copy characters
+// - size: the size of buffer
+HRESULT FontInfoBase::FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const
+try
+{
+    auto toCopy = std::min<size_t>(buffer.size() - 1, _faceName.size());
+    auto last = std::copy(_faceName.cbegin(), _faceName.cbegin() + toCopy, buffer.begin());
+    std::fill(last, buffer.end(), L'\0');
+    return S_OK;
+}
+CATCH_RETURN();
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
-void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,
-                                 const BYTE bFamily,
-                                 const LONG lWeight,
+void FontInfoBase::SetFromEngine(const std::wstring_view faceName,
+                                 const unsigned char family,
+                                 const unsigned int weight,
                                  const bool fSetDefaultRasterFont)
 {
-    wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszFaceName);
-    _bFamily = bFamily;
-    _lWeight = lWeight;
+    _faceName = faceName;
+    _family = family;
+    _weight = weight;
     _fDefaultRasterSetFromEngine = fSetDefaultRasterFont;
 }
 
@@ -93,7 +103,7 @@ void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,
 // FontInfoBase doesn't have sizing information, this helper checks everything else.
 bool FontInfoBase::IsDefaultRasterFontNoSize() const
 {
-    return (_lWeight == 0 && _bFamily == 0 && wcsnlen_s(_wszFaceName, ARRAYSIZE(_wszFaceName)) == 0);
+    return (_weight == 0 && _family == 0 && _faceName.empty());
 }
 
 void FontInfoBase::ValidateFont()
@@ -102,18 +112,17 @@ void FontInfoBase::ValidateFont()
     if (!IsDefaultRasterFontNoSize() && s_pFontDefaultList != nullptr)
     {
         // If we have a list of default fonts and our current font is the placeholder for the defaults, substitute here.
-        if (0 == wcsncmp(_wszFaceName, DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME)))
+        if (_faceName == DEFAULT_TT_FONT_FACENAME)
         {
-            WCHAR pwszDefaultFontFace[LF_FACESIZE];
+            std::wstring defaultFontFace;
             if (SUCCEEDED(s_pFontDefaultList->RetrieveDefaultFontNameForCodepage(GetCodePage(),
-                                                                                 pwszDefaultFontFace,
-                                                                                 ARRAYSIZE(pwszDefaultFontFace))))
+                                                                                 defaultFontFace)))
             {
-                wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszDefaultFontFace);
+                _faceName = defaultFontFace;
 
                 // If we're assigning a default true type font name, make sure the family is also set to TrueType
                 // to help GDI select the appropriate font when we actually create it.
-                _bFamily = TMPF_TRUETYPE;
+                _family = TMPF_TRUETYPE;
             }
         }
     }
@@ -121,8 +130,10 @@ void FontInfoBase::ValidateFont()
 
 bool FontInfoBase::IsTrueTypeFont() const
 {
-    return (_bFamily & TMPF_TRUETYPE) != 0;
+    return WI_IsFlagSet(_family, TMPF_TRUETYPE);
 }
+
+Microsoft::Console::Render::IFontDefaultList* FontInfoBase::s_pFontDefaultList;
 
 void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
 {

@@ -10,7 +10,7 @@
 #include "util.h"
 
 #pragma optimize("", off)
-#pragma warning(disable: 4748)
+#pragma warning(disable : 4748)
 
 int __cdecl wmain(int /*argc*/, __in_ecount(argc) PCWSTR* /*argv*/)
 {

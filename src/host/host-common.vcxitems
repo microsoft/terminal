@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\alias.cpp" />
+    <ClCompile Include="..\cmdline.cpp" />
+    <ClCompile Include="..\CommandNumberPopup.cpp" />
+    <ClCompile Include="..\CommandListPopup.cpp" />
+    <ClCompile Include="..\CopyFromCharPopup.cpp" />
+    <ClCompile Include="..\CopyToCharPopup.cpp" />
+    <ClCompile Include="..\conattrs.cpp" />
+    <ClCompile Include="..\ConsoleArguments.cpp" />
+    <ClCompile Include="..\CursorBlinker.cpp" />
+    <ClCompile Include="..\readDataCooked.cpp" />
+    <ClCompile Include="..\conareainfo.cpp" />
+    <ClCompile Include="..\conimeinfo.cpp" />
+    <ClCompile Include="..\consoleInformation.cpp" />
+    <ClCompile Include="..\convarea.cpp" />
+    <ClCompile Include="..\dbcs.cpp" />
+    <ClCompile Include="..\directio.cpp" />
+    <ClCompile Include="..\getset.cpp" />
+    <ClCompile Include="..\globals.cpp" />
+    <ClCompile Include="..\handle.cpp" />
+    <ClCompile Include="..\history.cpp" />
+    <ClCompile Include="..\init.cpp" />
+    <ClCompile Include="..\input.cpp" />
+    <ClCompile Include="..\inputBuffer.cpp" />
+    <ClCompile Include="..\inputKeyInfo.cpp" />
+    <ClCompile Include="..\inputReadHandleData.cpp" />
+    <ClCompile Include="..\misc.cpp" />
+    <ClCompile Include="..\ntprivapi.cpp" />
+    <ClCompile Include="..\output.cpp" />
+    <ClCompile Include="..\outputStream.cpp" />
+    <ClCompile Include="..\popup.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\PtySignalInputThread.cpp" />
+    <ClCompile Include="..\readData.cpp" />
+    <ClCompile Include="..\readDataDirect.cpp" />
+    <ClCompile Include="..\readDataRaw.cpp" />
+    <ClCompile Include="..\registry.cpp" />
+    <ClCompile Include="..\renderData.cpp" />
+    <ClCompile Include="..\renderFontDefaults.cpp" />
+    <ClCompile Include="..\screenInfo.cpp" />
+    <ClCompile Include="..\ScreenBufferRenderTarget.cpp" />
+    <ClCompile Include="..\scrolling.cpp" />
+    <ClCompile Include="..\selection.cpp" />
+    <ClCompile Include="..\selectionInput.cpp" />
+    <ClCompile Include="..\selectionState.cpp" />
+    <ClCompile Include="..\settings.cpp" />
+    <ClCompile Include="..\srvinit.cpp" />
+    <ClCompile Include="..\stream.cpp" />
+    <ClCompile Include="..\telemetry.cpp" />
+    <ClCompile Include="..\tracing.cpp" />
+    <ClCompile Include="..\utils.cpp" />
+    <ClCompile Include="..\utf8ToWideCharParser.cpp" />
+    <ClCompile Include="..\VtInputThread.cpp" />
+    <ClCompile Include="..\VtIo.cpp" />
+    <ClCompile Include="..\writeData.cpp" />
+    <ClCompile Include="..\_output.cpp" />
+    <ClCompile Include="..\_stream.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\IIoProvider.hpp" />
+    <ClInclude Include="..\alias.h" />
+    <ClInclude Include="..\ApiRoutines.h" />
+    <ClInclude Include="..\cmdline.h" />
+    <ClInclude Include="..\CommandNumberPopup.hpp" />
+    <ClInclude Include="..\CommandListPopup.hpp" />
+    <ClInclude Include="..\CopyFromCharPopup.hpp" />
+    <ClInclude Include="..\CopyToCharPopup.hpp" />
+    <ClInclude Include="..\conapi.h" />
+    <ClInclude Include="..\conddkrefs.h" />
+    <ClInclude Include="..\conareainfo.h" />
+    <ClInclude Include="..\conimeinfo.h" />
+    <ClInclude Include="..\ConsoleArguments.hpp" />
+    <ClInclude Include="..\conserv.h" />
+    <ClInclude Include="..\conv.h" />
+    <ClInclude Include="..\conwinuserrefs.h" />
+    <ClInclude Include="..\CursorBlinker.hpp" />
+    <ClInclude Include="..\dbcs.h" />
+    <ClInclude Include="..\directio.h" />
+    <ClInclude Include="..\getset.h" />
+    <ClInclude Include="..\globals.h" />
+    <ClInclude Include="..\handle.h" />
+    <ClInclude Include="..\history.h" />
+    <ClInclude Include="..\init.hpp" />
+    <ClInclude Include="..\input.h" />
+    <ClInclude Include="..\inputBuffer.hpp" />
+    <ClInclude Include="..\misc.h" />
+    <ClInclude Include="..\ntprivapi.hpp" />
+    <ClInclude Include="..\output.h" />
+    <ClInclude Include="..\outputStream.hpp" />
+    <ClInclude Include="..\popup.h" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\readData.hpp" />
+    <ClInclude Include="..\readDataCooked.hpp" />
+    <ClInclude Include="..\rectreadDataDirect.hpp" />
+    <ClInclude Include="..\readDataRaw.hpp" />
+    <ClInclude Include="..\registry.hpp" />
+    <ClInclude Include="..\renderData.hpp" />
+    <ClInclude Include="..\renderFontDefaults.hpp" />
+    <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\screenInfo.hpp" />
+    <ClInclude Include="..\ScreenBufferRenderTarget.hpp" />
+    <ClInclude Include="..\scrolling.hpp" />
+    <ClInclude Include="..\selection.hpp" />
+    <ClInclude Include="..\server.h" />
+    <ClInclude Include="..\settings.hpp" />
+    <ClInclude Include="..\srvinit.h" />
+    <ClInclude Include="..\stream.h" />
+    <ClInclude Include="..\telemetry.hpp" />
+    <ClInclude Include="..\tracing.hpp" />
+    <ClInclude Include="..\utils.hpp" />
+    <ClInclude Include="..\utf8ToWideCharParser.hpp" />
+    <ClInclude Include="..\VtInputThread.hpp" />
+    <ClInclude Include="..\VtIo.hpp" />
+    <ClInclude Include="..\writeData.hpp" />
+    <ClInclude Include="..\_output.h" />
+    <ClInclude Include="..\_stream.h" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

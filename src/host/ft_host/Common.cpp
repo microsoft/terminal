@@ -7,6 +7,15 @@ using WEX::Logging::Log;
 using namespace WEX::Common;
 
 HANDLE Common::_hConsole = INVALID_HANDLE_VALUE;
+bool Common::_isV2 = true;
+extern wil::unique_process_information pi;
+
+bool IsConsoleStillRunning()
+{
+    DWORD exitCode = S_OK;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetExitCodeProcess(pi.hProcess, &exitCode));
+    return exitCode == STILL_ACTIVE;
+}
 
 void VerifySucceededGLE(BOOL bResult)
 {
@@ -112,25 +121,6 @@ bool CheckLastError(HANDLE handle, PCWSTR pwszFunc)
     }
 }
 
-HRESULT ExpandPathToMutable(_In_ PCWSTR pwszPath, _Out_ wistd::unique_ptr<wchar_t[]>& MutablePath) noexcept
-{
-    // Find how many characters we need.
-    const DWORD cchExpanded = ExpandEnvironmentStringsW(pwszPath, nullptr, 0);
-    RETURN_LAST_ERROR_IF(0 == cchExpanded);
-
-    // Allocate space to hold result
-    wistd::unique_ptr<wchar_t[]> NewMutable = wil::make_unique_nothrow<wchar_t[]>(cchExpanded);
-    RETURN_IF_NULL_ALLOC(NewMutable);
-
-    // Expand string into allocated space
-    RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszPath, NewMutable.get(), cchExpanded));
-
-    // On success, give our string back out (swapping with what was given and we'll free it for the caller.)
-    MutablePath.swap(NewMutable);
-
-    return S_OK;
-}
-
 bool CheckIfFileExists(_In_ PCWSTR pwszPath) noexcept
 {
     wil::unique_hfile hFile(CreateFileW(pwszPath,
@@ -160,7 +150,8 @@ BOOL UnadjustWindowRectEx(
     RECT rc;
     SetRectEmpty(&rc);
     BOOL fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
-    if (fRc) {
+    if (fRc)
+    {
         prc->left -= rc.left;
         prc->top -= rc.top;
         prc->right -= rc.right;
@@ -194,10 +185,10 @@ bool Common::TestBufferSetup()
     // to the default output buffer at the same time.
 
     _hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-        0 /*dwShareMode*/,
-        NULL /*lpSecurityAttributes*/,
-        CONSOLE_TEXTMODE_BUFFER,
-        NULL /*lpReserved*/);
+                                          0 /*dwShareMode*/,
+                                          nullptr /*lpSecurityAttributes*/,
+                                          CONSOLE_TEXTMODE_BUFFER,
+                                          nullptr /*lpReserved*/);
 
     VERIFY_ARE_NOT_EQUAL(_hConsole, INVALID_HANDLE_VALUE, L"Creating our test screen buffer.");
 
@@ -240,7 +231,7 @@ CommonV1V2Helper::CommonV1V2Helper(const ForceV2States ForceV2StateDesired)
         _fRestoreOnExit = false;
         return;
     }
-    
+
     VERIFY_ARE_EQUAL(ERROR_SUCCESS, lstatus);
 
     Log::Comment(L"Backing up v1/v2 console state.");

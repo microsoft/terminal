@@ -50,8 +50,9 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \

@@ -29,5 +29,4 @@ Abstract:
 typedef _Return_type_success_(return >= 0) long NTSTATUS;
 #endif
 
-#define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
-
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)

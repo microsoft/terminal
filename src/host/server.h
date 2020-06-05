@@ -21,7 +21,6 @@ Revision History:
 #include "settings.hpp"
 
 #include "conimeinfo.h"
-#include "..\terminal\adapter\MouseInput.hpp"
 #include "VtIo.hpp"
 #include "CursorBlinker.hpp"
 
@@ -32,6 +31,7 @@ Revision History:
 
 #include "..\inc\IDefaultColorProvider.hpp"
 
+// clang-format off
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
 #define CONSOLE_OUTPUT_SUSPENDED        0x00000002
@@ -68,6 +68,7 @@ Revision History:
 #define CONSOLE_INITIALIZED             0x80000000
 
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
+// clang-format on
 
 class COOKED_READ_DATA;
 class CommandHistory;
@@ -86,7 +87,7 @@ public:
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
 
-    SCREEN_INFORMATION* ScreenBuffers;  // singly linked list
+    SCREEN_INFORMATION* ScreenBuffers; // singly linked list
     ConsoleWaitQueue OutputQueue;
 
     DWORD Flags;
@@ -97,15 +98,13 @@ public:
     UINT CP;
     UINT OutputCP;
 
-    ULONG CtrlFlags;    // indicates outstanding ctrl requests
+    ULONG CtrlFlags; // indicates outstanding ctrl requests
     ULONG LimitingProcessId;
 
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
     ConsoleImeInfo ConsoleIme;
-
-    Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();
     bool TryLockConsole();
@@ -114,8 +113,6 @@ public:
     ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
-
-    static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
@@ -141,8 +138,7 @@ public:
     const std::wstring& GetLinkTitle() const noexcept;
     const std::wstring GetTitleAndPrefix() const;
 
-    [[nodiscard]]
-    static NTSTATUS AllocateConsole(const std::wstring_view title);
+    [[nodiscard]] static NTSTATUS AllocateConsole(const std::wstring_view title);
     // MSFT:16886775 : get rid of friends
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
@@ -154,17 +150,16 @@ public:
     RenderData renderData;
 
 private:
-    CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
     std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _OriginalTitle;
-    std::wstring _LinkTitle;   // Path to .lnk file
+    std::wstring _LinkTitle; // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;
     COOKED_READ_DATA* _cookedReadData; // non-ownership pointer
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

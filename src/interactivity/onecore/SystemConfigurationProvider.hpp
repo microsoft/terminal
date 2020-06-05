@@ -18,10 +18,6 @@ Author(s):
 
 #pragma hdrstop
 
-#ifndef DEFAULT_TT_FONT_FACENAME
-#define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
-#endif
-
 class InputTests;
 
 namespace Microsoft::Console::Interactivity::OneCore
@@ -38,10 +34,11 @@ namespace Microsoft::Console::Interactivity::OneCore
         ULONG GetNumberOfWheelScrollCharacters();
 
         void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
-                                _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
-                                _Inout_ PDWORD pdwTitleLength,
-                                _In_ PCWSTR pwszCurrDir,
-                                _In_ PCWSTR pwszAppName);
+                                 _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
+                                 _Inout_ PDWORD pdwTitleLength,
+                                 _In_ PCWSTR pwszCurrDir,
+                                 _In_ PCWSTR pwszAppName);
+
     private:
         static const UINT s_DefaultCaretBlinkTime = 530; // milliseconds
         static const bool s_DefaultIsCaretBlinkingEnabled = true;

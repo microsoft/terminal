@@ -2,24 +2,28 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <!-- See https://docs.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects?view=vs-2017#BKMK_Syntax_reference for documentation -->
     <Type Name="TextColor">
-        <DisplayString Condition="_meta==ColorType::IsIndex">{{Index:{_index}}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsIndex256">{{Index256:{_index}}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsIndex16">{{Index16:{_index}}}</DisplayString>
         <DisplayString Condition="_meta==ColorType::IsDefault">{{Default}}</DisplayString>
         <DisplayString Condition="_meta==ColorType::IsRgb">{{RGB:{_red},{_green},{_blue}}}</DisplayString>
         <Expand></Expand>
     </Type>
 
     <Type Name="TextAttribute">
-        <!-- You can't do too much trickyness inside the DisplayString format
+        <!-- You can't do too much trickiness inside the DisplayString format
                 string, so we'd have to add entries for each flag if we really
                 wanted them to show up like that. -->
-        <DisplayString Condition="_isBold">{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Bold}}</DisplayString>
-        <DisplayString>{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Normal}}</DisplayString>
+        <DisplayString>{{FG: {_foreground}, BG: {_background}, Legacy: {_wAttrLegacy}, {_extendedAttrs}}</DisplayString>
         <Expand>
-            <Item Name="_wAttrLegacy">_wAttrLegacy</Item>
-            <Item Name="_isBold">_isBold</Item>
-            <Item Name="_foreground">_foreground</Item>
-            <Item Name="_background">_background</Item>
+            <Item Name="Legacy">_wAttrLegacy</Item>
+            <Item Name="FG">_foreground</Item>
+            <Item Name="BG">_background</Item>
+            <Item Name="Extended">_extendedAttrs</Item>
         </Expand>
+    </Type>
+
+    <Type Name="TextAttributeRun">
+        <DisplayString>Length={_cchLength} Attr={_attributes}</DisplayString>
     </Type>
 
     <Type Name="Microsoft::Console::Types::Viewport">
@@ -71,5 +75,26 @@
         <Expand>
             <ExpandedItem>_Mypair._Myval2</ExpandedItem>
         </Expand>
+    </Type>
+
+    <Type Name="KeyEvent">
+        <DisplayString Condition="_keyDown">{{↓ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+        <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+    </Type>
+
+    <Type Name="til::size">
+        <DisplayString>{{W: {_width,d} x H: {_height,d} -> A: {_width * _height, d}}}</DisplayString>
+    </Type>
+
+    <Type Name="til::point">
+        <DisplayString>{{X: {_x,d}, Y: {_y,d}}}</DisplayString>
+    </Type>
+
+    <Type Name="til::rectangle">
+        <DisplayString>{{L: {_topLeft._x}, T: {_topLeft._y}, R: {_bottomRight._x} B: {_bottomRight._y}   [W: {_bottomRight._x - _topLeft._x} x H: {_bottomRight._y - _topLeft._y} -> A: {(_bottomRight._x - _topLeft._x) * (_bottomRight._y - _topLeft._y)}]}}</DisplayString>
+    </Type>
+
+    <Type Name="til::color">
+      <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; α: {(int)a,d}}}</DisplayString>
     </Type>
 </AutoVisualizer>

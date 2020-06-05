@@ -617,7 +617,7 @@ ReRender:
 
                 pCtx->pwszGlyphRunAccel[ColumnIndex] = pRowInformation->New[ColumnIndex].Character;
                 if (ColumnIndexReadAhead != pCtx->DisplaySize.Width) {
-                    while (pRowInformation->New[ColumnIndex].Atribute == pRowInformation->New[ColumnIndexReadAhead].Atribute) {
+                    while (pRowInformation->New[ColumnIndex].Attribute == pRowInformation->New[ColumnIndexReadAhead].Attribute) {
                         if (memcmp(&pRowInformation->New[ColumnIndexReadAhead],
                                    &pRowInformation->Old[ColumnIndexReadAhead],
                                    sizeof(CD_IO_CHARACTER)) == 0) {
@@ -667,11 +667,11 @@ ReRender:
                     }
 
                     pCtx->pD2DColorBrush->SetColor(
-                        ConsoleColors[(pCharacter->Atribute >> 4) & 0xF]);
+                        ConsoleColors[(pCharacter->Attribute >> 4) & 0xF]);
                     pCtx->pD2DSwapChainRT->FillRectangle(&GlyphRectangle,
                                                           pCtx->pD2DColorBrush);
 
-                    pCtx->pD2DColorBrush->SetColor(ConsoleColors[pCharacter->Atribute & 0xF]);
+                    pCtx->pD2DColorBrush->SetColor(ConsoleColors[pCharacter->Attribute & 0xF]);
                     pCtx->pD2DSwapChainRT->DrawTextLayout(Origin,
                                                           pTextLayout,
                                                           pCtx->pD2DColorBrush,

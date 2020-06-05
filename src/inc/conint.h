@@ -25,16 +25,14 @@ Revision History:
 
 namespace Microsoft::Console::Internal
 {
-
     namespace ProcessPolicy
     {
-        [[nodiscard]]
-        HRESULT CheckAppModelPolicy(const HANDLE hToken,
-                                    bool& fIsWrongWayBlocked) noexcept;
+        [[nodiscard]] HRESULT CheckAppModelPolicy(const HANDLE hToken,
+                                                  bool& fIsWrongWayBlocked) noexcept;
 
-        [[nodiscard]]
-        HRESULT CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
-                                          bool& fIsWrongWayBlocked) noexcept;
+        [[nodiscard]] HRESULT CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
+                                                        bool& fIsWrongWayBlocked) noexcept;
+
     }
 
     namespace EdpPolicy
@@ -42,4 +40,8 @@ namespace Microsoft::Console::Internal
         void AuditClipboard(const std::wstring_view destinationName) noexcept;
     }
 
+    namespace Theming
+    {
+        [[nodiscard]] HRESULT TrySetDarkMode(HWND hwnd) noexcept;
+    }
 }

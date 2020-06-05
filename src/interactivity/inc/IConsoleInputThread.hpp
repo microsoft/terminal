@@ -23,8 +23,8 @@ namespace Microsoft::Console::Interactivity
         virtual ~IConsoleInputThread() = 0;
         virtual HANDLE Start() = 0;
 
-        HANDLE GetHandle()   { return _hThread; }
-        DWORD  GetThreadId() { return _dwThreadId; }
+        HANDLE GetHandle() { return _hThread; }
+        DWORD GetThreadId() { return _dwThreadId; }
 
     protected:
         // Prevent accidental copies.
@@ -34,11 +34,11 @@ namespace Microsoft::Console::Interactivity
         // .ctor
         IConsoleInputThread() :
             _hThread(nullptr),
-            _dwThreadId((DWORD)(-1)) { }
+            _dwThreadId((DWORD)(-1)) {}
 
         // Protected Variables
         HANDLE _hThread;
-        DWORD  _dwThreadId;
+        DWORD _dwThreadId;
     };
 
     inline IConsoleInputThread::~IConsoleInputThread() {}

@@ -7,7 +7,7 @@
 
 INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA() :
     _isInputPending{ false },
-    _isMultilineInput{ false }, 
+    _isMultilineInput{ false },
     _readCount{ 0 },
     _buffer{}
 {

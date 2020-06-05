@@ -1,0 +1,5 @@
+<SignConfigXML>
+  <job platform="" configuration="" dest="__INPATHROOT__" jobname="EngFunSimpleSign" approvers="">
+   <file src="__INPATHROOT__\Microsoft.Terminal*.nupkg" signType="NuGet" /> 
+  </job>
+</SignConfigXML>

@@ -17,6 +17,8 @@ Abstract:
 
 #pragma once
 
+// clang-format off
+
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
@@ -33,3 +35,5 @@ Abstract:
 #include "..\inc\operators.hpp"
 #include "..\inc\unicode.hpp"
 #pragma warning(pop)
+
+// clang-format on

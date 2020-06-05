@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{0CF235BD-2DA0-407E-90EE-C467E8BBC714}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>bufferout</RootNamespace>
+    <ProjectName>BufferOut</ProjectName>
+    <TargetName>ConBufferOut</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
@@ -11,6 +19,7 @@
     <ClCompile Include="..\OutputCellView.cpp" />
     <ClCompile Include="..\Row.cpp" />
     <ClCompile Include="..\RowCellIterator.cpp" />
+    <ClCompile Include="..\search.cpp" />
     <ClCompile Include="..\TextColor.cpp" />
     <ClCompile Include="..\TextAttribute.cpp" />
     <ClCompile Include="..\TextAttributeRun.cpp" />
@@ -37,6 +46,7 @@
     <ClInclude Include="..\OutputCellView.hpp" />
     <ClInclude Include="..\Row.hpp" />
     <ClInclude Include="..\RowCellIterator.hpp" />
+    <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
     <ClInclude Include="..\TextAttribute.h" />
     <ClInclude Include="..\TextAttributeRun.h" />
@@ -49,19 +59,6 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\UnicodeStorage.hpp" />
   </ItemGroup>
-  <PropertyGroup>
-    <ProjectGuid>{0CF235BD-2DA0-407E-90EE-C467E8BBC714}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>bufferout</RootNamespace>
-    <ProjectName>BufferOut</ProjectName>
-    <TargetName>ConBufferOut</TargetName>
-  </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\AppModel;$(SolutionDir)\dep\MinCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

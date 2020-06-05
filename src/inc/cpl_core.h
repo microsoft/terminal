@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 /*
 *  General rules for being installed in the Control Panel:
 *
@@ -7,7 +8,7 @@
 *         the messages discussed below.
 *      2) If the applet needs to save information in CONTROL.INI minimize
 *         clutter by using the application name [MMCPL.appletname].
-*      3) If the applet is refrenced in CONTROL.INI under [MMCPL] use
+*      3) If the applet is referenced in CONTROL.INI under [MMCPL] use
 *         the following form:
 *              ...
 *              [MMCPL]
@@ -19,8 +20,9 @@
 *
 */
 #ifndef _INC_CPL
-#define _INC_CPL 
+#define _INC_CPL
 
+// clang-format off
 
 #include <pshpack1.h>   /* Assume byte packing throughout */
 
@@ -147,7 +149,7 @@ typedef LPNEWCPLINFOA LPNEWCPLINFO;
 
 
 #define CPL_NEWINQUIRE    8
-/*  Same as CPL_INQUIRE execpt lParam2 is a pointer to a NEWCPLINFO struct. */
+/*  Same as CPL_INQUIRE except lParam2 is a pointer to a NEWCPLINFO struct. */
 /*  The return value is ignored. */
 /*  A CPL should NOT respond to the CPL_NEWINQURE message unless CPL_DYNAMIC_RES */
 /*  is used in CPL_INQUIRE.  CPLs which respond to CPL_NEWINQUIRE cannot be cached */
@@ -181,5 +183,6 @@ typedef LPNEWCPLINFOA LPNEWCPLINFO;
 
 #include <poppack.h>
 
-#endif  /* _INC_CPL */
+// clang-format on
 
+#endif /* _INC_CPL */

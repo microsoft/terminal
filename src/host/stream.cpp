@@ -35,13 +35,12 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // arrow key.
 // Return Value:
 // - STATUS_SUCCESS on success or a relevant error code on failure.
-[[nodiscard]]
-NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
-                 _Out_ wchar_t* const pwchOut,
-                 const bool Wait,
-                 _Out_opt_ bool* const pCommandLineEditingKeys,
-                 _Out_opt_ bool* const pPopupKeys,
-                 _Out_opt_ DWORD* const pdwKeyState) noexcept
+[[nodiscard]] NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
+                               _Out_ wchar_t* const pwchOut,
+                               const bool Wait,
+                               _Out_opt_ bool* const pCommandLineEditingKeys,
+                               _Out_opt_ bool* const pPopupKeys,
+                               _Out_opt_ DWORD* const pdwKeyState) noexcept
 {
     if (nullptr != pCommandLineEditingKeys)
     {
@@ -129,9 +128,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 }
                 // Ignore Escape and Newline chars
                 else if (keyEvent->IsKeyDown() &&
-                    (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                         (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
-                          keyEvent->GetCharData() != UNICODE_LINEFEED)))
+                         (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
+                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
                 {
                     *pwchOut = keyEvent->GetCharData();
                     return STATUS_SUCCESS;
@@ -184,7 +183,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
 size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
-                                   _In_reads_(ulCurrentPosition) const WCHAR * const pwchBuffer,
+                                   _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
                                    _In_ size_t ulCurrentPosition)
 {
     SHORT XPosition = sOriginalCursorPositionX;
@@ -221,7 +220,7 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
 // Routine Description:
 // - This routine returns the number of screen spaces the specified character takes up.
 size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
-                              _In_reads_(ulCurrentPosition + 1) const WCHAR * const pwchBuffer,
+                              _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
                               _In_ size_t ulCurrentPosition)
 {
     WCHAR Char = pwchBuffer[ulCurrentPosition];
@@ -268,7 +267,6 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
     }
 }
 
-
 // Routine Description:
 // - if we have leftover input, copy as much fits into the user's
 // buffer and return.  we may have multi line input, if a macro
@@ -282,12 +280,11 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // Return Value:
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
-[[nodiscard]]
-static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
-                                  gsl::span<char> buffer,
-                                  size_t& bytesRead,
-                                  INPUT_READ_HANDLE_DATA& readHandleState,
-                                  const bool unicode)
+[[nodiscard]] static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
+                                                gsl::span<char> buffer,
+                                                size_t& bytesRead,
+                                                INPUT_READ_HANDLE_DATA& readHandleState,
+                                                const bool unicode)
 {
     // TODO: MSFT: 18047766 - Correct this method to not play byte counting games.
     BOOL fAddDbcsLead = FALSE;
@@ -339,7 +336,6 @@ static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
                 }
             }
         }
-
 
         NumToWrite = 0;
         Tmp = pending.cbegin();
@@ -395,7 +391,7 @@ static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
     pendingBytes -= NumToWrite;
     if (pendingBytes != 0)
     {
-        std::wstring_view remainingPending{ pending.data() + (NumToWrite / sizeof(wchar_t)) , pendingBytes / sizeof(wchar_t) };
+        std::wstring_view remainingPending{ pending.data() + (NumToWrite / sizeof(wchar_t)), pendingBytes / sizeof(wchar_t) };
         readHandleState.UpdatePending(remainingPending);
     }
     else
@@ -420,7 +416,9 @@ static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
             inputBuffer.StoreReadPartialByteSequence(std::move(partialEvent));
         }
 
-#pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
+        // clang-format on
         memmove(pBuffer, tempBuffer.get(), NumToWrite);
 
         if (fAddDbcsLead)
@@ -457,18 +455,17 @@ static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
 // - STATUS_UNSUCCESSFUL if not able to access current screen buffer
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant HRESULT codes
-[[nodiscard]]
-static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
-                              const HANDLE processData,
-                              gsl::span<char> buffer,
-                              size_t& bytesRead,
-                              DWORD& controlKeyState,
-                              const std::string_view initialData,
-                              const DWORD ctrlWakeupMask,
-                              INPUT_READ_HANDLE_DATA& readHandleState,
-                              const std::wstring_view exeName,
-                              const bool unicode,
-                              std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
+                                            const HANDLE processData,
+                                            gsl::span<char> buffer,
+                                            size_t& bytesRead,
+                                            DWORD& controlKeyState,
+                                            const std::string_view initialData,
+                                            const DWORD ctrlWakeupMask,
+                                            INPUT_READ_HANDLE_DATA& readHandleState,
+                                            const std::wstring_view exeName,
+                                            const bool unicode,
+                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
@@ -525,15 +522,13 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
-[[nodiscard]]
-static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                    gsl::span<char> buffer,
-                                    size_t& bytesRead,
-                                    INPUT_READ_HANDLE_DATA& readHandleState,
-                                    const bool unicode,
-                                    std::unique_ptr<IWaitRoutine>& waiter)
+[[nodiscard]] static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
+                                                  gsl::span<char> buffer,
+                                                  size_t& bytesRead,
+                                                  INPUT_READ_HANDLE_DATA& readHandleState,
+                                                  const bool unicode,
+                                                  std::unique_ptr<IWaitRoutine>& waiter)
 {
-
     size_t NumToWrite = 0;
     bool addDbcsLead = false;
     NTSTATUS Status = STATUS_SUCCESS;
@@ -642,7 +637,7 @@ static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
                 inputBuffer.StoreReadPartialByteSequence(std::move(partialEvent));
             }
 
-#pragma prefast(suppress:26053 26015, "PREfast claims read overflow. *pReadByteCount is the exact size of tempBuffer as allocated above.")
+#pragma prefast(suppress : 26053 26015, "PREfast claims read overflow. *pReadByteCount is the exact size of tempBuffer as allocated above.")
             memmove(pBuffer, tempBuffer.get(), bytesRead);
 
             if (addDbcsLead)
@@ -686,18 +681,17 @@ static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NSTATUS codes as necessary
-[[nodiscard]]
-NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
-                       const HANDLE processData,
-                       gsl::span<char> buffer,
-                       size_t& bytesRead,
-                       ULONG& controlKeyState,
-                       const std::string_view initialData,
-                       const DWORD ctrlWakeupMask,
-                       INPUT_READ_HANDLE_DATA& readHandleState,
-                       const std::wstring_view exeName,
-                       const bool unicode,
-                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
+                                     const HANDLE processData,
+                                     gsl::span<char> buffer,
+                                     size_t& bytesRead,
+                                     ULONG& controlKeyState,
+                                     const std::string_view initialData,
+                                     const DWORD ctrlWakeupMask,
+                                     INPUT_READ_HANDLE_DATA& readHandleState,
+                                     const std::wstring_view exeName,
+                                     const bool unicode,
+                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -750,17 +744,16 @@ NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                      gsl::span<char> buffer,
-                                      size_t& written,
-                                      std::unique_ptr<IWaitRoutine>& waiter,
-                                      const std::string_view initialData,
-                                      const std::wstring_view exeName,
-                                      INPUT_READ_HANDLE_DATA& readHandleState,
-                                      const HANDLE clientHandle,
-                                      const DWORD controlWakeupMask,
-                                      DWORD& controlKeyState) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
+                                                    gsl::span<char> buffer,
+                                                    size_t& written,
+                                                    std::unique_ptr<IWaitRoutine>& waiter,
+                                                    const std::string_view initialData,
+                                                    const std::wstring_view exeName,
+                                                    INPUT_READ_HANDLE_DATA& readHandleState,
+                                                    const HANDLE clientHandle,
+                                                    const DWORD controlWakeupMask,
+                                                    DWORD& controlKeyState) noexcept
 {
     try
     {
@@ -779,17 +772,16 @@ HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                      gsl::span<char> buffer,
-                                      size_t& written,
-                                      std::unique_ptr<IWaitRoutine>& waiter,
-                                      const std::string_view initialData,
-                                      const std::wstring_view exeName,
-                                      INPUT_READ_HANDLE_DATA& readHandleState,
-                                      const HANDLE clientHandle,
-                                      const DWORD controlWakeupMask,
-                                      DWORD& controlKeyState) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
+                                                    gsl::span<char> buffer,
+                                                    size_t& written,
+                                                    std::unique_ptr<IWaitRoutine>& waiter,
+                                                    const std::string_view initialData,
+                                                    const std::wstring_view exeName,
+                                                    INPUT_READ_HANDLE_DATA& readHandleState,
+                                                    const HANDLE clientHandle,
+                                                    const DWORD controlWakeupMask,
+                                                    DWORD& controlKeyState) noexcept
 {
     try
     {

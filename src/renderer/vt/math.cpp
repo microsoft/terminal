@@ -17,26 +17,20 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
-SMALL_RECT VtEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> VtEngine::GetDirtyArea()
 {
-    SMALL_RECT dirty = _invalidRect.ToInclusive();
-    if (dirty.Top < _virtualTop)
-    {
-        dirty.Top = _virtualTop;
-    }
-    return dirty;
+    return _invalidMap.runs();
 }
 
 // Routine Description:
-// - Uses the currently selected font to determine how wide the given character will be when renderered.
+// - Uses the currently selected font to determine how wide the given character will be when rendered.
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - glyph - utf16 encoded codepoint to check
-// - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
+// - pResult - receives return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
+[[nodiscard]] HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
     return S_FALSE;
@@ -69,19 +63,26 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT
 // - true iff only the next character is invalid
 bool VtEngine::_WillWriteSingleChar() const
 {
-    COORD currentCursor = _lastText;
-    SMALL_RECT _srcInvalid = _invalidRect.ToExclusive();
-    bool noScrollDelta = (_scrollDelta.X == 0 && _scrollDelta.Y == 0);
+    // If there is no scroll delta, return false.
+    if (til::point{ 0, 0 } != _scrollDelta)
+    {
+        return false;
+    }
 
-    bool invalidIsOneChar = (_invalidRect.Width() == 1) &&
-                            (_invalidRect.Height() == 1);
+    // If there is more than one invalid char, return false.
+    if (!_invalidMap.one())
+    {
+        return false;
+    }
+
+    // Get the single point at which things are invalid.
+    const auto invalidPoint = _invalidMap.runs().front().origin();
+
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    bool invalidIsNext = (_srcInvalid.Top == _lastText.Y)
-                         && (_srcInvalid.Left == _lastText.X);
-    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y)
-                         && (_srcInvalid.Left == (_lastText.X-1));
+    bool invalidIsNext = invalidPoint == til::point{ _lastText };
+    bool invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
 
-    return noScrollDelta && invalidIsOneChar && (invalidIsNext || invalidIsLast);
+    return invalidIsNext || invalidIsLast;
 }

@@ -16,7 +16,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-const COORD VtEngine::INVALID_COORDS = {-1, -1};
+const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -35,11 +35,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _LastBG(INVALID_COLOR),
     _lastWasBold(false),
     _lastViewport(initialViewport),
-    _invalidRect(Viewport::Empty()),
-    _fInvalidRectUsed(false),
-    _lastRealCursor({0}),
-    _lastText({0}),
-    _scrollDelta({0}),
+    _invalidMap(initialViewport.Dimensions()),
+    _lastText({ 0 }),
+    _scrollDelta({ 0, 0 }),
     _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
@@ -54,7 +52,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
-    _trace {}
+    _inResizeRequest{ false },
+    _trace{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -73,15 +72,24 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - str: The buffer to write to the pipe. Might have nulls in it.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_Write(std::string_view const str) noexcept
+[[nodiscard]] HRESULT VtEngine::_Write(std::string_view const str) noexcept
 {
     _trace.TraceString(str);
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
-        RETURN_LAST_ERROR_IF(!_pfnTestCallback(str.data(), str.size()));
-        return S_OK;
+        // Try to get the last error. If that wasn't set, then the test probably
+        // doesn't set last error. No matter. We'll just return with E_FAIL
+        // then. This is a unit test, we don't particularly care.
+        const auto succeeded = _pfnTestCallback(str.data(), str.size());
+        auto hr = E_FAIL;
+        if (!succeeded)
+        {
+            const auto err = ::GetLastError();
+            // If there wasn't an error in GLE, just use E_FAIL
+            hr = SUCCEEDED_WIN32(err) ? hr : HRESULT_FROM_WIN32(err);
+        }
+        return succeeded ? S_OK : hr;
     }
 #endif
 
@@ -94,8 +102,7 @@ HRESULT VtEngine::_Write(std::string_view const str) noexcept
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT VtEngine::_Flush() noexcept
+[[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
 #ifdef UNIT_TESTING
     if (_hFile.get() == INVALID_HANDLE_VALUE)
@@ -126,8 +133,7 @@ HRESULT VtEngine::_Flush() noexcept
 
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
-[[nodiscard]]
-HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
+[[nodiscard]] HRESULT VtEngine::WriteTerminalUtf8(const std::string_view str) noexcept
 {
     return _Write(str);
 }
@@ -139,8 +145,7 @@ HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring_view wstr) noexcept
 {
     try
     {
@@ -153,20 +158,19 @@ HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
 // Method Description:
 // - Writes a wstring to the tty, encoded as "utf-8" where characters that are
 //      outside the ASCII range are encoded as '?'
-//   This mainly exists to maintain compatability with the inbox telnet client.
+//   This mainly exists to maintain compatibility with the inbox telnet client.
 //   This is one implementation of the WriteTerminalW method.
 // Arguments:
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalAscii(const std::wstring_view wstr) noexcept
 {
     const size_t cchActual = wstr.length();
 
     std::string needed;
     needed.reserve(wstr.size());
-    
+
     for (const auto& wch : wstr)
     {
         // We're explicitly replacing characters outside ASCII with a ? because
@@ -181,37 +185,66 @@ HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
 // - Helper for calling _Write with a string for formatting a sequence. Used
 //      extensively by VtSequences.cpp
 // Arguments:
-// - pFormat: the pointer to the string to write to the pipe.
+// - pFormat: pointer to format string to write to the pipe
 // - ...: a va_list of args to format the string with.
 // Return Value:
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
+try
 {
+    va_list args;
+    va_start(args, pFormat);
+
+    // NOTE: pFormat is a pointer because varargs refuses to operate with a ref in that position
+    // NOTE: We're not using string_view because it doesn't guarantee null (which will be needed
+    //       later in the formatting method).
 
     HRESULT hr = E_FAIL;
-    va_list argList;
-    va_start(argList, pFormat);
 
-    int cchNeeded = _scprintf(pFormat->c_str(), argList);
-    // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
-    if (cchNeeded > -1)
+    // We're going to hold onto our format string space across calls because
+    // the VT renderer will be formatting a LOT of strings and alloc/freeing them
+    // over and over is going to be way worse for perf than just holding some extra
+    // memory for formatting purposes.
+    // See _formatBuffer for its location.
+
+    // First, plow ahead using our pre-reserved string space.
+    LPSTR destEnd = nullptr;
+    size_t destRemaining = 0;
+    if (SUCCEEDED(StringCchVPrintfExA(_formatBuffer.data(),
+                                      _formatBuffer.size(),
+                                      &destEnd,
+                                      &destRemaining,
+                                      STRSAFE_NO_TRUNCATION,
+                                      pFormat->c_str(),
+                                      args)))
     {
-        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        RETURN_IF_NULL_ALLOC(psz);
+        return _Write({ _formatBuffer.data(), _formatBuffer.size() - destRemaining });
+    }
 
-        int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pFormat->c_str(), argList);
-        hr = _Write({ psz.get(), gsl::narrow<size_t>(cchWritten) });
+    // If we didn't succeed at filling/using the existing space, then
+    // we're going to take the long way by counting the space required and resizing up to that
+    // space and formatting.
+
+    const auto needed = _scprintf(pFormat->c_str(), args);
+    // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
+    if (needed > -1)
+    {
+        _formatBuffer.resize(static_cast<size_t>(needed) + 1);
+
+        const auto written = _vsnprintf_s(_formatBuffer.data(), _formatBuffer.size(), needed, pFormat->c_str(), args);
+        hr = _Write({ _formatBuffer.data(), gsl::narrow<size_t>(written) });
     }
     else
     {
         hr = E_INVALIDARG;
     }
 
-    va_end(argList);
+    va_end(args);
+
     return hr;
 }
+CATCH_RETURN();
 
 // Method Description:
 // - This method will update the active font on the current device context
@@ -221,9 +254,8 @@ HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) n
 // - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
-                             _Out_ FontInfo& /*pfiFont*/) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                           _Out_ FontInfo& /*pfiFont*/) noexcept
 {
     return S_OK;
 }
@@ -236,8 +268,7 @@ HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -250,8 +281,7 @@ HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -266,6 +296,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
         {
             hr = _ResizeWindow(newView.Width(), newView.Height());
         }
+        _resized = true;
     }
 
     // See MSFT:19408543
@@ -277,40 +308,29 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
 
-    if (SUCCEEDED(hr))
+    if (_resizeQuirk)
     {
-        // Viewport is smaller now - just update it all.
-        if ( oldView.Height() > newView.Height() || oldView.Width() > newView.Width() )
+        // GH#3490 - When the viewport width changed, don't do anything extra here.
+        // If the buffer had areas that were invalid due to the resize, then the
+        // buffer will have triggered it's own invalidations for what it knows is
+        // invalid. Previously, we'd invalidate everything if the width changed,
+        // because we couldn't be sure if lines were reflowed.
+        _invalidMap.resize(newView.Dimensions());
+    }
+    else
+    {
+        if (SUCCEEDED(hr))
         {
-            hr = InvalidateAll();
-        }
-        else
-        {
-            // At least one of the directions grew.
-            // First try and add everything to the right of the old viewport,
-            //      then everything below where the old viewport ended.
-            if (oldView.Width() < newView.Width())
-            {
-                short left = oldView.RightExclusive();
-                short top = 0;
-                short right = newView.RightInclusive();
-                short bottom = oldView.BottomInclusive();
-                Viewport rightOfOldViewport = Viewport::FromInclusive({left, top, right, bottom});
-                hr = _InvalidCombine(rightOfOldViewport);
-            }
-            if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
-            {
-                short left = 0;
-                short top = oldView.BottomExclusive();
-                short right = newView.RightInclusive();
-                short bottom = newView.BottomInclusive();
-                Viewport belowOldViewport = Viewport::FromInclusive({left, top, right, bottom});
-                hr = _InvalidCombine(belowOldViewport);
+            _invalidMap.resize(newView.Dimensions(), true); // resize while filling in new space with repaint requests.
 
+            // Viewport is smaller now - just update it all.
+            if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
+            {
+                hr = InvalidateAll();
             }
         }
     }
-    _resized = true;
+
     return hr;
 }
 
@@ -326,10 +346,9 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
-                                  _Out_ FontInfo& /*pfiFont*/,
-                                  const int /*iDpi*/) noexcept
+[[nodiscard]] HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                                _Out_ FontInfo& /*pfiFont*/,
+                                                const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -337,13 +356,12 @@ HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
 // Method Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
-// - pFontSize - recieves the current X by Y size of the font.
+// - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
-    *pFontSize = COORD({1, 1});
+    *pFontSize = COORD({ 1, 1 });
     return S_FALSE;
 }
 
@@ -356,7 +374,6 @@ HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 // - <none>
 void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn)
 {
-
 #ifdef UNIT_TESTING
 
     _pfnTestCallback = pfn;
@@ -365,7 +382,6 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 #else
     THROW_HR(E_FAIL);
 #endif
-
 }
 
 // Method Description:
@@ -377,7 +393,7 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 // - true if the entire viewport has been invalidated
 bool VtEngine::_AllIsInvalid() const
 {
-    return _lastViewport == _invalidRect;
+    return _invalidMap.all();
 }
 
 // Method Description:
@@ -387,8 +403,7 @@ bool VtEngine::_AllIsInvalid() const
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::SuppressResizeRepaint() noexcept
+[[nodiscard]] HRESULT VtEngine::SuppressResizeRepaint() noexcept
 {
     _suppressResizeRepaint = true;
     return S_OK;
@@ -404,8 +419,7 @@ HRESULT VtEngine::SuppressResizeRepaint() noexcept
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
@@ -432,5 +446,66 @@ HRESULT VtEngine::RequestCursor() noexcept
 {
     RETURN_IF_FAILED(_RequestCursor());
     RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}
+
+// Method Description:
+// - Tell the vt renderer to begin a resize operation. During a resize
+//   operation, the vt renderer should _not_ request to be repainted during a
+//   text buffer circling event. Any callers of this method should make sure to
+//   call EndResize to make sure the renderer returns to normal behavior.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::BeginResizeRequest()
+{
+    _inResizeRequest = true;
+}
+
+// Method Description:
+// - Tell the vt renderer to end a resize operation.
+//   See BeginResize for more details.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::EndResizeRequest()
+{
+    _inResizeRequest = false;
+}
+
+// Method Description:
+// - Configure the renderer for the resize quirk. This changes the behavior of
+//   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
+//   This is used by the Windows Terminal, because it is prepared to be
+//   connected to a conpty, and handles it's own buffer specifically for a
+//   conpty scenario.
+// - See also: GH#3490, #4354, #4741
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we were started with the `--resizeQuirk` flag enabled.
+void VtEngine::SetResizeQuirk(const bool resizeQuirk)
+{
+    _resizeQuirk = resizeQuirk;
+}
+
+// Method Description:
+// - Manually emit a "Erase Scrollback" sequence to the connected terminal. We
+//   need to do this in certain cases that we've identified where we believe the
+//   client wanted the entire terminal buffer cleared, not just the viewport.
+//   For more information, see GH#3126.
+// - This is unimplemented in the win-telnet, xterm-ascii renderers - inbox
+//   telnet.exe doesn't know how to handle a ^[[3J. This _is_ implemented in the
+//   Xterm256Engine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT VtEngine::ManuallyClearScrollback() noexcept
+{
     return S_OK;
 }

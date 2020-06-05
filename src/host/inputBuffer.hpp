@@ -33,7 +33,7 @@ class InputBuffer final : public ConsoleObjectHeader
 public:
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
-    bool fInComposition;  // specifies if there's an ongoing text composition
+    bool fInComposition; // specifies if there's an ongoing text composition
 
     InputBuffer();
     ~InputBuffer();
@@ -55,21 +55,18 @@ public:
     void Flush();
     void FlushAllButKeys();
 
-    [[nodiscard]]
-    NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
-                  const size_t AmountToRead,
-                  const bool Peek,
-                  const bool WaitForData,
-                  const bool Unicode,
-                  const bool Stream);
+    [[nodiscard]] NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
+                                const size_t AmountToRead,
+                                const bool Peek,
+                                const bool WaitForData,
+                                const bool Unicode,
+                                const bool Stream);
 
-    [[nodiscard]]
-    NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
-                  const bool Peek,
-                  const bool WaitForData,
-                  const bool Unicode,
-                  const bool Stream);
-
+    [[nodiscard]] NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
+                                const bool Peek,
+                                const bool WaitForData,
+                                const bool Unicode,
+                                const bool Stream);
 
     size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
@@ -84,6 +81,12 @@ private:
     std::unique_ptr<IInputEvent> _readPartialByteSequence;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
+
+    // This flag is used in _HandleTerminalInputCallback
+    // If the InputBuffer leads to a _HandleTerminalInputCallback call,
+    //    we should suppress the wakeup functions.
+    // Otherwise, we should be calling them.
+    bool _vtInputShouldSuppress{ false };
 
     void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                      const size_t readCount,
