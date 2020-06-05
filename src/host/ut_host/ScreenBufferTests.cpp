@@ -2194,7 +2194,7 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
@@ -2303,7 +2303,7 @@ void ScreenBufferTests::SetDefaultsTogether()
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
@@ -2378,7 +2378,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     gci.SetDefaultForegroundColor(INVALID_COLOR);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-attr on default color (magenta)"));
@@ -2446,7 +2446,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
@@ -2509,7 +2509,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
@@ -2577,7 +2577,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
     TextAttribute expectedDefaults{};
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's, move to the left, then delete-char the second."));
@@ -3811,7 +3811,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     }
 
     // Set the colors to Green on Red. This should have no effect on the results.
-    si.SetAttributes({ FOREGROUND_GREEN | BACKGROUND_RED });
+    si.SetAttributes(TextAttribute{ FOREGROUND_GREEN | BACKGROUND_RED });
 
     // Place the cursor in the center.
     const short centerX = bufferWidth / 2;
