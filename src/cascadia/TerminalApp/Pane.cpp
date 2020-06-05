@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -918,7 +919,109 @@ bool Pane::CanSplit(SplitState splitType)
         return _secondChild->CanSplit(splitType);
     }
 
+    // auto checkChild = [this](auto& child) -> bool {
+    //     if (child->_HasFocusedChild())
+    //     {
+    //         const til::size childSize{ til::math::rounding,
+    //                                    child->_root.ActualWidth(),
+    //                                    child->_root.ActualHeight() };
+    //         if (size.width() == 0 && size.height() == 0)
+    //         {
+    //             // Using our size, figure out how much space is left for the child.
+
+    //             // Use that available space to ask the child if it can add another split, using the provided space.
+    //         }
+
+    //         return _firstChild->CanSplit(splitType);
+    //     }
+
+    //     return false;
+    // }
+
     return false;
+}
+
+std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                               SplitState splitType,
+                                               const winrt::Windows::Foundation::Size availableSpace) const
+{
+    if (_IsLeaf())
+    {
+        if (target.get() == this)
+        {
+            //If this pane is a leaf, and it's the pane we're looking for, use
+            //the available space to calculate which direction to split in.
+            // return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
+
+            // const auto controlSize = _control.MinimumSize();
+            // const auto newControlWidth = controlSize.Width;
+            // const auto newControlHeight = controlSize.Height;
+            // const auto scale = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            //
+            // const Size minSize{
+            //     ::base::saturated_cast<float>(scale * (newControlWidth + (2 * PaneBorderSize))),
+            //     ::base::saturated_cast<float>(scale * (newControlHeight + (2 * PaneBorderSize)))
+            // };
+
+            // const Size originalMinSize = _GetMinSize();
+            const Size minSize = _GetMinSize();
+            // const Size minSize{ originalMinSize.Width * 2.0f, originalMinSize.Height * 2.0f };
+            auto actualSplitType = splitType; // _convertAutomaticSplitState(splitType);
+
+            if (actualSplitType == SplitState::None)
+            {
+                return { false };
+            }
+
+            if (actualSplitType == SplitState::Vertical)
+            {
+                const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+                const auto newWidth = widthMinusSeparator * Half;
+
+                return { newWidth > minSize.Width };
+            }
+
+            if (actualSplitType == SplitState::Horizontal)
+            {
+                const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+                const auto newHeight = heightMinusSeparator * Half;
+
+                return { newHeight > minSize.Height };
+            }
+        }
+        else
+        {
+            // If this pane is _any other leaf_, then just return nullopt, to
+            // indicate that the `target` Pane is not down this branch.
+            return std::nullopt;
+        }
+    }
+    else
+    {
+        // If this pane is a parent, calculate how much space our children will
+        // be able to use, and recurse into them.
+
+        const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        const float firstWidth = isVerticalSplit ?
+                                     (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+                                     availableSpace.Width;
+        const float secondWidth = isVerticalSplit ?
+                                      (availableSpace.Width - firstWidth) - PaneBorderSize :
+                                      availableSpace.Width;
+        const float firstHeight = !isVerticalSplit ?
+                                      (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+                                      availableSpace.Height;
+        const float secondHeight = !isVerticalSplit ?
+                                       (availableSpace.Height - firstHeight) - PaneBorderSize :
+                                       availableSpace.Height;
+
+        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, { secondWidth, secondHeight });
+    }
+
+    // We should not possibly be getting here - both the above branches should
+    // return a value.
+    FAIL_FAST();
 }
 
 // Method Description:
