@@ -248,46 +248,26 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
-            realArgs;
-            ::TerminalApp::AppCommandlineArgs appArgs;
-
-            // copied from AppLogic::_ParseArgs
-            auto parseArgs = [this, &appArgs](auto& args) -> int {
-                // std::vector<winrt::hstring> argv;
-                // argv.push_back(L"wt.exe"); // { realArgs.Commandline() };
-                // argv.push_back(realArgs.Commandline()); // { realArgs.Commandline() };
-                winrt::array_view<const winrt::hstring> actions{ args };
-                auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(actions);
-                for (auto& cmdBlob : commands)
-                {
-                    const auto result = appArgs.ParseCommand(cmdBlob);
-
-                    // If this succeeded, result will be 0. Otherwise, the caller should
-                    // exit(result), to exit the program.
-                    if (result != 0)
-                    {
-                        return result;
-                    }
-                }
-
-                // If all the args were successfully parsed, we'll have some commands
-                // built in appArgs, which we'll use when the application starts up.
-                return 0;
-            };
-
-            std::wstring fullCmdline = std::wstring{ L"wt.exe " } + realArgs.Commandline().c_str();
+            // Convert the commandline into an array of args with
+            // CommandLineToArgvW, similar to how the app typically does when
+            // called from the commandline.
             int argc = 0;
-            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(fullCmdline.c_str(), &argc) };
+            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(realArgs.Commandline().c_str(), &argc) };
             if (argv)
             {
                 std::vector<winrt::hstring> args;
+
+                // Make sure the first argument is wt.exe, because ParseArgs
+                // will always skip the program name.
+                args.emplace_back(L"wt.exe");
                 for (auto& elem : wil::make_range(argv.get(), argc))
                 {
                     args.emplace_back(elem);
                 }
+                winrt::array_view<const winrt::hstring> argsView{ args };
 
-                bool handled = parseArgs(args) == 0;
-
+                ::TerminalApp::AppCommandlineArgs appArgs;
+                bool handled = appArgs.ParseArgs(argsView) == 0;
                 if (handled)
                 {
                     _startupActions = appArgs.GetStartupActions();
