@@ -17,6 +17,7 @@
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
@@ -2193,8 +2194,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   as font size, scrollbar and other control scaling, etc. Make sure the
     //   caller knows what monitor the control is about to appear on.
     // Return Value:
-    // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
+    // - a size containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
@@ -2213,13 +2214,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                      dpi);
     }
 
-    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
-                                                                         const int32_t& fontHeight,
-                                                                         const winrt::Windows::UI::Text::FontWeight& fontWeight,
-                                                                         const winrt::hstring& fontFace,
-                                                                         const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
-                                                                         const winrt::hstring& padding,
-                                                                         const uint32_t dpi)
+    // Function Description:
+    // - Determines how much space (in pixels) an app would need to reserve to
+    //   create a control with the settings stored in the settings param. This
+    //   accounts for things like the font size and face, the initialRows and
+    //   initialCols, and scrollbar visibility. The returned sized is based upon
+    //   the provided DPI value
+    // Arguments:
+    // - initialSizeInChars: The size to get the proposed dimensions for.
+    // - fontHeight: The font height to use to calculate the proposed size for.
+    // - fontWeight: The font weight to use to calculate the proposed size for.
+    // - fontFace: The font name to use to calculate the proposed size for.
+    // - scrollState: The ScrollbarState to use to calculate the proposed size for.
+    // - padding: The padding to use to calculate the proposed size for.
+    // - dpi: The DPI we should create the terminal at. This affects things such
+    //   as font size, scrollbar and other control scaling, etc. Make sure the
+    //   caller knows what monitor the control is about to appear on.
+    // Return Value:
+    // - a size containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
+                                                                        const int32_t& fontHeight,
+                                                                        const winrt::Windows::UI::Text::FontWeight& fontWeight,
+                                                                        const winrt::hstring& fontFace,
+                                                                        const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                                        const winrt::hstring& padding,
+                                                                        const uint32_t dpi)
     {
         const auto cols = ::base::saturated_cast<int>(initialSizeInChars.Width);
         const auto rows = ::base::saturated_cast<int>(initialSizeInChars.Height);
@@ -2295,11 +2314,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   have a visible character.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
-        // If the terminal hasn't been initialized yet, then the font size will
-        // have dimensions {1, fontSize.Y}, which can mess with consumers of
-        // this method. In that case, we'll need to pre-calculate the font
-        // width, before we actually have a renderer or swapchain.
-
         if (_initializedTerminal)
         {
             const auto fontSize = _actualFont.GetSize();
@@ -2320,16 +2334,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            winrt::Windows::Foundation::Size minSize{ 1, 1 };
-            auto dpi = USER_DEFAULT_SCREEN_DPI;
-            auto p = GetProposedDimensions(minSize,
-                                           _settings.FontSize(),
-                                           _settings.FontWeight(),
-                                           _settings.FontFace(),
-                                           _settings.ScrollState(),
-                                           _settings.Padding(),
-                                           dpi);
-            return { p.X, p.Y };
+            // If the terminal hasn't been initialized yet, then the font size will
+            // have dimensions {1, fontSize.Y}, which can mess with consumers of
+            // this method. In that case, we'll need to pre-calculate the font
+            // width, before we actually have a renderer or swapchain.
+            const winrt::Windows::Foundation::Size minSize{ 1, 1 };
+            const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
+            return GetProposedDimensions(minSize,
+                                         _settings.FontSize(),
+                                         _settings.FontWeight(),
+                                         _settings.FontFace(),
+                                         _settings.ScrollState(),
+                                         _settings.Padding(),
+                                         dpi);
         }
     }
 

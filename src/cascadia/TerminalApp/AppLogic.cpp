@@ -472,7 +472,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point AppLogic::GetLaunchDimensions(uint32_t dpi)
+    winrt::Windows::Foundation::Size AppLogic::GetLaunchDimensions(uint32_t dpi)
     {
         if (!_loadedInitialSettings)
         {
@@ -502,7 +502,7 @@ namespace winrt::TerminalApp::implementation
             // of the height calculation here.
             auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
             titlebar.Measure({ SHRT_MAX, SHRT_MAX });
-            proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
+            proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
         }
         else if (_settings->GlobalSettings().AlwaysShowTabs())
         {
@@ -517,7 +517,7 @@ namespace winrt::TerminalApp::implementation
             // For whatever reason, there's about 6px of unaccounted-for space
             // in the application. I couldn't tell you where these 6px are
             // coming from, but they need to be included in this math.
-            proposedSize.Y += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
         }
 
         return proposedSize;

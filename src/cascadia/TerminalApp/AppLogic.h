@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName() const;
         winrt::hstring ApplicationVersion() const;
 
-        Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
+        Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();

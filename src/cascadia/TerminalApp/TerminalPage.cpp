@@ -1282,7 +1282,7 @@ namespace winrt::TerminalApp::implementation
             winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
             auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic /*&& _startupState < StartupState::Initialized*/)
+            if (realSplitType == SplitState::Automatic)
             {
                 realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
             }
@@ -1292,11 +1292,6 @@ namespace winrt::TerminalApp::implementation
             {
                 return;
             }
-            // const auto canSplit = focusedTab->CanSplitPane(splitType);
-            // if (!canSplit && _startupState == StartupState::Initialized)
-            // {
-            //     return;
-            // }
 
             TermControl newControl{ controlSettings, controlConnection };
 
