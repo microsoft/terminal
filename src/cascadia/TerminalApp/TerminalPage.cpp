@@ -215,14 +215,20 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-        if (auto page{ weakThis.get() })
+        for (const auto& action : _startupActions)
         {
-            for (const auto& action : _startupActions)
+            co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+            if (auto page{ weakThis.get() })
             {
                 _actionDispatch->DoAction(action);
             }
-
+            else
+            {
+                return;
+            }
+        }
+        if (auto page{ weakThis.get() })
+        {
             if (initial)
             {
                 _CompleteInitialization();
