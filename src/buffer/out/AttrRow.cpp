@@ -190,26 +190,6 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
     return SUCCEEDED(InsertAttrRuns({ &run, 1 }, iStart, _cchRowWidth - 1, _cchRowWidth));
 }
 
-// Routine Description:
-// - Replaces all runs in the row with the given wToBeReplacedAttr with the new
-//      attribute wReplaceWith. This method is used for replacing specifically
-//      legacy attributes.
-// Arguments:
-// - wToBeReplacedAttr - the legacy attribute to replace in this row.
-// - wReplaceWith - the new value for the matching runs' attributes.
-// Return Value:
-// <none>
-void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplaceWith) noexcept
-{
-    TextAttribute ToBeReplaced;
-    ToBeReplaced.SetFromLegacy(wToBeReplacedAttr);
-
-    TextAttribute ReplaceWith;
-    ReplaceWith.SetFromLegacy(wReplaceWith);
-
-    ReplaceAttrs(ToBeReplaced, ReplaceWith);
-}
-
 // Method Description:
 // - Replaces all runs in the row with the given toBeReplacedAttr with the new
 //      attribute replaceWith.

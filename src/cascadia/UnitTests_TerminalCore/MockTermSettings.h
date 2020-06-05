@@ -29,6 +29,7 @@ namespace TerminalCoreUnitTests
         uint32_t DefaultForeground() { return COLOR_WHITE; }
         uint32_t DefaultBackground() { return COLOR_BLACK; }
         bool SnapOnInput() { return false; }
+        bool AltGrAliasing() { return true; }
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
@@ -49,6 +50,7 @@ namespace TerminalCoreUnitTests
         void DefaultForeground(uint32_t) {}
         void DefaultBackground(uint32_t) {}
         void SnapOnInput(bool) {}
+        void AltGrAliasing(bool) {}
         void CursorColor(uint32_t) {}
         void CursorShape(CursorStyle const&) noexcept {}
         void CursorHeight(uint32_t) {}

@@ -2,7 +2,8 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <!-- See https://docs.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects?view=vs-2017#BKMK_Syntax_reference for documentation -->
     <Type Name="TextColor">
-        <DisplayString Condition="_meta==ColorType::IsIndex">{{Index:{_index}}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsIndex256">{{Index256:{_index}}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsIndex16">{{Index16:{_index}}}</DisplayString>
         <DisplayString Condition="_meta==ColorType::IsDefault">{{Default}}</DisplayString>
         <DisplayString Condition="_meta==ColorType::IsRgb">{{RGB:{_red},{_green},{_blue}}}</DisplayString>
         <Expand></Expand>

@@ -294,6 +294,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Method Description:
     // - called when the client application (not necessarily its pty) exits for any reason
     void ConptyConnection::_ClientTerminated() noexcept
+    try
     {
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -321,6 +322,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _piClient.reset();
     }
+    CATCH_LOG()
 
     void ConptyConnection::WriteInput(hstring const& data)
     {
@@ -349,6 +351,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     void ConptyConnection::Close() noexcept
+    try
     {
         if (_transitionToState(ConnectionState::Closing))
         {
@@ -378,6 +381,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _transitionToState(ConnectionState::Closed);
         }
     }
+    CATCH_LOG()
 
     DWORD ConptyConnection::_OutputThread()
     {

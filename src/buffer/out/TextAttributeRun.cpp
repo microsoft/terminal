@@ -45,14 +45,3 @@ void TextAttributeRun::SetAttributes(const TextAttribute textAttribute) noexcept
 {
     _attributes = textAttribute;
 }
-
-// Routine Description:
-// - Sets the attributes of this run to the given legacy attributes
-// Arguments:
-// - wNew - the new value for this run's attributes
-// Return Value:
-// <none>
-void TextAttributeRun::SetAttributesFromLegacy(const WORD wNew) noexcept
-{
-    _attributes.SetFromLegacy(wNew);
-}

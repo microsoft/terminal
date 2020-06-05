@@ -300,7 +300,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
     return S_OK;
 }

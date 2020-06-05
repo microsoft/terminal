@@ -39,6 +39,7 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
 #include "winrt/Windows.UI.Xaml.Automation.h"
+#include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
