@@ -508,8 +508,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
-decf
 DECEKBD
+decf
 DECKPAM
 DECKPM
 DECKPNM
@@ -1426,6 +1426,7 @@ Mul
 multiline
 munged
 mutex
+mutexes
 muxes
 myapplet
 mydir
@@ -1922,6 +1923,7 @@ RELBINPATH
 remoting
 renderengine
 rendersize
+reparent
 reparenting
 replatformed
 Replymessage
@@ -2101,8 +2103,8 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
-shobjidl
 shlwapi
+shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2276,6 +2278,7 @@ terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
+tesroff
 testapp
 testcon
 testd
@@ -2390,8 +2393,8 @@ uap
 uapadmin
 UAX
 ubuntu
-ucd
 UCD
+ucd
 ucdxml
 uch
 UCHAR
@@ -2422,6 +2425,7 @@ unexpand
 Unfocus
 unfocuses
 unhighlighting
+unhosted
 unicode
 UNICODESTRING
 UNICODETEXT
@@ -2612,7 +2616,6 @@ wincontypes
 WINCORE
 windbg
 WINDEF
-winget
 WINDIR
 windll
 WINDOWALPHA
@@ -2641,6 +2644,7 @@ WINDOWTITLE
 winevent
 winfx
 wingdi
+winget
 WINIDE
 winioctl
 winmd

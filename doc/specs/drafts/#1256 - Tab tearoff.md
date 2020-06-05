@@ -31,7 +31,7 @@ There are several common pieces needed for both the tab tear-off scenario and th
 
 We need some sort of server/manager code that sits there waiting for connections from `wt.exe` processes and potentially `conhost.exe` processes such that it can broker a connection between the processes. It either needs to run in its own process or it needs to run in one of the existing `wt.exe`s that is chosen as the primary manager at the time. It should create communication channels and a global mutex at the time of creation.
 
-All other `wt.exe` processes starting after the primary should detect the existance of the server manager process and wait on the mutex handle. When the primary disappears, the OS scheduler should choose one of the others to wake up first on the mutex. It can take the lock and then set up the primary management channel. 
+All other `wt.exe` processes starting after the primary should detect the existence of the server manager process and wait on the mutex handle. When the primary disappears, the OS scheduler should choose one of the others to wake up first on the mutex. It can take the lock and then set up the primary management channel. 
 
 Alternatively, if the manager process is completely isolated and we expect all `wt.exe`s to have to remain connected at all times, we can make it such that when the connections are broken between the individual processes and the manager that they all shut down. I would prefer that it is resilient (the previous option) over this one, but browsers must have a good reason for preferring this way.
 
