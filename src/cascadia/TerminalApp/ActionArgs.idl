@@ -98,7 +98,7 @@ namespace TerminalApp
         SplitType SplitMode { get; };
     };
 
-     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
         SettingsTarget Target { get; };
     };

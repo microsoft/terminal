@@ -1541,7 +1541,7 @@ namespace winrt::TerminalApp::implementation
         // thread, because the main thread is a STA.
         co_await winrt::resume_background();
 
-        auto openFile = [weakThis{ get_weak() }](const auto filePath) {
+        auto openFile = [](const auto filePath) {
             HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
             if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
             {
