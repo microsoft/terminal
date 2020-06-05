@@ -87,13 +87,13 @@ DEFINE_ENUM_FLAG_OPERATORS(JsonTestFlags);
 JSON_FLAG_MAPPER(JsonTestFlags)
 {
     JSON_MAPPINGS(7) = {
-        pair_type{ "none", JsonTestFlags::None }, // DEFAULT
+        pair_type{ "none", AllClear },
         pair_type{ "first", JsonTestFlags::First },
         pair_type{ "second", JsonTestFlags::Second },
         pair_type{ "third", JsonTestFlags::Third },
         pair_type{ "fourth", JsonTestFlags::Fourth },
         pair_type{ "fifth", JsonTestFlags::Fifth },
-        pair_type{ "all", JsonTestFlags::All },
+        pair_type{ "all", AllSet },
     };
 };
 
@@ -318,6 +318,13 @@ namespace TerminalAppUnitTests
         static const GUID testGuid{ 0xaa8147aa, 0xe289, 0x4508, { 0xbe, 0x83, 0xfb, 0x68, 0x36, 0x1e, 0xf2, 0xf3 } };
 
         TryBasicType(testGuid, testGuidString);
+
+        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "NOT_A_GUID" }), std::exception, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "{too short for a guid but just a bit}" }), std::exception, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "{proper length string not a guid tho?}" }), std::exception, _ReturnTrueForException);
+
+        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#" }), std::exception, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#1234567890" }), std::exception, _ReturnTrueForException);
     }
 
     void JsonUtilsTests::BasicTypeWithCustomConverter()
@@ -357,7 +364,7 @@ namespace TerminalAppUnitTests
 
         // Unknown value should produce something?
         Json::Value stringUnknown{ "unknown" };
-        VERIFY_ARE_EQUAL(JsonTestEnum::First, GetValue<JsonTestEnum>(stringUnknown));
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestEnum>(stringUnknown), std::exception, _ReturnTrueForException);
     }
 
     void JsonUtilsTests::FlagMapper()
@@ -394,9 +401,15 @@ namespace TerminalAppUnitTests
         arrayNoneFirst.append({ "first" });
         VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayNoneFirst), std::exception, _ReturnTrueForException);
 
+        // Stacking Any + None (Exception; same as above, different order)
+        Json::Value arrayFirstNone{ Json::arrayValue };
+        arrayFirstNone.append({ "first" });
+        arrayFirstNone.append({ "none" });
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayFirstNone), std::exception, _ReturnTrueForException);
+
         // Unknown flag value?
         Json::Value stringUnknown{ "unknown" };
-        VERIFY_ARE_EQUAL(JsonTestFlags::None, GetValue<JsonTestFlags>(stringUnknown));
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(stringUnknown), std::exception, _ReturnTrueForException);
     }
 
 }

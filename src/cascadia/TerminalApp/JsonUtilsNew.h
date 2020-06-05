@@ -10,8 +10,8 @@ Abstract:
 Author(s):
 - Mike Griese - August 2019
 - Dustin Howett - January 2020
-
 --*/
+
 #pragma once
 
 #include <json.h>
@@ -182,7 +182,13 @@ namespace TerminalApp::JsonUtils
 
         bool CanConvert(const Json::Value& json)
         {
-            return json.isString();
+            if (!json.isString())
+            {
+                return false;
+            }
+
+            const auto string{ Detail::GetStringView(json) };
+            return string.length() == 38 && string.front() == '{' && string.back() == '}';
         }
     };
 
@@ -202,7 +208,13 @@ namespace TerminalApp::JsonUtils
 
         bool CanConvert(const Json::Value& json)
         {
-            return json.isString();
+            if (!json.isString())
+            {
+                return false;
+            }
+
+            const auto string{ Detail::GetStringView(json) };
+            return (string.length() == 7 || string.length() == 3) && string.front() == '#';
         }
     };
 
@@ -220,8 +232,8 @@ namespace TerminalApp::JsonUtils
                     return pair.second;
                 }
             }
-            // the first mapping is the "Default"
-            return TBase::mappings[0].second;
+
+            throw std::exception{};
         }
 
         bool CanConvert(const Json::Value& json)
@@ -233,55 +245,46 @@ namespace TerminalApp::JsonUtils
     // FlagMapper is EnumMapper, but it works for bitfields.
     // It supports a string (single flag) or an array of strings.
     // Does an O(n*m) search; meant for small search spaces!
+    //
+    // Cleverly leverage EnumMapper to do the heavy lifting.
     template<typename T, typename TBase>
-    struct FlagMapper
+    struct FlagMapper : public EnumMapper<T, TBase>
     {
-        using pair_type = std::pair<std::string_view, T>;
-        const T* _find(const std::string_view name) const
-        {
-            for (const auto& pair : TBase::mappings)
-            {
-                if (pair.first == name)
-                {
-                    return &pair.second;
-                }
-            }
-            return nullptr;
-        }
+        static constexpr T AllSet{ static_cast<T>(~0u) };
+        static constexpr T AllClear{ static_cast<T>(0u) };
 
         T FromJson(const Json::Value& json)
         {
             if (json.isString())
             {
-                const auto name{ Detail::GetStringView(json) };
-                const auto found{ _find(name) };
-                if (found)
-                {
-                    return *found;
-                }
+                return EnumMapper::FromJson(json);
             }
             else if (json.isArray())
             {
+                unsigned int seen{ 0 };
                 T value{};
                 for (const auto& element : json)
                 {
-                    const auto name{ Detail::GetStringView(element) };
-                    const auto found{ _find(name) };
-                    if (found)
+                    auto newFlag{ EnumMapper::FromJson(element) };
+                    if (++seen > 1 &&
+                        ((newFlag == AllClear && value != AllClear) ||
+                         (value == AllClear && newFlag != AllClear)))
                     {
-                        value |= *found;
+                        // attempt to combine AllClear (explicitly) with anything else
+                        throw std::exception();
                     }
+                    value |= newFlag;
                 }
                 return value;
             }
 
-            // If we didn't recognize any flags, the default is _NO FLAGS_
-            return static_cast<T>(0);
+            // We'll only get here if CanConvert has failed us.
+            return AllClear;
         }
 
         bool CanConvert(const Json::Value& json)
         {
-            return json.isString() || json.isArray();
+            return EnumMapper::CanConvert(json) || json.isArray();
         }
     };
 
