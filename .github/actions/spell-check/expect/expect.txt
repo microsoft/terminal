@@ -508,8 +508,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
-decf
 DECEKBD
+decf
 DECKPAM
 DECKPM
 DECKPNM
@@ -906,6 +906,7 @@ grep
 Greyscale
 gridline
 groupbox
+gset
 gsl
 GTP
 guc
@@ -1425,6 +1426,7 @@ Mul
 multiline
 munged
 mutex
+mutexes
 muxes
 myapplet
 mydir
@@ -1530,6 +1532,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
+NRCS
 NSTATUS
 ntapi
 ntcon
@@ -1920,6 +1923,7 @@ RELBINPATH
 remoting
 renderengine
 rendersize
+reparent
 reparenting
 replatformed
 Replymessage
@@ -2030,6 +2034,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
+SCS
 scursor
 sddl
 sdeleted
@@ -2098,8 +2103,8 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
-shobjidl
 shlwapi
+shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2260,6 +2265,7 @@ tcommandline
 tcommands
 tcon
 TDP
+tearoff
 Teb
 techcommunity
 technet
@@ -2419,6 +2425,7 @@ unexpand
 Unfocus
 unfocuses
 unhighlighting
+unhosted
 unicode
 UNICODESTRING
 UNICODETEXT
@@ -2444,6 +2451,7 @@ untimes
 UPDATEDISPLAY
 UPDOWN
 UPKEY
+UPSS
 upvote
 uri
 url
@@ -2608,7 +2616,6 @@ wincontypes
 WINCORE
 windbg
 WINDEF
-winget
 WINDIR
 windll
 WINDOWALPHA
@@ -2637,6 +2644,7 @@ WINDOWTITLE
 winevent
 winfx
 wingdi
+winget
 WINIDE
 winioctl
 winmd

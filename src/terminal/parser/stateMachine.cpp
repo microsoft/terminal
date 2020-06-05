@@ -190,10 +190,8 @@ static constexpr bool _isCsiInvalid(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is "operating system control string" beginning
-//      indicator.
-//   This immediately follows an escape and signifies a  signifies a varying
-//      length control sequence, quite similar to CSI.
+// - Determines if a character is a "Single Shift Select" indicator.
+//   This immediately follows an escape and signifies a varying length control string.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -217,8 +215,10 @@ static constexpr bool _isVt52CursorAddress(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a "Single Shift Select" indicator.
-//   This immediately follows an escape and signifies a varying length control string.
+// - Determines if a character is "operating system control string" beginning
+//      indicator.
+//   This immediately follows an escape and signifies a  signifies a varying
+//      length control sequence, quite similar to CSI.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -838,7 +838,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
         {
             _EnterOscParam();
         }
-        else if (_isSs3Indicator(wch))
+        else if (_isSs3Indicator(wch) && _engine->ParseControlSequenceAfterSs3())
         {
             _EnterSs3Entry();
         }
