@@ -3,6 +3,8 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
+#include "ActionArgs.h"
+#include "ActionAndArgs.h"
 
 #include "CommandPalette.g.cpp"
 
@@ -102,16 +104,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
-            // Action Mode: Dispatch the action of the selected command.
-
-            if (const auto selectedItem = _FilteredActionsView().SelectedItem())
+            if (_mode == PaletteMode::ActionMode)
             {
-                if (const auto data = selectedItem.try_as<Command>())
-                {
-                    const auto actionAndArgs = data.Action();
-                    _dispatch.DoAction(actionAndArgs);
-                    _close();
-                }
+                _dispatchAction();
+            }
+            else
+            {
+                _dispatchCommandline();
             }
 
             e.Handled(true);
@@ -133,6 +132,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        _checkMode();
         _updateFilteredActions();
         _FilteredActionsView().SelectedIndex(0);
     }
@@ -159,6 +159,12 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateFilteredActions()
     {
         _filteredActions.Clear();
+
+        if (_mode == PaletteMode::CommandlineMode)
+        {
+            return;
+        }
+
         auto searchText = _SearchBox().Text();
         const bool addAll = searchText.empty();
 
@@ -254,6 +260,53 @@ namespace winrt::TerminalApp::implementation
 
         // _SearchBox().Text(L"");
         _closeHandlers(*this, RoutedEventArgs{});
+    }
+
+    void CommandPalette::_checkMode()
+    {
+        _mode = PaletteMode::ActionMode;
+
+        auto inputText = _SearchBox().Text();
+        if (inputText.size() > 0)
+        {
+            if (inputText[0] == L'>')
+            {
+                _mode = PaletteMode::CommandlineMode;
+            }
+        }
+    }
+
+    void CommandPalette::_dispatchAction()
+    {
+        // Action Mode: Dispatch the action of the selected command.
+
+        if (const auto selectedItem = _FilteredActionsView().SelectedItem())
+        {
+            if (const auto data = selectedItem.try_as<Command>())
+            {
+                const auto actionAndArgs = data.Action();
+                _dispatch.DoAction(actionAndArgs);
+                _close();
+            }
+        }
+    }
+    void CommandPalette::_dispatchCommandline()
+    {
+        auto inputText = _SearchBox().Text();
+        std::wstring input{ _SearchBox().Text() };
+        winrt::hstring cmdline{ input.substr(1) };
+
+        // Build the NewTab action from the values we've parsed on the commandline.
+        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(cmdline);
+        executeActionAndArgs->Args(*args);
+
+        if (_dispatch.DoAction(*executeActionAndArgs))
+        {
+            _close();
+        }
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(CommandPalette, Closed, _closeHandlers, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);

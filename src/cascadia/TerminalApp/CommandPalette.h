@@ -10,6 +10,12 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    enum class PaletteMode : uint32_t
+    {
+        ActionMode = 0,
+        CommandlineMode
+    };
+
     struct CommandPalette : CommandPaletteT<CommandPalette>
     {
         CommandPalette();
@@ -28,6 +34,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allActions{ nullptr };
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
+        PaletteMode _mode{ PaletteMode::ActionMode };
+
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
         void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
@@ -35,9 +43,14 @@ namespace winrt::TerminalApp::implementation
 
         void _selectNextItem(const bool moveDown);
 
+        void _checkMode();
+
         void _updateFilteredActions();
         static bool _filterMatchesName(winrt::hstring searchText, winrt::hstring name);
         void _close();
+
+        void _dispatchAction();
+        void _dispatchCommandline();
     };
 }
 
