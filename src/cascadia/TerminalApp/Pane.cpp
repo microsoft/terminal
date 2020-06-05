@@ -919,28 +919,37 @@ bool Pane::CanSplit(SplitState splitType)
         return _secondChild->CanSplit(splitType);
     }
 
-    // auto checkChild = [this](auto& child) -> bool {
-    //     if (child->_HasFocusedChild())
-    //     {
-    //         const til::size childSize{ til::math::rounding,
-    //                                    child->_root.ActualWidth(),
-    //                                    child->_root.ActualHeight() };
-    //         if (size.width() == 0 && size.height() == 0)
-    //         {
-    //             // Using our size, figure out how much space is left for the child.
-
-    //             // Use that available space to ask the child if it can add another split, using the provided space.
-    //         }
-
-    //         return _firstChild->CanSplit(splitType);
-    //     }
-
-    //     return false;
-    // }
-
     return false;
 }
 
+// Method Description:
+// - This is a helper to determine if a given Pane can be split, but without
+//   using the ActualWidth() and ActualHeight() methods. This is used during
+//   processing of many "split-pane" commands, which could happen _before_ we've
+//   laid out a Pane for the first time. When this happens, the Pane's don't
+//   have an actual size yet. However, we'd still like to figure out if the pane
+//   could be split, once they're all laid out.
+// - This method assumes that the Pane we're attempting to split is `target`,
+//   and this method should be called on the root of a tree of Panes.
+// - We'll walk down the tree attempting to find `target`. As we traverse the
+//   tree, we'll reduce the size passed to each subsequent recursive call. The
+//   size passed to this method represents how much space this Pane _will_ have
+//   to use.
+//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//     available space to calculate which direction to split in.
+//   * If this pane is _any other leaf_, then just return nullopt, to indicate
+//     that the `target` Pane is not down this branch.
+//   * If this pane is a parent, calculate how much space our children will be
+//     able to use, and recurse into them.
+// Arguments:
+// - target: The Pane we're attempting to split.
+// - splitType: The direction we're attempting to split in.
+// - availableSpace: The theoretical space that's available for this pane to be able to split.
+// Return Value:
+// - nullopt if `target` is not this pane or a child of this pane, otherwise
+//   true iff we could split this pane, given `availableSpace`
+// Note:
+// - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
                                                SplitState splitType,
                                                const winrt::Windows::Foundation::Size availableSpace) const
@@ -951,29 +960,14 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
         {
             //If this pane is a leaf, and it's the pane we're looking for, use
             //the available space to calculate which direction to split in.
-            // return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
-
-            // const auto controlSize = _control.MinimumSize();
-            // const auto newControlWidth = controlSize.Width;
-            // const auto newControlHeight = controlSize.Height;
-            // const auto scale = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-            //
-            // const Size minSize{
-            //     ::base::saturated_cast<float>(scale * (newControlWidth + (2 * PaneBorderSize))),
-            //     ::base::saturated_cast<float>(scale * (newControlHeight + (2 * PaneBorderSize)))
-            // };
-
-            // const Size originalMinSize = _GetMinSize();
             const Size minSize = _GetMinSize();
-            // const Size minSize{ originalMinSize.Width * 2.0f, originalMinSize.Height * 2.0f };
-            auto actualSplitType = splitType; // _convertAutomaticSplitState(splitType);
 
-            if (actualSplitType == SplitState::None)
+            if (splitType == SplitState::None)
             {
                 return { false };
             }
 
-            if (actualSplitType == SplitState::Vertical)
+            if (splitType == SplitState::Vertical)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
                 const auto newWidth = widthMinusSeparator * Half;
@@ -981,7 +975,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { newWidth > minSize.Width };
             }
 
-            if (actualSplitType == SplitState::Horizontal)
+            if (splitType == SplitState::Horizontal)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
                 const auto newHeight = heightMinusSeparator * Half;
