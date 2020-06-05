@@ -2265,6 +2265,7 @@ tcommandline
 tcommands
 tcon
 TDP
+tearoff
 Teb
 techcommunity
 technet
@@ -2278,7 +2279,6 @@ terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
-tesroff
 testapp
 testcon
 testd
@@ -2393,8 +2393,8 @@ uap
 uapadmin
 UAX
 ubuntu
-UCD
 ucd
+UCD
 ucdxml
 uch
 UCHAR
