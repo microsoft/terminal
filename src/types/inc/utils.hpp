@@ -33,8 +33,8 @@ namespace Microsoft::Console::Utils
     GUID GuidFromString(const std::wstring wstr);
     GUID CreateGuid();
 
-    std::string ColorToHexString(const COLORREF color);
-    COLORREF ColorFromHexString(const std::string wstr);
+    std::string ColorToHexString(const til::color color);
+    til::color ColorFromHexString(const std::string_view wstr);
 
     void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
     void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
@@ -85,4 +85,33 @@ namespace Microsoft::Console::Utils
     }
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+
+    // Method Description:
+    // - Base case provided to handle the last argument to CoalesceOptionals<T...>()
+    template<typename T>
+    T CoalesceOptionals(const T& base)
+    {
+        return base;
+    }
+
+    // Method Description:
+    // - Base case provided to throw an assertion if you call CoalesceOptionals(opt, opt, opt)
+    template<typename T>
+    T CoalesceOptionals(const std::optional<T>& base)
+    {
+        static_assert(false, "CoalesceOptionals must be passed a base non-optional value to be used if all optionals are empty");
+        return T{};
+    }
+
+    // Method Description:
+    // - Returns the value from the first populated optional, or a base value if none were populated.
+    template<typename T, typename... Ts>
+    T CoalesceOptionals(const std::optional<T>& t1, Ts&&... t2)
+    {
+        // Initially, I wanted to check "has_value" and short-circuit out so that we didn't
+        // evaluate value_or for every single optional, but has_value/value emits exception handling
+        // code that value_or doesn't. Less exception handling is cheaper than calling value_or a
+        // few more times.
+        return t1.value_or(CoalesceOptionals(std::forward<Ts>(t2)...));
+    }
 }

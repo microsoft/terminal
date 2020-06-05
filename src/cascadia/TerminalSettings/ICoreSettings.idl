@@ -25,6 +25,7 @@ namespace Microsoft.Terminal.Settings
         Int32 RowsToScroll;
 
         Boolean SnapOnInput;
+        Boolean AltGrAliasing;
 
         UInt32 CursorColor;
         CursorStyle CursorShape;

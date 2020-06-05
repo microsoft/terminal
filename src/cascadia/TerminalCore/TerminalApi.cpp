@@ -44,7 +44,7 @@ bool Terminal::SetTextToDefaults(bool foreground, bool background) noexcept
 bool Terminal::SetTextForegroundIndex(BYTE colorIndex) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedAttributes({ colorIndex }, {});
+    attrs.SetIndexedForeground(colorIndex);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }
@@ -52,7 +52,23 @@ bool Terminal::SetTextForegroundIndex(BYTE colorIndex) noexcept
 bool Terminal::SetTextBackgroundIndex(BYTE colorIndex) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedAttributes({}, { colorIndex });
+    attrs.SetIndexedBackground(colorIndex);
+    _buffer->SetCurrentAttributes(attrs);
+    return true;
+}
+
+bool Terminal::SetTextForegroundIndex256(BYTE colorIndex) noexcept
+{
+    TextAttribute attrs = _buffer->GetCurrentAttributes();
+    attrs.SetIndexedForeground256(colorIndex);
+    _buffer->SetCurrentAttributes(attrs);
+    return true;
+}
+
+bool Terminal::SetTextBackgroundIndex256(BYTE colorIndex) noexcept
+{
+    TextAttribute attrs = _buffer->GetCurrentAttributes();
+    attrs.SetIndexedBackground256(colorIndex);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }
@@ -68,14 +84,7 @@ bool Terminal::SetTextRgbColor(COLORREF color, bool foreground) noexcept
 bool Terminal::BoldText(bool boldOn) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    if (boldOn)
-    {
-        attrs.Embolden();
-    }
-    else
-    {
-        attrs.Debolden();
-    }
+    attrs.SetBold(boldOn);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }
@@ -83,11 +92,7 @@ bool Terminal::BoldText(bool boldOn) noexcept
 bool Terminal::UnderlineText(bool underlineOn) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    WORD metaAttrs = attrs.GetMetaAttributes();
-
-    WI_UpdateFlag(metaAttrs, COMMON_LVB_UNDERSCORE, underlineOn);
-
-    attrs.SetMetaAttributes(metaAttrs);
+    attrs.SetUnderline(underlineOn);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }
@@ -95,11 +100,7 @@ bool Terminal::UnderlineText(bool underlineOn) noexcept
 bool Terminal::ReverseText(bool reversed) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    WORD metaAttrs = attrs.GetMetaAttributes();
-
-    WI_UpdateFlag(metaAttrs, COMMON_LVB_REVERSE_VIDEO, reversed);
-
-    attrs.SetMetaAttributes(metaAttrs);
+    attrs.SetReverseVideo(reversed);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }

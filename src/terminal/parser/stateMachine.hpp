@@ -37,6 +37,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
+        void SetAnsiMode(bool ansiMode) noexcept;
+
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
 
@@ -52,6 +54,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
         void _ActionEscDispatch(const wchar_t wch);
+        void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch);
         void _ActionParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
@@ -75,6 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterOscTermination() noexcept;
         void _EnterSs3Entry();
         void _EnterSs3Param() noexcept;
+        void _EnterVt52Param() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -88,6 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
+        void _EventVt52Param(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 
@@ -104,7 +109,8 @@ namespace Microsoft::Console::VirtualTerminal
             OscString,
             OscTermination,
             Ss3Entry,
-            Ss3Param
+            Ss3Param,
+            Vt52Param
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
@@ -112,6 +118,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<IStateMachineEngine> _engine;
 
         VTStates _state;
+
+        bool _isInAnsiMode;
 
         std::wstring_view _run;
 

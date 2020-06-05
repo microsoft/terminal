@@ -12,11 +12,11 @@
       <Link>Images\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
     <!-- Fonts -->
-    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
-    <Content Include="$(OpenConsoleDir)res\CascadiaMono.ttf" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <Content Include="$(OpenConsoleDir)res\CascadiaMono.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
