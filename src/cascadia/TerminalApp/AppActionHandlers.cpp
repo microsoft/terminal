@@ -239,19 +239,19 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleExecuteCommandline(const IInspectable& /*sender*/,
-                                                 const TerminalApp::ActionEventArgs& args)
+                                                 const TerminalApp::ActionEventArgs& actionArgs)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
             realArgs;
             ::TerminalApp::AppCommandlineArgs appArgs;
 
             // copied from AppLogic::_ParseArgs
-            auto parseArgs = [this, &realArgs, &appArgs]() -> int {
-                std::vector<winrt::hstring> argv;
-                argv.push_back(L"wt.exe"); // { realArgs.Commandline() };
-                argv.push_back(realArgs.Commandline()); // { realArgs.Commandline() };
-                winrt::array_view<const winrt::hstring> actions{ argv };
+            auto parseArgs = [this, &appArgs](auto& args) -> int {
+                // std::vector<winrt::hstring> argv;
+                // argv.push_back(L"wt.exe"); // { realArgs.Commandline() };
+                // argv.push_back(realArgs.Commandline()); // { realArgs.Commandline() };
+                winrt::array_view<const winrt::hstring> actions{ args };
                 auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(actions);
                 for (auto& cmdBlob : commands)
                 {
@@ -270,15 +270,27 @@ namespace winrt::TerminalApp::implementation
                 return 0;
             };
 
-            bool handled = parseArgs() == 0;
-
-            if (handled)
+            std::wstring fullCmdline = std::wstring{ L"wt.exe " } + realArgs.Commandline().c_str();
+            int argc = 0;
+            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(fullCmdline.c_str(), &argc) };
+            if (argv)
             {
-                _startupActions = appArgs.GetStartupActions();
-                _ProcessStartupActions(false);
-            }
+                std::vector<winrt::hstring> args;
+                for (auto& elem : wil::make_range(argv.get(), argc))
+                {
+                    args.emplace_back(elem);
+                }
 
-            args.Handled(handled);
+                bool handled = parseArgs(args) == 0;
+
+                if (handled)
+                {
+                    _startupActions = appArgs.GetStartupActions();
+                    _ProcessStartupActions(false);
+                }
+
+                actionArgs.Handled(handled);
+            }
         }
     }
 
