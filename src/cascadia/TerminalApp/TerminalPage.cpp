@@ -201,7 +201,8 @@ namespace winrt::TerminalApp::implementation
     // - Process all the startup actions in our list of startup actions. We'll
     //   do this all at once here.
     // Arguments:
-    // - <none>
+    // - initial: if true, we're parsing these args during startup, and we
+    //   should fire an Initialized event.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TerminalPage::_ProcessStartupActions(const bool initial)
