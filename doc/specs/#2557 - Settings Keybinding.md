@@ -86,6 +86,14 @@ Here, we take away the ability to specifically choose which page the user wants 
 
 If there are concerns about adding more settings files in the future, `openDefaults` could be renamed to be `target`, and this would still serve as a hybrid of Proposition 1 and 2, with less possible options.
 
+### Conclusion:
+We decided to go with Proposition 1.1. The keybinding arg is `target` and it supports...
+- `settingsFile`: open "settings.json"
+- `defaultsFile`: open "defaults.json"
+- `allSettingsFiles`: open all settings files
+- `settingsUI`: open the Settings UI
+
+`settingsFile` will be the default until the Settings UI is implemented. At that point, the default will be silently changed to `settingsUI`.
 
 ## UI/UX Design
 
