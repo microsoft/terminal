@@ -1277,15 +1277,15 @@ namespace winrt::TerminalApp::implementation
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-            const auto canSplit = focusedTab->CanSplitPane(splitType);
+            // const auto canSplit = focusedTab->CanSplitPane(splitType);
 
-            if (!canSplit && _startupState == StartupState::Initialized)
-            {
-                return;
-            }
+            // if (!canSplit && _startupState == StartupState::Initialized)
+            // {
+            //     return;
+            // }
 
             auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic && _startupState < StartupState::Initialized)
+            if (realSplitType == SplitState::Automatic /*&& _startupState < StartupState::Initialized*/)
             {
                 float contentWidth = gsl::narrow_cast<float>(_tabContent.ActualWidth());
                 float contentHeight = gsl::narrow_cast<float>(_tabContent.ActualHeight());
