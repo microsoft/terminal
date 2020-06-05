@@ -35,7 +35,7 @@ We'll change the TermControl class to derive from the
 * Otherwise, it might be possible that we could just remove that fake control
   entirely.
 * We'll remove the `GetControl` method from the `TermControl`, as the
-  `TermControl` itslef will now be used as the control.
+  `TermControl` itself will now be used as the control.
 
 We'll change the Pane class to accept a `Windows.UI.Xaml.Controls.Control`
 instead of a `TermControl`.
@@ -76,8 +76,8 @@ is a bigger discussion than the feature at hand, however.
 
 ### Performance, Power, and Efficiency
 
+decide to host a WebView in a pane, then it surely could impact these measures.
 I don't believe this will have a noticable impact _on its own_. Should the user
-decide to host a WebView in a pane, then it surely could impact these measuress.
 However, I leave that discussion to the implementation of the actual alternative
 pane content itself.
 
@@ -95,7 +95,7 @@ should the control provide some sort of accessibility pattern.
   keybindings model has the `TermControl` call into the App layer to see if a
   keystroke should be handled by the app first. We may want to make sure that
   for non-terminal controls, we add a event handler to try and have the
-  `AppKeyBindings` handle the keypress ifthe control doesn't. This won't solve
+  `AppKeyBindings` handle the keypress if the control doesn't. This won't solve
   the case where the control wants to use a keybinding that is mapped by the
   Terminal App. In that case, non-terminal controls will actually behave
   differently from the `TermControl`. The `TermControl` will give the app the
