@@ -28,6 +28,7 @@ static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
@@ -121,6 +122,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -188,6 +190,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.AltGrAliasing(_altGrAliasing);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -474,6 +477,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetInt(json, HistorySizeKey, _historySize);
 
     JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
+
+    JsonUtils::GetBool(json, AltGrAliasingKey, _altGrAliasing);
 
     JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
 

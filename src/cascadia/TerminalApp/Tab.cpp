@@ -741,6 +741,7 @@ namespace winrt::TerminalApp::implementation
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
 
             tab->_RefreshVisualState();
 
@@ -774,7 +775,8 @@ namespace winrt::TerminalApp::implementation
                 L"TabViewItemHeaderForegroundSelected",
                 L"TabViewItemHeaderForegroundPointerOver",
                 L"TabViewItemHeaderBackgroundPressed",
-                L"TabViewItemHeaderForegroundPressed"
+                L"TabViewItemHeaderForegroundPressed",
+                L"TabViewButtonForegroundActiveTab"
             };
 
             // simply clear any of the colors in the tab's dict

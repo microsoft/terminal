@@ -77,6 +77,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateWriteConsoleControlInput(const KeyEvent key) = 0;
         virtual bool PrivateRefreshWindow() = 0;
 
+        virtual bool SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual bool GetConsoleOutputCP(unsigned int& codepage) = 0;
 
         virtual bool PrivateSuppressResizeRepaint() = 0;
