@@ -32,7 +32,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     _screenInfo(screenInfo),
     _userInputFunction(&Popup::_getUserInputInternal)
 {
-    _attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
+    _attributes = *screenInfo.GetPopupAttributes();
 
     const COORD size = _CalculateSize(screenInfo, proposedSize);
     const COORD origin = _CalculateOrigin(screenInfo, size);
