@@ -140,11 +140,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _snapOnInput = settings.SnapOnInput();
-
+    _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
-
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-
     _startingTitle = settings.StartingTitle();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
@@ -419,6 +417,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     _StoreKeyEvent(vkey, scanCode);
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
 
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximize, size, move, close.
@@ -428,7 +427,17 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    const auto ch = _CharacterFromKeyEvent(vkey, scanCode, states);
+    // By default Windows treats Ctrl+Alt as an alias for AltGr.
+    // When the altGrAliasing setting is set to false, this behaviour should be disabled.
+    //
+    // Whenever possible _CharacterFromKeyEvent() will return a valid character.
+    // For instance both Ctrl+Alt+Q as well as AltGr+Q return @ on a German keyboard.
+    //
+    // We can achieve the altGrAliasing functionality by skipping the call to _CharacterFromKeyEvent,
+    // as TerminalInput::HandleKey will then fall back to using the vkey which
+    // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
+    // See GH#5525/GH#6211 for more details
+    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
 
     // Delegate it to the character event handler if this key event can be
     // mapped to one (see method description above). For Alt+key combinations

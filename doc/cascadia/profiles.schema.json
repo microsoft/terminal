@@ -615,6 +615,11 @@
           "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
           "type": "boolean"
         },
+        "altGrAliasing": {
+          "default": true,
+          "description": "By default Windows treats Ctrl+Alt as an alias for AltGr. When altGrAliasing is set to false, this behavior will be disabled.",
+          "type": "boolean"
+        },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
           "type": ["string", "null"]

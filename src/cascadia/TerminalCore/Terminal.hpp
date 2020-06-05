@@ -212,6 +212,7 @@ private:
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+    bool _altGrAliasing;
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
