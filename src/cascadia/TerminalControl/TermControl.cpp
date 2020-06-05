@@ -1003,6 +1003,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (multiClickMapper == 1)
                 {
                     mode = ::Terminal::SelectionExpansionMode::Cell;
+                    _singleClickTouchdownPos = cursorPosition;
                 }
                 else if (multiClickMapper == 2)
                 {
@@ -1012,12 +1013,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
-                else
-                {
-                    // This should never happen because the multiClickMapper should be limited to the other values.
-                    // Perhaps you forgot to update MAX_CLICK_COUNT
-                    FAIL_FAST();
-                }
 
                 // Update the selection appropriately
                 if (shiftEnabled && _terminal->IsSelectionActive())
@@ -1026,11 +1021,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                else if (multiClickMapper == 1)
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
-                    _singleClickTouchdownPos = cursorPosition;
                     _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
                 else
