@@ -18,8 +18,7 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl();
 
-        void Maximize();
-        void RestoreDown();
+        void SetWindowVisualState(WindowVisualState visualState);
 
         void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
                             winrt::Windows::UI::Xaml::RoutedEventArgs const& e);

@@ -7,7 +7,7 @@
 #include "TabRowControl.g.cpp"
 
 using namespace winrt;
-using namespace Windows::UI::Xaml;
+using namespace winrt::Microsoft::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {

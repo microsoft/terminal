@@ -7,20 +7,6 @@
 using namespace Microsoft::Console;
 
 // Function Description:
-// - Clamps a long in between `min` and `SHRT_MAX`
-// Arguments:
-// - value: the value to clamp
-// - min: the minimum value to clamp to
-// Return Value:
-// - The clamped value as a short.
-short Utils::ClampToShortMax(const long value, const short min)
-{
-    return static_cast<short>(std::clamp(value,
-                                         static_cast<long>(min),
-                                         static_cast<long>(SHRT_MAX)));
-}
-
-// Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
 // Arguments:
@@ -29,12 +15,7 @@ short Utils::ClampToShortMax(const long value, const short min)
 // - a string representation of the GUID. On failure, throws E_INVALIDARG.
 std::wstring Utils::GuidToString(const GUID guid)
 {
-    wchar_t guid_cstr[39];
-    const int written = swprintf(guid_cstr, sizeof(guid_cstr), L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-
-    THROW_HR_IF(E_INVALIDARG, written == -1);
-
-    return std::wstring(guid_cstr);
+    return wil::str_printf<std::wstring>(L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 }
 
 // Method Description:
@@ -70,39 +51,52 @@ GUID Utils::CreateGuid()
 // - color: the COLORREF to create the string for
 // Return Value:
 // - a string representation of the color
-std::string Utils::ColorToHexString(const COLORREF color)
+std::string Utils::ColorToHexString(const til::color color)
 {
     std::stringstream ss;
     ss << "#" << std::uppercase << std::setfill('0') << std::hex;
     // Force the compiler to promote from byte to int. Without it, the
     // stringstream will try to write the components as chars
-    ss << std::setw(2) << static_cast<int>(GetRValue(color));
-    ss << std::setw(2) << static_cast<int>(GetGValue(color));
-    ss << std::setw(2) << static_cast<int>(GetBValue(color));
+    ss << std::setw(2) << static_cast<int>(color.r);
+    ss << std::setw(2) << static_cast<int>(color.g);
+    ss << std::setw(2) << static_cast<int>(color.b);
     return ss.str();
 }
 
 // Function Description:
-// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// - Parses a color from a string. The string should be in the format "#RRGGBB" or "#RGB"
 // Arguments:
 // - str: a string representation of the COLORREF to parse
 // Return Value:
 // - A COLORREF if the string could successfully be parsed. If the string is not
 //      the correct format, throws E_INVALIDARG
-COLORREF Utils::ColorFromHexString(const std::string str)
+til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() < 7 || str.size() >= 8);
-    THROW_HR_IF(E_INVALIDARG, str[0] != '#');
+    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
-    std::string rStr{ &str[1], 2 };
-    std::string gStr{ &str[3], 2 };
-    std::string bStr{ &str[5], 2 };
+    std::string rStr;
+    std::string gStr;
+    std::string bStr;
 
-    BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    if (str.size() == 4)
+    {
+        rStr = std::string(2, str.at(1));
+        gStr = std::string(2, str.at(2));
+        bStr = std::string(2, str.at(3));
+    }
+    else
+    {
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+    }
 
-    return RGB(r, g, b);
+    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+
+    return til::color{ r, g, b };
 }
 
 // Routine Description:
@@ -113,37 +107,67 @@ COLORREF Utils::ColorFromHexString(const std::string str)
 // - True if non zero and not set to invalid magic value. False otherwise.
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
-    return handle != 0 && handle != INVALID_HANDLE_VALUE;
+    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
 }
 
 // Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color scheme
+// - Fill the first 16 entries of a given color table with the Campbell color
+//   scheme, in the ANSI/VT RGB order.
 // Arguments:
 // - table: a color table with at least 16 entries
 // Return Value:
 // - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
+void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
 
     // clang-format off
-    table[0]   = RGB( 12,   12,   12);
-    table[1]   = RGB( 197,  15,   31);
-    table[2]   = RGB( 19,   161,  14);
-    table[3]   = RGB( 193,  156,  0);
-    table[4]   = RGB( 0,    55,   218);
-    table[5]   = RGB( 136,  23,   152);
-    table[6]   = RGB( 58,   150,  221);
-    table[7]   = RGB( 204,  204,  204);
-    table[8]   = RGB( 118,  118,  118);
-    table[9]   = RGB( 231,  72,   86);
-    table[10]  = RGB( 22,   198,  12);
-    table[11]  = RGB( 249,  241,  165);
-    table[12]  = RGB( 59,   120,  255);
-    table[13]  = RGB( 180,  0,    158);
-    table[14]  = RGB( 97,   214,  214);
-    table[15]  = RGB( 242,  242,  242);
+    table[0]   = RGB(12,   12,   12);
+    table[1]   = RGB(197,  15,   31);
+    table[2]   = RGB(19,   161,  14);
+    table[3]   = RGB(193,  156,  0);
+    table[4]   = RGB(0,    55,   218);
+    table[5]   = RGB(136,  23,   152);
+    table[6]   = RGB(58,   150,  221);
+    table[7]   = RGB(204,  204,  204);
+    table[8]   = RGB(118,  118,  118);
+    table[9]   = RGB(231,  72,   86);
+    table[10]  = RGB(22,   198,  12);
+    table[11]  = RGB(249,  241,  165);
+    table[12]  = RGB(59,   120,  255);
+    table[13]  = RGB(180,  0,    158);
+    table[14]  = RGB(97,   214,  214);
+    table[15]  = RGB(242,  242,  242);
     // clang-format on
+}
+
+// Function Description:
+// - Fill the first 16 entries of a given color table with the Campbell color
+//   scheme, in the Windows BGR order.
+// Arguments:
+// - table: a color table with at least 16 entries
+// Return Value:
+// - <none>, throws if the table has less that 16 entries
+void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
+{
+    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
+    InitializeCampbellColorTable(table);
+    SwapANSIColorOrderForConhost(table);
+}
+
+// Function Description:
+// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
+// Arguments:
+// - table: a color table with at least 16 entries
+// Return Value:
+// - <none>, throws if the table has less that 16 entries
+void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
+{
+    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
+    std::swap(table[1], table[4]);
+    std::swap(table[3], table[6]);
+    std::swap(table[9], table[12]);
+    std::swap(table[11], table[14]);
 }
 
 // Function Description:
@@ -153,111 +177,111 @@ void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
 // - table: a color table with at least 256 entries
 // Return Value:
 // - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
+void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 256);
 
     // clang-format off
-    table[0]   = RGB( 0x00, 0x00, 0x00);
-    table[1]   = RGB( 0x80, 0x00, 0x00);
-    table[2]   = RGB( 0x00, 0x80, 0x00);
-    table[3]   = RGB( 0x80, 0x80, 0x00);
-    table[4]   = RGB( 0x00, 0x00, 0x80);
-    table[5]   = RGB( 0x80, 0x00, 0x80);
-    table[6]   = RGB( 0x00, 0x80, 0x80);
-    table[7]   = RGB( 0xc0, 0xc0, 0xc0);
-    table[8]   = RGB( 0x80, 0x80, 0x80);
-    table[9]   = RGB( 0xff, 0x00, 0x00);
-    table[10]  = RGB( 0x00, 0xff, 0x00);
-    table[11]  = RGB( 0xff, 0xff, 0x00);
-    table[12]  = RGB( 0x00, 0x00, 0xff);
-    table[13]  = RGB( 0xff, 0x00, 0xff);
-    table[14]  = RGB( 0x00, 0xff, 0xff);
-    table[15]  = RGB( 0xff, 0xff, 0xff);
-    table[16]  = RGB( 0x00, 0x00, 0x00);
-    table[17]  = RGB( 0x00, 0x00, 0x5f);
-    table[18]  = RGB( 0x00, 0x00, 0x87);
-    table[19]  = RGB( 0x00, 0x00, 0xaf);
-    table[20]  = RGB( 0x00, 0x00, 0xd7);
-    table[21]  = RGB( 0x00, 0x00, 0xff);
-    table[22]  = RGB( 0x00, 0x5f, 0x00);
-    table[23]  = RGB( 0x00, 0x5f, 0x5f);
-    table[24]  = RGB( 0x00, 0x5f, 0x87);
-    table[25]  = RGB( 0x00, 0x5f, 0xaf);
-    table[26]  = RGB( 0x00, 0x5f, 0xd7);
-    table[27]  = RGB( 0x00, 0x5f, 0xff);
-    table[28]  = RGB( 0x00, 0x87, 0x00);
-    table[29]  = RGB( 0x00, 0x87, 0x5f);
-    table[30]  = RGB( 0x00, 0x87, 0x87);
-    table[31]  = RGB( 0x00, 0x87, 0xaf);
-    table[32]  = RGB( 0x00, 0x87, 0xd7);
-    table[33]  = RGB( 0x00, 0x87, 0xff);
-    table[34]  = RGB( 0x00, 0xaf, 0x00);
-    table[35]  = RGB( 0x00, 0xaf, 0x5f);
-    table[36]  = RGB( 0x00, 0xaf, 0x87);
-    table[37]  = RGB( 0x00, 0xaf, 0xaf);
-    table[38]  = RGB( 0x00, 0xaf, 0xd7);
-    table[39]  = RGB( 0x00, 0xaf, 0xff);
-    table[40]  = RGB( 0x00, 0xd7, 0x00);
-    table[41]  = RGB( 0x00, 0xd7, 0x5f);
-    table[42]  = RGB( 0x00, 0xd7, 0x87);
-    table[43]  = RGB( 0x00, 0xd7, 0xaf);
-    table[44]  = RGB( 0x00, 0xd7, 0xd7);
-    table[45]  = RGB( 0x00, 0xd7, 0xff);
-    table[46]  = RGB( 0x00, 0xff, 0x00);
-    table[47]  = RGB( 0x00, 0xff, 0x5f);
-    table[48]  = RGB( 0x00, 0xff, 0x87);
-    table[49]  = RGB( 0x00, 0xff, 0xaf);
-    table[50]  = RGB( 0x00, 0xff, 0xd7);
-    table[51]  = RGB( 0x00, 0xff, 0xff);
-    table[52]  = RGB( 0x5f, 0x00, 0x00);
-    table[53]  = RGB( 0x5f, 0x00, 0x5f);
-    table[54]  = RGB( 0x5f, 0x00, 0x87);
-    table[55]  = RGB( 0x5f, 0x00, 0xaf);
-    table[56]  = RGB( 0x5f, 0x00, 0xd7);
-    table[57]  = RGB( 0x5f, 0x00, 0xff);
-    table[58]  = RGB( 0x5f, 0x5f, 0x00);
-    table[59]  = RGB( 0x5f, 0x5f, 0x5f);
-    table[60]  = RGB( 0x5f, 0x5f, 0x87);
-    table[61]  = RGB( 0x5f, 0x5f, 0xaf);
-    table[62]  = RGB( 0x5f, 0x5f, 0xd7);
-    table[63]  = RGB( 0x5f, 0x5f, 0xff);
-    table[64]  = RGB( 0x5f, 0x87, 0x00);
-    table[65]  = RGB( 0x5f, 0x87, 0x5f);
-    table[66]  = RGB( 0x5f, 0x87, 0x87);
-    table[67]  = RGB( 0x5f, 0x87, 0xaf);
-    table[68]  = RGB( 0x5f, 0x87, 0xd7);
-    table[69]  = RGB( 0x5f, 0x87, 0xff);
-    table[70]  = RGB( 0x5f, 0xaf, 0x00);
-    table[71]  = RGB( 0x5f, 0xaf, 0x5f);
-    table[72]  = RGB( 0x5f, 0xaf, 0x87);
-    table[73]  = RGB( 0x5f, 0xaf, 0xaf);
-    table[74]  = RGB( 0x5f, 0xaf, 0xd7);
-    table[75]  = RGB( 0x5f, 0xaf, 0xff);
-    table[76]  = RGB( 0x5f, 0xd7, 0x00);
-    table[77]  = RGB( 0x5f, 0xd7, 0x5f);
-    table[78]  = RGB( 0x5f, 0xd7, 0x87);
-    table[79]  = RGB( 0x5f, 0xd7, 0xaf);
-    table[80]  = RGB( 0x5f, 0xd7, 0xd7);
-    table[81]  = RGB( 0x5f, 0xd7, 0xff);
-    table[82]  = RGB( 0x5f, 0xff, 0x00);
-    table[83]  = RGB( 0x5f, 0xff, 0x5f);
-    table[84]  = RGB( 0x5f, 0xff, 0x87);
-    table[85]  = RGB( 0x5f, 0xff, 0xaf);
-    table[86]  = RGB( 0x5f, 0xff, 0xd7);
-    table[87]  = RGB( 0x5f, 0xff, 0xff);
-    table[88]  = RGB( 0x87, 0x00, 0x00);
-    table[89]  = RGB( 0x87, 0x00, 0x5f);
-    table[90]  = RGB( 0x87, 0x00, 0x87);
-    table[91]  = RGB( 0x87, 0x00, 0xaf);
-    table[92]  = RGB( 0x87, 0x00, 0xd7);
-    table[93]  = RGB( 0x87, 0x00, 0xff);
-    table[94]  = RGB( 0x87, 0x5f, 0x00);
-    table[95]  = RGB( 0x87, 0x5f, 0x5f);
-    table[96]  = RGB( 0x87, 0x5f, 0x87);
-    table[97]  = RGB( 0x87, 0x5f, 0xaf);
-    table[98]  = RGB( 0x87, 0x5f, 0xd7);
-    table[99]  = RGB( 0x87, 0x5f, 0xff);
+    table[0]   = RGB(0x00, 0x00, 0x00);
+    table[1]   = RGB(0x80, 0x00, 0x00);
+    table[2]   = RGB(0x00, 0x80, 0x00);
+    table[3]   = RGB(0x80, 0x80, 0x00);
+    table[4]   = RGB(0x00, 0x00, 0x80);
+    table[5]   = RGB(0x80, 0x00, 0x80);
+    table[6]   = RGB(0x00, 0x80, 0x80);
+    table[7]   = RGB(0xc0, 0xc0, 0xc0);
+    table[8]   = RGB(0x80, 0x80, 0x80);
+    table[9]   = RGB(0xff, 0x00, 0x00);
+    table[10]  = RGB(0x00, 0xff, 0x00);
+    table[11]  = RGB(0xff, 0xff, 0x00);
+    table[12]  = RGB(0x00, 0x00, 0xff);
+    table[13]  = RGB(0xff, 0x00, 0xff);
+    table[14]  = RGB(0x00, 0xff, 0xff);
+    table[15]  = RGB(0xff, 0xff, 0xff);
+    table[16]  = RGB(0x00, 0x00, 0x00);
+    table[17]  = RGB(0x00, 0x00, 0x5f);
+    table[18]  = RGB(0x00, 0x00, 0x87);
+    table[19]  = RGB(0x00, 0x00, 0xaf);
+    table[20]  = RGB(0x00, 0x00, 0xd7);
+    table[21]  = RGB(0x00, 0x00, 0xff);
+    table[22]  = RGB(0x00, 0x5f, 0x00);
+    table[23]  = RGB(0x00, 0x5f, 0x5f);
+    table[24]  = RGB(0x00, 0x5f, 0x87);
+    table[25]  = RGB(0x00, 0x5f, 0xaf);
+    table[26]  = RGB(0x00, 0x5f, 0xd7);
+    table[27]  = RGB(0x00, 0x5f, 0xff);
+    table[28]  = RGB(0x00, 0x87, 0x00);
+    table[29]  = RGB(0x00, 0x87, 0x5f);
+    table[30]  = RGB(0x00, 0x87, 0x87);
+    table[31]  = RGB(0x00, 0x87, 0xaf);
+    table[32]  = RGB(0x00, 0x87, 0xd7);
+    table[33]  = RGB(0x00, 0x87, 0xff);
+    table[34]  = RGB(0x00, 0xaf, 0x00);
+    table[35]  = RGB(0x00, 0xaf, 0x5f);
+    table[36]  = RGB(0x00, 0xaf, 0x87);
+    table[37]  = RGB(0x00, 0xaf, 0xaf);
+    table[38]  = RGB(0x00, 0xaf, 0xd7);
+    table[39]  = RGB(0x00, 0xaf, 0xff);
+    table[40]  = RGB(0x00, 0xd7, 0x00);
+    table[41]  = RGB(0x00, 0xd7, 0x5f);
+    table[42]  = RGB(0x00, 0xd7, 0x87);
+    table[43]  = RGB(0x00, 0xd7, 0xaf);
+    table[44]  = RGB(0x00, 0xd7, 0xd7);
+    table[45]  = RGB(0x00, 0xd7, 0xff);
+    table[46]  = RGB(0x00, 0xff, 0x00);
+    table[47]  = RGB(0x00, 0xff, 0x5f);
+    table[48]  = RGB(0x00, 0xff, 0x87);
+    table[49]  = RGB(0x00, 0xff, 0xaf);
+    table[50]  = RGB(0x00, 0xff, 0xd7);
+    table[51]  = RGB(0x00, 0xff, 0xff);
+    table[52]  = RGB(0x5f, 0x00, 0x00);
+    table[53]  = RGB(0x5f, 0x00, 0x5f);
+    table[54]  = RGB(0x5f, 0x00, 0x87);
+    table[55]  = RGB(0x5f, 0x00, 0xaf);
+    table[56]  = RGB(0x5f, 0x00, 0xd7);
+    table[57]  = RGB(0x5f, 0x00, 0xff);
+    table[58]  = RGB(0x5f, 0x5f, 0x00);
+    table[59]  = RGB(0x5f, 0x5f, 0x5f);
+    table[60]  = RGB(0x5f, 0x5f, 0x87);
+    table[61]  = RGB(0x5f, 0x5f, 0xaf);
+    table[62]  = RGB(0x5f, 0x5f, 0xd7);
+    table[63]  = RGB(0x5f, 0x5f, 0xff);
+    table[64]  = RGB(0x5f, 0x87, 0x00);
+    table[65]  = RGB(0x5f, 0x87, 0x5f);
+    table[66]  = RGB(0x5f, 0x87, 0x87);
+    table[67]  = RGB(0x5f, 0x87, 0xaf);
+    table[68]  = RGB(0x5f, 0x87, 0xd7);
+    table[69]  = RGB(0x5f, 0x87, 0xff);
+    table[70]  = RGB(0x5f, 0xaf, 0x00);
+    table[71]  = RGB(0x5f, 0xaf, 0x5f);
+    table[72]  = RGB(0x5f, 0xaf, 0x87);
+    table[73]  = RGB(0x5f, 0xaf, 0xaf);
+    table[74]  = RGB(0x5f, 0xaf, 0xd7);
+    table[75]  = RGB(0x5f, 0xaf, 0xff);
+    table[76]  = RGB(0x5f, 0xd7, 0x00);
+    table[77]  = RGB(0x5f, 0xd7, 0x5f);
+    table[78]  = RGB(0x5f, 0xd7, 0x87);
+    table[79]  = RGB(0x5f, 0xd7, 0xaf);
+    table[80]  = RGB(0x5f, 0xd7, 0xd7);
+    table[81]  = RGB(0x5f, 0xd7, 0xff);
+    table[82]  = RGB(0x5f, 0xff, 0x00);
+    table[83]  = RGB(0x5f, 0xff, 0x5f);
+    table[84]  = RGB(0x5f, 0xff, 0x87);
+    table[85]  = RGB(0x5f, 0xff, 0xaf);
+    table[86]  = RGB(0x5f, 0xff, 0xd7);
+    table[87]  = RGB(0x5f, 0xff, 0xff);
+    table[88]  = RGB(0x87, 0x00, 0x00);
+    table[89]  = RGB(0x87, 0x00, 0x5f);
+    table[90]  = RGB(0x87, 0x00, 0x87);
+    table[91]  = RGB(0x87, 0x00, 0xaf);
+    table[92]  = RGB(0x87, 0x00, 0xd7);
+    table[93]  = RGB(0x87, 0x00, 0xff);
+    table[94]  = RGB(0x87, 0x5f, 0x00);
+    table[95]  = RGB(0x87, 0x5f, 0x5f);
+    table[96]  = RGB(0x87, 0x5f, 0x87);
+    table[97]  = RGB(0x87, 0x5f, 0xaf);
+    table[98]  = RGB(0x87, 0x5f, 0xd7);
+    table[99]  = RGB(0x87, 0x5f, 0xff);
     table[100] = RGB(0x87, 0x87, 0x00);
     table[101] = RGB(0x87, 0x87, 0x5f);
     table[102] = RGB(0x87, 0x87, 0x87);
@@ -336,24 +360,24 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
     table[175] = RGB(0xd7, 0x87, 0xaf);
     table[176] = RGB(0xd7, 0x87, 0xd7);
     table[177] = RGB(0xd7, 0x87, 0xff);
-    table[178] = RGB(0xdf, 0xaf, 0x00);
-    table[179] = RGB(0xdf, 0xaf, 0x5f);
-    table[180] = RGB(0xdf, 0xaf, 0x87);
-    table[181] = RGB(0xdf, 0xaf, 0xaf);
-    table[182] = RGB(0xdf, 0xaf, 0xd7);
-    table[183] = RGB(0xdf, 0xaf, 0xff);
-    table[184] = RGB(0xdf, 0xd7, 0x00);
-    table[185] = RGB(0xdf, 0xd7, 0x5f);
-    table[186] = RGB(0xdf, 0xd7, 0x87);
-    table[187] = RGB(0xdf, 0xd7, 0xaf);
-    table[188] = RGB(0xdf, 0xd7, 0xd7);
-    table[189] = RGB(0xdf, 0xd7, 0xff);
-    table[190] = RGB(0xdf, 0xff, 0x00);
-    table[191] = RGB(0xdf, 0xff, 0x5f);
-    table[192] = RGB(0xdf, 0xff, 0x87);
-    table[193] = RGB(0xdf, 0xff, 0xaf);
-    table[194] = RGB(0xdf, 0xff, 0xd7);
-    table[195] = RGB(0xdf, 0xff, 0xff);
+    table[178] = RGB(0xd7, 0xaf, 0x00);
+    table[179] = RGB(0xd7, 0xaf, 0x5f);
+    table[180] = RGB(0xd7, 0xaf, 0x87);
+    table[181] = RGB(0xd7, 0xaf, 0xaf);
+    table[182] = RGB(0xd7, 0xaf, 0xd7);
+    table[183] = RGB(0xd7, 0xaf, 0xff);
+    table[184] = RGB(0xd7, 0xd7, 0x00);
+    table[185] = RGB(0xd7, 0xd7, 0x5f);
+    table[186] = RGB(0xd7, 0xd7, 0x87);
+    table[187] = RGB(0xd7, 0xd7, 0xaf);
+    table[188] = RGB(0xd7, 0xd7, 0xd7);
+    table[189] = RGB(0xd7, 0xd7, 0xff);
+    table[190] = RGB(0xd7, 0xff, 0x00);
+    table[191] = RGB(0xd7, 0xff, 0x5f);
+    table[192] = RGB(0xd7, 0xff, 0x87);
+    table[193] = RGB(0xd7, 0xff, 0xaf);
+    table[194] = RGB(0xd7, 0xff, 0xd7);
+    table[195] = RGB(0xd7, 0xff, 0xff);
     table[196] = RGB(0xff, 0x00, 0x00);
     table[197] = RGB(0xff, 0x00, 0x5f);
     table[198] = RGB(0xff, 0x00, 0x87);
@@ -418,22 +442,6 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 }
 
 // Function Description:
-// - Fill the alpha byte of the colors in a given color table with the given value.
-// Arguments:
-// - table: a color table
-// - newAlpha: the new value to use as the alpha for all the entries in that table.
-// Return Value:
-// - <none>
-void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
-{
-    const auto shiftedAlpha = newAlpha << 24;
-    for (auto& color : table)
-    {
-        WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-    }
-}
-
-// Function Description:
 // - Generate a Version 5 UUID (specified in RFC4122 4.3)
 //   v5 UUIDs are stable given the same namespace and "name".
 // Arguments:
@@ -443,7 +451,7 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
 // - name: Bytes comprising the name (in a namespace-specific format)
 // Return Value:
 // - a new stable v5 UUID
-GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name)
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name)
 {
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
@@ -460,8 +468,8 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
 
-    buffer[6] = (buffer[6] & 0x0F) | 0x50; // set the uuid version to 5
-    buffer[8] = (buffer[8] & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
+    buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
+    buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
 
     // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
     // "...the underlying bytes making up the object can be copied into an array

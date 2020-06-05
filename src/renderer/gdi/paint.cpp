@@ -286,7 +286,8 @@ using namespace Microsoft::Console::Render;
 //#define MAX_POLY_LINES 80
 [[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                  const COORD coord,
-                                                 const bool trimLeft) noexcept
+                                                 const bool trimLeft,
+                                                 const bool /*lineWrapped*/) noexcept
 {
     try
     {
@@ -506,7 +507,7 @@ using namespace Microsoft::Console::Render;
 // - options - Parameters that affect the way that the cursor is drawn
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-[[nodiscard]] HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
@@ -666,7 +667,7 @@ void GdiEngine::_CreateDebugWindow()
                                        0,
                                        0,
                                        0,
-                                       0,
+                                       nullptr,
                                        nullptr,
                                        nullptr,
                                        nullptr);
@@ -705,7 +706,7 @@ void GdiEngine::_PaintDebugRect(const RECT* const prc) const
 
 // Routine Description:
 // - Will immediately Blt the given rectangle to the screen for aid in debugging when it is tough to see
-//   what is occuring with the in-memory DC.
+//   what is occurring with the in-memory DC.
 // - This will pause the thread for 200ms when called to give you an opportunity to see the paint.
 // - NOTE: You must set _fDebug flag for this to operate using a debugger.
 // - NOTE: This only works in Debug (DBG) builds.

@@ -8,28 +8,41 @@
     <Filter Include="Generated Files">
       <UniqueIdentifier>{926ab91d-31b4-48c3-b9a4-e681349f27f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\en-US">
+      <UniqueIdentifier>{ee3ff32f-d013-49cb-8eb9-1ec084585086}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="EchoConnection.cpp" />
-    <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="AzureConnection.cpp" />
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="TelnetConnection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
-    <ClInclude Include="ConhostConnection.h" />
+    <ClInclude Include="AzureConnection.h" />
+    <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="TelnetConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
-    <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
+    <Midl Include="AzureConnection.idl" />
+    <Midl Include="ConptyConnection.idl" />
+    <Midl Include="TelnetConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TerminalConnection.def" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources/en-US/Resources.resw">
+      <Filter>Resources\en-US</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>

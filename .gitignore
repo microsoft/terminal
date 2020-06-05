@@ -48,6 +48,7 @@ dlldata.c
 project.lock.json
 artifacts/
 
+*_h.h
 *_i.c
 *_p.c
 *_i.h
@@ -144,13 +145,13 @@ publish/
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml
-# TODO: Comment the next line if you want to checkin your web deploy settings
+# TODO: Comment the next line if you want to check in your web deploy settings
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
-# checkin your Azure Web App publish settings, but sensitive information contained
+# check in your Azure Web App publish settings, but sensitive information contained
 # in these scripts will be unencrypted
 PublishScripts/
 
@@ -162,7 +163,7 @@ PublishScripts/
 !**/packages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/packages/repositories.config
-# NuGet v3's project.json files produces more ignoreable files
+# NuGet v3's project.json files produces more ignorable files
 *.nuget.props
 *.nuget.targets
 
@@ -260,6 +261,9 @@ build*.trc
 build*.rec
 build*.wrn
 build*.metadata
+
+# MS Build binary logs
+*.binlog
 
 # .razzlerc.cmd file - used by dev environment
 tools/.razzlerc.*

@@ -22,33 +22,35 @@ using namespace Microsoft::Console::VirtualTerminal;
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
-    for (auto& ev : inEventsToWrite)
+    for (const auto& ev : inEventsToWrite)
     {
         if (ev->EventType() == InputEventType::KeyEvent)
         {
-            auto& k = static_cast<KeyEvent&>(*ev);
-            auto wch = k.GetCharData();
+            const auto& k = static_cast<KeyEvent&>(*ev);
+            const auto wch = k.GetCharData();
             wstr += wch;
         }
     }
     return wstr;
 }
 
+#pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
-    _title{ L"" },
+    _title{},
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _boxSelection{ false },
-    _selectionActive{ false },
-    _selectionAnchor{ 0, 0 },
-    _endSelectionPosition{ 0, 0 }
+    _blockSelection{ false },
+    _selection{ std::nullopt }
 {
-    _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+    auto dispatch = std::make_unique<TerminalDispatch>(*this);
+    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+
+    _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
@@ -85,10 +87,16 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
 {
     const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
+
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
+
+    if (_suppressApplicationTitle)
+    {
+        _title = _startingTitle;
+    }
 }
 
 // Method Description:
@@ -128,12 +136,14 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable[i] = settings.GetColorTableEntry(i);
+        _colorTable.at(i) = settings.GetColorTableEntry(i);
     }
 
     _snapOnInput = settings.SnapOnInput();
-
+    _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
+    _suppressApplicationTitle = settings.SuppressApplicationTitle();
+    _startingTitle = settings.StartingTitle();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -158,24 +168,188 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         return S_FALSE;
     }
 
+    const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
+
     const auto oldTop = _mutableViewport.Top();
 
-    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
-    COORD bufferSize{ viewportSize.X, newBufferHeight };
-    RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+    const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
-    auto proposedTop = oldTop;
-    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    const auto proposedBottom = newView.BottomExclusive();
+    COORD bufferSize{ viewportSize.X, newBufferHeight };
+
+    // Save cursor's relative height versus the viewport
+    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
+
+    // This will be used to determine where the viewport should be in the new buffer.
+    const short oldViewportTop = _mutableViewport.Top();
+    short newViewportTop = oldViewportTop;
+    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+
+    // If the original buffer had _no_ scroll offset, then we should be at the
+    // bottom in the new buffer as well. Track that case now.
+    const bool originalOffsetWasZero = _scrollOffset == 0;
+
+    // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
+    _buffer->GetCursor().StartDeferDrawing();
+    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _buffer->GetCursor().EndDeferDrawing(); });
+
+    // First allocate a new text buffer to take the place of the current one.
+    std::unique_ptr<TextBuffer> newTextBuffer;
+    try
+    {
+        newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
+                                                     _buffer->GetCurrentAttributes(),
+                                                     0, // temporarily set size to 0 so it won't render.
+                                                     _buffer->GetRenderTarget());
+
+        newTextBuffer->GetCursor().StartDeferDrawing();
+
+        // Build a PositionInformation to track the position of both the top of
+        // the mutable viewport and the top of the visible viewport in the new
+        // buffer.
+        // * the new value of mutableViewportTop will be used to figure out
+        //   where we should place the mutable viewport in the new buffer. This
+        //   requires a bit of trickiness to remain consistent with conpty's
+        //   buffer (as seen below).
+        // * the new value of visibleViewportTop will be used to calculate the
+        //   new scrollOffset in the new buffer, so that the visible lines on
+        //   the screen remain roughly the same.
+        TextBuffer::PositionInformation oldRows{ 0 };
+        oldRows.mutableViewportTop = oldViewportTop;
+        oldRows.visibleViewportTop = newVisibleTop;
+
+        const std::optional<short> oldViewStart{ oldViewportTop };
+        RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
+                                            *newTextBuffer.get(),
+                                            _mutableViewport,
+                                            { oldRows }));
+
+        newViewportTop = oldRows.mutableViewportTop;
+        newVisibleTop = oldRows.visibleViewportTop;
+    }
+    CATCH_RETURN();
+
+    // Conpty resizes a little oddly - if the height decreased, and there were
+    // blank lines at the bottom, those lines will get trimmed. If there's not
+    // blank lines, then the top will get "shifted down", moving the top line
+    // into scrollback. See GH#3490 for more details.
+    //
+    // If the final position in the buffer is on the bottom row of the new
+    // viewport, then we're going to need to move the top down. Otherwise, move
+    // the bottom up.
+    //
+    // There are also important things to consider with line wrapping.
+    // * If a line in scrollback wrapped that didn't previously, we'll need to
+    //   make sure to have the new viewport down another line. This will cause
+    //   our top to move down.
+    // * If a line _in the viewport_ wrapped that didn't previously, then the
+    //   conpty buffer will also have that wrapped line, and will move the
+    //   cursor & text down a line in response. This causes our bottom to move
+    //   down.
+    //
+    // We're going to use a combo of both these things to calculate where the
+    // new viewport should be. To keep in sync with conpty, we'll need to make
+    // sure that any lines that entered the scrollback _stay in scrollback_. We
+    // do that by taking the max of
+    // * Where the old top line in the viewport exists in the new buffer (as
+    //   calculated by TextBuffer::Reflow)
+    // * Where the bottom of the text in the new buffer is (and using that to
+    //   calculate another proposed top location).
+
+    const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
+#pragma warning(push)
+#pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
+    COORD newLastChar = newCursorPos;
+    try
+    {
+        newLastChar = newTextBuffer->GetLastNonSpaceCharacter();
+    }
+    CATCH_LOG();
+#pragma warning(pop)
+
+    const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
+
+    const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
+    const short proposedTopFromScrollback = newViewportTop;
+
+    short proposedTop = std::max(proposedTopFromLastLine,
+                                 proposedTopFromScrollback);
+
+    // If we're using the new location of the old top line to place the
+    // viewport, we might need to make an adjustment to it.
+    //
+    // We're using the last cell of the line to calculate where the top line is
+    // in the new buffer. If that line wrapped, then all the lines below it
+    // shifted down in the buffer. If there's space for all those lines in the
+    // conpty buffer, then the originally unwrapped top line will _still_ be in
+    // the buffer. In that case, don't stick to the _end_ of the old top line,
+    // instead stick to the _start_, which is one line up.
+    //
+    // We can know if there's space in the conpty buffer by checking if the
+    // maxRow (the highest row we've written text to) is above the viewport from
+    // this proposed top position.
+    if (proposedTop == proposedTopFromScrollback)
+    {
+        const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+        if (maxRow < proposedViewFromTop.BottomInclusive())
+        {
+            if (dx < 0 && proposedTop > 0)
+            {
+                try
+                {
+                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
+                    if (row.GetCharRow().WasWrapForced())
+                    {
+                        proposedTop--;
+                    }
+                }
+                CATCH_LOG();
+            }
+        }
+    }
+
+    // If the new bottom would be higher than the last row of text, then we
+    // definitely want to use the last row of text to determine where the
+    // viewport should be.
+    const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+    if (maxRow > proposedViewFromTop.BottomInclusive())
+    {
+        proposedTop = proposedTopFromLastLine;
+    }
+
+    // Make sure the proposed viewport is within the bounds of the buffer.
+    // First make sure the top is >=0
+    proposedTop = std::max(static_cast<short>(0), proposedTop);
+
     // If the new bottom would be below the bottom of the buffer, then slide the
     // top up so that we'll still fit within the buffer.
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.Y)
     {
-        proposedTop -= (proposedBottom - bufferSize.Y);
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    _scrollOffset = 0;
+
+    _buffer.swap(newTextBuffer);
+
+    // GH#3494: Maintain scrollbar position during resize
+    // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
+    newVisibleTop = std::min(newVisibleTop, _mutableViewport.Top());
+    // Make sure we don't scroll past the top of the scrollback
+    newVisibleTop = std::max<short>(newVisibleTop, 0);
+
+    // If the old scrolloffset was 0, then we weren't scrolled back at all
+    // before, and shouldn't be now either.
+    _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
+
+    // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
+    try
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+    }
+    CATCH_LOG();
     _NotifyScrollEvent();
 
     return S_OK;
@@ -185,23 +359,18 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
-    _stateMachine->ProcessString(stringView.data(), stringView.size());
+    _stateMachine->ProcessString(stringView);
 }
 
 // Method Description:
-// - Send this particular key event to the terminal. The terminal will translate
-//   the key and the modifiers pressed into the appropriate VT sequence for that
-//   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT br processed any further. If we return false, the event
-//   was NOT translated, and we should instead use the event to try and get the
-//   real character out of the event.
+// - Attempts to snap to the bottom of the buffer, if SnapOnInput is true. Does
+//   nothing if SnapOnInput is set to false, or we're already at the bottom of
+//   the buffer.
 // Arguments:
-// - vkey: The vkey of the key pressed.
-// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - <none>
 // Return Value:
-// - true if we translated the key event, and it should not be processed any further.
-// - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
+// - <none>
+void Terminal::TrySnapOnInput()
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
@@ -209,73 +378,257 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
         _scrollOffset = 0;
         _NotifyScrollEvent();
     }
+}
 
-    // AltGr key combinations don't always contain any meaningful,
-    // pretranslated unicode character during WM_KEYDOWN.
-    // E.g. on a German keyboard AltGr+Q should result in a "@" character,
-    // but actually results in "Q" with Alt and Ctrl modifier states.
-    // By returning false though, we can abort handling this WM_KEYDOWN
-    // event and let the WM_CHAR handler kick in, which will be
-    // provided with an appropriate unicode character.
-    if (states.IsAltGrPressed())
+// Routine Description:
+// - Relays if we are tracking mouse input
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool Terminal::IsTrackingMouseInput() const noexcept
+{
+    return _terminalInput->IsTrackingMouseInput();
+}
+
+// Method Description:
+// - Send this particular (non-character) key event to the terminal.
+// - The terminal will translate the key and the modifiers pressed into the
+//   appropriate VT sequence for that key chord. If we do translate the key,
+//   we'll return true. In that case, the event should NOT be processed any further.
+// - Character events (e.g. WM_CHAR) are generally the best way to properly receive
+//   keyboard input on Windows though, as the OS is suited best at handling the
+//   translation of the current keyboard layout, dead keys, etc.
+//   As a result of this false is returned for all key events that contain characters.
+//   SendCharEvent may then be called with the data obtained from a character event.
+// - As a special case we'll always handle VK_TAB key events.
+//   This must be done due to TermControl::_KeyDownHandler (one of the callers)
+//   always marking tab key events as handled, causing no character event to be raised.
+// Arguments:
+// - vkey: The vkey of the last pressed key.
+// - scanCode: The scan code of the last pressed key.
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// Return Value:
+// - true if we translated the key event, and it should not be processed any further.
+// - false if we did not translate the key, and it should be processed into a character.
+bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
+{
+    TrySnapOnInput();
+    _StoreKeyEvent(vkey, scanCode);
+
+    const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
+
+    // DON'T manually handle Alt+Space - the system will use this to bring up
+    // the system menu for restore, min/maximize, size, move, close.
+    // (This doesn't apply to Ctrl+Alt+Space.)
+    if (isAltOnlyPressed && vkey == VK_SPACE)
     {
         return false;
     }
 
-    // Alt key sequences _require_ the char to be in the keyevent. If alt is
-    // pressed, manually get the character that's being typed, and put it in the
-    // KeyEvent.
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximimize, size, move, close
-    wchar_t ch = UNICODE_NULL;
-    if (states.IsAltPressed() && vkey != VK_SPACE)
+    // By default Windows treats Ctrl+Alt as an alias for AltGr.
+    // When the altGrAliasing setting is set to false, this behaviour should be disabled.
+    //
+    // Whenever possible _CharacterFromKeyEvent() will return a valid character.
+    // For instance both Ctrl+Alt+Q as well as AltGr+Q return @ on a German keyboard.
+    //
+    // We can achieve the altGrAliasing functionality by skipping the call to _CharacterFromKeyEvent,
+    // as TerminalInput::HandleKey will then fall back to using the vkey which
+    // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
+    // See GH#5525/GH#6211 for more details
+    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
+
+    // Delegate it to the character event handler if this key event can be
+    // mapped to one (see method description above). For Alt+key combinations
+    // we'll not receive another character event for some reason though.
+    // -> Don't delegate the event if this is a Alt+key combination.
+    //
+    // As a special case we'll furthermore always handle VK_TAB
+    // key events here instead of in Terminal::SendCharEvent.
+    // See the method description for more information.
+    if (!isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
     {
-        ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
-        // MapVirtualKey will give us the capitalized version of the char.
-        // However, if shift isn't pressed, we want to send the lowercase version.
-        // (See GH#637)
-        if (!states.IsShiftPressed())
-        {
-            ch = towlower(ch);
-        }
+        return false;
     }
 
-    if (states.IsCtrlPressed())
-    {
-        switch (vkey)
-        {
-        case 0x48:
-            // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
-            // correctly, the keyEvents's char needs to be set to Backspace.
-            // 0x48 is the VKEY for 'H', which isn't named
-            ch = UNICODE_BACKSPACE;
-            break;
-        case VK_SPACE:
-            // Manually handle Ctrl+Space here. The terminalInput translator requires
-            // the char to be set to Space for space handling to work correctly.
-            ch = UNICODE_SPACE;
-            break;
-        }
-    }
-
-    // Manually handle Escape here. If we let it fall through, it'll come
-    // back up through the character handler. It's registered as a translation
-    // in TerminalInput, so we'll let TerminalInput control it.
-    if (vkey == VK_ESCAPE)
-    {
-        ch = UNICODE_ESC;
-    }
-
-    const bool manuallyHandled = ch != UNICODE_NULL;
-
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, states.Value() };
-    const bool translated = _terminalInput->HandleKey(&keyEv);
-
-    return translated && manuallyHandled;
+    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    return _terminalInput->HandleKey(&keyEv);
 }
 
 // Method Description:
-// - Aquire a read lock on the terminal.
+// - Send this particular mouse event to the terminal. The terminal will translate
+//   the button and the modifiers pressed into the appropriate VT sequence for that
+//   mouse event. If we do translate the key, we'll return true. In that case, the
+//   event should NOT be processed any further. If we return false, the event
+//   was NOT translated, and we should instead use the event normally
+// Arguments:
+// - viewportPos: the position of the mouse event relative to the viewport origin.
+// - uiButton: the WM mouse button event code
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - wheelDelta: the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
+// Return Value:
+// - true if we translated the key event, and it should not be processed any further.
+// - false if we did not translate the key, and it should be processed into a character.
+bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
+{
+    // viewportPos must be within the dimensions of the viewport
+    const auto viewportDimensions = _mutableViewport.Dimensions();
+    if (viewportPos.X < 0 || viewportPos.X >= viewportDimensions.X || viewportPos.Y < 0 || viewportPos.Y >= viewportDimensions.Y)
+    {
+        return false;
+    }
+
+    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+}
+
+// Method Description:
+// - Send this particular character to the terminal.
+// - This method is the counterpart to SendKeyEvent and behaves almost identical.
+//   The difference is the focus on sending characters to the terminal,
+//   whereas SendKeyEvent handles the sending of keys like the arrow keys.
+// Arguments:
+// - ch: The UTF-16 code unit to be sent.
+// - scanCode: The scan code of the last pressed key. Can be left 0.
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// Return Value:
+// - true if we translated the character event, and it should not be processed any further.
+// - false otherwise.
+bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
+{
+    // DON'T manually handle Alt+Space - the system will use this to bring up
+    // the system menu for restore, min/maximize, size, move, close.
+    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
+    {
+        return false;
+    }
+
+    auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
+    if (vkey == 0 && scanCode != 0)
+    {
+        vkey = _VirtualKeyFromScanCode(scanCode);
+    }
+    if (vkey == 0)
+    {
+        vkey = _VirtualKeyFromCharacter(ch);
+    }
+
+    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    return _terminalInput->HandleKey(&keyEv);
+}
+
+// Method Description:
+// - Returns the keyboard's scan code for the given virtual key code.
+// Arguments:
+// - vkey: The virtual key code.
+// Return Value:
+// - The keyboard's scan code.
+WORD Terminal::_ScanCodeFromVirtualKey(const WORD vkey) noexcept
+{
+    return LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
+}
+
+// Method Description:
+// - Returns the virtual key code for the given keyboard's scan code.
+// Arguments:
+// - scanCode: The keyboard's scan code.
+// Return Value:
+// - The virtual key code. 0 if no mapping can be found.
+WORD Terminal::_VirtualKeyFromScanCode(const WORD scanCode) noexcept
+{
+    return LOWORD(MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK));
+}
+
+// Method Description:
+// - Returns any virtual key code that produces the given character.
+// Arguments:
+// - scanCode: The keyboard's scan code.
+// Return Value:
+// - The virtual key code. 0 if no mapping can be found.
+WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
+{
+    const auto vkey = LOWORD(VkKeyScanW(ch));
+    return vkey == -1 ? 0 : vkey;
+}
+
+// Method Description:
+// - Translates the specified virtual key code and keyboard state to the corresponding character.
+// Arguments:
+// - vkey: The virtual key code that initiated this keyboard event.
+// - scanCode: The scan code that initiated this keyboard event.
+// - states: The current keyboard state.
+// Return Value:
+// - The character that would result from this virtual key code and keyboard state.
+wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
+try
+{
+    const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
+
+    // We might want to use GetKeyboardState() instead of building our own keyState.
+    // The question is whether that's necessary though. For now it seems to work fine as it is.
+    std::array<BYTE, 256> keyState = {};
+    keyState.at(VK_SHIFT) = states.IsShiftPressed() ? 0x80 : 0;
+    keyState.at(VK_CONTROL) = states.IsCtrlPressed() ? 0x80 : 0;
+    keyState.at(VK_MENU) = states.IsAltPressed() ? 0x80 : 0;
+
+    // For the following use of ToUnicodeEx() please look here:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-tounicodeex
+
+    // Technically ToUnicodeEx() can produce arbitrarily long sequences of diacritics etc.
+    // Since we only handle the case of a single UTF-16 code point, we can set the buffer size to 2 though.
+    std::array<wchar_t, 2> buffer;
+
+    // wFlags:
+    // * If bit 0 is set, a menu is active.
+    //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
+    // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
+    const auto result = ToUnicodeEx(vkey, sc, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
+
+    // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
+    return result == 1 || result == -1 ? buffer.at(0) : 0;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return UNICODE_INVALID;
+}
+
+// Method Description:
+// - It's possible for a single scan code on a keyboard to
+//   produce different key codes depending on the keyboard state.
+//   MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK) will always chose one of the
+//   possibilities no matter what though and thus can't be used in SendCharEvent.
+// - This method stores the key code from a key event (SendKeyEvent).
+//   If the key event contains character data, handling of the event will be
+//   denied, in order to delegate the work to the character event handler.
+// - The character event handler (SendCharEvent) will now pick up
+//   the stored key code to restore the full key event data.
+// Arguments:
+// - vkey: The virtual key code.
+// - scanCode: The scan code.
+void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode)
+{
+    _lastKeyEventCodes.emplace(KeyEventCodes{ vkey, scanCode });
+}
+
+// Method Description:
+// - This method acts as a counterpart to _StoreKeyEvent and extracts a stored
+//   key code. As a safety measure it'll ensure that the given scan code
+//   matches the stored scan code from the previous key event.
+// - See _StoreKeyEvent for more information.
+// Arguments:
+// - scanCode: The scan code.
+// Return Value:
+// - The key code matching the given scan code. Otherwise 0.
+WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
+{
+    const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});
+    _lastKeyEventCodes.reset();
+    return codes.ScanCode == scanCode ? codes.VirtualKey : 0;
+}
+
+// Method Description:
+// - Acquire a read lock on the terminal.
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -285,7 +638,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 }
 
 // Method Description:
-// - Aquire a write lock on the terminal.
+// - Acquire a write lock on the terminal.
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
@@ -304,16 +657,26 @@ short Terminal::GetBufferHeight() const noexcept
     return _mutableViewport.BottomExclusive();
 }
 
-// _ViewStartIndex is also the length of the scrollback
-int Terminal::_ViewStartIndex() const noexcept
+// ViewStartIndex is also the length of the scrollback
+int Terminal::ViewStartIndex() const noexcept
 {
     return _mutableViewport.Top();
+}
+
+int Terminal::ViewEndIndex() const noexcept
+{
+    return _mutableViewport.BottomInclusive();
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
 int Terminal::_VisibleStartIndex() const noexcept
 {
-    return std::max(0, _ViewStartIndex() - _scrollOffset);
+    return std::max(0, ViewStartIndex() - _scrollOffset);
+}
+
+int Terminal::_VisibleEndIndex() const noexcept
+{
+    return std::max(0, ViewEndIndex() - _scrollOffset);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
@@ -334,110 +697,145 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
-    const Viewport bufferSize = _buffer->GetSize();
+
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
 
     for (size_t i = 0; i < stringView.size(); i++)
     {
-        wchar_t wch = stringView[i];
+        const auto wch = stringView.at(i);
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
-        bool notifyScroll = false;
 
-        if (wch == UNICODE_LINEFEED)
+        // TODO: MSFT 21006766
+        // This is not great but I need it demoable. Fix by making a buffer stream writer.
+        //
+        // If wch is a surrogate character we need to read 2 code units
+        // from the stringView to form a single code point.
+        const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
+        const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
+        const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
+        const auto end = _buffer->Write(it);
+        const auto cellDistance = end.GetCellDistance(it);
+        const auto inputDistance = end.GetInputDistance(it);
+
+        if (inputDistance > 0)
         {
-            proposedCursorPosition.Y++;
-        }
-        else if (wch == UNICODE_CARRIAGERETURN)
-        {
-            proposedCursorPosition.X = 0;
-        }
-        else if (wch == UNICODE_BACKSPACE)
-        {
-            if (cursorPosBefore.X == 0)
-            {
-                proposedCursorPosition.X = bufferSize.Width() - 1;
-                proposedCursorPosition.Y--;
-            }
-            else
-            {
-                proposedCursorPosition.X--;
-            }
+            // If "wch" was a surrogate character, we just consumed 2 code units above.
+            // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
+            proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            i += inputDistance - 1;
         }
         else
         {
-            // TODO: MSFT 21006766
-            // This is not great but I need it demoable. Fix by making a buffer stream writer.
-            if (wch >= 0xD800 && wch <= 0xDFFF)
-            {
-                OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                i += cellDistance - 1;
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-            }
-            else
-            {
-                OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-            }
+            // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
+            // the call to _buffer->Write() will refuse to write anything on the current line.
+            // GetInputDistance() thus returns 0, which would in turn cause i to be
+            // decremented by 1 below and force the outer loop to loop forever.
+            // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
+            // With well behaving shells during normal operation this safeguard should normally not be encountered.
+            proposedCursorPosition.X = 0;
+            proposedCursorPosition.Y++;
+
+            // Try the character again.
+            i--;
+
+            // If we write the last cell of the row here, TextBuffer::Write will
+            // mark this line as wrapped for us. If the next character we
+            // process is a newline, the Terminal::CursorLineFeed will unmark
+            // this line as wrapped.
+
+            // TODO: GH#780 - This should really be a _deferred_ newline. If
+            // the next character to come in is a newline or a cursor
+            // movement or anything, then we should _not_ wrap this line
+            // here.
         }
 
-        // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
-        if (newRows > 0)
+        _AdjustCursorPosition(proposedCursorPosition);
+    }
+
+    cursor.EndDeferDrawing();
+}
+
+void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
+{
+#pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
+    auto proposedCursorPosition = proposedPosition;
+    auto& cursor = _buffer->GetCursor();
+    const Viewport bufferSize = _buffer->GetSize();
+    bool notifyScroll = false;
+
+    // If we're about to scroll past the bottom of the buffer, instead cycle the
+    // buffer.
+    // GH#5540 - Make sure this is a positive number. We can't create a
+    // negative number of new rows.
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
+    if (newRows > 0)
+    {
+        for (auto dy = 0; dy < newRows; dy++)
         {
-            for (auto dy = 0; dy < newRows; dy++)
-            {
-                _buffer->IncrementCircularBuffer();
-                proposedCursorPosition.Y--;
-            }
+            _buffer->IncrementCircularBuffer();
+            proposedCursorPosition.Y--;
+        }
+        notifyScroll = true;
+    }
+
+    // Update Cursor Position
+    cursor.SetPosition(proposedCursorPosition);
+
+    const COORD cursorPosAfter = cursor.GetPosition();
+
+    // Move the viewport down if the cursor moved below the viewport.
+    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    {
+        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        if (newViewTop != _mutableViewport.Top())
+        {
+            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
+                                                        _mutableViewport.Dimensions());
             notifyScroll = true;
         }
-
-        // This section is essentially equivalent to `AdjustCursorPosition`
-        // Update Cursor Position
-        cursor.SetPosition(proposedCursorPosition);
-
-        const COORD cursorPosAfter = cursor.GetPosition();
-
-        // Move the viewport down if the cursor moved below the viewport.
-        if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
-        {
-            const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
-            if (newViewTop != _mutableViewport.Top())
-            {
-                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
-                notifyScroll = true;
-            }
-        }
-
-        if (notifyScroll)
-        {
-            _buffer->GetRenderTarget().TriggerRedrawAll();
-            _NotifyScrollEvent();
-        }
     }
+
+    if (notifyScroll)
+    {
+        // We have to report the delta here because we might have circled the text buffer.
+        // That didn't change the viewport and therefore the TriggerScroll(void)
+        // method can't detect the delta on its own.
+        COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
+        _buffer->GetRenderTarget().TriggerScroll(&delta);
+        _NotifyScrollEvent();
+    }
+
+    _NotifyTerminalCursorPositionChanged();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
 {
+    // we're going to modify state here that the renderer could be reading.
+    auto lock = LockForWriting();
+
     const auto clampedNewTop = std::max(0, viewTop);
-    const auto realTop = _ViewStartIndex();
+    const auto realTop = ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 
     _scrollOffset = std::max(0, newDelta);
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+
+    // We can use the void variant of TriggerScroll here because
+    // we adjusted the viewport so it can detect the difference
+    // from the previous frame drawn.
+    _buffer->GetRenderTarget().TriggerScroll();
 }
 
-int Terminal::GetScrollOffset()
+int Terminal::GetScrollOffset() noexcept
 {
     return _VisibleStartIndex();
 }
 
-void Terminal::_NotifyScrollEvent()
+void Terminal::_NotifyScrollEvent() noexcept
+try
 {
     if (_pfnScrollPositionChanged)
     {
@@ -448,34 +846,53 @@ void Terminal::_NotifyScrollEvent()
         _pfnScrollPositionChanged(top, height, bottom);
     }
 }
+CATCH_LOG()
+
+void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
+{
+    if (_pfnCursorPositionChanged)
+    {
+        try
+        {
+            _pfnCursorPositionChanged();
+        }
+        CATCH_LOG();
+    }
+}
 
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
 {
-    _pfnWriteInput = pfn;
+    _pfnWriteInput.swap(pfn);
 }
 
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
-    _pfnTitleChanged = pfn;
+    _pfnTitleChanged.swap(pfn);
 }
 
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
-    _pfnScrollPositionChanged = pfn;
+    _pfnScrollPositionChanged.swap(pfn);
+}
+
+void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnCursorPositionChanged.swap(pfn);
 }
 
 // Method Description:
 // - Allows setting a callback for when the background color is changed
 // Arguments:
 // - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
 {
-    _pfnBackgroundColorChanged = pfn;
+    _pfnBackgroundColorChanged.swap(pfn);
 }
 
 void Terminal::_InitializeColorTable()
+try
 {
-    gsl::span<COLORREF> tableView = { &_colorTable[0], gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    const gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     // First set up the basic 256 colors
     Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
@@ -483,15 +900,20 @@ void Terminal::_InitializeColorTable()
     // Then make sure all the values have an alpha of 255
     Utils::SetColorTableAlpha(tableView, 0xff);
 }
+CATCH_LOG()
 
 // Method Description:
-// - Sets the visibility of the text cursor.
+// - Sets the cursor to be currently on. On/Off is tracked independently of
+//   cursor visibility (hidden/visible). On/off is controlled by the cursor
+//   blinker. Visibility is usually controlled by the client application. If the
+//   cursor is hidden, then the cursor will remain hidden. If the cursor is
+//   Visible, then it will immediately become visible.
 // Arguments:
 // - isVisible: whether the cursor should be visible
-void Terminal::SetCursorVisible(const bool isVisible) noexcept
+void Terminal::SetCursorOn(const bool isOn)
 {
-    auto& cursor = _buffer->GetCursor();
-    cursor.SetIsVisible(isVisible);
+    auto lock = LockForWriting();
+    _buffer->GetCursor().SetIsOn(isOn);
 }
 
 bool Terminal::IsCursorBlinkingAllowed() const noexcept

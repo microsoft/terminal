@@ -273,13 +273,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     try
     {
-        RETURN_NTSTATUS(_DoGetConsoleInput(context,
-                                           outEvents,
-                                           eventsToRead,
-                                           readHandleState,
-                                           false,
-                                           true,
-                                           waiter));
+        NTSTATUS Status = _DoGetConsoleInput(context,
+                                             outEvents,
+                                             eventsToRead,
+                                             readHandleState,
+                                             false,
+                                             true,
+                                             waiter);
+        if (CONSOLE_STATUS_WAIT == Status)
+        {
+            return HRESULT_FROM_NT(Status);
+        }
+        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }
@@ -308,13 +313,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     try
     {
-        RETURN_NTSTATUS(_DoGetConsoleInput(context,
-                                           outEvents,
-                                           eventsToRead,
-                                           readHandleState,
-                                           true,
-                                           true,
-                                           waiter));
+        NTSTATUS Status = _DoGetConsoleInput(context,
+                                             outEvents,
+                                             eventsToRead,
+                                             readHandleState,
+                                             true,
+                                             true,
+                                             waiter);
+        if (CONSOLE_STATUS_WAIT == Status)
+        {
+            return HRESULT_FROM_NT(Status);
+        }
+        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }
@@ -343,13 +353,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     try
     {
-        RETURN_NTSTATUS(_DoGetConsoleInput(context,
-                                           outEvents,
-                                           eventsToRead,
-                                           readHandleState,
-                                           false,
-                                           false,
-                                           waiter));
+        NTSTATUS Status = _DoGetConsoleInput(context,
+                                             outEvents,
+                                             eventsToRead,
+                                             readHandleState,
+                                             false,
+                                             false,
+                                             waiter);
+        if (CONSOLE_STATUS_WAIT == Status)
+        {
+            return HRESULT_FROM_NT(Status);
+        }
+        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }
@@ -378,13 +393,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     try
     {
-        RETURN_NTSTATUS(_DoGetConsoleInput(context,
-                                           outEvents,
-                                           eventsToRead,
-                                           readHandleState,
-                                           true,
-                                           false,
-                                           waiter));
+        NTSTATUS Status = _DoGetConsoleInput(context,
+                                             outEvents,
+                                             eventsToRead,
+                                             readHandleState,
+                                             true,
+                                             false,
+                                             waiter);
+        if (CONSOLE_STATUS_WAIT == Status)
+        {
+            return HRESULT_FROM_NT(Status);
+        }
+        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }
@@ -1203,7 +1223,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                          WindowSize,
                                                          siExisting.GetAttributes(),
                                                          siExisting.GetAttributes(),
-                                                         CURSOR_SMALL_SIZE,
+                                                         Cursor::CURSOR_SMALL_SIZE,
                                                          &ScreenInfo);
 
     if (!NT_SUCCESS(Status))

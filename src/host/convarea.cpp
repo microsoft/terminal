@@ -104,6 +104,9 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->SaveCursorVisibility();
+
     gci.pInputBuffer->fInComposition = true;
     return S_OK;
 }
@@ -113,6 +116,9 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->RestoreCursorVisibility();
 
     gci.pInputBuffer->fInComposition = false;
     return S_OK;

@@ -31,7 +31,7 @@ class SCREEN_INFORMATION;
 class ConsoleImeInfo final
 {
 public:
-    // IME compositon string information
+    // IME composition string information
     // There is one "composition string" per line that must be rendered on the screen
     std::vector<ConversionAreaInfo> ConvAreaCompStr;
 
@@ -54,6 +54,9 @@ public:
     void WriteResultMessage(const std::wstring_view text);
 
     void RedrawCompMessage();
+
+    void SaveCursorVisibility();
+    void RestoreCursorVisibility();
 
 private:
     [[nodiscard]] HRESULT _AddConversionArea();
@@ -80,8 +83,6 @@ private:
                                                                  const Microsoft::Console::Types::Viewport view,
                                                                  SCREEN_INFORMATION& screenInfo);
 
-    void _SaveCursorVisibility();
-    void _RestoreCursorVisibility();
     bool _isSavedCursorVisible;
 
     std::wstring _text;

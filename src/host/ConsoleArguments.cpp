@@ -18,6 +18,7 @@ const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
@@ -100,7 +101,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _commandline(commandline),
     _vtInHandle(hStdIn),
     _vtOutHandle(hStdOut),
-    _recievedEarlySizeChange{ false },
+    _receivedEarlySizeChange{ false },
     _originalWidth{ -1 },
     _originalHeight{ -1 }
 {
@@ -138,7 +139,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _width = other._width;
         _height = other._height;
         _inheritCursor = other._inheritCursor;
-        _recievedEarlySizeChange = other._recievedEarlySizeChange;
+        _receivedEarlySizeChange = other._receivedEarlySizeChange;
     }
 
     return *this;
@@ -479,6 +480,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == RESIZE_QUIRK)
+        {
+            _resizeQuirk = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -611,6 +618,10 @@ bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
 }
+bool ConsoleArguments::IsResizeQuirkEnabled() const
+{
+    return _resizeQuirk;
+}
 
 // Method Description:
 // - Tell us to use a different size than the one parsed as the size of the
@@ -630,11 +641,25 @@ void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
     // Stash away the original values we parsed when this is called.
     // This is to help debugging - if the signal thread DOES change these values,
     //      we can still recover what was given to us on the commandline.
-    if (!_recievedEarlySizeChange)
+    if (!_receivedEarlySizeChange)
     {
         _originalWidth = _width;
         _originalHeight = _height;
         // Mark that we've changed size from what our commandline values were
-        _recievedEarlySizeChange = true;
+        _receivedEarlySizeChange = true;
     }
 }
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick us into thinking
+//   we're headless (in conpty mode), even without parsing any arguments.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleArguments::EnableConptyModeForTests()
+{
+    _headless = true;
+}
+#endif

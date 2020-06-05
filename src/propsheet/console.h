@@ -26,7 +26,7 @@ Revision History:
 #include "OptionsPage.h"
 #include "LayoutPage.h"
 #include "ColorsPage.h"
-#include "TerminalPage.h"
+#include "TerminalPropsheetPage.h"
 #include "ColorControl.h"
 
 //
@@ -225,3 +225,5 @@ const unsigned int TERMINAL_PAGE_INDEX = 4;
 // number of property sheet pages
 static const int V1_NUMBER_OF_PAGES = 4;
 static const int NUMBER_OF_PAGES = 5;
+
+BOOL GetConsoleBoolValue(__in PCWSTR pszValueName, __in BOOL fDefault);

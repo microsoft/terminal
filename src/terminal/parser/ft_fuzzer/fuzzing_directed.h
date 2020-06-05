@@ -266,7 +266,7 @@ namespace fuzz
         static BYTE GetRandom(__in BYTE tMin, __in BYTE tMax)
         {
             std::mt19937 engine(m_rd()); // Mersenne twister MT19937
-            // BYTE is unsiged, so we want to also use an unsigned type to avoid sign
+            // BYTE is unsigned, so we want to also use an unsigned type to avoid sign
             // extension of tMin and tMax.
             std::uniform_int_distribution<unsigned short> distribution(tMin, tMax);
             auto generator = std::bind(distribution, engine);
@@ -354,7 +354,7 @@ namespace fuzz
         template<typename _Type1, typename _Type2, typename... _Args>
         friend class CFuzzArraySize;
 
-        // Creates a CFuzzArray instance that wraps a buffer specfied by
+        // Creates a CFuzzArray instance that wraps a buffer specified by
         // rg, together with its size (note that this is the number of elements
         // not necessarily the byte count).  cElems is a reference so it must
         // point to a valid variable.  In this constructor, it is valid for
@@ -898,7 +898,7 @@ namespace fuzz
 
         _Type operator->() const throw()
         {
-            return (m_fFuzzed) ? m_t : m_tInit;
+            return (this->m_fFuzzed) ? this->m_t : m_tInit;
         }
 
         // This operator makes it possible to invoke the fuzzing map
@@ -960,7 +960,7 @@ namespace fuzz
         __inline virtual _Type** operator&() throw()
         {
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
-            return (m_fFuzzed) ? &m_t : &m_tInit;
+            return (this->m_fFuzzed) ? &(this->m_t) : &m_tInit;
         }
 
     private:
@@ -978,11 +978,11 @@ namespace fuzz
         void OnFuzzedValueFromMap()
         {
             m_pszFuzzed = nullptr;
-            m_ftEffectiveTraits = m_traits;
-            m_pfnOnFuzzedValueFromMap = [&](_Type* psz, std::function<void(_Type*)> dealloc) {
+            m_ftEffectiveTraits = this->m_traits;
+            this->m_pfnOnFuzzedValueFromMap = [&](_Type* psz, std::function<void(_Type*)> dealloc) {
                 FreeFuzzedString();
                 _Type* pszFuzzed = psz;
-                if (psz && psz != m_tInit)
+                if (psz && psz != this->m_tInit)
                 {
                     size_t cb = (sizeof(_Type) == sizeof(char)) ?
                                     (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
@@ -1014,8 +1014,8 @@ namespace fuzz
                 // allocation and deallocation responsibilities.
                 if (m_ftEffectiveTraits & TRAIT_TRANSFER_ALLOCATION)
                 {
-                    _Alloc::Free(m_tInit);
-                    m_tInit = nullptr;
+                    _Alloc::Free(this->m_tInit);
+                    this->m_tInit = nullptr;
                 }
                 else
                 {
@@ -1070,11 +1070,11 @@ namespace fuzz
     protected:
         __inline virtual _Type GetValueFromMap()
         {
-            if (!m_fFuzzed)
+            if (!this->m_fFuzzed)
             {
-                m_t = 0;
-                m_fFuzzed = TRUE;
-                for (auto& r : m_map)
+                this->m_t = 0;
+                this->m_fFuzzed = TRUE;
+                for (auto& r : this->m_map)
                 {
                     // Generate a new random value during each map entry
                     // and use it to evaluate if each individual fuzz map
@@ -1087,12 +1087,12 @@ namespace fuzz
                     int iLow = iHigh - (r.range.iHigh - r.range.iLow);
                     if (iLow <= wRandom && wRandom < iHigh)
                     {
-                        m_t |= CallFuzzMapFunction(r.fte.pfnFuzz, m_tInit, m_tArgs);
+                        this->m_t |= CallFuzzMapFunction(r.fte.pfnFuzz, this->m_tInit, m_tArgs);
                     }
                 }
             }
 
-            return m_t;
+            return this->m_t;
         }
     };
 }

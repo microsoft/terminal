@@ -10,7 +10,7 @@
   <Target Name="_ConsoleMapWinmdsToManifestFiles" DependsOnTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <!-- For each non-system .winmd file in References, generate a .manifest in IntDir for it. -->
-      <_ConsoleWinmdManifest Include="@(ReferencePath->'$(IntDir)\%(FileName).manifest')" Condition="'%(ReferencePath.IsSystemReference)' != 'true' and '%(ReferencePath.WinMDFile)' == 'true' and '%(ReferencePath.ReferenceSourceTarget)' == 'ResolveAssemblyReference'">
+      <_ConsoleWinmdManifest Include="@(ReferencePath->'$(IntDir)\%(FileName).manifest')" Condition="'%(ReferencePath.IsSystemReference)' != 'true' and '%(ReferencePath.WinMDFile)' == 'true' and '%(ReferencePath.ReferenceSourceTarget)' == 'ResolveAssemblyReference' and '%(ReferencePath.Implementation)' != ''">
         <WinMDPath>%(ReferencePath.FullPath)</WinMDPath>
         <Implementation>%(ReferencePath.Implementation)</Implementation>
       </_ConsoleWinmdManifest>

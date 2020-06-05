@@ -82,6 +82,12 @@ private:
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
+    // This flag is used in _HandleTerminalInputCallback
+    // If the InputBuffer leads to a _HandleTerminalInputCallback call,
+    //    we should suppress the wakeup functions.
+    // Otherwise, we should be calling them.
+    bool _vtInputShouldSuppress{ false };
+
     void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                      const size_t readCount,
                      _Out_ size_t& eventsRead,

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap">
+
+  <!-- This file is used as the Appxmanifest for tests that _need_ to run in a
+  packaged environment. It will be copied to the test's OutDir as part of the
+  PostBuild step. It's highly similar to the "SUA" manifest that
+  TAEF ships with, with the following modifications:
+
+  1. All of our winrt types are included in this manifest, including types from
+     MUX.dll. This is done in a custom build step that automatically adds each
+     of our types to this manifest.
+
+  2. We also _NEED_ the two vclibs listed under the `PackageDependency` block.
+
+  -->
+
+  <Identity Name="TerminalApp.LocalTests.Package"
+          ProcessorArchitecture="neutral"
+          Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+          Version="1.0.0.0"
+          ResourceId="en-us" />
+
+  <Properties>
+    <DisplayName>TerminalApp.LocalTests.Package Host Process</DisplayName>
+    <PublisherDisplayName>Microsoft Corp.</PublisherDisplayName>
+    <Logo>taef.png</Logo>
+    <Description>TAEF Packaged UWP Application Host Process</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.18362.0" />
+    <PackageDependency Name="Microsoft.VCLibs.140.00.Debug" MinVersion="14.0.27023.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
+    <PackageDependency Name="Microsoft.VCLibs.140.00.Debug.UWPDesktop" MinVersion="14.0.27027.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="TE.ProcessHost" Executable="TE.ProcessHost.UAP.exe" EntryPoint="ProcessHostApplication">
+      <uap:VisualElements DisplayName="TAEF UWA Host Process" Square150x150Logo="taef.png" Square44x44Logo="taef.png" Description="TAEF UWA Host Process" BackgroundColor="#222222">
+        <uap:SplashScreen Image="taef.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+
+
+
+</Package>

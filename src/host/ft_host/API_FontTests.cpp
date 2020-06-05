@@ -206,9 +206,9 @@ void FontTests::TestFontScenario()
 
 void FontTests::TestLongFontNameScenario()
 {
-    wistd::unique_ptr<wchar_t[]> expandedLongFontPath;
-    VERIFY_SUCCEEDED(ExpandPathToMutable(pwszLongFontPath, expandedLongFontPath));
-    if (!CheckIfFileExists(expandedLongFontPath.get()))
+    std::wstring expandedLongFontPath = wil::ExpandEnvironmentStringsW<std::wstring>(pwszLongFontPath);
+
+    if (!CheckIfFileExists(expandedLongFontPath.c_str()))
     {
         Log::Comment(L"Lucida Sans Typewriter doesn't exist; skipping long font test.");
         Log::Result(WEX::Logging::TestResults::Result::Skipped);

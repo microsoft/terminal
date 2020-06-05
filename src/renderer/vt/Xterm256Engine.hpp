@@ -26,20 +26,28 @@ namespace Microsoft::Console::Render
         Xterm256Engine(_In_ wil::unique_hfile hPipe,
                        const Microsoft::Console::IDefaultColorProvider& colorProvider,
                        const Microsoft::Console::Types::Viewport initialViewport,
-                       _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                       const WORD cColorTable);
+                       const std::basic_string_view<COLORREF> colorTable);
 
         virtual ~Xterm256Engine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                    const COLORREF colorBackground,
                                                    const WORD legacyColorAttribute,
-                                                   const bool isBold,
+                                                   const ExtendedAttributes extendedAttrs,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
+        [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
+
     private:
+        [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
+
+        // We're only using Italics, Blinking, Invisible and Crossed Out for now
+        // See GH#2916 for adding a more complete implementation.
+        ExtendedAttributes _lastExtendedAttrsState;
+
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
 #endif
     };
 }

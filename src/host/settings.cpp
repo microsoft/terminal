@@ -9,8 +9,8 @@
 
 #pragma hdrstop
 
-#define DEFAULT_NUMBER_OF_COMMANDS 25
-#define DEFAULT_NUMBER_OF_BUFFERS 4
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
@@ -29,7 +29,7 @@ Settings::Settings() :
     _uFontFamily(0),
     _uFontWeight(0),
     // FaceName initialized below
-    _uCursorSize(CURSOR_SMALL_SIZE),
+    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
     _bFullScreen(false),
     _bQuickEdit(true),
     _bInsertMode(true),
@@ -45,6 +45,7 @@ Settings::Settings() :
     _fCtrlKeyShortcutsDisabled(false),
     _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
     _fFilterOnPaste(false),
+    _LaunchFaceName{},
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
     _fAllowAltF4Close(true),
@@ -52,6 +53,7 @@ Settings::Settings() :
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
+    _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
@@ -76,15 +78,12 @@ Settings::Settings() :
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
-    ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
-
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
-    ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
 
 // Routine Description:
@@ -123,8 +122,8 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
@@ -221,7 +220,10 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _bHistoryNoDup = pStateInfo->HistoryNoDup;
     _uHistoryBufferSize = pStateInfo->HistoryBufferSize;
     _uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
-    memmove(_ColorTable, pStateInfo->ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
+    {
+        SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+    }
     _uCodePage = pStateInfo->CodePage;
     _bWrapText = !!pStateInfo->fWrapText;
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
@@ -263,7 +265,10 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.HistoryNoDup = _bHistoryNoDup;
     csi.HistoryBufferSize = _uHistoryBufferSize;
     csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
-    memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(csi.ColorTable); i++)
+    {
+        csi.ColorTable[i] = GetColorTableEntry(i);
+    }
     csi.CodePage = _uCodePage;
     csi.fWrapText = !!_bWrapText;
     csi.fFilterOnPaste = _fFilterOnPaste;
@@ -326,6 +331,24 @@ void Settings::Validate()
     WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
+    // If the extended color options are set to invalid values (all the same color), reset them.
+    if (_CursorColor != Cursor::s_InvertCursorColor && _CursorColor == _DefaultBackground)
+    {
+        _CursorColor = Cursor::s_InvertCursorColor;
+    }
+
+    if (_DefaultForeground != INVALID_COLOR && _DefaultForeground == _DefaultBackground)
+    {
+        // INVALID_COLOR is used as an "unset" sentinel in future attribute functions.
+        _DefaultForeground = _DefaultBackground = INVALID_COLOR;
+        // If the damaged settings _further_ propagated to the default fill attribute, fix it.
+        if (_wFillAttribute == 0)
+        {
+            // These attributes were taken from the Settings ctor and equal "gray on black"
+            _wFillAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        }
+    }
+
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
     FAIL_FAST_IF(!(_dwScreenBufferSize.X > 0));
@@ -377,6 +400,15 @@ void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed
     }
 }
 
+bool Settings::IsScreenReversed() const
+{
+    return _fScreenReversed;
+}
+void Settings::SetScreenReversed(const bool fScreenReversed)
+{
+    _fScreenReversed = fScreenReversed;
+}
+
 bool Settings::GetFilterOnPaste() const
 {
     return _fFilterOnPaste;
@@ -386,13 +418,13 @@ void Settings::SetFilterOnPaste(const bool fFilterOnPaste)
     _fFilterOnPaste = fFilterOnPaste;
 }
 
-const WCHAR* const Settings::GetLaunchFaceName() const
+const std::wstring_view Settings::GetLaunchFaceName() const
 {
     return _LaunchFaceName;
 }
-void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength)
+void Settings::SetLaunchFaceName(const std::wstring_view launchFaceName)
 {
-    StringCchCopyW(_LaunchFaceName, cchLength, LaunchFaceName);
+    _LaunchFaceName = launchFaceName;
 }
 
 UINT Settings::GetCodePage() const
@@ -510,7 +542,7 @@ void Settings::SetPopupFillAttribute(const WORD wPopupFillAttribute)
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
-    // everywhere by defualt.
+    // everywhere by default.
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
@@ -612,9 +644,10 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return _FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
+void Settings::SetFaceName(const std::wstring_view faceName)
 {
-    StringCchCopyW(_FaceName, cchLength, pcszFaceName);
+    auto extent = std::min<size_t>(faceName.size(), ARRAYSIZE(_FaceName));
+    StringCchCopyW(_FaceName, extent, faceName.data());
 }
 
 UINT Settings::GetCursorSize() const
@@ -689,26 +722,19 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-const COLORREF* const Settings::GetColorTable() const
+std::basic_string_view<COLORREF> Settings::Get16ColorTable() const
 {
-    return _ColorTable;
+    return Get256ColorTable().substr(0, 16);
 }
-void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
-{
-    size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
-    memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
+std::basic_string_view<COLORREF> Settings::Get256ColorTable() const
+{
+    return { _colorTable.data(), _colorTable.size() };
 }
+
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        _ColorTable[index] = ColorValue;
-    }
-    else
-    {
-        _XtermColorTable[index] = ColorValue;
-    }
+    _colorTable.at(index) = ColorValue;
 }
 
 bool Settings::IsStartupTitleIsLinkNameSet() const
@@ -726,21 +752,9 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
-const size_t Settings::GetColorTableSize() const
-{
-    return ARRAYSIZE(_ColorTable);
-}
-
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        return _ColorTable[index];
-    }
-    else
-    {
-        return _XtermColorTable[index];
-    }
+    return _colorTable.at(index);
 }
 
 // Routine Description:
@@ -764,19 +778,21 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
     // If the attributes have any RGB components, we need to match that RGB
     //      color to a color table value.
-    if (attributes.IsRgb())
+    if (attributes.IsHighColor())
     {
         // If the attribute doesn't have a "default" colored *ground, look up
         //  the nearest color table value for its *ground.
-        const COLORREF rgbForeground = LookupForegroundColor(attributes);
-        fgIndex = attributes.ForegroundIsDefault() ?
-                      fgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
+        if (!attributes.ForegroundIsDefault())
+        {
+            const COLORREF rgbForeground = LookupForegroundColor(attributes);
+            fgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbForeground, Get16ColorTable()));
+        }
 
-        const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-        bgIndex = attributes.BackgroundIsDefault() ?
-                      bgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
+        if (!attributes.BackgroundIsDefault())
+        {
+            const COLORREF rgbBackground = LookupBackgroundColor(attributes);
+            bgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbBackground, Get16ColorTable()));
+        }
     }
 
     // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
@@ -785,19 +801,6 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     //      use should it not already have one.
     const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
     return wCompleteAttr;
-}
-
-//Routine Description:
-// For a given RGB color Color, finds the nearest color from the array ColorTable, and returns the index of that match.
-//Arguments:
-// - Color - The RGB color to fine the nearest color to.
-// - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
-// Return value:
-// The index in ColorTable of the nearest match to Color.
-WORD Settings::FindNearestTableIndex(const COLORREF Color) const
-{
-    return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }
 
 COLORREF Settings::GetCursorColor() const noexcept
@@ -896,7 +899,7 @@ bool Settings::GetUseDx() const noexcept
 COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(_wFillAttribute) & FG_ATTRS);
 }
 
 // Method Description:
@@ -911,11 +914,11 @@ COLORREF Settings::CalculateDefaultForeground() const noexcept
 COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(_wFillAttribute) & BG_ATTRS) >> 4);
 }
 
 // Method Description:
-// - Get the foregroud color of a particular text attribute, using our color
+// - Get the foreground color of a particular text attribute, using our color
 //      table, and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
@@ -923,8 +926,15 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 // - The color value of the attribute's foreground TextColor.
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    const auto tableView = Get256ColorTable();
+    if (_fScreenReversed)
+    {
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
+    else
+    {
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 // Method Description:
@@ -936,8 +946,15 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 // - The color value of the attribute's background TextColor.
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    const auto tableView = Get256ColorTable();
+    if (_fScreenReversed)
+    {
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
+    else
+    {
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 bool Settings::GetCopyColor() const noexcept

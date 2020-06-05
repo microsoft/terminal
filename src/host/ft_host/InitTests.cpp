@@ -16,6 +16,7 @@ static PCWSTR pwszForceV2ValueName = L"ForceV2";
 // instead of using the Windows-default copy of console host.
 
 wil::unique_handle hJob;
+wil::unique_process_information pi;
 
 static FILE* std_out = nullptr;
 static FILE* std_in = nullptr;
@@ -90,10 +91,12 @@ MODULE_SETUP(ModuleSetup)
     if (testAsV1)
     {
         v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V1));
+        Common::_isV2 = false;
     }
     else
     {
         v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V2));
+        Common::_isV2 = true;
     }
 
     // Retrieve location of directory that the test was deployed to.
@@ -105,11 +108,13 @@ MODULE_SETUP(ModuleSetup)
     // The OS will auto-start the inbox conhost to host this process.
     if (insideWindows || testAsV1)
     {
+        WEX::Logging::Log::Comment(L"Launching with inbox conhost.exe");
         value = value.Append(L"Nihilist.exe");
     }
     else
     {
         // If we're outside or testing V2, let's use the open console binary we built.
+        WEX::Logging::Log::Comment(L"Launching with OpenConsole.exe");
         value = value.Append(L"OpenConsole.exe Nihilist.exe");
     }
 
@@ -135,7 +140,6 @@ MODULE_SETUP(ModuleSetup)
     // Setup and call create process.
     STARTUPINFOW si = { 0 };
     si.cb = sizeof(STARTUPINFOW);
-    wil::unique_process_information pi;
 
     // We start suspended so we can put it in the job before it does anything
     // We say new console so it doesn't run in the same window as our test.

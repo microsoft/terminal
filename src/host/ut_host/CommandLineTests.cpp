@@ -44,7 +44,7 @@ class CommandLineTests
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
-        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
             return false;
@@ -54,7 +54,7 @@ class CommandLineTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        CommandHistory::s_Free((HANDLE)0);
+        CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
@@ -373,7 +373,7 @@ class CommandLineTests
         // save current position for later checking
         const auto endCursorPos = cookedReadData._currentPosition;
         const auto endBufferPos = cookedReadData._bufPtr;
-        // NOTE: need to initialize the actualy cursor and keep it up to date with the changes here. remove
+        // NOTE: need to initialize the actually cursor and keep it up to date with the changes here. remove
         once functions are fixed
         // try to move right, nothing should happen
         short expectedPos = gsl::narrow<short>(endCursorPos);

@@ -290,7 +290,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
     *ppsl = nullptr;
     *ppPf = nullptr;
     IShellLink* psl;
-    HRESULT hr = SHCoCreateInstance(NULL, &CLSID_ShellLink, NULL, IID_PPV_ARGS(&psl));
+    HRESULT hr = SHCoCreateInstance(nullptr, &CLSID_ShellLink, nullptr, IID_PPV_ARGS(&psl));
     if (SUCCEEDED(hr))
     {
         IPersistFile* pPf;
@@ -344,6 +344,8 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
                                                               _Out_ BOOL* const pfReadConsoleProperties,
                                                               _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
                                                               const size_t cchShortcutTitle,
+                                                              _Out_writes_opt_(cchLinkTarget) PWSTR pwszLinkTarget,
+                                                              const size_t cchLinkTarget,
                                                               _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
                                                               const size_t cchIconLocation,
                                                               _Out_opt_ int* const piIcon,
@@ -355,6 +357,11 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
     if (pwszShortcutTitle && cchShortcutTitle > 0)
     {
         pwszShortcutTitle[0] = L'\0';
+    }
+
+    if (pwszLinkTarget && cchLinkTarget > 0)
+    {
+        pwszLinkTarget[0] = L'\0';
     }
 
     if (pwszIconLocation && cchIconLocation > 0)
@@ -374,7 +381,12 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             s_GetLinkTitle(pStateInfo->LinkTitle, pwszShortcutTitle, cchShortcutTitle);
         }
 
-        if (pwszIconLocation && piIcon)
+        if (pwszLinkTarget)
+        {
+            hr = psl->GetPath(pwszLinkTarget, static_cast<int>(cchLinkTarget), NULL, 0);
+        }
+
+        if (SUCCEEDED(hr) && pwszIconLocation && piIcon)
         {
             hr = psl->GetIconLocation(pwszIconLocation, static_cast<int>(cchIconLocation), piIcon);
         }
@@ -409,16 +421,19 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
     return (SUCCEEDED(hr)) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
-/**
-Writes the console properties out to the link it was opened from.
-Arguments:
-    pStateInfo - pointer to structure containing information
-Return Value:
-    A status code if something failed or S_OK
-*/
+// Function Description:
+// - Writes the console properties out to the link it was opened from.
+// Arguments:
+// - pStateInfo: pointer to structure containing information
+// - writeTerminalSettings: If true, persist the "Terminal" properties only
+//   present in the v2 console. This should be false if called from a v11
+//   console. See GH#2319
+// Return Value:
+// - A status code if something failed or S_OK
 [[nodiscard]] NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
                                                               const BOOL fEastAsianSystem,
-                                                              const BOOL fForceV2)
+                                                              const BOOL fForceV2,
+                                                              const bool writeTerminalSettings)
 {
     IShellLinkW* psl;
     IPersistFile* ppf;
@@ -488,12 +503,21 @@ Return Value:
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
-                    s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+
+                    // Only save the "Terminal" settings if we launched as a v2
+                    // propsheet. The v1 console doesn't know anything about
+                    // these settings, and their value will be incorrectly
+                    // zero'd if we save in this state.
+                    // See microsoft/terminal#2319 for more details.
+                    if (writeTerminalSettings)
+                    {
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
+                        s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+                    }
                     hr = pps->Commit();
                     pps->Release();
                 }
@@ -505,7 +529,7 @@ Return Value:
         if (SUCCEEDED(hr))
         {
             // Only persist changes if we've successfully made them.
-            hr = ppf->Save(NULL, TRUE);
+            hr = ppf->Save(nullptr, TRUE);
         }
 
         ppf->Release();

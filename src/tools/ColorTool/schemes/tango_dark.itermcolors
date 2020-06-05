@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Name:		Tango Dark
+	Author:		Anonymous
+	Url:		http://tango-project.org/
+	License:	Public Domain
+
+
+	Released to the Public Domain in 2009
+
+	A popular color scheme created by the Tango Desktop Project
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>Ansi 0 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0</string>
+            <key>Red Component</key>
+            <string>0</string>
+        </dict>
+        <key>Ansi 1 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0</string>
+            <key>Red Component</key>
+            <string>0.8</string>
+        </dict>
+        <key>Ansi 10 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.2039216</string>
+            <key>Green Component</key>
+            <string>0.8862745</string>
+            <key>Red Component</key>
+            <string>0.5411764999999999</string>
+        </dict>
+        <key>Ansi 11 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.3098039</string>
+            <key>Green Component</key>
+            <string>0.9137255</string>
+            <key>Red Component</key>
+            <string>0.9882353</string>
+        </dict>
+        <key>Ansi 12 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.8117647</string>
+            <key>Green Component</key>
+            <string>0.6235294</string>
+            <key>Red Component</key>
+            <string>0.4470588</string>
+        </dict>
+        <key>Ansi 13 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.6588235</string>
+            <key>Green Component</key>
+            <string>0.4980392</string>
+            <key>Red Component</key>
+            <string>0.6784314</string>
+        </dict>
+        <key>Ansi 14 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.8862745</string>
+            <key>Green Component</key>
+            <string>0.8862745</string>
+            <key>Red Component</key>
+            <string>0.2039216</string>
+        </dict>
+        <key>Ansi 15 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.9254902</string>
+            <key>Green Component</key>
+            <string>0.9333333</string>
+            <key>Red Component</key>
+            <string>0.9333333</string>
+        </dict>
+        <key>Ansi 2 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.02352941</string>
+            <key>Green Component</key>
+            <string>0.6039215999999999</string>
+            <key>Red Component</key>
+            <string>0.3058824</string>
+        </dict>
+        <key>Ansi 3 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0.627451</string>
+            <key>Red Component</key>
+            <string>0.7686275</string>
+        </dict>
+        <key>Ansi 4 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.6431373</string>
+            <key>Green Component</key>
+            <string>0.3960784</string>
+            <key>Red Component</key>
+            <string>0.2039216</string>
+        </dict>
+        <key>Ansi 5 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.4823529</string>
+            <key>Green Component</key>
+            <string>0.3137255</string>
+            <key>Red Component</key>
+            <string>0.4588235</string>
+        </dict>
+        <key>Ansi 6 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.6039215999999999</string>
+            <key>Green Component</key>
+            <string>0.5960785</string>
+            <key>Red Component</key>
+            <string>0.02352941</string>
+        </dict>
+        <key>Ansi 7 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.8117647</string>
+            <key>Green Component</key>
+            <string>0.8431373</string>
+            <key>Red Component</key>
+            <string>0.827451</string>
+        </dict>
+        <key>Ansi 8 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.3254902</string>
+            <key>Green Component</key>
+            <string>0.3411765</string>
+            <key>Red Component</key>
+            <string>0.3333333</string>
+        </dict>
+        <key>Ansi 9 Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.1607843</string>
+            <key>Green Component</key>
+            <string>0.1607843</string>
+            <key>Red Component</key>
+            <string>0.9372549</string>
+        </dict>
+        <key>Background Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0</string>
+            <key>Red Component</key>
+            <string>0</string>
+        </dict>
+        <key>Bold Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>1</string>
+            <key>Green Component</key>
+            <string>1</string>
+            <key>Red Component</key>
+            <string>1</string>
+        </dict>
+        <key>Cursor Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>1</string>
+            <key>Green Component</key>
+            <string>1</string>
+            <key>Red Component</key>
+            <string>1</string>
+        </dict>
+        <key>Cursor Text Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0</string>
+            <key>Red Component</key>
+            <string>0</string>
+        </dict>
+        <key>Foreground Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0.8117647</string>
+            <key>Green Component</key>
+            <string>0.8431373</string>
+            <key>Red Component</key>
+            <string>0.827451</string>
+        </dict>
+        <key>Selected Text Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>0</string>
+            <key>Green Component</key>
+            <string>0</string>
+            <key>Red Component</key>
+            <string>0</string>
+        </dict>
+        <key>Selection Color</key>
+        <dict>
+            <key>Blue Component</key>
+            <string>1</string>
+            <key>Green Component</key>
+            <string>0.8353</string>
+            <key>Red Component</key>
+            <string>0.7098</string>
+        </dict>
+</dict>
+</plist>

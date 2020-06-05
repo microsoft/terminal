@@ -1,12 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{DCF55140-EF6A-4736-A403-957E4F7430BB}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>adapter</RootNamespace>
+    <ProjectName>TerminalAdapter</ProjectName>
+    <TargetName>ConTermAdapt</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
     <ClCompile Include="..\DispatchCommon.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
-    <ClCompile Include="..\MouseInput.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
     <ClCompile Include="..\tracing.cpp" />
@@ -17,11 +24,11 @@
   <ItemGroup>
     <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
+    <ClInclude Include="..\charsets.hpp" />
     <ClInclude Include="..\DispatchTypes.hpp" />
     <ClInclude Include="..\DispatchCommon.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />
-    <ClInclude Include="..\MouseInput.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
@@ -38,14 +45,6 @@
       <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
     </ProjectReference>
   </ItemGroup>
-  <PropertyGroup>
-    <ProjectGuid>{DCF55140-EF6A-4736-A403-957E4F7430BB}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>adapter</RootNamespace>
-    <ProjectName>TerminalAdapter</ProjectName>
-    <TargetName>ConTermAdapt</TargetName>
-  </PropertyGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

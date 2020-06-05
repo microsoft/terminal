@@ -98,10 +98,10 @@ public:
     } RegPropertyMap;
 
     static const RegPropertyMap s_PropertyMappings[];
-    static const size_t RegistrySerialization::s_PropertyMappingsSize;
+    static const size_t s_PropertyMappingsSize;
 
     static const RegPropertyMap s_GlobalPropMappings[];
-    static const size_t RegistrySerialization::s_GlobalPropMappingsSize;
+    static const size_t s_GlobalPropMappingsSize;
 
     [[nodiscard]] static NTSTATUS s_LoadRegDword(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
     [[nodiscard]] static NTSTATUS s_LoadRegString(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);

@@ -28,7 +28,7 @@ private:
 
 public:
     static std::vector<std::vector<wchar_t>> Parse(std::wstring_view wstr);
-    static std::wstring_view ParseNext(std::wstring_view wstr);
+    static std::wstring_view ParseNext(std::wstring_view wstr) noexcept;
 
     // Routine Description:
     // - checks if wchar is a utf16 leading surrogate

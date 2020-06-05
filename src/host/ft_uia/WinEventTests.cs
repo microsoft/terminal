@@ -212,7 +212,7 @@ namespace Conhost.UIA.Tests
         [TestMethod]
         public void TestSelection()
         {
-            RunTest(TestSelectionImpl);  
+            RunTest(TestSelectionImpl);
         }
 
         private void TestSelectionImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
@@ -295,7 +295,7 @@ namespace Conhost.UIA.Tests
         [TestMethod]
         public void TestLaunchAndExitChild()
         {
-            RunTest(TestLaunchAndExitChildImpl);   
+            RunTest(TestLaunchAndExitChildImpl);
         }
 
         private void TestLaunchAndExitChildImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
@@ -357,11 +357,11 @@ namespace Conhost.UIA.Tests
         {
             RunTest(TestScrollByWheelImpl);
         }
-        
+
         private void TestScrollByWheelImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
         {
             int rowsPerScroll = app.GetRowsPerScroll();
-            int scrollDelta; 
+            int scrollDelta;
 
             // A. Scroll down.
             {

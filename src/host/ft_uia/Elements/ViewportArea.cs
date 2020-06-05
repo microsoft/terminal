@@ -105,7 +105,7 @@ namespace Conhost.UIA.Tests.Elements
             app.UIRoot.SendKeys(Keys.Escape);
             this.state = ViewportStates.Normal;
         }
-        
+
         public void EnterMode(ViewportStates state)
         {
             if (state == ViewportStates.Normal)

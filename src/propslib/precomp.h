@@ -4,6 +4,8 @@
 #define DEFINE_CONSOLEV2_PROPERTIES
 #define INC_OLE2
 
+#define NOMINMAX
+
 #define WIN32_NO_STATUS
 #include <windows.h>
 #undef WIN32_NO_STATUS
@@ -48,7 +50,7 @@ PopEntryList(
     PSINGLE_LIST_ENTRY FirstEntry;
 
     FirstEntry = ListHead->Next;
-    if (FirstEntry != NULL)
+    if (FirstEntry != nullptr)
     {
         ListHead->Next = FirstEntry->Next;
     }
