@@ -290,11 +290,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
     void CommandPalette::_dispatchCommandline()
     {
-        auto inputText = _SearchBox().Text();
-        std::wstring input{ _SearchBox().Text() };
-        winrt::hstring cmdline{ input.substr(1) };
+        const auto inputText = _SearchBox().Text();
+        const std::wstring input{ _SearchBox().Text() };
+        const auto rawCmdline{ input.substr(1) };
+
+        // Trim leading whitespace
+        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        if (firstNonSpace == std::wstring::npos)
+        {
+            return;
+        }
+
+        winrt::hstring cmdline{ rawCmdline.substr(firstNonSpace) };
 
         // Build the NewTab action from the values we've parsed on the commandline.
         auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
