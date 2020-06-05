@@ -30,8 +30,21 @@ Originally, #2557 was intended to allow for a keybinding arg to access defaults.
 - what if we decide to create more settings files in the future? (i.e. themes.json, extensions.json, etc...)
 - when the Settings UI comes in, there is ambiguity as to what `openSettings` does (json? UI? Which page?)
 
-### Proposition 1: the `target` arg
+### Proposition 1.1: the minimal `target` arg
 Instead, what if we introduced a new `target` keybinding argument, that could be used as follows:
+| Keybinding Command | Behavior |
+|--|--|
+| `"command": { "action": "openSettings", "target": "settingsFile" }`       | opens "settings.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "defaultsFile" }`       | opens "defaults.json" in your default text editor |
+| `"command": { "action": "openSettings", "target": "allSettingsFiles" }`   | opens all of settings files in your default text editor |
+| `"command": { "action": "openSettings", "target": "settingsUI" }`         | opens the Settings UI |
+
+This was based on Proposition 1 below, but reduced the overhead of people able to define specific pages to go to.
+
+### Other options we considered were...
+
+#### Proposition 1: the `target` arg
+We considered making target be more specific like this:
 | Keybinding Command | Behavior |
 |--|--|
 | `"command": { "action": "openSettings", "target": "settingsFile" }`   | opens "settings.json" in your default text editor |
@@ -45,17 +58,7 @@ If the Settings UI does not have a home page, `uiGlobals` and `uiSettings` will 
 
 This provides the user with more flexibility to decide what settings page to open and how to access it.
 
-### Proposition 1.1: the minimal `target` arg
-If we wanted to remove the ability to open to a specific settings page, proposition 1 would look something like this:
-| Keybinding Command | Behavior |
-|--|--|
-| `"command": { "action": "openSettings", "target": "settingsFile" }`   | opens "settings.json" in your default text editor |
-| `"command": { "action": "openSettings", "target": "defaultsFile" }`   | opens "defaults.json" in your default text editor |
-| `"command": { "action": "openSettings", "target": "settingsUI" }`     | opens the Settings UI |
-
-
-
-### Proposition 2: the `format` and `page` args
+#### Proposition 2: the `format` and `page` args
 Another approach would be to break up `target` into `format` and `page`.
 
 `format` would be either `json` or `ui`, dictating how you can access the setting.
@@ -77,7 +80,7 @@ The tricky thing for this approach is, what do we do in the following scenario:
 ```
 In situations like this, where the user wants a `json` format, but chooses a `page` that is a part of a larger settings file, I propose we simply open `settings.json` (or whichever file contains the settings for the desired feature).
 
-### Proposition 3: minimal approach
+#### Proposition 3: minimal approach
 What if we don't need to care about the page, and we really just cared about the format: UI vs json? Then, we still need a way to represent opening defaults.json. We could simplify Proposition 2 to be as follows:
 - `format`: `json`, `ui`
 - ~`page`~ `openDefaults`: `true`, `false`
@@ -85,15 +88,6 @@ What if we don't need to care about the page, and we really just cared about the
 Here, we take away the ability to specifically choose which page the user wants to open, but the result looks much cleaner.
 
 If there are concerns about adding more settings files in the future, `openDefaults` could be renamed to be `target`, and this would still serve as a hybrid of Proposition 1 and 2, with less possible options.
-
-### Conclusion:
-We decided to go with Proposition 1.1. The keybinding arg is `target` and it supports...
-- `settingsFile`: open "settings.json"
-- `defaultsFile`: open "defaults.json"
-- `allSettingsFiles`: open all settings files
-- `settingsUI`: open the Settings UI
-
-`settingsFile` will be the default until the Settings UI is implemented. At that point, the default will be silently changed to `settingsUI`.
 
 ## UI/UX Design
 
