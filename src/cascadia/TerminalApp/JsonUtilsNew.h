@@ -265,7 +265,7 @@ namespace TerminalApp::JsonUtils
                 T value{};
                 for (const auto& element : json)
                 {
-                    auto newFlag{ EnumMapper::FromJson(element) };
+                    const auto newFlag{ EnumMapper::FromJson(element) };
                     if (++seen > 1 &&
                         ((newFlag == AllClear && value != AllClear) ||
                          (value == AllClear && newFlag != AllClear)))
