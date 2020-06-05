@@ -129,8 +129,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
-        const KeyEvent keyDown{ true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED };
-        const KeyEvent keyUp{ false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED };
+        const auto [keyDown, keyUp] = KeyEvent::MakePair(1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
         success = _pDispatch->WriteCtrlKey(keyDown) && _pDispatch->WriteCtrlKey(keyUp);
     }
     else if (wch >= '\x0' && wch < '\x20')
@@ -498,8 +497,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             break;
         case CsiActionCodes::Win32KeyboardInput:
         {
-            // Use WriteCtrlKey here, because that will take extra steps to make
-            // sure things like Ctrl+C, Ctrl+Break are handled correctly.
+            // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
+            // because that will take extra steps to make sure things like
+            // Ctrl+C, Ctrl+Break are handled correctly.
             success = _pDispatch->WriteCtrlKey(key);
             break;
         }

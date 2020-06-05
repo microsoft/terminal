@@ -773,7 +773,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //
         // GH#4999: Only process keybindings on the keydown. If we don't check
         // this at all, we'll process the keybinding twice. If we only process
-        // keybindings on the keyUp, then we'll still sand the keydown to the
+        // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
         if (!modifiers.IsAltGrPressed() && keyDown)

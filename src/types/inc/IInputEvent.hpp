@@ -177,6 +177,28 @@ public:
     {
     }
 
+    static std::pair<KeyEvent, KeyEvent> MakePair(
+        const WORD repeatCount,
+        const WORD virtualKeyCode,
+        const WORD virtualScanCode,
+        const wchar_t charData,
+        const DWORD activeModifierKeys)
+    {
+        return std::make_pair<KeyEvent, KeyEvent>(
+            { true,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys },
+            { false,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys });
+    }
+
     ~KeyEvent();
     KeyEvent(const KeyEvent&) = default;
     KeyEvent(KeyEvent&&) = default;
