@@ -121,6 +121,9 @@ namespace Microsoft::Console::Render
 
         SMALL_RECT _srViewportPrevious;
 
+        static constexpr float _shrinkThreshold = 0.8f;
+        std::vector<Cluster> _clusterBuffer;
+
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
