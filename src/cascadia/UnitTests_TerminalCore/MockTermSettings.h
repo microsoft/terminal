@@ -38,6 +38,7 @@ namespace TerminalCoreUnitTests
         winrt::hstring StartingTitle() { return _startingTitle; }
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
+        bool ForceVTInput() { return false; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -59,6 +60,7 @@ namespace TerminalCoreUnitTests
         void StartingTitle(winrt::hstring const& value) { _startingTitle = value; }
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
+        void ForceVTInput(bool) {}
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}
