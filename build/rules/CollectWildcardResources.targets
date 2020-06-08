@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <Target Name="BeforeGenerateProjectPriFile" DependsOnTargets="OpenConsoleCollectWildcardPRIFiles" />
+
+  <Target Name="OpenConsoleCollectWildcardPRIFiles">
+    <CreateItem Include="@(OCResourceDirectory->'%(Identity)\**\*.resw')">
+      <Output TaskParameter="Include" ItemName="_OCFoundPRIFiles" />
+    </CreateItem>
+    <ItemGroup>
+      <_OCFoundPRIFiles Include="@(PRIResource)" />
+      <PRIResource Remove="@(PRIResource)" />
+      <PRIResource Include="@(_OCFoundPRIFiles->Distinct())" />
+    </ItemGroup>
+    <Message Text="$(ProjectName) (wildcard PRIs) -> @(PRIResource)" />
+  </Target>
+</Project>

@@ -120,13 +120,6 @@
     <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
     <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
-    <!-- Add all the CRT libs as content -->
-    <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
-      <TargetPath>%(Filename)%(Extension)</TargetPath>
-    </_OpenConsoleVCLibToCopy>
-  </ItemGroup>
   <!-- **END VC LIBS HACK** -->
 
 
@@ -151,6 +144,15 @@
       ContinueOnError="$(_ContinueOnError)">
       <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
     </MSBuild>
+
+    <!-- **BEGIN VC LIBS HACK** -->
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <!-- Add all the CRT libs as content -->
+      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </_OpenConsoleVCLibToCopy>
+    </ItemGroup>
+    <!-- **END VC LIBS HACK** -->
 
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />

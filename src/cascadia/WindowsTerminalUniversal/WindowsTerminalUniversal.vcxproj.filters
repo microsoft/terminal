@@ -23,7 +23,7 @@
     <PRIResource Include="Resources.devicefamily-core.resw">
       <Filter>Resources</Filter>
     </PRIResource>
-    <PRIResource Include="Resources\*\Resources.resw">
+    <PRIResource Include="Resources\en-US\Resources.resw">
       <Filter>Resources</Filter>
     </PRIResource>
     <PRIResource Include="Resources.resw">

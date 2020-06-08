@@ -46,8 +46,9 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
   </ItemGroup>
 
   <!-- This is picked up by CascadiaResources.build.items. -->
@@ -148,4 +149,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
