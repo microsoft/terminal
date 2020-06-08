@@ -202,7 +202,14 @@ public:
     ~KeyEvent();
     KeyEvent(const KeyEvent&) = default;
     KeyEvent(KeyEvent&&) = default;
+// For these two operators, there seems to be a bug in the compiler:
+// See https://stackoverflow.com/a/60206505/1481137
+//   > C.128 applies only to virtual member functions, but operator= is not
+//   > virtual in your base class and neither does it have the same signature as
+//   > in the derived class, so there is no reason for it to apply.
+#pragma warning(suppress : 26456)
     KeyEvent& operator=(const KeyEvent&) & = default;
+#pragma warning(suppress : 26456)
     KeyEvent& operator=(KeyEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;

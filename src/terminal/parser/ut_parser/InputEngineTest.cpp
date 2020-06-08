@@ -103,7 +103,18 @@ public:
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
     {
         auto records = IInputEvent::ToInputRecords(inEvents);
-        VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
+
+        // This callback doesn't work super well for the Ctrl+C iteration of the
+        // C0Test. For ^C, we always send a keydown and a key up event, however,
+        // both calls to WriteCtrlKey happen in one single call to
+        // ProcessString, and the test doesn't have a chance to load each key
+        // into this callback individually. Instead, we'll just skip these
+        // checks for the second call to WriteInput for this test.
+        if (_expectSendCtrlC && vExpectedInput.size() == 0)
+        {
+            return;
+        }
+        VERIFY_ARE_EQUAL(1u, vExpectedInput.size());
 
         bool foundEqual = false;
         INPUT_RECORD irExpected = vExpectedInput.back();
