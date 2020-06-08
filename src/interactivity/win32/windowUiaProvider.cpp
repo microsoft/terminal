@@ -94,7 +94,7 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
 IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*/,
-                                                         _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+                                                     _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
     *ppInterface = nullptr;
