@@ -373,7 +373,7 @@ bool Renderer::_CheckViewportAndScroll()
 
     // If we're keeping some buffers between calls, let them know about the viewport size
     // so they can prepare the buffers for changes to either preallocate memory at once
-    // (instead of growing naturally) or shrink down to reduce usage as approrpiate.
+    // (instead of growing naturally) or shrink down to reduce usage as appropriate.
     const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
     til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
 
