@@ -207,10 +207,11 @@ public:
 //   > C.128 applies only to virtual member functions, but operator= is not
 //   > virtual in your base class and neither does it have the same signature as
 //   > in the derived class, so there is no reason for it to apply.
+#pragma warning(push)
 #pragma warning(suppress : 26456)
     KeyEvent& operator=(const KeyEvent&) & = default;
-#pragma warning(suppress : 26456)
     KeyEvent& operator=(KeyEvent&&) & = default;
+#pragma warning(pop)
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;

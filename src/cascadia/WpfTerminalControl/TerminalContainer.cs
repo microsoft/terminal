@@ -239,7 +239,7 @@ namespace Microsoft.Terminal.Wpf
                         this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_KEYUP:
-                        // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+                        // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
                         NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)((uint)lParam >> 16), false);
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:

@@ -19,6 +19,7 @@ const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
+const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
@@ -486,6 +487,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == WIN32_INPUT_MODE)
+        {
+            _win32InputMode = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -621,6 +628,10 @@ bool ConsoleArguments::GetInheritCursor() const
 bool ConsoleArguments::IsResizeQuirkEnabled() const
 {
     return _resizeQuirk;
+}
+bool ConsoleArguments::IsWin32InputModeEnabled() const
+{
+    return _win32InputMode;
 }
 
 // Method Description:

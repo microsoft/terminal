@@ -706,6 +706,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
             (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers, false);
             handled = true;
         }
 
