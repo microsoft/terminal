@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-05-22
-last updated: 2020-05-22
+last updated: 2020-06-08
 issue id: 1203
 ---
 # Cursor Text Foreground Color
@@ -27,11 +27,21 @@ This spec outlines the addition of a new setting `cursorTextColor`, that would
 allow the text under the cursor to be drawn in another color, so that the text
 will always be visible.
 
+### Note
+
+This spec is being writtin a bit retroactively. [#6337] was merged before this
+spec was approved, which added support for a two-phased attempt at rendering the
+cursor in DX during the rendering of each run of text. This spec now mostly
+reflects new settings, and how they should appear to the user.
+
 ## Solution Design
 
-We're going to draw the cursor in two phases - a pre-paint and a post-paint. All
-the other renderers will just return `S_FALSE` from the cursor pre-paint phase
-automatically - we absolutely don't need to implement it for them.
+Note that these changes only apply to the DX renderer. All other renderers will
+be unaffected by this change.
+
+We're drawing the cursor in two passes. The first pass happens before the text
+is painted to the rendering target (below the character), and the second pass
+happens afterwards (above the character). - a pre-paint and a post-paint.
 
 We'll introduce `cursorTextColor` as a setting that accepts the following
 values:
@@ -44,29 +54,21 @@ values:
   comment](https://github.com/microsoft/terminal/issues/1203#issuecomment-618754090)).
 * `null`: Paint the cursor _on top of the character_ always.
 
-`null` is effectively the behavior we have now. I'm proposing we move the
-default _for all profiles_ to `textForeground`.
-
-Currently, the cursor is drawn once in the renderer, after the text is sent to
-the render engine to be drawn. I propose we add an optional cursor pre-paint
-step to the renderer & engine, to give the renderer a chance to draw the cursor
-_before_ the text is drawn to the screen.
-
-We're going to draw the cursor in two phases - a pre-paint and a post-paint. All
-the other renderers will just return `S_FALSE` from the cursor pre-paint phase
-automatically - we absolutely don't need to implement it for them.
+`null` is effectively the behavior we had prior to [#6337]. [#6337] changed the
+default behavior _for all profiles_ to `textForeground`.
 
 For the DX renderer (the Terminal render engine), we'll modify our behavior.
 
-* `null`: This is the current behavior. Cursor is drawn in post-paint, on top of
-  the cell.
-* `"textForeground"`: Cursor is drawn in pre-paint, underneath the text from the
-  cell.
+* `"textForeground"`: For the `filledBox` cursor, the cursor is drawn in
+  pre-paint, underneath the text from the cell. FOr all other cursors, the
+  cursor is drawn on top of the character.
+* `null`: Cursor is drawn in post-paint, on top of the cell, for all cursor
+  chapes.
 * `"#rrggbb"`: Cursor is drawn in pre-paint, underneath the text from the cell.
-  The renderer will return `S_FALSE` from the cursor pre-paint phase, indicating
-  we should manually break the text run where the cursor is. When we draw the
-  run where the cursor is, we'll draw it using the the provided color
-  (`#rrggbb`) instead.
+  The render engine will also need to indicate to the renderer that the renderer
+  should manually break the text run where the cursor is. When we draw the run
+  where the cursor is, we'll draw it using the the provided color (`#rrggbb`)
+  instead.
 * `"textBackground"`: This is the same as the `#rrggbb` case, but with the cell
   the cursor is on being drawn in the current background color for that cell.
 
@@ -81,14 +83,14 @@ Filled Box | `textForeground` | FALSE | #rrggbb | cell FG | N/A | Box of #rrggbb
 Filled Box | `textBackground` | TRUE | #rrggbb | cell BG | N/A | Box of #rrggbb with character in (text BG) on top |
 Vintage |   |   |   |   |   |   |   |
 Vintage | `null` | FALSE | N/A | cell FG | #rrggbb | ▃ of #rrggbb on top of char in (text FG) | Current behavior
-Vintage | `#r2g2b2` | TRUE | #rrggbb | #r2g2b2 | N/A | ▃ of #rrggbb with character in #r2g2b2 on top of ▃ |
-Vintage | `textForeground` | FALSE | #rrggbb | cell FG | N/A | ▃ of #rrggbb with character in (text FG) on top of ▃ | Proposed Default
-Vintage | `textBackground` | TRUE | #rrggbb | cell BG | N/A | ▃ of #rrggbb with character in (text BG) on top of ▃ |
+Vintage | `#r2g2b2` | TRUE | N/A | #r2g2b2 | #rrggbb | ▃ of #rrggbb on top of character in #r2g2b2 on top of ▃ |
+Vintage | `textForeground` | FALSE | N/A | cell FG | #rrggbb | ▃ of #rrggbb on top of character in (text FG) on top of ▃ | Proposed Default
+Vintage | `textBackground` | TRUE | N/A | cell BG | #rrggbb | ▃ of #rrggbb on top of character in (text BG) on top of ▃ |
 Vertical Bar |   |   |   |   |   |   |   |
 Vertical Bar | `null` | FALSE | N/A | cell FG | #rrggbb | ┃ of #rrggbb on top of char in (text FG) | Current behavior
-Vertical Bar | `#r2g2b2` | TRUE | #rrggbb | #r2g2b2 | N/A | ┃ of #rrggbb with character in #r2g2b2 on top of ┃ |
-Vertical Bar | `textForeground` | FALSE | #rrggbb | cell FG | N/A | ┃ of #rrggbb with character in (text FG) on top of ┃ | Proposed Default
-Vertical Bar | `textBackground` | TRUE | #rrggbb | cell BG | N/A | ┃ of #rrggbb with character in (text BG) on top of ┃ |
+Vertical Bar | `#r2g2b2` | TRUE | N/A | #r2g2b2 | #rrggbb | ┃ of #rrggbb on top of character in #r2g2b2 on top of ┃ |
+Vertical Bar | `textForeground` | FALSE | N/A | cell FG | #rrggbb | ┃ of #rrggbb on top of character in (text FG) on top of ┃ | Proposed Default
+Vertical Bar | `textBackground` | TRUE | N/A | cell BG | #rrggbb | ┃ of #rrggbb on top of character in (text BG) on top of ┃ |
 
 I omitted `underscore`, `emptyBox` because they're just the same as Vertical Bar
 cases.
@@ -109,9 +111,6 @@ I believe this work can be broken into 3 PRs:
    involve manually breaking runs of characters on the cell where the cursor is,
    which will require some extra plumbing.
 
-I'd want to get both 1&2 done in the course of a single release. Ideally all 3
-would be done in the course of a single release, but if only the first two are
-done, then at least users can opt-out of the new behavior.
 
 ## Capabilities
 
@@ -127,8 +126,16 @@ N/A
 
 ### Compatibility
 
-Renderers other than the DX renderer will all auto-return `S_FALSE` from the
-cursor pre-paint phase, leaving their behavior unchanged.
+The initial PR doesn't do anything to change the behavior of other render
+engines, so I don't expect any compatibility issues with them.
+
+Once the initial PR is complete, until the second PR is finished, the user can use
+
+```json
+{ "cursorShape": "vintage", "cursorHeight": 100 }
+```
+
+to replicate the old (pre-[#6337]) behavior.
 
 ### Performance, Power, and Efficiency
 N/A
@@ -159,4 +166,5 @@ Feature Request: Show character under cursor when cursorShape is set to filledBo
 <!-- Footnotes -->
 [#1203]: https://github.com/microsoft/terminal/issues/1203
 [#3580]: https://github.com/microsoft/terminal/issues/3580
+[#6337]: https://github.com/microsoft/terminal/pull/6337
 
