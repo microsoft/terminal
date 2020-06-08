@@ -757,7 +757,7 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
     //          "10", the character 'A' is "65". If omitted, defaults to '0'.
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
-    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
     return fmt::format(L"\x1b[{};{};{};{};{};{}_",
                        key.GetVirtualKeyCode(),
                        key.GetVirtualScanCode(),
