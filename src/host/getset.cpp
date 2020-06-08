@@ -577,7 +577,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             gci.SetColorTableEntry(i, data.ColorTable[i]);
         }
 
-        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
+        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 

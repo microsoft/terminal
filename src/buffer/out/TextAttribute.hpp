@@ -40,7 +40,7 @@ public:
     {
     }
 
-    constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
+    explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
         _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS), true },
         _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4), true },
