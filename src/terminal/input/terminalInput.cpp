@@ -271,6 +271,10 @@ void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
 {
     _win32InputMode = win32InputMode;
 }
+void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _forceDisableWin32InputMode = win32InputMode;
+}
 
 static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
                                                                const bool ansiMode,
@@ -527,7 +531,8 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     // GH#4999 - If we're in win32-input mode, skip straight to doing that.
     // Since this mode handles all types of key events, do nothing else.
-    if (_win32InputMode)
+    // Only do this if win32-input-mode support isn't manually disabled.
+    if (_win32InputMode && !_forceDisableWin32InputMode)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
         _SendInputSequence(seq);

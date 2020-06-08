@@ -39,6 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
         void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
         void ChangeWin32InputMode(const bool win32InputMode) noexcept;
+        void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
@@ -74,6 +75,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _keypadApplicationMode{ false };
         bool _cursorApplicationMode{ false };
         bool _win32InputMode{ false };
+        bool _forceDisableWin32InputMode{ false };
 
         void _SendChar(const wchar_t ch);
         void _SendNullInputSequence(const DWORD dwControlKeyState) const;

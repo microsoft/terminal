@@ -34,12 +34,13 @@ static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
+static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
-static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
 // Launch mode values
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
@@ -130,6 +131,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.CopyOnSelect(_CopyOnSelect);
     settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
     settings.SoftwareRendering(_SoftwareRendering);
+    settings.ForceVTInput(_ForceVTInput);
 }
 
 // Method Description:
@@ -220,6 +222,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
 
     JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
+    JsonUtils::GetBool(json, ForceVTInputKey, _ForceVTInput);
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
