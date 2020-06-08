@@ -71,6 +71,7 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
         bool _IntermediateScsDispatch(const wchar_t wch,
                                       const std::basic_string_view<wchar_t> intermediates);
