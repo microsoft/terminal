@@ -59,38 +59,7 @@ public:
     {
     }
 
-    WORD GetLegacyAttributes() const noexcept
-    {
-        const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
-        const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
-        const bool brighten = _foreground.IsIndex16() && IsBold();
-        return (fg | bg | meta) | (brighten ? FOREGROUND_INTENSITY : 0);
-    }
-
-    // Method Description:
-    // - Returns a WORD with legacy-style attributes for this textattribute.
-    //      If either the foreground or background of this textattribute is not
-    //      a legacy attribute, then instead use the provided default index as
-    //      the value for that component.
-    // Arguments:
-    // - defaultFgIndex: the BYTE to use as the index for the foreground, should
-    //      the foreground not be a legacy style attribute.
-    // - defaultBgIndex: the BYTE to use as the index for the background, should
-    //      the background not be a legacy style attribute.
-    // Return Value:
-    // - a WORD with legacy-style attributes for this textattribute.
-    WORD GetLegacyAttributes(const BYTE defaultFgIndex,
-                             const BYTE defaultBgIndex) const noexcept
-    {
-        const BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
-        const BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
-        const BYTE fg = (fgIndex & FG_ATTRS);
-        const BYTE bg = (bgIndex << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
-        const bool brighten = _foreground.IsIndex16() && IsBold();
-        return (fg | bg | meta) | (brighten ? FOREGROUND_INTENSITY : 0);
-    }
+    WORD GetLegacyAttributes(const WORD defaultAttributes = 0x07) const noexcept;
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
@@ -119,7 +88,6 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsHighColor() const noexcept;
     bool IsBold() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -149,7 +117,6 @@ public:
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
 
-    bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
     void SetStandardErase() noexcept;
