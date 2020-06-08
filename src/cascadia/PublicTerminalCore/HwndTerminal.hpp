@@ -92,7 +92,7 @@ private:
     friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
-    friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode);
+    friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     friend void _stdcall TerminalBlinkCursor(void* terminal);

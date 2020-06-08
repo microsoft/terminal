@@ -162,6 +162,13 @@ public:
         return _privateSetKeypadModeResult;
     }
 
+    bool PrivateEnableWin32InputMode(const bool /*win32InputMode*/) override
+    {
+        Log::Comment(L"PrivateEnableWin32InputMode MOCK called...");
+
+        return true;
+    }
+
     bool PrivateSetAnsiMode(const bool ansiMode) override
     {
         Log::Comment(L"PrivateSetAnsiMode MOCK called...");
