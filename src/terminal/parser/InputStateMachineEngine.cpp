@@ -1335,7 +1335,7 @@ bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<siz
     //          "10", the character 'A' is "65". If omitted, defaults to '0'.
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
-    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
 
     if (parameters.size() > 6)
     {
@@ -1343,6 +1343,7 @@ bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<siz
     }
 
     key = KeyEvent();
+    key.SetRepeatCount(1);
     switch (parameters.size())
     {
     case 6:

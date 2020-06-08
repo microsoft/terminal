@@ -1426,7 +1426,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
         VERIFY_ARE_EQUAL(false, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1437,7 +1437,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
         VERIFY_ARE_EQUAL(false, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1448,7 +1448,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(false, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1459,7 +1459,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(true, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1470,7 +1470,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(true, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1481,7 +1481,7 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(true, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(0, key.GetRepeatCount());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
         KeyEvent key{};
@@ -1549,7 +1549,15 @@ void InputEngineTest::TestWin32InputOptionals()
                          key.IsKeyDown());
         VERIFY_ARE_EQUAL((provideActiveModifierKeys && numParams > 4) ? 5u : 0u,
                          key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL((provideRepeatCount && numParams > 5) ? 6 : 0,
-                         key.GetRepeatCount());
+        if (numParams == 6)
+        {
+            VERIFY_ARE_EQUAL((provideRepeatCount) ? 6 : 0,
+                             key.GetRepeatCount());
+        }
+        else
+        {
+            VERIFY_ARE_EQUAL((provideRepeatCount && numParams > 5) ? 6 : 1,
+                             key.GetRepeatCount());
+        }
     }
 }
