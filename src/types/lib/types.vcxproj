@@ -33,7 +33,6 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\utils.cpp" />
-    <ClCompile Include="..\WindowUiaProviderBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IBaseData.h" />
@@ -58,7 +57,6 @@
     <ClInclude Include="..\ScreenInfoUiaProviderBase.h" />
     <ClInclude Include="..\UiaTextRangeBase.hpp" />
     <ClInclude Include="..\UiaTracing.h" />
-    <ClInclude Include="..\WindowUiaProviderBase.hpp" />
   </ItemGroup>
   <ItemGroup>
     <!-- subsume fmt, one of our dependencies, into contypes. -->
