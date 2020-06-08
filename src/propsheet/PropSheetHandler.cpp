@@ -118,7 +118,7 @@ private:
                 // Not all console shortcuts have console-specific properties. We just take the registry defaults in
                 // those cases.
                 BOOL readSettings = FALSE;
-                NTSTATUS s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
+                NTSTATUS s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
                 hr = HRESULT_FROM_NT(s);
             }
             else

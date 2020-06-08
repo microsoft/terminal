@@ -572,9 +572,12 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
-        gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
+        for (size_t i = 0; i < std::size(data.ColorTable); i++)
+        {
+            gci.SetColorTableEntry(i, data.ColorTable[i]);
+        }
 
-        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
+        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -919,6 +922,25 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+    // Do nothing if no change.
+    if (gci.OutputCP != codepage)
+    {
+        // Set new code page
+        gci.OutputCP = codepage;
+
+        SetConsoleCPInfo(TRUE);
+    }
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
@@ -929,23 +951,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.OutputCP != codepage)
-        {
-            // Set new code page
-            gci.OutputCP = codepage;
-
-            SetConsoleCPInfo(TRUE);
-        }
-
-        return S_OK;
+        return DoSrvSetConsoleOutputCodePage(codepage);
     }
     CATCH_RETURN();
 }

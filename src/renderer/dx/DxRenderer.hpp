@@ -77,6 +77,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
+        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               COORD const coord,
@@ -160,9 +162,6 @@ namespace Microsoft::Console::Render
 
         static std::atomic<size_t> _tracelogCount;
 
-        static const ULONG s_ulMinCursorHeightPercent = 25;
-        static const ULONG s_ulMaxCursorHeightPercent = 100;
-
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
@@ -201,6 +200,8 @@ namespace Microsoft::Console::Render
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         float _defaultTextBackgroundOpacity;
+
+        RenderFrameInfo _frameInfo;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct

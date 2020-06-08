@@ -8,6 +8,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
+#include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -46,7 +47,15 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
 // - <none>
 void AdaptDispatch::Print(const wchar_t wchPrintable)
 {
-    _pDefaults->Print(_termOutput.TranslateKey(wchPrintable));
+    const auto wchTranslated = _termOutput.TranslateKey(wchPrintable);
+    // By default the DEL character is meant to be ignored in the same way as a
+    // NUL character. However, it's possible that it could be translated to a
+    // printable character in a 96-character set. This condition makes sure that
+    // a character is only output if the DEL is translated to something else.
+    if (wchTranslated != AsciiChars::DEL)
+    {
+        _pDefaults->Print(wchTranslated);
+    }
 }
 
 // Routine Description
@@ -335,6 +344,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
     return success;
@@ -375,6 +385,12 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the code page if it was previously saved.
+    if (savedCursorState.CodePage != 0)
+    {
+        success = _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
+    }
 
     return success;
 }
@@ -715,6 +731,19 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
+//   An actual VT52 terminal would typically identify itself with ESC / K.
+//   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::Vt52DeviceAttributes()
+{
+    return _WriteResponse(L"\x1b/Z");
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>
@@ -956,6 +985,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
+    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        success = SetAnsiMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
@@ -1127,6 +1159,20 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
+{
+    // When an attempt is made to update the mode, the designated character sets
+    // need to be reset to defaults, even if the mode doesn't actually change.
+    _termOutput = {};
+
+    return _pConApi->PrivateSetAnsiMode(ansiMode);
 }
 
 // Routine Description:
@@ -1560,18 +1606,107 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 }
 
 //Routine Description:
-// Designate Charset - Sets the active charset to be the one mapped to wch.
-//     See DispatchTypes::VTCharacterSets for a list of supported charsets.
-//     Also http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Controls-beginning-with-ESC
-//       For a list of all charsets and their codes.
-//     If the specified charset is unsupported, we do nothing (remain on the current one)
+// DOCS - Selects the coding system through which character sets are activated.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
+//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
+//     the code page is set to UTF-8, and only the GL area can be remapped.
 //Arguments:
-// - wchCharset - The character indicating the charset we should switch to.
+// - codingSystem - The coding system that will be selected.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
+bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 {
-    return _termOutput.DesignateCharset(wchCharset);
+    // If we haven't previously saved the initial code page, do so now.
+    // This will be used to restore the code page in response to a reset.
+    if (!_initialCodePage.has_value())
+    {
+        unsigned int currentCodePage;
+        _pConApi->GetConsoleOutputCP(currentCodePage);
+        _initialCodePage = currentCodePage;
+    }
+
+    bool success = false;
+    switch (codingSystem)
+    {
+    case DispatchTypes::CodingSystem::ISO2022:
+        success = _pConApi->SetConsoleOutputCP(28591);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(true);
+        }
+        break;
+    case DispatchTypes::CodingSystem::UTF8:
+        success = _pConApi->SetConsoleOutputCP(CP_UTF8);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(false);
+        }
+        break;
+    }
+    return success;
+}
+
+//Routine Description:
+// Designate Charset - Selects a specific 94-character set into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
+//     If the specified charset is unsupported, we do nothing (remain on the current one)
+//Arguments:
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The characters indicating the charset that will be used.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    return _termOutput.Designate94Charset(gsetNumber, charset);
+}
+
+//Routine Description:
+// Designate Charset - Selects a specific 96-character set into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
+//     If the specified charset is unsupported, we do nothing (remain on the current one)
+//Arguments:
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The characters indicating the charset that will be used.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    return _termOutput.Designate96Charset(gsetNumber, charset);
+}
+
+//Routine Description:
+// Locking Shift - Invoke one of the G-sets into the left half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShift(const size_t gsetNumber)
+{
+    return _termOutput.LockingShift(gsetNumber);
+}
+
+//Routine Description:
+// Locking Shift Right - Invoke one of the G-sets into the right half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShiftRight(const size_t gsetNumber)
+{
+    return _termOutput.LockingShiftRight(gsetNumber);
+}
+
+//Routine Description:
+// Single Shift - Temporarily invoke one of the G-sets into the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::SingleShift(const size_t gsetNumber)
+{
+    return _termOutput.SingleShift(gsetNumber);
 }
 
 //Routine Description:
@@ -1637,7 +1772,12 @@ bool AdaptDispatch::SoftReset()
     }
     if (success)
     {
-        success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
+        _termOutput = {}; // Reset all character set designations.
+        if (_initialCodePage.has_value())
+        {
+            // Restore initial code page if previously changed by a DOCS sequence.
+            success = _pConApi->SetConsoleOutputCP(_initialCodePage.value());
+        }
     }
     if (success)
     {

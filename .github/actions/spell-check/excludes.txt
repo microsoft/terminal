@@ -51,6 +51,7 @@ SUMS$
 \.xpm$
 \.yml$
 \.zip$
+^consolegit2gitfilters\.json$
 ^dep/
 ^oss/
 ^doc/reference/UTF8-torture-test\.txt$

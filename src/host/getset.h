@@ -50,6 +50,7 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
 
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSuppressResizeRepaint();

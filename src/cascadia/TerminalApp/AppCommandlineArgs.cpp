@@ -157,6 +157,7 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
         if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
         {
@@ -173,6 +174,20 @@ void AppCommandlineArgs::_buildParser()
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
+    // Maximized and Fullscreen flags
+    //   -M,--maximized: Maximizes the window on launch
+    //   -F,--fullscreen: Fullscreens the window on launch
+    auto maximizedCallback = [this](int64_t /*count*/) {
+        _launchMode = winrt::TerminalApp::LaunchMode::MaximizedMode;
+    };
+    auto fullscreenCallback = [this](int64_t /*count*/) {
+        _launchMode = winrt::TerminalApp::LaunchMode::FullscreenMode;
+    };
+    auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
+    auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
+    maximized->excludes(fullscreen);
+
+    // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
@@ -315,6 +330,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
                                                                            RS_A(L"CmdStartingDirArgDesc"));
+    subcommand.titleOption = subcommand.subcommand->add_option("--title",
+                                                               _startingTitle,
+                                                               RS_A(L"CmdTitleArgDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -372,6 +390,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
+    if (*subcommand.titleOption)
+    {
+        args->TabTitle(winrt::to_hstring(_startingTitle));
+    }
+
     return *args;
 }
 
@@ -402,6 +425,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
     _startingDirectory.clear();
+    _startingTitle.clear();
     _commandline.clear();
 
     _splitVertical = false;
@@ -410,6 +434,10 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
+
+    // DON'T clear _launchMode here! This will get called once for every
+    // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
+    // the "global" fullscreen flag (-F).
 }
 
 // Function Description:
@@ -603,4 +631,9 @@ void AppCommandlineArgs::ValidateStartupCommands()
         newTabAction->Args(*args);
         _startupActions.push_front(*newTabAction);
     }
+}
+
+std::optional<winrt::TerminalApp::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
+{
+    return _launchMode;
 }
