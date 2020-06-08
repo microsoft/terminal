@@ -145,6 +145,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
 
+    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -408,10 +410,14 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - keyDown: If true, the key was pressed, otherwise the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey,
+                            const WORD scanCode,
+                            const ControlKeyStates states,
+                            const bool keyDown)
 {
     TrySnapOnInput();
     _StoreKeyEvent(vkey, scanCode);
@@ -452,7 +458,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -513,8 +519,15 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    // Unfortunately, the UI doesn't give us both a character down and a
+    // character up event, only a character received event. So fake sending both
+    // to the terminal input translator. Unless it's in win32-input-mode, it'll
+    // ignore the keyup.
+    KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
+    const auto handledDown = _terminalInput->HandleKey(&keyDown);
+    const auto handledUp = _terminalInput->HandleKey(&keyUp);
+    return handledDown || handledUp;
 }
 
 // Method Description:

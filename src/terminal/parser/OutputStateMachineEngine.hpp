@@ -171,7 +171,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetCursorColor = 12,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112,
+            ResetCursorColor = 112
         };
 
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;

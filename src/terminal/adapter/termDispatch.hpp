@@ -47,6 +47,7 @@ public:
     bool SetColumns(const size_t /*columns*/) noexcept override { return false; } // DECCOLM
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
+    bool EnableWin32InputMode(const bool /*win32InputMode*/) noexcept override { return false; } // win32-input-mode
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) noexcept override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM

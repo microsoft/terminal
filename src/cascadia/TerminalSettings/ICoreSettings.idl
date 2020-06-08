@@ -33,6 +33,8 @@ namespace Microsoft.Terminal.Settings
         String StartingTitle;
         Boolean SuppressApplicationTitle;
         String WordDelimiters;
+
+        Boolean ForceVTInput;
     };
 
 }

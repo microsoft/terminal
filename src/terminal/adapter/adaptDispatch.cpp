@@ -1031,6 +1031,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
+    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        success = EnableWin32InputMode(enable);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -1092,6 +1095,27 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
+
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
+    return success;
+}
+
+// Method Description:
+// - win32-input-mode: Enable sending full input records encoded as a string of
+//   characters to the client application.
+// Arguments:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
+{
+    bool success = true;
+    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
 
     // If we're a conpty, always return false
     if (_pConApi->IsConsolePty())

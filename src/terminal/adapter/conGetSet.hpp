@@ -45,6 +45,7 @@ namespace Microsoft::Console::VirtualTerminal
                                           const SMALL_RECT& window) = 0;
         virtual bool PrivateSetCursorKeysMode(const bool applicationMode) = 0;
         virtual bool PrivateSetKeypadMode(const bool applicationMode) = 0;
+        virtual bool PrivateEnableWin32InputMode(const bool win32InputMode) = 0;
 
         virtual bool PrivateSetAnsiMode(const bool ansiMode) = 0;
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;

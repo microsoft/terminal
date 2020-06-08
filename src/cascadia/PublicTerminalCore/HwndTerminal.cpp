@@ -557,11 +557,11 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
 try
 {
     const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags);
+    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 CATCH_LOG();
 
@@ -590,10 +590,10 @@ try
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
 }
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
