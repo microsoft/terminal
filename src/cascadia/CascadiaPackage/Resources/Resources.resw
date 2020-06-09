@@ -121,7 +121,7 @@
     <value>Windows Terminal</value>
   </data>
   <data name="AppNameDev" xml:space="preserve">
-    <value>Windows Terminal Dev Build</value>
+    <value>Windows Terminal Dev</value>
   </data>
   <data name="AppNamePre" xml:space="preserve">
     <value>Windows Terminal Preview</value>
