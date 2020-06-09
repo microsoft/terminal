@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document outlines the roadmap towards delivering Windows Terminal 2.0 by spring 2021.
+This document outlines the roadmap towards delivering Windows Terminal 2.0 by Spring 2021.
+
 
 ## Milestones
 
