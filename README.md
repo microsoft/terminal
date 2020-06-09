@@ -62,6 +62,10 @@ If you have any issues when installing/upgrading the package please go to the [W
 
 ---
 
+## Windows Terminal 2.0 Roadmap
+
+The plan for delivering Windows Terminal 2.0 [is described here](/doc/terminal-v2-roadmap.md) and will be updated as the project proceeds.
+
 ## Project Build Status
 
 Project|Build Status
