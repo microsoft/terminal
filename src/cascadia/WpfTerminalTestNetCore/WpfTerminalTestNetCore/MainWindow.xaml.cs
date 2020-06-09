@@ -1,4 +1,9 @@
-﻿using Microsoft.Terminal.Wpf;
+﻿// <copyright file="MainWindow.xaml.cs" company="Microsoft Corporation">
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+// </copyright>
+
+using Microsoft.Terminal.Wpf;
 using System;
 using System.Windows;
 

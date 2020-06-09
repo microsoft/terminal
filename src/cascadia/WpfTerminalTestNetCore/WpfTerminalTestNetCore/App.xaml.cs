@@ -1,4 +1,9 @@
-﻿using System;
+﻿// <copyright file="App.xaml.cs" company="Microsoft Corporation">
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+// </copyright>
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
