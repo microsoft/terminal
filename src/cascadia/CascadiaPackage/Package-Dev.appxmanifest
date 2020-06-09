@@ -20,7 +20,7 @@
     Version="0.0.1.0" />
 
   <Properties>
-    <DisplayName>ms-resource:AppNameDev</DisplayName>
+    <DisplayName>Windows Terminal Dev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
