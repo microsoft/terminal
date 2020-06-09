@@ -26,8 +26,7 @@ namespace Microsoft::Console::Render
         WinTelnetEngine(_In_ wil::unique_hfile hPipe,
                         const Microsoft::Console::IDefaultColorProvider& colorProvider,
                         const Microsoft::Console::Types::Viewport initialViewport,
-                        _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                        const WORD cColorTable);
+                        const std::basic_string_view<COLORREF> colorTable);
         virtual ~WinTelnetEngine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
@@ -45,8 +44,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept;
 
     private:
-        const COLORREF* const _ColorTable;
-        const WORD _cColorTable;
+        const std::basic_string_view<COLORREF> _colorTable;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

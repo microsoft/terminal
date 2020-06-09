@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
+  <!--
+    Microsoft ResX Schema
+
     Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
     associated with the data types.
-    
+
     Example:
-    
+
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-                
-    There are any number of "resheader" rows that contain simple 
+
+    There are any number of "resheader" rows that contain simple
     name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
     mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
     extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
     read any of the formats listed below.
-    
+
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-    
+
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
+    value   : The object must be serialized into a byte array
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -168,6 +168,30 @@
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="CloseWindowWarningTitle" xml:space="preserve">
+    <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Color...</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Custom...</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>Rename Tab</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>
@@ -186,6 +210,17 @@
   <data name="MissingRequiredParameter" xml:space="preserve">
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
     <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>The "globals" property is deprecated - your settings might need updating. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2128258</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>For more info, see this web page.</value>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
@@ -221,19 +256,44 @@
     <value>Open in the given directory instead of the profile's set "startingDirectory"</value>
     <comment>{Locked="\"startingDirectory\""}</comment>
   </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>Open the terminal with the provided title instead of the profile's set "title"</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>Display the application version</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Launch the window maximized</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>Launch the window in fullscreen mode</value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>New Tab</value>
   </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>New Tab</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Maximize</value>
   </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Minimize</value>
   </data>
   <data name="AboutDialog.Title" xml:space="preserve">
@@ -261,6 +321,10 @@
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
     <value>Privacy Policy</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>Third-Party Notices</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Windows Terminal (Unpackaged)</value>

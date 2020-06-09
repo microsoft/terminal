@@ -23,12 +23,12 @@ bool Globals::IsHeadless() const
 //   true to `IsHeadless`, which will cause the console host to act in conpty
 //   mode.
 // Arguments:
-// - <none>
+// - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
-void Globals::EnableConptyModeForTests()
+void Globals::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
     launchArgs.EnableConptyModeForTests();
-    getConsoleInformation().GetVtIo()->EnableConptyModeForTests();
+    getConsoleInformation().GetVtIo()->EnableConptyModeForTests(std::move(vtRenderEngine));
 }
 #endif

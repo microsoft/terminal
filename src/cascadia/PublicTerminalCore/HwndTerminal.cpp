@@ -29,6 +29,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam) noexcept
+try
 {
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
     HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -84,6 +85,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+CATCH_LOG()
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
@@ -555,11 +557,11 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
 try
 {
     const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags);
+    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 CATCH_LOG();
 
@@ -588,10 +590,10 @@ try
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
 }
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
@@ -686,6 +688,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
 HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+try
 {
     std::wstring finalString;
 
@@ -714,7 +717,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
     RETURN_LAST_ERROR_IF(!OpenClipboard(_hwnd.get()));
 
     { // Clipboard Scope
-        auto clipboardCloser = wil::scope_exit([]() noexcept {
+        auto clipboardCloser = wil::scope_exit([]() {
             LOG_LAST_ERROR_IF(!CloseClipboard());
         });
 
@@ -724,10 +727,10 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
         if (fAlsoCopyFormatting)
         {
             const auto& fontData = _actualFont;
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / this->_currentDpi;
+            int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
             const COLORREF bgColor = _terminal->GetBackgroundColor(_terminal->GetDefaultBrushColors());
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Hwnd Console Host");
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
             std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
@@ -742,6 +745,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Copies the given string onto the global system clipboard in the specified format

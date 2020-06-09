@@ -17,7 +17,7 @@ namespace TerminalApp::JsonUtils
 {
     void GetOptionalColor(const Json::Value& json,
                           std::string_view key,
-                          std::optional<uint32_t>& target);
+                          std::optional<til::color>& target);
 
     void GetOptionalString(const Json::Value& json,
                            std::string_view key,

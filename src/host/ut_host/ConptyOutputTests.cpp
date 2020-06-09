@@ -85,23 +85,22 @@ class ConptyOutputTests
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
         Viewport initialViewport = currentBuffer.GetViewport();
 
-        _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
-                                                            gci,
-                                                            initialViewport,
-                                                            gci.GetColorTable(),
-                                                            static_cast<WORD>(gci.GetColorTableSize()));
+        auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
+                                                               gci,
+                                                               initialViewport,
+                                                               gci.Get16ColorTable());
         auto pfn = std::bind(&ConptyOutputTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
-        _pVtRenderEngine->SetTestCallback(pfn);
+        vtRenderEngine->SetTestCallback(pfn);
 
-        g.pRender->AddRenderEngine(_pVtRenderEngine.get());
-        gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+        g.pRender->AddRenderEngine(vtRenderEngine.get());
+        gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
 
         expectedOutput.clear();
 
         // Manually set the console into conpty mode. We're not actually going
         // to set up the pipes for conpty, but we want the console to behave
         // like it would in conpty mode.
-        g.EnableConptyModeForTests();
+        g.EnableConptyModeForTests(std::move(vtRenderEngine));
 
         return true;
     }
@@ -128,7 +127,6 @@ private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
     std::deque<std::string> expectedOutput;
-    std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<CommonState> m_state;
 };
 
@@ -202,7 +200,6 @@ void ConptyOutputTests::ConptyOutputTestCanary()
 {
     Log::Comment(NoThrowString().Format(
         L"This is a simple test to make sure that everything is working as expected."));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     _flushFirstFrame();
 }
@@ -212,7 +209,6 @@ void ConptyOutputTests::SimpleWriteOutputTest()
     Log::Comment(NoThrowString().Format(
         L"Write some simple output, and make sure it gets rendered largely "
         L"unmodified to the terminal"));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -232,7 +228,6 @@ void ConptyOutputTests::WriteTwoLinesUsesNewline()
 {
     Log::Comment(NoThrowString().Format(
         L"Write two lines of output. We should use \r\n to move the cursor"));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -271,7 +266,6 @@ void ConptyOutputTests::WriteAFewSimpleLines()
 {
     Log::Comment(NoThrowString().Format(
         L"Write more lines of output. We should use \r\n to move the cursor"));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -330,7 +324,6 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
 {
     Log::Comment(NoThrowString().Format(
         L"Make sure we don't use EL and wipe out the last column of text"));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;

@@ -11,11 +11,13 @@
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
+#include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
+#include "ColorHelper.h"
 #include "DebugTapConnection.h"
 
 using namespace winrt;
@@ -76,7 +78,7 @@ namespace winrt::TerminalApp::implementation
             // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
             // but that process is running at a different IL than us.
             // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
         }
         CATCH_LOG();
 
@@ -115,7 +117,7 @@ namespace winrt::TerminalApp::implementation
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().ShowTabsInTitlebar())
         {
             // Remove the TabView from the page. We'll hang on to it, we need to
             // put it in the titlebar.
@@ -182,12 +184,11 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            _appArgs.ValidateStartupCommands();
-            if (_appArgs.GetStartupActions().empty())
+            if (_startupActions.empty())
             {
                 _OpenNewTab(nullptr);
-                _startupState = StartupState::Initialized;
-                _InitializedHandlers(*this, nullptr);
+
+                _CompleteInitialization();
             }
             else
             {
@@ -206,7 +207,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
     {
         // If there are no actions left, do nothing.
-        if (_appArgs.GetStartupActions().empty())
+        if (_startupActions.empty())
         {
             return;
         }
@@ -216,13 +217,27 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : _appArgs.GetStartupActions())
+            for (const auto& action : _startupActions)
             {
                 _actionDispatch->DoAction(action);
             }
-            _startupState = StartupState::Initialized;
-            _InitializedHandlers(*this, nullptr);
+
+            _CompleteInitialization();
         }
+    }
+
+    // Method Description:
+    // - Perform and steps that need to be done once our initial state is all
+    //   set up. This includes entering fullscreen mode and firing our
+    //   Initialized event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_CompleteInitialization()
+    {
+        _startupState = StartupState::Initialized;
+        _InitializedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -254,6 +269,13 @@ namespace winrt::TerminalApp::implementation
         return RS_(L"ApplicationVersionUnknown");
     }
 
+    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        currentPath.replace_filename(L"NOTICE.html");
+        ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
@@ -277,7 +299,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
-        const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
+        const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
         auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
@@ -333,7 +355,29 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
                     newTerminalArgs->ProfileIndex(profileIndex);
-                    page->_OpenNewTab(*newTerminalArgs);
+
+                    // if alt is pressed, open a pane
+                    const CoreWindow window = CoreWindow::GetForCurrentThread();
+                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                    const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    // Check for DebugTap
+                    bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                    WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                    WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                    if (altPressed && !debugTap)
+                    {
+                        page->_SplitPane(TerminalApp::SplitState::Automatic,
+                                         TerminalApp::SplitType::Manual,
+                                         *newTerminalArgs);
+                    }
+                    else
+                    {
+                        page->_OpenNewTab(*newTerminalArgs);
+                    }
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -722,7 +766,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.GetActiveTitle();
 
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+        if (_settings->GlobalSettings().ShowTitleInTitlebar() &&
             tab.IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
@@ -756,7 +800,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
+        _tabView.TabWidthMode(_settings->GlobalSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -767,9 +811,9 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const bool isVisible = (!_isFullscreen) &&
-                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                               (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings->GlobalSettings().GetAlwaysShowTabs());
+                                _settings->GlobalSettings().AlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -820,9 +864,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
-        _tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl);
-
-        _RemoveTabViewItemByIndex(tabIndexFromControl);
+        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _RemoveTabViewItemByIndex(tabIndexFromControl);
+        }
     }
 
     // Method Description:
@@ -843,6 +889,50 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
+        }
+        else if (_isFullscreen || _rearranging)
+        {
+            // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
+            // not Visible, it's _not_ going to raise a SelectionChanged event,
+            // which is what we usually use to focus another tab. Instead, we'll
+            // have to do it manually here.
+            //
+            // GH#5559 Similarly, we suppress _OnTabItemsChanged events during a
+            // rearrange, so if a tab is closed while we're rearranging tabs, do
+            // this manually.
+            //
+            // We can't use
+            //   auto selectedIndex = _tabView.SelectedIndex();
+            // Because this will always return -1 in this scenario unfortunately.
+            //
+            // So, what we're going to try to do is move the focus to the tab
+            // to the left, within the bounds of how many tabs we have.
+            //
+            // EX: we have 4 tabs: [A, B, C, D]. If we close:
+            // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
+            // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
+            // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
+            // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
+            const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
+            // _UpdatedSelectedTab will do the work of setting up the new tab as
+            // the focused one, and unfocusing all the others.
+            _UpdatedSelectedTab(newSelectedIndex);
+
+            // Also, we need to _manually_ set the SelectedItem of the tabView
+            // here. If we don't, then the TabView will technically not have a
+            // selected item at all, which can make things like ClosePane not
+            // work correctly.
+            auto newSelectedTab{ _GetStrongTabImpl(newSelectedIndex) };
+            _tabView.SelectedItem(newSelectedTab->GetTabViewItem());
+        }
+
+        // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
+        // out our state.
+        if (_rearranging)
+        {
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
         }
     }
 
@@ -865,22 +955,52 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab.BindEventHandlers(term);
+        hostingTab.Initialize(term);
 
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        term.TitleChanged([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto newTitle) {
+        auto weakTab{ hostingTab.get_weak() };
+        auto weakThis{ get_weak() };
+        // PropertyChanged is the generic mechanism by which the Tab
+        // communicates changes to any of its observable properties, including
+        // the Title
+        hostingTab.PropertyChanged([weakTab, weakThis](auto&&, const WUX::Data::PropertyChangedEventArgs& args) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+            if (page && tab)
+            {
+                if (args.PropertyName() == L"Title")
+                {
+                    page->_UpdateTitle(*tab);
+                }
+            }
+        });
+
+        // react on color changed events
+        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
-            if (page && tab)
+            if (page && tab && tab->IsFocused())
             {
-                // The title of the control changed, but not necessarily the title
-                // of the tab. Get the title of the focused pane of the tab, and set
-                // the tab's text to the focused panes' text.
-                page->_UpdateTitle(*tab);
+                page->_SetNonClientAreaColors(color);
             }
         });
+
+        hostingTab.ColorCleared([weakTab, weakThis]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->IsFocused())
+            {
+                page->_ClearNonClientAreaColors();
+            }
+        });
+
+        // TODO GH#3327: Once we support colorizing the NewTab button based on
+        // the color of the tab, we'll want to make sure to call
+        // _ClearNewTabButtonColor here, to reset it to the default (for the
+        // newly created tab).
+        // remove any colors left by other colored tabs
+        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -1028,7 +1148,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
+        if (_tabs.Size() > 1 && _settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }
@@ -1204,7 +1324,7 @@ namespace winrt::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TerminalPage::Title()
     {
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+        if (_settings->GlobalSettings().ShowTitleInTitlebar())
         {
             auto selectedIndex = _tabView.SelectedIndex();
             if (selectedIndex >= 0)
@@ -1326,7 +1446,7 @@ namespace winrt::TerminalApp::implementation
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        if (_settings->GlobalSettings().GetCopyFormatting())
+        if (_settings->GlobalSettings().CopyFormatting())
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1379,12 +1499,26 @@ namespace winrt::TerminalApp::implementation
         // will crash on the UI thread, because the main thread is a STA.
         co_await winrt::resume_background();
 
-        hstring text = L"";
-        if (data.Contains(StandardDataFormats::Text()))
+        try
         {
-            text = co_await data.GetTextAsync();
+            hstring text = L"";
+            if (data.Contains(StandardDataFormats::Text()))
+            {
+                text = co_await data.GetTextAsync();
+            }
+            // Windows Explorer's "Copy address" menu item stores a StorageItem in the clipboard, and no text.
+            else if (data.Contains(StandardDataFormats::StorageItems()))
+            {
+                Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items = co_await data.GetStorageItemsAsync();
+                if (items.Size() > 0)
+                {
+                    Windows::Storage::IStorageItem item = items.GetAt(0);
+                    text = item.Path();
+                }
+            }
+            eventArgs.HandleClipboardData(text);
         }
-        eventArgs.HandleClipboardData(text);
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1467,6 +1601,10 @@ namespace winrt::TerminalApp::implementation
             _RemoveTabViewItem(sender.as<MUX::Controls::TabViewItem>());
             eventArgs.Handled(true);
         }
+        else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
+        {
+            eventArgs.Handled(true);
+        }
     }
 
     void TerminalPage::_UpdatedSelectedTab(const int32_t index)
@@ -1488,7 +1626,20 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
+
+                // Raise an event that our title changed
                 _titleChangeHandlers(*this, Title());
+
+                // Raise an event that our titlebar color changed
+                std::optional<Windows::UI::Color> color = tab->GetTabColor();
+                if (color.has_value())
+                {
+                    _SetNonClientAreaColors(color.value());
+                }
+                else
+                {
+                    _ClearNonClientAreaColors();
+                }
             }
             CATCH_LOG();
         }
@@ -1616,69 +1767,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets the initial commandline to process on startup, and attempts to
-    //   parse it. Commands will be parsed into a list of ShortcutActions that
-    //   will be processed on TerminalPage::Create().
+    // - Sets the initial actions to process on startup. We'll make a copy of
+    //   this list, and process these actions when we're loaded.
     // - This function will have no effective result after Create() is called.
-    // - This function returns 0, unless a there was a non-zero result from
-    //   trying to parse one of the commands provided. In that case, no commands
-    //   after the failing command will be parsed, and the non-zero code
-    //   returned.
     // Arguments:
-    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - actions: a list of Actions to process on startup.
     // Return Value:
-    // - the result of the first command who's parsing returned a non-zero code,
-    //   or 0. (see TerminalPage::_ParseArgs)
-    int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
+    // - <none>
+    void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
     {
-        return _ParseArgs(args);
-    }
-
-    // Method Description:
-    // - Attempts to parse an array of commandline args into a list of
-    //   commands to execute, and then parses these commands. As commands are
-    //   successfully parsed, they will generate ShortcutActions for us to be
-    //   able to execute. If we fail to parse any commands, we'll return the
-    //   error code from the failure to parse that command, and stop processing
-    //   additional commands.
-    // Arguments:
-    // - args: an array of strings to process as a commandline. These args can contain spaces
-    // Return Value:
-    // - 0 if the commandline was successfully parsed
-    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
-    {
-        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
-
-        for (auto& cmdBlob : commands)
-        {
-            // On one hand, it seems like we should be able to have one
-            // AppCommandlineArgs for parsing all of them, and collect the
-            // results one at a time.
-            //
-            // On the other hand, re-using a CLI::App seems to leave state from
-            // previous parsings around, so we could get mysterious behavior
-            // where one command affects the values of the next.
-            //
-            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
-            // > If that option is not given, CLI11 will not touch the initial
-            // > value. This allows you to set up defaults by simply setting
-            // > your value beforehand.
-            //
-            // So we pretty much need the to either manually reset the state
-            // each command, or build new ones.
-            const auto result = _appArgs.ParseCommand(cmdBlob);
-
-            // If this succeeded, result will be 0. Otherwise, the caller should
-            // exit(result), to exit the program.
-            if (result != 0)
-            {
-                return result;
-            }
-        }
-
-        // If all the args were successfully parsed, we'll have some commands
-        // built in _appArgs, which we'll use when the application starts up.
-        return 0;
+        _startupActions = actions;
     }
 
     // Method Description:
@@ -1717,29 +1815,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ToggleFullscreen()
+    void TerminalPage::ToggleFullscreen()
     {
         _toggleFullscreenHandlers(*this, nullptr);
 
         _isFullscreen = !_isFullscreen;
 
         _UpdateTabView();
-    }
-
-    // Method Description:
-    // - If there were any errors parsing the commandline that was used to
-    //   initialize the terminal, this will return a string containing that
-    //   message. If there were no errors, this message will be blank.
-    // - If the user requested help on any command (using --help), this will
-    //   contain the help message.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the help text or error message for the provided commandline, if one
-    //   exists, otherwise the empty string.
-    winrt::hstring TerminalPage::EarlyExitMessage()
-    {
-        return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
     // Method Description:
@@ -1766,6 +1848,158 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(tab));
         return tabImpl;
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // Arguments:
+    // - color: The color of the newly selected tab, used to properly calculate
+    //          the foreground color of the split button (to match the font
+    //          color of the tab)
+    // - accentColor: the actual color we are going to use to paint the tab row and
+    //                split button, so that there is some contrast between the tab
+    //                and the non-client are behind it
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        bool IsBrightColor = ColorHelper::IsBrightColor(color);
+        bool isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
+        winrt::Windows::UI::Color pressedColor{};
+        winrt::Windows::UI::Color hoverColor{};
+        winrt::Windows::UI::Color foregroundColor{};
+        const float hoverColorAdjustment = 5.f;
+        const float pressedColorAdjustment = 7.f;
+
+        if (IsBrightColor)
+        {
+            foregroundColor = winrt::Windows::UI::Colors::Black();
+        }
+        else
+        {
+            foregroundColor = winrt::Windows::UI::Colors::White();
+        }
+
+        if (isLightAccentColor)
+        {
+            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
+        }
+        else
+        {
+            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
+        }
+
+        Media::SolidColorBrush backgroundBrush{ accentColor };
+        Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
+        Media::SolidColorBrush backgroundPressedBrush{ pressedColor };
+        Media::SolidColorBrush foregroundBrush{ foregroundColor };
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackground"), backgroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+    }
+
+    // Method Description:
+    // - Clears the tab split button color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // - Clears the tab row color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearNewTabButtonColor()
+    {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        winrt::hstring keys[] = {
+            L"SplitButtonBackground",
+            L"SplitButtonBackgroundPointerOver",
+            L"SplitButtonBackgroundPressed",
+            L"SplitButtonForeground",
+            L"SplitButtonForegroundPointerOver",
+            L"SplitButtonForegroundPressed"
+        };
+
+        // simply clear any of the colors in the split button's dict
+        for (auto keyString : keys)
+        {
+            auto key = winrt::box_value(keyString);
+            if (_newTabButton.Resources().HasKey(key))
+            {
+                _newTabButton.Resources().Remove(key);
+            }
+        }
+
+        const auto res = Application::Current().Resources();
+
+        const auto defaultBackgroundKey = winrt::box_value(L"TabViewItemHeaderBackground");
+        const auto defaultForegroundKey = winrt::box_value(L"SystemControlForegroundBaseHighBrush");
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
+
+        // TODO: Related to GH#3917 - I think if the system is set to "Dark"
+        // theme, but the app is set to light theme, then this lookup still
+        // returns to us the dark theme brushes. There's gotta be a way to get
+        // the right brushes...
+        // See also GH#5741
+        if (res.HasKey(defaultBackgroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultBackgroundKey);
+            backgroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            backgroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
+        }
+
+        if (res.HasKey(defaultForegroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultForegroundKey);
+            foregroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            foregroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
+        }
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // - This method could also set the color of the title bar and tab row
+    // in the future
+    // Arguments:
+    // - selectedTabColor: The color of the newly selected tab
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& /*selectedTabColor*/)
+    {
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
+    }
+
+    // Method Description:
+    // - Clears the tab split button color when the tab's color is cleared
+    // - This method could also clear the color of the title bar and tab row
+    // in the future
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearNonClientAreaColors()
+    {
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -78,7 +78,6 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(CONSOLE_OBJ_PATH)\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
-    $(CONSOLE_OBJ_PATH)\renderer\dx\lib\$(O)\ConRenderDx.lib \
     $(CONSOLE_OBJ_PATH)\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
     $(CONSOLE_OBJ_PATH)\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
     $(CONSOLE_OBJ_PATH)\renderer\vt\lib\$(O)\ConRenderVt.lib \

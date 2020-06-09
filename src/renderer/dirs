@@ -1,6 +1,5 @@
 DIRS= \
      base \
-     dx \
      gdi \
      wddmcon \
      vt \

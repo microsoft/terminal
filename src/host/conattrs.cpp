@@ -22,7 +22,7 @@ struct _HSL
     double h, s, l;
 
     // constructs an HSL color from a RGB Color.
-    _HSL(const COLORREF rgb)
+    explicit _HSL(const COLORREF rgb)
     {
         const double r = (double)GetRValue(rgb);
         const double g = (double)GetGValue(rgb);
@@ -81,13 +81,12 @@ static double _FindDifference(const _HSL* const phslColorA, const COLORREF rgbCo
 //Arguments:
 // - Color - The RGB color to fine the nearest color to.
 // - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, const WORD cColorTable)
+WORD FindNearestTableIndex(const COLORREF Color, const std::basic_string_view<COLORREF> ColorTable)
 {
     // Quick check for an exact match in the color table:
-    for (WORD i = 0; i < cColorTable; i++)
+    for (WORD i = 0; i < ColorTable.size(); i++)
     {
         if (Color == ColorTable[i])
         {
@@ -100,7 +99,7 @@ WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const C
     const _HSL hslColor = _HSL(Color);
     WORD closest = 0;
     double minDiff = _FindDifference(&hslColor, ColorTable[0]);
-    for (WORD i = 1; i < cColorTable; i++)
+    for (WORD i = 1; i < ColorTable.size(); i++)
     {
         double diff = _FindDifference(&hslColor, ColorTable[i]);
         if (diff < minDiff)
@@ -146,36 +145,19 @@ WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry) noexcept
                                   static_cast<WORD>(xtermTableEntry);
 }
 
-// Function Description:
-// - Converts the value of a pair of xterm color table indices to the legacy attr equivalent.
-// Arguments:
-// - xtermForeground: the xterm color table foreground index
-// - xtermBackground: the xterm color table background index
-// Return Value:
-// - The legacy windows attribute equivalent.
-WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground)
-{
-    const WORD fgAttr = XtermToWindowsIndex(xtermForeground);
-    const WORD bgAttr = XtermToWindowsIndex(xtermBackground);
-
-    return (bgAttr << 4) | fgAttr;
-}
-
 //Routine Description:
 // Returns the exact entry from the color table, if it's in there.
 //Arguments:
 // - Color - The RGB color to fine the nearest color to.
 // - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
 bool FindTableIndex(const COLORREF Color,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable,
+                    const std::basic_string_view<COLORREF> ColorTable,
                     _Out_ WORD* const pFoundIndex)
 {
     *pFoundIndex = 0;
-    for (WORD i = 0; i < cColorTable; i++)
+    for (WORD i = 0; i < ColorTable.size(); i++)
     {
         if (ColorTable[i] == Color)
         {
@@ -184,42 +166,4 @@ bool FindTableIndex(const COLORREF Color,
         }
     }
     return false;
-}
-
-// Method Description:
-// - Get a COLORREF for the foreground component of the given legacy attributes.
-// Arguments:
-// - wLegacyAttrs - The legacy attributes to get the foreground color from.
-// - ColorTable - The array of colors to get the color from.
-// - cColorTable - The number of elements in ColorTable
-// Return Value:
-// - the COLORREF for the foreground component
-COLORREF ForegroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable)
-{
-    const byte iColorTableIndex = LOBYTE(wLegacyAttrs) & FG_ATTRS;
-
-    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
-               ColorTable[iColorTableIndex] :
-               INVALID_COLOR;
-}
-
-// Method Description:
-// - Get a COLORREF for the background component of the given legacy attributes.
-// Arguments:
-// - wLegacyAttrs - The legacy attributes to get the background color from.
-// - ColorTable - The array of colors to get the color from.
-// - cColorTable - The number of elements in ColorTable
-// Return Value:
-// - the COLORREF for the background component
-COLORREF BackgroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable)
-{
-    const byte iColorTableIndex = (LOBYTE(wLegacyAttrs) & BG_ATTRS) >> 4;
-
-    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
-               ColorTable[iColorTableIndex] :
-               INVALID_COLOR;
 }

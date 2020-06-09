@@ -5,6 +5,21 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - defaultAttributes: the attribute values to be used for default colors.
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
+    const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
+    const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
+    const bool brighten = _foreground.IsIndex16() && IsBold();
+    return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
+}
+
 bool TextAttribute::IsLegacy() const noexcept
 {
     return _foreground.IsLegacy() && _background.IsLegacy();
@@ -18,7 +33,7 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
                                                COLORREF defaultFgColor,
                                                COLORREF defaultBgColor) const noexcept
 {
-    return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
+    return IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
 }
 
 // Routine Description:
@@ -31,7 +46,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
                                                COLORREF defaultFgColor,
                                                COLORREF defaultBgColor) const noexcept
 {
-    return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
+    return IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
 }
 
 // Routine Description:
@@ -60,21 +75,6 @@ COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> color
     return _background.GetColor(colorTable, defaultColor, false);
 }
 
-void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
-{
-    WI_UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
-    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-}
-
-WORD TextAttribute::GetMetaAttributes() const noexcept
-{
-    WORD wMeta = _wAttrLegacy;
-    WI_ClearAllFlags(wMeta, FG_ATTRS);
-    WI_ClearAllFlags(wMeta, BG_ATTRS);
-    WI_ClearAllFlags(wMeta, COMMON_LVB_SBCSDBCS);
-    return wMeta;
-}
-
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
@@ -85,62 +85,24 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
     _background = TextColor(rgbBackground);
 }
 
-void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
+void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
 {
-    _wAttrLegacy = gsl::narrow_cast<WORD>(wLegacy & META_ATTRS);
-    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    const BYTE fgIndex = gsl::narrow_cast<BYTE>(wLegacy & FG_ATTRS);
-    const BYTE bgIndex = gsl::narrow_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
-    _foreground = TextColor(fgIndex);
-    _background = TextColor(bgIndex);
+    _foreground = TextColor(fgIndex, false);
 }
 
-void TextAttribute::SetLegacyAttributes(const WORD attrs,
-                                        const bool setForeground,
-                                        const bool setBackground,
-                                        const bool setMeta) noexcept
+void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
 {
-    if (setForeground)
-    {
-        const BYTE fgIndex = gsl::narrow_cast<BYTE>(attrs & FG_ATTRS);
-        _foreground = TextColor(fgIndex);
-    }
-    if (setBackground)
-    {
-        const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
-        _background = TextColor(bgIndex);
-    }
-    if (setMeta)
-    {
-        SetMetaAttributes(attrs);
-    }
+    _background = TextColor(bgIndex, false);
 }
 
-// Method Description:
-// - Sets the foreground and/or background to a particular index in the 256color
-//      table. If either parameter is nullptr, it's ignored.
-//   This method can be used to set the colors to indexes in the range [0, 255],
-//      as opposed to SetLegacyAttributes, which clamps them to [0,15]
-// Arguments:
-// - foreground: nullptr if we should ignore this attr, else a pointer to a byte
-//      value to use as an index into the 256-color table.
-// - background: nullptr if we should ignore this attr, else a pointer to a byte
-//      value to use as an index into the 256-color table.
-// Return Value:
-// - <none>
-void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foreground,
-                                         const std::optional<const BYTE> background) noexcept
+void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
 {
-    if (foreground)
-    {
-        const BYTE fgIndex = (*foreground) & 0xFF;
-        _foreground = TextColor(fgIndex);
-    }
-    if (background)
-    {
-        const BYTE bgIndex = (*background) & 0xFF;
-        _background = TextColor(bgIndex);
-    }
+    _foreground = TextColor(fgIndex, true);
+}
+
+void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
+{
+    _background = TextColor(bgIndex, true);
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
@@ -195,19 +157,81 @@ void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
 }
 
-void TextAttribute::Embolden() noexcept
+bool TextAttribute::IsBold() const noexcept
 {
-    _SetBoldness(true);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
 }
 
-void TextAttribute::Debolden() noexcept
+bool TextAttribute::IsItalic() const noexcept
 {
-    _SetBoldness(false);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Italics);
 }
 
-void TextAttribute::SetExtendedAttributes(const ExtendedAttributes attrs) noexcept
+bool TextAttribute::IsBlinking() const noexcept
 {
-    _extendedAttrs = attrs;
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Blinking);
+}
+
+bool TextAttribute::IsInvisible() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Invisible);
+}
+
+bool TextAttribute::IsCrossedOut() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::CrossedOut);
+}
+
+bool TextAttribute::IsUnderlined() const noexcept
+{
+    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
+}
+
+bool TextAttribute::IsReverseVideo() const noexcept
+{
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+}
+
+void TextAttribute::SetBold(bool isBold) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+}
+
+void TextAttribute::SetItalics(bool isItalic) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Italics, isItalic);
+}
+
+void TextAttribute::SetBlinking(bool isBlinking) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Blinking, isBlinking);
+}
+
+void TextAttribute::SetInvisible(bool isInvisible) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Invisible, isInvisible);
+}
+
+void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::CrossedOut, isCrossedOut);
+}
+
+void TextAttribute::SetUnderline(bool isUnderlined) noexcept
+{
+    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+}
+
+void TextAttribute::SetReverseVideo(bool isReversed) noexcept
+{
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO, isReversed);
+}
+
+ExtendedAttributes TextAttribute::GetExtendedAttributes() const noexcept
+{
+    return _extendedAttrs;
 }
 
 // Routine Description:
@@ -215,11 +239,6 @@ void TextAttribute::SetExtendedAttributes(const ExtendedAttributes attrs) noexce
 void TextAttribute::Invert() noexcept
 {
     WI_ToggleFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
-}
-
-void TextAttribute::_SetBoldness(const bool isBold) noexcept
-{
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
 }
 
 void TextAttribute::SetDefaultForeground() noexcept
@@ -230,21 +249,6 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
-}
-
-// Method Description:
-// - Returns true if this attribute indicates its foreground is the "default"
-//      foreground. Its _rgbForeground will contain the actual value of the
-//      default foreground. If the default colors are ever changed, this method
-//      should be used to identify attributes with the default fg value, and
-//      update them accordingly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff this attribute indicates it's the "default" foreground color.
-bool TextAttribute::ForegroundIsDefault() const noexcept
-{
-    return _foreground.IsDefault();
 }
 
 // Method Description:
@@ -267,6 +271,6 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 //      requires for most erasing and filling operations.
 void TextAttribute::SetStandardErase() noexcept
 {
-    SetExtendedAttributes(ExtendedAttributes::Normal);
-    SetMetaAttributes(0);
+    _extendedAttrs = ExtendedAttributes::Normal;
+    _wAttrLegacy = 0;
 }

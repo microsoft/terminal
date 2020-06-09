@@ -11,9 +11,8 @@ using namespace Microsoft::Console::Types;
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                const IDefaultColorProvider& colorProvider,
                                const Viewport initialViewport,
-                               _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                               const WORD cColorTable) :
-    XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, false),
+                               const std::basic_string_view<COLORREF> colorTable) :
+    XtermEngine(std::move(hPipe), colorProvider, initialViewport, colorTable, false),
     _lastExtendedAttrsState{ ExtendedAttributes::Normal }
 {
 }
@@ -52,8 +51,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,
                                               WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
-                                              _ColorTable,
-                                              _cColorTable);
+                                              _colorTable);
 }
 
 // Routine Description:
@@ -109,4 +107,18 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     RETURN_IF_FAILED(hr);
 
     return S_OK;
+}
+
+// Method Description:
+// - Manually emit a "Erase Scrollback" sequence to the connected terminal. We
+//   need to do this in certain cases that we've identified where we believe the
+//   client wanted the entire terminal buffer cleared, not just the viewport.
+//   For more information, see GH#3126.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT Xterm256Engine::ManuallyClearScrollback() noexcept
+{
+    return _ClearScrollback();
 }

@@ -174,12 +174,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
+        winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
         void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
         void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _KeyUpHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -197,7 +198,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
-        void _DoResize(const double newWidth, const double newHeight);
+        void _DoResizeUnderLock(const double newWidth, const double newHeight);
+        void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         winrt::fire_and_forget _TerminalCursorPositionChanged();
@@ -217,8 +219,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
+        void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
-        bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
 

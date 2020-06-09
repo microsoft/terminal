@@ -93,5 +93,4 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().SetWindowVisualState(visualState);
     }
-
 }

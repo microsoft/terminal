@@ -156,7 +156,7 @@ using namespace Microsoft::Console::Types;
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     _trace.TracePaintCursor(options.coordCursor);
 
@@ -192,8 +192,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                                          const COLORREF colorBackground,
                                                          const bool isBold,
-                                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                         const WORD cColorTable) noexcept
+                                                         const std::basic_string_view<COLORREF> colorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -232,7 +231,7 @@ using namespace Microsoft::Console::Types;
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
             }
-            else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorForeground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
             }
@@ -249,7 +248,7 @@ using namespace Microsoft::Console::Types;
             {
                 RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
             }
-            else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+            else if (::FindTableIndex(colorBackground, colorTable, &wFoundColor))
             {
                 RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
             }
@@ -278,8 +277,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                              const COLORREF colorBackground,
                                                              const bool isBold,
-                                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                             const WORD cColorTable) noexcept
+                                                             const std::basic_string_view<COLORREF> colorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -312,7 +310,7 @@ using namespace Microsoft::Console::Types;
 
         if (fgChanged)
         {
-            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
 
             _LastFG = colorForeground;
@@ -320,7 +318,7 @@ using namespace Microsoft::Console::Types;
 
         if (bgChanged)
         {
-            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, colorTable);
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
 
             _LastBG = colorBackground;
@@ -445,6 +443,12 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
     const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
+
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
@@ -459,7 +463,7 @@ using namespace Microsoft::Console::Types;
     // on the same line.
     const bool removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine));
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -475,6 +479,13 @@ using namespace Microsoft::Console::Types;
         // accidentally erasing the last character from the previous line, as
         // the cursor is still waiting on that character for the next character
         // to follow it.
+        //
+        // GH#5839 - If we've emitted a wrapped row, because the cursor is
+        // sitting just past the last cell of the previous row, if we execute a
+        // EraseCharacter or EraseLine here, then the row won't actually get
+        // cleared here. This logic is important to make sure that the cursor is
+        // in the right position before we do that.
+
         _wrappedRow = std::nullopt;
         _trace.TraceClearWrapped();
     }
@@ -578,6 +589,7 @@ using namespace Microsoft::Console::Types;
     if (printingBottomLine)
     {
         _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
     }
 
     return S_OK;

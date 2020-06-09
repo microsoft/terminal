@@ -46,7 +46,7 @@ class TerminalApp::CascadiaSettings final
 {
 public:
     CascadiaSettings();
-    CascadiaSettings(const bool addDynamicProfiles);
+    explicit CascadiaSettings(const bool addDynamicProfiles);
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
@@ -69,7 +69,6 @@ public:
     static std::filesystem::path GetSettingsPath();
     static std::filesystem::path GetDefaultSettingsPath();
 
-    std::optional<GUID> FindGuid(const std::wstring_view profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
@@ -106,7 +105,8 @@ private:
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    GUID _GetProfileForIndex(std::optional<int> index) const;
+    std::optional<GUID> _GetProfileGuidByName(const std::wstring_view) const;
+    std::optional<GUID> _GetProfileGuidByIndex(std::optional<int> index) const;
     GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
@@ -114,11 +114,13 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
+    void _ResolveDefaultProfile();
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
     void _ValidateMediaResources();
     void _ValidateKeybindings();
+    void _ValidateNoGlobalsKey();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

@@ -68,13 +68,26 @@ public:
     static void VerifyExpectedString(std::wstring_view expectedString,
                                      TextBufferCellIterator& iter)
     {
+        size_t currentCharIndex = 0;
         for (const auto wch : expectedString)
         {
+            // This test spews out a lot of verify logging by default because of
+            // the loops, so suppress that to only show the failures.
+            WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+
             wchar_t buffer[]{ wch, L'\0' };
             std::wstring_view view{ buffer, 1 };
             VERIFY_IS_TRUE(iter, L"Ensure iterator is still valid");
+
+            if (view != (iter)->Chars())
+            {
+                WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(L"character [%d] was mismatched", currentCharIndex));
+            }
+
             VERIFY_ARE_EQUAL(view, (iter++)->Chars(), WEX::Common::NoThrowString().Format(L"%s", view.data()));
         }
+        WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
+            L"Successfully validated %d characters were '%s'", expectedString.size(), expectedString.data()));
     };
 
     // Function Description:
@@ -138,5 +151,51 @@ public:
         std::replace(escaped.begin(), escaped.end(), L'\x0A', L'\x240A'); // LF
         std::replace(escaped.begin(), escaped.end(), L'\x0D', L'\x240D'); // CR
         return escaped;
+    }
+
+    template<class... T>
+    static bool VerifyLineContains(TextBufferCellIterator& actual, T&&... expectedContent)
+    {
+        auto expected = OutputCellIterator{ std::forward<T>(expectedContent)... };
+
+        WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+        auto charsProcessed = 0;
+
+        while (actual && expected)
+        {
+            auto actualChars = actual->Chars();
+            auto expectedChars = expected->Chars();
+            auto actualAttrs = actual->TextAttr();
+            auto expectedAttrs = expected->TextAttr();
+
+            auto mismatched = (actualChars != expectedChars || actualAttrs != expectedAttrs);
+            if (mismatched)
+            {
+                Log::Comment(NoThrowString().Format(
+                    L"Character or attribute at index %d was mismatched", charsProcessed));
+            }
+
+            VERIFY_ARE_EQUAL(expectedChars, actualChars);
+            VERIFY_ARE_EQUAL(expectedAttrs, actualAttrs);
+            if (mismatched)
+            {
+                return false;
+            }
+            ++actual;
+            ++expected;
+            ++charsProcessed;
+        }
+
+        WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
+            L"Successfully validated the chars and attrs of %d cells", charsProcessed));
+        return true;
+    };
+
+    template<class... T>
+    static TextBufferCellIterator VerifyLineContains(const TextBuffer& tb, COORD position, T&&... expectedContent)
+    {
+        auto actual = tb.GetCellLineDataAt(position);
+        VerifyLineContains(actual, std::forward<T>(expectedContent)...);
+        return actual;
     }
 };

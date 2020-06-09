@@ -135,7 +135,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz{},
             _rc{},
             _bits{},
-            _dirty{},
             _runs{}
         {
         }
@@ -149,7 +148,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(_sz.area()),
-            _dirty(fill ? sz : til::rectangle{}),
             _runs{}
         {
             if (fill)
@@ -162,7 +160,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _sz == other._sz &&
                    _rc == other._rc &&
-                   _dirty == other._dirty && // dirty is before bits because it's a rough estimate of bits and a faster comparison.
                    _bits == other._bits;
             // _runs excluded because it's a cache of generated state.
         }
@@ -187,15 +184,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // If we don't have cached runs, rebuild.
             if (!_runs.has_value())
             {
-                // If there's only one square dirty, quick save it off and be done.
-                if (one())
-                {
-                    _runs.emplace({ _dirty });
-                }
-                else
-                {
-                    _runs.emplace(begin(), end());
-                }
+                _runs.emplace(begin(), end());
             }
 
             // Return a reference to the runs.
@@ -274,8 +263,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _runs.reset(); // reset cached runs on any non-const method
 
             _bits.set(_rc.index_of(pt));
-
-            _dirty |= til::rectangle{ pt };
         }
 
         void set(const til::rectangle rc)
@@ -287,22 +274,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
             }
-
-            _dirty |= rc;
         }
 
         void set_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.set();
-            _dirty = _rc;
         }
 
         void reset_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.reset();
-            _dirty = {};
         }
 
         // True if we resized. False if it was the same size as before.
@@ -358,9 +341,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        bool one() const
+        constexpr bool one() const noexcept
         {
-            return _dirty.size() == til::size{ 1, 1 };
+            return _bits.count() == 1;
         }
 
         constexpr bool any() const noexcept
@@ -370,12 +353,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool none() const noexcept
         {
-            return _dirty.empty();
+            return _bits.none();
         }
 
         constexpr bool all() const noexcept
         {
-            return _dirty == _rc;
+            return _bits.all();
         }
 
         constexpr til::size size() const noexcept
@@ -399,7 +382,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-        til::rectangle _dirty;
         til::size _sz;
         til::rectangle _rc;
         dynamic_bitset<> _bits;

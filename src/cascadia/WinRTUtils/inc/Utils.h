@@ -4,22 +4,6 @@
 #pragma once
 
 // Method Description:
-// - Converts a COLORREF to Color
-// Arguments:
-// - colorref: COLORREF to convert to Color
-// Return Value:
-// - Color containing the RGB values from colorref
-inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
-{
-    winrt::Windows::UI::Color color;
-    color.A = 255;
-    color.R = GetRValue(colorref);
-    color.G = GetGValue(colorref);
-    color.B = GetBValue(colorref);
-    return color;
-}
-
-// Method Description:
 // - Scales a Rect based on a scale factor
 // Arguments:
 // - rect: Rect to scale by scale

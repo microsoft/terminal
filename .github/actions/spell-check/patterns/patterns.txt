@@ -1,8 +1,14 @@
-https://(?:(?:[-a-zA-Z0-9?&=]*\.|)microsoft\.com)/[-a-zA-Z0-9?&=_\/.]*
+https://(?:(?:[-a-zA-Z0-9?&=]*\.|)microsoft\.com)/[-a-zA-Z0-9?&=_#\/.]*
 https://aka\.ms/[-a-zA-Z0-9?&=\/_]*
+https://www\.itscj\.ipsj\.or\.jp/iso-ir/[-0-9]+\.pdf
+https://www\.vt100\.net/docs/[-a-zA-Z0-9#_\/.]*
+https://www.w3.org/[-a-zA-Z0-9?&=\/_#]*
 https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
-(?:0[Xx]|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]?\b
-\{[0-9A-FA-F]{8}-(?:[0-9A-FA-F]{4}-){3}[0-9A-FA-F]{12}\}
+https://[a-z-]+\.githubusercontent\.com/[-a-zA-Z0-9?&=_\/.]*
+[Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
+(?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)
+(?:0[Xx]|\\x|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]{0,2}\b
+microsoft/cascadia-code\@[0-9a-fA-F]{40}
 \d+x\d+Logo
 Scro\&ll
 # selectionInput.cpp

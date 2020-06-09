@@ -1758,8 +1758,7 @@ void TextBufferTests::ResizeTraditional()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkY", shrinkY), L"Shrink Y = true, Grow Y = false");
 
     const COORD smallSize = { 5, 5 };
-    TextAttribute defaultAttr;
-    defaultAttr.SetFromLegacy(0);
+    const TextAttribute defaultAttr(0);
 
     TextBuffer buffer(smallSize, defaultAttr, 12, _renderTarget);
 
