@@ -417,7 +417,13 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const ControlKeyStates states,
                             const bool keyDown)
 {
-    TrySnapOnInput();
+    // GH#6423 - don't snap on this key if the key that was pressed was a
+    // modifier key. We'll wait for a real keystroke to snap to the bottom.
+    if (!KeyEvent::IsModifierKey(vkey))
+    {
+        TrySnapOnInput();
+    }
+
     _StoreKeyEvent(vkey, scanCode);
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();

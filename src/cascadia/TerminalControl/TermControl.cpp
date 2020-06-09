@@ -826,7 +826,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
         // flow through to the terminal.
-        if (_terminal->IsSelectionActive())
+        // GH#6423 - don't dismiss selection if the key that was pressed was a
+        // modifier key. We'll wait for a real keystroke to dismiss the
+        // selection.
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();

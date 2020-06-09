@@ -17,6 +17,7 @@ IMap
 IObject
 IStorage
 LCID
+LSHIFT
 NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
@@ -26,5 +27,6 @@ oaidl
 ocidl
 rfind
 roundf
+RSHIFT
 SIZENS
 tmp
