@@ -692,7 +692,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
         // The `DefWindowProc` function doesn't open the system menu for some
         // reason so we have to do it ourselves.
         if (wParam == HTCAPTION)
