@@ -74,12 +74,35 @@ the MIT License. See LICENSE in the project root for license information. -->
             AllowDrop="False"
             ItemsSource="{x:Bind FilteredActions}">
 
-            <ItemsControl.ItemTemplate>
+            <ItemsControl.ItemTemplate >
                 <DataTemplate x:DataType="local:Command">
-                    <StackPanel Orientation="Horizontal" >
-                        <!-- TODO: Add Icon to command palette entries -->
-                        <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
-                    </StackPanel>
+
+                    <!-- This HorizontalContentAlignment="Stretch" is important
+                    to make sure it takes the entire width of the line -->
+                    <ListViewItem HorizontalContentAlignment="Stretch">
+
+                        <Grid HorizontalAlignment="Stretch"  >
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- TODO: Add Icon to command palette entries, in column 0 -->
+
+                            <TextBlock Grid.Column="1"
+                                       HorizontalAlignment="Left"
+                                       Text="{x:Bind Name, Mode=OneWay}" />
+
+                            <TextBlock Grid.Column="2"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Text="ctrl+shift+1" />
+                        </Grid>
+                    </ListViewItem>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ListView>
