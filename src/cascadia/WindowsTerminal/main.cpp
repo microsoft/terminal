@@ -78,6 +78,11 @@ static bool _messageIsF7Keypress(const MSG& message)
     return (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN) && message.wParam == VK_F7;
 }
 
+static bool _messageIsAltKeyup(const MSG& message)
+{
+    return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && (message.wParam == VK_MENU || message.wParam == VK_LMENU || message.wParam == VK_RMENU);
+}
+
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
@@ -144,6 +149,12 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             }
         }
 
+        if (_messageIsAltKeyup(message))
+        {
+            auto a = 0;
+            a++;
+            a;
+        }
         TranslateMessage(&message);
         DispatchMessage(&message);
     }

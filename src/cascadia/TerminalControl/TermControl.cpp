@@ -122,6 +122,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
+        CoreWindow::GetForCurrentThread().Dispatcher().AcceleratorKeyActivated([this](auto&&, const AcceleratorKeyEventArgs& args) {
+            auto keyState = args.KeyStatus();
+            auto down = keyState.WasKeyDown;
+            auto released = keyState.IsKeyReleased;
+            down;
+            released;
+
+            auto a = 0;
+            a++;
+            a;
+
+        });
+
         _ApplyUISettings();
     }
 
