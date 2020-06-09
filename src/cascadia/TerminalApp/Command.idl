@@ -12,5 +12,6 @@ namespace TerminalApp
         String Name;
         String IconPath;
         ActionAndArgs Action;
+        String KeyChordText;
     }
 }

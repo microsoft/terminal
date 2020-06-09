@@ -55,8 +55,12 @@ namespace winrt::TerminalApp::implementation
     {
         for (auto& kv : _keyShortcuts)
         {
-            if (kv.second.Action() == actionAndArgs.Action() &&
-                kv.second.Args().Equals(actionAndArgs.Args()))
+            auto action = kv.second.Action();
+            auto args = kv.second.Args();
+            auto actionMatched = action == actionAndArgs.Action();
+            auto argsMatched = args == actionAndArgs.Args();
+            if (actionMatched &&
+                argsMatched)
             {
                 return kv.first;
             }

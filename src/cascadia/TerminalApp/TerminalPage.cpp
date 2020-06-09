@@ -43,6 +43,35 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a string representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
+    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return buffer;
+    }
+
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() }
     {
@@ -63,9 +92,24 @@ namespace winrt::TerminalApp::implementation
         {
             // Update the command palette when settings reload
             auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-            for (auto& action : _settings->GlobalSettings().GetCommands())
+            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
             {
-                commandsCollection.Append(action.second);
+                auto command = nameAndCommand.second;
+                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+                if (keyChord)
+                {
+                    auto overrideString = _FormatOverrideShortcutText(keyChord.Modifiers());
+                    // TODO: The string can't just be the character. If it's
+                    // something like "tab" or "+", this won't return a
+                    // printable character. We should use that keybinding
+                    // serialization table in reverse.
+                    auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
+                    if (mappedCh != 0)
+                    {
+                        command.KeyChordText(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
+                    }
+                }
+                commandsCollection.Append(command);
             }
             CommandPalette().SetActions(commandsCollection);
         }
@@ -1357,35 +1401,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return { L"Windows Terminal" };
-    }
-
-    // Method Description:
-    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
-    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
-    //      in the same order that XAML would put them as well.
-    // Return Value:
-    // - a string representation of the key modifiers for the shortcut
-    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
-    {
-        std::wstring buffer{ L"" };
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
-        {
-            buffer += L"Ctrl+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
-        {
-            buffer += L"Shift+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
-        {
-            buffer += L"Alt+";
-        }
-
-        return buffer;
     }
 
     // Method Description:
