@@ -140,12 +140,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _snapOnInput = settings.SnapOnInput();
-
+    _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
-
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-
     _startingTitle = settings.StartingTitle();
+
+    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -410,15 +410,20 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - keyDown: If true, the key was pressed, otherwise the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey,
+                            const WORD scanCode,
+                            const ControlKeyStates states,
+                            const bool keyDown)
 {
     TrySnapOnInput();
     _StoreKeyEvent(vkey, scanCode);
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
 
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximize, size, move, close.
@@ -428,7 +433,17 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    const auto ch = _CharacterFromKeyEvent(vkey, scanCode, states);
+    // By default Windows treats Ctrl+Alt as an alias for AltGr.
+    // When the altGrAliasing setting is set to false, this behaviour should be disabled.
+    //
+    // Whenever possible _CharacterFromKeyEvent() will return a valid character.
+    // For instance both Ctrl+Alt+Q as well as AltGr+Q return @ on a German keyboard.
+    //
+    // We can achieve the altGrAliasing functionality by skipping the call to _CharacterFromKeyEvent,
+    // as TerminalInput::HandleKey will then fall back to using the vkey which
+    // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
+    // See GH#5525/GH#6211 for more details
+    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
 
     // Delegate it to the character event handler if this key event can be
     // mapped to one (see method description above). For Alt+key combinations
@@ -443,7 +458,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -504,8 +519,15 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    // Unfortunately, the UI doesn't give us both a character down and a
+    // character up event, only a character received event. So fake sending both
+    // to the terminal input translator. Unless it's in win32-input-mode, it'll
+    // ignore the keyup.
+    KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
+    const auto handledDown = _terminalInput->HandleKey(&keyDown);
+    const auto handledUp = _terminalInput->HandleKey(&keyUp);
+    return handledDown || handledUp;
 }
 
 // Method Description:

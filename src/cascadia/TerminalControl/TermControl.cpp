@@ -705,7 +705,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!handled)
         {
             // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-            (void)_TrySendKeyEvent(VK_F7, 0, modifiers);
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers, false);
             handled = true;
         }
 
@@ -715,6 +716,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
+        _KeyHandler(e, true);
+    }
+
+    void TermControl::_KeyUpHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                    Input::KeyRoutedEventArgs const& e)
+    {
+        _KeyHandler(e, false);
+    }
+
+    void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
+    {
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
         if (_searchBox && _searchBox->ContainsFocus())
@@ -722,14 +734,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // mark event as handled and do nothing if...
-        //   - closing
-        //   - key modifier is pressed
-        // NOTE: for key combos like CTRL + C, two events are fired (one for CTRL, one for 'C'). We care about the 'C' event and then check for key modifiers below.
+        // Mark the event as handled and do nothing if we're closing, or the key
+        // was the Windows key.
+        //
+        // NOTE: for key combos like CTRL + C, two events are fired (one for
+        // CTRL, one for 'C'). Since it's possible the terminal is in
+        // win32-input-mode, then we'll send all these keystrokes to the
+        // terminal - it's smart enough to ignore the keys it doesn't care
+        // about.
         if (_closing ||
-            e.OriginalKey() == VirtualKey::Control ||
-            e.OriginalKey() == VirtualKey::Shift ||
-            e.OriginalKey() == VirtualKey::Menu ||
             e.OriginalKey() == VirtualKey::LeftWindows ||
             e.OriginalKey() == VirtualKey::RightWindows)
 
@@ -743,19 +756,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
-        // Alt-Numpad# input will send us a character once the user releases Alt, so we should be ignoring the individual keydowns.
-        // The character will be sent through the TSFInputControl.
-        // See GH#1401 for more details
-        if (modifiers.IsAltPressed() && (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
+        // Alt-Numpad# input will send us a character once the user releases
+        // Alt, so we should be ignoring the individual keydowns. The character
+        // will be sent through the TSFInputControl. See GH#1401 for more
+        // details
+        if (modifiers.IsAltPressed() &&
+            (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
 
         {
             e.Handled(true);
             return;
         }
 
-        // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate
+        // between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
-        if (!modifiers.IsAltGrPressed())
+        //
+        // GH#4999: Only process keybindings on the keydown. If we don't check
+        // this at all, we'll process the keybinding twice. If we only process
+        // keybindings on the keyUp, then we'll still send the keydown to the
+        // connected terminal application, and something like ctrl+shift+T will
+        // emit a ^T to the pipe.
+        if (!modifiers.IsAltGrPressed() && keyDown)
         {
             auto bindings = _settings.KeyBindings();
             if (bindings)
@@ -771,7 +793,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!handled)
         {
-            handled = _TrySendKeyEvent(vkey, scanCode, modifiers);
+            handled = _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
@@ -793,7 +815,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers)
+    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    bool TermControl::_TrySendKeyEvent(const WORD vkey,
+                                       const WORD scanCode,
+                                       const ControlKeyStates modifiers,
+                                       const bool keyDown)
     {
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
@@ -818,7 +844,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
-        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers) : true;
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown) : true;
 
         if (_cursorTimer.has_value())
         {

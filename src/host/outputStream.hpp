@@ -73,6 +73,7 @@ public:
 
     bool PrivateSetCursorKeysMode(const bool applicationMode) override;
     bool PrivateSetKeypadMode(const bool applicationMode) override;
+    bool PrivateEnableWin32InputMode(const bool win32InputMode) override;
 
     bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;
@@ -115,6 +116,7 @@ public:
 
     bool PrivateWriteConsoleControlInput(const KeyEvent key) override;
 
+    bool SetConsoleOutputCP(const unsigned int codepage) override;
     bool GetConsoleOutputCP(unsigned int& codepage) override;
 
     bool IsConsolePty() const override;

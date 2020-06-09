@@ -28,7 +28,13 @@
 
 #include "..\..\renderer\base\renderer.hpp"
 #include "..\..\renderer\gdi\gdirenderer.hpp"
+
+#ifndef __INSIDE_WINDOWS
 #include "..\..\renderer\dx\DxRenderer.hpp"
+#else
+// Forward-declare this so we don't blow up later.
+struct DxEngine;
+#endif
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"

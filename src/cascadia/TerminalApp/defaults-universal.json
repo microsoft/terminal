@@ -41,6 +41,7 @@
             "icon": "ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "useAcrylic": false,
             "backgroundImage": "ms-appx:///internal-background.png",
             "backgroundImageAlignment": "bottomRight",

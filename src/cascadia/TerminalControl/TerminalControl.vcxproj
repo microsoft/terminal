@@ -86,7 +86,8 @@
     <None Include="TerminalControl.def" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -133,4 +134,6 @@
       <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

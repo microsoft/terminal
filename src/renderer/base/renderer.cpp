@@ -808,7 +808,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     // We could theoretically pre-pass for this in the loop above to be more efficient about walking
                     // the iterator, but I fear it would make the code even more confusing than it already is.
                     // Do that in the future if some WPR trace points you to this spot as super bad.
-                    for (auto colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                    for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                     {
                         auto lines = lineIt->TextAttr();
                         _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
