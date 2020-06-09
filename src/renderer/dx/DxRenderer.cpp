@@ -83,6 +83,7 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+    _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -433,6 +434,7 @@ try
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         switch (_chainMode)
         {
@@ -485,6 +487,17 @@ try
         }
         default:
             THROW_HR(E_NOTIMPL);
+        }
+
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
+        const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
+        if (SUCCEEDED(asResult))
+        {
+            _swapChainFrameLatencyWaitableObject = swapChain2->GetFrameLatencyWaitableObject();
+        }
+        else
+        {
+            LOG_HR_MSG(asResult, "Failed to obtain IDXGISwapChain2 from swap chain");
         }
 
         if (_retroTerminalEffects)
@@ -612,6 +625,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
+        _swapChainFrameLatencyWaitableObject = INVALID_HANDLE_VALUE;
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -960,7 +974,7 @@ try
             _d2dRenderTarget.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
             // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -1083,6 +1097,22 @@ CATCH_RETURN()
     CATCH_RETURN();
 
     return S_OK;
+}
+
+// Method Description:
+// - Blocks until the engine is able to render without blocking.
+// - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
+void DxEngine::WaitUntilCanRender() noexcept
+{
+    if (_swapChainFrameLatencyWaitableObject == INVALID_HANDLE_VALUE)
+    {
+        return;
+    }
+
+    WaitForSingleObjectEx(
+        _swapChainFrameLatencyWaitableObject,
+        1000, // 1 second timeout (shouldn't ever occur)
+        true);
 }
 
 // Routine Description:
