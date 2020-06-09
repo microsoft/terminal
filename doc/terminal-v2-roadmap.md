@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document outlines the roadmap towards delivering Windows Terminal 2.0 by spring 2021.
+This document outlines the roadmap towards delivering Windows Terminal 2.0 by Spring 2021.
+
 
 ## Milestones
 
@@ -53,7 +54,7 @@ The following are a list of the key scenarios we're aiming to deliver for Termin
 | 0 | Command palette | A popup menu to list possible actions and commands.<br><br>Issues: [#5400], [#2046]<br>Spec: [#2193] |
 | 1 | Tab tear-off | The ability to tear a tab out of the current window and spawn a new window or attach it to a separate window.<br><br>Issue: [#1256]<br>Spec: [#2080] |
 | 1 | Clickable links | Hyperlinking any links that appear in the text buffer. When clicking on the link, the link will open in your default browser.<br><br>Issue: [#574] |
-| 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed)\*.<br>\* Or your preferred terminal<br><br>Issue: [#492]<br>Spec: [#2080] |
+| 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed) or your preferred terminal<br><br>Issue: [#492]<br>Spec: [#2080] |
 | 1 | Overall theme support | Tab coloring, title bar coloring, pane border coloring, pane border width, definition of what makes a theme<br><br>Issue: [#3327]<br>Spec: [#5772] |
 | 1 | Open tab as admin/other user | Open tab in existing Windows Terminal instance as admin (if Terminal was run unelevated) or as another user.<br><br>Issue: [#5000] |
 | 1 | Traditional opacity | Have a transparent background without the acrylic blur.<br><br>Issue: [#603] |
