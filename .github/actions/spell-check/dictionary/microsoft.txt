@@ -12,3 +12,4 @@ SACLs
 tdbuildteamid
 vcruntime
 visualstudio
+WINBLUE

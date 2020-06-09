@@ -18,6 +18,10 @@
 #include <d3dcompiler.h>
 #include <DirectXColors.h>
 
+#if WINVER >= _WIN32_WINNT_WINBLUE
+#include <dxgi1_3.h>
+#endif
+
 using namespace DirectX;
 
 std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
@@ -83,7 +87,9 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+#if WINVER >= _WIN32_WINNT_WINBLUE
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
+#endif
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -434,7 +440,9 @@ try
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+#if WINVER >= _WIN32_WINNT_WINBLUE
         SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+#endif
 
         switch (_chainMode)
         {
@@ -489,6 +497,7 @@ try
             THROW_HR(E_NOTIMPL);
         }
 
+#if WINVER >= _WIN32_WINNT_WINBLUE
         ::Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
         const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
         if (SUCCEEDED(asResult))
@@ -499,6 +508,7 @@ try
         {
             LOG_HR_MSG(asResult, "Failed to obtain IDXGISwapChain2 from swap chain");
         }
+#endif
 
         if (_retroTerminalEffects)
         {
@@ -625,7 +635,9 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
+#if WINVER >= _WIN32_WINNT_WINBLUE
         _swapChainFrameLatencyWaitableObject = INVALID_HANDLE_VALUE;
+#endif
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -1104,6 +1116,7 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
+#if WINVER >= _WIN32_WINNT_WINBLUE
     if (_swapChainFrameLatencyWaitableObject == INVALID_HANDLE_VALUE)
     {
         return;
@@ -1113,6 +1126,7 @@ void DxEngine::WaitUntilCanRender() noexcept
         _swapChainFrameLatencyWaitableObject,
         1000, // 1 second timeout (shouldn't ever occur)
         true);
+#endif
 }
 
 // Routine Description:
