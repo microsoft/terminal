@@ -85,7 +85,11 @@ try
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-CATCH_LOG()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return 0;
+}
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
