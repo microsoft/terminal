@@ -87,5 +87,5 @@ private:
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateFrameTheme() const;
 
-    void _OpenSystemMenu(int mouseX, int mouseY) const noexcept;
+    void _OpenSystemMenu(const int mouseX, const int mouseY) const noexcept;
 };

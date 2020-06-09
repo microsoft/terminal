@@ -880,7 +880,7 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 // Arguments:
 // - cursorX: the cursor's X position in screen coordinates
 // - cursorY: the cursor's Y position in screen coordinates
-void NonClientIslandWindow::_OpenSystemMenu(int cursorX, int cursorY) const noexcept
+void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
 {
     const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
 
@@ -889,7 +889,7 @@ void NonClientIslandWindow::_OpenSystemMenu(int cursorX, int cursorY) const noex
     {
         return;
     }
-    bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
 
     // Update the options based on window state.
     MENUITEMINFO mii;
