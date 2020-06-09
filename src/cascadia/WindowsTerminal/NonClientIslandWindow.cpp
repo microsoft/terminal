@@ -901,10 +901,11 @@ void NonClientIslandWindow::_OpenSystemMenu(int cursorX, int cursorY) const noex
         SetMenuItemInfo(systemMenu, item, FALSE, &mii);
     };
     setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, true);
-    setState(SC_SIZE, true);
+    setState(SC_MOVE, !isMaximized);
+    setState(SC_SIZE, !isMaximized);
     setState(SC_MINIMIZE, true);
     setState(SC_MAXIMIZE, !isMaximized);
+    setState(SC_CLOSE, true);
     SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
 
     const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
