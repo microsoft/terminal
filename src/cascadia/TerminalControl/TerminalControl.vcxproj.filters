@@ -45,7 +45,7 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\*\Resources.resw">
+    <PRIResource Include="Resources\en-US\Resources.resw">
       <Filter>Resources</Filter>
     </PRIResource>
   </ItemGroup>

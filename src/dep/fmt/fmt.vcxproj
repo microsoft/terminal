@@ -16,10 +16,22 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\oss\fmt\src\*.cc" />
+    <ClCompile Include="$(SolutionDir)oss/fmt/src/format.cc" />
+    <ClCompile Include="$(SolutionDir)oss/fmt/src/os.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\oss\fmt\include\fmt\*.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/chrono.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/color.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/compile.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/core.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/format-inl.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/format.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/locale.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/os.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/ostream.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/posix.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/printf.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/ranges.h" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

@@ -214,7 +214,7 @@ public:
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
     TextAttribute GetAttributes() const;
-    const TextAttribute* const GetPopupAttributes() const;
+    TextAttribute GetPopupAttributes() const;
 
     void SetAttributes(const TextAttribute& attributes);
     void SetPopupAttributes(const TextAttribute& popupAttributes);

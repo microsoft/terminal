@@ -436,3 +436,17 @@ using namespace Microsoft::Console::Render;
 {
     return _Write("\x1b[29m");
 }
+
+// Method Description:
+// - Send a sequence to the connected terminal to request win32-input-mode from
+//   them. This will enable the connected terminal to send us full INPUT_RECORDs
+//   as input. If the terminal doesn't understand this sequence, it'll just
+//   ignore it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
+{
+    return _Write("\x1b[?9001h");
+}

@@ -521,6 +521,12 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    return true;
+}
+
 bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
 {
     _terminalInput->ChangeCursorKeysMode(applicationMode);

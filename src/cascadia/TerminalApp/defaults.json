@@ -42,6 +42,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         },
@@ -60,6 +61,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         }

@@ -177,11 +177,41 @@ public:
     {
     }
 
+    static std::pair<KeyEvent, KeyEvent> MakePair(
+        const WORD repeatCount,
+        const WORD virtualKeyCode,
+        const WORD virtualScanCode,
+        const wchar_t charData,
+        const DWORD activeModifierKeys)
+    {
+        return std::make_pair<KeyEvent, KeyEvent>(
+            { true,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys },
+            { false,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys });
+    }
+
     ~KeyEvent();
     KeyEvent(const KeyEvent&) = default;
     KeyEvent(KeyEvent&&) = default;
+// For these two operators, there seems to be a bug in the compiler:
+// See https://stackoverflow.com/a/60206505/1481137
+//   > C.128 applies only to virtual member functions, but operator= is not
+//   > virtual in your base class and neither does it have the same signature as
+//   > in the derived class, so there is no reason for it to apply.
+#pragma warning(push)
+#pragma warning(disable : 26456)
     KeyEvent& operator=(const KeyEvent&) & = default;
     KeyEvent& operator=(KeyEvent&&) & = default;
+#pragma warning(pop)
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;

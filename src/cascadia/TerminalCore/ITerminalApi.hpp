@@ -49,6 +49,7 @@ namespace Microsoft::Terminal::Core
         virtual bool SetDefaultForeground(const DWORD color) noexcept = 0;
         virtual bool SetDefaultBackground(const DWORD color) noexcept = 0;
 
+        virtual bool EnableWin32InputMode(const bool win32InputMode) noexcept = 0;
         virtual bool SetCursorKeysMode(const bool applicationMode) noexcept = 0;
         virtual bool SetKeypadMode(const bool applicationMode) noexcept = 0;
         virtual bool EnableVT200MouseMode(const bool enabled) noexcept = 0;
