@@ -86,4 +86,6 @@ private:
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateFrameTheme() const;
+
+    void _OpenSystemMenu(int mouseX, int mouseY) const noexcept;
 };
