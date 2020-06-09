@@ -45,6 +45,7 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+        _UpdateTitle();
     }
 
     // Method Description:
