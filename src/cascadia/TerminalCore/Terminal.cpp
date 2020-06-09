@@ -92,11 +92,6 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
-
-    if (_suppressApplicationTitle)
-    {
-        _title = _startingTitle;
-    }
 }
 
 // Method Description:
@@ -130,9 +125,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         break;
     }
 
-    _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                  settings.CursorColor(),
-                                  cursorShape);
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
+                                      settings.CursorColor(),
+                                      cursorShape);
+    }
 
     for (int i = 0; i < 16; i++)
     {
