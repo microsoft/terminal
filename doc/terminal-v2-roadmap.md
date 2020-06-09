@@ -49,25 +49,25 @@ The following are a list of the key scenarios we're aiming to deliver for Termin
 
 | Priority\* | Scenario | Description/Notes |
 | ---------- | -------- | ----------------- |
-| 0 | Settings UI | A user interface that connects to settings.json. This provides a way for people to edit their settings without having to edit a JSON file.<br><br>Issue: #1564 |
-| 0 | Command palette | A popup menu to list possible actions and commands.<br><br>Issues: #5400, #2046<br>Spec: #2193 |
-| 1 | Tab tear-off | The ability to tear a tab out of the current window and spawn a new window or attach it to a separate window.<br><br>Issue: #1256<br>Spec: #2080 |
-| 1 | Clickable links | Hyperlinking any links that appear in the text buffer. When clicking on the link, the link will open in your default browser.<br><br>Issue: #574 |
-| 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed)\*.<br>\* Or your preferred terminal<br><br>Issue: #492<br>Spec: #2080 |
-| 1 | Overall theme support | Tab coloring, title bar coloring, pane border coloring, pane border width, definition of what makes a theme<br><br>Issue: #3327<br>Spec: #5772 |
-| 1 | Open tab as admin/other user | Open tab in existing Windows Terminal instance as admin (if Terminal was run unelevated) or as another user.<br><br>Issue: #5000 |
-| 1 | Traditional opacity | Don't add the acrylic blur.<br><br>Issue: #603 |
-| 2 | SnapOnOutput, scroll lock | Pause output or scrolling on click.<br><br>Issue: #980<br>Spec: #2529<br>Implementation: #6062 |
-| 2 | Infinite scrollback | Have an infinite history for the text buffer.<br><br>Issue: #1410 |
-| 2 | Pane management | All issues listed out in the original issue. Some features include pane resizing with mouse, pane zooming, and opening a pane by prompting which profile to use.<br><br>Issue: #1000 |
+| 0 | Settings UI | A user interface that connects to settings.json. This provides a way for people to edit their settings without having to edit a JSON file.<br><br>Issue: [#1564] |
+| 0 | Command palette | A popup menu to list possible actions and commands.<br><br>Issues: [#5400], [#2046]<br>Spec: [#2193] |
+| 1 | Tab tear-off | The ability to tear a tab out of the current window and spawn a new window or attach it to a separate window.<br><br>Issue: [#1256]<br>Spec: [#2080] |
+| 1 | Clickable links | Hyperlinking any links that appear in the text buffer. When clicking on the link, the link will open in your default browser.<br><br>Issue: [#574] |
+| 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed)\*.<br>\* Or your preferred terminal<br><br>Issue: [#492]<br>Spec: [#2080] |
+| 1 | Overall theme support | Tab coloring, title bar coloring, pane border coloring, pane border width, definition of what makes a theme<br><br>Issue: [#3327]<br>Spec: [#5772] |
+| 1 | Open tab as admin/other user | Open tab in existing Windows Terminal instance as admin (if Terminal was run unelevated) or as another user.<br><br>Issue: [#5000] |
+| 1 | Traditional opacity | Don't add the acrylic blur.<br><br>Issue: [#603] |
+| 2 | SnapOnOutput, scroll lock | Pause output or scrolling on click.<br><br>Issue: [#980]<br>Spec: [#2529]<br>Implementation: [#6062] |
+| 2 | Infinite scrollback | Have an infinite history for the text buffer.<br><br>Issue: [#1410] |
+| 2 | Pane management | All issues listed out in the original issue. Some features include pane resizing with mouse, pane zooming, and opening a pane by prompting which profile to use.<br><br>Issue: [#1000] |
 | 2 | Theme marketplace | Marketplace for creation and distribution of themes.<br>Dependent on overall theming |
-| 2 | Jump list | Show profiles from task bar (on right click)/start menu.<br><br>Issue: #576 |
-| 2 | Open with multiple tabs | A setting that allows Windows Terminal to launch with a specific tab configuration (not using only command line arguments).<br><br>Issue: #756 |
-| 3 | Open in Windows Terminal | Functionality to right click on a file or folder and select Open in Windows Terminal.<br><br>Issue: #1060<br>Implementation: #6100 |
-| 3 | Session restoration | Launch Windows Terminal and the previous session is restored with the proper tab and pane configuration and starting directories.<br><br>Issues: #961, #960, #766 |
-| 3 | Quake mode | Provide a quick launch terminal that appears and disappears when a hotkey is pressed.<br><br>Issue: #653 |
+| 2 | Jump list | Show profiles from task bar (on right click)/start menu.<br><br>Issue: [#576] |
+| 2 | Open with multiple tabs | A setting that allows Windows Terminal to launch with a specific tab configuration (not using only command line arguments).<br><br>Issue: [#756] |
+| 3 | Open in Windows Terminal | Functionality to right click on a file or folder and select Open in Windows Terminal.<br><br>Issue: [#1060]<br>Implementation: [#6100] |
+| 3 | Session restoration | Launch Windows Terminal and the previous session is restored with the proper tab and pane configuration and starting directories.<br><br>Issues: [#961], [#960], [#766] |
+| 3 | Quake mode | Provide a quick launch terminal that appears and disappears when a hotkey is pressed.<br><br>Issue: [#653] |
 | 3 | Settings migration infrastructure | Migrate people's settings without breaking them. Hand-in-hand with settings UI. |
-| 3 | Pointer bindings | Provide settings that can be bound to the mouse.<br><br>Issue: #1553 |
+| 3 | Pointer bindings | Provide settings that can be bound to the mouse.<br><br>Issue: [#1553] |
 
 Feature Notes:
 
@@ -80,3 +80,30 @@ Feature Notes:
 [1.1]: https://github.com/microsoft/terminal/milestone/24
 [1.2]: https://github.com/microsoft/terminal/milestone/25
 [2.0]: https://github.com/microsoft/terminal/milestone/22
+[#1564]: https://github.com/microsoft/terminal/issues/1564
+[#5400]: https://github.com/microsoft/terminal/issues/5400
+[#2046]: https://github.com/microsoft/terminal/issues/2046
+[#2193]: https://github.com/microsoft/terminal/pull/2193
+[#1256]: https://github.com/microsoft/terminal/issues/1256
+[#2080]: https://github.com/microsoft/terminal/pull/2080
+[#574]: https://github.com/microsoft/terminal/issues/574
+[#492]: https://github.com/microsoft/terminal/issues/492
+[#2080]: https://github.com/microsoft/terminal/pull/2080
+[#3327]: https://github.com/microsoft/terminal/issues/3327
+[#5772]: https://github.com/microsoft/terminal/pull/5772
+[#5000]: https://github.com/microsoft/terminal/issues/5000
+[#603]: https://github.com/microsoft/terminal/issues/603
+[#980]: https://github.com/microsoft/terminal/issues/980
+[#2529]: https://github.com/microsoft/terminal/pull/2529
+[#6062]: https://github.com/microsoft/terminal/pull/6062
+[#1410]: https://github.com/microsoft/terminal/issues/1410
+[#1000]: https://github.com/microsoft/terminal/issues/1000
+[#576]: https://github.com/microsoft/terminal/issues/576
+[#756]: https://github.com/microsoft/terminal/issues/756
+[#1060]: https://github.com/microsoft/terminal/issues/1060
+[#6100]: https://github.com/microsoft/terminal/pull/6100
+[#961]: https://github.com/microsoft/terminal/issues/961
+[#960]: https://github.com/microsoft/terminal/issues/960
+[#766]: https://github.com/microsoft/terminal/issues/766
+[#653]: https://github.com/microsoft/terminal/issues/653
+[#1553]: https://github.com/microsoft/terminal/issues/1553
