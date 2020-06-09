@@ -56,7 +56,7 @@ The following are a list of the key scenarios we're aiming to deliver for Termin
 | 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed)\*.<br>\* Or your preferred terminal<br><br>Issue: [#492]<br>Spec: [#2080] |
 | 1 | Overall theme support | Tab coloring, title bar coloring, pane border coloring, pane border width, definition of what makes a theme<br><br>Issue: [#3327]<br>Spec: [#5772] |
 | 1 | Open tab as admin/other user | Open tab in existing Windows Terminal instance as admin (if Terminal was run unelevated) or as another user.<br><br>Issue: [#5000] |
-| 1 | Traditional opacity | Don't add the acrylic blur.<br><br>Issue: [#603] |
+| 1 | Traditional opacity | Have a transparent background without the acrylic blur.<br><br>Issue: [#603] |
 | 2 | SnapOnOutput, scroll lock | Pause output or scrolling on click.<br><br>Issue: [#980]<br>Spec: [#2529]<br>Implementation: [#6062] |
 | 2 | Infinite scrollback | Have an infinite history for the text buffer.<br><br>Issue: [#1410] |
 | 2 | Pane management | All issues listed out in the original issue. Some features include pane resizing with mouse, pane zooming, and opening a pane by prompting which profile to use.<br><br>Issue: [#1000] |
