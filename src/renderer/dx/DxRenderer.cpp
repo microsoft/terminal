@@ -982,7 +982,7 @@ try
             _d2dRenderTarget.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            UINT swapChainFlags = IsWindows8Point1OrGreater() ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
+            const UINT swapChainFlags = IsWindows8Point1OrGreater() ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
             RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, swapChainFlags));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
