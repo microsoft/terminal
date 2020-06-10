@@ -33,12 +33,12 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 // - COORD of the end position of the text buffer
 COORD RenderData::GetTextBufferEndPosition() const noexcept
 {
-    // We use the end line of mutableViewport as the end
+    // We use the end line of virtualViewport as the end
     // of the text buffer, it always moves with the written
     // text
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto mutableViewport = gci.GetActiveOutputBuffer().GetVirtualViewport();
-    COORD endPosition{ mutableViewport.Width() - 1, mutableViewport.BottomInclusive() };
+    const auto virtualViewport = gci.GetActiveOutputBuffer().GetVirtualViewport();
+    COORD endPosition{ virtualViewport.Width() - 1, virtualViewport.BottomInclusive() };
     return endPosition;
 }
 
