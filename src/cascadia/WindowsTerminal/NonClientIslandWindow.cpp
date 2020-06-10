@@ -80,7 +80,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
                                          0,
                                          0,
                                          0,
-                                         GetWindowHandle(),
+                                         GetHandle(),
                                          nullptr,
                                          wil::GetModuleInstanceHandle(),
                                          this));
@@ -122,7 +122,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         POINT screenPt{ clientPt };
         if (ClientToScreen(_dragBarWindow.get(), &screenPt))
         {
-            auto parentWindow{ GetWindowHandle() };
+            auto parentWindow{ GetHandle() };
 
             // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
             // then pass that click through as an NC click in that location.
@@ -569,7 +569,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // with that message at the time it was sent to handle the message
         // correctly.
         const auto screenPtLparam{ GetMessagePos() };
-        const LRESULT hitTest{ SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, screenPtLparam) };
+        const LRESULT hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
         if (hitTest == HTTOP)
         {
             // We have to set the vertical resize cursor manually on
@@ -592,7 +592,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         }
     }
 
-    return DefWindowProc(GetWindowHandle(), WM_SETCURSOR, wParam, lParam);
+    return DefWindowProc(GetHandle(), WM_SETCURSOR, wParam, lParam);
 }
 
 // Method Description:
@@ -838,7 +838,10 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    if (_titlebar)
+    {
+        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it

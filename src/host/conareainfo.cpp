@@ -24,8 +24,8 @@ ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) 
 
 ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
                                        const COORD windowSize,
-                                       const CHAR_INFO fill,
-                                       const CHAR_INFO popupFill,
+                                       const TextAttribute& fill,
+                                       const TextAttribute& popupFill,
                                        const FontInfo fontInfo) :
     _caInfo{ bufferSize },
     _isHidden{ true },
@@ -37,8 +37,8 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
     THROW_IF_NTSTATUS_FAILED(SCREEN_INFORMATION::CreateInstance(windowSize,
                                                                 fontInfo,
                                                                 bufferSize,
-                                                                { fill.Attributes },
-                                                                { popupFill.Attributes },
+                                                                fill,
+                                                                popupFill,
                                                                 0,
                                                                 &pNewScreen));
 

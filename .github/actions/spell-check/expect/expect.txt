@@ -508,6 +508,7 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECEKBD
 decf
 DECKPAM
 DECKPM
@@ -525,6 +526,7 @@ deconstructed
 DECPCTERM
 DECRC
 DECRLM
+DECRQM
 DECRST
 DECSASD
 DECSC
@@ -537,6 +539,7 @@ DECSEL
 DECSET
 DECSLRM
 DECSMBV
+DECSMKR
 DECSR
 decstandar
 DECSTBM
@@ -603,6 +606,7 @@ dllexport
 DLLGETVERSIONPROC
 dllimport
 dllinit
+dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
@@ -902,6 +906,7 @@ grep
 Greyscale
 gridline
 groupbox
+gset
 gsl
 GTP
 guc
@@ -1162,6 +1167,7 @@ kcub
 kcud
 kcuf
 kcuu
+Kd
 keith
 kernelbase
 kernelbasestaging
@@ -1209,6 +1215,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libtickit
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1320,6 +1327,7 @@ MAKELONG
 MAKELPARAM
 MAKELRESULT
 malloc
+manpage
 MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
@@ -1418,6 +1426,7 @@ Mul
 multiline
 munged
 mutex
+mutexes
 muxes
 myapplet
 mydir
@@ -1510,17 +1519,20 @@ NOTHOUSANDS
 nothrow
 NOTICKS
 NOTIMPL
+notin
 NOTNULL
 NOTRACK
 NOTSUPPORTED
 notypeopt
 nouicompat
+nounihan
 NOUPDATE
 NOWAIT
 NOYIELD
 NOZORDER
 NPM
 npos
+NRCS
 NSTATUS
 ntapi
 ntcon
@@ -1734,6 +1746,7 @@ popup
 POPUPATTR
 PORFLG
 positionals
+posix
 POSTCHARBREAKS
 POSX
 POSXSCROLL
@@ -1908,8 +1921,10 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 renderengine
 rendersize
+reparent
 reparenting
 replatformed
 Replymessage
@@ -1962,6 +1977,7 @@ robomac
 roundtrip
 ROWSTOSCROLL
 RRF
+RRRGGGBB
 rtcore
 RTEXT
 rtf
@@ -2020,6 +2036,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
+SCS
 scursor
 sddl
 sdeleted
@@ -2089,6 +2106,7 @@ Shl
 shlguid
 shlobj
 shlwapi
+shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2249,6 +2267,7 @@ tcommandline
 tcommands
 tcon
 TDP
+tearoff
 Teb
 techcommunity
 technet
@@ -2374,9 +2393,11 @@ typeparam
 TYUI
 uap
 uapadmin
+UAX
 ubuntu
 ucd
 UCD
+ucdxml
 uch
 UCHAR
 ucs
@@ -2406,6 +2427,7 @@ unexpand
 Unfocus
 unfocuses
 unhighlighting
+unhosted
 unicode
 UNICODESTRING
 UNICODETEXT
@@ -2431,6 +2453,7 @@ untimes
 UPDATEDISPLAY
 UPDOWN
 UPKEY
+UPSS
 upvote
 uri
 url
@@ -2595,7 +2618,6 @@ wincontypes
 WINCORE
 windbg
 WINDEF
-winget
 WINDIR
 windll
 WINDOWALPHA
@@ -2624,6 +2646,7 @@ WINDOWTITLE
 winevent
 winfx
 wingdi
+winget
 WINIDE
 winioctl
 winmd

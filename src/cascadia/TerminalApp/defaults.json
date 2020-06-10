@@ -20,6 +20,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
+    "startOnUserLogin":  false,
     "theme": "system",
     "rowsToScroll": "system",
     "snapToGridOnResize": true,
@@ -41,6 +42,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         },
@@ -59,6 +61,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         }

@@ -352,7 +352,7 @@ CATCH_RETURN();
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
     return S_FALSE;
 }
