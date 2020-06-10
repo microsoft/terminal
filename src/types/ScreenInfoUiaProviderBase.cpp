@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "ScreenInfoUiaProviderBase.h"
-#include "WindowUiaProviderBase.hpp"
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
