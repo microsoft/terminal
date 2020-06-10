@@ -15,6 +15,7 @@
   <PropertyGroup>
     <UnreasonablePlatform>$(Platform)</UnreasonablePlatform>
     <UnreasonablePlatform Condition="'$(UnreasonablePlatform)' == 'x86'">Win32</UnreasonablePlatform>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="$(SolutionDir)bin\$(UnreasonablePlatform)\$(Configuration)\PublicTerminalCore.dll">
