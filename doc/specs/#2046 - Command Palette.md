@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2020-05-20
+last updated: 2020-06-10
 issue id: 2046
 ---
 
@@ -190,6 +190,16 @@ pre-expansion could just stash the json for the action, then expand it later?
 This implementation detail is why this particular feature is not slated for
 inclusion in an initial Command Palette implementation.
 
+From initial prototyping, it seems like the best solution will be to stash the
+command's original json around when parsing an expandable command like the above
+examples. Then, we'll handle the expansion in the settings validation phase,
+after all the profiles and color schemes have been loaded.
+
+For each profile, we'll need to replace all the instances in the original json
+of strings like `${profile.name}` with the profile's name to create a new json
+string. We'll attempt to parse that new string into a new command to add to the
+list of commands.
+
 ### Commandline Mode
 
 One of our more highly requested features is the ability to run a `wt.exe`
@@ -363,7 +373,7 @@ following command
 { "icon": null, "name": { "key": "NewTabCommandName" }, "action": "newTab" },
 ```
 
-Could be overriden with the command:
+Could be overridden with the command:
 ```json
 { "icon": null, "name": "Open New Tab", "action": "splitPane" },
 ```
@@ -716,6 +726,20 @@ So, you could imagine the entire tree as follows:
       ├─ Split Vertically
       └─ Split Horizontally
 ```
+
+Note that the palette isn't displayed like a tree - it only ever displays the
+commands from one single level at a time. So at first, only:
+
+* New Tab With Profile...
+* Connect to ssh...
+* New Pane...
+
+are visible. Then, when the user <kbd>enter</kbd>'s on one of these (like "New
+Pane"), the UI will change to display:
+
+* Profile 1...
+* Profile 2...
+* Profile 3...
 
 ### Configuring the Action/Commandline Mode prefix
 
