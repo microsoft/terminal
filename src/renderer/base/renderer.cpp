@@ -28,7 +28,8 @@ Renderer::Renderer(IRenderData* pData,
                    std::unique_ptr<IRenderThread> thread) :
     _pData(pData),
     _pThread{ std::move(thread) },
-    _destructing{ false }
+    _destructing{ false },
+    _clusterBuffer{}
 {
     _srViewportPrevious = { 0 };
 
@@ -370,6 +371,12 @@ bool Renderer::_CheckViewportAndScroll()
 
     _srViewportPrevious = srNewViewport;
 
+    // If we're keeping some buffers between calls, let them know about the viewport size
+    // so they can prepare the buffers for changes to either preallocate memory at once
+    // (instead of growing naturally) or shrink down to reduce usage as appropriate.
+    const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
+    til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
+
     if (coordDelta.X != 0 || coordDelta.Y != 0)
     {
         for (auto engine : _rgpEngines)
@@ -683,7 +690,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // we should have an iterator/view adapter for the rendering.
         // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
         // Retrieve the iterator for one line of information.
-        std::vector<Cluster> clusters;
         size_t cols = 0;
 
         // Retrieve the first color.
@@ -714,7 +720,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             const auto currentRunTargetStart = screenPoint;
 
             // Ensure that our cluster vector is clear.
-            clusters.clear();
+            _clusterBuffer.clear();
 
             // Reset our flag to know when we're in the special circumstance
             // of attempting to draw only the right-half of a two-column character
@@ -746,7 +752,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
-                if (clusters.empty() && it->DbcsAttr().IsTrailing())
+                if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
                 {
                     // If we have room to move to the left to start drawing...
                     if (screenPoint.X > 0)
@@ -757,7 +763,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
                         columnCount = it->Columns() + 1;
-                        clusters.emplace_back(it->Chars(), columnCount);
+                        _clusterBuffer.emplace_back(it->Chars(), columnCount);
                     }
                     else
                     {
@@ -770,7 +776,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 else
                 {
                     columnCount = it->Columns();
-                    clusters.emplace_back(it->Chars(), columnCount);
+                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
                 }
 
                 if (columnCount > 1)
@@ -785,7 +791,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             // We're only allowed to draw the grid lines under certain circumstances.
