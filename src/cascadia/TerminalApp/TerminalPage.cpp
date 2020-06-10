@@ -14,6 +14,7 @@
 #include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include "KeyChordSerialization.h"
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
@@ -78,7 +79,8 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                     bool needRefreshUI)
     {
         _settings = settings;
         if (needRefreshUI)
@@ -95,19 +97,16 @@ namespace winrt::TerminalApp::implementation
             for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
             {
                 auto command = nameAndCommand.second;
+
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the string for that keychord and display it as a
+                // part of the command in the UI. Each Command's KeyChordText is
+                // unset by default, so we don't need to worry about clearing it
+                // if there isn't a key associated with it.
                 auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
                 if (keyChord)
                 {
-                    auto overrideString = _FormatOverrideShortcutText(keyChord.Modifiers());
-                    // TODO: The string can't just be the character. If it's
-                    // something like "tab" or "+", this won't return a
-                    // printable character. We should use that keybinding
-                    // serialization table in reverse.
-                    auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
-                    if (mappedCh != 0)
-                    {
-                        command.KeyChordText(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
-                    }
+                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
                 }
                 commandsCollection.Append(command);
             }

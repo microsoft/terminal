@@ -58,7 +58,7 @@ namespace winrt::TerminalApp::implementation
             auto action = kv.second.Action();
             auto args = kv.second.Args();
             auto actionMatched = action == actionAndArgs.Action();
-            auto argsMatched = args == actionAndArgs.Args();
+            auto argsMatched = args ? args.Equals(actionAndArgs.Args()) : args == actionAndArgs.Args();
             if (actionMatched &&
                 argsMatched)
             {
