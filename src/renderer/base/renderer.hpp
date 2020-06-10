@@ -73,6 +73,7 @@ namespace Microsoft::Console::Render
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
+        void WaitUntilCanRender() override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 

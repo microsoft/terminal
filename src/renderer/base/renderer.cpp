@@ -1200,3 +1200,13 @@ void Renderer::ResetErrorStateAndResume()
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
 }
+
+// Method Description:
+// - Blocks until the engines are able to render without blocking.
+void Renderer::WaitUntilCanRender()
+{
+    for (const auto pEngine : _rgpEngines)
+    {
+        pEngine->WaitUntilCanRender();
+    }
+}
