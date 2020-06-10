@@ -184,7 +184,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
-        HANDLE _swapChainFrameLatencyWaitableObject;
+        wil::unique_handle _swapChainFrameLatencyWaitableObject;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;

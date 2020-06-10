@@ -500,7 +500,7 @@ try
             const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
             if (SUCCEEDED(asResult))
             {
-                _swapChainFrameLatencyWaitableObject = swapChain2->GetFrameLatencyWaitableObject();
+                _swapChainFrameLatencyWaitableObject = wil::unique_handle{ swapChain2->GetFrameLatencyWaitableObject() };
             }
             else
             {
@@ -633,7 +633,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
-        _swapChainFrameLatencyWaitableObject = INVALID_HANDLE_VALUE;
+        _swapChainFrameLatencyWaitableObject.reset();
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -1113,13 +1113,13 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if (_swapChainFrameLatencyWaitableObject == INVALID_HANDLE_VALUE)
+    if (!_swapChainFrameLatencyWaitableObject)
     {
         return;
     }
 
     WaitForSingleObjectEx(
-        _swapChainFrameLatencyWaitableObject,
+        _swapChainFrameLatencyWaitableObject.get(),
         1000, // 1 second timeout (shouldn't ever occur)
         true);
 }
