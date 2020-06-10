@@ -1116,11 +1116,15 @@ void DxEngine::WaitUntilCanRender() noexcept
     {
         return;
     }
-
-    WaitForSingleObjectEx(
+    
+    const auto ret = WaitForSingleObjectEx(
         _swapChainFrameLatencyWaitableObject.get(),
         1000, // 1 second timeout (shouldn't ever occur)
         true);
+    if (ret != WAIT_OBJECT_0)
+    {
+        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+    }
 }
 
 // Routine Description:
