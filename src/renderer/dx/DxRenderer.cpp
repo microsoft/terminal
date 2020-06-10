@@ -1116,7 +1116,7 @@ void DxEngine::WaitUntilCanRender() noexcept
     {
         return;
     }
-    
+
     const auto ret = WaitForSingleObjectEx(
         _swapChainFrameLatencyWaitableObject.get(),
         1000, // 1 second timeout (shouldn't ever occur)
