@@ -699,6 +699,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         {
             _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         }
+        break;
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
