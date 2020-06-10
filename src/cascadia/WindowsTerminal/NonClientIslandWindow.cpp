@@ -124,10 +124,11 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         {
             auto parentWindow{ GetHandle() };
 
+            const LPARAM newLparam = MAKELPARAM(screenPt.x, screenPt.y);
             // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
             // then pass that click through as an NC click in that location.
-            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
-            SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
+            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, newLparam) };
+            SendMessage(parentWindow, nonClientMessage.value(), hitTest, newLparam);
 
             return 0;
         }
@@ -691,6 +692,14 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
+    case WM_NCRBUTTONUP:
+        // The `DefWindowProc` function doesn't open the system menu for some
+        // reason so we have to do it ourselves.
+        if (wParam == HTCAPTION)
+        {
+            _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        }
+        break;
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -861,4 +870,48 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
     // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
     // updated to include that mode.
     return !_fullscreen;
+}
+
+// Method Description:
+// - Opens the window's system menu.
+// - The system menu is the menu that opens when the user presses Alt+Space or
+//   right clicks on the title bar.
+// - Before updating the menu, we update the buttons like "Maximize" and
+//   "Restore" so that they are grayed out depending on the window's state.
+// Arguments:
+// - cursorX: the cursor's X position in screen coordinates
+// - cursorY: the cursor's Y position in screen coordinates
+void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
+{
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+
+    WINDOWPLACEMENT placement;
+    if (!GetWindowPlacement(_window.get(), &placement))
+    {
+        return;
+    }
+    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+
+    // Update the options based on window state.
+    MENUITEMINFO mii;
+    mii.cbSize = sizeof(MENUITEMINFO);
+    mii.fMask = MIIM_STATE;
+    mii.fType = MFT_STRING;
+    auto setState = [&](UINT item, bool enabled) {
+        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
+        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
+    };
+    setState(SC_RESTORE, isMaximized);
+    setState(SC_MOVE, !isMaximized);
+    setState(SC_SIZE, !isMaximized);
+    setState(SC_MINIMIZE, true);
+    setState(SC_MAXIMIZE, !isMaximized);
+    setState(SC_CLOSE, true);
+    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+
+    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
+    if (ret != 0)
+    {
+        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+    }
 }
