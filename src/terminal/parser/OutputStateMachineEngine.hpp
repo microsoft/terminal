@@ -66,6 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const std::basic_string_view<size_t> parameters);
