@@ -56,6 +56,7 @@ public:
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
     const std::map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
+    std::map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
 
     // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.

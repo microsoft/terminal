@@ -13,7 +13,10 @@ using namespace winrt::TerminalApp;
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconPathKey{ "iconPath" };
 static constexpr std::string_view ActionKey{ "action" };
-static constexpr std::string_view ArgsKey{ "args" };
+
+static constexpr std::string_view IterateOnKey{ "iterateOn" };
+
+static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -57,6 +60,16 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
+    winrt::com_ptr<ActionAndArgs> _getActionAndArgsFromJson(const Json::Value& json,
+                                                            std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+    {
+        if (const auto actionJson{ json[JsonKey(ActionKey)] })
+        {
+            return ActionAndArgs::FromJson(actionJson, warnings);
+        }
+        return nullptr;
+    }
+
     // Method Description:
     // - Deserialize an Command from the `json` object. The json object should
     //   contain a "name" and "action", and optionally an "icon".
@@ -90,10 +103,21 @@ namespace winrt::TerminalApp::implementation
         {
             result->_setIconPath(winrt::to_hstring(iconPathJson.asString()));
         }
+        bool parseActionLater = false;
 
-        if (const auto actionJson{ json[JsonKey(ActionKey)] })
+        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
         {
-            auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
+            auto s = iterateOnJson.asString();
+            if (s == IterateOnProfilesValue)
+            {
+                result->_IterateOn = ExpandCommandType::Profiles;
+                parseActionLater = true;
+            }
+        }
+
+        if (!parseActionLater)
+        {
+            auto actionAndArgs = _getActionAndArgsFromJson(json, warnings);
 
             if (actionAndArgs)
             {
@@ -106,6 +130,10 @@ namespace winrt::TerminalApp::implementation
                 // will _remove_ the "foo" command, by returning null here.
                 return nullptr;
             }
+        }
+        else
+        {
+            result->_originalJson = json;
         }
 
         return result;
@@ -155,5 +183,76 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return warnings;
+    }
+
+    winrt::hstring _replaceKeyword(const winrt::hstring& sourceString,
+                                   const std::wstring_view keyword,
+                                   const std::wstring_view replaceWith)
+    {
+        std::wstring result{ sourceString };
+        size_t index = 0;
+        while (true)
+        {
+            index = result.find(keyword, index);
+            if (index == std::wstring::npos)
+            {
+                break;
+            }
+            result.replace(index, keyword.size(), replaceWith);
+            index += replaceWith.size();
+        }
+        return winrt::hstring{ result };
+    }
+
+    std::vector<winrt::TerminalApp::Command> Command::ExpandCommand(winrt::com_ptr<Command> expandable,
+                                                                    const std::vector<::TerminalApp::Profile>& profiles)
+    {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        std::vector<winrt::TerminalApp::Command> newCommands;
+
+        if (expandable->_IterateOn == ExpandCommandType::Profiles)
+        {
+            // commands.erase(expandable->_Name);
+
+            for (const auto& p : profiles)
+            {
+                auto newCmd = winrt::make_self<Command>();
+                newCmd->_setIconPath(expandable->_IconPath);
+                newCmd->_setKeyChordText(expandable->_KeyChordText);
+                newCmd->_setName(_replaceKeyword(expandable->_Name,
+                                                 L"${profile.name}",
+                                                 p.GetName()));
+
+                // Replace all the keywords in the original json, and try and parse that
+                auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
+                auto newJsonString = winrt::to_string(_replaceKeyword(oldJsonString,
+                                                                      L"${profile.name}",
+                                                                      p.GetName()));
+
+                Json::Value newJsonValue; // = Json::Value{newJsonString};
+
+                std::string errs; // This string will receive any error text from failing to parse.
+                std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+                auto actualDataStart = newJsonString.data();
+                const auto actualDataEnd = newJsonString.data() + newJsonString.size();
+                if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
+                {
+                    // This will be caught by App::_TryLoadSettings, who will display
+                    // the text to the user.
+                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+                }
+
+                auto actionAndArgs = _getActionAndArgsFromJson(newJsonValue, warnings);
+
+                // newCmd->_setAction(expandable._Action);
+                if (actionAndArgs && !newCmd->_Name.empty())
+                {
+                    newCmd->_setAction(*actionAndArgs);
+                    newCommands.push_back(*newCmd);
+                }
+            }
+        }
+
+        return newCommands;
     }
 }

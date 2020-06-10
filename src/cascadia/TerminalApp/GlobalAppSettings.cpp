@@ -378,3 +378,8 @@ const std::map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::
 {
     return _commands;
 }
+
+std::map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
+{
+    return _commands;
+}

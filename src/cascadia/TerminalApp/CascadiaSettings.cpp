@@ -188,6 +188,8 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateKeybindings();
 
     _ValidateNoGlobalsKey();
+
+    _ExpandCommands();
 }
 
 // Method Description:
@@ -717,4 +719,33 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     replace(finalSettings, "%COMMAND_PROMPT_LOCALIZED_NAME%", RS_A(L"CommandPromptDisplayName"));
 
     return finalSettings;
+}
+
+void CascadiaSettings::_ExpandCommands()
+{
+    std::vector<winrt::hstring> commandsToRemove;
+    std::vector<winrt::TerminalApp::Command> commandsToAdd;
+
+    for (auto nameAndCmd : _globals.GetCommands())
+    {
+        winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
+        cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
+
+        auto newCommands = winrt::TerminalApp::implementation::Command::ExpandCommand(cmd, _profiles);
+        if (newCommands.size() > 0)
+        {
+            commandsToRemove.push_back(nameAndCmd.first);
+            commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
+        }
+    }
+
+    for (auto& name : commandsToRemove)
+    {
+        _globals.GetCommands().erase(name);
+    }
+
+    for (auto& cmd : commandsToAdd)
+    {
+        _globals.GetCommands().insert_or_assign(cmd.Name(), cmd);
+    }
 }
