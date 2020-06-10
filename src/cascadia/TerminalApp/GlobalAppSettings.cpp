@@ -27,8 +27,6 @@ static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
-static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
-static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
@@ -36,18 +34,28 @@ static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
-static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
-static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
-static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
-static constexpr std::wstring_view LightThemeValue{ L"light" };
-static constexpr std::wstring_view DarkThemeValue{ L"dark" };
-static constexpr std::wstring_view SystemThemeValue{ L"system" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+
+static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
+static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
-static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
+// Launch mode values
+static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
+static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
+static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
+
+// Tab Width Mode values
+static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
+static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
+static constexpr std::wstring_view TitleLengthCompactModeValue{ L"compact" };
+
+// Theme values
+static constexpr std::wstring_view LightThemeValue{ L"light" };
+static constexpr std::wstring_view DarkThemeValue{ L"dark" };
+static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -123,6 +131,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.CopyOnSelect(_CopyOnSelect);
     settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
     settings.SoftwareRendering(_SoftwareRendering);
+    settings.ForceVTInput(_ForceVTInput);
 }
 
 // Method Description:
@@ -213,6 +222,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
 
     JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
+    JsonUtils::GetBool(json, ForceVTInputKey, _ForceVTInput);
 
     // GetBool will only override the current value if the key exists
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
@@ -321,6 +331,10 @@ TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWi
     if (tabWidthModeString == TitleLengthTabWidthModeValue)
     {
         return TabViewWidthMode::SizeToContent;
+    }
+    else if (tabWidthModeString == TitleLengthCompactModeValue)
+    {
+        return TabViewWidthMode::Compact;
     }
     // default behavior for invalid data or EqualTabWidthValue
     return TabViewWidthMode::Equal;

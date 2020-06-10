@@ -142,6 +142,7 @@ private:
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
+    bool _altGrAliasing;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 

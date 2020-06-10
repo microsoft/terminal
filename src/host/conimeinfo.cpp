@@ -146,11 +146,9 @@ void ConsoleImeInfo::ClearAllAreas()
 
     const COORD windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
-    CHAR_INFO fill;
-    fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
+    const TextAttribute fill = gci.GetActiveOutputBuffer().GetAttributes();
 
-    CHAR_INFO popupFill;
-    popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
+    const TextAttribute popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
 
     const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 

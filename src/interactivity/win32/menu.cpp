@@ -584,7 +584,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
     // Set the screen info's default text attributes to defaults -
-    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);

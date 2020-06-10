@@ -121,28 +121,28 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
-
-  <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
-    don't roll these up automatically, so we'll need to copy them manually
-    (below)
-
-    The dependencies from TerminalConnection get rolled up in the
-    GetPackagingOutputs step, when it produces the "appx recipe". This means
-    they only show up when the build produces an AppX\ folder for either running
-    or packaging.
-
-    It is literally impossible to produce an AppX\ folder using MSBuild without
-    packaging an appx, and we don't want to do that anyway, so we use these copy
-    rules instead.
-  -->
-  <ItemGroup>
-      <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
-  </ItemGroup>
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 
   <Target Name="AfterBuild">
+
+    <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
+      don't roll these up automatically, so we'll need to copy them manually
+      (below)
+
+      The dependencies from TerminalConnection get rolled up in the
+      GetPackagingOutputs step, when it produces the "appx recipe". This means
+      they only show up when the build produces an AppX\ folder for either running
+      or packaging.
+
+      It is literally impossible to produce an AppX\ folder using MSBuild without
+      packaging an appx, and we don't want to do that anyway, so we use these copy
+      rules instead.
+    -->
+    <ItemGroup>
+        <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
+    </ItemGroup>
 
     <!-- Copy the AppxManifest.xml to another file, because when TAEF is
       deploying the app, it'll delete the AppxManifest.xml file from this

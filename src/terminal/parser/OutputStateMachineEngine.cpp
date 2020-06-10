@@ -7,6 +7,7 @@
 #include "OutputStateMachineEngine.hpp"
 
 #include "ascii.hpp"
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 

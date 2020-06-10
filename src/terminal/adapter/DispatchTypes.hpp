@@ -96,7 +96,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8_EXTENDED_MODE = 1005,
         SGR_EXTENDED_MODE = 1006,
         ALTERNATE_SCROLL = 1007,
-        ASB_AlternateScreenBuffer = 1049
+        ASB_AlternateScreenBuffer = 1049,
+        W32IM_Win32InputMode = 9001
     };
 
     namespace CharacterSets

@@ -508,8 +508,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
-decf
 DECEKBD
+decf
 DECKPAM
 DECKPM
 DECKPNM
@@ -1426,6 +1426,7 @@ Mul
 multiline
 munged
 mutex
+mutexes
 muxes
 myapplet
 mydir
@@ -1745,6 +1746,7 @@ popup
 POPUPATTR
 PORFLG
 positionals
+posix
 POSTCHARBREAKS
 POSX
 POSXSCROLL
@@ -1922,6 +1924,7 @@ RELBINPATH
 remoting
 renderengine
 rendersize
+reparent
 reparenting
 replatformed
 Replymessage
@@ -1974,6 +1977,7 @@ robomac
 roundtrip
 ROWSTOSCROLL
 RRF
+RRRGGGBB
 rtcore
 RTEXT
 rtf
@@ -2101,8 +2105,8 @@ SHIFTJIS
 Shl
 shlguid
 shlobj
-shobjidl
 shlwapi
+shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2263,6 +2267,7 @@ tcommandline
 tcommands
 tcon
 TDP
+tearoff
 Teb
 techcommunity
 technet
@@ -2422,6 +2427,7 @@ unexpand
 Unfocus
 unfocuses
 unhighlighting
+unhosted
 unicode
 UNICODESTRING
 UNICODETEXT
@@ -2612,7 +2618,6 @@ wincontypes
 WINCORE
 windbg
 WINDEF
-winget
 WINDIR
 windll
 WINDOWALPHA
@@ -2641,6 +2646,7 @@ WINDOWTITLE
 winevent
 winfx
 wingdi
+winget
 WINIDE
 winioctl
 winmd
