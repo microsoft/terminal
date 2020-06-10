@@ -183,6 +183,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
+        UINT _swapChainFlags;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
 

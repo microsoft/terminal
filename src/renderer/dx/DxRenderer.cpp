@@ -426,6 +426,11 @@ try
 
     if (createSwapChain)
     {
+        _swapChainFlags = 0;
+
+        // requires DXGI 1.3 which was introduced in Windows 8.1
+        WI_SetFlagIf(_swapChainFlags, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, IsWindows8Point1OrGreater());
+
         DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
         SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -434,12 +439,7 @@ try
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
-
-        // requires DXGI 1.3 which was introduced in Windows 8.1
-        if (IsWindows8Point1OrGreater())
-        {
-            SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
-        }
+        SwapChainDesc.Flags = _swapChainFlags;
 
         switch (_chainMode)
         {
@@ -982,8 +982,7 @@ try
             _d2dRenderTarget.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            const UINT swapChainFlags = IsWindows8Point1OrGreater() ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
-            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, swapChainFlags));
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, _swapChainFlags));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
             // OK we made it past the parts that can cause errors. We can release our failure handler.
