@@ -18,6 +18,8 @@ static constexpr std::string_view IterateOnKey{ "iterateOn" };
 
 static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 
+static constexpr std::wstring_view ProfileName{ L"{$profile.name}" };
+
 namespace winrt::TerminalApp::implementation
 {
     // Function Description:
@@ -60,6 +62,16 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
+    // Function Description:
+    // - Attempt to get the action of this Command from the provided json
+    //   object. Will return nullptr if there's no "action" property, otherwise
+    //   returns the result of ActionAndArgs::FromJson.
+    // Arguments:
+    // - json: The Json::Value representing the command object we should get the action for.
+    // - warnings: If there were any warnings during parsing, they'll be
+    //   appended to this vector.
+    // Return Value:
+    // - the nullptr if we couldn't find an "action" or failed to parse the action, otherwise the parsed action
     winrt::com_ptr<ActionAndArgs> _getActionAndArgsFromJson(const Json::Value& json,
                                                             std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
@@ -185,6 +197,8 @@ namespace winrt::TerminalApp::implementation
         return warnings;
     }
 
+    // Function Description:
+    // - A helper to replace any occurences of `keyword` with `replaceWith` in `sourceString`
     winrt::hstring _replaceKeyword(const winrt::hstring& sourceString,
                                    const std::wstring_view keyword,
                                    const std::wstring_view replaceWith)
@@ -204,47 +218,80 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ result };
     }
 
+    // Function Description:
+    // - Attempts to expand the given command into many commands, if the command
+    //   has `"iterateOn": "profiles"` set.
+    // - If it doesn't, this function will do
+    //   nothing and return an empty vector.
+    // - If it does, we're going to attempt to build a new set of commands using
+    //   the given command as a prototype. We'll attempt to create a new command
+    //   for each and every profile, to replace the original command.
+    //   * For the new commands, we'll replace any instance of "${profile.name}"
+    //     in the original json used to create this action with the name of the
+    //     given profile.
+    // - If we encounter any errors while re-parsing the json with the replaced
+    //   name, we'll just return immediately.
+    // - At the end, we'll return all the new commands we've build for the given command.
+    // Arguments:
+    // - expandable: the Command to potentially turn into more commands
+    // - profiles: A list of all the profiles that this command should be expanded on.
+    // - warnings: If there were any warnings during parsing, they'll be
+    //   appended to this vector.
+    // Return Value:
+    // - and empty vector if the command wasn't expandable, otherwise a list of
+    //   the newly-created commands.
     std::vector<winrt::TerminalApp::Command> Command::ExpandCommand(winrt::com_ptr<Command> expandable,
-                                                                    const std::vector<::TerminalApp::Profile>& profiles)
+                                                                    const std::vector<::TerminalApp::Profile>& profiles,
+                                                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
         std::vector<winrt::TerminalApp::Command> newCommands;
+
+        if (expandable->_IterateOn == ExpandCommandType::None)
+        {
+            return newCommands;
+        }
+
+        std::string errs; // This string will receive any error text from failing to parse.
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
         if (expandable->_IterateOn == ExpandCommandType::Profiles)
         {
-            // commands.erase(expandable->_Name);
-
             for (const auto& p : profiles)
             {
+                // For each profile, create a new command. This command will have:
+                // * the icon path and keychord text of the original command
+                // * the Name will have any instances of "${profile.name}"
+                //   replaced with the profile's name
+                // * for the action, we'll take the original json, replace any
+                //   instances of "${profile.name}" with the profile's name,
+                //   then re-attempt to parse the action and args.
+                //
                 auto newCmd = winrt::make_self<Command>();
                 newCmd->_setIconPath(expandable->_IconPath);
                 newCmd->_setKeyChordText(expandable->_KeyChordText);
                 newCmd->_setName(_replaceKeyword(expandable->_Name,
-                                                 L"${profile.name}",
+                                                 ProfileName,
                                                  p.GetName()));
 
                 // Replace all the keywords in the original json, and try and parse that
                 auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
+
+                // TODO: We need to escape the profile name for JSON appropriately
                 auto newJsonString = winrt::to_string(_replaceKeyword(oldJsonString,
-                                                                      L"${profile.name}",
+                                                                      ProfileName,
                                                                       p.GetName()));
 
-                Json::Value newJsonValue; // = Json::Value{newJsonString};
-
-                std::string errs; // This string will receive any error text from failing to parse.
-                std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-                auto actualDataStart = newJsonString.data();
+                Json::Value newJsonValue;
+                const auto actualDataStart = newJsonString.data();
                 const auto actualDataEnd = newJsonString.data() + newJsonString.size();
                 if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
                 {
-                    // This will be caught by App::_TryLoadSettings, who will display
-                    // the text to the user.
-                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+                    warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
+                    // If we encounter a re-parsing error, just stop processing the rest of the commands.
+                    break;
                 }
 
                 auto actionAndArgs = _getActionAndArgsFromJson(newJsonValue, warnings);
-
-                // newCmd->_setAction(expandable._Action);
                 if (actionAndArgs && !newCmd->_Name.empty())
                 {
                     newCmd->_setAction(*actionAndArgs);

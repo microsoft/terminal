@@ -25,7 +25,8 @@ namespace winrt::TerminalApp::implementation
                                                                           const Json::Value& json);
 
         static std::vector<winrt::TerminalApp::Command> ExpandCommand(winrt::com_ptr<Command> expandable,
-                                                                      const std::vector<::TerminalApp::Profile>& profiles);
+                                                                      const std::vector<::TerminalApp::Profile>& profiles,
+                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);

@@ -222,6 +222,10 @@
   <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
     <value>For more info, see this web page.</value>
   </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>The "globals" property is deprecated - your settings might need updating. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
