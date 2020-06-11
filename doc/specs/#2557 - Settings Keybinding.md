@@ -126,7 +126,9 @@ None.
 
 ## Future considerations
 
-None.
+When the Settings UI becomes available, a new value for `target` of `settingsUI` will be added and it will become the default target.
+
+If the community finds value in opening to a specific page of the Settings UI, `target` will be responsible for providing that functionality.
 
 ## Resources
 
