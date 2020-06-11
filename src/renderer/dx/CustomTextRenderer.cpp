@@ -331,7 +331,7 @@ try
         return E_NOTIMPL;
     }
 
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
 
     if (options.fUseColor)
     {
