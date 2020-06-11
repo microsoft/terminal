@@ -125,19 +125,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (auto control{ weakThis.get() })
                 {
                     control->Dispatcher()
-                        .RunAsync(CoreDispatcherPriority::Normal, [weakThis2 = control->get_weak(), update2 = ScrollBarUpdate{ update }]() {
-                            if (auto control2{ weakThis2.get() })
+                        .RunAsync(CoreDispatcherPriority::Normal, [=]() {
+                            if (auto control2{ weakThis.get() })
                             {
                                 control2->_isInternalScrollBarUpdate = true;
 
                                 auto scrollBar = control2->ScrollBar();
-                                if (update2.newValue.has_value())
+                                if (update.newValue.has_value())
                                 {
-                                    scrollBar.Value(update2.newValue.value());
+                                    scrollBar.Value(update.newValue.value());
                                 }
-                                scrollBar.Maximum(update2.newMaximum);
-                                scrollBar.Minimum(update2.newMinimum);
-                                scrollBar.ViewportSize(update2.newViewportSize);
+                                scrollBar.Maximum(update.newMaximum);
+                                scrollBar.Minimum(update.newMinimum);
+                                scrollBar.ViewportSize(update.newViewportSize);
 
                                 control2->_isInternalScrollBarUpdate = false;
                             }
