@@ -72,6 +72,15 @@ bool AppHost::OnF7Pressed()
     return false;
 }
 
+bool AppHost::OnAltReleased()
+{
+    if (_logic)
+    {
+        return _logic.OnAltReleased();
+    }
+    return false;
+}
+
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the app logic for processing.

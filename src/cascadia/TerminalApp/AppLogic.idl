@@ -4,6 +4,7 @@
 import "../TerminalPage.idl";
 import "../ShortcutActionDispatch.idl";
 import "../IF7Listener.idl";
+import "../IAltListener.idl";
 
 namespace TerminalApp
 {
@@ -14,7 +15,7 @@ namespace TerminalApp
         FullscreenMode,
     };
 
-    [default_interface] runtimeclass AppLogic : IF7Listener
+    [default_interface] runtimeclass AppLogic : IF7Listener, IAltListener
     {
         AppLogic();
 

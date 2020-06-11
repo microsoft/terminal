@@ -85,6 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CreateSearchBoxControl();
 
         bool OnF7Pressed();
+        bool OnAltReleased();
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 

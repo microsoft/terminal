@@ -18,6 +18,7 @@ public:
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
     bool OnF7Pressed();
+    bool OnAltReleased();
 
 private:
     bool _useNonClientArea;

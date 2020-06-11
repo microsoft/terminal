@@ -15,9 +15,15 @@ namespace Microsoft.Terminal.TerminalControl
     // If you change this interface, please update the guid.
     // If you press F7 and get a runtime error, go make sure both copies are the same.
     [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
-    interface IF7Listener
-    {
+    interface IF7Listener {
         Boolean OnF7Pressed();
+    }
+
+        // Same as the above, but with Alt
+    [uuid("36a6554d-07e9-4861-8d8b-5d882de31e75")]
+    interface IAltListener
+    {
+        Boolean OnAltReleased();
     }
 
     runtimeclass CopyToClipboardEventArgs
@@ -32,7 +38,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IF7Listener, IMouseWheelListener
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IF7Listener, IAltListener, IMouseWheelListener
     {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);

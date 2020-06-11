@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    // C++/winrt makes it difficult to share this idl between two projects,
+    // Instead, we just pin the uuid and include it in both TermControl and App
+    // If you update this one, please update the one in TerminalControl\TermControl.idl
+    // If you change this interface, please update the guid.
+    // If you press Alt and get a runtime error, go make sure both copies are the same.
+    [uuid("36a6554d-07e9-4861-8d8b-5d882de31e75")]
+    interface IAltListener {
+        Boolean OnAltReleased();
+    }
+}

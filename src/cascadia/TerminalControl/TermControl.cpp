@@ -716,6 +716,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return handled;
     }
 
+    // Method Description:
+    // - Manually generate an Alt KeyUp event into the key bindings or terminal.
+    //   This is required as part of GH#6421.
+    // - This is basically the same thing as the F7 hack above, but with Alt KeyUp instead.
+    // Return value:
+    // - Whether Alt was handled.
+    bool TermControl::OnAltReleased()
+    {
+        const auto modifiers{ _GetPressedModifierKeys() };
+        (void)_TrySendKeyEvent(VK_MENU, 0, modifiers, false);
+        return true;
+    }
+
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
