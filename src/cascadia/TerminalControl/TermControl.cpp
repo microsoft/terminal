@@ -98,6 +98,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
 
+        _terminal->UpdateSettings(settings);
+
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
@@ -706,7 +708,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
             (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
-            (void)_TrySendKeyEvent(VK_F7, 0, modifiers, false);
+            // GH#6438: Note that we're _not_ sending the key up here - that'll
+            // get passed through XAML to our KeyUp handler normally.
             handled = true;
         }
 
@@ -824,7 +827,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
         // flow through to the terminal.
-        if (_terminal->IsSelectionActive())
+        // GH#6423 - don't dismiss selection if the key that was pressed was a
+        // modifier key. We'll wait for a real keystroke to dismiss the
+        // selection.
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();

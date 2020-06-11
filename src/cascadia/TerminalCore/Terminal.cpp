@@ -92,11 +92,6 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
-
-    if (_suppressApplicationTitle)
-    {
-        _title = _startingTitle;
-    }
 }
 
 // Method Description:
@@ -130,9 +125,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         break;
     }
 
-    _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                  settings.CursorColor(),
-                                  cursorShape);
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
+                                      settings.CursorColor(),
+                                      cursorShape);
+    }
 
     for (int i = 0; i < 16; i++)
     {
@@ -419,7 +417,13 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const ControlKeyStates states,
                             const bool keyDown)
 {
-    TrySnapOnInput();
+    // GH#6423 - don't snap on this key if the key that was pressed was a
+    // modifier key. We'll wait for a real keystroke to snap to the bottom.
+    if (!KeyEvent::IsModifierKey(vkey))
+    {
+        TrySnapOnInput();
+    }
+
     _StoreKeyEvent(vkey, scanCode);
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();

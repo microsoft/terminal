@@ -9,6 +9,7 @@
 
 #include <dxgi.h>
 #include <dxgi1_2.h>
+#include <dxgi1_3.h>
 
 #include <d3d11.h>
 #include <d2d1.h>
@@ -73,6 +74,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
+
+        void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
@@ -180,7 +183,9 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
+        UINT _swapChainFlags;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
+        wil::unique_handle _swapChainFrameLatencyWaitableObject;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;

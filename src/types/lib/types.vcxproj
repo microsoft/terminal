@@ -33,11 +33,9 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\utils.cpp" />
-    <ClCompile Include="..\WindowUiaProviderBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IBaseData.h" />
-    <ClInclude Include="..\IConsoleWindow.hpp" />
     <ClInclude Include="..\IControlAccessibilityInfo.h" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
@@ -51,14 +49,12 @@
     <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
     <ClInclude Include="..\IUiaTraceable.h" />
-    <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\TermControlUiaTextRange.hpp" />
     <ClInclude Include="..\TermControlUiaProvider.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProviderBase.h" />
     <ClInclude Include="..\UiaTextRangeBase.hpp" />
     <ClInclude Include="..\UiaTracing.h" />
-    <ClInclude Include="..\WindowUiaProviderBase.hpp" />
   </ItemGroup>
   <ItemGroup>
     <!-- subsume fmt, one of our dependencies, into contypes. -->
