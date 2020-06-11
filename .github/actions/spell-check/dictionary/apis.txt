@@ -12,6 +12,7 @@ IBind
 IClass
 IComparable
 ICustom
+IDirect
 IExplorer
 IMap
 IObject
