@@ -37,14 +37,14 @@
     <ClInclude Include="SearchBoxControl.h">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ScrollBarUpdater.h" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TimeThrottle.h" />
+    <ClInclude Include="ThreadSafeOptional.h" />
+    <ClInclude Include="ThrottledFunc.h" />
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
@@ -58,11 +58,9 @@
     <ClCompile Include="SearchBoxControl.cpp">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ScrollBarUpdater.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TimeThrottle.cpp" />
     <ClCompile Include="TSFInputControl.cpp">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClCompile>

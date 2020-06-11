@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _initializedTerminal{ false },
         _settings{ settings },
         _closing{ false },
-        _scrollBarUpdater{ std::make_shared<ScrollBarUpdater>() },
+        _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -119,6 +119,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _layoutUpdatedRevoker.revoke();
             }
         });
+
+        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>([weakThis = get_weak()](const auto& upd) {
+            auto go = [=]() -> winrt::Windows::Foundation::IAsyncAction {
+                if (auto control{ weakThis.get() })
+                {
+                    co_await winrt::resume_foreground(control->Dispatcher());
+                }
+                else
+                {
+                    return;
+                }
+
+                if (auto control{ weakThis.get() })
+                {
+                    control->_isInternalScrollBarUpdate = true;
+
+                    auto scrollBar = control->ScrollBar();
+                    if (upd.newValue.has_value())
+                    {
+                        scrollBar.Value(upd.newValue.value());
+                    }
+                    scrollBar.Maximum(upd.newMaximum);
+                    scrollBar.Minimum(upd.newMinimum);
+                    scrollBar.ViewportSize(upd.newViewportSize);
+
+                    control->_isInternalScrollBarUpdate = false;
+                }
+            };
+            go().get();
+        }, std::chrono::milliseconds(8));
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -214,7 +244,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (_closing)
             {
-                return;
+                co_return;
             }
 
             // Update our control settings
@@ -1427,7 +1457,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        if (_scrollBarUpdater->IsInternalUpdate() || _closing)
+        if (_isInternalScrollBarUpdate || _closing)
         {
             // The update comes from ourselves, more specifically from the
             // terminal. So we don't have to update the terminal because it
@@ -1443,7 +1473,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
-        _scrollBarUpdater->CancelPendingValueChange();
+        _updateScrollBar->ModifyPending([](auto& upd) {
+            upd.newValue.reset();
+        });
     }
 
     // Method Description:
@@ -1966,15 +1998,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
 
         ScrollBarUpdate update;
-
         const auto hiddenContent = bufferSize - viewHeight;
-        update.NewMaximum = hiddenContent;
+        update.newMaximum = hiddenContent;
+        update.newMinimum = 0;
+        update.newViewportSize = viewHeight;
+        update.newValue = viewTop;
 
-        update.NewMinimum = 0;
-        update.NewViewportSize = viewHeight;
-        update.NewValue = viewTop;
-
-        _scrollBarUpdater->DoUpdate(ScrollBar(), update);
+        _updateScrollBar->Run(update);
     }
 
     // Method Description:

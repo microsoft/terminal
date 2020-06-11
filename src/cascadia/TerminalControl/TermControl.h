@@ -15,7 +15,7 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
-#include "ScrollBarUpdater.h"
+#include "ThrottledFunc.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -136,7 +136,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        std::shared_ptr<ScrollBarUpdater> _scrollBarUpdater;
+        struct ScrollBarUpdate
+        {
+            std::optional<double> newValue;
+            double newMaximum;
+            double newMinimum;
+            double newViewportSize;
+        };
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        bool _isInternalScrollBarUpdate;
 
         int _rowsToScroll;
 
