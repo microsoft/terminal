@@ -102,10 +102,16 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 // Something like
-                //      { name: "foo", action: null }
+                //      { name: "foo", action: "unbound" }
                 // will _remove_ the "foo" command, by returning null here.
                 return nullptr;
             }
+        }
+        else
+        {
+            // { name: "foo", action: null } will land in this case, which
+            // should also be used for unbinding.
+            return nullptr;
         }
 
         return result;
