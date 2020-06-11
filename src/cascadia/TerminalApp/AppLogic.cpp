@@ -913,7 +913,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root)
         {
-            // Manually bubble the OnGotAKey event up through the focus tree.
+            // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
