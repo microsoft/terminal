@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
         void TitlebarClicked();
-        bool OnGotAKey(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
         void WindowCloseButtonClicked();
 

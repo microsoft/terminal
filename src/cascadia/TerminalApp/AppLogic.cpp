@@ -909,7 +909,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler (per GH#6421)
     // Return value:
     // - whether the key was handled
-    bool AppLogic::OnGotAKey(const uint32_t vkey, const bool down)
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
         if (_root)
         {
@@ -920,7 +920,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (keyListener.OnGotAKey(vkey, down))
+                    if (keyListener.OnDirectKeyEvent(vkey, down))
                     {
                         return true;
                     }

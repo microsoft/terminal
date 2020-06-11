@@ -63,11 +63,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnGotAKey(const uint32_t vkey, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnGotAKey(vkey, down);
+        return _logic.OnDirectKeyEvent(vkey, down);
     }
     return false;
 }

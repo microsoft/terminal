@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
-        bool OnGotAKey(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 
