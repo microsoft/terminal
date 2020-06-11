@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
-            [weakThis = get_weak()](const auto& upd) {
+            [weakThis = get_weak()](const auto& update) {
                 auto go = [=]() -> winrt::Windows::Foundation::IAsyncAction {
                     if (auto control{ weakThis.get() })
                     {
@@ -137,13 +137,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                         control->_isInternalScrollBarUpdate = true;
 
                         auto scrollBar = control->ScrollBar();
-                        if (upd.newValue.has_value())
+                        if (update.newValue.has_value())
                         {
-                            scrollBar.Value(upd.newValue.value());
+                            scrollBar.Value(update.newValue.value());
                         }
-                        scrollBar.Maximum(upd.newMaximum);
-                        scrollBar.Minimum(upd.newMinimum);
-                        scrollBar.ViewportSize(upd.newViewportSize);
+                        scrollBar.Maximum(update.newMaximum);
+                        scrollBar.Minimum(update.newMinimum);
+                        scrollBar.ViewportSize(update.newViewportSize);
 
                         control->_isInternalScrollBarUpdate = false;
                     }
@@ -1475,8 +1475,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
-        _updateScrollBar->ModifyPending([](auto& upd) {
-            upd.newValue.reset();
+        _updateScrollBar->ModifyPending([](auto& update) {
+            update.newValue.reset();
         });
     }
 
