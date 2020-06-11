@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
-                auto go = [=]() -> winrt::Windows::Foundation::IAsyncAction {
+                [=]() -> winrt::fire_and_forget {
                     if (auto control{ weakThis.get() })
                     {
                         co_await winrt::resume_foreground(control->Dispatcher());
@@ -147,8 +147,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                         control->_isInternalScrollBarUpdate = false;
                     }
-                };
-                go().get();
+                }();
             },
             std::chrono::milliseconds(8));
 
