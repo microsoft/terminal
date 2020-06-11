@@ -3,18 +3,16 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- TimeThrottle.h
+- ThrottledFunc.h
 
 Abstract:
 - This module is a helper to throttle actions.
 - The action is defined by the user of that helper. It could be updating a
   a file, fetching something from the disk, etc.
 - You give it a minimum delay between two actions and every time you want to
-  start a new action, you call the `GetNextWaitTime` method. If it returns a
-  non empty value, then you have to wait for that amount of time before you
-  can actually do the action.
-- When you complete an action, you call the `DidAction` method.
-- This is not thread safe.
+  start a new action, you call the `Run` method with an argument.
+- Then the function give in the constructor will be called, but only when
+  enough time passed since the last call.
 --*/
 
 #pragma once
