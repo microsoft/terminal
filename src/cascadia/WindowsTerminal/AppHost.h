@@ -17,8 +17,7 @@ public:
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
-    bool OnF7Pressed();
-    bool OnAltReleased();
+    bool OnGotAKey(const uint32_t vkey, const bool down);
 
 private:
     bool _useNonClientArea;

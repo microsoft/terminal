@@ -63,20 +63,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnF7Pressed()
+bool AppHost::OnGotAKey(const uint32_t vkey, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnF7Pressed();
-    }
-    return false;
-}
-
-bool AppHost::OnAltReleased()
-{
-    if (_logic)
-    {
-        return _logic.OnAltReleased();
+        return _logic.OnGotAKey(vkey, down);
     }
     return false;
 }

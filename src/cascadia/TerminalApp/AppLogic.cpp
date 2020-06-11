@@ -906,44 +906,10 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Implements the F7 handler (per GH#638)
-    // Return value:
-    // - whether F7 was handled
-    bool AppLogic::OnF7Pressed()
-    {
-        if (_root)
-        {
-            // Manually bubble the OnF7Pressed event up through the focus tree.
-            auto xamlRoot{ _root->XamlRoot() };
-            auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
-            do
-            {
-                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
-                {
-                    if (f7Listener.OnF7Pressed())
-                    {
-                        return true;
-                    }
-                    // otherwise, keep walking. bubble the event manually.
-                }
-
-                if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
-                {
-                    focusedObject = focusedElement.Parent();
-                }
-                else
-                {
-                    break; // we hit a non-FE object, stop bubbling.
-                }
-            } while (focusedObject);
-        }
-        return false;
-    }
-
-    // Method Description:
     // - Implements the Alt handler (per GH#6421)
     // Return value:
-    // - whether Alt was handled
-    bool AppLogic::OnAltReleased()
+    // - whether the key was handled
+    bool AppLogic::OnGotAKey(const uint32_t vkey, const bool down)
     {
         if (_root)
         {
@@ -952,9 +918,9 @@ namespace winrt::TerminalApp::implementation
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto f7Listener{ focusedObject.try_as<IAltListener>() })
+                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (f7Listener.OnAltReleased())
+                    if (keyListener.OnGotAKey(vkey, down))
                     {
                         return true;
                     }
