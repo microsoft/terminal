@@ -23,14 +23,14 @@ class BaseTests
 
         Log::Comment(L"Expand vector.");
         til::manage_vector(foo, 30, shrinkThreshold);
-        VERIFY_ARE_EQUAL(30, foo.capacity());
+        VERIFY_ARE_EQUAL(30u, foo.capacity());
 
         Log::Comment(L"Try shrink but by not enough for threshold.");
         til::manage_vector(foo, 18, shrinkThreshold);
-        VERIFY_ARE_EQUAL(30, foo.capacity());
+        VERIFY_ARE_EQUAL(30u, foo.capacity());
 
         Log::Comment(L"Shrink because it is meeting threshold.");
         til::manage_vector(foo, 15, shrinkThreshold);
-        VERIFY_ARE_EQUAL(15, foo.capacity());
+        VERIFY_ARE_EQUAL(15u, foo.capacity());
     }
 };
