@@ -122,32 +122,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
-                [=]() -> winrt::fire_and_forget {
-                    if (auto control{ weakThis.get() })
-                    {
-                        co_await winrt::resume_foreground(control->Dispatcher());
-                    }
-                    else
-                    {
-                        return;
-                    }
+                if (auto control{ weakThis.get() })
+                {
+                    control->Dispatcher()
+                        .RunAsync(CoreDispatcherPriority::Normal, [weakThis2 = control->get_weak(), update2 = ScrollBarUpdate{ update }]() {
+                            if (auto control2{ weakThis2.get() })
+                            {
+                                control2->_isInternalScrollBarUpdate = true;
 
-                    if (auto control{ weakThis.get() })
-                    {
-                        control->_isInternalScrollBarUpdate = true;
+                                auto scrollBar = control2->ScrollBar();
+                                if (update2.newValue.has_value())
+                                {
+                                    scrollBar.Value(update2.newValue.value());
+                                }
+                                scrollBar.Maximum(update2.newMaximum);
+                                scrollBar.Minimum(update2.newMinimum);
+                                scrollBar.ViewportSize(update2.newViewportSize);
 
-                        auto scrollBar = control->ScrollBar();
-                        if (update.newValue.has_value())
-                        {
-                            scrollBar.Value(update.newValue.value());
-                        }
-                        scrollBar.Maximum(update.newMaximum);
-                        scrollBar.Minimum(update.newMinimum);
-                        scrollBar.ViewportSize(update.newViewportSize);
-
-                        control->_isInternalScrollBarUpdate = false;
-                    }
-                }();
+                                control2->_isInternalScrollBarUpdate = false;
+                            }
+                        });
+                }
             },
             std::chrono::milliseconds(8));
 
