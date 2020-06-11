@@ -6,13 +6,12 @@ Module Name:
 - ThrottledFunc.h
 
 Abstract:
-- This module is a helper to throttle actions.
-- The action is defined by the user of that helper. It could be updating a
-  a file, fetching something from the disk, etc.
-- You give it a minimum delay between two actions and every time you want to
-  start a new action, you call the `Run` method with an argument.
-- Then the function give in the constructor will be called, but only when
-  enough time passed since the last call.
+- This module defines a class to throttle function calls.
+- You create an instance of a `ThrottledFunc` with a function and the delay
+  between two function calls.
+- The function takes an argument of type `T`, the template argument of
+  `ThrottledFunc`.
+- Use the `Run` method to wait and then call the function.
 --*/
 
 #pragma once
@@ -36,14 +35,14 @@ public:
     // - Runs the function later with the specified argument, except if `Run`
     //   is called again before with a new argument, in which case the new
     //   argument will be instead.
-    // - For more information, read the Abstract section in the header file.
+    // - For more information, read the "Abstract" section in the header file.
     // Arguments:
-    // - arg: the argument
+    // - arg: the argument to pass to the function
     // Return Value:
     // - <none>
     winrt::fire_and_forget Run(T arg)
     {
-        if (!_nextArg.Emplace(arg))
+        if (!_pendingCallArg.Emplace(arg))
         {
             // already pending
             return;
@@ -53,12 +52,12 @@ public:
 
         co_await winrt::resume_after(_delay);
 
-        if (auto that{ weakThis.lock() })
+        if (auto self{ weakThis.lock() })
         {
-            auto arg = that->_nextArg.Take();
+            auto arg = self->_pendingCallArg.Take();
             if (arg.has_value())
             {
-                that->_func(arg.value());
+                self->_func(arg.value());
             }
             else
             {
@@ -67,14 +66,32 @@ public:
         }
     }
 
+    // Method Description:
+    // - Modifies the pending argument for the next function invocation, if
+    //   there is one pending currently.
+    // - Let's say that you just called the `Run` method with argument A.
+    //   After the delay specified in the constructor, the function R
+    //   specified in the constructor will be called with argument A.
+    // - By using this method, you can modify argument A before the function R
+    //   is called with argument A.
+    // - You pass a function to this method which will take a reference to
+    //   argument A and will modify it.
+    // - When there is no pending invocation of function R, this method will
+    //   not do anything.
+    // - This method is always thread-safe. It can be called multiple times on
+    //   different threads.
+    // Arguments:
+    // - f: the function to call with a reference to the argument
+    // Return Value:
+    // - <none>
     template<typename F>
     void ModifyPending(F f)
     {
-        _nextArg.ModifyValue(f);
+        _pendingCallArg.ModifyValue(f);
     }
 
 private:
     Func _func;
     winrt::Windows::Foundation::TimeSpan _delay;
-    ThreadSafeOptional<T> _nextArg;
+    ThreadSafeOptional<T> _pendingCallArg;
 };

@@ -27,6 +27,10 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
+// The minimum delay between updates to the scroll bar's values.
+// The updates are throttled to limit power usage.
+constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -144,7 +148,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                         });
                 }
             },
-            std::chrono::milliseconds(8));
+            ScrollBarUpdateInterval);
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);

@@ -120,6 +120,20 @@ private:
 
 void ScrollTest::TestNotifyScrolling()
 {
+    // See https://github.com/microsoft/terminal/pull/5630
+    //
+    // This is a test for GH#5540, in the most bizarre way. The origin of that
+    // bug was that as newlines were emitted, we'd accumulate an enormous scroll
+    // delta into a selection region, to the point of overflowing a SHORT. When
+    // the overflow occurred, the Terminal would fail to send a NotifyScroll() to
+    // the TermControl hosting it.
+    //
+    // For this bug to repro, we need to:
+    // - Have a sufficiently large buffer, because each newline we'll accumulate
+    //   a delta of (0, ~bufferHeight), so (bufferHeight^2 + bufferHeight) >
+    //   SHRT_MAX
+    // - Have a selection
+
     Log::Comment(L"Watch out - this test takes a while to run, and won't "
                  L"output anything unless in encounters an error. This is expected.");
 

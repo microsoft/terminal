@@ -28,6 +28,15 @@ public:
         return value;
     }
 
+    // Method Description:
+    // - If the optional has a value, then call the specified function with a
+    //   reference to the value.
+    // - This method is always thread-safe. It can be called multiple times on
+    //   different threads.
+    // Arguments:
+    // - f: the function to call with a reference to the value
+    // Return Value:
+    // - <none>
     template<typename F>
     void ModifyValue(F f)
     {
