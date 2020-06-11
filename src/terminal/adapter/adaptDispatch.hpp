@@ -68,6 +68,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
         bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
@@ -86,7 +87,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // SCS
+        bool DesignateCodingSystem(const wchar_t codingSystem) override; // DOCS
+        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
+        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
+        bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
+        bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
+        bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
@@ -121,6 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            unsigned int CodePage = 0;
         };
         struct Offset
         {
@@ -163,6 +170,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

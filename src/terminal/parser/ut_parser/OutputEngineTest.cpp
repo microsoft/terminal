@@ -550,87 +550,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
-
-    TEST_METHOD(TestSs3Entry)
-    {
-        auto dispatch = std::make_unique<DummyDispatch>();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L'm');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    }
-
-    TEST_METHOD(TestSs3Immediate)
-    {
-        // Intermediates aren't supported by Ss3 - they just get dispatched
-        auto dispatch = std::make_unique<DummyDispatch>();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L'$');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L'#');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L'%');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L'?');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    }
-
-    TEST_METHOD(TestSs3Param)
-    {
-        auto dispatch = std::make_unique<DummyDispatch>();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'O');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-        mach.ProcessCharacter(L';');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L'3');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L'2');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L'4');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L';');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L';');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L'8');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-        mach.ProcessCharacter(L'J');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    }
 };
 
 class StatefulDispatch final : public TermDispatch
@@ -692,6 +611,7 @@ public:
         _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
+        _win32InputMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
     {
     }
@@ -894,6 +814,9 @@ public:
         case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
+        case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+            fSuccess = EnableWin32InputMode(fEnable);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
@@ -932,6 +855,12 @@ public:
     bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
     {
         _cursorKeysMode = fApplicationMode;
+        return true;
+    }
+
+    bool EnableWin32InputMode(const bool enable) noexcept
+    {
+        _win32InputMode = enable;
         return true;
     }
 
@@ -1058,6 +987,7 @@ public:
     size_t _numTabs;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
+    bool _win32InputMode;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
