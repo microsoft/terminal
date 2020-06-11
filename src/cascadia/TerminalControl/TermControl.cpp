@@ -683,36 +683,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Manually generate an F7 event into the key bindings or terminal.
-    //   This is required as part of GH#638.
+    // - Manually handles key events for certain keys that can't be passed to us
+    //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
     // Return value:
-    // - Whether F7 was handled.
-    bool TermControl::OnF7Pressed()
+    // - Whether the key was handled.
+    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
-        bool handled{ false };
-        auto bindings{ _settings.KeyBindings() };
-
         const auto modifiers{ _GetPressedModifierKeys() };
-
-        if (bindings)
+        auto handled = false;
+        if (vkey == VK_MENU && !down)
         {
-            handled = bindings.TryKeyChord({
-                modifiers.IsCtrlPressed(),
-                modifiers.IsAltPressed(),
-                modifiers.IsShiftPressed(),
-                VK_F7,
-            });
-        }
-
-        if (!handled)
-        {
-            // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-            (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
-            // GH#6438: Note that we're _not_ sending the key up here - that'll
-            // get passed through XAML to our KeyUp handler normally.
+            // Manually generate an Alt KeyUp event into the key bindings or terminal.
+            //   This is required as part of GH#6421.
+            (void)_TrySendKeyEvent(VK_MENU, 0, modifiers, false);
             handled = true;
         }
+        else if (vkey == VK_F7 && down)
+        {
+            // Manually generate an F7 event into the key bindings or terminal.
+            //   This is required as part of GH#638.
+            auto bindings{ _settings.KeyBindings() };
 
+            if (bindings)
+            {
+                handled = bindings.TryKeyChord({
+                    modifiers.IsCtrlPressed(),
+                    modifiers.IsAltPressed(),
+                    modifiers.IsShiftPressed(),
+                    VK_F7,
+                });
+            }
+
+            if (!handled)
+            {
+                // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
+                (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+                // GH#6438: Note that we're _not_ sending the key up here - that'll
+                // get passed through XAML to our KeyUp handler normally.
+                handled = true;
+            }
+        }
         return handled;
     }
 
