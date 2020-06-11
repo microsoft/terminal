@@ -120,35 +120,37 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>([weakThis = get_weak()](const auto& upd) {
-            auto go = [=]() -> winrt::Windows::Foundation::IAsyncAction {
-                if (auto control{ weakThis.get() })
-                {
-                    co_await winrt::resume_foreground(control->Dispatcher());
-                }
-                else
-                {
-                    return;
-                }
-
-                if (auto control{ weakThis.get() })
-                {
-                    control->_isInternalScrollBarUpdate = true;
-
-                    auto scrollBar = control->ScrollBar();
-                    if (upd.newValue.has_value())
+        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
+            [weakThis = get_weak()](const auto& upd) {
+                auto go = [=]() -> winrt::Windows::Foundation::IAsyncAction {
+                    if (auto control{ weakThis.get() })
                     {
-                        scrollBar.Value(upd.newValue.value());
+                        co_await winrt::resume_foreground(control->Dispatcher());
                     }
-                    scrollBar.Maximum(upd.newMaximum);
-                    scrollBar.Minimum(upd.newMinimum);
-                    scrollBar.ViewportSize(upd.newViewportSize);
+                    else
+                    {
+                        return;
+                    }
 
-                    control->_isInternalScrollBarUpdate = false;
-                }
-            };
-            go().get();
-        }, std::chrono::milliseconds(8));
+                    if (auto control{ weakThis.get() })
+                    {
+                        control->_isInternalScrollBarUpdate = true;
+
+                        auto scrollBar = control->ScrollBar();
+                        if (upd.newValue.has_value())
+                        {
+                            scrollBar.Value(upd.newValue.value());
+                        }
+                        scrollBar.Maximum(upd.newMaximum);
+                        scrollBar.Minimum(upd.newMinimum);
+                        scrollBar.ViewportSize(upd.newViewportSize);
+
+                        control->_isInternalScrollBarUpdate = false;
+                    }
+                };
+                go().get();
+            },
+            std::chrono::milliseconds(8));
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
