@@ -285,6 +285,15 @@ namespace winrt::TerminalApp::implementation
     {
         _showDialogHandlers(*this, FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
     }
+    
+    // Method Description:
+    // - when more then one pane is opened,
+    //   this shows a warning to the user if they are
+    // sure they want to close the tab.
+    void TerminalPage::_ShowCloseTabWarningDialog()
+    {
+        _showDialogHandlers(*this, FindName(L"CloseTabDialog").try_as<WUX::Controls::ContentDialog>());
+    }
 
     // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
@@ -1646,14 +1655,25 @@ namespace winrt::TerminalApp::implementation
     // - Responds to the TabView control's Tab Closing event by removing
     //      the indicated tab from the set and focusing another one.
     //      The event is cancelled so App maintains control over the
-    //      items in the tabview.
+    //      items in the tabview. If there are more the one pane in the focused
+    //      tab, it will show a warning
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
-        const auto tabViewItem = eventArgs.Tab();
-        _RemoveTabViewItem(tabViewItem);
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            if (focusedTab->_GetLeafPaneCount() == 1)
+            {
+                const auto tabViewItem = eventArgs.Tab();
+                _RemoveTabViewItem(tabViewItem);
+            }
+            else if (focusedTab->_GetLeafPaneCount() > 1)
+            {
+                _ShowCloseTabWarningDialog();
+            }
     }
 
     // Method Description:
@@ -1669,6 +1689,21 @@ namespace winrt::TerminalApp::implementation
     {
         _CloseAllTabs();
     }
+        
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseFocusedTab(), which closes the tab currently
+    //   selected. This method will be called if
+    //   the user confirms to close the selected tab.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    {
+        _CloseFocusedTab();
+    }
+        
     // Method Description:
     // - Called when the primary button of the content dialog is clicked.
     // This calls _CloseFocusedTab(), which closes the focused tab.
