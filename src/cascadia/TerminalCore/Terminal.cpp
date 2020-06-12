@@ -784,7 +784,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
-    SHORT fakeScroll = 0;
+    SHORT rowsPushedOffTopOfBuffer = 0;
     if (proposedCursorPosition.Y >= bufferSize.Height())
     {
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
@@ -792,7 +792,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         {
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
-            fakeScroll--;
+            rowsPushedOffTopOfBuffer++;
         }
     }
 
@@ -817,12 +817,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _NotifyScrollEvent();
     }
 
-    if (fakeScroll != 0)
+    if (rowsPushedOffTopOfBuffer != 0)
     {
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, fakeScroll };
+        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
