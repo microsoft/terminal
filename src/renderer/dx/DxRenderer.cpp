@@ -96,7 +96,8 @@ DxEngine::DxEngine() :
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
-    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
+    _drawingContext{}
 {
     const auto was = _tracelogCount.fetch_add(1);
     if (0 == was)
@@ -998,6 +999,49 @@ try
 
         _d2dRenderTarget->BeginDraw();
         _isPainting = true;
+
+        {
+            // Get the baseline for this font as that's where we draw from
+            DWRITE_LINE_SPACING spacing;
+            RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+
+            // GH#5098: If we're rendering with cleartype text, we need to always
+            // render onto an opaque background. If our background's opacity is
+            // 1.0f, that's great, we can use that. Otherwise, we need to force the
+            // text renderer to render this text in grayscale. In
+            // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
+            // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
+            // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
+            //
+            // Currently, only text with the default background color uses an alpha
+            // of 0, every other background uses 1.0
+            //
+            // DANGER: Layers slow us down. Only do this in the specific case where
+            // someone has chosen the slower ClearType antialiasing (versus the faster
+            // grayscale antialiasing)
+            const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+            const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+            // Another way of naming "bgIsDefault" is "bgHasTransparency"
+            const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                                     (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                                     (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                                     (_backgroundColor.b == _defaultBackgroundColor.b);
+            const bool forceGrayscaleAA = usingCleartype &&
+                                          usingTransparency &&
+                                          bgIsDefault;
+
+            // Assemble the drawing context information
+            _drawingContext = std::make_unique<DrawingContext>(_d2dRenderTarget.Get(),
+                                                               _d2dBrushForeground.Get(),
+                                                               _d2dBrushBackground.Get(),
+                                                               forceGrayscaleAA,
+                                                               _dwriteFactory.Get(),
+                                                               spacing,
+                                                               _glyphCell,
+                                                               _d2dRenderTarget->GetSize(),
+                                                               _frameInfo.cursorInfo,
+                                                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        }
     }
 
     return S_OK;
@@ -1020,6 +1064,8 @@ try
     if (_haveDeviceResources)
     {
         _isPainting = false;
+
+        LOG_IF_FAILED(_customRenderer->EndFrame(_drawingContext.get()));
 
         hr = _d2dRenderTarget->EndDraw();
 
@@ -1299,48 +1345,8 @@ try
     RETURN_IF_FAILED(_customLayout->Reset());
     RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
-    // Get the baseline for this font as that's where we draw from
-    DWRITE_LINE_SPACING spacing;
-    RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
-
-    // GH#5098: If we're rendering with cleartype text, we need to always
-    // render onto an opaque background. If our background's opacity is
-    // 1.0f, that's great, we can use that. Otherwise, we need to force the
-    // text renderer to render this text in grayscale. In
-    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
-    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
-    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
-    //
-    // Currently, only text with the default background color uses an alpha
-    // of 0, every other background uses 1.0
-    //
-    // DANGER: Layers slow us down. Only do this in the specific case where
-    // someone has chosen the slower ClearType antialiasing (versus the faster
-    // grayscale antialiasing)
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-    // Another way of naming "bgIsDefault" is "bgHasTransparency"
-    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
-                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
-                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
-                             (_backgroundColor.b == _defaultBackgroundColor.b);
-    const bool forceGrayscaleAA = usingCleartype &&
-                                  usingTransparency &&
-                                  bgIsDefault;
-
-    // Assemble the drawing context information
-    DrawingContext context(_d2dRenderTarget.Get(),
-                           _d2dBrushForeground.Get(),
-                           _d2dBrushBackground.Get(),
-                           forceGrayscaleAA,
-                           _dwriteFactory.Get(),
-                           spacing,
-                           _glyphCell,
-                           _frameInfo.cursorInfo,
-                           D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
-
     // Layout then render the text
-    RETURN_IF_FAILED(_customLayout->Draw(&context, _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }

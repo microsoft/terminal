@@ -188,6 +188,7 @@ namespace Microsoft::Console::Render
         UINT _swapChainFlags;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
+        std::unique_ptr<DrawingContext> _drawingContext;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;

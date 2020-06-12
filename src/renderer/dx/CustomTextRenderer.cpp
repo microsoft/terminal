@@ -409,6 +409,33 @@ CATCH_RETURN()
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
+    // Determine clip rectangle
+    D2D1_RECT_F clipRect;
+    clipRect.top = origin.y;
+    clipRect.bottom = clipRect.top + drawingContext->cellSize.height;
+    clipRect.left = 0;
+    clipRect.right = drawingContext->targetSize.width;
+
+    if (_clipRect.top != clipRect.top || _clipRect.bottom != clipRect.bottom ||
+        _clipRect.left != clipRect.left || _clipRect.right != clipRect.right)
+    {
+        if (_hasClipPushed)
+        {
+            d2dContext->PopAxisAlignedClip();
+            _hasClipPushed = false;
+        }
+
+        // Clip all drawing in this glyph run to where we expect.
+        // We need the AntialiasMode here to be Aliased to ensure
+        //  that background boxes line up with each other and don't leave behind
+        //  stray colors.
+        // See GH#3626 for more details.
+        d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+
+        _clipRect = clipRect;
+        _hasClipPushed = true;
+    }
+
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
     const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
@@ -424,18 +451,6 @@ CATCH_RETURN()
         rect.left -= totalSpan;
     }
     rect.right = rect.left + totalSpan;
-
-    // Clip all drawing in this glyph run to where we expect.
-    // We need the AntialiasMode here to be Aliased to ensure
-    //  that background boxes line up with each other and don't leave behind
-    //  stray colors.
-    // See GH#3626 for more details.
-    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-
-    // Ensure we pop it on the way out
-    auto popclip = wil::scope_exit([&d2dContext]() noexcept {
-        d2dContext->PopAxisAlignedClip();
-    });
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
@@ -634,6 +649,21 @@ CATCH_RETURN()
     return S_OK;
 }
 #pragma endregion
+
+[[nodiscard]] HRESULT CustomTextRenderer::EndFrame(void* clientDrawingContext) noexcept
+try
+{
+    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+
+    if (_hasClipPushed)
+    {
+        drawingContext->renderTarget->PopAxisAlignedClip();
+        _hasClipPushed = false;
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                              D2D1_POINT_2F baselineOrigin,
