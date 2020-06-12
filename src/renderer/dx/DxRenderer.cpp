@@ -95,6 +95,7 @@ DxEngine::DxEngine() :
     _scale{ 1.0f },
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
+    _customLayout{ },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
     const auto was = _tracelogCount.fetch_add(1);
@@ -443,8 +444,7 @@ try
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd:
-        {
+        case SwapChainMode::ForHwnd: {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -473,8 +473,7 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition:
-        {
+        case SwapChainMode::ForComposition: {
             // Use the given target size for compositions.
             SwapChainDesc.Width = _displaySizePixels.width<UINT>();
             SwapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -881,15 +880,13 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         return _sizeTarget;
     }
     default:
@@ -1295,13 +1292,8 @@ try
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
     // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            clusters,
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
     // Get the baseline for this font as that's where we draw from
     DWRITE_LINE_SPACING spacing;
@@ -1344,7 +1336,7 @@ try
                            D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
     // Layout then render the text
-    RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(_customLayout->Draw(&context, _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
@@ -1589,6 +1581,9 @@ try
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
 
+    // Prepare the text layout
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
+
     return S_OK;
 }
 CATCH_RETURN();
@@ -1716,17 +1711,11 @@ try
 
     const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-    // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            { &cluster, 1 },
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters({ &cluster, 1 }));
 
     UINT32 columns = 0;
-    RETURN_IF_FAILED(layout.GetColumns(&columns));
+    RETURN_IF_FAILED(_customLayout->GetColumns(&columns));
 
     *pResult = columns != 1;
 
@@ -2131,12 +2120,10 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;

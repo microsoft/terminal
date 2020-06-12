@@ -22,6 +22,7 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
 
 #include "../../types/inc/Viewport.hpp"
@@ -171,6 +172,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
