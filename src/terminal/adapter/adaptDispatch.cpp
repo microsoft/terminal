@@ -2339,7 +2339,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 //   a check for whether the PTY is in use.
 // Return value:
 // True if the request should be passed.
-bool AdaptDispatch::_ShouldPassThroughInputModeChange() noexcept
+bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
 {
     // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
     // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
