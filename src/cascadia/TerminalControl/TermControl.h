@@ -15,6 +15,7 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
+#include "ThrottledFunc.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -135,8 +136,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        bool _isTerminalInitiatedScroll;
-        std::atomic<bool> _willUpdateScrollBarToMatchViewport;
+        struct ScrollBarUpdate
+        {
+            std::optional<double> newValue;
+            double newMaximum;
+            double newMinimum;
+            double newViewportSize;
+        };
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        bool _isInternalScrollBarUpdate;
 
         int _rowsToScroll;
 
@@ -200,7 +208,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
-        winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         winrt::fire_and_forget _TerminalCursorPositionChanged();
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
@@ -215,7 +223,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TryStopAutoScroll(const uint32_t pointerId);
         void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
-        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
