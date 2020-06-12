@@ -1858,7 +1858,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 // - <none>
 void CustomTextLayout::_OrderRuns()
 {
-    std::sort(_runs.begin(), _runs.end(), [](auto&& a, auto&& b) { return a.textStart < b.textStart; });
+    std::sort(_runs.begin(), _runs.end(), [](auto& a, auto& b) { return a.textStart < b.textStart; });
     for (UINT32 i = 0; i < _runs.size() - 1; ++i)
     {
         _runs[i].nextRunIndex = i + 1;
