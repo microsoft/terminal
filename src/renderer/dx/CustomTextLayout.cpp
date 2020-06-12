@@ -1858,21 +1858,13 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 // - <none>
 void CustomTextLayout::_OrderRuns()
 {
-    const size_t totalRuns = _runs.size();
-    std::vector<LinkedRun> runs;
-    runs.resize(totalRuns);
-
-    UINT32 nextRunIndex = 0;
-    for (UINT32 i = 0; i < totalRuns; ++i)
+    std::sort(_runs.begin(), _runs.end(), [](auto&& a, auto&& b) { return a.textStart < b.textStart; });
+    for (UINT32 i = 0; i < _runs.size() - 1; ++i)
     {
-        runs.at(i) = _runs.at(nextRunIndex);
-        runs.at(i).nextRunIndex = i + 1;
-        nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
+        _runs[i].nextRunIndex = i + 1;
     }
 
-    runs.back().nextRunIndex = 0;
-
-    _runs.swap(runs);
+    _runs.back().nextRunIndex = 0;
 }
 
 #pragma endregion
