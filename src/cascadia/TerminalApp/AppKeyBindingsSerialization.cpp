@@ -109,6 +109,8 @@ static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParse
 
     { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
+    { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
     { ShortcutAction::Invalid, nullptr },
 };
 
