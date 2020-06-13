@@ -45,9 +45,10 @@ class ThrottledArgFunc : public std::enable_shared_from_this<ThrottledArgFunc<T>
 public:
     using Func = std::function<void(T arg)>;
 
-    ThrottledArgFunc(Func func, winrt::Windows::Foundation::TimeSpan delay) :
+    ThrottledArgFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
         _func{ func },
-        _delay{ delay }
+        _delay{ delay },
+        _dispatcher{ dispatcher }
     {
     }
 
@@ -62,30 +63,29 @@ public:
     // - arg: the argument to pass to the function
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Run(T arg)
+    void Run(T arg)
     {
-        if (!_pendingCallArg.Emplace(arg))
+        if (!_pendingRunArg.Emplace(arg))
         {
             // already pending
             return;
         }
 
-        auto weakThis = this->weak_from_this();
-
-        co_await winrt::resume_after(_delay);
-
-        if (auto self{ weakThis.lock() })
-        {
-            auto arg = self->_pendingCallArg.Take();
-            if (arg.has_value())
+        _dispatcher.RunAsync(CoreDispatcherPriority::Low, [weakThis = this->weak_from_this()]() {
+            if (auto self{ weakThis.lock() })
             {
-                self->_func(arg.value());
+                DispatcherTimer timer;
+                timer.Interval(self->_delay);
+                timer.Tick([=](auto&&...) {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        timer.Stop();
+                        self->_func(self->_pendingRunArg.Take().value());
+                    }
+                });
+                timer.Start();
             }
-            else
-            {
-                // should not happen
-            }
-        }
+        });
     }
 
     // Method Description:
@@ -109,11 +109,12 @@ public:
     template<typename F>
     void ModifyPending(F f)
     {
-        _pendingCallArg.ModifyValue(f);
+        _pendingRunArg.ModifyValue(f);
     }
 
 private:
     Func _func;
     winrt::Windows::Foundation::TimeSpan _delay;
-    ThreadSafeOptional<T> _pendingCallArg;
+    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    ThreadSafeOptional<T> _pendingRunArg;
 };
