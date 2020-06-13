@@ -398,7 +398,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             const auto bitShift = delta_y * _sz.width();
 
+#pragma warning(push)
+            // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
+#pragma warning(disable : 26472)
             const auto newBits = static_cast<size_t>(std::abs(bitShift));
+#pragma warning(pop)
             const bool isLeftShift = bitShift > 0;
 
             if (newBits >= _bits.size())
