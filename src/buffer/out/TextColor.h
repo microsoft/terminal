@@ -77,6 +77,7 @@ public:
     friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
 
+    bool CanBeBrightened() const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;

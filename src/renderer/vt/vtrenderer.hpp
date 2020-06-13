@@ -119,9 +119,6 @@ namespace Microsoft::Console::Render
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
         TextAttribute _lastTextAttributes;
-        COLORREF _LastFG;
-        COLORREF _LastBG;
-        bool _lastWasBold;
 
         Microsoft::Console::Types::Viewport _lastViewport;
 
@@ -206,9 +203,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
-        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                           const IRenderData* pData,
-                                                           const std::basic_string_view<COLORREF> colorTable) noexcept;
+        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
 
         bool _WillWriteSingleChar() const;
 

@@ -16,7 +16,7 @@ WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noex
     const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
     const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = _foreground.IsIndex16() && IsBold();
+    const bool brighten = IsBold() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 

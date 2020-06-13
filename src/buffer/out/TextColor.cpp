@@ -50,6 +50,11 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // clang-format on
 
+bool TextColor::CanBeBrightened() const noexcept
+{
+    return IsIndex16() || IsDefault();
+}
+
 bool TextColor::IsLegacy() const noexcept
 {
     return IsIndex16() || (IsIndex256() && _index < 16);

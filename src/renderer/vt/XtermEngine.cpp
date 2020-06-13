@@ -162,7 +162,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                        const gsl::not_null<IRenderData*> pData,
+                                                        const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -174,7 +174,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(textAttributes, pData, _colorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(textAttributes);
 }
 
 // Routine Description:
