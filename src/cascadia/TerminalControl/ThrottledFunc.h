@@ -12,7 +12,7 @@ Module Name:
 #include "ThreadSafeOptional.h"
 
 // Class Description:
-// - Represents a function whose invokation is delayed by a specified duration
+// - Represents a function whose invocation is delayed by a specified duration
 //   and rate-limited such that if the code tries to run the function while a
 //   call to the function is already pending, the request will be ignored.
 // - The function will be run on the the specified dispatcher.
@@ -33,7 +33,7 @@ private:
 };
 
 // Class Description:
-// - Represents a function that takes an argument and whose invokation is
+// - Represents a function that takes an argument and whose invocation is
 //   delayed by a specified duration and rate-limited such that if the code
 //   tries to run the function while a call to the function is already
 //   pending, then the previous call with the previous argument will be
