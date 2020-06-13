@@ -118,6 +118,7 @@ namespace Microsoft::Console::Render
 
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
+        TextAttribute _lastTextAttributes;
         COLORREF _LastFG;
         COLORREF _LastBG;
         bool _lastWasBold;
@@ -155,7 +156,7 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
-        std::optional<COLORREF> _newBottomLineBG{ std::nullopt };
+        std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -181,6 +182,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ChangeTitle(const std::string& title) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
                                                            const bool fIsForeground) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRendition256Color(const WORD index,
+                                                            const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
@@ -211,9 +214,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
-        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                       const IRenderData* pData,
-                                                       const std::basic_string_view<COLORREF> colorTable) noexcept;
+        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const IRenderData* pData,
                                                            const std::basic_string_view<COLORREF> colorTable) noexcept;

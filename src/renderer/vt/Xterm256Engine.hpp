@@ -39,10 +39,6 @@ namespace Microsoft::Console::Render
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
 
-        // We're only using Italics, Blinking, Invisible and Crossed Out for now
-        // See GH#2916 for adding a more complete implementation.
-        TextAttribute _lastTextAttributes;
-
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
         friend class ConptyOutputTests;

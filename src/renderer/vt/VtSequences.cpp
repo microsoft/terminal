@@ -251,6 +251,24 @@ using namespace Microsoft::Console::Render;
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to an
+//      indexed color from the 256-color table.
+// Arguments:
+// - wAttr: Windows color table index to emit as a VT sequence
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
+                                                              const bool fIsForeground) noexcept
+{
+    const std::string fmt = fIsForeground ?
+                                "\x1b[38;5;%dm" :
+                                "\x1b[48;5;%dm";
+
+    return _WriteFormattedString(&fmt, ::Xterm256ToWindowsIndex(index));
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes to an
 //      RGB color.
 // Arguments:
 // - color: The color to emit a VT sequence for

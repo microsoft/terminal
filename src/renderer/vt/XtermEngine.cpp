@@ -17,7 +17,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _colorTable(colorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
     _nextCursorIsVisible(true)
@@ -144,7 +143,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const TextAttribute& textAttributes) noexcept
 {
     bool textUnderlined = textAttributes.IsUnderlined();
-    if (textUnderlined != _usingUnderLine)
+    if (textUnderlined != _lastTextAttributes.IsUnderlined())
     {
         if (textUnderlined)
         {
@@ -154,7 +153,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             RETURN_IF_FAILED(_EndUnderline());
         }
-        _usingUnderLine = textUnderlined;
+        _lastTextAttributes.SetUnderline(textUnderlined);
     }
     return S_OK;
 }
@@ -471,7 +470,7 @@ try
     // important information to send to the connected Terminal.
     if (_newBottomLine)
     {
-        _newBottomLineBG = _LastBG;
+        _newBottomLineBG = _lastTextAttributes.GetBackground();
     }
 
     return S_OK;

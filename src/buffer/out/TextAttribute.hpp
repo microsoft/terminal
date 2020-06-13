@@ -106,6 +106,10 @@ public:
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
 
+    TextColor GetForeground() const noexcept;
+    TextColor GetBackground() const noexcept;
+    void SetForeground(const TextColor foreground) noexcept;
+    void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;

@@ -27,9 +27,11 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                           const gsl::not_null<IRenderData*> pData,
+                                                           const gsl::not_null<IRenderData*> /*pData*/,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
+    RETURN_IF_FAILED(VtEngine::_RgbUpdateDrawingBrushes(textAttributes));
+
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
     //      flag is there. If the state of that flag is different then our
     //      current state, change the underlining state.
@@ -40,9 +42,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
 
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
-    RETURN_IF_FAILED(_UpdateExtendedAttrs(textAttributes));
-
-    return VtEngine::_RgbUpdateDrawingBrushes(textAttributes, pData, _colorTable);
+    return _UpdateExtendedAttrs(textAttributes);
 }
 
 // Routine Description:

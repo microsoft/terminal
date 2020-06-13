@@ -186,80 +186,65 @@ using namespace Microsoft::Console::Types;
 //      color sequences.
 // Arguments:
 // - textAttributes: Text attributes to use for the colors.
-// - pData: The interface to console data structures required for rendering.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                         const IRenderData* pData,
-                                                         const std::basic_string_view<COLORREF> colorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept
 {
-    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
-    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
-    const bool fgChanged = colorForeground != _LastFG;
-    const bool bgChanged = colorBackground != _LastBG;
-    const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
-    const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
-    const bool isBold = textAttributes.IsBold();
+    const auto fg = textAttributes.GetForeground();
+    const auto bg = textAttributes.GetBackground();
+    auto lastFg = _lastTextAttributes.GetForeground();
+    auto lastBg = _lastTextAttributes.GetBackground();
 
     // If both the FG and BG should be the defaults, emit a SGR reset.
-    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
+    if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
     {
-        // SGR Reset will also clear out the boldness of the text.
+        // SGR Reset will clear all attributes.
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _LastFG = colorForeground;
-        _LastBG = colorBackground;
-        _lastWasBold = false;
-
-        // I'm not sure this is possible currently, but if the text is bold, but
-        //      default colors, make sure we bold it.
-        if (isBold)
-        {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
-        }
+        _lastTextAttributes = {};
+        lastFg = {};
+        lastBg = {};
     }
-    else
+
+    if (fg != lastFg)
     {
-        if (_lastWasBold != isBold)
+        if (fg.IsDefault())
         {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
         }
+        else if (fg.IsIndex16())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(fg.GetIndex(), true));
+        }
+        else if (fg.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition256Color(fg.GetIndex(), true));
+        }
+        else if (fg.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(fg.GetRGB(), true));
+        }
+        _lastTextAttributes.SetForeground(fg);
+    }
 
-        WORD wFoundColor = 0;
-        if (fgChanged)
+    if (bg != lastBg)
+    {
+        if (bg.IsDefault())
         {
-            if (fgIsDefault)
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
-            }
-            else if (::FindTableIndex(colorForeground, colorTable, &wFoundColor))
-            {
-                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
-            }
-            else
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
-            }
-            _LastFG = colorForeground;
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
         }
-
-        if (bgChanged)
+        else if (bg.IsIndex16())
         {
-            if (bgIsDefault)
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
-            }
-            else if (::FindTableIndex(colorBackground, colorTable, &wFoundColor))
-            {
-                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
-            }
-            else
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
-            }
-            _LastBG = colorBackground;
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(bg.GetIndex(), false));
         }
+        else if (bg.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition256Color(bg.GetIndex(), false));
+        }
+        else if (bg.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(bg.GetRGB(), false));
+        }
+        _lastTextAttributes.SetBackground(bg);
     }
 
     return S_OK;
@@ -451,7 +436,7 @@ using namespace Microsoft::Console::Types;
     // than when we emitted the line, we can't optimize out the spaces from it.
     // We'll still need to emit those spaces, so that the connected terminal
     // will have the same background color on those blank cells.
-    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _LastBG) : true;
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _lastTextAttributes.GetBackground()) : true;
 
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.

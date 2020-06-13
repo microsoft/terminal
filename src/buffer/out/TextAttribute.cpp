@@ -75,6 +75,26 @@ COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> color
     return _background.GetColor(colorTable, defaultColor, false);
 }
 
+TextColor TextAttribute::GetForeground() const noexcept
+{
+    return _foreground;
+}
+
+TextColor TextAttribute::GetBackground() const noexcept
+{
+    return _background;
+}
+
+void TextAttribute::SetForeground(const TextColor foreground) noexcept
+{
+    _foreground = foreground;
+}
+
+void TextAttribute::SetBackground(const TextColor background) noexcept
+{
+    _background = background;
+}
+
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);

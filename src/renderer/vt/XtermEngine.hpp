@@ -56,7 +56,6 @@ namespace Microsoft::Console::Render
     protected:
         const std::basic_string_view<COLORREF> _colorTable;
         const bool _fUseAsciiOnly;
-        bool _usingUnderLine;
         bool _needToDisableCursor;
         bool _lastCursorIsVisible;
         bool _nextCursorIsVisible;

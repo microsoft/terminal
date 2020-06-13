@@ -98,6 +98,8 @@ public:
         return _index;
     }
 
+    COLORREF GetRGB() const noexcept;
+
 private:
     ColorType _meta : 2;
     union
@@ -106,8 +108,6 @@ private:
     };
     BYTE _green;
     BYTE _blue;
-
-    COLORREF _GetRGB() const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -149,7 +149,7 @@ namespace WEX
                 }
                 else if (color.IsRgb())
                 {
-                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color._GetRGB());
+                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color.GetRGB());
                 }
                 else
                 {
