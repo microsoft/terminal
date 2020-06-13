@@ -31,74 +31,60 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
     RETURN_IF_FAILED(VtEngine::_RgbUpdateDrawingBrushes(textAttributes));
-
-    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
-    //      flag is there. If the state of that flag is different then our
-    //      current state, change the underlining state.
-    // We have to do this here, instead of in PaintBufferGridLines, because
-    //      we'll have already painted the text by the time PaintBufferGridLines
-    //      is called.
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
-
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
     return _UpdateExtendedAttrs(textAttributes);
 }
 
 // Routine Description:
-// - Write a VT sequence to either start or stop underlining text.
+// - Write a VT sequence to update the character rendition attributes.
 // Arguments:
 // - textAttributes - text attributes (bold, italic, underline, etc.) to use.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept
 {
-    // Helper lambda to check if a state (attr) has changed since it's last
-    // value (lastState), and appropriately start/end that state with the given
-    // begin/end functions.
-    auto updateFlagAndState = [this](const bool flagSet,
-                                     const bool lastState,
-                                     std::function<HRESULT(Xterm256Engine*)> beginFn,
-                                     std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
-        if (flagSet != lastState)
-        {
-            if (flagSet)
-            {
-                RETURN_IF_FAILED(beginFn(this));
-            }
-            else
-            {
-                RETURN_IF_FAILED(endFn(this));
-            }
-        }
-        return S_OK;
-    };
+    if (textAttributes.IsBold() != _lastTextAttributes.IsBold())
+    {
+        RETURN_IF_FAILED(_SetBold(textAttributes.IsBold()));
+        _lastTextAttributes.SetBold(textAttributes.IsBold());
+    }
 
-    auto hr = updateFlagAndState(textAttributes.IsItalic(),
-                                 _lastTextAttributes.IsItalic(),
-                                 &Xterm256Engine::_BeginItalics,
-                                 &Xterm256Engine::_EndItalics);
-    RETURN_IF_FAILED(hr);
+    if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
+    {
+        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+    }
 
-    hr = updateFlagAndState(textAttributes.IsBlinking(),
-                            _lastTextAttributes.IsBlinking(),
-                            &Xterm256Engine::_BeginBlink,
-                            &Xterm256Engine::_EndBlink);
-    RETURN_IF_FAILED(hr);
+    if (textAttributes.IsItalic() != _lastTextAttributes.IsItalic())
+    {
+        RETURN_IF_FAILED(_SetItalics(textAttributes.IsItalic()));
+        _lastTextAttributes.SetItalics(textAttributes.IsItalic());
+    }
 
-    hr = updateFlagAndState(textAttributes.IsInvisible(),
-                            _lastTextAttributes.IsInvisible(),
-                            &Xterm256Engine::_BeginInvisible,
-                            &Xterm256Engine::_EndInvisible);
-    RETURN_IF_FAILED(hr);
+    if (textAttributes.IsBlinking() != _lastTextAttributes.IsBlinking())
+    {
+        RETURN_IF_FAILED(_SetBlinking(textAttributes.IsBlinking()));
+        _lastTextAttributes.SetBlinking(textAttributes.IsBlinking());
+    }
 
-    hr = updateFlagAndState(textAttributes.IsCrossedOut(),
-                            _lastTextAttributes.IsCrossedOut(),
-                            &Xterm256Engine::_BeginCrossedOut,
-                            &Xterm256Engine::_EndCrossedOut);
-    RETURN_IF_FAILED(hr);
+    if (textAttributes.IsInvisible() != _lastTextAttributes.IsInvisible())
+    {
+        RETURN_IF_FAILED(_SetInvisible(textAttributes.IsInvisible()));
+        _lastTextAttributes.SetInvisible(textAttributes.IsInvisible());
+    }
 
-    _lastTextAttributes = textAttributes;
+    if (textAttributes.IsCrossedOut() != _lastTextAttributes.IsCrossedOut())
+    {
+        RETURN_IF_FAILED(_SetCrossedOut(textAttributes.IsCrossedOut()));
+        _lastTextAttributes.SetCrossedOut(textAttributes.IsCrossedOut());
+    }
+
+    if (textAttributes.IsReverseVideo() != _lastTextAttributes.IsReverseVideo())
+    {
+        RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
+        _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
+    }
+
     return S_OK;
 }
 

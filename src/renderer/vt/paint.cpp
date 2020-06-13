@@ -285,7 +285,7 @@ using namespace Microsoft::Console::Types;
         //      default colors, make sure we bold it.
         if (isBold)
         {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            RETURN_IF_FAILED(_SetBold(isBold));
             _lastWasBold = isBold;
         }
     }
@@ -293,7 +293,7 @@ using namespace Microsoft::Console::Types;
     {
         if (_lastWasBold != isBold)
         {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            RETURN_IF_FAILED(_SetBold(isBold));
             _lastWasBold = isBold;
         }
 

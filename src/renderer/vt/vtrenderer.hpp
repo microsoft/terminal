@@ -188,26 +188,17 @@ namespace Microsoft::Console::Render
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
 
-        [[nodiscard]] HRESULT _SetGraphicsBoldness(const bool isBold) noexcept;
-
         [[nodiscard]] HRESULT _SetGraphicsDefault() noexcept;
 
         [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
-        [[nodiscard]] HRESULT _BeginUnderline() noexcept;
-        [[nodiscard]] HRESULT _EndUnderline() noexcept;
-
-        [[nodiscard]] HRESULT _BeginItalics() noexcept;
-        [[nodiscard]] HRESULT _EndItalics() noexcept;
-
-        [[nodiscard]] HRESULT _BeginBlink() noexcept;
-        [[nodiscard]] HRESULT _EndBlink() noexcept;
-
-        [[nodiscard]] HRESULT _BeginInvisible() noexcept;
-        [[nodiscard]] HRESULT _EndInvisible() noexcept;
-
-        [[nodiscard]] HRESULT _BeginCrossedOut() noexcept;
-        [[nodiscard]] HRESULT _EndCrossedOut() noexcept;
+        [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
+        [[nodiscard]] HRESULT _SetUnderline(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetItalics(const bool isItalic) noexcept;
+        [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
+        [[nodiscard]] HRESULT _SetInvisible(const bool isInvisible) noexcept;
+        [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
+        [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 

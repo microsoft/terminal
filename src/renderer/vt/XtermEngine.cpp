@@ -145,14 +145,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     bool textUnderlined = textAttributes.IsUnderlined();
     if (textUnderlined != _lastTextAttributes.IsUnderlined())
     {
-        if (textUnderlined)
-        {
-            RETURN_IF_FAILED(_BeginUnderline());
-        }
-        else
-        {
-            RETURN_IF_FAILED(_EndUnderline());
-        }
+        RETURN_IF_FAILED(_SetUnderline(textUnderlined));
         _lastTextAttributes.SetUnderline(textUnderlined);
     }
     return S_OK;
