@@ -4,14 +4,6 @@ Licensed under the MIT license.
 
 Module Name:
 - ThrottledFunc.h
-
-Abstract:
-- This module defines a class to throttle function calls.
-- You create an instance of a `ThrottledFunc` with a function and the delay
-  between two function calls.
-- The function takes an argument of type `T`, the template argument of
-  `ThrottledFunc`.
-- Use the `Run` method to wait and then call the function.
 --*/
 
 #pragma once
@@ -19,13 +11,41 @@ Abstract:
 
 #include "ThreadSafeOptional.h"
 
+// Class Description:
+// - Represents a function whose invokation is delayed by a specified duration
+//   and rate-limited such that if the code tries to run the function while a
+//   call to the function is already pending, the request will be ignored.
+// - The function will be run on the the specified dispatcher.
+class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc>
+{
+public:
+    using Func = std::function<void()>;
+
+    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher);
+
+    void Run();
+
+private:
+    Func _func;
+    winrt::Windows::Foundation::TimeSpan _delay;
+    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    std::atomic_flag _isRunPending;
+};
+
+// Class Description:
+// - Represents a function that takes an argument and whose invokation is
+//   delayed by a specified duration and rate-limited such that if the code
+//   tries to run the function while a call to the function is already
+//   pending, then the previous call with the previous argument will be
+//   cancelled and the call will be made with the new argument instead.
+// - The function will be run on the the specified dispatcher.
 template<typename T>
-class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<T>>
+class ThrottledArgFunc : public std::enable_shared_from_this<ThrottledArgFunc<T>>
 {
 public:
     using Func = std::function<void(T arg)>;
 
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay) :
+    ThrottledArgFunc(Func func, winrt::Windows::Foundation::TimeSpan delay) :
         _func{ func },
         _delay{ delay }
     {
@@ -35,7 +55,9 @@ public:
     // - Runs the function later with the specified argument, except if `Run`
     //   is called again before with a new argument, in which case the new
     //   argument will be instead.
-    // - For more information, read the "Abstract" section in the header file.
+    // - For more information, read the class' documentation.
+    // - This method is always thread-safe. It can be called multiple times on
+    //   different threads.
     // Arguments:
     // - arg: the argument to pass to the function
     // Return Value:

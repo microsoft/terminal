@@ -19,6 +19,7 @@
     <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="SearchBoxControl.cpp" />
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="ThrottledFunc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

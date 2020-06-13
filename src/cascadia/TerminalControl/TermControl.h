@@ -136,6 +136,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
+        std::shared_ptr<ThrottledFunc> _tsfTryRedrawCanvas;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -143,7 +145,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledArgFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         int _rowsToScroll;
@@ -210,7 +212,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
-        winrt::fire_and_forget _TerminalCursorPositionChanged();
+        void _TerminalCursorPositionChanged();
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
