@@ -36,6 +36,20 @@ the MIT License. See LICENSE in the project root for license information. -->
         Grid.Column="1"
         MinWidth="45.0"
         DoubleTapped="DragBar_DoubleTapped"/>
+    <Button
+        x:Name="KeepOnTopButton"
+        MinWidth="46.0"
+        Width="46.0"
+        Height="36"
+        Margin="220,0,0,0"
+        Content="&#xE840;"
+        FontFamily="Segoe MDL2 Assets"
+        FontSize="12"
+        FontWeight="SemiLight"
+        UseLayoutRounding="True"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Stretch"
+        Grid.Row="2"/>
 
     <local:MinMaxCloseControl
         Grid.Column="2"
