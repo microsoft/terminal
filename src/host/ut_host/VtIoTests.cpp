@@ -96,9 +96,6 @@ void VtIoTests::DtorTestJustEngine()
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
 
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
     for (int i = 0; i < 25; ++i)
@@ -108,21 +105,21 @@ void VtIoTests::DtorTestJustEngine()
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
-        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport(), colorTable);
+        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport());
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete pRenderer256;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), SetUpViewport(), colorTable, false);
+        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), SetUpViewport(), false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXterm;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), SetUpViewport(), colorTable, true);
+        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), SetUpViewport(), true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -136,9 +133,6 @@ void VtIoTests::DtorTestDeleteVtio()
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
-
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
@@ -154,8 +148,7 @@ void VtIoTests::DtorTestDeleteVtio()
         VtIo* vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                  SetUpViewport(),
-                                                                  colorTable);
+                                                                  SetUpViewport());
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -165,7 +158,6 @@ void VtIoTests::DtorTestDeleteVtio()
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                SetUpViewport(),
-                                                               colorTable,
                                                                false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete vtio;
@@ -176,7 +168,6 @@ void VtIoTests::DtorTestDeleteVtio()
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                SetUpViewport(),
-                                                               colorTable,
                                                                true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete vtio;
@@ -192,9 +183,6 @@ void VtIoTests::DtorTestStackAlloc()
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
 
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
     for (int i = 0; i < 25; ++i)
@@ -208,8 +196,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                     SetUpViewport(),
-                                                                     colorTable);
+                                                                     SetUpViewport());
         }
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
@@ -217,7 +204,6 @@ void VtIoTests::DtorTestStackAlloc()
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                   SetUpViewport(),
-                                                                  colorTable,
                                                                   false);
         }
 
@@ -226,7 +212,6 @@ void VtIoTests::DtorTestStackAlloc()
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                   SetUpViewport(),
-                                                                  colorTable,
                                                                   true);
         }
     }
@@ -240,9 +225,6 @@ void VtIoTests::DtorTestStackAllocMany()
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
 
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
     for (int i = 0; i < 25; ++i)
@@ -255,21 +237,18 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio1;
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                      SetUpViewport(),
-                                                                      colorTable);
+                                                                      SetUpViewport());
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio2;
             vtio2._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                    SetUpViewport(),
-                                                                   colorTable,
                                                                    false);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio3;
             vtio3._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                    SetUpViewport(),
-                                                                   colorTable,
                                                                    true);
         }
     }

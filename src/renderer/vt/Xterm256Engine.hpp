@@ -24,8 +24,7 @@ namespace Microsoft::Console::Render
     {
     public:
         Xterm256Engine(_In_ wil::unique_hfile hPipe,
-                       const Microsoft::Console::Types::Viewport initialViewport,
-                       const std::basic_string_view<COLORREF> colorTable);
+                       const Microsoft::Console::Types::Viewport initialViewport);
 
         virtual ~Xterm256Engine() override = default;
 

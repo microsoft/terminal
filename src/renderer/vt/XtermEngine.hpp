@@ -29,7 +29,6 @@ namespace Microsoft::Console::Render
     public:
         XtermEngine(_In_ wil::unique_hfile hPipe,
                     const Microsoft::Console::Types::Viewport initialViewport,
-                    const std::basic_string_view<COLORREF> colorTable,
                     const bool fUseAsciiOnly);
 
         virtual ~XtermEngine() override = default;
@@ -53,7 +52,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
     protected:
-        const std::basic_string_view<COLORREF> _colorTable;
         const bool _fUseAsciiOnly;
         bool _needToDisableCursor;
         bool _lastCursorIsVisible;

@@ -28,7 +28,6 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-COLORREF g_ColorTable[COLOR_TABLE_SIZE];
 static const std::string CLEAR_SCREEN = "\x1b[2J";
 static const std::string CURSOR_HOME = "\x1b[H";
 // Sometimes when we're expecting the renderengine to not write anything,
@@ -43,24 +42,6 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        // clang-format off
-        g_ColorTable[0] =  RGB( 12,  12,  12); // Black
-        g_ColorTable[1] =  RGB( 0,   55, 218); // Dark Blue
-        g_ColorTable[2] =  RGB( 19, 161,  14); // Dark Green
-        g_ColorTable[3] =  RGB( 58, 150, 221); // Dark Cyan
-        g_ColorTable[4] =  RGB(197,  15,  31); // Dark Red
-        g_ColorTable[5] =  RGB(136,  23, 152); // Dark Magenta
-        g_ColorTable[6] =  RGB(193, 156,   0); // Dark Yellow
-        g_ColorTable[7] =  RGB(204, 204, 204); // Dark White
-        g_ColorTable[8] =  RGB(118, 118, 118); // Bright Black
-        g_ColorTable[9] =  RGB( 59, 120, 255); // Bright Blue
-        g_ColorTable[10] = RGB( 22, 198,  12); // Bright Green
-        g_ColorTable[11] = RGB( 97, 214, 214); // Bright Cyan
-        g_ColorTable[12] = RGB(231,  72,  86); // Bright Red
-        g_ColorTable[13] = RGB(180,   0, 158); // Bright Magenta
-        g_ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
-        g_ColorTable[15] = RGB(242, 242, 242); // White
-        // clang-format on
         return true;
     }
 
@@ -167,7 +148,7 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
 void VtRendererTest::VtSequenceHelperTests()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
     engine->SetTestCallback(pfn);
@@ -224,7 +205,7 @@ void VtRendererTest::VtSequenceHelperTests()
 void VtRendererTest::Xterm256TestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -412,7 +393,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 void VtRendererTest::Xterm256TestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderData renderData;
@@ -534,7 +515,7 @@ void VtRendererTest::Xterm256TestColors()
 void VtRendererTest::Xterm256TestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -686,7 +667,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     }
 
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -730,7 +711,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -917,7 +898,7 @@ void VtRendererTest::XtermTestInvalidate()
 void VtRendererTest::XtermTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderData renderData;
@@ -947,7 +928,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetBackground(g_ColorTable[4]);
+        textAttributes.SetBackground(RGB(197, 15, 31));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -955,7 +936,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetForeground(g_ColorTable[7]);
+        textAttributes.SetForeground(RGB(204, 204, 204));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1001,7 +982,7 @@ void VtRendererTest::XtermTestColors()
 void VtRendererTest::XtermTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -1110,7 +1091,7 @@ void VtRendererTest::XtermTestCursor()
 void VtRendererTest::TestWrapping()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -1163,7 +1144,7 @@ void VtRendererTest::TestResize()
 {
     Viewport view = SetUpViewport();
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view, g_ColorTable);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -1200,7 +1181,7 @@ void VtRendererTest::TestCursorVisibility()
 {
     Viewport view = SetUpViewport();
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view, g_ColorTable);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -1325,7 +1306,7 @@ void VtRendererTest::FormattedString()
 
     Viewport view = SetUpViewport();
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view, g_ColorTable);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
