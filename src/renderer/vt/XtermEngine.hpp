@@ -62,8 +62,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]] HRESULT _UpdateUnderline(const TextAttribute& textAttributes) noexcept;
-
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
 #ifdef UNIT_TESTING

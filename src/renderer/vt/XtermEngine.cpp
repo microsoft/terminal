@@ -134,24 +134,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 }
 
 // Routine Description:
-// - Write a VT sequence to either start or stop underlining text.
-// Arguments:
-// - textAttributes: text attributes containing information about the
-//      underlining state of the text.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const TextAttribute& textAttributes) noexcept
-{
-    bool textUnderlined = textAttributes.IsUnderlined();
-    if (textUnderlined != _lastTextAttributes.IsUnderlined())
-    {
-        RETURN_IF_FAILED(_SetUnderline(textUnderlined));
-        _lastTextAttributes.SetUnderline(textUnderlined);
-    }
-    return S_OK;
-}
-
-// Routine Description:
 // - Write a VT sequence to change the current colors of text. Only writes
 //      16-color attributes.
 // Arguments:
@@ -165,16 +147,22 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                                                         const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
-    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
-    //      flag is there. If the state of that flag is different then our
-    //      current state, change the underlining state.
-    // We have to do this here, instead of in PaintBufferGridLines, because
-    //      we'll have already painted the text by the time PaintBufferGridLines
-    //      is called.
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(textAttributes));
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(textAttributes);
+    RETURN_IF_FAILED(VtEngine::_16ColorUpdateDrawingBrushes(textAttributes));
+
+    // And the only supported meta attributes are reverse video and underline
+    if (textAttributes.IsReverseVideo() != _lastTextAttributes.IsReverseVideo())
+    {
+        RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
+        _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
+    }
+    if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
+    {
+        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
