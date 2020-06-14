@@ -157,7 +157,7 @@ public:
 
         UINT uiCursorSize = 12;
 
-        auto initialAttributes = useDefaultAttributes ? gci.GetDefaultAttributes() :
+        auto initialAttributes = useDefaultAttributes ? TextAttribute{} :
                                                         TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY };
 
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);

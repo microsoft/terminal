@@ -486,47 +486,53 @@ void VtRendererTest::Xterm256TestColors()
     // test actually uses an RGB value instead of the closest match.
 
     Log::Comment(NoThrowString().Format(
-        L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
+        L"Begin by setting the default colors"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                   &renderData,
                                                   false));
 
     TestPaint(*engine, [&]() {
+        TextAttribute textAttributes;
+
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
+        textAttributes.SetIndexedBackground(FOREGROUND_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[4] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
+        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], g_ColorTable[4] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
-        qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], 0x010101 },
+        textAttributes.SetBackground(0x010101);
+        qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background RGB(1,1,1)
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
-        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], g_ColorTable[0] },
+        textAttributes.SetDefaultBackground();
+        qExpectedInput.push_back("\x1b[49m"); // Background default
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
-
+        textAttributes = {};
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
     });
@@ -535,7 +541,7 @@ void VtRendererTest::Xterm256TestColors()
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                       &renderData,
                                                       false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
@@ -946,47 +952,54 @@ void VtRendererTest::XtermTestColors()
         L"Test changing the text attributes"));
 
     Log::Comment(NoThrowString().Format(
-        L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
+        L"Begin by setting the default colors"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                   &renderData,
                                                   false));
 
     TestPaint(*engine, [&]() {
+        TextAttribute textAttributes;
+
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
+        textAttributes.SetBackground(g_ColorTable[4]);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[4] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
+        textAttributes.SetForeground(g_ColorTable[7]);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], g_ColorTable[4] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
+        textAttributes.SetBackground(0x010101);
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], 0x010101 },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
-        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[7], g_ColorTable[0] },
+        textAttributes.SetDefaultBackground();
+        qExpectedInput.push_back("\x1b[m"); // Both foreground and background default
+        qExpectedInput.push_back("\x1b[37m"); // Reapply foreground DARK_WHITE
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
-
+        textAttributes = {};
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
     });
@@ -995,7 +1008,7 @@ void VtRendererTest::XtermTestColors()
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ g_ColorTable[15], g_ColorTable[0] },
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                       &renderData,
                                                       false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
