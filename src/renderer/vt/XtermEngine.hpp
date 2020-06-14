@@ -28,7 +28,6 @@ namespace Microsoft::Console::Render
     {
     public:
         XtermEngine(_In_ wil::unique_hfile hPipe,
-                    const Microsoft::Console::IDefaultColorProvider& colorProvider,
                     const Microsoft::Console::Types::Viewport initialViewport,
                     const std::basic_string_view<COLORREF> colorTable,
                     const bool fUseAsciiOnly);

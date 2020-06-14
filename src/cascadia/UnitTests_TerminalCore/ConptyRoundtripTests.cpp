@@ -116,7 +116,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         Viewport initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
-                                                               gci,
                                                                initialViewport,
                                                                gci.Get16ColorTable());
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);

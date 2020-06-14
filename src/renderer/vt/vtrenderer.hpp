@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
-#include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -42,7 +41,6 @@ namespace Microsoft::Console::Render
         static const COORD INVALID_COORDS;
 
         VtEngine(_In_ wil::unique_hfile hPipe,
-                 const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
         virtual ~VtEngine() override = default;
@@ -115,8 +113,6 @@ namespace Microsoft::Console::Render
         std::string _buffer;
 
         std::string _formatBuffer;
-
-        const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
         TextAttribute _lastTextAttributes;
 
