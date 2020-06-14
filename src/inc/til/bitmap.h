@@ -440,6 +440,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     _bits.set(_bits.size() - newBits, newBits, true);
                 }
             }
+
+            _runs.reset(); // reset cached runs on any non-const method
         }
 
         til::size _sz;
