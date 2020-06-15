@@ -29,7 +29,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters);
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset();
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset() noexcept;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
 

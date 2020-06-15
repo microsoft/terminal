@@ -654,6 +654,7 @@ CATCH_RETURN()
 try
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF(E_INVALIDARG, !drawingContext);
 
     if (_hasClipPushed)
     {

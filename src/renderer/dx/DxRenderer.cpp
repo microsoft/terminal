@@ -1346,9 +1346,6 @@ try
     RETURN_IF_FAILED(_customLayout->Reset());
     RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
-    // Copy cursor info into drawing context
-    _drawingContext->cursorInfo = _frameInfo.cursorInfo;
-
     // Layout then render the text
     RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
@@ -2215,5 +2212,6 @@ CATCH_LOG()
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
     _frameInfo = info;
+    _drawingContext->cursorInfo = info.cursorInfo;
     return S_OK;
 }

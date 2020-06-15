@@ -134,7 +134,7 @@ namespace Microsoft::Console::Render
                                                 _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                 _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
 
-        D2D1_RECT_F _clipRect;
+        D2D1_RECT_F _clipRect = { 0 };
         bool _hasClipPushed = false;
     };
 }
