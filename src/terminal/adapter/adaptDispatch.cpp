@@ -1064,8 +1064,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1083,8 +1082,7 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
     bool success = true;
     success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1880,8 +1878,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableVT200MouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1901,8 +1898,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1922,8 +1918,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1942,8 +1937,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1963,8 +1957,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1984,8 +1977,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAlternateScroll(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -2180,4 +2172,23 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     }
 
     return success;
+}
+
+// Routine Description:
+// - Determines whether we should pass any sequence that manipulates
+//   TerminalInput's input generator through the PTY. It encapsulates
+//   a check for whether the PTY is in use.
+// Return value:
+// True if the request should be passed.
+bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
+{
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input.
+    // The original comment said, "Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911". Unfortunately, time has shown
+    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+    // impact on the actual connected terminal. We can't remove this check,
+    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
+    return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
 }
