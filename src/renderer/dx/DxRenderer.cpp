@@ -424,48 +424,51 @@ try
 
     _displaySizePixels = _GetClientSize();
 
+    // Get the other device types so we have deeper access to more functionality
+    // in our pipeline than by just walking straight from the D3D device.
+
+    RETURN_IF_FAILED(_d3dDevice.As(&_dxgiDevice));
+    RETURN_IF_FAILED(_d2dFactory->CreateDevice(_dxgiDevice.Get(), _d2dDevice.ReleaseAndGetAddressOf()));
+
     if (createSwapChain)
     {
-        _swapChainFlags = 0;
+        _swapChainDesc.Flags = 0;
 
         // requires DXGI 1.3 which was introduced in Windows 8.1
-        WI_SetFlagIf(_swapChainFlags, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, IsWindows8Point1OrGreater());
+        WI_SetFlagIf(_swapChainDesc.Flags, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, IsWindows8Point1OrGreater());
 
-        DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
-        SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        SwapChainDesc.BufferCount = 2;
-        SwapChainDesc.SampleDesc.Count = 1;
-        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
-        SwapChainDesc.Flags = _swapChainFlags;
+        _swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        _swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        _swapChainDesc.BufferCount = 2;
+        _swapChainDesc.SampleDesc.Count = 1;
+        _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+        _swapChainDesc.Scaling = DXGI_SCALING_NONE;
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd:
-        {
+        case SwapChainMode::ForHwnd: {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
-            SwapChainDesc.Width = rect.right - rect.left;
-            SwapChainDesc.Height = rect.bottom - rect.top;
+            _swapChainDesc.Width = rect.right - rect.left;
+            _swapChainDesc.Height = rect.bottom - rect.top;
 
             // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
-            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
             const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
                                                                                      _hwndTarget,
-                                                                                     &SwapChainDesc,
+                                                                                     &_swapChainDesc,
                                                                                      nullptr,
                                                                                      nullptr,
                                                                                      &_dxgiSwapChain);
             if (FAILED(createSwapChainResult))
             {
-                SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+                _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
                 RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
                                                                        _hwndTarget,
-                                                                       &SwapChainDesc,
+                                                                       &_swapChainDesc,
                                                                        nullptr,
                                                                        nullptr,
                                                                        &_dxgiSwapChain));
@@ -473,19 +476,18 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition:
-        {
+        case SwapChainMode::ForComposition: {
             // Use the given target size for compositions.
-            SwapChainDesc.Width = _displaySizePixels.width<UINT>();
-            SwapChainDesc.Height = _displaySizePixels.height<UINT>();
+            _swapChainDesc.Width = _displaySizePixels.width<UINT>();
+            _swapChainDesc.Height = _displaySizePixels.height<UINT>();
 
             // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
-            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
             // It's 100% required to use scaling mode stretch for composition. There is no other choice.
-            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+            _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
             RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                          &SwapChainDesc,
+                                                                          &_swapChainDesc,
                                                                           nullptr,
                                                                           &_dxgiSwapChain));
             break;
@@ -531,7 +533,7 @@ try
     if (_isPainting)
     {
         // TODO: MSFT: 21169176 - remove this or restore the "try a few times to render" code... I think
-        _d2dRenderTarget->BeginDraw();
+        _d2dDeviceContext->BeginDraw();
     }
 
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
@@ -551,35 +553,62 @@ try
 }
 CATCH_RETURN();
 
+D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode)
+{
+    switch (mode)
+    {
+    case DXGI_ALPHA_MODE_PREMULTIPLIED:
+        return D2D1_ALPHA_MODE_PREMULTIPLIED;
+    case DXGI_ALPHA_MODE_STRAIGHT:
+        return D2D1_ALPHA_MODE_STRAIGHT;
+    case DXGI_ALPHA_MODE_IGNORE:
+        return D2D1_ALPHA_MODE_IGNORE;
+    case DXGI_ALPHA_MODE_FORCE_DWORD:
+        return D2D1_ALPHA_MODE_FORCE_DWORD;
+    default:
+    case DXGI_ALPHA_MODE_UNSPECIFIED:
+        return D2D1_ALPHA_MODE_UNKNOWN;
+    }
+}
+
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     try
     {
+        // Pull surface out of swap chain.
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
-        const D2D1_RENDER_TARGET_PROPERTIES props =
-            D2D1::RenderTargetProperties(
-                D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-                0.0f,
-                0.0f);
+        // Create a device context out of it (supercedes render targets)
+        RETURN_IF_FAILED(_d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_d2dDeviceContext));
 
-        RETURN_IF_FAILED(_d2dFactory->CreateDxgiSurfaceRenderTarget(_dxgiSurface.Get(),
-                                                                    &props,
-                                                                    &_d2dRenderTarget));
+        // Make a bitmap and bind it to the swap chain surface
+        const auto bitmapProperties = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(_swapChainDesc.Format, _dxgiAlphaToD2d1Alpha(_swapChainDesc.AlphaMode)));
+
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dBitmap));
+
+        // Assign that bitmap as the target of the D2D device context. Draw commands hit the context
+        // and are backed by the bitmap which is bound to the swap chain which goes on to be presented.
+        // (The foot bone connected to the leg bone,
+        //  The leg bone connected to the knee bone,
+        //  The knee bone connected to the thigh bone
+        //  ... and so on)
+
+        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
 
         // We need the AntialiasMode for non-text object to be Aliased to ensure
         //  that background boxes line up with each other and don't leave behind
         //  stray colors.
         // See GH#3626 for more details.
-        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-        _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
+        _d2dDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dDeviceContext->SetTextAntialiasMode(_antialiasingMode);
 
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
-                                                                 &_d2dBrushBackground));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
+                                                                  &_d2dBrushBackground));
 
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
-                                                                 &_d2dBrushForeground));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
+                                                                  &_d2dBrushForeground));
 
         const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
             D2D1_CAP_STYLE_SQUARE, // startCap
@@ -624,16 +653,21 @@ void DxEngine::_ReleaseDeviceResources() noexcept
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
 
-        if (nullptr != _d2dRenderTarget.Get() && _isPainting)
+        _d2dBitmap.Reset();
+
+        if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
-            _d2dRenderTarget->EndDraw();
+            _d2dDeviceContext->EndDraw();
         }
 
-        _d2dRenderTarget.Reset();
+        _d2dDeviceContext.Reset();
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
         _swapChainFrameLatencyWaitableObject.reset();
+
+        _d2dDevice.Reset();
+        _dxgiDevice.Reset();
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -881,15 +915,13 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         return _sizeTarget;
     }
     default:
@@ -979,10 +1011,10 @@ try
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
-            _d2dRenderTarget.Reset();
+            _d2dDeviceContext.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, _swapChainFlags));
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), _swapChainDesc.Format, _swapChainDesc.Flags));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
             // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -995,7 +1027,7 @@ try
             _firstFrame = true;
         }
 
-        _d2dRenderTarget->BeginDraw();
+        _d2dDeviceContext->BeginDraw();
         _isPainting = true;
     }
 
@@ -1020,7 +1052,7 @@ try
     {
         _isPainting = false;
 
-        hr = _d2dRenderTarget->EndDraw();
+        hr = _d2dDeviceContext->EndDraw();
 
         if (SUCCEEDED(hr))
         {
@@ -1251,14 +1283,14 @@ try
     // If the entire thing is invalid, just use one big clear operation.
     if (_invalidMap.all())
     {
-        _d2dRenderTarget->Clear(nothing);
+        _d2dDeviceContext->Clear(nothing);
     }
     else
     {
         // Runs are counts of cells.
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
-        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
+        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
         for (const auto rect : _invalidMap.runs())
         {
             // Use aliased.
@@ -1266,11 +1298,11 @@ try
             // the edges are cut nice and sharp (not blended by anti-aliasing).
             // For performance reasons, it takes a lot less work to not
             // do anti-alias blending.
-            _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-            _d2dRenderTarget->Clear(nothing);
-            _d2dRenderTarget->PopAxisAlignedClip();
+            _d2dDeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _d2dDeviceContext->Clear(nothing);
+            _d2dDeviceContext->PopAxisAlignedClip();
         }
-        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
     }
 
     return S_OK;
@@ -1333,7 +1365,7 @@ try
                                   bgIsDefault;
 
     // Assemble the drawing context information
-    DrawingContext context(_d2dRenderTarget.Get(),
+    DrawingContext context(_d2dDeviceContext.Get(),
                            _d2dBrushForeground.Get(),
                            _d2dBrushBackground.Get(),
                            forceGrayscaleAA,
@@ -1387,7 +1419,7 @@ try
             end = start;
             end.x += font.width();
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         if (lines & GridLines::Left)
@@ -1395,7 +1427,7 @@ try
             end = start;
             end.y += font.height();
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         // NOTE: Watch out for inclusive/exclusive rectangles here.
@@ -1413,7 +1445,7 @@ try
             end = start;
             end.x += font.width() - 1.f;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         start = { target.x + font.width() - 0.5f, target.y + 0.5f };
@@ -1423,7 +1455,7 @@ try
             end = start;
             end.y += font.height() - 1.f;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         // Move to the next character in this run.
@@ -1450,7 +1482,7 @@ try
 
     const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_glyphCell);
 
-    _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
+    _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
     return S_OK;
 }
@@ -2131,12 +2163,10 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
