@@ -164,6 +164,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
+        bool _ShouldPassThroughInputModeChange() const;
+
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
