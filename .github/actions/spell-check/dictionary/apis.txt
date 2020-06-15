@@ -7,11 +7,13 @@ EXPCMDFLAGS
 EXPCMDSTATE
 fullkbd
 href
+IAsync
 IBox
 IBind
 IClass
 IComparable
 ICustom
+IDirect
 IExplorer
 IMap
 IObject

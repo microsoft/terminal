@@ -36,7 +36,7 @@ namespace TerminalCoreUnitTests
     class TerminalBufferTests;
     class TerminalApiTest;
     class ConptyRoundtripTests;
-    class TerminalAndRendererTests;
+    class ScrollTest;
 };
 #endif
 
@@ -301,6 +301,6 @@ private:
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
-    friend class TerminalCoreUnitTests::TerminalAndRendererTests;
+    friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

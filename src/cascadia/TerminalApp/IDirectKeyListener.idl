@@ -7,10 +7,8 @@ namespace TerminalApp
     // Instead, we just pin the uuid and include it in both TermControl and App
     // If you update this one, please update the one in TerminalControl\TermControl.idl
     // If you change this interface, please update the guid.
-    // If you press F7 and get a runtime error, go make sure both copies are the same.
-    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
-    interface IF7Listener
-    {
-        Boolean OnF7Pressed();
+    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")] interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, Boolean down);
     }
 }

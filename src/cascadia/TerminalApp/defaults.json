@@ -279,6 +279,7 @@
         { "command": "toggleFullscreen", "keys": "f11" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "defaultFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
 
         // Tab Management

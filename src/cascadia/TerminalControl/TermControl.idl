@@ -11,13 +11,11 @@ namespace Microsoft.Terminal.TerminalControl
 
     // C++/winrt makes it difficult to share this idl between two projects,
     // Instead, we just pin the uuid and include it in both TermControl and App
-    // If you update this one, please update TerminalApp\IF7Listener.idl.
+    // If you update this one, please update TerminalApp\IDirectKeyListener.idl.
     // If you change this interface, please update the guid.
-    // If you press F7 and get a runtime error, go make sure both copies are the same.
-    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
-    interface IF7Listener
-    {
-        Boolean OnF7Pressed();
+    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")] interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, Boolean down);
     }
 
     runtimeclass CopyToClipboardEventArgs
@@ -32,7 +30,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IF7Listener, IMouseWheelListener
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);

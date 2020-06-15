@@ -95,6 +95,8 @@ namespace winrt::TerminalApp::implementation
 
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
+        { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
         { ShortcutAction::Invalid, nullptr },
     };
 

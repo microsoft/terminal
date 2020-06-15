@@ -201,7 +201,7 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="../IF7Listener.idl" />
+    <Midl Include="../IDirectKeyListener.idl" />
     <Midl Include="../App.idl">
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
