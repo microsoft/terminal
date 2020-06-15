@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         });
 
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TsfRedrawInterval,
             Dispatcher());
 
-        _updateScrollBar = std::make_shared<ThrottledArgsFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {

@@ -9,7 +9,7 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 
-ThrottledFunc::ThrottledFunc(ThrottledFunc::Func func, TimeSpan delay, CoreDispatcher dispatcher) :
+ThrottledFunc<>::ThrottledFunc(ThrottledFunc::Func func, TimeSpan delay, CoreDispatcher dispatcher) :
     _func{ func },
     _delay{ delay },
     _dispatcher{ dispatcher },
@@ -27,7 +27,7 @@ ThrottledFunc::ThrottledFunc(ThrottledFunc::Func func, TimeSpan delay, CoreDispa
 // - <none>
 // Return Value:
 // - <none>
-void ThrottledFunc::Run()
+void ThrottledFunc<>::Run()
 {
     if (_isRunPending.test_and_set())
     {
