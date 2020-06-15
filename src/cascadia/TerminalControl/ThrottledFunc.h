@@ -16,7 +16,7 @@ Module Name:
 //   pending, then the previous call with the previous arguments will be
 //   cancelled and the call will be made with the new arguments instead.
 // - The function will be run on the the specified dispatcher.
-template <typename ...Args>
+template<typename... Args>
 class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<Args...>>
 {
 public:
@@ -40,7 +40,7 @@ public:
     // - arg: the argument to pass to the function
     // Return Value:
     // - <none>
-    template <typename ...MakeArgs>
+    template<typename... MakeArgs>
     void Run(MakeArgs&&... args)
     {
         {
