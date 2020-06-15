@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             TsfRedrawInterval,
             Dispatcher());
 
-        _updateScrollBar = std::make_shared<ThrottledArgFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledArgsFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {

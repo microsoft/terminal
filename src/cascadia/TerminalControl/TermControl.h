@@ -145,7 +145,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledArgFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledArgsFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         int _rowsToScroll;
