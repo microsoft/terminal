@@ -419,13 +419,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 {
     // GH#6423 - don't snap on this key if the key that was pressed was a
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
-    // GH#6481 - Additionally, we'll only snap if this is one of a few specific
-    // keys that typically count as "input", but don't send a character.
-    // Otherwise, SendCharEvent handles snapping for most keys.
-    if (!KeyEvent::IsModifierKey(vkey) &&
-        (((vkey >= VK_PRIOR) && (vkey <= VK_DOWN)) || // PgUp,PgDn, Home, End, Arrows
-         ((vkey >= VK_INSERT) && (vkey <= VK_DELETE)) || // insert & delete
-         ((vkey >= VK_NUMPAD0) && (vkey <= VK_F24)))) // numpad and F keys
+    // GH#6481 - Additionally, make sure the key was actually pressed. This
+    // check will make sure we behave the same as before GH#6309
+    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
     {
         TrySnapOnInput();
     }
@@ -529,12 +525,6 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    // GH#6481 - only snap on input for characters and keys like the arrow keys
-    // (which are handled in SendKeyEvent)
-    if (!KeyEvent::IsModifierKey(vkey))
-    {
-        TrySnapOnInput();
-    }
     // Unfortunately, the UI doesn't give us both a character down and a
     // character up event, only a character received event. So fake sending both
     // to the terminal input translator. Unless it's in win32-input-mode, it'll
