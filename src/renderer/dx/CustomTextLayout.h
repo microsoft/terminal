@@ -134,6 +134,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
 
+        [[nodiscard]] HRESULT _AnalyzeTextComplexity() noexcept;
         [[nodiscard]] HRESULT _AnalyzeRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRuns() noexcept;
         [[nodiscard]] HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
@@ -180,6 +181,9 @@ namespace Microsoft::Console::Render
 
         // Glyph shaping results
 
+        // Whether the entire text is determined to be simple and does not require full script shaping.
+        bool _isEntireTextSimple;
+
         std::vector<DWRITE_GLYPH_OFFSET> _glyphOffsets;
 
         // Clusters are complicated. They're in respect to each individual run.
@@ -190,6 +194,9 @@ namespace Microsoft::Console::Render
 
         // This appears to be the index of the glyph inside each font.
         std::vector<UINT16> _glyphIndices;
+
+        // This is for calculating glyph advances when the entire text is simple.
+        std::vector<INT32> _glyphDesignUnitAdvances;
 
         std::vector<float> _glyphAdvances;
 

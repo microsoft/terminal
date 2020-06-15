@@ -5,6 +5,21 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - defaultAttributes: the attribute values to be used for default colors.
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
+    const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
+    const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
+    const bool brighten = _foreground.IsIndex16() && IsBold();
+    return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
+}
+
 bool TextAttribute::IsLegacy() const noexcept
 {
     return _foreground.IsLegacy() && _background.IsLegacy();
@@ -72,12 +87,22 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
 {
-    _foreground = TextColor(fgIndex);
+    _foreground = TextColor(fgIndex, false);
 }
 
 void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
 {
-    _background = TextColor(bgIndex);
+    _background = TextColor(bgIndex, false);
+}
+
+void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
+{
+    _foreground = TextColor(fgIndex, true);
+}
+
+void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
+{
+    _background = TextColor(bgIndex, true);
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
@@ -224,21 +249,6 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
-}
-
-// Method Description:
-// - Returns true if this attribute indicates its foreground is the "default"
-//      foreground. Its _rgbForeground will contain the actual value of the
-//      default foreground. If the default colors are ever changed, this method
-//      should be used to identify attributes with the default fg value, and
-//      update them accordingly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff this attribute indicates it's the "default" foreground color.
-bool TextAttribute::ForegroundIsDefault() const noexcept
-{
-    return _foreground.IsDefault();
 }
 
 // Method Description:

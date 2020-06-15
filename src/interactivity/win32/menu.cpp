@@ -335,7 +335,10 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
     pStateInfo->HistoryNoDup = !!(gci.Flags & CONSOLE_HISTORY_NODUP);
 
-    memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
+    for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
+    {
+        pStateInfo->ColorTable[i] = gci.GetColorTableEntry(i);
+    }
 
     // Create mutable copies of the titles so the propsheet can do something with them.
     if (gci.GetOriginalTitle().length() > 0)
@@ -562,7 +565,10 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         }
     }
 
-    gci.SetColorTable(pStateInfo->ColorTable, gci.GetColorTableSize());
+    for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
+    {
+        gci.SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+    }
 
     // Ensure that attributes only contain color specification.
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
@@ -578,7 +584,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
     // Set the screen info's default text attributes to defaults -
-    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);

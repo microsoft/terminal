@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v2.0.0
       with:
         fetch-depth: 5
-    - uses: check-spelling/check-spelling@0.0.15-alpha
+    - uses: check-spelling/check-spelling@0.0.16-alpha
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         bucket: .github/actions

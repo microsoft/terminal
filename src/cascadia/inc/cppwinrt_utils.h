@@ -99,12 +99,12 @@ public:                                                                         
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
-#define GETSET_PROPERTY(type, name, ...)              \
-public:                                               \
-    type name() const { return _##name; }             \
-    void name(const type& value) { _##name = value; } \
-                                                      \
-private:                                              \
+#define GETSET_PROPERTY(type, name, ...)                       \
+public:                                                        \
+    type name() const noexcept { return _##name; }             \
+    void name(const type& value) noexcept { _##name = value; } \
+                                                               \
+private:                                                       \
     type _##name{ __VA_ARGS__ };
 
 // Use this macro to quickly implement both the getter and setter for an observable property.

@@ -201,6 +201,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // things in DIPs, and the fontSize is in pixels.
         TextBlock().FontSize(unscaledFontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+        TextBlock().FontWeight(fontArgs->FontWeight());
 
         // TextBlock's actual dimensions right after initialization is 0w x 0h. So,
         // if an IME is displayed before TextBlock has text (like showing the emoji picker

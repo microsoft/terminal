@@ -41,9 +41,10 @@ Revision History:
 
 enum class ColorType : BYTE
 {
-    IsIndex = 0x0,
-    IsDefault = 0x1,
-    IsRgb = 0x2
+    IsIndex256 = 0x0,
+    IsIndex16 = 0x1,
+    IsDefault = 0x2,
+    IsRgb = 0x3
 };
 
 struct TextColor
@@ -57,9 +58,9 @@ public:
     {
     }
 
-    constexpr TextColor(const BYTE wLegacyAttr) noexcept :
-        _meta{ ColorType::IsIndex },
-        _index{ wLegacyAttr },
+    constexpr TextColor(const BYTE index, const bool isIndex256) noexcept :
+        _meta{ isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16 },
+        _index{ index },
         _green{ 0 },
         _blue{ 0 }
     {
@@ -76,28 +77,21 @@ public:
     friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
 
-    constexpr bool IsLegacy() const noexcept
-    {
-        return !(IsDefault() || IsRgb());
-    }
-
-    constexpr bool IsDefault() const noexcept
-    {
-        return _meta == ColorType::IsDefault;
-    }
-
-    constexpr bool IsRgb() const noexcept
-    {
-        return _meta == ColorType::IsRgb;
-    }
+    bool IsLegacy() const noexcept;
+    bool IsIndex16() const noexcept;
+    bool IsIndex256() const noexcept;
+    bool IsDefault() const noexcept;
+    bool IsRgb() const noexcept;
 
     void SetColor(const COLORREF rgbColor) noexcept;
-    void SetIndex(const BYTE index) noexcept;
+    void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
     COLORREF GetColor(std::basic_string_view<COLORREF> colorTable,
                       const COLORREF defaultColor,
                       const bool brighten) const noexcept;
+
+    BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept
     {

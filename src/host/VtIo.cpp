@@ -74,6 +74,7 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
+    _win32InputMode = pArgs->IsWin32InputModeEnabled();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -161,31 +162,27 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                     gci,
                                                                     initialViewport,
-                                                                    gci.GetColorTable(),
-                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                                                                    gci.Get16ColorTable());
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 gci.Get16ColorTable(),
                                                                  true);
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
                                                                      gci,
                                                                      initialViewport,
-                                                                     gci.GetColorTable(),
-                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                                                                     gci.Get16ColorTable());
                 break;
             default:
                 return E_FAIL;
@@ -235,6 +232,15 @@ bool VtIo::IsUsingVt() const
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
         }
         CATCH_RETURN();
+    }
+
+    // GH#4999 - Send a sequence to the connected terminal to request
+    // win32-input-mode from them. This will enable the connected terminal to
+    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+    // this sequence, it'll just ignore it.
+    if (_win32InputMode)
+    {
+        LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
     }
 
     // MSFT: 15813316

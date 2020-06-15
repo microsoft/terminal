@@ -21,6 +21,8 @@ namespace Microsoft::Terminal::Core
         virtual bool SetTextToDefaults(bool foreground, bool background) noexcept = 0;
         virtual bool SetTextForegroundIndex(BYTE colorIndex) noexcept = 0;
         virtual bool SetTextBackgroundIndex(BYTE colorIndex) noexcept = 0;
+        virtual bool SetTextForegroundIndex256(BYTE colorIndex) noexcept = 0;
+        virtual bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept = 0;
         virtual bool SetTextRgbColor(COLORREF color, bool foreground) noexcept = 0;
         virtual bool BoldText(bool boldOn) noexcept = 0;
         virtual bool UnderlineText(bool underlineOn) noexcept = 0;
@@ -47,6 +49,7 @@ namespace Microsoft::Terminal::Core
         virtual bool SetDefaultForeground(const DWORD color) noexcept = 0;
         virtual bool SetDefaultBackground(const DWORD color) noexcept = 0;
 
+        virtual bool EnableWin32InputMode(const bool win32InputMode) noexcept = 0;
         virtual bool SetCursorKeysMode(const bool applicationMode) noexcept = 0;
         virtual bool SetKeypadMode(const bool applicationMode) noexcept = 0;
         virtual bool EnableVT200MouseMode(const bool enabled) noexcept = 0;
