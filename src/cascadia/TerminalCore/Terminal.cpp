@@ -419,7 +419,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 {
     // GH#6423 - don't snap on this key if the key that was pressed was a
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
-    if (!KeyEvent::IsModifierKey(vkey))
+    // GH#6481 - Additionally, make sure the key was actually pressed. This
+    // check will make sure we behave the same as before GH#6309
+    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
     {
         TrySnapOnInput();
     }
