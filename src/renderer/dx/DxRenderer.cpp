@@ -694,6 +694,7 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
+
     _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
@@ -1344,6 +1345,9 @@ try
     // Create the text layout
     RETURN_IF_FAILED(_customLayout->Reset());
     RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+
+    // Copy cursor info into drawing context
+    _drawingContext->cursorInfo = _frameInfo.cursorInfo;
 
     // Layout then render the text
     RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
