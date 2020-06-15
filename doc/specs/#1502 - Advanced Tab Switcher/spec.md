@@ -1,7 +1,7 @@
 ---
 author: Leon Liang @leonMSFT
 created on: 2019-11-27
-last updated: 2019-12-03
+last updated: 2019-06-15
 issue id: 1502
 ---
 
@@ -27,15 +27,15 @@ Visual Studio's tab switcher presents itself as a box in the middle of the edito
 
 ![Visual Studio Tab Switcher](img/VSTabSwitcher.png)
 
-I'm partial towards Visual Studio's implementation, specifically where a box pops up in the center of the window. It allows for expansion in all four directions, which could be useful when adding future features such as Pane Navigation.
+Since our command palette will have an implementation similar to VSCode's, I'd rather reuse the UI from our command palette for the Tab Switcher. This means it'll appear as a dropdown from the middle of the tab view.
 
 In terms of navigating the switcher, both VSCode and Visual Studio behave very similarly. Both open with the press of <kbd>ctrl+tab</kbd> and dismiss on release of <kbd>ctrl</kbd>. They both also allow the user to select the tab with the mouse and with <kbd>enter</kbd>. <kbd>esc</kbd> and a mouse click outside of the switcher both dismiss the window as well.
 
 ## Solution Design
 
-In addition to the current in-order tab list, namely `IObservableVector<(TODO)> _tabs`, we'll add `IObservableVector<(TODO)> _mruTabs` to represent the tabs in Most Recently Used order. (I'm currently working on converting Tab to WinRT so I'll come back to what the type will be.)
+In addition to the current in-order tab list, namely `IObservableVector<TerminalApp::Tab> _tabs`, we'll add `IObservableVector<TerminalApp::Tab> _mruTabs` to represent the tabs in Most Recently Used order.
 
-We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
+We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the corr ect vector.
 
 This vector of tabs will be used to create a ListView, so that the UI would diplay a vertical list of tabs, represented by their tab titles. Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab. There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching. This ListView would be hidden until the user presses a keybinding to show the ListView.
 
@@ -43,11 +43,9 @@ The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to d
 
 ## UI/UX Design
 
-First, we'll give a quick overview of how the tab switcher UI would look like, then we'll dive into more detail on how the user would interact with the switcher.
+The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window.
 
-The tab switcher will appear as a box in the center of the terminal. It'll have a maximum and minimum height and width. We want the switcher to stretch, but it shouldn't stretch to take up the entirety of the terminal. If the user has a ton of tabs or has really long tab names, the box should still be fairly contained and shouldn't run wild.  
-
-In the box will be a vertical list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
+In the box will be a list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
 
 The list would look (roughly) like this:
 ```
@@ -92,7 +90,7 @@ The tabs designated by numbers 1 through 4 are no longer visible (but still quic
 
 #### Opening the Tab Switcher
 
-The user will press a keybinding named `openTabSwitcher` to bring up the UI.
+The user will press a keybinding named `tabSwitcher` to bring up the UI.
 The user will be able to change it to whatever they like.
 There will also be an optional `anchor` arg that may be provided to this keybinding. 
 
@@ -116,7 +114,7 @@ The user will be able to navigate through the switcher with the following keybin
 - Switching Down: <kbd>tab</kbd> or <kbd>downArrow</kbd>
 - Switching Up: <kbd>shift+tab</kbd> or <kbd>upArrow</kbd>
 
-As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch focus to the selected tab.
+As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch focus to the selected tab. This also applies to pointer interaction. Hovering over an item with a mouse will highligh the item but not switch to the tab.
 
 #### Closing the Switcher and Bringing a Tab into Focus
 
@@ -189,7 +187,7 @@ Visual Studio Code only allows the user to shrink the window until it hits a min
 
 ![Small Visual Studio Code with Tab Switcher](img/VSCodeMinimumTabSwitcherSize.png)
 
-Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal. So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks. Whatever is visible of the TabSwitcher will be visible. In the case where the Terminal is so small that the switcher isn't visible, the Terminal isn't of much use anyway.
+Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal. So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks. Since the Terminal also has a minimum width, the switcher should always have enough space to be usefully visible.
 
 ## Future considerations
 
@@ -207,9 +205,7 @@ Pane navigation is a clear next step to build on top of the tab switcher, but th
 
 ### Tab Search by Name/Title
 
-This is something that would be particularly nice to have, especially when there's a large list of tabs. You could be cycling through your thousands of tabs, trying to find the tab that's actually 456th in the list.
-
-A search box would be attached to the UI and the list of tabs that are presented would be filtered based on what the string is in the searchbox. We already have search being worked on [#605], so we could probably leverage some of that work for tab search.
+This is something that would be particularly nice to have, especially when there's a large list of tabs. You could be cycling through your thousands of tabs, trying to find the tab that's actually 456th in the list. The command palette is specced to be able to filter through commands as a user types into its search box, so we might be able to be reuse that functionality to filter through tab titles!
 
 ### Tab Preview on Hover
 
@@ -221,6 +217,7 @@ after the tab switcher has landed.
 Feature Request: An advanced tab switcher [#1502]  
 Ctrl+Tab toggle between last two windows like Alt+Tab [#973]  
 The Command Palette Thread [#2046]
+The Command Palette Spec [#5674]
 Feature Request: Search [#605]
 
 <!-- Footnotes -->
