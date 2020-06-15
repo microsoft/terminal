@@ -32,7 +32,6 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class WindowUiaProviderBase;
     class Viewport;
 
     class ScreenInfoUiaProviderBase :

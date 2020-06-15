@@ -18,6 +18,26 @@
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    template<typename T>
+    void manage_vector(std::vector<T>& vector, typename std::vector<T>::size_type requestedSize, float shrinkThreshold)
+    {
+        const auto existingCapacity = vector.capacity();
+        const auto requiredCapacity = requestedSize;
+
+        // Check by integer first as float math is way more expensive.
+        if (requiredCapacity < existingCapacity)
+        {
+            // Now check if it's even worth shrinking. We don't want to shrink by 1 at a time, so meet a threshold first.
+            if (requiredCapacity <= gsl::narrow_cast<size_t>((static_cast<float>(existingCapacity) * shrinkThreshold)))
+            {
+                // There's no real way to force a shrink, so make a new one.
+                vector = std::vector<T>{};
+            }
+        }
+
+        // Reserve won't shrink on its own and won't grow if we have enough space.
+        vector.reserve(requiredCapacity);
+    }
 }
 
 // These sit outside the namespace because they sit outside for WIL too.

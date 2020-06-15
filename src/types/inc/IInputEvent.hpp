@@ -301,6 +301,29 @@ public:
     bool IsCommandLineEditingKey() const noexcept;
     bool IsPopupKey() const noexcept;
 
+    // Function Description:
+    // - Returns true if the given VKey represents a modifier key - shift, alt,
+    //   control or the Win key.
+    // Arguments:
+    // - vkey: the VKEY to check
+    // Return Value:
+    // - true iff the key is a modifier key.
+    constexpr static bool IsModifierKey(const WORD vkey)
+    {
+        return (vkey == VK_CONTROL) ||
+               (vkey == VK_LCONTROL) ||
+               (vkey == VK_RCONTROL) ||
+               (vkey == VK_MENU) ||
+               (vkey == VK_LMENU) ||
+               (vkey == VK_RMENU) ||
+               (vkey == VK_SHIFT) ||
+               (vkey == VK_LSHIFT) ||
+               (vkey == VK_RSHIFT) ||
+               // There is no VK_WIN
+               (vkey == VK_LWIN) ||
+               (vkey == VK_RWIN);
+    };
+
 private:
     bool _keyDown;
     WORD _repeatCount;

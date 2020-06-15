@@ -73,6 +73,7 @@ namespace Microsoft::Console::Render
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
+        void WaitUntilCanRender() override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
@@ -120,6 +121,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
         SMALL_RECT _srViewportPrevious;
+
+        static constexpr float _shrinkThreshold = 0.8f;
+        std::vector<Cluster> _clusterBuffer;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
