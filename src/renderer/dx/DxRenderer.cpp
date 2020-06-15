@@ -1040,7 +1040,7 @@ try
                                                                spacing,
                                                                _glyphCell,
                                                                _d2dRenderTarget->GetSize(),
-                                                               _frameInfo.cursorInfo,
+                                                               std::nullopt,
                                                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
         }
     }
@@ -2211,7 +2211,6 @@ CATCH_LOG()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
-    _frameInfo = info;
     _drawingContext->cursorInfo = info.cursorInfo;
     return S_OK;
 }

@@ -209,8 +209,6 @@ namespace Microsoft::Console::Render
 
         float _defaultTextBackgroundOpacity;
 
-        RenderFrameInfo _frameInfo;
-
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
