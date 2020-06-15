@@ -3,10 +3,6 @@
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
 
-// We define everything necessary for the ActionAndArgs class in the header, but
-// we still need this file to compile the ActionAndArgs.g.cpp file, and we can't
-// just include that file in the header.
-
 static constexpr std::string_view ActionKey{ "action" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
