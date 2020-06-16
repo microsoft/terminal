@@ -1,7 +1,7 @@
 ---
 author: Leon Liang @leonMSFT
 created on: 2019-11-27
-last updated: 2019-06-15
+last updated: 2020-06-16
 issue id: 1502
 ---
 
@@ -27,23 +27,25 @@ Visual Studio's tab switcher presents itself as a box in the middle of the edito
 
 ![Visual Studio Tab Switcher](img/VSTabSwitcher.png)
 
-Since our command palette will have an implementation similar to VSCode's, I'd rather reuse the UI from our command palette for the Tab Switcher. This means it'll appear as a dropdown from the middle of the tab view.
-
 In terms of navigating the switcher, both VSCode and Visual Studio behave very similarly. Both open with the press of <kbd>ctrl+tab</kbd> and dismiss on release of <kbd>ctrl</kbd>. They both also allow the user to select the tab with the mouse and with <kbd>enter</kbd>. <kbd>esc</kbd> and a mouse click outside of the switcher both dismiss the window as well.
+
+I'm partial towards looking like VSCode's Tab Switcher - specifically because it seems like both their Command Palette and Tab Switcher use the same UI. You can observe this by first bringing up the command palette, then hitting the keybinding to bring up the tab switcher. You'll notice that they're both using the same centered drop-down from the tab row. In fact, hitting the Tab Switcher keybinding in VSCode while the Command Palette is open simply auto fills the search box with "edit active", signifying that the user wants to select one of the tabs to edit, effectively "swapping" to the tab that's highlighted. 
+
+Since Terminal now has a command palette, it would be amazing to reuse that UI and simply fill it with the names of a user's currently open tabs!
 
 ## Solution Design
 
 In addition to the current in-order tab list, namely `IObservableVector<TerminalApp::Tab> _tabs`, we'll add `IObservableVector<TerminalApp::Tab> _mruTabs` to represent the tabs in Most Recently Used order.
 
-We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the corr ect vector.
+We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
 
-This vector of tabs will be used to create a ListView, so that the UI would diplay a vertical list of tabs, represented by their tab titles. Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab. There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching. This ListView would be hidden until the user presses a keybinding to show the ListView.
+This vector of tabs will be used to create a ListView, so that the UI would display a vertical list of tabs, represented by their tab titles. Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab. There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching. This ListView would be hidden until the user presses a keybinding to show the ListView.
 
 The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to dispatch a `SwitchToTab` `ShortcutAction`. This will eventually cause `TerminalPage::_OnTabSelectionChanged` to be called. We can update the MRU in this function to be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update both `_tabs` and `_mruTabs`.
 
 ## UI/UX Design
 
-The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window.
+The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window. 
 
 In the box will be a list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
 
@@ -51,7 +53,7 @@ The list would look (roughly) like this:
 ```
 1 foo (highlighted)
 2 boo
-3 Windows boofoo
+3 Windows
 4 /c/Users/booboo
 5 Git Moo
 6 shoo
@@ -114,11 +116,11 @@ The user will be able to navigate through the switcher with the following keybin
 - Switching Down: <kbd>tab</kbd> or <kbd>downArrow</kbd>
 - Switching Up: <kbd>shift+tab</kbd> or <kbd>upArrow</kbd>
 
-As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch focus to the selected tab. This also applies to pointer interaction. Hovering over an item with a mouse will highligh the item but not switch to the tab.
+As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch focus to the selected tab. This also applies to pointer interaction. Hovering over an item with a mouse will highlight the item but not switch to the tab.
 
 #### Closing the Switcher and Bringing a Tab into Focus
 
-There are two _dismissal_ keybinds:
+There are two _dismissal_ keybindings:
 
 1. <kbd>enter</kbd> : brings the currently selected tab into focus and dismisses the UI.
 2. <kbd>esc</kbd> : dismisses the UI without changing tab focus.
@@ -128,7 +130,7 @@ The following are ways a user can dismiss the UI, _whether or not_ the `Anchor` 
 1. The user can press a number associated with a tab to instantly switch to the tab and dismiss the switcher.
 2. The user can click on a tab to instantly switch to the tab and dismiss the switcher.
 3. The user can click outside of the UI to dismiss the switcher without bringing the selected tab into focus.
-4. The user can press any of the dismissal keybinds.
+4. The user can press any of the dismissal keybindings.
 
 If the `anchor` key is provided, then in addition to the above methods, the UI will dismiss upon the release of the `anchor` key.
 
@@ -193,7 +195,7 @@ Terminal can't really replicate Visual Studio's version of the tab switcher in t
 
 ### Pane Navigation
 
-@zadiji-msft in [#1502] brought up the idea of pane navigation, inspired by tmux.
+There was discussion in [#1502] that brought up the idea of pane navigation, inspired by tmux.
 
 ![Tmux Tab and Pane Switching](img/tmuxPaneSwitching.png)
 
@@ -201,7 +203,7 @@ Tmux allows the user to navigate directly to a pane and even give a preview of t
 
 To support pane navigation, the tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab. As the user iterates through the tab list, they can simply hit right to dig deeper into the tab's panes, and hit left to come back to the tab list. Each tab's list of panes will be MRU or in-order, depending on which `displayOrder` arg was provided to the `openTabSwitcher` keybinding.
 
-Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just tab navigation in order to keep the scope tight. The tab swticher implementation just needs to allow for pane navigation to be added in later.
+Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just tab navigation in order to keep the scope tight. The tab switcher implementation just needs to allow for pane navigation to be added in later.
 
 ### Tab Search by Name/Title
 
@@ -225,3 +227,4 @@ Feature Request: Search [#605]
 [#973]: https://github.com/microsoft/terminal/issues/973
 [#1502]: https://github.com/microsoft/terminal/issues/1502
 [#2046]: https://github.com/microsoft/terminal/issues/2046
+[#5674]: https://github.com/microsoft/terminal/pull/5674
