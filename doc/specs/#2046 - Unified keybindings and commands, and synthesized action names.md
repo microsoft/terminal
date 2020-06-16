@@ -308,7 +308,7 @@ will be defined as follows:
   - If we so chose, in the future we can add further commands that we think are
     helpful to `defaults.json`, without needing to give them keys.
 
-These changes to the `defaults.json` are represented in json as the follwoing:
+These changes to the `defaults.json` are represented in json as the following:
 
 ```json
 "commands": [
