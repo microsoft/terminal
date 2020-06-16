@@ -172,6 +172,8 @@ namespace winrt::TerminalApp::implementation
 
         void _CompleteInitialization();
 
+        std::deque<winrt::TerminalApp::ActionAndArgs> _ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

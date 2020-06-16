@@ -243,33 +243,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
-            // Convert the commandline into an array of args with
-            // CommandLineToArgvW, similar to how the app typically does when
-            // called from the commandline.
-            int argc = 0;
-            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(realArgs.Commandline().c_str(), &argc) };
-            if (argv)
+            _startupActions = _ConvertExecuteCommandlineToActions(realArgs);
+            if (!_startupActions.empty())
             {
-                std::vector<winrt::hstring> args;
-
-                // Make sure the first argument is wt.exe, because ParseArgs
-                // will always skip the program name.
-                args.emplace_back(L"wt.exe");
-                for (auto& elem : wil::make_range(argv.get(), argc))
-                {
-                    args.emplace_back(elem);
-                }
-                winrt::array_view<const winrt::hstring> argsView{ args };
-
-                ::TerminalApp::AppCommandlineArgs appArgs;
-                bool handled = appArgs.ParseArgs(argsView) == 0;
-                if (handled)
-                {
-                    _startupActions = appArgs.GetStartupActions();
-                    _ProcessStartupActions(false);
-                }
-
-                actionArgs.Handled(handled);
+                _ProcessStartupActions(false);
+                actionArgs.Handled(true);
             }
         }
     }
