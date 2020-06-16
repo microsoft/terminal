@@ -243,7 +243,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
-            _startupActions = _ConvertExecuteCommandlineToActions(realArgs);
+            _startupActions = TerminalPage::ConvertExecuteCommandlineToActions(realArgs);
             if (!_startupActions.empty())
             {
                 _ProcessStartupActions(false);

@@ -52,6 +52,7 @@ namespace winrt::TerminalApp::implementation
         void ToggleFullscreen();
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
+        static std::deque<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -171,8 +172,6 @@ namespace winrt::TerminalApp::implementation
         void _ClearNewTabButtonColor();
 
         void _CompleteInitialization();
-
-        std::deque<winrt::TerminalApp::ActionAndArgs> _ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
