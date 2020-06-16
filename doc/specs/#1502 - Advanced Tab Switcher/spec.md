@@ -35,19 +35,17 @@ Since Terminal now has a command palette, it would be amazing to reuse that UI a
 
 ## Solution Design
 
-In addition to the current in-order tab list, namely `IObservableVector<TerminalApp::Tab> _tabs`, we'll add `IObservableVector<TerminalApp::Tab> _mruTabs` to represent the tabs in Most Recently Used order.
+To extend upon the command palette, we simply need to create and maintain two Vector<Commands>, where each command will simply dispatch a `SwitchToTab` `ShortcutAction`. One vector will have the commands in tab row order, and the other will be in MRU order. They'll both have to be maintained along with our existing vector of tabs.  
 
-We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
+These vectors of commands can then be set as the commands to pull from in the command palette, and as long as the tab titles are available in these commands, the command palette will be able to naturally filter through the tabs as a user types in its search bar. Just like the command palette, a user will be able to navigate through the list of tabs with the arrow keys and pointer interactions. As part of this implementation, I can supplement these actions with "tab switcher specific" navigation keybindings that would only work if the command palette is in tab switcher mode. 
 
-This vector of tabs will be used to create a ListView, so that the UI would display a vertical list of tabs, represented by their tab titles. Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab. There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching. This ListView would be hidden until the user presses a keybinding to show the ListView.
-
-The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to dispatch a `SwitchToTab` `ShortcutAction`. This will eventually cause `TerminalPage::_OnTabSelectionChanged` to be called. We can update the MRU in this function to be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update both `_tabs` and `_mruTabs`.
+The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to dispatch a `SwitchToTab` `ShortcutAction`. This will eventually cause `TerminalPage::_OnTabSelectionChanged` to be called. We can update the MRU in this function to be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update the command vectors.
 
 ## UI/UX Design
 
-The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window. 
+The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window. There will also be a search box on top of the list of tabs.
 
-In the box will be a list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
+Each entry in the list will show the tab's titles and their assigned number for quick switching, and only one line will be highlighted to signify the tab that is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
 
 The list would look (roughly) like this:
 ```
@@ -92,7 +90,8 @@ The tabs designated by numbers 1 through 4 are no longer visible (but still quic
 
 #### Opening the Tab Switcher
 
-The user will press a keybinding named `tabSwitcher` to bring up the UI.
+The user can press a keybinding named `tabSwitcher` to bring up the command palette UI with a list of tab titles.
+The user can also bring up the command palette first, and type a "tab switcher" prefix like "@" into the search bar to switch into "tab switcher mode".
 The user will be able to change it to whatever they like.
 There will also be an optional `anchor` arg that may be provided to this keybinding. 
 
@@ -204,10 +203,6 @@ Tmux allows the user to navigate directly to a pane and even give a preview of t
 To support pane navigation, the tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab. As the user iterates through the tab list, they can simply hit right to dig deeper into the tab's panes, and hit left to come back to the tab list. Each tab's list of panes will be MRU or in-order, depending on which `displayOrder` arg was provided to the `openTabSwitcher` keybinding.
 
 Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just tab navigation in order to keep the scope tight. The tab switcher implementation just needs to allow for pane navigation to be added in later.
-
-### Tab Search by Name/Title
-
-This is something that would be particularly nice to have, especially when there's a large list of tabs. You could be cycling through your thousands of tabs, trying to find the tab that's actually 456th in the list. The command palette is specced to be able to filter through commands as a user types into its search box, so we might be able to be reuse that functionality to filter through tab titles!
 
 ### Tab Preview on Hover
 
