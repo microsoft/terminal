@@ -43,7 +43,9 @@ The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to d
 
 ## UI/UX Design
 
-The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window. There will also be a search box on top of the list of tabs.
+The Tab Switcher will reuse a lot of the XAML code that's used in the command palette. This means it'll show up as a drop-down from the horizontal center of the tab row. It'll appear as a single overlay over the whole Terminal window. There will also be a search box on top of the list of tabs. Here's a rough mockup of how the command palette/tab switcher looks like:
+
+![Mockup Command Palette with Tab Titles](img/CommandPaletteExample.png)
 
 Each entry in the list will show the tab's titles and their assigned number for quick switching, and only one line will be highlighted to signify the tab that is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
 
