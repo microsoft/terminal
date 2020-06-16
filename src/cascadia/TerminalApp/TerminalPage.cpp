@@ -393,6 +393,11 @@ namespace winrt::TerminalApp::implementation
                 // Create the shortcuts button.
                 auto shortcutsItem = WUX::Controls::MenuFlyoutItem{};
                 shortcutsItem.Text(RS_(L"ShortcutsMenuItem"));
+                
+                WUX::Controls::FontIcon shortcutsIcon{};
+                shortcutsIcon.Glyph(L"\xE765");
+                shortcutsIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                shortcutsFlyout.Icon(shortcutsIcon);
 
                 shortcutsItem.Click({ this, &TerminalPage::_ShortcutsButtonOnClick });
                 newTabFlyout.Items().Append(shortcutsItem);
