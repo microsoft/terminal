@@ -416,24 +416,31 @@ CATCH_RETURN()
     clipRect.left = 0;
     clipRect.right = drawingContext->targetSize.width;
 
-    if (_clipRect.top != clipRect.top || _clipRect.bottom != clipRect.bottom ||
-        _clipRect.left != clipRect.left || _clipRect.right != clipRect.right)
+    // If we already have a clip rectangle, check if it different than the previous one.
+    if (_clipRect.has_value())
     {
-        if (_hasClipPushed)
+        const auto storedVal = _clipRect.value();
+        // If it is different, pop off the old one and push the new one on.
+        if (storedVal.top != clipRect.top || storedVal.bottom != clipRect.bottom ||
+            storedVal.left != clipRect.left || storedVal.right != clipRect.right)
         {
             d2dContext->PopAxisAlignedClip();
-            _hasClipPushed = false;
+
+            // Clip all drawing in this glyph run to where we expect.
+            // We need the AntialiasMode here to be Aliased to ensure
+            //  that background boxes line up with each other and don't leave behind
+            //  stray colors.
+            // See GH#3626 for more details.
+            d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _clipRect = clipRect;
         }
-
-        // Clip all drawing in this glyph run to where we expect.
-        // We need the AntialiasMode here to be Aliased to ensure
-        //  that background boxes line up with each other and don't leave behind
-        //  stray colors.
-        // See GH#3626 for more details.
+    }
+    // If we have no clip rectangle, it's easy. Push it on and go.
+    else
+    {
+        // See above for aliased flag explanation.
         d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-
         _clipRect = clipRect;
-        _hasClipPushed = true;
     }
 
     // Draw the background
