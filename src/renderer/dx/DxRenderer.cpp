@@ -653,6 +653,45 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 // Routine Description:
+// - Calculates whether or not we should force grayscale AA based on the
+//   current renderer state.
+// Arguments:
+// - <none> - Uses internal state of _antialiasingMode, _defaultTextBackgroundOpacity,
+//            _backgroundColor, and _defaultBackgroundColor.
+// Return Value:
+// - True if we must render this text in grayscale AA as cleartype simply won't work. False otherwise.
+[[nodiscard]] bool DxEngine::_ShouldForceGrayscaleAA() noexcept
+{
+    // GH#5098: If we're rendering with cleartype text, we need to always
+    // render onto an opaque background. If our background's opacity is
+    // 1.0f, that's great, we can use that. Otherwise, we need to force the
+    // text renderer to render this text in grayscale. In
+    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
+    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
+    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
+    //
+    // Currently, only text with the default background color uses an alpha
+    // of 0, every other background uses 1.0
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing)
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    // Another way of naming "bgIsDefault" is "bgHasTransparency"
+    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                             (_backgroundColor.b == _defaultBackgroundColor.b);
+    const bool forceGrayscaleAA = usingCleartype &&
+                                  usingTransparency &&
+                                  bgIsDefault;
+
+    return forceGrayscaleAA;
+}
+
+
+// Routine Description:
 // - Helper to create a DirectWrite text layout object
 //   out of a string.
 // Arguments:
@@ -1006,36 +1045,12 @@ try
             DWRITE_LINE_SPACING spacing;
             RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
-            // GH#5098: If we're rendering with cleartype text, we need to always
-            // render onto an opaque background. If our background's opacity is
-            // 1.0f, that's great, we can use that. Otherwise, we need to force the
-            // text renderer to render this text in grayscale. In
-            // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
-            // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
-            // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
-            //
-            // Currently, only text with the default background color uses an alpha
-            // of 0, every other background uses 1.0
-            //
-            // DANGER: Layers slow us down. Only do this in the specific case where
-            // someone has chosen the slower ClearType antialiasing (versus the faster
-            // grayscale antialiasing)
-            const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-            const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-            // Another way of naming "bgIsDefault" is "bgHasTransparency"
-            const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
-                                     (_backgroundColor.r == _defaultBackgroundColor.r) &&
-                                     (_backgroundColor.g == _defaultBackgroundColor.g) &&
-                                     (_backgroundColor.b == _defaultBackgroundColor.b);
-            const bool forceGrayscaleAA = usingCleartype &&
-                                          usingTransparency &&
-                                          bgIsDefault;
 
             // Assemble the drawing context information
             _drawingContext = std::make_unique<DrawingContext>(_d2dRenderTarget.Get(),
                                                                _d2dBrushForeground.Get(),
                                                                _d2dBrushBackground.Get(),
-                                                               forceGrayscaleAA,
+                                                               _ShouldForceGrayscaleAA(),
                                                                _dwriteFactory.Get(),
                                                                spacing,
                                                                _glyphCell,
@@ -1565,6 +1580,17 @@ CATCH_RETURN()
             const auto dxgiColor = s_RgbaFromColorF(_defaultBackgroundColor);
             RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
         }*/
+    }
+
+    // If we have a drawing context, it may be choosing its antialiasing based
+    // on the colors. Update it if it exists.
+    // We only need to do this here because this is called all the time on painting frames
+    // and will update it in a timely fashion. Changing the AA mode or opacity do affect
+    // it, but we will always hit updating the drawing brushes so we don't
+    // need to update this in those locations.
+    if (_drawingContext)
+    {
+        _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
     }
 
     return S_OK;

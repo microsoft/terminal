@@ -225,6 +225,8 @@ namespace Microsoft::Console::Render
 
         void _ReleaseDeviceResources() noexcept;
 
+        bool _ShouldForceGrayscaleAA() noexcept;
+
         [[nodiscard]] HRESULT _CreateTextLayout(
             _In_reads_(StringLength) PCWCHAR String,
             _In_ size_t StringLength,
