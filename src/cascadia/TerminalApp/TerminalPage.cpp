@@ -20,6 +20,8 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 
+#include <algorithm>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -1516,7 +1518,13 @@ namespace winrt::TerminalApp::implementation
                     text = item.Path();
                 }
             }
+            hstring::value_type* temporary = new hstring::value_type[text.size()+1];
+            wcscpy_s(temporary, text.size() + 1, text.c_str());
+            auto trash = std::remove(temporary, temporary + text.size() + 1, L'\t');
+            text = hstring(temporary);
+            trash = trash; //Know your place
             eventArgs.HandleClipboardData(text);
+            delete[] temporary;
         }
         CATCH_LOG();
     }
