@@ -690,7 +690,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     return forceGrayscaleAA;
 }
 
-
 // Routine Description:
 // - Helper to create a DirectWrite text layout object
 //   out of a string.
@@ -1044,7 +1043,6 @@ try
             // Get the baseline for this font as that's where we draw from
             DWRITE_LINE_SPACING spacing;
             RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
-
 
             // Assemble the drawing context information
             _drawingContext = std::make_unique<DrawingContext>(_d2dRenderTarget.Get(),
