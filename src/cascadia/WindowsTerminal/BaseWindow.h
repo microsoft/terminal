@@ -3,15 +3,10 @@
 
 #pragma once
 
-#include "..\types\IConsoleWindow.hpp"
-#include "..\types\WindowUiaProviderBase.hpp"
-
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
 
 #include <wil/resource.h>
-
-using namespace Microsoft::Console::Types;
 
 template<typename T>
 class BaseWindow
@@ -54,24 +49,8 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
-            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
-            /*
-        case WM_GETOBJECT:
-        {
-            return HandleGetObject(_window.get(), wparam, lparam);
-        }
-        */
-
         case WM_DESTROY:
         {
-            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
-            /*
-            // signal to uia that they can disconnect our uia provider
-            if (_pUiaProvider)
-            {
-                UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
-            }
-            */
             PostQuitMessage(0);
             return 0;
         }
@@ -139,22 +118,6 @@ public:
         _inDpiChange = false;
         return 0;
     }
-
-    [[nodiscard]] LRESULT HandleGetObject(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
-    {
-        LRESULT retVal = 0;
-
-        // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
-        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
-        {
-            retVal = UiaReturnRawElementProvider(hWnd, wParam, lParam, _GetUiaProvider());
-        }
-        // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
-
-        return retVal;
-    }
-
-    virtual IRawElementProviderSimple* _GetUiaProvider() = 0;
 
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;

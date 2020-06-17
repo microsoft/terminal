@@ -40,10 +40,10 @@ public:
     {
     }
 
-    constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
+    explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
-        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
+        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS), true },
+        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4), true },
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
@@ -59,36 +59,7 @@ public:
     {
     }
 
-    constexpr WORD GetLegacyAttributes() const noexcept
-    {
-        const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
-        const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
-    }
-
-    // Method Description:
-    // - Returns a WORD with legacy-style attributes for this textattribute.
-    //      If either the foreground or background of this textattribute is not
-    //      a legacy attribute, then instead use the provided default index as
-    //      the value for that component.
-    // Arguments:
-    // - defaultFgIndex: the BYTE to use as the index for the foreground, should
-    //      the foreground not be a legacy style attribute.
-    // - defaultBgIndex: the BYTE to use as the index for the background, should
-    //      the background not be a legacy style attribute.
-    // Return Value:
-    // - a WORD with legacy-style attributes for this textattribute.
-    constexpr WORD GetLegacyAttributes(const BYTE defaultFgIndex,
-                                       const BYTE defaultBgIndex) const noexcept
-    {
-        const BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
-        const BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
-        const BYTE fg = (fgIndex & FG_ATTRS);
-        const BYTE bg = (bgIndex << 4) & BG_ATTRS;
-        const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
-    }
+    WORD GetLegacyAttributes(const WORD defaultAttributes = 0x07) const noexcept;
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
@@ -107,22 +78,6 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    void SetFromLegacy(const WORD wLegacy) noexcept;
-
-    void SetLegacyAttributes(const WORD attrs,
-                             const bool setForeground,
-                             const bool setBackground,
-                             const bool setMeta) noexcept;
-
-    void SetIndexedAttributes(const std::optional<const BYTE> foreground,
-                              const std::optional<const BYTE> background) noexcept;
-
-    void SetMetaAttributes(const WORD wMeta) noexcept;
-    WORD GetMetaAttributes() const noexcept;
-
-    void Embolden() noexcept;
-    void Debolden() noexcept;
-
     void Invert() noexcept;
 
     friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
@@ -133,45 +88,48 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
+    bool IsBold() const noexcept;
+    bool IsItalic() const noexcept;
+    bool IsBlinking() const noexcept;
+    bool IsInvisible() const noexcept;
+    bool IsCrossedOut() const noexcept;
+    bool IsUnderlined() const noexcept;
+    bool IsReverseVideo() const noexcept;
 
-    constexpr bool IsBold() const noexcept
-    {
-        return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
-    }
+    void SetBold(bool isBold) noexcept;
+    void SetItalics(bool isItalic) noexcept;
+    void SetBlinking(bool isBlinking) noexcept;
+    void SetInvisible(bool isInvisible) noexcept;
+    void SetCrossedOut(bool isCrossedOut) noexcept;
+    void SetUnderline(bool isUnderlined) noexcept;
+    void SetReverseVideo(bool isReversed) noexcept;
 
-    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
-    {
-        return _extendedAttrs;
-    }
-
-    void SetExtendedAttributes(const ExtendedAttributes attrs) noexcept;
+    ExtendedAttributes GetExtendedAttributes() const noexcept;
 
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
+    void SetIndexedForeground(const BYTE fgIndex) noexcept;
+    void SetIndexedBackground(const BYTE bgIndex) noexcept;
+    void SetIndexedForeground256(const BYTE fgIndex) noexcept;
+    void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
 
-    bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
     void SetStandardErase() noexcept;
 
-    constexpr bool IsRgb() const noexcept
-    {
-        return _foreground.IsRgb() || _background.IsRgb();
-    }
-
     // This returns whether this attribute, if printed directly next to another attribute, for the space
     // character, would look identical to the other one.
-    constexpr bool HasIdenticalVisualRepresentationForBlankSpace(const TextAttribute& other, const bool inverted = false) const noexcept
+    bool HasIdenticalVisualRepresentationForBlankSpace(const TextAttribute& other, const bool inverted = false) const noexcept
     {
         // sneaky-sneaky: I'm using xor here
         // inverted is whether there's a global invert; Reverse is a local one.
         // global ^ local == true : the background attribute is actually the visible foreground, so we care about the foregrounds being identical
         // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
-        const auto checkForeground = (inverted != _IsReverseVideo());
+        const auto checkForeground = (inverted != IsReverseVideo());
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
@@ -192,13 +150,6 @@ private:
                                COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
-
-    constexpr bool _IsReverseVideo() const noexcept
-    {
-        return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
-    }
-
-    void _SetBoldness(const bool isBold) noexcept;
 
     WORD _wAttrLegacy;
     TextColor _foreground;
@@ -238,26 +189,6 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return !(a == b);
-}
-
-constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return attr.GetLegacyAttributes() == legacyAttr;
-}
-
-constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return !(attr == legacyAttr);
-}
-
-constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return attr == legacyAttr;
-}
-
-constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return !(attr == legacyAttr);
 }
 
 #ifdef UNIT_TESTING

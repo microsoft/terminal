@@ -518,8 +518,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const CHAR_INFO& charInfo) noe
         dbcsAttr.SetTrailing();
     }
 
-    TextAttribute textAttr;
-    textAttr.SetFromLegacy(charInfo.Attributes);
+    const TextAttribute textAttr(charInfo.Attributes);
 
     const auto behavior = TextAttributeBehavior::Stored;
     return OutputCellView(glyph, dbcsAttr, textAttr, behavior);

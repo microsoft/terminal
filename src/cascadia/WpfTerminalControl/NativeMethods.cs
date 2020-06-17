@@ -50,6 +50,11 @@ namespace Microsoft.Terminal.Wpf
             WM_KEYDOWN = 0x0100,
 
             /// <summary>
+            /// The WM_KEYUP message is posted to the window with the keyboard focus when a nonsystem key is released. A nonsystem key is a key that is pressed when the ALT key is not pressed, or a keyboard key that is pressed when a window has the keyboard focus.
+            /// </summary>
+            WM_KEYUP = 0x0101,
+
+            /// <summary>
             /// The WM_CHAR message is posted to the window with the keyboard focus when a WM_KEYDOWN message is translated by the TranslateMessage function. The WM_CHAR message contains the character code of the key that was pressed.
             /// </summary>
             WM_CHAR = 0x0102,
@@ -207,7 +212,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode, bool keyDown);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode);

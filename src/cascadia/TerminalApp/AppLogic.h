@@ -28,7 +28,8 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        winrt::hstring EarlyExitMessage();
+        winrt::hstring ParseCommandlineMessage();
+        bool ShouldExitEarly();
 
         winrt::hstring ApplicationDisplayName() const;
         winrt::hstring ApplicationVersion() const;
@@ -44,7 +45,7 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
         void TitlebarClicked();
-        bool OnF7Pressed();
+        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
         void WindowCloseButtonClicked();
 
@@ -75,6 +76,9 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        int _ParseArgs(winrt::array_view<const hstring>& args);
+
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
@@ -82,6 +86,7 @@ namespace winrt::TerminalApp::implementation
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
         fire_and_forget _RefreshThemeRoutine();
+        fire_and_forget _ApplyStartupTaskStateChange();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 

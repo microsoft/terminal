@@ -14,6 +14,7 @@
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SplitPaneArgs.g.h"
+#include "OpenSettingsArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -32,7 +33,8 @@ namespace winrt::TerminalApp::implementation
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
-        ActionEventArgs(const TerminalApp::IActionArgs& args) :
+
+        explicit ActionEventArgs(const TerminalApp::IActionArgs& args) :
             _ActionArgs{ args } {};
         GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
         GETSET_PROPERTY(bool, Handled, false);
@@ -376,6 +378,65 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
             {
                 args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
+            }
+            return { *args, {} };
+        }
+    };
+
+    // Possible SettingsTarget values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view SettingsFileString{ "settingsFile" };
+    static constexpr std::string_view DefaultsFileString{ "defaultsFile" };
+    static constexpr std::string_view AllFilesString{ "allFiles" };
+
+    // Function Description:
+    // - Helper function for parsing a SettingsTarget from a string
+    // Arguments:
+    // - targetString: the string to attempt to parse
+    // Return Value:
+    // - The encoded SettingsTarget value, or SettingsTarget::SettingsFile if it was an invalid string
+    static TerminalApp::SettingsTarget ParseSettingsTarget(const std::string& targetString)
+    {
+        if (targetString == SettingsFileString)
+        {
+            return TerminalApp::SettingsTarget::SettingsFile;
+        }
+        else if (targetString == DefaultsFileString)
+        {
+            return TerminalApp::SettingsTarget::DefaultsFile;
+        }
+        else if (targetString == AllFilesString)
+        {
+            return TerminalApp::SettingsTarget::AllFiles;
+        }
+        // default behavior for invalid data
+        return TerminalApp::SettingsTarget::SettingsFile;
+    };
+
+    struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
+    {
+        OpenSettingsArgs() = default;
+        GETSET_PROPERTY(TerminalApp::SettingsTarget, Target, TerminalApp::SettingsTarget::SettingsFile);
+
+        static constexpr std::string_view TargetKey{ "target" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<OpenSettingsArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Target == _Target;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<OpenSettingsArgs>();
+            if (auto targetString{ json[JsonKey(TargetKey)] })
+            {
+                args->_Target = ParseSettingsTarget(targetString.asString());
             }
             return { *args, {} };
         }

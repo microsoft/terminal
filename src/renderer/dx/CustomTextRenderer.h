@@ -4,18 +4,21 @@
 #pragma once
 
 #include <wrl/implements.h>
+#include "BoxDrawingEffect.h"
+#include "../../renderer/inc/CursorOptions.h"
 
 namespace Microsoft::Console::Render
 {
     struct DrawingContext
     {
         DrawingContext(ID2D1RenderTarget* renderTarget,
-                       ID2D1Brush* foregroundBrush,
-                       ID2D1Brush* backgroundBrush,
+                       ID2D1SolidColorBrush* foregroundBrush,
+                       ID2D1SolidColorBrush* backgroundBrush,
                        bool forceGrayscaleAA,
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
+                       const std::optional<CursorOptions>& cursorInfo,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
         {
             this->renderTarget = renderTarget;
@@ -25,18 +28,30 @@ namespace Microsoft::Console::Render
             this->dwriteFactory = dwriteFactory;
             this->spacing = spacing;
             this->cellSize = cellSize;
+            this->cursorInfo = cursorInfo;
             this->options = options;
         }
 
         ID2D1RenderTarget* renderTarget;
-        ID2D1Brush* foregroundBrush;
-        ID2D1Brush* backgroundBrush;
+        ID2D1SolidColorBrush* foregroundBrush;
+        ID2D1SolidColorBrush* backgroundBrush;
         bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
         D2D_SIZE_F cellSize;
+        std::optional<CursorOptions> cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
     };
+
+    // Helper to choose which Direct2D method to use when drawing the cursor rectangle
+    enum class CursorPaintType
+    {
+        Fill,
+        Outline
+    };
+
+    constexpr const ULONG MinCursorHeightPercent = 25;
+    constexpr const ULONG MaxCursorHeightPercent = 100;
 
     class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextRenderer>
     {
@@ -98,13 +113,15 @@ namespace Microsoft::Console::Render
                                                  DWRITE_MEASURING_MODE measuringMode,
                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                  _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                                 ID2D1Brush* brush);
+                                                 ID2D1Brush* brush,
+                                                 _In_opt_ IUnknown* clientDrawingEffect);
 
-        [[nodiscard]] HRESULT _DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
-                                                         D2D1_POINT_2F baselineOrigin,
-                                                         DWRITE_MEASURING_MODE measuringMode,
-                                                         _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                         _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
+        [[nodiscard]] HRESULT _DrawBoxRunManually(DrawingContext* clientDrawingContext,
+                                                  D2D1_POINT_2F baselineOrigin,
+                                                  DWRITE_MEASURING_MODE measuringMode,
+                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                  _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                  _In_ IBoxDrawingEffect* clientDrawingEffect) noexcept;
 
         [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                 D2D1_POINT_2F baselineOrigin,

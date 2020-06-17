@@ -109,6 +109,11 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[2J");
 }
 
+[[nodiscard]] HRESULT VtEngine::_ClearScrollback() noexcept
+{
+    return _Write("\x1b[3J");
+}
+
 // Method Description:
 // - Formats and writes a sequence to either insert or delete a number of lines
 //      into the buffer at the current cursor location.
@@ -430,4 +435,18 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
 {
     return _Write("\x1b[29m");
+}
+
+// Method Description:
+// - Send a sequence to the connected terminal to request win32-input-mode from
+//   them. This will enable the connected terminal to send us full INPUT_RECORDs
+//   as input. If the terminal doesn't understand this sequence, it'll just
+//   ignore it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
+{
+    return _Write("\x1b[?9001h");
 }

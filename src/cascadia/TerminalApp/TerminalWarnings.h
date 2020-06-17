@@ -47,7 +47,7 @@ namespace TerminalApp
     class SettingsException : public std::runtime_error
     {
     public:
-        SettingsException(const SettingsLoadErrors& error) :
+        explicit SettingsException(const SettingsLoadErrors& error) :
             std::runtime_error{ nullptr },
             _error{ error } {};
 

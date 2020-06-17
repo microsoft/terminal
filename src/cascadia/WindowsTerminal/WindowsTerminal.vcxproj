@@ -53,7 +53,6 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
-    <ClInclude Include="WindowUiaProvider.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -63,7 +62,6 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
-    <ClCompile Include="WindowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />
@@ -101,14 +99,14 @@
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets'))" />
@@ -140,8 +138,27 @@
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
+
+    <!-- **BEGIN VC LIBS HACK** -->
+    <PropertyGroup>
+      <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
+      <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
+      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
+
+      <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+    <!-- **END VC LIBS HACK** -->
   </Target>
 
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
-</Project>
+</Project>
+

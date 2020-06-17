@@ -125,7 +125,7 @@ This creates a new Windows Terminal window with one tab, and 3 panes:
 * `split-pane -p "Windows PowerShell"`: This will create a new pane, split from
   the parent with the default profile. This pane will open with the "Windows
   PowerShell" profile
-* `split-pane -H wsl.exe`: This will create a third pane, slit _horizontally_
+* `split-pane -H wsl.exe`: This will create a third pane, split _horizontally_
   from the "Windows PowerShell" pane. It will be running the default profile,
   and will use `wsl.exe` as the commandline (instead of the default profile's
   `commandline`).

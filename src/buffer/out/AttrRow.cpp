@@ -190,26 +190,6 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
     return SUCCEEDED(InsertAttrRuns({ &run, 1 }, iStart, _cchRowWidth - 1, _cchRowWidth));
 }
 
-// Routine Description:
-// - Replaces all runs in the row with the given wToBeReplacedAttr with the new
-//      attribute wReplaceWith. This method is used for replacing specifically
-//      legacy attributes.
-// Arguments:
-// - wToBeReplacedAttr - the legacy attribute to replace in this row.
-// - wReplaceWith - the new value for the matching runs' attributes.
-// Return Value:
-// <none>
-void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplaceWith) noexcept
-{
-    TextAttribute ToBeReplaced;
-    ToBeReplaced.SetFromLegacy(wToBeReplacedAttr);
-
-    TextAttribute ReplaceWith;
-    ReplaceWith.SetFromLegacy(wReplaceWith);
-
-    ReplaceAttrs(ToBeReplaced, ReplaceWith);
-}
-
 // Method Description:
 // - Replaces all runs in the row with the given toBeReplacedAttr with the new
 //      attribute replaceWith.
@@ -280,7 +260,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         }
         // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
         // it's possible that we just walk left-to-right through the row and find a quick exit.
-        else if (iStart > 0 && iStart == iEnd)
+        else if (iStart >= 0 && iStart == iEnd)
         {
             // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
             // where we are currently at.
@@ -306,8 +286,22 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                         return S_OK;
                     }
 
+                    // If the current run has length of exactly one, we can simply change the attribute
+                    // of the current run.
+                    // e.g.
+                    // AAAAABCCCCCCCCC
+                    //      ^
+                    // AAAAADCCCCCCCCC
+                    //
+                    // Here 'D' is the new color.
+                    if (curr->GetLength() == 1)
+                    {
+                        curr->SetAttributes(NewAttr);
+                        return S_OK;
+                    }
+
                     // If the insertion happens at current run's lower boundary...
-                    if (iStart == lowerBound)
+                    if (iStart == lowerBound && i > 0)
                     {
                         const auto prev = std::prev(curr, 1);
                         // ... and the previous run has the same color as the new one, we can
@@ -324,6 +318,32 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                             curr->DecrementLength();
 
                             // If we just reduced the right half to zero, just erase it out of the list.
+                            if (curr->GetLength() == 0)
+                            {
+                                _list.erase(curr);
+                            }
+
+                            return S_OK;
+                        }
+                    }
+
+                    // If the insertion happens at current run's upper boundary...
+                    if (iStart == upperBound - 1 && i + 1 < _list.size())
+                    {
+                        // ...then let's try our luck with the next run if possible. This is basically the opposite
+                        // of what we did with the previous run.
+                        // e.g.
+                        // AAAAAABBBBBBCCC
+                        //      ^
+                        // AAAAABBBBBBBCCC
+                        //
+                        // Here 'B' is the new color.
+                        const auto next = std::next(curr, 1);
+                        if (NewAttr == next->GetAttributes())
+                        {
+                            curr->DecrementLength();
+                            next->IncrementLength();
+
                             if (curr->GetLength() == 0)
                             {
                                 _list.erase(curr);

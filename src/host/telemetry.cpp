@@ -419,7 +419,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
                                     TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
                                     TraceLoggingBool(gci.GetWrapText(), "WrapText"),
-                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetColorTableSize(), "ColorTable"),
+                                    TraceLoggingUInt32Array((UINT32 const*)gci.Get16ColorTable().data(), (UINT16)gci.Get16ColorTable().size(), "ColorTable"),
                                     TraceLoggingValue(gci.CP, "CodePageInput"),
                                     TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
                                     TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),
@@ -453,7 +453,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingValue(gci.GetShowWindow(), "ShowWindow"),
                                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            static_assert(sizeof(UINT32) == sizeof(*gci.GetColorTable()), "gci.GetColorTable()");
+            static_assert(sizeof(UINT32) == sizeof(gci.Get16ColorTable()[0]), "gci.Get16ColorTable()");
 
             // I could use the TraceLoggingUIntArray, but then we would have to know the order of the enums on the backend.
             // So just log each enum count separately with its string representation which makes it more human readable.

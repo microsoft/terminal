@@ -181,7 +181,7 @@ SOFTWARE.
 
 ```
 
-## {fmt}
+## &#x7b;fmt&#x7d;
 
 **Source**: https://github.com/fmtlib/fmt
 

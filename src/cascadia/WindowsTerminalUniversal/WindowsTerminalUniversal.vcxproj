@@ -112,10 +112,10 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalOfficialBuild)'!='true'">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
@@ -123,15 +123,16 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
     <PRIResource Include="Resources\Resources.devicefamily-core.resw" />
+    <OCResourceDirectory Include="Resources" />
   </ItemGroup>
   <PropertyGroup>
     <!-- This is picked up by CascadiaResources.build.items. -->
     <WindowsTerminalAssetSuffix>-Universal</WindowsTerminalAssetSuffix>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+  <PropertyGroup Condition="'$(WindowsTerminalOfficialBuild)'!='true'">
     <!-- This is picked up by CascadiaResources.build.items. -->
     <WindowsTerminalAssetSuffix>$(WindowsTerminalAssetSuffix)Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>
@@ -159,7 +160,7 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+    <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
     <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   </ImportGroup>
@@ -167,10 +168,12 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

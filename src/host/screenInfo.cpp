@@ -360,7 +360,10 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
-    memmove(lpColorTable, gci.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
+    for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
+    {
+        lpColorTable[i] = gci.GetColorTableEntry(i);
+    }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();
 }
@@ -1857,7 +1860,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          existingFont,
                                                          WindowSize,
                                                          initAttributes,
-                                                         *GetPopupAttributes(),
+                                                         GetPopupAttributes(),
                                                          Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
@@ -2014,9 +2017,9 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
+TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 {
-    return &_PopupAttributes;
+    return _PopupAttributes;
 }
 
 // Routine Description:
@@ -2068,7 +2071,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const TextAttribute oldPrimaryAttributes = GetAttributes();
-    const TextAttribute oldPopupAttributes = *GetPopupAttributes();
+    const TextAttribute oldPopupAttributes = GetPopupAttributes();
 
     // Quick return if we don't need to do anything.
     if (oldPrimaryAttributes == attributes && oldPopupAttributes == popupAttributes)
@@ -2078,12 +2081,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
 
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-
-    auto& commandLine = CommandLine::Instance();
-    if (commandLine.HasPopup())
-    {
-        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
-    }
 
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just

@@ -120,9 +120,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
-        // TODO:GH#2557 Add an optional arg for opening the defaults here
-        _LaunchSettings(false);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::OpenSettingsArgs>())
+        {
+            _LaunchSettings(realArgs.Target());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
@@ -232,7 +234,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {
-        _ToggleFullscreen();
+        ToggleFullscreen();
         args.Handled(true);
     }
 }

@@ -26,6 +26,8 @@
     <ClInclude Include="TermControlAutomationPeer.h" />
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="TermControlUiaProvider.hpp" />
+    <ClInclude Include="ThreadSafeOptional.h" />
+    <ClInclude Include="ThrottledFunc.h" />
     <ClInclude Include="UiaTextRange.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -45,7 +47,7 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\*\Resources.resw">
+    <PRIResource Include="Resources\en-US\Resources.resw">
       <Filter>Resources</Filter>
     </PRIResource>
   </ItemGroup>

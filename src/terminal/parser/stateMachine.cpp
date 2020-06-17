@@ -14,6 +14,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
+    _isInAnsiMode(true),
     _intermediates{},
     _parameters{},
     _oscString{},
@@ -21,6 +22,11 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _processingIndividually(false)
 {
     _ActionClear();
+}
+
+void StateMachine::SetAnsiMode(bool ansiMode) noexcept
+{
+    _isInAnsiMode = ansiMode;
 }
 
 const IStateMachineEngine& StateMachine::Engine() const noexcept
@@ -184,10 +190,8 @@ static constexpr bool _isCsiInvalid(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is "operating system control string" beginning
-//      indicator.
-//   This immediately follows an escape and signifies a  signifies a varying
-//      length control sequence, quite similar to CSI.
+// - Determines if a character is a "Single Shift Select" indicator.
+//   This immediately follows an escape and signifies a varying length control string.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -198,8 +202,23 @@ static constexpr bool _isSs3Indicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a "Single Shift Select" indicator.
-//   This immediately follows an escape and signifies a varying length control string.
+// - Determines if a character is the VT52 "Direct Cursor Address" command.
+//   This immediately follows an escape and signifies the start of a multiple
+//      character command sequence.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isVt52CursorAddress(const wchar_t wch) noexcept
+{
+    return wch == L'Y'; // 0x59
+}
+
+// Routine Description:
+// - Determines if a character is "operating system control string" beginning
+//      indicator.
+//   This immediately follows an escape and signifies a  signifies a varying
+//      length control sequence, quite similar to CSI.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -335,6 +354,31 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
     _trace.TraceOnAction(L"EscDispatch");
 
     const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(success);
+
+    if (!success)
+    {
+        // Suppress it and log telemetry on failed cases
+        TermTelemetry::Instance().LogFailed(wch);
+    }
+}
+
+// Routine Description:
+// - Triggers the Vt52EscDispatch action to indicate that the listener should handle a VT52 escape sequence.
+//   These sequences start with ESC and a single letter, sometimes followed by parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - <none>
+void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
+{
+    _trace.TraceOnAction(L"Vt52EscDispatch");
+
+    const bool success = _engine->ActionVt52EscDispatch(wch,
+                                                        { _intermediates.data(), _intermediates.size() },
+                                                        { _parameters.data(), _parameters.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
@@ -700,6 +744,20 @@ void StateMachine::_EnterSs3Param() noexcept
 }
 
 // Routine Description:
+// - Moves the state machine into the VT52Param state.
+//   This state is entered:
+//   1. When a VT52 Cursor Address escape is detected, so parameters are expected to follow.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterVt52Param() noexcept
+{
+    _state = VTStates::Vt52Param;
+    _trace.TraceStateChange(L"Vt52Param");
+}
+
+// Routine Description:
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
@@ -716,7 +774,7 @@ void StateMachine::_EventGround(const wchar_t wch)
     {
         _ActionExecute(wch);
     }
-    else if (_isC1Csi(wch))
+    else if (_isC1Csi(wch) && _isInAnsiMode)
     {
         _EnterCsiEntry();
     }
@@ -770,21 +828,33 @@ void StateMachine::_EventEscape(const wchar_t wch)
             _EnterEscapeIntermediate();
         }
     }
-    else if (_isCsiIndicator(wch))
+    else if (_isInAnsiMode)
     {
-        _EnterCsiEntry();
+        if (_isCsiIndicator(wch))
+        {
+            _EnterCsiEntry();
+        }
+        else if (_isOscIndicator(wch))
+        {
+            _EnterOscParam();
+        }
+        else if (_isSs3Indicator(wch) && _engine->ParseControlSequenceAfterSs3())
+        {
+            _EnterSs3Entry();
+        }
+        else
+        {
+            _ActionEscDispatch(wch);
+            _EnterGround();
+        }
     }
-    else if (_isOscIndicator(wch))
+    else if (_isVt52CursorAddress(wch))
     {
-        _EnterOscParam();
-    }
-    else if (_isSs3Indicator(wch))
-    {
-        _EnterSs3Entry();
+        _EnterVt52Param();
     }
     else
     {
-        _ActionEscDispatch(wch);
+        _ActionVt52EscDispatch(wch);
         _EnterGround();
     }
 }
@@ -815,9 +885,18 @@ void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else
+    else if (_isInAnsiMode)
     {
         _ActionEscDispatch(wch);
+        _EnterGround();
+    }
+    else if (_isVt52CursorAddress(wch))
+    {
+        _EnterVt52Param();
+    }
+    else
+    {
+        _ActionVt52EscDispatch(wch);
         _EnterGround();
     }
 }
@@ -1157,6 +1236,41 @@ void StateMachine::_EventSs3Param(const wchar_t wch)
 }
 
 // Routine Description:
+// - Processes a character event into an Action that occurs while in the Vt52Param state.
+//   Events in this state will:
+//   1. Execute C0 control characters
+//   2. Ignore Delete characters
+//   3. Store exactly two parameter characters
+//   4. Dispatch a control sequence with parameters for action (always Direct Cursor Address)
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventVt52Param(const wchar_t wch)
+{
+    _trace.TraceOnEvent(L"Vt52Param");
+    if (_isC0Code(wch))
+    {
+        _ActionExecute(wch);
+    }
+    else if (_isDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else
+    {
+        _parameters.push_back(wch);
+        if (_parameters.size() == 2)
+        {
+            // The command character is processed before the parameter values,
+            // but it will always be 'Y', the Direct Cursor Address command.
+            _ActionVt52EscDispatch(L'Y');
+            _EnterGround();
+        }
+    }
+}
+
+// Routine Description:
 // - Entry to the state machine. Takes characters one by one and processes them according to the state machine rules.
 // Arguments:
 // - wch - New character to operate upon
@@ -1213,6 +1327,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             return _EventSs3Entry(wch);
         case VTStates::Ss3Param:
             return _EventSs3Param(wch);
+        case VTStates::Vt52Param:
+            return _EventVt52Param(wch);
         default:
             return;
         }

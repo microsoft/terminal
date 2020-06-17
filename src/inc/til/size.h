@@ -250,6 +250,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
+        template<typename T>
+        T area() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&ret));
+            return ret;
+        }
+
 #ifdef _WINCONTYPES_
         operator COORD() const
         {

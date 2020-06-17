@@ -53,7 +53,7 @@ private:
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
-    COLORREF _backgroundBrushColor;
+    til::color _backgroundBrushColor;
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hwnd _dragBarWindow;
@@ -86,4 +86,6 @@ private:
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateFrameTheme() const;
+
+    void _OpenSystemMenu(const int mouseX, const int mouseY) const noexcept;
 };

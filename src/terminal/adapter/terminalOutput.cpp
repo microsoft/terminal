@@ -3,161 +3,207 @@
 
 #include <precomp.h>
 #include <windows.h>
+#include "charsets.hpp"
 #include "terminalOutput.hpp"
 #include "strsafe.h"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-// We include a full table so all we have to do is the lookup.
-// The tables only ever change the values x20 - x7f, hence why the table starts at \x20
-// From http://vt100.net/docs/vt220-rm/table2-4.html
-static constexpr std::array<wchar_t, 96> s_decSpecialGraphicsTranslations{
-    L'\x20',
-    L'\x21',
-    L'\x22',
-    L'\x23',
-    L'\x24',
-    L'\x25',
-    L'\x26',
-    L'\x27',
-    L'\x28',
-    L'\x29',
-    L'\x2a',
-    L'\x2b',
-    L'\x2c',
-    L'\x2d',
-    L'\x2e',
-    L'\x2f',
-    L'\x30',
-    L'\x31',
-    L'\x32',
-    L'\x33',
-    L'\x34',
-    L'\x35',
-    L'\x36',
-    L'\x37',
-    L'\x38',
-    L'\x39',
-    L'\x3a',
-    L'\x3b',
-    L'\x3c',
-    L'\x3d',
-    L'\x3e',
-    L'\x3f',
-    L'\x40',
-    L'\x41',
-    L'\x42',
-    L'\x43',
-    L'\x44',
-    L'\x45',
-    L'\x46',
-    L'\x47',
-    L'\x48',
-    L'\x49',
-    L'\x4a',
-    L'\x4b',
-    L'\x4c',
-    L'\x4d',
-    L'\x4e',
-    L'\x4f',
-    L'\x50',
-    L'\x51',
-    L'\x52',
-    L'\x53',
-    L'\x54',
-    L'\x55',
-    L'\x56',
-    L'\x57',
-    L'\x58',
-    L'\x59',
-    L'\x5a',
-    L'\x5b',
-    L'\x5c',
-    L'\x5d',
-    L'\x5e',
-    L'\u0020', // L'\x5f',   -> Blank
-    L'\u2666', // L'\x60',   -> Diamond (more commonly U+25C6, but U+2666 renders better for us)
-    L'\u2592', // L'\x61',   -> Checkerboard
-    L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
-    L'\u240c', // L'\x63',   -> FF, SYMBOL FOR FORM FEED
-    L'\u240d', // L'\x64',   -> CR, SYMBOL FOR CARRIAGE RETURN
-    L'\u240a', // L'\x65',   -> LF, SYMBOL FOR LINE FEED
-    L'\u00b0', // L'\x66',   -> Degree symbol
-    L'\u00b1', // L'\x67',   -> Plus/minus
-    L'\u2424', // L'\x68',   -> NL, SYMBOL FOR NEWLINE
-    L'\u240b', // L'\x69',   -> VT, SYMBOL FOR VERTICAL TABULATION
-    L'\u2518', // L'\x6a',   -> Lower-right corner
-    L'\u2510', // L'\x6b',   -> Upper-right corner
-    L'\u250c', // L'\x6c',   -> Upper-left corner
-    L'\u2514', // L'\x6d',   -> Lower-left corner
-    L'\u253c', // L'\x6e',   -> Crossing lines
-    L'\u23ba', // L'\x6f',   -> Horizontal line - Scan 1
-    L'\u23bb', // L'\x70',   -> Horizontal line - Scan 3
-    L'\u2500', // L'\x71',   -> Horizontal line - Scan 5
-    L'\u23bc', // L'\x72',   -> Horizontal line - Scan 7
-    L'\u23bd', // L'\x73',   -> Horizontal line - Scan 9
-    L'\u251c', // L'\x74',   -> Left "T"
-    L'\u2524', // L'\x75',   -> Right "T"
-    L'\u2534', // L'\x76',   -> Bottom "T"
-    L'\u252c', // L'\x77',   -> Top "T"
-    L'\u2502', // L'\x78',   -> | Vertical bar
-    L'\u2264', // L'\x79',   -> Less than or equal to
-    L'\u2265', // L'\x7a',   -> Greater than or equal to
-    L'\u03c0', // L'\x7b',   -> Pi
-    L'\u2260', // L'\x7c',   -> Not equal to
-    L'\u00a3', // L'\x7d',   -> UK pound sign
-    L'\u00b7', // L'\x7e',   -> Centered dot
-    L'\x7f' // L'\x7f',   -> DEL
-};
-
-bool TerminalOutput::DesignateCharset(const wchar_t newCharset) noexcept
+TerminalOutput::TerminalOutput() noexcept
 {
-    bool result = false;
-    if (newCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
-        newCharset == DispatchTypes::VTCharacterSets::USASCII)
+    _gsetTranslationTables.at(0) = Ascii;
+    _gsetTranslationTables.at(1) = Ascii;
+    _gsetTranslationTables.at(2) = Latin1;
+    _gsetTranslationTables.at(3) = Latin1;
+}
+
+bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    switch (charset.first)
     {
-        _currentCharset = newCharset;
-        result = true;
+    case L'B': // US ASCII
+    case L'1': // Alternate Character ROM
+        return _SetTranslationTable(gsetNumber, Ascii);
+    case L'0': // DEC Special Graphics
+    case L'2': // Alternate Character ROM Special Graphics
+        return _SetTranslationTable(gsetNumber, DecSpecialGraphics);
+    case L'<': // DEC Supplemental
+        return _SetTranslationTable(gsetNumber, DecSupplemental);
+    case L'A': // British NRCS
+        return _SetTranslationTable(gsetNumber, BritishNrcs);
+    case L'4': // Dutch NRCS
+        return _SetTranslationTable(gsetNumber, DutchNrcs);
+    case L'5': // Finnish NRCS
+    case L'C': // (fallback)
+        return _SetTranslationTable(gsetNumber, FinnishNrcs);
+    case L'R': // French NRCS
+        return _SetTranslationTable(gsetNumber, FrenchNrcs);
+    case L'f': // French NRCS (ISO update)
+        return _SetTranslationTable(gsetNumber, FrenchNrcsIso);
+    case L'9': // French Canadian NRCS
+    case L'Q': // (fallback)
+        return _SetTranslationTable(gsetNumber, FrenchCanadianNrcs);
+    case L'K': // German NRCS
+        return _SetTranslationTable(gsetNumber, GermanNrcs);
+    case L'Y': // Italian NRCS
+        return _SetTranslationTable(gsetNumber, ItalianNrcs);
+    case L'6': // Norwegian/Danish NRCS
+    case L'E': // (fallback)
+        return _SetTranslationTable(gsetNumber, NorwegianDanishNrcs);
+    case L'`': // Norwegian/Danish NRCS (ISO standard)
+        return _SetTranslationTable(gsetNumber, NorwegianDanishNrcsIso);
+    case L'Z': // Spanish NRCS
+        return _SetTranslationTable(gsetNumber, SpanishNrcs);
+    case L'7': // Swedish NRCS
+    case L'H': // (fallback)
+        return _SetTranslationTable(gsetNumber, SwedishNrcs);
+    case L'=': // Swiss NRCS
+        return _SetTranslationTable(gsetNumber, SwissNrcs);
+    case L'&':
+        switch (charset.second)
+        {
+        case L'4': // DEC Cyrillic
+            return _SetTranslationTable(gsetNumber, DecCyrillic);
+        case L'5': // Russian NRCS
+            return _SetTranslationTable(gsetNumber, RussianNrcs);
+        }
+        return false;
+    case L'"':
+        switch (charset.second)
+        {
+        case L'?': // DEC Greek
+            return _SetTranslationTable(gsetNumber, DecGreek);
+        case L'>': // Greek NRCS
+            return _SetTranslationTable(gsetNumber, GreekNrcs);
+        case L'4': // DEC Hebrew
+            return _SetTranslationTable(gsetNumber, DecHebrew);
+        }
+        return false;
+    case L'%':
+        switch (charset.second)
+        {
+        case L'=': // Hebrew NRCS
+            return _SetTranslationTable(gsetNumber, HebrewNrcs);
+        case L'0': // DEC Turkish
+            return _SetTranslationTable(gsetNumber, DecTurkish);
+        case L'2': // Turkish NRCS
+            return _SetTranslationTable(gsetNumber, TurkishNrcs);
+        case L'5': // DEC Supplemental
+            return _SetTranslationTable(gsetNumber, DecSupplemental);
+        case L'6': // Portuguese NRCS
+            return _SetTranslationTable(gsetNumber, PortugueseNrcs);
+        }
+        return false;
+    default:
+        return false;
     }
-    return result;
+}
+
+bool TerminalOutput::Designate96Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    switch (charset.first)
+    {
+    case L'A': // ISO Latin-1 Supplemental
+    case L'<': // (UPSS when assigned to Latin-1)
+        return _SetTranslationTable(gsetNumber, Latin1);
+    case L'B': // ISO Latin-2 Supplemental
+        return _SetTranslationTable(gsetNumber, Latin2);
+    case L'L': // ISO Latin-Cyrillic Supplemental
+        return _SetTranslationTable(gsetNumber, LatinCyrillic);
+    case L'F': // ISO Latin-Greek Supplemental
+        return _SetTranslationTable(gsetNumber, LatinGreek);
+    case L'H': // ISO Latin-Hebrew Supplemental
+        return _SetTranslationTable(gsetNumber, LatinHebrew);
+    case L'M': // ISO Latin-5 Supplemental
+        return _SetTranslationTable(gsetNumber, Latin5);
+    default:
+        return false;
+    }
+}
+
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::LockingShift(const size_t gsetNumber)
+{
+    _glSetNumber = gsetNumber;
+    _glTranslationTable = _gsetTranslationTables.at(_glSetNumber);
+    // If GL is mapped to ASCII then we don't need to translate anything.
+    if (_glTranslationTable == Ascii)
+    {
+        _glTranslationTable = {};
+    }
+    return true;
+}
+
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
+{
+    _grSetNumber = gsetNumber;
+    _grTranslationTable = _gsetTranslationTables.at(_grSetNumber);
+    // If GR is mapped to Latin1, or GR translation is not allowed, we don't need to translate anything.
+    if (_grTranslationTable == Latin1 || !_grTranslationEnabled)
+    {
+        _grTranslationTable = {};
+    }
+    return true;
+}
+
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::SingleShift(const size_t gsetNumber)
+{
+    _ssTranslationTable = _gsetTranslationTables.at(gsetNumber);
+    return true;
 }
 
 // Routine Description:
-// - Returns true if the current charset isn't USASCII, indicating that text has to come through here
+// - Returns true if there is an active translation table, indicating that text has to come through here
 // Arguments:
 // - <none>
 // Return Value:
-// - True if the current charset is not USASCII
+// - True if translation is required.
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return _currentCharset != DispatchTypes::VTCharacterSets::USASCII;
+    return !_glTranslationTable.empty() || !_grTranslationTable.empty() || !_ssTranslationTable.empty();
 }
 
-const std::wstring_view TerminalOutput::_GetTranslationTable() const noexcept
+void TerminalOutput::EnableGrTranslation(boolean enabled)
 {
-    switch (_currentCharset)
-    {
-    case DispatchTypes::VTCharacterSets::DEC_LineDrawing:
-        return { s_decSpecialGraphicsTranslations.data(), s_decSpecialGraphicsTranslations.size() };
-    }
-    return {};
+    _grTranslationEnabled = enabled;
+    // We need to reapply the right locking shift to (de)activate the translation table.
+    LockingShiftRight(_grSetNumber);
 }
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     wchar_t wchFound = wch;
-    if (_currentCharset == DispatchTypes::VTCharacterSets::USASCII ||
-        wch < '\x5f' || wch > '\x7f') // filter out the region we know is unchanged
+    if (!_ssTranslationTable.empty())
     {
-        ; // do nothing, these are the same as default.
+        if (wch - 0x20u < _ssTranslationTable.size())
+        {
+            wchFound = _ssTranslationTable.at(wch - 0x20u);
+        }
+        else if (wch - 0xA0u < _ssTranslationTable.size())
+        {
+            wchFound = _ssTranslationTable.at(wch - 0xA0u);
+        }
+        _ssTranslationTable = {};
     }
     else
     {
-        const auto translationTable = _GetTranslationTable();
-        if (!translationTable.empty())
+        if (wch - 0x20u < _glTranslationTable.size())
         {
-            wchFound = translationTable.at(wch - '\x20');
+            wchFound = _glTranslationTable.at(wch - 0x20u);
+        }
+        else if (wch - 0xA0u < _grTranslationTable.size())
+        {
+            wchFound = _grTranslationTable.at(wch - 0xA0u);
         }
     }
     return wchFound;
+}
+
+bool TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
+{
+    _gsetTranslationTables.at(gsetNumber) = translationTable;
+    // We need to reapply the locking shifts in case the underlying G-sets have changed.
+    return LockingShift(_glSetNumber) && LockingShiftRight(_grSetNumber);
 }

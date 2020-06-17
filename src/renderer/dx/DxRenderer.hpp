@@ -9,6 +9,7 @@
 
 #include <dxgi.h>
 #include <dxgi1_2.h>
+#include <dxgi1_3.h>
 
 #include <d3d11.h>
 #include <d2d1.h>
@@ -55,6 +56,10 @@ namespace Microsoft::Console::Render
 
         void SetRetroTerminalEffects(bool enable) noexcept;
 
+        void SetForceFullRepaintRendering(bool enable) noexcept;
+
+        void SetSoftwareRendering(bool enable) noexcept;
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -69,9 +74,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
+
+        void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+
+        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
@@ -134,6 +143,7 @@ namespace Microsoft::Console::Render
 
         til::size _displaySizePixels;
         til::size _glyphCell;
+        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -155,9 +165,6 @@ namespace Microsoft::Console::Render
 
         static std::atomic<size_t> _tracelogCount;
 
-        static const ULONG s_ulMinCursorHeightPercent = 25;
-        static const ULONG s_ulMaxCursorHeightPercent = 100;
-
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
@@ -176,7 +183,9 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
+        UINT _swapChainFlags;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
+        wil::unique_handle _swapChainFrameLatencyWaitableObject;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;
@@ -189,9 +198,15 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
+        // Preferences and overrides
+        bool _softwareRendering;
+        bool _forceFullRepaintRendering;
+
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         float _defaultTextBackgroundOpacity;
+
+        RenderFrameInfo _frameInfo;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct

@@ -32,10 +32,13 @@
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Release'">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'==''">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
@@ -43,20 +46,28 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
-    <!-- This is picked up by CascadiaResources.build.items. -->
+
+  <!-- This is picked up by CascadiaResources.build.items. -->
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'==''">
     <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
+    <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
     <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
+    <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
   </ItemGroup>
+
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
@@ -106,12 +117,38 @@
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
     </ItemGroup>
   </Target>
+
+  <!-- **BEGIN VC LIBS HACK** -->
+  <!--
+    For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
+    It's very difficult for users who do not have access to the store to get our dependency packages, and we want to be robust
+    and deployable everywhere. Since these libraries can be redistributed, it's easiest if we simply redistribute them.
+    See also the "VC LIBS HACK" section in WindowsTerminal.vcxproj.
+  -->
+  <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
+       This is part of the generic machinery that applies to every AppX. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" />
+    </ItemGroup>
+  </Target>
+  <!-- **END VC LIBS HACK** -->
+
   <!-- This is required to get the package dependency in the AppXManifest. -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

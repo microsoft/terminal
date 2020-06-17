@@ -25,6 +25,13 @@ using namespace TerminalCoreUnitTests;
 
 class TerminalCoreUnitTests::TerminalBufferTests final
 {
+    // !!! DANGER: Many tests in this class expect the Terminal buffer
+    // to be 80x32. If you change these, you'll probably inadvertently break a
+    // bunch of tests !!!
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+    static const SHORT TerminalHistoryLength = 100;
+
     TEST_CLASS(TerminalBufferTests);
 
     TEST_METHOD(TestSimpleBufferWriting);
@@ -36,7 +43,7 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ 80, 32 }, 100, emptyRT);
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, emptyRT);
         return true;
     }
 
