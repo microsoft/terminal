@@ -12,8 +12,8 @@ namespace Microsoft::Console::Render
     struct DrawingContext
     {
         DrawingContext(ID2D1RenderTarget* renderTarget,
-                       ID2D1Brush* foregroundBrush,
-                       ID2D1Brush* backgroundBrush,
+                       ID2D1SolidColorBrush* foregroundBrush,
+                       ID2D1SolidColorBrush* backgroundBrush,
                        bool forceGrayscaleAA,
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
@@ -33,8 +33,8 @@ namespace Microsoft::Console::Render
         }
 
         ID2D1RenderTarget* renderTarget;
-        ID2D1Brush* foregroundBrush;
-        ID2D1Brush* backgroundBrush;
+        ID2D1SolidColorBrush* foregroundBrush;
+        ID2D1SolidColorBrush* backgroundBrush;
         bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;

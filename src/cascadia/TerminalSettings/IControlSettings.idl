@@ -52,10 +52,11 @@ namespace Microsoft.Terminal.Settings
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 
         UInt32 SelectionBackground;
+
+        TextAntialiasingMode AntialiasingMode;
+
         Boolean RetroTerminalEffect;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
-
-        TextAntialiasingMode AntialiasingMode;
     };
 }

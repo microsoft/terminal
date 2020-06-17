@@ -177,11 +177,41 @@ public:
     {
     }
 
+    static std::pair<KeyEvent, KeyEvent> MakePair(
+        const WORD repeatCount,
+        const WORD virtualKeyCode,
+        const WORD virtualScanCode,
+        const wchar_t charData,
+        const DWORD activeModifierKeys)
+    {
+        return std::make_pair<KeyEvent, KeyEvent>(
+            { true,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys },
+            { false,
+              repeatCount,
+              virtualKeyCode,
+              virtualScanCode,
+              charData,
+              activeModifierKeys });
+    }
+
     ~KeyEvent();
     KeyEvent(const KeyEvent&) = default;
     KeyEvent(KeyEvent&&) = default;
+// For these two operators, there seems to be a bug in the compiler:
+// See https://stackoverflow.com/a/60206505/1481137
+//   > C.128 applies only to virtual member functions, but operator= is not
+//   > virtual in your base class and neither does it have the same signature as
+//   > in the derived class, so there is no reason for it to apply.
+#pragma warning(push)
+#pragma warning(disable : 26456)
     KeyEvent& operator=(const KeyEvent&) & = default;
     KeyEvent& operator=(KeyEvent&&) & = default;
+#pragma warning(pop)
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -270,6 +300,29 @@ public:
     bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const;
     bool IsCommandLineEditingKey() const noexcept;
     bool IsPopupKey() const noexcept;
+
+    // Function Description:
+    // - Returns true if the given VKey represents a modifier key - shift, alt,
+    //   control or the Win key.
+    // Arguments:
+    // - vkey: the VKEY to check
+    // Return Value:
+    // - true iff the key is a modifier key.
+    constexpr static bool IsModifierKey(const WORD vkey)
+    {
+        return (vkey == VK_CONTROL) ||
+               (vkey == VK_LCONTROL) ||
+               (vkey == VK_RCONTROL) ||
+               (vkey == VK_MENU) ||
+               (vkey == VK_LMENU) ||
+               (vkey == VK_RMENU) ||
+               (vkey == VK_SHIFT) ||
+               (vkey == VK_LSHIFT) ||
+               (vkey == VK_RSHIFT) ||
+               // There is no VK_WIN
+               (vkey == VK_LWIN) ||
+               (vkey == VK_RWIN);
+    };
 
 private:
     bool _keyDown;

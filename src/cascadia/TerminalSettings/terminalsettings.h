@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         GETSET_PROPERTY(int32_t, InitialCols, 80);
 
         GETSET_PROPERTY(bool, SnapOnInput, true);
+        GETSET_PROPERTY(bool, AltGrAliasing, true);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
         GETSET_PROPERTY(CursorStyle, CursorShape, CursorStyle::Vintage);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
@@ -92,11 +93,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         GETSET_PROPERTY(ScrollbarState, ScrollState, ScrollbarState::Visible);
 
+        GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode, TextAntialiasingMode::Grayscale);
+
         GETSET_PROPERTY(bool, RetroTerminalEffect, false);
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
-
-        GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode, TextAntialiasingMode::Grayscale);
+        GETSET_PROPERTY(bool, ForceVTInput, false);
 
 #pragma warning(pop)
 

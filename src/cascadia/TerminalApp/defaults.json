@@ -42,6 +42,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         },
@@ -60,6 +61,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         }
@@ -277,6 +279,7 @@
         { "command": "toggleFullscreen", "keys": "f11" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
 
         // Tab Management

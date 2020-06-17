@@ -267,6 +267,15 @@ void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
     _cursorApplicationMode = applicationMode;
 }
 
+void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
+{
+    _win32InputMode = win32InputMode;
+}
+void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _forceDisableWin32InputMode = win32InputMode;
+}
+
 static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
                                                                const bool ansiMode,
                                                                const bool cursorApplicationMode,
@@ -520,6 +529,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
+    // GH#4999 - If we're in win32-input mode, skip straight to doing that.
+    // Since this mode handles all types of key events, do nothing else.
+    // Only do this if win32-input-mode support isn't manually disabled.
+    if (_win32InputMode && !_forceDisableWin32InputMode)
+    {
+        const auto seq = _GenerateWin32KeySequence(keyEvent);
+        _SendInputSequence(seq);
+        return true;
+    }
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
@@ -718,4 +737,32 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
             LOG_HR(wil::ResultFromCaughtException());
         }
     }
+}
+
+// Method Description:
+// - Synthesize a win32-input-mode sequence for the given keyevent.
+// Arguments:
+// - key: the KeyEvent to serialize.
+// Return Value:
+// - the formatted string representation of this key
+std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
+{
+    // Sequences are formatted as follows:
+    //
+    // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
+    //
+    //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+    //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+    //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+    //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+    //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
+    return fmt::format(L"\x1b[{};{};{};{};{};{}_",
+                       key.GetVirtualKeyCode(),
+                       key.GetVirtualScanCode(),
+                       static_cast<int>(key.GetCharData()),
+                       key.IsKeyDown() ? 1 : 0,
+                       key.GetActiveModifierKeys(),
+                       key.GetRepeatCount());
 }
