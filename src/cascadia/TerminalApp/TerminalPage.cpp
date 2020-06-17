@@ -1518,11 +1518,12 @@ namespace winrt::TerminalApp::implementation
                     text = item.Path();
                 }
             }
+            //The following removes all tab characters when pasting from clipboard.
+            //TODO: Include an option to toggle this setting on and off.
             hstring::value_type* temporary = new hstring::value_type[text.size()+1];
             wcscpy_s(temporary, text.size() + 1, text.c_str());
-            auto trash = std::remove(temporary, temporary + text.size() + 1, L'\t');
-            text = hstring(temporary);
-            trash = trash; //Know your place
+            auto endIt = std::remove(temporary, temporary + text.size() + 1, L'\t');
+            text = hstring(temporary, endIt - temporary);
             eventArgs.HandleClipboardData(text);
             delete[] temporary;
         }
