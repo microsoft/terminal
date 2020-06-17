@@ -622,6 +622,9 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     try
     {
         _haveDeviceResources = false;
+
+        _pixelShaderSettingsBuffer.Reset();
+
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
 
