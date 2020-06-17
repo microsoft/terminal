@@ -707,6 +707,7 @@ void DxEngine::SetCallback(std::function<void()> pfn)
 }
 
 void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+try
 {
     if (_retroTerminalEffects != enable)
     {
@@ -715,8 +716,10 @@ void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
         LOG_IF_FAILED(InvalidateAll());
     }
 }
+CATCH_LOG()
 
 void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
+try
 {
     if (_forceFullRepaintRendering != enable)
     {
@@ -724,8 +727,10 @@ void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
         LOG_IF_FAILED(InvalidateAll());
     }
 }
+CATCH_LOG()
 
 void DxEngine::SetSoftwareRendering(bool enable) noexcept
+try
 {
     if (_softwareRendering != enable)
     {
@@ -734,6 +739,7 @@ void DxEngine::SetSoftwareRendering(bool enable) noexcept
         LOG_IF_FAILED(InvalidateAll());
     }
 }
+CATCH_LOG()
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
@@ -2193,6 +2199,7 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 // Return Value:
 // - N/A
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
+try
 {
     if (_antialiasingMode != antialiasingMode)
     {
@@ -2200,6 +2207,7 @@ void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMo
         LOG_IF_FAILED(InvalidateAll());
     }
 }
+CATCH_LOG()
 
 // Method Description:
 // - Update our tracker of the opacity of our background. We can only
