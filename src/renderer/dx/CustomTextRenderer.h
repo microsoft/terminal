@@ -20,18 +20,18 @@ namespace Microsoft::Console::Render
                        const D2D_SIZE_F cellSize,
                        const D2D_SIZE_F targetSize,
                        const std::optional<CursorOptions>& cursorInfo,
-                       const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
+                       const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept :
+            renderTarget(renderTarget),
+            foregroundBrush(foregroundBrush),
+            backgroundBrush(backgroundBrush),
+            forceGrayscaleAA(forceGrayscaleAA),
+            dwriteFactory(dwriteFactory),
+            spacing(spacing),
+            cellSize(cellSize),
+            targetSize(targetSize),
+            cursorInfo(cursorInfo),
+            options(options)
         {
-            this->renderTarget = renderTarget;
-            this->foregroundBrush = foregroundBrush;
-            this->backgroundBrush = backgroundBrush;
-            this->forceGrayscaleAA = forceGrayscaleAA;
-            this->dwriteFactory = dwriteFactory;
-            this->spacing = spacing;
-            this->cellSize = cellSize;
-            this->targetSize = targetSize;
-            this->cursorInfo = cursorInfo;
-            this->options = options;
         }
 
         ID2D1RenderTarget* renderTarget;
