@@ -663,10 +663,10 @@ try
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF(E_INVALIDARG, !drawingContext);
 
-    if (_hasClipPushed)
+    if (_clipRect.has_value())
     {
         drawingContext->renderTarget->PopAxisAlignedClip();
-        _hasClipPushed = false;
+        _clipRect = std::nullopt;
     }
 
     return S_OK;
