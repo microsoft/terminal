@@ -54,18 +54,52 @@ namespace TerminalApp::JsonUtils
         };
     }
 
+    // These exceptions cannot use localized messages, as we do not have
+    // guaranteed access to the resource loader.
     class TypeMismatchException : public std::runtime_error
     {
     public:
         TypeMismatchException() :
-            runtime_error("invalid type") {}
+            runtime_error("unexpected data type") {}
     };
 
     class KeyedException : public std::runtime_error
     {
     public:
-        KeyedException(const std::string_view key, const std::exception& exception) :
-            runtime_error(fmt::format("error parsing \"{0}\": {1}", key, exception.what()).c_str()) {}
+        KeyedException(const std::string_view key, std::exception_ptr exception) :
+            runtime_error(fmt::format("error parsing \"{0}\"", key).c_str()),
+            _key{ key },
+            _innerException{ std::move(exception) } {}
+
+        std::string GetKey() const
+        {
+            return _key;
+        }
+
+        [[noreturn]] void RethrowInner() const
+        {
+            std::rethrow_exception(_innerException);
+        }
+
+    private:
+        std::string _key;
+        std::exception_ptr _innerException;
+    };
+
+    class UnexpectedValueException : public std::runtime_error
+    {
+    public:
+        UnexpectedValueException(const std::string_view value) :
+            runtime_error(fmt::format("unexpected value \"{0}\"", value).c_str()),
+            _value{ value } {}
+
+        std::string GetValue() const
+        {
+            return _value;
+        }
+
+    private:
+        std::string _value;
     };
 
     template<typename T>
@@ -233,7 +267,7 @@ namespace TerminalApp::JsonUtils
                 }
             }
 
-            throw std::exception{};
+            throw UnexpectedValueException{ name };
         }
 
         bool CanConvert(const Json::Value& json)
@@ -271,7 +305,7 @@ namespace TerminalApp::JsonUtils
                          (value == AllClear && newFlag != AllClear)))
                     {
                         // attempt to combine AllClear (explicitly) with anything else
-                        throw std::exception();
+                        throw UnexpectedValueException{ element.asString() };
                     }
                     value |= newFlag;
                 }
@@ -362,10 +396,10 @@ namespace TerminalApp::JsonUtils
             {
                 return GetValue(*found, target, std::forward<Converter>(conv));
             }
-            catch (const std::exception& e)
+            catch (...)
             {
-                // WRAP! WRAP LIKE YOUR LIFE DEPENDS ON IT!
-                throw KeyedException(key, e);
+                // Wrap any caught exceptions in one that preserves context.
+                throw KeyedException(key, std::current_exception());
             }
         }
         return false;
