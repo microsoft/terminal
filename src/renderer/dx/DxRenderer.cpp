@@ -84,6 +84,7 @@ DxEngine::DxEngine() :
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
+    _recreateDeviceRequested{ false },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -704,17 +705,31 @@ void DxEngine::SetCallback(std::function<void()> pfn)
 
 void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
 {
-    _retroTerminalEffects = enable;
+    if (_retroTerminalEffects != enable)
+    {
+        _retroTerminalEffects = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
 
 void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
 {
-    _forceFullRepaintRendering = enable;
+    if (_forceFullRepaintRendering != enable)
+    {
+        _forceFullRepaintRendering = enable;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
 
 void DxEngine::SetSoftwareRendering(bool enable) noexcept
 {
-    _softwareRendering = enable;
+    if (_softwareRendering != enable)
+    {
+        _softwareRendering = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
@@ -965,7 +980,10 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources)
+
+        // If we don't have device resources or if someone has requested that we
+        // recreate the device... then make new resources. (Create will dump the old ones.)
+        if (!_haveDeviceResources || _recreateDeviceRequested.exchange(false))
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
@@ -2173,7 +2191,11 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 // - N/A
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    _antialiasingMode = antialiasingMode;
+    if (_antialiasingMode != antialiasingMode)
+    {
+        _antialiasingMode = antialiasingMode;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
 
 // Method Description:
