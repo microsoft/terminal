@@ -49,6 +49,7 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view RenameTabKey{ "renameTab" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -84,6 +85,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { SplitPaneKey, ShortcutAction::SplitPane },
     { UnboundKey, ShortcutAction::Invalid },
     { FindKey, ShortcutAction::Find },
+    { RenameTabKey, ShortcutAction::RenameTab },
 };
 
 using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
@@ -108,6 +110,8 @@ static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParse
     { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
 
     { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
+
+    { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
 
     { ShortcutAction::Invalid, nullptr },
 };
