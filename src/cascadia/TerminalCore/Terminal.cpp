@@ -44,6 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
