@@ -252,7 +252,7 @@ JSON | Generated String
 -- | --
 `{ "action":"copyText" }` | "Copy text"
 `{ "action":"copyText", "singleLine": true }` | "Copy text as a single line"
-`{ "action":"copyText", "singleLine": true, "copyFormatting": true }` | "Copy text without formatting"
+`{ "action":"copyText", "singleLine": false, "copyFormatting": false }` | "Copy text without formatting"
 `{ "action":"copyText", "singleLine": true, "copyFormatting": true }` | "Copy text as a single line without formatting"
 
 CopyText is a bit of a simplistic case however, with very few args or
