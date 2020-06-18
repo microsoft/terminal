@@ -377,5 +377,8 @@
   <data name="ShortcutsMenuItem" xml:space="preserve">
     <value>Keybindings</value>
     <comment></comment>
+    <data name="KeybindingsTitle" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment></comment>
   </data>
 </root>
