@@ -240,7 +240,11 @@ namespace winrt::TerminalApp::implementation
     // - Show a dialog with Shortcuts information. Displays the app's default keybindings
     void TerminalPage::_ShowShortcutsDialog()
     {
-        _showDialogHandlers(*this, FindName(L"ShortcutsDialog").try_as<WUX::Controls::ContentDialog>());
+        const auto title = RS_(L"KeybindingsTitle", titleKey);
+        const auto buttonText = RS_(L"Ok");
+        WUX::Controls::ContentDialog dialog;
+        dialog.CloseButtonText(buttonText);
+        _showDialogHandlers(*this, dialog);
     }
     
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -391,16 +395,16 @@ namespace winrt::TerminalApp::implementation
                 }
       
                 // Create the shortcuts button.
-                auto shortcutsItem = WUX::Controls::MenuFlyoutItem{};
-                shortcutsItem.Text(RS_(L"ShortcutsMenuItem"));
+                auto shortcutsFlyout = WUX::Controls::MenuFlyoutItem{};
+                shortcutsFlyout.Text(RS_(L"ShortcutsMenuItem"));
                 
                 WUX::Controls::FontIcon shortcutsIcon{};
                 shortcutsIcon.Glyph(L"\xE765");
                 shortcutsIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
                 shortcutsFlyout.Icon(shortcutsIcon);
 
-                shortcutsItem.Click({ this, &TerminalPage::_ShortcutsButtonOnClick });
-                newTabFlyout.Items().Append(shortcutsItem);
+                shortcutsFlyout.Click({ this, &TerminalPage::_ShortcutsButtonOnClick });
+                newTabFlyout.Items().Append(shortcutsFlyout);
 
                 // Create the feedback button.
                 auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
