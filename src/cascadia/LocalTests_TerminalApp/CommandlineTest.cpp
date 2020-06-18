@@ -392,7 +392,7 @@ namespace TerminalAppLocalTests
             TEST_METHOD_PROPERTY(L"Data:useShortForm", L"{false, true}")
         END_TEST_METHOD_PROPERTIES()
 
-        INIT_TEST_PROPERTY(bool, useShortForm, L"TODO");
+        INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `nt` instead of `new-tab`");
         const wchar_t* subcommand = useShortForm ? L"nt" : L"new-tab";
 
         {
@@ -585,7 +585,7 @@ namespace TerminalAppLocalTests
             TEST_METHOD_PROPERTY(L"Data:useShortForm", L"{false, true}")
         END_TEST_METHOD_PROPERTIES()
 
-        INIT_TEST_PROPERTY(bool, useShortForm, L"TODO");
+        INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `sp` instead of `split-pane`");
         const wchar_t* subcommand = useShortForm ? L"sp" : L"split-pane";
 
         {
@@ -737,8 +737,8 @@ namespace TerminalAppLocalTests
             TEST_METHOD_PROPERTY(L"Data:useShortFormSplitPane", L"{false, true}")
         END_TEST_METHOD_PROPERTIES()
 
-        INIT_TEST_PROPERTY(bool, useShortFormNewTab, L"TODO");
-        INIT_TEST_PROPERTY(bool, useShortFormSplitPane, L"TODO");
+        INIT_TEST_PROPERTY(bool, useShortFormNewTab, L"If true, use `nt` instead of `new-tab`");
+        INIT_TEST_PROPERTY(bool, useShortFormSplitPane, L"If true, use `sp` instead of `split-pane`");
         const wchar_t* ntSubcommand = useShortFormNewTab ? L"nt" : L"new-tab";
         const wchar_t* spSubcommand = useShortFormSplitPane ? L"sp" : L"split-pane";
 
@@ -862,7 +862,7 @@ namespace TerminalAppLocalTests
             TEST_METHOD_PROPERTY(L"Data:useShortForm", L"{false, true}")
         END_TEST_METHOD_PROPERTIES()
 
-        INIT_TEST_PROPERTY(bool, useShortForm, L"TODO");
+        INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `ft` instead of `focus-tab`");
         const wchar_t* subcommand = useShortForm ? L"ft" : L"focus-tab";
 
         {
