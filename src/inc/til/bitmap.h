@@ -83,14 +83,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             void _calculateArea()
             {
-                // Backup the position as the next one.
-                _nextPos = _pos;
-
-                // Seek forward until we find an on bit.
-                while (_nextPos < _end && !_values[_nextPos])
-                {
-                    ++_nextPos;
-                }
+                const auto nextPos = _pos == 0 ? _values.find_first() : _values.find_next(_pos - 1);
+                _nextPos = base::saturated_cast<ptrdiff_t>(nextPos);
 
                 // If we haven't reached the end yet...
                 if (_nextPos < _end)
@@ -119,7 +113,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 else
                 {
                     // If we reached the end, set the pos because the run is empty.
-                    _pos = _nextPos;
+                    _pos = _end;
+                    _nextPos = _end;
                     _run = til::rectangle{};
                 }
             }
