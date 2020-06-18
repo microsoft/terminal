@@ -755,6 +755,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
+        _actionDispatch->ResetTabColor({ this, &TerminalPage::_HandleResetTabColor });
     }
 
     // Method Description:
@@ -1094,6 +1096,18 @@ namespace winrt::TerminalApp::implementation
             return focusedIndex;
         }
         return std::nullopt;
+    }
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<Tab> TerminalPage::_GetFocusedTab()
+    {
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            return _GetStrongTabImpl(*index);
+        }
+        return nullptr;
     }
 
     // Method Description:

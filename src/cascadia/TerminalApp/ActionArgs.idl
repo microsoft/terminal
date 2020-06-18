@@ -102,4 +102,9 @@ namespace TerminalApp
     {
         SettingsTarget Target { get; };
     };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> TabColor { get; };
+    };
 }

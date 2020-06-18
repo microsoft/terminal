@@ -53,6 +53,10 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
+        void SetTabColor(const winrt::Windows::UI::Color& color);
+        void ResetTabColor();
+        void ActivateColorPicker();
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -80,8 +84,6 @@ namespace winrt::TerminalApp::implementation
         void _Focus();
 
         void _CreateContextMenu();
-        void _SetTabColor(const winrt::Windows::UI::Color& color);
-        void _ResetTabColor();
         void _RefreshVisualState();
 
         void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;

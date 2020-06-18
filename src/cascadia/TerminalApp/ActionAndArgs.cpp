@@ -33,6 +33,8 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view SetTabColorKey{ "setTabColor" };
+static constexpr std::string_view ResetTabColorKey{ "resetTabColor" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -68,6 +70,8 @@ namespace winrt::TerminalApp::implementation
         { OpenSettingsKey, ShortcutAction::OpenSettings },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { SetTabColorKey, ShortcutAction::SetTabColor },
+        { ResetTabColorKey, ShortcutAction::ResetTabColor },
         { UnboundKey, ShortcutAction::Invalid },
         { FindKey, ShortcutAction::Find }
     };
@@ -96,6 +100,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
