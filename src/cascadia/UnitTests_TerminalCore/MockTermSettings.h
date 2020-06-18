@@ -29,6 +29,7 @@ namespace TerminalCoreUnitTests
         uint32_t DefaultForeground() { return COLOR_WHITE; }
         uint32_t DefaultBackground() { return COLOR_BLACK; }
         bool SnapOnInput() { return false; }
+        bool AltGrAliasing() { return true; }
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
@@ -37,6 +38,7 @@ namespace TerminalCoreUnitTests
         winrt::hstring StartingTitle() { return _startingTitle; }
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
+        bool ForceVTInput() { return false; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -49,6 +51,7 @@ namespace TerminalCoreUnitTests
         void DefaultForeground(uint32_t) {}
         void DefaultBackground(uint32_t) {}
         void SnapOnInput(bool) {}
+        void AltGrAliasing(bool) {}
         void CursorColor(uint32_t) {}
         void CursorShape(CursorStyle const&) noexcept {}
         void CursorHeight(uint32_t) {}
@@ -57,6 +60,7 @@ namespace TerminalCoreUnitTests
         void StartingTitle(winrt::hstring const& value) { _startingTitle = value; }
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
+        void ForceVTInput(bool) {}
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}

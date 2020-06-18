@@ -83,6 +83,7 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+    _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -425,6 +426,11 @@ try
 
     if (createSwapChain)
     {
+        _swapChainFlags = 0;
+
+        // requires DXGI 1.3 which was introduced in Windows 8.1
+        WI_SetFlagIf(_swapChainFlags, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, IsWindows8Point1OrGreater());
+
         DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
         SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -433,6 +439,7 @@ try
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        SwapChainDesc.Flags = _swapChainFlags;
 
         switch (_chainMode)
         {
@@ -485,6 +492,20 @@ try
         }
         default:
             THROW_HR(E_NOTIMPL);
+        }
+
+        if (IsWindows8Point1OrGreater())
+        {
+            ::Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
+            const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
+            if (SUCCEEDED(asResult))
+            {
+                _swapChainFrameLatencyWaitableObject = wil::unique_handle{ swapChain2->GetFrameLatencyWaitableObject() };
+            }
+            else
+            {
+                LOG_HR_MSG(asResult, "Failed to obtain IDXGISwapChain2 from swap chain");
+            }
         }
 
         if (_retroTerminalEffects)
@@ -612,6 +633,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
+        _swapChainFrameLatencyWaitableObject.reset();
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -960,7 +982,7 @@ try
             _d2dRenderTarget.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, _swapChainFlags));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
             // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -1083,6 +1105,26 @@ CATCH_RETURN()
     CATCH_RETURN();
 
     return S_OK;
+}
+
+// Method Description:
+// - Blocks until the engine is able to render without blocking.
+// - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
+void DxEngine::WaitUntilCanRender() noexcept
+{
+    if (!_swapChainFrameLatencyWaitableObject)
+    {
+        return;
+    }
+
+    const auto ret = WaitForSingleObjectEx(
+        _swapChainFrameLatencyWaitableObject.get(),
+        1000, // 1 second timeout (shouldn't ever occur)
+        true);
+    if (ret != WAIT_OBJECT_0)
+    {
+        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+    }
 }
 
 // Routine Description:
@@ -1298,6 +1340,7 @@ try
                            _dwriteFactory.Get(),
                            spacing,
                            _glyphCell,
+                           _frameInfo.cursorInfo,
                            D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
     // Layout then render the text
@@ -1413,109 +1456,17 @@ try
 }
 CATCH_RETURN()
 
-// Helper to choose which Direct2D method to use when drawing the cursor rectangle
-enum class CursorPaintType
-{
-    Fill,
-    Outline
-};
-
 // Routine Description:
-// - Draws a block at the given position to represent the cursor
-// - May be a styled cursor at the character cell location that is less than a full block
+// - Does nothing. Our cursor is drawn in CustomTextRenderer::DrawGlyphRun,
+//   either above or below the text.
 // Arguments:
-// - options - Packed options relevant to how to draw the cursor
+// - options - unused
 // Return Value:
-// - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
-try
+// - S_OK
+[[nodiscard]] HRESULT DxEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
-    // if the cursor is off, do nothing - it should not be visible.
-    if (!options.isOn)
-    {
-        return S_FALSE;
-    }
-    // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(_glyphCell);
-
-    // If we're double-width, make it one extra glyph wider
-    if (options.fIsDoubleWidth)
-    {
-        rect.right += _glyphCell.width();
-    }
-
-    CursorPaintType paintType = CursorPaintType::Fill;
-
-    switch (options.cursorType)
-    {
-    case CursorType::Legacy:
-    {
-        // Enforce min/max cursor height
-        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
-        ulHeight = (_glyphCell.height<ULONG>() * ulHeight) / 100;
-        rect.top = rect.bottom - ulHeight;
-        break;
-    }
-    case CursorType::VerticalBar:
-    {
-        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
-        // It's either the left + the proposed width from the ease of access setting, or
-        // it's the right edge of the block cursor as a maximum.
-        rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
-        break;
-    }
-    case CursorType::Underscore:
-    {
-        rect.top = rect.bottom - 1;
-        break;
-    }
-    case CursorType::EmptyBox:
-    {
-        paintType = CursorPaintType::Outline;
-        break;
-    }
-    case CursorType::FullBox:
-    {
-        break;
-    }
-    default:
-        return E_NOTIMPL;
-    }
-
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = _d2dBrushForeground;
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(_ColorFFromColorRef(OPACITY_OPAQUE | options.cursorColor), &brush));
-    }
-
-    switch (paintType)
-    {
-    case CursorPaintType::Fill:
-    {
-        _d2dRenderTarget->FillRectangle(rect, brush.Get());
-        break;
-    }
-    case CursorPaintType::Outline:
-    {
-        // DrawRectangle in straddles physical pixels in an attempt to draw a line
-        // between them. To avoid this, bump the rectangle around by half the stroke width.
-        rect.top += 0.5f;
-        rect.left += 0.5f;
-        rect.bottom -= 0.5f;
-        rect.right -= 0.5f;
-
-        _d2dRenderTarget->DrawRectangle(rect, brush.Get());
-        break;
-    }
-    default:
-        return E_NOTIMPL;
-    }
-
     return S_OK;
 }
-CATCH_RETURN()
 
 // Routine Description:
 // - Paint terminal effects.
@@ -2236,6 +2187,7 @@ void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMo
 // Return Value:
 // - <none>
 void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+try
 {
     _defaultTextBackgroundOpacity = opacity;
 
@@ -2243,4 +2195,22 @@ void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
     // drawn with cleartype or not.
     // We don't terribly care if this fails.
     LOG_IF_FAILED(InvalidateAll());
+}
+CATCH_LOG()
+
+// Method Description:
+// - Informs this render engine about certain state for this frame at the
+//   beginning of this frame. We'll use it to get information about the cursor
+//   before PaintCursor is called. This enables the DX renderer to draw the
+//   cursor underneath the text.
+// - This is called every frame. When the cursor is Off or out of frame, the
+//   info's cursorInfo will be set to std::nullopt;
+// Arguments:
+// - info - a RenderFrameInfo with information about the state of the cursor in this frame.
+// Return Value:
+// - S_OK
+[[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+{
+    _frameInfo = info;
+    return S_OK;
 }

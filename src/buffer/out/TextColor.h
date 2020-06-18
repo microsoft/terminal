@@ -78,7 +78,6 @@ public:
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsHighColor() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
     bool IsDefault() const noexcept;
@@ -91,6 +90,8 @@ public:
     COLORREF GetColor(std::basic_string_view<COLORREF> colorTable,
                       const COLORREF defaultColor,
                       const bool brighten) const noexcept;
+
+    BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept
     {

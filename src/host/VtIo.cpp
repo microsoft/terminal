@@ -7,7 +7,6 @@
 
 #include "../renderer/vt/XtermEngine.hpp"
 #include "../renderer/vt/Xterm256Engine.hpp"
-#include "../renderer/vt/WinTelnetEngine.hpp"
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
@@ -51,10 +50,6 @@ VtIo::VtIo() :
     {
         ioMode = VtIoMode::XTERM;
     }
-    else if (VtMode == WIN_TELNET_STRING)
-    {
-        ioMode = VtIoMode::WIN_TELNET;
-    }
     else if (VtMode == XTERM_ASCII_STRING)
     {
         ioMode = VtIoMode::XTERM_ASCII;
@@ -74,6 +69,7 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
+    _win32InputMode = pArgs->IsWin32InputModeEnabled();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -177,12 +173,6 @@ VtIo::VtIo() :
                                                                  gci.Get16ColorTable(),
                                                                  true);
                 break;
-            case VtIoMode::WIN_TELNET:
-                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
-                                                                     gci,
-                                                                     initialViewport,
-                                                                     gci.Get16ColorTable());
-                break;
             default:
                 return E_FAIL;
             }
@@ -231,6 +221,15 @@ bool VtIo::IsUsingVt() const
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
         }
         CATCH_RETURN();
+    }
+
+    // GH#4999 - Send a sequence to the connected terminal to request
+    // win32-input-mode from them. This will enable the connected terminal to
+    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+    // this sequence, it'll just ignore it.
+    if (_win32InputMode)
+    {
+        LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
     }
 
     // MSFT: 15813316

@@ -61,7 +61,8 @@ namespace TerminalCoreUnitTests
         // Make sure we don't handle Alt+Space. The system will use this to
         // bring up the system menu for restore, min/maximize, size, move,
         // close
-        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
+        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, true));
+        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, false));
         VERIFY_IS_FALSE(term.SendCharEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
     }
 }

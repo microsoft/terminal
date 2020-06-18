@@ -53,6 +53,10 @@ public:
     bool ActionEscDispatch(const wchar_t /* wch */,
                            const std::basic_string_view<wchar_t> /* intermediates */) override { return true; };
 
+    bool ActionVt52EscDispatch(const wchar_t /*wch*/,
+                               const std::basic_string_view<wchar_t> /*intermediates*/,
+                               const std::basic_string_view<size_t> /*parameters*/) override { return true; };
+
     bool ActionClear() override { return true; };
 
     bool ActionIgnore() override { return true; };
@@ -72,6 +76,7 @@ public:
     bool ActionSs3Dispatch(const wchar_t /* wch */,
                            const std::basic_string_view<size_t> /* parameters */) override { return true; };
 
+    bool ParseControlSequenceAfterSs3() const override { return false; }
     bool FlushAtEndOfString() const override { return false; };
     bool DispatchControlCharsFromEscape() const override { return false; };
     bool DispatchIntermediatesFromEscape() const override { return false; };

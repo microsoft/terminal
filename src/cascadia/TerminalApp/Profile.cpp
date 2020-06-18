@@ -28,6 +28,7 @@ static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
@@ -121,6 +122,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -188,6 +190,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.AltGrAliasing(_altGrAliasing);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -474,6 +477,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetInt(json, HistorySizeKey, _historySize);
 
     JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
+
+    JsonUtils::GetBool(json, AltGrAliasingKey, _altGrAliasing);
 
     JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
 
@@ -871,27 +876,6 @@ CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
 }
 
 // Method Description:
-// - Helper function for converting a CloseOnExitMode to its corresponding string
-//   value.
-// Arguments:
-// - closeOnExitMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CloseOnExitMode
-std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
-{
-    switch (closeOnExitMode)
-    {
-    case CloseOnExitMode::Always:
-        return CloseOnExitAlways;
-    case CloseOnExitMode::Never:
-        return CloseOnExitNever;
-    case CloseOnExitMode::Graceful:
-    default:
-        return CloseOnExitGraceful;
-    }
-}
-
-// Method Description:
 // - Helper function for converting a user-specified scrollbar state to its corresponding enum
 // Arguments:
 // - The value from the settings.json file
@@ -937,29 +921,6 @@ Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretc
     else // Fall through to default behavior
     {
         return Media::Stretch::UniformToFill;
-    }
-}
-
-// Method Description:
-// - Helper function for converting an ImageStretchMode to the
-//   correct string value.
-// Arguments:
-// - imageStretchMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
-{
-    switch (imageStretchMode)
-    {
-    case Media::Stretch::None:
-        return ImageStretchModeNone;
-    case Media::Stretch::Fill:
-        return ImageStretchModeFill;
-    case Media::Stretch::Uniform:
-        return ImageStretchModeUniform;
-    default:
-    case Media::Stretch::UniformToFill:
-        return ImageStretchModeUniformTofill;
     }
 }
 
@@ -1020,58 +981,6 @@ std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(
 }
 
 // Method Description:
-// - Helper function for converting the HorizontalAlignment+VerticalAlignment tuple
-//   to the correct string value.
-// Arguments:
-// - imageAlignment: The enum values tuple to convert to a string.
-// Return Value:
-// - The string value for the given ImageAlignment
-std::string_view Profile::SerializeImageAlignment(const std::tuple<HorizontalAlignment, VerticalAlignment> imageAlignment)
-{
-    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(imageAlignment);
-    const auto imageVerticalAlignment = std::get<VerticalAlignment>(imageAlignment);
-    switch (imageHorizontalAlignment)
-    {
-    case HorizontalAlignment::Left:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopLeft;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomLeft;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentLeft;
-        }
-
-    case HorizontalAlignment::Right:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopRight;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomRight;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentRight;
-        }
-
-    default:
-    case HorizontalAlignment::Center:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTop;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottom;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentCenter;
-        }
-    }
-}
-
-// Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
 //   CursorStyle enum value
 // Arguments:
@@ -1102,31 +1011,6 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
     }
     // default behavior for invalid data
     return CursorStyle::Bar;
-}
-
-// Method Description:
-// - Helper function for converting a CursorStyle to its corresponding string
-//   value.
-// Arguments:
-// - cursorShape: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CursorStyle
-std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
-{
-    switch (cursorShape)
-    {
-    case CursorStyle::Underscore:
-        return CursorShapeUnderscore;
-    case CursorStyle::FilledBox:
-        return CursorShapeFilledbox;
-    case CursorStyle::EmptyBox:
-        return CursorShapeEmptybox;
-    case CursorStyle::Vintage:
-        return CursorShapeVintage;
-    default:
-    case CursorStyle::Bar:
-        return CursorShapeBar;
-    }
 }
 
 // Method Description:
@@ -1237,25 +1121,4 @@ TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& anti
     }
     // default behavior for invalid data
     return TextAntialiasingMode::Grayscale;
-}
-
-// Method Description:
-// - Helper function for converting a TextAntialiasingMode to its corresponding
-//   string value.
-// Arguments:
-// - antialiasingMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given TextAntialiasingMode
-std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingMode antialiasingMode)
-{
-    switch (antialiasingMode)
-    {
-    case TextAntialiasingMode::Cleartype:
-        return AntialiasingModeCleartype;
-    case TextAntialiasingMode::Aliased:
-        return AntialiasingModeAliased;
-    default:
-    case TextAntialiasingMode::Grayscale:
-        return AntialiasingModeGrayscale;
-    }
 }

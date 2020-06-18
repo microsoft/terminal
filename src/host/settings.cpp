@@ -760,47 +760,14 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
 // Routine Description:
 // - Generates a legacy attribute from the given TextAttributes.
 //     This needs to be a method on the Settings because the generated index
-//     is dependent upon the particular values of the color table at the time of reading.
+//     is dependent upon the default fill attributes.
 // Parameters:
 // - attributes - The TextAttributes to generate a legacy attribute for.
 // Return value:
-// - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
+// - A WORD representing the legacy attributes that most closely represent the given fullcolor attributes.
 WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 {
-    const WORD wLegacyOriginal = attributes.GetLegacyAttributes();
-    if (attributes.IsLegacy())
-    {
-        return wLegacyOriginal;
-    }
-    // We need to construct the legacy attributes manually
-    // First start with whatever our default legacy attributes are
-    BYTE fgIndex = static_cast<BYTE>((_wFillAttribute & FG_ATTRS));
-    BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
-    // If the attributes have any RGB components, we need to match that RGB
-    //      color to a color table value.
-    if (attributes.IsHighColor())
-    {
-        // If the attribute doesn't have a "default" colored *ground, look up
-        //  the nearest color table value for its *ground.
-        if (!attributes.ForegroundIsDefault())
-        {
-            const COLORREF rgbForeground = LookupForegroundColor(attributes);
-            fgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbForeground, Get16ColorTable()));
-        }
-
-        if (!attributes.BackgroundIsDefault())
-        {
-            const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-            bgIndex = static_cast<BYTE>(::FindNearestTableIndex(rgbBackground, Get16ColorTable()));
-        }
-    }
-
-    // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
-    //      it has if the component is a legacy index, otherwise it will use the
-    //      provided byte for each index. In this way, we can provide a value to
-    //      use should it not already have one.
-    const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
-    return wCompleteAttr;
+    return attributes.GetLegacyAttributes(_wFillAttribute);
 }
 
 COLORREF Settings::GetCursorColor() const noexcept

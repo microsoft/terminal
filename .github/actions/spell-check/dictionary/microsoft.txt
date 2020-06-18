@@ -1,3 +1,6 @@
+ACLs
+DACL
+DACLs
 LKG
 mfcribbon
 microsoft
@@ -5,6 +8,7 @@ microsoftonline
 osgvsowi
 powerrename
 powershell
+SACLs
 tdbuildteamid
 vcruntime
 visualstudio
