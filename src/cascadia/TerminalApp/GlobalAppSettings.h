@@ -78,6 +78,7 @@ public:
     GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
     GETSET_PROPERTY(bool, SoftwareRendering, false);
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
+    GETSET_PROPERTY(bool, RemoveTabsOnPaste, false);
 
     GETSET_PROPERTY(bool, StartOnUserLogin, false);
 

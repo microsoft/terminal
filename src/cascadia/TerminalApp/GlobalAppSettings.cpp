@@ -34,6 +34,7 @@ static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
+static constexpr std::string_view RemoveTabsOnPasteKey{ "removeTabsOnPaste" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -225,6 +226,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
+
+    JsonUtils::GetBool(json, RemoveTabsOnPasteKey, _RemoveTabsOnPaste);
 }
 
 // Method Description:

@@ -1483,8 +1483,8 @@ namespace winrt::TerminalApp::implementation
                                                                     const PasteFromClipboardEventArgs eventArgs)
     {
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-        TerminalPage::PasteFromClipboard(eventArgs);
+        
+        TerminalPage::PasteFromClipboard(eventArgs, _settings->GlobalSettings().RemoveTabsOnPaste());
     }
 
     // Function Description:
@@ -1492,13 +1492,14 @@ namespace winrt::TerminalApp::implementation
     //   Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs)
+    fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs, bool removeTabs)
     {
         const DataPackageView data = Clipboard::GetContent();
 
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the getting the clipboard data
         // will crash on the UI thread, because the main thread is a STA.
+
         co_await winrt::resume_background();
 
         try
@@ -1519,13 +1520,15 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             //The following removes all tab characters when pasting from clipboard.
-            //TODO: Include an option to toggle this setting on and off.
-            hstring::value_type* temporary = new hstring::value_type[text.size()+1];
-            wcscpy_s(temporary, text.size() + 1, text.c_str());
-            auto endIt = std::remove(temporary, temporary + text.size() + 1, L'\t');
-            text = hstring(temporary, endIt - temporary);
+            if (removeTabs)
+            {
+                hstring::value_type* temporary = new hstring::value_type[text.size()+1];
+                wcscpy_s(temporary, text.size() + 1, text.c_str());
+                auto endIt = std::remove(temporary, temporary + text.size() + 1, L'\t');
+                text = hstring(temporary, static_cast<winrt::hstring::size_type>(endIt - temporary));
+                delete[] temporary;
+            }
             eventArgs.HandleClipboardData(text);
-            delete[] temporary;
         }
         CATCH_LOG();
     }
