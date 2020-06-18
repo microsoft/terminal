@@ -799,7 +799,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-        bool handled = false;
 
         // Alt-Numpad# input will send us a character once the user releases
         // Alt, so we should be ignoring the individual keydowns. The character
@@ -822,34 +821,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown)
+        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, modifiers))
         {
-            auto bindings = _settings.KeyBindings();
-            if (bindings)
-            {
-                handled = bindings.TryKeyChord({
-                    modifiers.IsCtrlPressed(),
-                    modifiers.IsAltPressed(),
-                    modifiers.IsShiftPressed(),
-                    vkey,
-                });
-            }
+            e.Handled(true);
+            return;
         }
 
-        if (!handled)
+        if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
-            handled = _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+            e.Handled(true);
+            return;
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
         // the terminal, and we don't want to be able to escape focus of the
         // control with tab.
-        if (e.OriginalKey() == VirtualKey::Tab)
+        e.Handled(e.OriginalKey() == VirtualKey::Tab);
+    }
+
+    // Method Description:
+    // - Attempt to handle this key combination as a key binding
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - modifiers: The ControlKeyStates representing the modifier key states.
+    bool TermControl::_TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
+    {
+        auto bindings = _settings.KeyBindings();
+        if (!bindings)
         {
-            handled = true;
+            return false;
         }
 
-        e.Handled(handled);
+        return bindings.TryKeyChord({
+            modifiers.IsCtrlPressed(),
+            modifiers.IsAltPressed(),
+            modifiers.IsShiftPressed(),
+            vkey,
+        });
     }
 
     // Method Description:
