@@ -25,6 +25,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <SolidColorBrush x:Key="CaptionButtonStrokeWindowUnfocused" Color="Red" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -38,6 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <SolidColorBrush x:Key="CaptionButtonStrokeWindowUnfocused" Color="Red" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -123,6 +125,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </VisualState>
 
                                         <VisualState x:Name="Disabled" />
+                                    </VisualStateGroup>
+
+                                    <VisualStateGroup x:Name="FocusStates">
+                                        <VisualState x:Name="WindowStateFocused" />
+
+                                        <VisualState x:Name="WindowStateUnfocused">
+                                            <VisualState.Setters>
+                                                <Setter Target="Path.Stroke" Value="{ThemeResource CaptionButtonStrokeWindowUnfocused}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
                                     </VisualStateGroup>
 
                                     <VisualStateGroup x:Name="MinMaxStates">
