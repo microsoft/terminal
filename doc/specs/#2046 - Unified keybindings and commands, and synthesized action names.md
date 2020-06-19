@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-06-15
-last updated: 2020-06-16
+last updated: 2020-06-19
 issue id: 2046
 ---
 
@@ -53,6 +53,9 @@ This spec will outline two primary changes to keybindings and commands.
 2. Propose a mechanism by which actions do not _require_ a `name` to appear in
    the Command Palette.
 
+These proposals are two atomic units - either could be approved or rejected
+independently of one another. They're presented together here in the same doc
+because together, they present a compelling story.
 
 ### Proposal 1: Unify Keybindings and Commands
 
@@ -60,17 +63,20 @@ As noted above, keybindings and commands have nearly the exact same syntax, save
 for a couple properties. To make things easier for the user, I'm proposing
 treating everything in _both_ the `keybindings` _and_ the `commands` arrays as
 **BOTH** a keybinding and a command.
+
+Furthermore, as a change from the previous spec, we'll be using `bindings` from
+here on as the unified `keybindings` and `commands` lists. This is considering
+that we'll currently be using `bindings` for both commands and keybindings, but
+we'll potentially also have mouse & touch bindings in this array in the future.
+We'll "deprecate" the existing `keybindings` property, and begin to exclusively
+use `bindings` as the new property name. For compatibility reasons, we'll
+continue to parse `keybindings` in the same way we parse `bindings`. We'll
+simply layer `bindings` on top of the legacy `keybindings`.
+
 * Anything entry that has a `keys` value will be added to the keybindings.
   Pressing that keybinding will activate the action defined in `command`.
 * Anything with a `name`<sup>[1]</sup> will be added as an entry (using that
   name) to the Command Palette's Action Mode.
-* `keybindings` will be parsed first into keybindings and commands, then
-  `commands` will be layered on top.
-  - The decision to keep both `keybindings` and `commands` as top-level objects
-    in the json blob is certainly **_TODO_: UP FOR DISCUSSION**. Now that we're
-    adding things that might not be bound to keys to the array, `commands` seems
-    like a more appropriate name. However, we're definitely not going to be able
-    to rename `keybindings`.
 
 ###### Caveats
 
@@ -94,7 +100,7 @@ but ignored for the remainder of this section, for illustrative purposes.
 Consider the following settings:
 
 ```json
-"commands": [
+"bindings": [
   { "name": "Duplicate Tab", "command": "duplicateTab", "keys": "ctrl+alt+a" },
   { "command": "nextTab", "keys": "ctrl+alt+b" },
   {
@@ -159,9 +165,6 @@ Consider the following settings:
   }
 ]
 ```
-
-> 👉 NOTE: The above could have just as easily been placed in `keybindings`, or
-> split across both `keybindings` and `commands`.
 
 This will generate a tree of commands as follows:
 
@@ -306,12 +309,19 @@ will be defined as follows:
   > `{ "name": "Open new tab with profile...", "action":null }` (et al) in their
   > settings.
   - If we so chose, in the future we can add further commands that we think are
-    helpful to `defaults.json`, without needing to give them keys.
+    helpful to `defaults.json`, without needing to give them keys. For example,
+    we could add
+    ```json
+    { "command": { "action": "copy", "singleLine": true } }
+    ```
+    to `bindings`, to add a "copy text as a single line" command, without
+    necessarily binding it to a keystroke.
+
 
 These changes to the `defaults.json` are represented in json as the following:
 
 ```json
-"commands": [
+"bindings": [
   {
     "icon": null,
     "name": { "key": "NewTabWithProfileRootCommandName" },
@@ -373,7 +383,7 @@ default keybindings and these changes is given in [**Appendix
 
 ## Concerns
 
-**TODO: FOR DISCUSSION**: "New tab with index {index}". How does this play with
+**DISCUSSION**: "New tab with index {index}". How does this play with
 the new tab dropdown customizations in [#5888]? In recent iterations of that
 spec, we changed the meaning of `{ "action": "newTab", "index": 1 }` to mean
 "open the first entry in the new tab menu". If that's a profile, then we'll open
@@ -391,6 +401,10 @@ We could instead add an `index` to `openNewTabDropdown`, and have that string
 instead be "Open new tab dropdown, index:1". That would help disambiguate the
 two.
 
+Following discussion, it was decided that this was in fact the cleanest
+solution, when accounting for both the needs of the new tab dropdown and the
+command palette. The [#5888] spec has been updated to reflect this.
+
 ## Future considerations
 
 * Some of these command names are starting to get _very_ long. Perhaps we need a
@@ -401,7 +415,10 @@ two.
   the Proposal 1 example, pressing `ctrl+alt+e` to jump to "Split Pane..."
   should probably show a small label that displays "Split Pane..." above the
   list of nested commands.
-
+* It wouldn't be totally impossible to allow keys to be bound to an iterable
+  command, and then simply have the key work as "open the command palette with
+  only the commands generated by this iterable command". This is left as a
+  future option, as it might require some additional technical plumbing.
 
 ## Appendix 1: Name generation samples for `ShortcutAction`s
 
@@ -489,11 +506,13 @@ two.
     default. The user knows what they're putting in the settings by adding this
     action, let them name it.
 * `ToggleMarkMode`
-  - "Enter Mark Mode"
+  - "Toggle Mark Mode"
 * `NextTab`
   - "Switch to the next most-recent tab"
 * `SetTabColor`
   - "Set the color of the current tab to {#color}"
+    * It would be _really_ cool if we could display a sample of the color
+      inline, but that's left as a future consideration.
   - "Set the color for this tab..."
     * this command isn't nested, but hitting enter immediately does something
       with the UI, so that's _fine_
