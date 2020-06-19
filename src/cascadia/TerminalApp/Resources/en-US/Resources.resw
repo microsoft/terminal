@@ -350,7 +350,6 @@
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
     <value>Type a command name...</value>
   </data>
-
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close Window</value>
   </data>
@@ -361,7 +360,13 @@
     <value>Open New Tab Dropdown</value>
   </data>
   <data name="OpenSettingsCommandKey" xml:space="preserve">
-    <value>Open Settings</value>
+    <value>Open settings file</value>
+  </data>
+  <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
+    <value>Open default settings file</value>
+  </data>
+  <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
+    <value>Open both settings and default settings files</value>
   </data>
   <data name="FindCommandKey" xml:space="preserve">
     <value>Find</value>
@@ -370,7 +375,27 @@
     <value>Resize Pane</value>
   </data>
   <data name="MoveFocusCommandKey" xml:space="preserve">
-    <value>Move Focus</value>
+    <value>Move focus</value>
+  </data>
+  <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
+    <value>Move focus {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+  </data>
+  <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
+    <value>Resize pane {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="DirectionUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="DirectionDown" xml:space="preserve">
+    <value>Down</value>
   </data>
   <data name="SwitchToTabCommandKey" xml:space="preserve">
     <value>Switch to Tab</value>
@@ -394,7 +419,7 @@
     <value>Next Tab</value>
   </data>
   <data name="PrevTabCommandKey" xml:space="preserve">
-    <value>Prev Tab</value>
+    <value>Previous Tab</value>
   </data>
   <data name="ClosePaneCommandKey" xml:space="preserve">
     <value>Close Pane</value>
@@ -409,7 +434,10 @@
     <value>Split Pane Vertically</value>
   </data>
   <data name="CopyTextCommandKey" xml:space="preserve">
-    <value>Copy Text</value>
+    <value>Copy text</value>
+  </data>
+  <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
+    <value>Copy text as a single line</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -434,6 +462,14 @@
   </data>
   <data name="DecreaseFontSizeCommandKey" xml:space="preserve">
     <value>Decrease Font Size</value>
+  </data>
+  <data name="IncreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Increase Font Size, amount: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="DecreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Decrease Font Size, amount: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
   </data>
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
     <value>Reset Font Size</value>
