@@ -34,7 +34,7 @@ static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
-static constexpr std::string_view ResetTabColorKey{ "resetTabColor" };
+static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { SetTabColorKey, ShortcutAction::SetTabColor },
-        { ResetTabColorKey, ShortcutAction::ResetTabColor },
+        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
         { FindKey, ShortcutAction::Find }
     };

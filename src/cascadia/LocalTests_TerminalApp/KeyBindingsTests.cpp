@@ -407,7 +407,7 @@ namespace TerminalAppLocalTests
         const std::string bindings0String{ R"([
             { "keys": ["ctrl+c"], "command": { "action": "setTabColor", "color": null } },
             { "keys": ["ctrl+d"], "command": { "action": "setTabColor", "color": "#123456" } },
-            { "keys": ["ctrl+e"], "command": { "action": "setTabColor", "color": "thisStringObviouslyIsntAColor" } },
+            { "keys": ["ctrl+e"], "command": { "action": "setTabColor", "color": "thisStringObviouslyWontWork" } },
             { "keys": ["ctrl+f"], "command": "setTabColor" },
         ])" };
 

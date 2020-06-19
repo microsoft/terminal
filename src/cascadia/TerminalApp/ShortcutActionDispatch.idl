@@ -33,7 +33,7 @@ namespace TerminalApp
         Find,
         ToggleFullscreen,
         SetTabColor,
-        ResetTabColor,
+        OpenTabColorPicker,
         OpenSettings
     };
 
@@ -73,6 +73,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> MoveFocus;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
-        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResetTabColor;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
     }
 }

@@ -756,7 +756,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
-        _actionDispatch->ResetTabColor({ this, &TerminalPage::_HandleResetTabColor });
+        _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
     }
 
     // Method Description:

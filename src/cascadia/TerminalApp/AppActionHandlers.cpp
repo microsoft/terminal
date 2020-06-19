@@ -260,18 +260,19 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                activeTab->ActivateColorPicker();
+                activeTab->ResetTabColor();
             }
         }
         args.Handled(true);
     }
-    void TerminalPage::_HandleResetTabColor(const IInspectable& /*sender*/,
-                                           const TerminalApp::ActionEventArgs& args)
+
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
     {
         auto activeTab = _GetFocusedTab();
         if (activeTab)
         {
-            activeTab->ResetTabColor();
+            activeTab->ActivateColorPicker();
         }
         args.Handled(true);
     }

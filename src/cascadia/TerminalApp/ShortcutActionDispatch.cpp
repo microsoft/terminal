@@ -164,9 +164,9 @@ namespace winrt::TerminalApp::implementation
             _SetTabColorHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::ResetTabColor:
+        case ShortcutAction::OpenTabColorPicker:
         {
-            _ResetTabColorHandlers(*this, *eventArgs);
+            _OpenTabColorPickerHandlers(*this, *eventArgs);
             break;
         }
         default:
