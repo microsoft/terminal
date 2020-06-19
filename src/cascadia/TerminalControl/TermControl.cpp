@@ -250,7 +250,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update our control settings
             _ApplyUISettings();
 
-            // Update DxEngine settings
+            // Update the terminal core with its new Core settings
+            _terminal->UpdateSettings(_settings);
+
+            auto lock = _terminal->LockForWriting();
+
+            // Update DxEngine settings under the lock
             _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
             _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
@@ -270,11 +275,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
                 break;
             }
-
-            // Update the terminal core with its new Core settings
-            _terminal->UpdateSettings(_settings);
-
-            auto lock = _terminal->LockForWriting();
 
             // Refresh our font with the renderer
             const auto actualFontOldSize = _actualFont.GetSize();
