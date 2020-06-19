@@ -69,11 +69,14 @@ private:
     NewPaneSubcommand _newPaneShort;
     CLI::App* _focusTabCommand;
     CLI::App* _focusTabShort;
+    CLI::App* _moveFocusCommand;
+    CLI::App* _moveFocusShort;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;
     std::string _startingDirectory;
     std::string _startingTitle;
+    winrt::TerminalApp::Direction _moveFocusDirection{ winrt::TerminalApp::Direction::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
@@ -100,6 +103,7 @@ private:
     void _buildNewTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();
+    void _buildMoveFocusParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);
