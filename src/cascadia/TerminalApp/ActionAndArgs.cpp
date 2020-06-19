@@ -2,6 +2,7 @@
 #include "ActionArgs.h"
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
+#include <LibraryResources.h>
 
 static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view PasteTextKey{ "paste" };
@@ -76,35 +77,6 @@ namespace winrt::TerminalApp::implementation
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
-
-    const std::map<ShortcutAction, std::string_view> GeneratedActionNames{
-        { ShortcutAction::CopyText, CopyTextKey },
-        { ShortcutAction::PasteText, PasteTextKey },
-        { ShortcutAction::OpenNewTabDropdown, OpenNewTabDropdownKey },
-        { ShortcutAction::DuplicateTab, DuplicateTabKey },
-        { ShortcutAction::NewTab, NewTabKey },
-        { ShortcutAction::NewWindow, NewWindowKey },
-        { ShortcutAction::CloseWindow, CloseWindowKey },
-        { ShortcutAction::CloseTab, CloseTabKey },
-        { ShortcutAction::ClosePane, ClosePaneKey },
-        { ShortcutAction::NextTab, NextTabKey },
-        { ShortcutAction::PrevTab, PrevTabKey },
-        { ShortcutAction::AdjustFontSize, AdjustFontSizeKey },
-        { ShortcutAction::ResetFontSize, ResetFontSizeKey },
-        { ShortcutAction::ScrollUp, ScrollupKey },
-        { ShortcutAction::ScrollDown, ScrolldownKey },
-        { ShortcutAction::ScrollUpPage, ScrolluppageKey },
-        { ShortcutAction::ScrollDownPage, ScrolldownpageKey },
-        { ShortcutAction::SwitchToTab, SwitchToTabKey },
-        { ShortcutAction::ResizePane, ResizePaneKey },
-        { ShortcutAction::MoveFocus, MoveFocusKey },
-        { ShortcutAction::OpenSettings, OpenSettingsKey },
-        { ShortcutAction::ToggleFullscreen, ToggleFullscreenKey },
-        { ShortcutAction::SplitPane, SplitPaneKey },
-        { ShortcutAction::Invalid, UnboundKey },
-        { ShortcutAction::Find, FindKey },
-        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteKey },
-    };
 
     // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
     // a set of deserializer functions that can be used to deserialize a IActionArgs
@@ -242,6 +214,39 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring ActionAndArgs::GenerateName()
     {
+        // Use a magic static to initialize this map, because we won't be able
+        // to load the resoruces at _init_, only at runtime.
+        static const auto GeneratedActionNames = []() {
+            return std::map<ShortcutAction, winrt::hstring>{
+                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
+                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
+                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
+                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
+                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
+                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
+                { ShortcutAction::CloseTab, RS_(L"CloseTabCommandKey") },
+                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
+                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
+                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
+                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
+                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
+                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
+                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::Invalid, L"" },
+                { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+            };
+        }();
+
         if (_Args)
         {
             auto nameFromArgs = _Args.GenerateName();
@@ -252,7 +257,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto found = GeneratedActionNames.find(_Action);
-        return found != GeneratedActionNames.end() ? winrt::to_hstring(found->second) : L"";
+        return found != GeneratedActionNames.end() ? found->second : L"";
     }
 
 }

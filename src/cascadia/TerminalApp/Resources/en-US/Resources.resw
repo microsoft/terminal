@@ -366,8 +366,23 @@
   <data name="FindCommandKey" xml:space="preserve">
     <value>Find</value>
   </data>
+  <data name="ResizePaneCommandKey" xml:space="preserve">
+    <value>Resize Pane</value>
+  </data>
+  <data name="MoveFocusCommandKey" xml:space="preserve">
+    <value>Move Focus</value>
+  </data>
+  <data name="SwitchToTabCommandKey" xml:space="preserve">
+    <value>Switch to Tab</value>
+  </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New Tab</value>
+  </data>
+  <data name="SplitPaneCommandKey" xml:space="preserve">
+    <value>Split Pane</value>
+  </data>
+  <data name="NewWindowCommandKey" xml:space="preserve">
+    <value>New Window</value>
   </data>
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>Duplicate Tab</value>
@@ -384,6 +399,9 @@
   <data name="ClosePaneCommandKey" xml:space="preserve">
     <value>Close Pane</value>
   </data>
+  <data name="CloseTabCommandKey" xml:space="preserve">
+    <value>Close Tab</value>
+  </data>
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
     <value>Split Pane Horizontally</value>
   </data>
@@ -393,7 +411,7 @@
   <data name="CopyTextCommandKey" xml:space="preserve">
     <value>Copy Text</value>
   </data>
-  <data name="PasteCommandKey" xml:space="preserve">
+  <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
@@ -408,6 +426,9 @@
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
     <value>Scroll Up One Page</value>
   </data>
+  <data name="AdjustFontSizeCommandKey" xml:space="preserve">
+    <value>Adjust Font Size</value>
+  </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
     <value>Increase Font Size</value>
   </data>
@@ -416,5 +437,8 @@
   </data>
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
     <value>Reset Font Size</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
+    <value>Toggle Command Palette</value>
   </data>
 </root>
