@@ -7,7 +7,7 @@ This document outlines the roadmap towards delivering Windows Terminal 2.0 by Sp
 
 ## Milestones
 
-The Windows Terminal project is engineered and delivered as a set of 4-week milestones. New features will go into [Windows Terminal Preview](https://aka.ms/terminal-preview) first, then a month after they been in Preview, those features will move into [Windows Terminal](https://aka.ms/terminal).
+The Windows Terminal project is engineered and delivered as a set of 4-week milestones. New features will go into [Windows Terminal Preview](https://aka.ms/terminal-preview) first, then a month after they've been in Preview, those features will move into [Windows Terminal](https://aka.ms/terminal).
 
 | Duration | Activity | Releases |
 | --- | --- | --- |
