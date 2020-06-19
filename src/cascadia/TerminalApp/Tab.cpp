@@ -380,11 +380,13 @@ namespace winrt::TerminalApp::implementation
     void Tab::SetTabText(winrt::hstring title)
     {
         _runtimeTabText = title;
+        _UpdateTitle();
     }
 
     void Tab::ResetTabText()
     {
         _runtimeTabText = L"";
+        _UpdateTitle();
     }
 
     // Method Description:
