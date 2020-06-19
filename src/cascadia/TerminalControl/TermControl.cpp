@@ -250,13 +250,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update our control settings
             _ApplyUISettings();
 
-            // Update DxEngine's SelectionBackground
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
             auto lock = _terminal->LockForWriting();
+
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+            _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+            switch (_settings.AntialiasingMode())
+            {
+            case TextAntialiasingMode::Cleartype:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+                break;
+            case TextAntialiasingMode::Aliased:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+                break;
+            case TextAntialiasingMode::Grayscale:
+            default:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+                break;
+            }
 
             // Refresh our font with the renderer
             const auto actualFontOldSize = _actualFont.GetSize();
@@ -611,13 +629,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // TODO:GH#3927 - Make it possible to hot-reload these settings. Right
-            // here, the setting will only be used when the Terminal is initialized.
             dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-            // TODO:GH#3927 - hot-reload this one too
             // Update DxEngine's AntialiasingMode
             switch (_settings.AntialiasingMode())
             {

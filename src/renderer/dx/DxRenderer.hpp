@@ -175,6 +175,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
         // Device-Dependent Resources
+        bool _recreateDeviceRequested;
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;

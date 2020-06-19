@@ -84,6 +84,7 @@ DxEngine::DxEngine() :
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
+    _recreateDeviceRequested{ false },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -621,6 +622,9 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     try
     {
         _haveDeviceResources = false;
+
+        _pixelShaderSettingsBuffer.Reset();
+
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
 
@@ -703,19 +707,39 @@ void DxEngine::SetCallback(std::function<void()> pfn)
 }
 
 void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+try
 {
-    _retroTerminalEffects = enable;
+    if (_retroTerminalEffects != enable)
+    {
+        _retroTerminalEffects = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
+try
 {
-    _forceFullRepaintRendering = enable;
+    if (_forceFullRepaintRendering != enable)
+    {
+        _forceFullRepaintRendering = enable;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 void DxEngine::SetSoftwareRendering(bool enable) noexcept
+try
 {
-    _softwareRendering = enable;
+    if (_softwareRendering != enable)
+    {
+        _softwareRendering = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
@@ -965,9 +989,13 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources)
+
+        // If we don't have device resources or if someone has requested that we
+        // recreate the device... then make new resources. (Create will dump the old ones.)
+        if (!_haveDeviceResources || _recreateDeviceRequested)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
+            _recreateDeviceRequested = false;
         }
         else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
@@ -2172,9 +2200,15 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 // Return Value:
 // - N/A
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
+try
 {
-    _antialiasingMode = antialiasingMode;
+    if (_antialiasingMode != antialiasingMode)
+    {
+        _antialiasingMode = antialiasingMode;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 // Method Description:
 // - Update our tracker of the opacity of our background. We can only
