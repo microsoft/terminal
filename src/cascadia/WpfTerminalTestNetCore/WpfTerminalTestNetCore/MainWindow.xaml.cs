@@ -30,24 +30,37 @@ namespace WpfTerminalTestNetCore
 
         public void WriteInput(string data)
         {
-            if (data.Length > 0 && data[0] == '\x01') // ^A
+            if (data.Length == 0)
+            {
+                return;
+            }
+
+            if (data[0] == '\x01') // ^A
             {
                 _escapeMode = !_escapeMode;
                 TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"Printable ESC mode: {_escapeMode}\r\n"));
             }
-            else if (data.Length > 0 && data[0] == '\x02') // ^B
+            else if (data[0] == '\x02') // ^B
             {
                 _mouseMode = !_mouseMode;
                 var decSet = _mouseMode ? "h" : "l";
                 TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"\x1b[?1003{decSet}\x1b[?1006{decSet}"));
                 TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"SGR Mouse mode (1003, 1006): {_mouseMode}\r\n"));
             }
-            else if (data.Length > 0 && data[0] == '\x03') // ^C
+            else if ((data[0] == '\x03') ||
+                     (data == "\x1b[67;46;3;1;8;1_")) // ^C
             {
                 _win32InputMode = !_win32InputMode;
                 var decSet = _win32InputMode ? "h" : "l";
                 TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"\x1b[?9001{decSet}"));
                 TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"Win32 input mode: {_win32InputMode}\r\n"));
+
+                // If escape mode isn't currently enabled, turn it on now.
+                if (_win32InputMode && !_escapeMode)
+                {
+                    _escapeMode = true;
+                    TerminalOutput.Invoke(this, new TerminalOutputEventArgs($"Printable ESC mode: {_escapeMode}\r\n"));
+                }
             }
             else
             {
