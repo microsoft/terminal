@@ -14,7 +14,7 @@ Related repositories include:
 * [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal) ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
-* [Termianl Setting Generator](https://windowsterminalsetting.netlify.app/)
+* [Terminal Setting Generator](https://windowsterminalsetting.netlify.app/)
 
 ## Installing and running Windows Terminal
 
