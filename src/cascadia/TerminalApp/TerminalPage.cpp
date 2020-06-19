@@ -754,6 +754,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
+
     }
 
     // Method Description:
@@ -1095,6 +1097,18 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<Tab> TerminalPage::_GetFocusedTab()
+    {
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            return _GetStrongTabImpl(*index);
+        }
+        return nullptr;
+    }
     // Method Description:
     // - An async method for changing the focused tab on the UI thread. This
     //   method will _only_ set the selected item of the TabView, which will

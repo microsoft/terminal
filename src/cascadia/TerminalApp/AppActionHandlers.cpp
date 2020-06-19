@@ -235,4 +235,34 @@ namespace winrt::TerminalApp::implementation
         ToggleFullscreen();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<std::string> title;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
+        {
+            if (realArgs.Title() != nullptr)
+            {
+                title = realArgs.Title().Value();
+            }
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (title.has_value())
+            {
+                activeTab->RenameTab(title.value());
+            }
+            else
+            {
+                activeTab
+            }
+        }
+        args.Handled(true);
+    }
+    
+
 }
