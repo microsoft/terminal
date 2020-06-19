@@ -657,7 +657,7 @@ CATCH_RETURN()
 }
 #pragma endregion
 
-[[nodiscard]] HRESULT CustomTextRenderer::EndFrame(void* clientDrawingContext) noexcept
+[[nodiscard]] HRESULT CustomTextRenderer::EndClip(void* clientDrawingContext) noexcept
 try
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);

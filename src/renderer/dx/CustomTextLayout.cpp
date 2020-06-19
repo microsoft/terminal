@@ -20,7 +20,6 @@ using namespace Microsoft::Console::Render;
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-
 // - width - The count of pixels available per column (the expected pixel width of every column)
 // - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,

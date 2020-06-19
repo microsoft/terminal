@@ -101,7 +101,7 @@ namespace Microsoft::Console::Render
                                                                  BOOL isRightToLeft,
                                                                  IUnknown* clientDrawingEffect) noexcept override;
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE EndFrame(void* clientDrawingContext) noexcept;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE EndClip(void* clientDrawingContext) noexcept;
 
     private:
         [[nodiscard]] HRESULT _FillRectangle(void* clientDrawingContext,

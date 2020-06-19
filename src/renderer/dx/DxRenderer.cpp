@@ -1079,7 +1079,8 @@ try
     {
         _isPainting = false;
 
-        LOG_IF_FAILED(_customRenderer->EndFrame(_drawingContext.get()));
+        // If there's still a clip hanging around, remove it. We're all done.
+        LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
 
         hr = _d2dRenderTarget->EndDraw();
 
@@ -1459,6 +1460,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 try
 {
+    // If a clip rectangle is in place from drawing the text layer, remove it here.
+    LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+
     const auto existingColor = _d2dBrushForeground->GetColor();
 
     _d2dBrushForeground->SetColor(_selectionBackground);
