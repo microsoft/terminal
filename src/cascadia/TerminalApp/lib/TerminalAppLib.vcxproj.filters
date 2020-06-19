@@ -8,7 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp">

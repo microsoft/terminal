@@ -178,7 +178,6 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
