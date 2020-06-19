@@ -66,7 +66,7 @@ static constexpr bool debugFeaturesDefault{ false };
 
 JSON_ENUM_MAPPER(ElementTheme)
 {
-    static constexpr std::array<pair_type, 3> mappings = {
+    JSON_MAPPINGS(3) = {
         pair_type{ SystemThemeValue, ElementTheme::Default },
         pair_type{ LightThemeValue, ElementTheme::Light },
         pair_type{ DarkThemeValue, ElementTheme::Dark },
@@ -75,7 +75,7 @@ JSON_ENUM_MAPPER(ElementTheme)
 
 JSON_ENUM_MAPPER(LaunchMode)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
+    JSON_MAPPINGS(3) = {
         pair_type{ DefaultLaunchModeValue, LaunchMode::DefaultMode },
         pair_type{ MaximizedLaunchModeValue, LaunchMode::MaximizedMode },
         pair_type{ FullscreenLaunchModeValue, LaunchMode::FullscreenMode },
@@ -84,7 +84,7 @@ JSON_ENUM_MAPPER(LaunchMode)
 
 JSON_ENUM_MAPPER(TabViewWidthMode)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
+    JSON_MAPPINGS(3) = {
         pair_type{ EqualTabWidthModeValue, TabViewWidthMode::Equal },
         pair_type{ TitleLengthTabWidthModeValue, TabViewWidthMode::SizeToContent },
         pair_type{ TitleLengthCompactModeValue, TabViewWidthMode::Compact },
