@@ -51,6 +51,9 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
         void ClosePane();
 
+        void SetTabText(winrt::hstring title);
+        void ResetTabText();
+
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);

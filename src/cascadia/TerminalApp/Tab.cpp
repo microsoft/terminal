@@ -377,6 +377,16 @@ namespace winrt::TerminalApp::implementation
         _activePane->Close();
     }
 
+    void Tab::SetTabText(winrt::hstring title)
+    {
+        _runtimeTabText = title;
+    }
+
+    void Tab::ResetTabText()
+    {
+        _runtimeTabText = L"";
+    }
+
     // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree

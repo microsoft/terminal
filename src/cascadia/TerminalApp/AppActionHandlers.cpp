@@ -239,14 +239,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
                                           const TerminalApp::ActionEventArgs& args)
     {
-        std::optional<std::string> title;
+        std::optional<winrt::hstring> title;
 
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
         {
-            if (realArgs.Title() != nullptr)
-            {
-                title = realArgs.Title().Value();
-            }
+            //if (realArgs.Title() != nullptr)
+            //{
+            title = realArgs.Title();
+            //}
         }
 
         auto activeTab = _GetFocusedTab();
@@ -254,11 +254,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (title.has_value())
             {
-                activeTab->RenameTab(title.value());
+                activeTab->SetTabText(title.value());
             }
             else
             {
-                activeTab
+                activeTab->ResetTabText();
             }
         }
         args.Handled(true);
