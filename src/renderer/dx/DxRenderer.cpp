@@ -558,7 +558,7 @@ try
 }
 CATCH_RETURN();
 
-D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode)
+D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noexcept
 {
     switch (mode)
     {
