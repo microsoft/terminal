@@ -13,6 +13,7 @@
 
 #include <d3d11.h>
 #include <d2d1.h>
+#include <d2d1_1.h>
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
@@ -166,7 +167,8 @@ namespace Microsoft::Console::Render
         static std::atomic<size_t> _tracelogCount;
 
         // Device-Independent Resources
-        ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
+        ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
+
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
@@ -179,12 +181,18 @@ namespace Microsoft::Console::Render
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
-        ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
+
+        ::Microsoft::WRL::ComPtr<ID2D1Device> _d2dDevice;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> _d2dDeviceContext;
+        ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> _d2dBitmap;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
-        UINT _swapChainFlags;
+
+        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
+        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
+
+        DXGI_SWAP_CHAIN_DESC1 _swapChainDesc;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
 
