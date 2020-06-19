@@ -52,57 +52,6 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 
-// Possible values for closeOnExit
-static constexpr std::string_view CloseOnExitAlways{ "always" };
-static constexpr std::string_view CloseOnExitGraceful{ "graceful" };
-static constexpr std::string_view CloseOnExitNever{ "never" };
-
-// Possible values for Scrollbar state
-static constexpr std::string_view AlwaysVisible{ "visible" };
-static constexpr std::string_view AlwaysHide{ "hidden" };
-
-// Possible values for Cursor Shape
-static constexpr std::string_view CursorShapeVintage{ "vintage" };
-static constexpr std::string_view CursorShapeBar{ "bar" };
-static constexpr std::string_view CursorShapeUnderscore{ "underscore" };
-static constexpr std::string_view CursorShapeFilledbox{ "filledBox" };
-static constexpr std::string_view CursorShapeEmptybox{ "emptyBox" };
-
-// Possible values for Font Weight
-static constexpr std::string_view FontWeightThin{ "thin" };
-static constexpr std::string_view FontWeightExtraLight{ "extra-light" };
-static constexpr std::string_view FontWeightLight{ "light" };
-static constexpr std::string_view FontWeightSemiLight{ "semi-light" };
-static constexpr std::string_view FontWeightNormal{ "normal" };
-static constexpr std::string_view FontWeightMedium{ "medium" };
-static constexpr std::string_view FontWeightSemiBold{ "semi-bold" };
-static constexpr std::string_view FontWeightBold{ "bold" };
-static constexpr std::string_view FontWeightExtraBold{ "extra-bold" };
-static constexpr std::string_view FontWeightBlack{ "black" };
-static constexpr std::string_view FontWeightExtraBlack{ "extra-black" };
-
-// Possible values for Image Stretch Mode
-static constexpr std::string_view ImageStretchModeNone{ "none" };
-static constexpr std::string_view ImageStretchModeFill{ "fill" };
-static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
-static constexpr std::string_view ImageStretchModeUniformToFill{ "uniformToFill" };
-
-// Possible values for Image Alignment
-static constexpr std::string_view ImageAlignmentCenter{ "center" };
-static constexpr std::string_view ImageAlignmentLeft{ "left" };
-static constexpr std::string_view ImageAlignmentTop{ "top" };
-static constexpr std::string_view ImageAlignmentRight{ "right" };
-static constexpr std::string_view ImageAlignmentBottom{ "bottom" };
-static constexpr std::string_view ImageAlignmentTopLeft{ "topLeft" };
-static constexpr std::string_view ImageAlignmentTopRight{ "topRight" };
-static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
-static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
-
-// Possible values for TextAntialiasingMode
-static constexpr std::string_view AntialiasingModeGrayscale{ "grayscale" };
-static constexpr std::string_view AntialiasingModeCleartype{ "cleartype" };
-static constexpr std::string_view AntialiasingModeAliased{ "aliased" };
-
 #include "ProfileConversionTraits.cpp"
 
 Profile::Profile() :
@@ -437,13 +386,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    // TODO DH [JU-DH]
-    if (json.isMember(JsonKey(FontWeightKey)))
-    {
-        auto fontWeight{ json[JsonKey(FontWeightKey)] };
-        _fontWeight = _ParseFontWeight(fontWeight);
-    }
-
+    JsonUtils::GetValueForKey(json, FontWeightKey, _fontWeight);
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _connectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _commandline);
     JsonUtils::GetValueForKey(json, FontFaceKey, _fontFace);
@@ -691,78 +634,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 
         return std::wstring(defaultPath.get(), numCharsDefault);
     }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified font weight value to its corresponding enum
-// Arguments:
-// - The value from the settings.json file
-// Return Value:
-// - The corresponding value which maps to the string provided by the user
-winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value& json)
-{
-    if (json.isUInt())
-    {
-        winrt::Windows::UI::Text::FontWeight weight;
-        weight.Weight = static_cast<uint16_t>(json.asUInt());
-
-        // We're only accepting variable values between 100 and 990 so we don't go too crazy.
-        if (weight.Weight >= 100 && weight.Weight <= 990)
-        {
-            return weight;
-        }
-    }
-
-    if (json.isString())
-    {
-        auto fontWeight = json.asString();
-        if (fontWeight == FontWeightThin)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Thin();
-        }
-        else if (fontWeight == FontWeightExtraLight)
-        {
-            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
-        }
-        else if (fontWeight == FontWeightLight)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Light();
-        }
-        else if (fontWeight == FontWeightSemiLight)
-        {
-            return winrt::Windows::UI::Text::FontWeights::SemiLight();
-        }
-        else if (fontWeight == FontWeightNormal)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Normal();
-        }
-        else if (fontWeight == FontWeightMedium)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Medium();
-        }
-        else if (fontWeight == FontWeightSemiBold)
-        {
-            return winrt::Windows::UI::Text::FontWeights::SemiBold();
-        }
-        else if (fontWeight == FontWeightBold)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Bold();
-        }
-        else if (fontWeight == FontWeightExtraBold)
-        {
-            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
-        }
-        else if (fontWeight == FontWeightBlack)
-        {
-            return winrt::Windows::UI::Text::FontWeights::Black();
-        }
-        else if (fontWeight == FontWeightExtraBlack)
-        {
-            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
-        }
-    }
-
-    return winrt::Windows::UI::Text::FontWeights::Normal();
 }
 
 // Method Description:
