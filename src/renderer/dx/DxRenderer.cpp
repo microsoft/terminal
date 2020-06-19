@@ -430,6 +430,9 @@ try
     RETURN_IF_FAILED(_d3dDevice.As(&_dxgiDevice));
     RETURN_IF_FAILED(_d2dFactory->CreateDevice(_dxgiDevice.Get(), _d2dDevice.ReleaseAndGetAddressOf()));
 
+    // Create a device context out of it (supercedes render targets)
+    RETURN_IF_FAILED(_d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_d2dDeviceContext));
+
     if (createSwapChain)
     {
         _swapChainDesc.Flags = 0;
@@ -577,9 +580,6 @@ D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode)
     {
         // Pull surface out of swap chain.
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
-
-        // Create a device context out of it (supercedes render targets)
-        RETURN_IF_FAILED(_d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_d2dDeviceContext));
 
         // Make a bitmap and bind it to the swap chain surface
         const auto bitmapProperties = D2D1::BitmapProperties1(
@@ -1011,7 +1011,8 @@ try
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
-            _d2dDeviceContext.Reset();
+            _d2dDeviceContext->SetTarget(nullptr);
+            _d2dBitmap.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
             RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), _swapChainDesc.Format, _swapChainDesc.Flags));
