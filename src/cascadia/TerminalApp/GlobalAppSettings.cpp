@@ -229,13 +229,23 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 
-    if (auto commandsArray{ json[JsonKey(CommandsKey)] })
+    ////////////////////////////// PARSE COMMANDS //////////////////////////////
+    // Do it once for keybindings and again for commands
+    if (auto commandsArray{ json[JsonKey(KeybindingsKey)] })
     {
         auto warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
         // It's possible that the user provided commands have some warnings
         // in them, similar to the keybindings.
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
+    // if (auto commandsArray{ json[JsonKey(CommandsKey)] })
+    // {
+    //     auto warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
+    //     // It's possible that the user provided commands have some warnings
+    //     // in them, similar to the keybindings.
+    //     _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+    // }
+    //////////////////////////////
 }
 
 // Method Description:

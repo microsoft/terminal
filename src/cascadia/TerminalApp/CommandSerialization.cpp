@@ -12,7 +12,7 @@ using namespace winrt::TerminalApp;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconPathKey{ "iconPath" };
-static constexpr std::string_view ActionKey{ "action" };
+static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
 
 namespace winrt::TerminalApp::implementation
@@ -57,6 +57,22 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
+    winrt::hstring _nameFromJsonOrAction(const Json::Value& json, winrt::com_ptr<ActionAndArgs> actionAndArgs)
+    {
+        auto manualName = _nameFromJson(json);
+        if (!manualName.empty())
+        {
+            return manualName;
+        }
+        if (!actionAndArgs)
+        {
+            return L"";
+        }
+
+        auto generatedName = actionAndArgs->GenerateName();
+        return generatedName;
+    }
+
     // Method Description:
     // - Deserialize an Command from the `json` object. The json object should
     //   contain a "name" and "action", and optionally an "icon".
@@ -77,13 +93,6 @@ namespace winrt::TerminalApp::implementation
                                               std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         auto result = winrt::make_self<Command>();
-
-        result->_setName(_nameFromJson(json));
-
-        if (result->_Name.empty())
-        {
-            return nullptr;
-        }
 
         // TODO GH#TODO: iconPath not implemented quite yet. Can't seem to get the binding quite right.
         if (const auto iconPathJson{ json[JsonKey(IconPathKey)] })
@@ -106,11 +115,18 @@ namespace winrt::TerminalApp::implementation
                 // will _remove_ the "foo" command, by returning null here.
                 return nullptr;
             }
+
+            result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
         }
         else
         {
             // { name: "foo", action: null } will land in this case, which
             // should also be used for unbinding.
+            return nullptr;
+        }
+
+        if (result->_Name.empty())
+        {
             return nullptr;
         }
 

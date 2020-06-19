@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
     // the actual strings being pointed to. However, since both these strings and
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
-    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionNamesMap{
+    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
         { CopyTextKey, ShortcutAction::CopyText },
         { PasteTextKey, ShortcutAction::PasteText },
         { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
@@ -76,6 +76,35 @@ namespace winrt::TerminalApp::implementation
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
+
+    const std::map<ShortcutAction, std::string_view> GeneratedActionNames{
+        { ShortcutAction::CopyText, CopyTextKey },
+        { ShortcutAction::PasteText, PasteTextKey },
+        { ShortcutAction::OpenNewTabDropdown, OpenNewTabDropdownKey },
+        { ShortcutAction::DuplicateTab, DuplicateTabKey },
+        { ShortcutAction::NewTab, NewTabKey },
+        { ShortcutAction::NewWindow, NewWindowKey },
+        { ShortcutAction::CloseWindow, CloseWindowKey },
+        { ShortcutAction::CloseTab, CloseTabKey },
+        { ShortcutAction::ClosePane, ClosePaneKey },
+        { ShortcutAction::NextTab, NextTabKey },
+        { ShortcutAction::PrevTab, PrevTabKey },
+        { ShortcutAction::AdjustFontSize, AdjustFontSizeKey },
+        { ShortcutAction::ResetFontSize, ResetFontSizeKey },
+        { ShortcutAction::ScrollUp, ScrollupKey },
+        { ShortcutAction::ScrollDown, ScrolldownKey },
+        { ShortcutAction::ScrollUpPage, ScrolluppageKey },
+        { ShortcutAction::ScrollDownPage, ScrolldownpageKey },
+        { ShortcutAction::SwitchToTab, SwitchToTabKey },
+        { ShortcutAction::ResizePane, ResizePaneKey },
+        { ShortcutAction::MoveFocus, MoveFocusKey },
+        { ShortcutAction::OpenSettings, OpenSettingsKey },
+        { ShortcutAction::ToggleFullscreen, ToggleFullscreenKey },
+        { ShortcutAction::SplitPane, SplitPaneKey },
+        { ShortcutAction::Invalid, UnboundKey },
+        { ShortcutAction::Find, FindKey },
+        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteKey },
+    };
 
     // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
     // a set of deserializer functions that can be used to deserialize a IActionArgs
@@ -113,8 +142,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = ActionAndArgs::ActionNamesMap.find(actionString);
-        return found != ActionAndArgs::ActionNamesMap.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
+        return found != ActionAndArgs::ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     // Method Description:
@@ -209,6 +238,21 @@ namespace winrt::TerminalApp::implementation
         {
             return nullptr;
         }
+    }
+
+    winrt::hstring ActionAndArgs::GenerateName()
+    {
+        if (_Args)
+        {
+            auto nameFromArgs = _Args.GenerateName();
+            if (!nameFromArgs.empty())
+            {
+                return nameFromArgs;
+            }
+        }
+
+        const auto found = GeneratedActionNames.find(_Action);
+        return found != GeneratedActionNames.end() ? winrt::to_hstring(found->second) : L"";
     }
 
 }
