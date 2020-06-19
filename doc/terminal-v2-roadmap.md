@@ -21,7 +21,7 @@ Below is the schedule for when milestones will be included in release builds of 
 
 | Milestone End Date | Milestone Name | Preview Release Blog Post |
 | ------------------ | -------------- | ------------------------- |
-| 2020-06-30 | [1.1] in Windows Terminal Preview | |
+| 2020-06-18 | [1.1] in Windows Terminal Preview | [Windows Terminal Preview 1.1 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-1-release/) |
 | 2020-07-31 | [1.2] in Windows Terminal Preview<br>[1.1] in Windows Terminal | |
 | 2020-08-31 | 1.3 in Windows Terminal Preview<br>[1.2] in Windows Terminal | |
 | 2020-09-30 | 1.4 in Windows Terminal Preview<br>1.3 in Windows Terminal | |
