@@ -20,7 +20,6 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 
-#include <algorithm>
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -1482,16 +1481,17 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
                                                                     const PasteFromClipboardEventArgs eventArgs)
     {
+        auto weakThis{ get_weak() };
+
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
         
-        TerminalPage::PasteFromClipboard(eventArgs, _settings->GlobalSettings().RemoveTabsOnPaste());
+        if (auto strongThis{ weakThis.get() })
+        {
+            TerminalPage::PasteFromClipboard(eventArgs, strongThis->_settings->GlobalSettings().RemoveTabsOnPaste());
+        }
+
     }
 
-    // Function Description:
-    // - Copies and processes the text data from the Windows Clipboard.
-    //   Does some of this in a background thread, as to not hang/crash the UI thread.
-    // Arguments:
-    // - eventArgs: the PasteFromClipboard event sent from the TermControl
     fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs, bool removeTabs)
     {
         const DataPackageView data = Clipboard::GetContent();
@@ -1499,7 +1499,7 @@ namespace winrt::TerminalApp::implementation
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the getting the clipboard data
         // will crash on the UI thread, because the main thread is a STA.
-
+        
         co_await winrt::resume_background();
 
         try
@@ -1520,13 +1520,12 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             //The following removes all tab characters when pasting from clipboard.
-            if (removeTabs)
+            if (removeTabs) 
             {
-                hstring::value_type* temporary = new hstring::value_type[text.size()+1];
-                wcscpy_s(temporary, text.size() + 1, text.c_str());
-                auto endIt = std::remove(temporary, temporary + text.size() + 1, L'\t');
-                text = hstring(temporary, static_cast<winrt::hstring::size_type>(endIt - temporary));
-                delete[] temporary;
+                std::wstring temporary;
+                temporary.reserve(text.size());
+                std::copy_if(text.cbegin(), text.cend(), std::back_inserter(temporary), [](const wchar_t c) { return c != L'\t'; });
+                text = temporary;
             }
             eventArgs.HandleClipboardData(text);
         }
