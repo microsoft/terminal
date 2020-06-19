@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    // C++/winrt makes it difficult to share this idl between two projects,
+    // Instead, we just pin the uuid and include it in both TermControl and App
+    // If you update this one, please update the one in TerminalControl\TermControl.idl
+    // If you change this interface, please update the guid.
+    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")] interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, Boolean down);
+    }
+}

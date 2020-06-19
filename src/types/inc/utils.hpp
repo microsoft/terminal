@@ -11,6 +11,8 @@ Author(s):
 - Mike Griese (migrie) 12-Jun-2018
 --*/
 
+#pragma once
+
 namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;

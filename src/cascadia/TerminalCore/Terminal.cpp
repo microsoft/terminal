@@ -44,6 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -419,7 +420,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 {
     // GH#6423 - don't snap on this key if the key that was pressed was a
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
-    if (!KeyEvent::IsModifierKey(vkey))
+    // GH#6481 - Additionally, make sure the key was actually pressed. This
+    // check will make sure we behave the same as before GH#6309
+    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
     {
         TrySnapOnInput();
     }
@@ -781,48 +784,49 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     auto proposedCursorPosition = proposedPosition;
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
-    bool notifyScroll = false;
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
-    // GH#5540 - Make sure this is a positive number. We can't create a
-    // negative number of new rows.
-    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
-    if (newRows > 0)
+    SHORT rowsPushedOffTopOfBuffer = 0;
+    if (proposedCursorPosition.Y >= bufferSize.Height())
     {
+        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
+            rowsPushedOffTopOfBuffer++;
         }
-        notifyScroll = true;
     }
 
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
-    const COORD cursorPosAfter = cursor.GetPosition();
-
     // Move the viewport down if the cursor moved below the viewport.
-    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    bool updatedViewport = false;
+    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
     {
-        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
         {
             _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
                                                         _mutableViewport.Dimensions());
-            notifyScroll = true;
+            updatedViewport = true;
         }
     }
 
-    if (notifyScroll)
+    if (updatedViewport)
+    {
+        _NotifyScrollEvent();
+    }
+
+    if (rowsPushedOffTopOfBuffer != 0)
     {
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
+        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
-        _NotifyScrollEvent();
     }
 
     _NotifyTerminalCursorPositionChanged();

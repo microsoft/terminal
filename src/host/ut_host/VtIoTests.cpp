@@ -8,7 +8,6 @@
 
 #include "..\..\renderer\vt\Xterm256Engine.hpp"
 #include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\vt\WinTelnetEngine.hpp"
 #include "..\..\renderer\base\Renderer.hpp"
 #include "..\Settings.hpp"
 #include "..\VtIo.hpp"
@@ -83,9 +82,6 @@ void VtIoTests::ModeParsingTest()
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
 
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"win-telnet", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::WIN_TELNET);
-
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-ascii", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_ASCII);
 
@@ -144,13 +140,6 @@ void VtIoTests::DtorTestJustEngine()
         auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
-        Log::Comment(NoThrowString().Format(L"Deleted."));
-
-        hOutputFile.reset(INVALID_HANDLE_VALUE);
-
-        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable);
-        Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
-        delete pRenderEngineWinTelnet;
         Log::Comment(NoThrowString().Format(L"Deleted."));
     }
 }
@@ -211,17 +200,6 @@ void VtIoTests::DtorTestDeleteVtio()
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
-
-        hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        vtio = new VtIo();
-        Log::Comment(NoThrowString().Format(L"Made VtIo"));
-        vtio->_pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                   p,
-                                                                   SetUpViewport(),
-                                                                   colorTable);
-        Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
-        delete vtio;
-        Log::Comment(NoThrowString().Format(L"Deleted."));
     }
 }
 
@@ -274,15 +252,6 @@ void VtIoTests::DtorTestStackAlloc()
                                                                   colorTable,
                                                                   true);
         }
-
-        hOutputFile.reset(INVALID_HANDLE_VALUE);
-        {
-            VtIo vtio;
-            vtio._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                      p,
-                                                                      SetUpViewport(),
-                                                                      colorTable);
-        }
     }
 }
 
@@ -329,13 +298,6 @@ void VtIoTests::DtorTestStackAllocMany()
                                                                    SetUpViewport(),
                                                                    colorTable,
                                                                    true);
-
-            hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio4;
-            vtio4._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                       p,
-                                                                       SetUpViewport(),
-                                                                       colorTable);
         }
     }
 }

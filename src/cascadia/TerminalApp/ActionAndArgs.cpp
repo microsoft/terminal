@@ -3,9 +3,36 @@
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
 
-// We define everything necessary for the ActionAndArgs class in the header, but
-// we still need this file to compile the ActionAndArgs.g.cpp file, and we can't
-// just include that file in the header.
+static constexpr std::string_view ActionKey{ "action" };
+
+// This key is reserved to remove a keybinding, instead of mapping it to an action.
+static constexpr std::string_view UnboundKey{ "unbound" };
+
+static constexpr std::string_view CopyTextKey{ "copy" };
+static constexpr std::string_view PasteTextKey{ "paste" };
+static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
+static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
+static constexpr std::string_view NewTabKey{ "newTab" };
+static constexpr std::string_view NewWindowKey{ "newWindow" };
+static constexpr std::string_view CloseWindowKey{ "closeWindow" };
+static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
+static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
+static constexpr std::string_view NextTabKey{ "nextTab" };
+static constexpr std::string_view PrevTabKey{ "prevTab" };
+static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
+static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
+static constexpr std::string_view ScrollupKey{ "scrollUp" };
+static constexpr std::string_view ScrolldownKey{ "scrollDown" };
+static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
+static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
+static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
+static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view ResizePaneKey{ "resizePane" };
+static constexpr std::string_view MoveFocusKey{ "moveFocus" };
+static constexpr std::string_view FindKey{ "find" };
+static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -100,6 +127,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
 
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
+
+        { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
