@@ -83,6 +83,7 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+    _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
@@ -435,6 +436,7 @@ try
 
     if (createSwapChain)
     {
+        _swapChainDesc = { 0 };
         _swapChainDesc.Flags = 0;
 
         // requires DXGI 1.3 which was introduced in Windows 8.1
@@ -558,7 +560,7 @@ try
 }
 CATCH_RETURN();
 
-D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noexcept
+static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noexcept
 {
     switch (mode)
     {
