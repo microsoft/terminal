@@ -9,6 +9,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 static const wchar_t base64Chars[] = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const wchar_t padChar = L'=';
 
+#pragma warning(disable : 26446 26447 26482 26485 26493 26494)
+
 // Routine Description:
 // - Encode a string using base64. When there are not enough characters
 //      for one quantum, paddings are added.
@@ -16,7 +18,7 @@ static const wchar_t padChar = L'=';
 // - src - String to base64 encode.
 // Return Value:
 // - the encoded string.
-std::wstring Base64::s_Encode(const std::wstring_view src)
+std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
 {
     std::wstring dst;
     wchar_t input[3];
@@ -64,7 +66,7 @@ std::wstring Base64::s_Encode(const std::wstring_view src)
 // - dst - Destination to decode into.
 // Return Value:
 // - true if decoding successfully, otherwise false.
-bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst)
+bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
 {
     int state = 0;
     wchar_t tmp;
@@ -164,7 +166,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst)
 // - ch - Character to check.
 // Return Value:
 // - true iff ch is a carriage return or line feed.
-bool Base64::s_IsSpace(const wchar_t ch)
+constexpr bool Base64::s_IsSpace(const wchar_t ch) noexcept
 {
     return ch == L'\r' || ch == L'\n';
 }
