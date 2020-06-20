@@ -24,7 +24,3 @@ Abstract:
 
 #include "telemetry.hpp"
 #include "tracing.hpp"
-
-#include <wil/cppwinrt.h>
-#include <winrt/Windows.Security.Cryptography.h>
-#include <winrt/Windows.Storage.Streams.h>

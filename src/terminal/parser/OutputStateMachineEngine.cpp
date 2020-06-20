@@ -5,12 +5,12 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
+#include "base64.hpp"
 
 #include "ascii.hpp"
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
-using namespace winrt::Windows::Security::Cryptography;
-using namespace winrt::Windows::Storage::Streams;
 
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
@@ -1758,7 +1758,6 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    std::wstring& content,
                                                    bool& queryClipboard) const noexcept
 {
-    bool success = false;
     const size_t pos = string.find(';');
     if (pos != std::wstring_view::npos)
     {
@@ -1766,22 +1765,15 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
         if (substr == L"?")
         {
             queryClipboard = true;
-            success = true;
+            return true;
         }
         else
         {
-            try
-            {
-                auto buffer = CryptographicBuffer::DecodeFromBase64String(winrt::hstring(substr));
-                auto reader = DataReader::FromBuffer(buffer);
-                content = reader.ReadString(buffer.Length());
-                success = true;
-            }
-            CATCH_LOG();
+            return Base64::s_Decode(substr, content);
         }
     }
 
-    return success;
+    return false;
 }
 
 // Method Description:
