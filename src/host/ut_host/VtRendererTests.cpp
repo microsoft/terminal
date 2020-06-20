@@ -27,6 +27,7 @@ namespace Microsoft
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 static const std::string CLEAR_SCREEN = "\x1b[2J";
 static const std::string CURSOR_HOME = "\x1b[H";
@@ -67,10 +68,12 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(Xterm256TestColors);
     TEST_METHOD(Xterm256TestCursor);
     TEST_METHOD(Xterm256TestExtendedAttributes);
+    TEST_METHOD(Xterm256TestAttributesAcrossReset);
 
     TEST_METHOD(XtermTestInvalidate);
     TEST_METHOD(XtermTestColors);
     TEST_METHOD(XtermTestCursor);
+    TEST_METHOD(XtermTestAttributesAcrossReset);
 
     TEST_METHOD(FormattedString);
 
@@ -708,6 +711,90 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     VerifyExpectedInputsDrained();
 }
 
+void VtRendererTest::Xterm256TestAttributesAcrossReset()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 3, 4, 5, 7, 8, 9}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int renditionAttribute;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"renditionAttribute", renditionAttribute));
+
+    std::stringstream renditionSequence;
+    renditionSequence << "\x1b[" << renditionAttribute << "m";
+
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+    RenderData renderData;
+
+    Log::Comment(L"Make sure rendition attributes are retained when colors are reset");
+
+    Log::Comment(L"----Start With All Attributes Reset----");
+    TextAttribute textAttributes = {};
+    qExpectedInput.push_back("\x1b[m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    switch (renditionAttribute)
+    {
+    case GraphicsOptions::BoldBright:
+        Log::Comment(L"----Set Bold Attribute----");
+        textAttributes.SetBold(true);
+        break;
+    case GraphicsOptions::Italics:
+        Log::Comment(L"----Set Italics Attribute----");
+        textAttributes.SetItalics(true);
+        break;
+    case GraphicsOptions::Underline:
+        Log::Comment(L"----Set Underline Attribute----");
+        textAttributes.SetUnderline(true);
+        break;
+    case GraphicsOptions::BlinkOrXterm256Index:
+        Log::Comment(L"----Set Blink Attribute----");
+        textAttributes.SetBlinking(true);
+        break;
+    case GraphicsOptions::Negative:
+        Log::Comment(L"----Set Negative Attribute----");
+        textAttributes.SetReverseVideo(true);
+        break;
+    case GraphicsOptions::Invisible:
+        Log::Comment(L"----Set Invisible Attribute----");
+        textAttributes.SetInvisible(true);
+        break;
+    case GraphicsOptions::CrossedOut:
+        Log::Comment(L"----Set Crossed Out Attribute----");
+        textAttributes.SetCrossedOut(true);
+        break;
+    }
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Set Green Foreground----");
+    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    qExpectedInput.push_back("\x1b[32m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
+    textAttributes.SetDefaultForeground();
+    qExpectedInput.push_back("\x1b[m");
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Set Green Background----");
+    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    qExpectedInput.push_back("\x1b[42m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Reset Default Background and Retain Rendition----");
+    textAttributes.SetDefaultBackground();
+    qExpectedInput.push_back("\x1b[m");
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    VerifyExpectedInputsDrained();
+}
+
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -1086,6 +1173,74 @@ void VtRendererTest::XtermTestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
+}
+
+void VtRendererTest::XtermTestAttributesAcrossReset()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 4, 7}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int renditionAttribute;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"renditionAttribute", renditionAttribute));
+
+    std::stringstream renditionSequence;
+    renditionSequence << "\x1b[" << renditionAttribute << "m";
+
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+    RenderData renderData;
+
+    Log::Comment(L"Make sure rendition attributes are retained when colors are reset");
+
+    Log::Comment(L"----Start With All Attributes Reset----");
+    TextAttribute textAttributes = {};
+    qExpectedInput.push_back("\x1b[m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    switch (renditionAttribute)
+    {
+    case GraphicsOptions::BoldBright:
+        Log::Comment(L"----Set Bold Attribute----");
+        textAttributes.SetBold(true);
+        break;
+    case GraphicsOptions::Underline:
+        Log::Comment(L"----Set Underline Attribute----");
+        textAttributes.SetUnderline(true);
+        break;
+    case GraphicsOptions::Negative:
+        Log::Comment(L"----Set Negative Attribute----");
+        textAttributes.SetReverseVideo(true);
+        break;
+    }
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Set Green Foreground----");
+    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    qExpectedInput.push_back("\x1b[32m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
+    textAttributes.SetDefaultForeground();
+    qExpectedInput.push_back("\x1b[m");
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Set Green Background----");
+    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    qExpectedInput.push_back("\x1b[42m");
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    Log::Comment(L"----Reset Default Background and Retain Rendition----");
+    textAttributes.SetDefaultBackground();
+    qExpectedInput.push_back("\x1b[m");
+    qExpectedInput.push_back(renditionSequence.str());
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+
+    VerifyExpectedInputsDrained();
 }
 
 void VtRendererTest::TestWrapping()
