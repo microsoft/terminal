@@ -3,6 +3,7 @@ austdi
 Ballmer
 bhoj
 Bhojwani
+carlos
 dhowett
 Diviness
 dsafa
@@ -53,6 +54,8 @@ Wirt
 Wojciech
 zadjii
 Zamor
+Zamora
+zamora
 Zoey
 zorio
 Zverovich

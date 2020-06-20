@@ -30,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
 
-        virtual bool WriteCtrlC() = 0;
+        virtual bool WriteCtrlKey(const KeyEvent& event) = 0;
 
         virtual bool WriteString(const std::wstring_view string) = 0;
 

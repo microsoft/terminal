@@ -16,7 +16,7 @@ Author(s):
 #pragma once
 
 #include "IInteractivityFactory.hpp"
-#include "../types/IConsoleWindow.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../../host/globals.h"
 
 #include <memory>

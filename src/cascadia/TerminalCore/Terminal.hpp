@@ -36,7 +36,7 @@ namespace TerminalCoreUnitTests
     class TerminalBufferTests;
     class TerminalApiTest;
     class ConptyRoundtripTests;
-    class TerminalAndRendererTests;
+    class ScrollTest;
 };
 #endif
 
@@ -81,6 +81,8 @@ public:
     bool SetTextToDefaults(bool foreground, bool background) noexcept override;
     bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
     bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;
+    bool SetTextForegroundIndex256(BYTE colorIndex) noexcept override;
+    bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept override;
     bool SetTextRgbColor(COLORREF color, bool foreground) noexcept override;
     bool BoldText(bool boldOn) noexcept override;
     bool UnderlineText(bool underlineOn) noexcept override;
@@ -101,6 +103,7 @@ public:
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
+    bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
     bool SetCursorKeysMode(const bool applicationMode) noexcept override;
     bool SetKeypadMode(const bool applicationMode) noexcept override;
     bool EnableVT200MouseMode(const bool enabled) noexcept override;
@@ -117,7 +120,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
     bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
     bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
@@ -174,7 +177,7 @@ public:
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
-    void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
+    void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -200,13 +203,13 @@ private:
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
-    std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
+    std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
-    std::wstring _title;
+    std::optional<std::wstring> _title;
     std::wstring _startingTitle;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
@@ -214,6 +217,7 @@ private:
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+    bool _altGrAliasing;
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
@@ -301,6 +305,6 @@ private:
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
-    friend class TerminalCoreUnitTests::TerminalAndRendererTests;
+    friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

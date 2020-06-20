@@ -16,7 +16,7 @@ namespace Microsoft::Terminal::Core
         ITerminalInput& operator=(const ITerminalInput&) = default;
         ITerminalInput& operator=(ITerminalInput&&) = default;
 
-        virtual bool SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) = 0;
+        virtual bool SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states, const bool keyDown) = 0;
         virtual bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) = 0;
         virtual bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) = 0;
 

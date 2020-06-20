@@ -9,9 +9,11 @@
 
 #include <dxgi.h>
 #include <dxgi1_2.h>
+#include <dxgi1_3.h>
 
 #include <d3d11.h>
 #include <d2d1.h>
+#include <d2d1_1.h>
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
@@ -55,6 +57,10 @@ namespace Microsoft::Console::Render
 
         void SetRetroTerminalEffects(bool enable) noexcept;
 
+        void SetForceFullRepaintRendering(bool enable) noexcept;
+
+        void SetSoftwareRendering(bool enable) noexcept;
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -69,9 +75,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
+
+        void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+
+        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
@@ -156,11 +166,9 @@ namespace Microsoft::Console::Render
 
         static std::atomic<size_t> _tracelogCount;
 
-        static const ULONG s_ulMinCursorHeightPercent = 25;
-        static const ULONG s_ulMaxCursorHeightPercent = 100;
-
         // Device-Independent Resources
-        ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
+        ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
+
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
@@ -169,15 +177,24 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
         // Device-Dependent Resources
+        bool _recreateDeviceRequested;
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
-        ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
+
+        ::Microsoft::WRL::ComPtr<ID2D1Device> _d2dDevice;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> _d2dDeviceContext;
+        ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> _d2dBitmap;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
+
+        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
+        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
+
+        DXGI_SWAP_CHAIN_DESC1 _swapChainDesc;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
+        wil::unique_handle _swapChainFrameLatencyWaitableObject;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;
@@ -190,9 +207,15 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
+        // Preferences and overrides
+        bool _softwareRendering;
+        bool _forceFullRepaintRendering;
+
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         float _defaultTextBackgroundOpacity;
+
+        RenderFrameInfo _frameInfo;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct

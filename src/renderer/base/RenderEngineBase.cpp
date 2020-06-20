@@ -35,3 +35,15 @@ HRESULT RenderEngineBase::UpdateTitle(const std::wstring& newTitle) noexcept
     }
     return hr;
 }
+
+HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
+{
+    return S_FALSE;
+}
+
+// Method Description:
+// - Blocks until the engine is able to render without blocking.
+void RenderEngineBase::WaitUntilCanRender() noexcept
+{
+    // do nothing by default
+}

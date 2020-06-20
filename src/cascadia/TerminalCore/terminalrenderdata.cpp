@@ -181,7 +181,11 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 const std::wstring Terminal::GetConsoleTitle() const noexcept
 try
 {
-    return _title;
+    if (_title.has_value())
+    {
+        return _title.value();
+    }
+    return _startingTitle;
 }
 catch (...)
 {

@@ -28,6 +28,7 @@ static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
@@ -36,6 +37,7 @@ static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
 static constexpr std::string_view FontSizeKey{ "fontSize" };
+static constexpr std::string_view FontWeightKey{ "fontWeight" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -65,6 +67,19 @@ static constexpr std::wstring_view CursorShapeBar{ L"bar" };
 static constexpr std::wstring_view CursorShapeUnderscore{ L"underscore" };
 static constexpr std::wstring_view CursorShapeFilledbox{ L"filledBox" };
 static constexpr std::wstring_view CursorShapeEmptybox{ L"emptyBox" };
+
+// Possible values for Font Weight
+static constexpr std::string_view FontWeightThin{ "thin" };
+static constexpr std::string_view FontWeightExtraLight{ "extra-light" };
+static constexpr std::string_view FontWeightLight{ "light" };
+static constexpr std::string_view FontWeightSemiLight{ "semi-light" };
+static constexpr std::string_view FontWeightNormal{ "normal" };
+static constexpr std::string_view FontWeightMedium{ "medium" };
+static constexpr std::string_view FontWeightSemiBold{ "semi-bold" };
+static constexpr std::string_view FontWeightBold{ "bold" };
+static constexpr std::string_view FontWeightExtraBold{ "extra-bold" };
+static constexpr std::string_view FontWeightBlack{ "black" };
+static constexpr std::string_view FontWeightExtraBlack{ "extra-black" };
 
 // Possible values for Image Stretch Mode
 static constexpr std::string_view ImageStretchModeNone{ "none" };
@@ -107,6 +122,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -115,6 +131,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
+    /* _fontWeight is initialized below because the structure won't accept a uint16_t directly */
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
@@ -128,6 +145,9 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _retroTerminalEffect{},
     _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
+    winrt::Windows::UI::Text::FontWeight weight;
+    weight.Weight = DEFAULT_FONT_WEIGHT;
+    _fontWeight = weight;
 }
 
 Profile::~Profile()
@@ -170,6 +190,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.AltGrAliasing(_altGrAliasing);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -180,6 +201,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
+    terminalSettings.FontWeight(_fontWeight);
     terminalSettings.Padding(_padding);
 
     terminalSettings.Commandline(_commandline);
@@ -261,183 +283,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.AntialiasingMode(_antialiasingMode);
 
     return terminalSettings;
-}
-
-// Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value Profile::ToJson() const
-{
-    Json::Value root = GenerateStub();
-
-    ///// Profile-specific settings /////
-    // As of #2795, all profile-specific settings were moved to GenerateStub. If
-    // any new profiles-specific settings are added, they should probably be
-    // added here instead of in that method.
-
-    ///// Core Settings /////
-    if (_defaultForeground)
-    {
-        root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground.value());
-    }
-    if (_defaultBackground)
-    {
-        root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
-    }
-    if (_selectionBackground)
-    {
-        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
-    }
-    if (_cursorColor)
-    {
-        root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor.value());
-    }
-    if (_schemeName)
-    {
-        const auto scheme = winrt::to_string(_schemeName.value());
-        root[JsonKey(ColorSchemeKey)] = scheme;
-    }
-    root[JsonKey(HistorySizeKey)] = _historySize;
-    root[JsonKey(SnapOnInputKey)] = _snapOnInput;
-    // Only add the cursor height property if we're a legacy-style cursor.
-    if (_cursorShape == CursorStyle::Vintage)
-    {
-        root[JsonKey(CursorHeightKey)] = _cursorHeight;
-    }
-    root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
-
-    root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
-    root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
-    root[JsonKey(FontSizeKey)] = _fontSize;
-    root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
-    root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
-
-    if (_connectionType)
-    {
-        root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
-    }
-    if (_scrollbarState)
-    {
-        const auto scrollbarState = winrt::to_string(_scrollbarState.value());
-        root[JsonKey(ScrollbarStateKey)] = scrollbarState;
-    }
-
-    if (_icon)
-    {
-        const auto icon = winrt::to_string(_icon.value());
-        root[JsonKey(IconKey)] = icon;
-    }
-
-    if (_tabTitle)
-    {
-        root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
-    }
-
-    if (_suppressApplicationTitle)
-    {
-        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
-    }
-
-    if (_startingDirectory)
-    {
-        root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
-    }
-
-    if (_backgroundImage)
-    {
-        root[JsonKey(BackgroundImageKey)] = winrt::to_string(_backgroundImage.value());
-    }
-
-    if (_backgroundImageOpacity)
-    {
-        root[JsonKey(BackgroundImageOpacityKey)] = _backgroundImageOpacity.value();
-    }
-
-    if (_backgroundImageStretchMode)
-    {
-        root[JsonKey(BackgroundImageStretchModeKey)] = SerializeImageStretchMode(_backgroundImageStretchMode.value()).data();
-    }
-
-    if (_backgroundImageAlignment)
-    {
-        root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
-    }
-
-    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
-
-    if (_retroTerminalEffect)
-    {
-        root[JsonKey(RetroTerminalEffectKey)] = _retroTerminalEffect.value();
-    }
-
-    root[JsonKey(AntialiasingModeKey)] = SerializeTextAntialiasingMode(_antialiasingMode).data();
-
-    return root;
-}
-
-// Method Description:
-// - This generates a json object `diff` s.t.
-//      this = other.LayerJson(diff)
-// So if:
-// - this has a nullopt for an optional, diff will have null for that member
-// - this has a value for an optional, diff will have our value. If the other
-//   did _not_ have a value, and we did, diff will have our value.
-// Arguments:
-// - other: the other profile object to use as the "base" for this diff. The
-//   result could be layered upon that json object to re-create this object's
-//   serialization.
-// Return Value:
-// - a diff between this and the other object, such that this could be recreated
-//   from the diff and the other object.
-Json::Value Profile::DiffToJson(const Profile& other) const
-{
-    auto otherJson = other.ToJson();
-    auto myJson = ToJson();
-    Json::Value diff;
-
-    // Iterate in two steps:
-    // - first over all the keys in the 'other' object's serialization.
-    // - then over all the keys in our serialization.
-    // In this way, we ensure all keys from both objects are present in the
-    // final object.
-    for (const auto& key : otherJson.getMemberNames())
-    {
-        if (myJson.isMember(key))
-        {
-            // Both objects have the key
-            auto otherVal = otherJson[key];
-            auto myVal = myJson[key];
-            if (otherVal != myVal)
-            {
-                diff[key] = myVal;
-            }
-        }
-        else
-        {
-            // key is not in this json object. Set to null, so that when the
-            // diff is layered upon the original object, we'll properly set
-            // nullopt for any optionals that weren't present in this object.
-            diff[key] = Json::Value::null;
-        }
-    }
-    for (const auto& key : myJson.getMemberNames())
-    {
-        if (otherJson.isMember(key))
-        {
-            // both objects have this key. Do nothing, this is handled above
-        }
-        else
-        {
-            // We have a key the other object did not. Add our value.
-            diff[key] = myJson[key];
-        }
-    }
-
-    return diff;
 }
 
 // Method Description:
@@ -633,6 +478,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
 
+    JsonUtils::GetBool(json, AltGrAliasingKey, _altGrAliasing);
+
     JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
 
     if (json.isMember(JsonKey(CursorShapeKey)))
@@ -650,6 +497,12 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetWstring(json, FontFaceKey, _fontFace);
 
     JsonUtils::GetInt(json, FontSizeKey, _fontSize);
+
+    if (json.isMember(JsonKey(FontWeightKey)))
+    {
+        auto fontWeight{ json[JsonKey(FontWeightKey)] };
+        _fontWeight = _ParseFontWeight(fontWeight);
+    }
 
     JsonUtils::GetDouble(json, AcrylicTransparencyKey, _acrylicTransparency);
 
@@ -728,17 +581,17 @@ void Profile::SetUseAcrylic(bool useAcrylic) noexcept
     _useAcrylic = useAcrylic;
 }
 
-void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
+void Profile::SetDefaultForeground(til::color defaultForeground) noexcept
 {
     _defaultForeground = defaultForeground;
 }
 
-void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
+void Profile::SetDefaultBackground(til::color defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
 }
 
-void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
+void Profile::SetSelectionBackground(til::color selectionBackground) noexcept
 {
     _selectionBackground = selectionBackground;
 }
@@ -918,6 +771,78 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Method Description:
+// - Helper function for converting a user-specified font weight value to its corresponding enum
+// Arguments:
+// - The value from the settings.json file
+// Return Value:
+// - The corresponding value which maps to the string provided by the user
+winrt::Windows::UI::Text::FontWeight Profile::_ParseFontWeight(const Json::Value& json)
+{
+    if (json.isUInt())
+    {
+        winrt::Windows::UI::Text::FontWeight weight;
+        weight.Weight = static_cast<uint16_t>(json.asUInt());
+
+        // We're only accepting variable values between 100 and 990 so we don't go too crazy.
+        if (weight.Weight >= 100 && weight.Weight <= 990)
+        {
+            return weight;
+        }
+    }
+
+    if (json.isString())
+    {
+        auto fontWeight = json.asString();
+        if (fontWeight == FontWeightThin)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Thin();
+        }
+        else if (fontWeight == FontWeightExtraLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraLight();
+        }
+        else if (fontWeight == FontWeightLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Light();
+        }
+        else if (fontWeight == FontWeightSemiLight)
+        {
+            return winrt::Windows::UI::Text::FontWeights::SemiLight();
+        }
+        else if (fontWeight == FontWeightNormal)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Normal();
+        }
+        else if (fontWeight == FontWeightMedium)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Medium();
+        }
+        else if (fontWeight == FontWeightSemiBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::SemiBold();
+        }
+        else if (fontWeight == FontWeightBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Bold();
+        }
+        else if (fontWeight == FontWeightExtraBold)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraBold();
+        }
+        else if (fontWeight == FontWeightBlack)
+        {
+            return winrt::Windows::UI::Text::FontWeights::Black();
+        }
+        else if (fontWeight == FontWeightExtraBlack)
+        {
+            return winrt::Windows::UI::Text::FontWeights::ExtraBlack();
+        }
+    }
+
+    return winrt::Windows::UI::Text::FontWeights::Normal();
+}
+
+// Method Description:
 // - Helper function for converting a user-specified closeOnExit value to its corresponding enum
 // Arguments:
 // - The value from the settings.json file
@@ -948,27 +873,6 @@ CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
     }
 
     return CloseOnExitMode::Graceful;
-}
-
-// Method Description:
-// - Helper function for converting a CloseOnExitMode to its corresponding string
-//   value.
-// Arguments:
-// - closeOnExitMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CloseOnExitMode
-std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
-{
-    switch (closeOnExitMode)
-    {
-    case CloseOnExitMode::Always:
-        return CloseOnExitAlways;
-    case CloseOnExitMode::Never:
-        return CloseOnExitNever;
-    case CloseOnExitMode::Graceful:
-    default:
-        return CloseOnExitGraceful;
-    }
 }
 
 // Method Description:
@@ -1017,29 +921,6 @@ Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretc
     else // Fall through to default behavior
     {
         return Media::Stretch::UniformToFill;
-    }
-}
-
-// Method Description:
-// - Helper function for converting an ImageStretchMode to the
-//   correct string value.
-// Arguments:
-// - imageStretchMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
-{
-    switch (imageStretchMode)
-    {
-    case Media::Stretch::None:
-        return ImageStretchModeNone;
-    case Media::Stretch::Fill:
-        return ImageStretchModeFill;
-    case Media::Stretch::Uniform:
-        return ImageStretchModeUniform;
-    default:
-    case Media::Stretch::UniformToFill:
-        return ImageStretchModeUniformTofill;
     }
 }
 
@@ -1100,58 +981,6 @@ std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(
 }
 
 // Method Description:
-// - Helper function for converting the HorizontalAlignment+VerticalAlignment tuple
-//   to the correct string value.
-// Arguments:
-// - imageAlignment: The enum values tuple to convert to a string.
-// Return Value:
-// - The string value for the given ImageAlignment
-std::string_view Profile::SerializeImageAlignment(const std::tuple<HorizontalAlignment, VerticalAlignment> imageAlignment)
-{
-    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(imageAlignment);
-    const auto imageVerticalAlignment = std::get<VerticalAlignment>(imageAlignment);
-    switch (imageHorizontalAlignment)
-    {
-    case HorizontalAlignment::Left:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopLeft;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomLeft;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentLeft;
-        }
-
-    case HorizontalAlignment::Right:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopRight;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomRight;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentRight;
-        }
-
-    default:
-    case HorizontalAlignment::Center:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTop;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottom;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentCenter;
-        }
-    }
-}
-
-// Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
 //   CursorStyle enum value
 // Arguments:
@@ -1182,31 +1011,6 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
     }
     // default behavior for invalid data
     return CursorStyle::Bar;
-}
-
-// Method Description:
-// - Helper function for converting a CursorStyle to its corresponding string
-//   value.
-// Arguments:
-// - cursorShape: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CursorStyle
-std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
-{
-    switch (cursorShape)
-    {
-    case CursorStyle::Underscore:
-        return CursorShapeUnderscore;
-    case CursorStyle::FilledBox:
-        return CursorShapeFilledbox;
-    case CursorStyle::EmptyBox:
-        return CursorShapeEmptybox;
-    case CursorStyle::Vintage:
-        return CursorShapeVintage;
-    default:
-    case CursorStyle::Bar:
-        return CursorShapeBar;
-    }
 }
 
 // Method Description:
@@ -1317,25 +1121,4 @@ TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& anti
     }
     // default behavior for invalid data
     return TextAntialiasingMode::Grayscale;
-}
-
-// Method Description:
-// - Helper function for converting a TextAntialiasingMode to its corresponding
-//   string value.
-// Arguments:
-// - antialiasingMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given TextAntialiasingMode
-std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingMode antialiasingMode)
-{
-    switch (antialiasingMode)
-    {
-    case TextAntialiasingMode::Cleartype:
-        return AntialiasingModeCleartype;
-    case TextAntialiasingMode::Aliased:
-        return AntialiasingModeAliased;
-    default:
-    case TextAntialiasingMode::Grayscale:
-        return AntialiasingModeGrayscale;
-    }
 }

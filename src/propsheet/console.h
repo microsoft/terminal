@@ -26,7 +26,7 @@ Revision History:
 #include "OptionsPage.h"
 #include "LayoutPage.h"
 #include "ColorsPage.h"
-#include "TerminalPage.h"
+#include "TerminalPropsheetPage.h"
 #include "ColorControl.h"
 
 //

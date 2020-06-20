@@ -375,7 +375,7 @@ class OutputCellIteratorTests
         {
             auto expected = OutputCellView({},
                                            {},
-                                           { color },
+                                           TextAttribute{ color },
                                            TextAttributeBehavior::StoredOnly);
 
             VERIFY_IS_TRUE(it);
@@ -409,7 +409,7 @@ class OutputCellIteratorTests
         {
             auto expected = OutputCellView({ &ci.Char.UnicodeChar, 1 },
                                            {},
-                                           { ci.Attributes },
+                                           TextAttribute{ ci.Attributes },
                                            TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
@@ -429,7 +429,7 @@ class OutputCellIteratorTests
         for (auto i = 0; i < 5; i++)
         {
             const std::wstring pair(L"\xd834\xdd1e");
-            OutputCell cell(pair, {}, gsl::narrow<WORD>(i));
+            OutputCell cell(pair, {}, TextAttribute{ gsl::narrow<WORD>(i) });
             cells.push_back(cell);
         }
 

@@ -47,7 +47,9 @@ public:
     bool SetColumns(const size_t /*columns*/) noexcept override { return false; } // DECCOLM
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
+    bool EnableWin32InputMode(const bool /*win32InputMode*/) noexcept override { return false; } // win32-input-mode
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
+    bool SetAnsiMode(const bool /*ansiMode*/) noexcept override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
@@ -86,8 +88,14 @@ public:
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
+    bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
-    bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // SCS
+    bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
+    bool Designate94Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
+    bool Designate96Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
+    bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
+    bool LockingShiftRight(const size_t /*gsetNumber*/) noexcept override { return false; } // LS1R, LS2R, LS3R
+    bool SingleShift(const size_t /*gsetNumber*/) noexcept override { return false; } // SS2, SS3
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS

@@ -18,6 +18,8 @@ public:
     bool CursorPosition(const size_t line,
                         const size_t column) noexcept override; // CUP
 
+    bool EnableWin32InputMode(const bool win32InputMode) noexcept override; // win32-input-mode
+
     bool CursorVisibility(const bool isVisible) noexcept override; // DECTCEM
     bool EnableCursorBlinking(const bool enable) noexcept override; // ATT610
 

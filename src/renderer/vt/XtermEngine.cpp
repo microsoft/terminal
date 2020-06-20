@@ -12,12 +12,10 @@ using namespace Microsoft::Console::Types;
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                          const IDefaultColorProvider& colorProvider,
                          const Viewport initialViewport,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const WORD cColorTable,
+                         const std::basic_string_view<COLORREF> colorTable,
                          const bool fUseAsciiOnly) :
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
-    _ColorTable(ColorTable),
-    _cColorTable(cColorTable),
+    _colorTable(colorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
     _usingUnderLine(false),
     _needToDisableCursor(false),
@@ -192,8 +190,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
                                                   colorBackground,
                                                   WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
-                                                  _ColorTable,
-                                                  _cColorTable);
+                                                  _colorTable);
 }
 
 // Routine Description:
@@ -202,7 +199,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT XtermEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // PaintCursor is only called when the cursor is in fact visible in a single
     // frame. When this is called, mark _nextCursorIsVisible as true. At the end

@@ -138,6 +138,13 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
 void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> newExpansionMode)
 {
+    if (!_selection.has_value())
+    {
+        // capture a log for spurious endpoint sets without an active selection
+        LOG_HR(E_ILLEGAL_STATE_CHANGE);
+        return;
+    }
+
     const auto textBufferPos = _ConvertToBufferCell(viewportPos);
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
