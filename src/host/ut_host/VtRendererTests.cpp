@@ -449,8 +449,8 @@ void VtRendererTest::Xterm256TestColors()
     });
 
     // Now also do the body of the 16color test as well.
-    // The only change is that the "Change only the BG to something not in the table"
-    // test actually uses an RGB value instead of the closest match.
+    // However, instead of using a closest match ANSI color, we can reproduce
+    // the exact RGB or 256-color index value stored in the TextAttribute.
 
     Log::Comment(NoThrowString().Format(
         L"Begin by setting the default colors"));
@@ -480,9 +480,17 @@ void VtRendererTest::Xterm256TestColors()
                                                       false));
 
         Log::Comment(NoThrowString().Format(
-            L"----Change only the BG to something not in the table----"));
-        textAttributes.SetBackground(0x010101);
-        qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background RGB(1,1,1)
+            L"----Change only the BG to an RGB value----"));
+        textAttributes.SetBackground(RGB(19, 161, 14));
+        qExpectedInput.push_back("\x1b[48;2;19;161;14m"); // Background RGB(19,161,14)
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to an RGB value----"));
+        textAttributes.SetForeground(RGB(193, 156, 0));
+        qExpectedInput.push_back("\x1b[38;2;193;156;0m"); // Foreground RGB(193,156,0)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
@@ -491,6 +499,30 @@ void VtRendererTest::Xterm256TestColors()
             L"----Change only the BG to the 'Default' background----"));
         textAttributes.SetDefaultBackground();
         qExpectedInput.push_back("\x1b[49m"); // Background default
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to a 256-color index----"));
+        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        qExpectedInput.push_back("\x1b[38;5;7m"); // Foreground DARK_WHITE (256-Color Index)
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to a 256-color index----"));
+        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        qExpectedInput.push_back("\x1b[48;5;1m"); // Background DARK_RED (256-Color Index)
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to the 'Default' foreground----"));
+        textAttributes.SetDefaultForeground();
+        qExpectedInput.push_back("\x1b[39m"); // Background default
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
@@ -1015,7 +1047,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetBackground(RGB(197, 15, 31));
+        textAttributes.SetIndexedBackground(FOREGROUND_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1023,16 +1055,24 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetForeground(RGB(204, 204, 204));
+        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
-            L"----Change only the BG to something not in the table----"));
-        textAttributes.SetBackground(0x010101);
-        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+            L"----Change only the BG to an RGB value----"));
+        textAttributes.SetBackground(RGB(19, 161, 14));
+        qExpectedInput.push_back("\x1b[42m"); // Background DARK_GREEN
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to an RGB value----"));
+        textAttributes.SetForeground(RGB(193, 156, 0));
+        qExpectedInput.push_back("\x1b[33m"); // Foreground DARK_YELLOW
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
@@ -1041,7 +1081,32 @@ void VtRendererTest::XtermTestColors()
             L"----Change only the BG to the 'Default' background----"));
         textAttributes.SetDefaultBackground();
         qExpectedInput.push_back("\x1b[m"); // Both foreground and background default
-        qExpectedInput.push_back("\x1b[37m"); // Reapply foreground DARK_WHITE
+        qExpectedInput.push_back("\x1b[33m"); // Reapply foreground DARK_YELLOW
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to a 256-color index----"));
+        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to a 256-color index----"));
+        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      &renderData,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG to the 'Default' foreground----"));
+        textAttributes.SetDefaultForeground();
+        qExpectedInput.push_back("\x1b[m"); // Both foreground and background default
+        qExpectedInput.push_back("\x1b[41m"); // Reapply background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
                                                       false));
