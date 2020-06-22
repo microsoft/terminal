@@ -53,5 +53,23 @@ the MIT License. See LICENSE in the project root for license information. -->
             DefaultButton="Primary"
             PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
         </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="MultiLinePasteDialog"
+            x:Uid="MultiLinePasteDialog"
+            DefaultButton="Primary"
+            PrimaryButtonClick="_AcceptPasteButtonOnClick"
+            CloseButtonClick="_RejectPasteButtonOnClick">
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="LargePasteDialog"
+            x:Uid="LargePasteDialog"
+            DefaultButton="Primary"
+            PrimaryButtonClick="_AcceptPasteButtonOnClick"
+            CloseButtonClick="_RejectPasteButtonOnClick">
+        </ContentDialog>
     </Grid>
 </Page>
