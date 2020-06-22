@@ -16,8 +16,8 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
-static constexpr std::string_view KeybindingsKey{ "keybindings" };
-static constexpr std::string_view CommandsKey{ "commands" };
+static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view BindingsKey{ "bindings" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
@@ -205,18 +205,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _TabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
     }
 
-    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
-    {
-        auto warnings = _keybindings->LayerJson(keybindings);
-        // It's possible that the user provided keybindings have some warnings
-        // in them - problems that we should alert the user to, but we can
-        // recover from. Most of these warnings cannot be detected later in the
-        // Validate settings phase, so we'll collect them now. If there were any
-        // warnings generated from parsing these keybindings, add them to our
-        // list of warnings.
-        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    }
-
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
@@ -229,23 +217,30 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 
-    ////////////////////////////// PARSE COMMANDS //////////////////////////////
-    // Do it once for keybindings and again for commands
-    if (auto commandsArray{ json[JsonKey(KeybindingsKey)] })
-    {
-        auto warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
-        // It's possible that the user provided commands have some warnings
-        // in them, similar to the keybindings.
-        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    }
-    // if (auto commandsArray{ json[JsonKey(CommandsKey)] })
-    // {
-    //     auto warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, commandsArray);
-    //     // It's possible that the user provided commands have some warnings
-    //     // in them, similar to the keybindings.
-    //     _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    // }
-    //////////////////////////////
+    // This is a helper lambda to get the keybindings and commands out of both
+    // and array of objects. We'll use this twice, once on the legacy
+    // `keybindings` key, and again on the newer `bindings` key.
+    auto parseBindings = [this, &json](auto jsonKey) {
+        if (auto bindings{ json[JsonKey(jsonKey)] })
+        {
+            auto warnings = _keybindings->LayerJson(bindings);
+            // It's possible that the user provided keybindings have some warnings
+            // in them - problems that we should alert the user to, but we can
+            // recover from. Most of these warnings cannot be detected later in the
+            // Validate settings phase, so we'll collect them now. If there were any
+            // warnings generated from parsing these keybindings, add them to our
+            // list of warnings.
+            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+
+            // Now parse the array again, but this time as a list of commands.
+            warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
+            // It's possible that the user provided commands have some warnings
+            // in them, similar to the keybindings.
+            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+        }
+    };
+    parseBindings(LegacyKeybindingsKey);
+    parseBindings(BindingsKey);
 }
 
 // Method Description:

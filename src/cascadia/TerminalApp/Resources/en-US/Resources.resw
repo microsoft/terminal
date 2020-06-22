@@ -351,13 +351,13 @@
     <value>Type a command name...</value>
   </data>
   <data name="CloseWindowCommandKey" xml:space="preserve">
-    <value>Close Window</value>
+    <value>Close window</value>
   </data>
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
-    <value>Toggle Fullscreen</value>
+    <value>Toggle fullscreen</value>
   </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
-    <value>Open New Tab Dropdown</value>
+    <value>Open new tab dropdown</value>
   </data>
   <data name="OpenSettingsCommandKey" xml:space="preserve">
     <value>Open settings file</value>
@@ -372,7 +372,7 @@
     <value>Find</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
-    <value>Resize Pane</value>
+    <value>Resize pane</value>
   </data>
   <data name="MoveFocusCommandKey" xml:space="preserve">
     <value>Move focus</value>
@@ -398,40 +398,40 @@
     <value>Down</value>
   </data>
   <data name="SwitchToTabCommandKey" xml:space="preserve">
-    <value>Switch to Tab</value>
+    <value>Switch to tab</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
-    <value>New Tab</value>
+    <value>New tab</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
-    <value>Split Pane</value>
+    <value>Split pane</value>
   </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
-    <value>New Window</value>
+    <value>New window</value>
   </data>
   <data name="DuplicateTabCommandKey" xml:space="preserve">
-    <value>Duplicate Tab</value>
+    <value>Duplicate tab</value>
   </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
-    <value>Duplicate Pane</value>
+    <value>Duplicate pane</value>
   </data>
   <data name="NextTabCommandKey" xml:space="preserve">
-    <value>Next Tab</value>
+    <value>Next tab</value>
   </data>
   <data name="PrevTabCommandKey" xml:space="preserve">
-    <value>Previous Tab</value>
+    <value>Previous tab</value>
   </data>
   <data name="ClosePaneCommandKey" xml:space="preserve">
-    <value>Close Pane</value>
+    <value>Close pane</value>
   </data>
   <data name="CloseTabCommandKey" xml:space="preserve">
-    <value>Close Tab</value>
+    <value>Close tab</value>
   </data>
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
-    <value>Split Pane Horizontally</value>
+    <value>Split pane horizontally</value>
   </data>
   <data name="SplitVerticalCommandKey" xml:space="preserve">
-    <value>Split Pane Vertically</value>
+    <value>Split pane vertically</value>
   </data>
   <data name="CopyTextCommandKey" xml:space="preserve">
     <value>Copy text</value>
@@ -443,38 +443,38 @@
     <value>Paste</value>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
-    <value>Scroll Down One Line</value>
+    <value>Scroll down one line</value>
   </data>
   <data name="ScrollDownPageCommandKey" xml:space="preserve">
-    <value>Scroll Down One Page</value>
+    <value>Scroll down one page</value>
   </data>
   <data name="ScrollUpCommandKey" xml:space="preserve">
-    <value>Scroll Up One Line</value>
+    <value>Scroll up one line</value>
   </data>
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
-    <value>Scroll Up One Page</value>
+    <value>Scroll up one page</value>
   </data>
   <data name="AdjustFontSizeCommandKey" xml:space="preserve">
-    <value>Adjust Font Size</value>
+    <value>Adjust font size</value>
   </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
-    <value>Increase Font Size</value>
+    <value>Increase font size</value>
   </data>
   <data name="DecreaseFontSizeCommandKey" xml:space="preserve">
-    <value>Decrease Font Size</value>
+    <value>Decrease font size</value>
   </data>
   <data name="IncreaseFontSizeWithAmountCommandKey" xml:space="preserve">
-    <value>Increase Font Size, amount: {0}</value>
+    <value>Increase font size, amount: {0}</value>
     <comment>{0} will be replaced with a positive number</comment>
   </data>
   <data name="DecreaseFontSizeWithAmountCommandKey" xml:space="preserve">
-    <value>Decrease Font Size, amount: {0}</value>
+    <value>Decrease font size, amount: {0}</value>
     <comment>{0} will be replaced with a positive number</comment>
   </data>
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
-    <value>Reset Font Size</value>
+    <value>Reset font size</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
-    <value>Toggle Command Palette</value>
+    <value>Toggle command palette</value>
   </data>
 </root>
