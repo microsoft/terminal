@@ -269,7 +269,7 @@
             "color": {
               "$ref": "#/definitions/Color",
               "default": null,
-              "description": "If provided, will set the tab's color to the given value. If ommitted, will reset the tab's color."
+              "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
             }
           }
         }
