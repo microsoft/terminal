@@ -50,7 +50,8 @@ namespace winrt::TerminalApp::implementation
             }
             else if (name.isString())
             {
-                return winrt::to_hstring(name.asString());
+                auto nameStr = name.asString();
+                return winrt::to_hstring(nameStr);
             }
         }
 
@@ -166,7 +167,7 @@ namespace winrt::TerminalApp::implementation
                         // If there wasn't a parsed command, then try to get the
                         // name from the json blob. If that name currently
                         // exists in our list of commands, we should remove it.
-                        const auto name = _nameFromJson(json);
+                        const auto name = _nameFromJson(value);
                         if (!name.empty())
                         {
                             commands.erase(name);
