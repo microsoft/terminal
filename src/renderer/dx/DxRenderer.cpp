@@ -97,7 +97,9 @@ DxEngine::DxEngine() :
     _scale{ 1.0f },
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
-    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
+    _customLayout{},
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
+    _drawingContext{}
 {
     const auto was = _tracelogCount.fetch_add(1);
     if (0 == was)
@@ -693,6 +695,44 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 // Routine Description:
+// - Calculates whether or not we should force grayscale AA based on the
+//   current renderer state.
+// Arguments:
+// - <none> - Uses internal state of _antialiasingMode, _defaultTextBackgroundOpacity,
+//            _backgroundColor, and _defaultBackgroundColor.
+// Return Value:
+// - True if we must render this text in grayscale AA as cleartype simply won't work. False otherwise.
+[[nodiscard]] bool DxEngine::_ShouldForceGrayscaleAA() noexcept
+{
+    // GH#5098: If we're rendering with cleartype text, we need to always
+    // render onto an opaque background. If our background's opacity is
+    // 1.0f, that's great, we can use that. Otherwise, we need to force the
+    // text renderer to render this text in grayscale. In
+    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
+    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
+    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
+    //
+    // Currently, only text with the default background color uses an alpha
+    // of 0, every other background uses 1.0
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing)
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    // Another way of naming "bgIsDefault" is "bgHasTransparency"
+    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                             (_backgroundColor.b == _defaultBackgroundColor.b);
+    const bool forceGrayscaleAA = usingCleartype &&
+                                  usingTransparency &&
+                                  bgIsDefault;
+
+    return forceGrayscaleAA;
+}
+
+// Routine Description:
 // - Helper to create a DirectWrite text layout object
 //   out of a string.
 // Arguments:
@@ -734,6 +774,7 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
+
     _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
@@ -1064,6 +1105,24 @@ try
 
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
+
+        {
+            // Get the baseline for this font as that's where we draw from
+            DWRITE_LINE_SPACING spacing;
+            RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+
+            // Assemble the drawing context information
+            _drawingContext = std::make_unique<DrawingContext>(_d2dDeviceContext.Get(),
+                                                               _d2dBrushForeground.Get(),
+                                                               _d2dBrushBackground.Get(),
+                                                               _ShouldForceGrayscaleAA(),
+                                                               _dwriteFactory.Get(),
+                                                               spacing,
+                                                               _glyphCell,
+                                                               _d2dDeviceContext->GetSize(),
+                                                               std::nullopt,
+                                                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        }
     }
 
     return S_OK;
@@ -1086,6 +1145,9 @@ try
     if (_haveDeviceResources)
     {
         _isPainting = false;
+
+        // If there's still a clip hanging around, remove it. We're all done.
+        LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
 
         hr = _d2dDeviceContext->EndDraw();
 
@@ -1362,56 +1424,11 @@ try
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
     // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            clusters,
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
-
-    // Get the baseline for this font as that's where we draw from
-    DWRITE_LINE_SPACING spacing;
-    RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
-
-    // GH#5098: If we're rendering with cleartype text, we need to always
-    // render onto an opaque background. If our background's opacity is
-    // 1.0f, that's great, we can use that. Otherwise, we need to force the
-    // text renderer to render this text in grayscale. In
-    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
-    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
-    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
-    //
-    // Currently, only text with the default background color uses an alpha
-    // of 0, every other background uses 1.0
-    //
-    // DANGER: Layers slow us down. Only do this in the specific case where
-    // someone has chosen the slower ClearType antialiasing (versus the faster
-    // grayscale antialiasing)
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-    // Another way of naming "bgIsDefault" is "bgHasTransparency"
-    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
-                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
-                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
-                             (_backgroundColor.b == _defaultBackgroundColor.b);
-    const bool forceGrayscaleAA = usingCleartype &&
-                                  usingTransparency &&
-                                  bgIsDefault;
-
-    // Assemble the drawing context information
-    DrawingContext context(_d2dDeviceContext.Get(),
-                           _d2dBrushForeground.Get(),
-                           _d2dBrushBackground.Get(),
-                           forceGrayscaleAA,
-                           _dwriteFactory.Get(),
-                           spacing,
-                           _glyphCell,
-                           _frameInfo.cursorInfo,
-                           D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
     // Layout then render the text
-    RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
@@ -1510,6 +1527,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 try
 {
+    // If a clip rectangle is in place from drawing the text layer, remove it here.
+    LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+
     const auto existingColor = _d2dBrushForeground->GetColor();
 
     _d2dBrushForeground->SetColor(_selectionBackground);
@@ -1631,6 +1651,17 @@ CATCH_RETURN()
         }*/
     }
 
+    // If we have a drawing context, it may be choosing its antialiasing based
+    // on the colors. Update it if it exists.
+    // We only need to do this here because this is called all the time on painting frames
+    // and will update it in a timely fashion. Changing the AA mode or opacity do affect
+    // it, but we will always hit updating the drawing brushes so we don't
+    // need to update this in those locations.
+    if (_drawingContext)
+    {
+        _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+    }
+
     return S_OK;
 }
 
@@ -1655,6 +1686,9 @@ try
 
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
+
+    // Prepare the text layout
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
 
     return S_OK;
 }
@@ -1783,17 +1817,11 @@ try
 
     const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-    // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            { &cluster, 1 },
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters({ &cluster, 1 }));
 
     UINT32 columns = 0;
-    RETURN_IF_FAILED(layout.GetColumns(&columns));
+    RETURN_IF_FAILED(_customLayout->GetColumns(&columns));
 
     *pResult = columns != 1;
 
@@ -2284,6 +2312,6 @@ CATCH_LOG()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
-    _frameInfo = info;
+    _drawingContext->cursorInfo = info.cursorInfo;
     return S_OK;
 }
