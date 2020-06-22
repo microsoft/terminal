@@ -1090,21 +1090,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl()
-    {
-        if (auto index{ _GetFocusedTabIndex() })
-        {
-            auto focusedTab{ _GetStrongTabImpl(*index) };
-            if (focusedTab->GetLeafPaneCount() > 1)
-            {
-                _ShowCloseTabWarningDialog();
-            }
-            else
-            {
-                _CloseFocusedTab();
-            }
-        }
-    }
     
     // Method Description:
     // - Close the currently focused tab. Focus will move to the left, if possible.
@@ -1667,8 +1652,7 @@ namespace winrt::TerminalApp::implementation
             auto focusedTab{ _GetStrongTabImpl(*index) };
             if (focusedTab->_GetLeafPaneCount() == 1)
             {
-                const auto tabViewItem = eventArgs.Tab();
-                _RemoveTabViewItem(tabViewItem);
+                _CloseFocusedTab();
             }
             else if (focusedTab->_GetLeafPaneCount() > 1)
             {
@@ -1688,20 +1672,6 @@ namespace winrt::TerminalApp::implementation
                                                          WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
-    }
-        
-    // Method Description:
-    // - Called when the primary button of the content dialog is clicked.
-    //   This calls _CloseFocusedTab(), which closes the tab currently
-    //   selected. This method will be called if
-    //   the user confirms to close the selected tab.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        _CloseFocusedTab();
     }
         
     // Method Description:
