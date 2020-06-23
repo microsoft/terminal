@@ -73,7 +73,7 @@ namespace Microsoft.Terminal.Wpf
         internal int Columns { get; private set; }
 
         /// <summary>
-        /// Stores the window handle of the terminal.
+        /// Gets the window handle of the terminal.
         /// </summary>
         internal IntPtr Hwnd => this.hwnd;
 
