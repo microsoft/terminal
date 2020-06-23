@@ -293,7 +293,8 @@ using namespace Microsoft::Console::Types;
         _lastTextAttributes.SetBold(needBold);
     }
 
-    // After which we drop the hight bits, since only colors 0 to 7 are supported.
+    // After which we drop the high bits, since only colors 0 to 7 are supported.
+
     fgIndex &= 7;
     bgIndex &= 7;
 
