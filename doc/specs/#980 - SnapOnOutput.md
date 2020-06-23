@@ -17,7 +17,7 @@ Currently, new output causes the Terminal to always scroll to it. Some users wan
 
 Creating a selection when the terminal is generating more output is difficult. This is because the terminal scrolls to the new output.
 
-In CMD, a selection causes any processes to run in the background, but prevents more output from being displayed. When the selection is removed, the output is flushed to the display.
+In ConHost, a selection causes the active process to be completely paused. When the selection is removed, the process continues.
 
 Typical Unix terminals work differently. Rather than disabling the output, they disable the automatic scrolling. This allows the user to continue to see more output by choice.
 
@@ -35,19 +35,19 @@ A new private enum array `_snapOnOutput` will be introduced to save which of the
 
 ## UI/UX Design
 
-The `snapOnOutput` setting is done at a profile-level to be near `snapOnInput`. Additionally, the `never` value seems more valuable when the user can dedicate a specific task to the profile. Such a scenario would be a shell that frequently generates new output (i.e.: a live-generating log), but the user is not necessarily interested in what the latest output is.
+The `snapOnOutput` setting is introduced as a profile setting to match `snapOnInput`.
 
 The default `snapOnOutput` value will be `[ "noSelection", "atBottom" ]`.
 
-When an enum array is defined in the settings, it will be interpreted logically. The following scenarios will be interpreted as follows:
-- `[ "always", "atBottom" ]` --> `"always"` because `atBottom` is a subset of `always`
-- `[ "never", "atBottom" ]` --> `"atBottom"`
+When an enum array is defined in the settings, it will be interpreted using boolean logic. The following scenarios will be invalid using the FlagMapper:
+- `[ "always", "atBottom" ]`
+- `[ "never", "atBottom" ]`
 
 ## Capabilities
 
 ### Accessibility
 
-The `UiaRenderer` exposes new content that is rendered to the screen upon a scroll. No additional changes are necessary here.
+N/A
 
 ### Security
 
@@ -80,21 +80,19 @@ See **Future considerations** > **Infinite Scrollback**.
 ### Extensibility
 The introduction of `enum SnapOnOutput` allows for this feature to be enabled/disabled in more complex scenarios. A potential extension would be to introduce a new UI element or keybinding to toggle this feature.
 
-Another would be to introduce additional accepted values. Consider the output from a large testing suite. A user could create an extension that snaps on output for failing tests or when the testing has concluded.
-
 ### Infinite Scrollback
 At the time of introducing this, the infinite scrollback feature is not supported. This means that the buffer saves the history up to the `historySize` amount of lines. When infinite scrollback is introduced, the buffer needs to change its own contents to allow the user to scroll beyond the `historySize`. With infinite scrollback enabled and the mutable viewport **NOT** snapping to new output, the `TerminalCore` needs to keep track of...
 - what contents are currently visible to the user (in the current location of the mutable viewport)
 - how to respond to a user's action of changing the location of the mutable viewport (i.e.: snapOnInput, scroll up/down)
 
-The `TermControl`'s scrollbar will abstract this issue away. As the viewport moves, really we're just presenting content that was saved to the text buffer.
-
 ### Private Mode Escape Sequences
-There are a couple of private mode escape sequences that some terminals use to control this kind of thing. Mode 1010, for example, snaps the viewport to the bottom on output, whereas Mode 1011 spans the viewport to the bottom on a keypress.
+There are a couple of private mode escape sequences that some terminals use to control this kind of thing. DECSET 1010, for example, snaps the viewport to the bottom on output, whereas DECSET 1011 spans the viewport to the bottom on a keypress.
 
-Mode 1010 should set the `SnapOnOutput` value via a Terminal API.
-Mode 1011 should set the `SnapOnInput` value via a Terminal API.
+DECSET 1010 should set the `SnapOnOutput` value via a Terminal API.
+DECSET 1011 should set the `SnapOnInput` value via a Terminal API.
 
 ## Resources
 
-[#980]: # https://github.com/microsoft/terminal/issues/980
+[GH#980](https://github.com/microsoft/terminal/issues/980)
+[DECSET 1010](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h4-Functions-using-CSI-_-ordered-by-the-final-character-lparen-s-rparen:CSI-?-Pm-h:Ps-=-1-0-1-0.1F79)
+[DECSET 1011](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h4-Functions-using-CSI-_-ordered-by-the-final-character-lparen-s-rparen:CSI-?-Pm-h:Ps-=-1-0-1-1.1F7A)
