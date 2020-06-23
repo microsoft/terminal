@@ -303,7 +303,7 @@ void u16state::reset() noexcept
                 }
 
                 // *** convert the code point to UTF-16 ***
-                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                if (codePoint != unicodeReplacementChar || !discardInvalids)
                 {
                     if (codePoint < 0x00010000u)
                     {
@@ -471,7 +471,7 @@ void u16state::reset() noexcept
                 }
 
                 // *** convert the code point to UTF-16 ***
-                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                if (codePoint != unicodeReplacementChar || !discardInvalids)
                 {
                     if (codePoint < 0x00010000u)
                     {
@@ -562,7 +562,7 @@ void u16state::reset() noexcept
                 }
 
                 // *** convert the code point to UTF-8 ***
-                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                if (codePoint != unicodeReplacementChar || !discardInvalids)
                 {
                     // the outcome of performance tests is that subsequent calls of push_back
                     // perform much better than appending a single initializer_list
@@ -664,7 +664,7 @@ void u16state::reset() noexcept
                 }
 
                 // *** convert the code point to UTF-8 ***
-                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                if (codePoint != unicodeReplacementChar || !discardInvalids)
                 {
                     // the outcome of further performance tests is that using pointers
                     // perform even better than subsequent calls of push_back

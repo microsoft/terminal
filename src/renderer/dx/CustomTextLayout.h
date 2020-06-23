@@ -24,9 +24,12 @@ namespace Microsoft::Console::Render
                          gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                          gsl::not_null<IDWriteTextFormat*> const format,
                          gsl::not_null<IDWriteFontFace1*> const font,
-                         const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width,
                          IBoxDrawingEffect* const boxEffect);
+
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters);
+
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset() noexcept;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
 

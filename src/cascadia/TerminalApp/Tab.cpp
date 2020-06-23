@@ -45,6 +45,15 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+
+        _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_inRename = true;
+                tab->_UpdateTabHeader();
+            }
+        });
+
         _UpdateTitle();
     }
 

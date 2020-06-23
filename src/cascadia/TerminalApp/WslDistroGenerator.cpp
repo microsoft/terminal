@@ -76,7 +76,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
     DWORD exitCode;
-    if (GetExitCodeProcess(pi.hProcess, &exitCode) == false)
+    if (!GetExitCodeProcess(pi.hProcess, &exitCode))
     {
         THROW_HR(E_INVALIDARG);
     }
@@ -116,7 +116,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
                 continue;
             }
 
-            size_t firstChar = distName.find_first_of(L"( ");
+            const size_t firstChar = distName.find_first_of(L"( ");
             // Some localizations don't have a space between the name and "(Default)"
             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
             if (firstChar < distName.size())
