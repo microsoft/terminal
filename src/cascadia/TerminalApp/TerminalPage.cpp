@@ -1645,7 +1645,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
+    void TerminalPage::_OnTabCloseRequested()
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
