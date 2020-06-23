@@ -31,6 +31,9 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 // The updates are throttled to limit power usage.
 constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 
+// The minimum delay between updating the TSF input control.
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -124,31 +127,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         });
 
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->TSFInputControl().TryRedrawCanvas();
+                }
+            },
+            TsfRedrawInterval,
+            Dispatcher());
+
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
-                    control->Dispatcher()
-                        .RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                            if (auto control2{ weakThis.get() })
-                            {
-                                control2->_isInternalScrollBarUpdate = true;
+                    control->_isInternalScrollBarUpdate = true;
 
-                                auto scrollBar = control2->ScrollBar();
-                                if (update.newValue.has_value())
-                                {
-                                    scrollBar.Value(update.newValue.value());
-                                }
-                                scrollBar.Maximum(update.newMaximum);
-                                scrollBar.Minimum(update.newMinimum);
-                                scrollBar.ViewportSize(update.newViewportSize);
+                    auto scrollBar = control->ScrollBar();
+                    if (update.newValue.has_value())
+                    {
+                        scrollBar.Value(update.newValue.value());
+                    }
+                    scrollBar.Maximum(update.newMaximum);
+                    scrollBar.Minimum(update.newMinimum);
+                    scrollBar.ViewportSize(update.newViewportSize);
 
-                                control2->_isInternalScrollBarUpdate = false;
-                            }
-                        });
+                    control->_isInternalScrollBarUpdate = false;
                 }
             },
-            ScrollBarUpdateInterval);
+            ScrollBarUpdateInterval,
+            Dispatcher());
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -2047,42 +2055,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   to be where the current cursor position is.
     // Arguments:
     // - N/A
-    winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
+    void TermControl::_TerminalCursorPositionChanged()
     {
-        bool expectedFalse{ false };
-        if (!_coroutineDispatchStateUpdateInProgress.compare_exchange_weak(expectedFalse, true))
-        {
-            // somebody's already in here.
-            return;
-        }
-
-        if (_closing.load())
-        {
-            return;
-        }
-
-        auto dispatcher{ Dispatcher() }; // cache a strong ref to this in case TermControl dies
-        auto weakThis{ get_weak() };
-
-        // Muffle 2: Muffle Harder
-        // If we're the lucky coroutine who gets through, we'll still wait 100ms to clog
-        // the atomic above so we don't service the cursor update too fast. If we get through
-        // and finish processing the update quickly but similar requests are still beating
-        // down the door above in the atomic, we may still update the cursor way more than
-        // is visible to anyone's eye, which is a waste of effort.
-        static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
-        co_await winrt::resume_after(CursorUpdateQuiesceTime);
-
-        co_await winrt::resume_foreground(dispatcher);
-
-        if (auto control{ weakThis.get() })
-        {
-            if (!_closing.load())
-            {
-                TSFInputControl().TryRedrawCanvas();
-            }
-            _coroutineDispatchStateUpdateInProgress.store(false);
-        }
+        _tsfTryRedrawCanvas->Run();
     }
 
     hstring TermControl::Title()

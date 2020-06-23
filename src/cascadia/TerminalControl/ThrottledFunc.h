@@ -4,94 +4,139 @@ Licensed under the MIT license.
 
 Module Name:
 - ThrottledFunc.h
-
-Abstract:
-- This module defines a class to throttle function calls.
-- You create an instance of a `ThrottledFunc` with a function and the delay
-  between two function calls.
-- The function takes an argument of type `T`, the template argument of
-  `ThrottledFunc`.
-- Use the `Run` method to wait and then call the function.
 --*/
 
 #pragma once
 #include "pch.h"
 
-#include "ThreadSafeOptional.h"
-
-template<typename T>
-class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<T>>
+// Class Description:
+// - Represents a function that takes arguments and whose invocation is
+//   delayed by a specified duration and rate-limited such that if the code
+//   tries to run the function while a call to the function is already
+//   pending, then the previous call with the previous arguments will be
+//   cancelled and the call will be made with the new arguments instead.
+// - The function will be run on the the specified dispatcher.
+template<typename... Args>
+class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<Args...>>
 {
 public:
-    using Func = std::function<void(T arg)>;
+    using Func = std::function<void(Args...)>;
 
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay) :
+    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
         _func{ func },
-        _delay{ delay }
+        _delay{ delay },
+        _dispatcher{ dispatcher }
     {
     }
 
     // Method Description:
-    // - Runs the function later with the specified argument, except if `Run`
-    //   is called again before with a new argument, in which case the new
-    //   argument will be instead.
-    // - For more information, read the "Abstract" section in the header file.
+    // - Runs the function later with the specified arguments, except if `Run`
+    //   is called again before with new arguments, in which case the new
+    //   arguments will be used instead.
+    // - For more information, read the class' documentation.
+    // - This method is always thread-safe. It can be called multiple times on
+    //   different threads.
     // Arguments:
     // - arg: the argument to pass to the function
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Run(T arg)
+    template<typename... MakeArgs>
+    void Run(MakeArgs&&... args)
     {
-        if (!_pendingCallArg.Emplace(arg))
         {
-            // already pending
-            return;
-        }
+            std::lock_guard guard{ _lock };
 
-        auto weakThis = this->weak_from_this();
+            bool hadValue = _pendingRunArgs.has_value();
+            _pendingRunArgs.emplace(std::forward<MakeArgs>(args)...);
 
-        co_await winrt::resume_after(_delay);
-
-        if (auto self{ weakThis.lock() })
-        {
-            auto arg = self->_pendingCallArg.Take();
-            if (arg.has_value())
+            if (hadValue)
             {
-                self->_func(arg.value());
-            }
-            else
-            {
-                // should not happen
+                // already pending
+                return;
             }
         }
+
+        _dispatcher.RunAsync(CoreDispatcherPriority::Low, [weakThis = this->weak_from_this()]() {
+            if (auto self{ weakThis.lock() })
+            {
+                DispatcherTimer timer;
+                timer.Interval(self->_delay);
+                timer.Tick([=](auto&&...) {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        timer.Stop();
+
+                        std::optional<std::tuple<Args...>> args;
+                        {
+                            std::lock_guard guard{ self->_lock };
+                            self->_pendingRunArgs.swap(args);
+                        }
+                        std::apply(self->_func, args.value());
+                    }
+                });
+                timer.Start();
+            }
+        });
     }
 
     // Method Description:
-    // - Modifies the pending argument for the next function invocation, if
+    // - Modifies the pending arguments for the next function invocation, if
     //   there is one pending currently.
-    // - Let's say that you just called the `Run` method with argument A.
-    //   After the delay specified in the constructor, the function R
-    //   specified in the constructor will be called with argument A.
-    // - By using this method, you can modify argument A before the function R
-    //   is called with argument A.
-    // - You pass a function to this method which will take a reference to
-    //   argument A and will modify it.
-    // - When there is no pending invocation of function R, this method will
+    // - Let's say that you just called the `Run` method with some arguments.
+    //   After the delay specified in the constructor, the function specified
+    //   in the constructor will be called with these arguments.
+    // - By using this method, you can modify the arguments before the function
+    //   is called.
+    // - You pass a function to this method which will take references to
+    //   the arguments (one argument corresponds to one reference to an
+    //   argument) and will modify them.
+    // - When there is no pending invocation of the function, this method will
     //   not do anything.
     // - This method is always thread-safe. It can be called multiple times on
     //   different threads.
     // Arguments:
-    // - f: the function to call with a reference to the argument
+    // - f: the function to call with references to the arguments
     // Return Value:
     // - <none>
     template<typename F>
     void ModifyPending(F f)
     {
-        _pendingCallArg.ModifyValue(f);
+        std::lock_guard guard{ _lock };
+
+        if (_pendingRunArgs.has_value())
+        {
+            std::apply(f, _pendingRunArgs.value());
+        }
     }
 
 private:
     Func _func;
     winrt::Windows::Foundation::TimeSpan _delay;
-    ThreadSafeOptional<T> _pendingCallArg;
+    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+
+    std::optional<std::tuple<Args...>> _pendingRunArgs;
+    std::mutex _lock;
+};
+
+// Class Description:
+// - Represents a function whose invocation is delayed by a specified duration
+//   and rate-limited such that if the code tries to run the function while a
+//   call to the function is already pending, the request will be ignored.
+// - The function will be run on the the specified dispatcher.
+template<>
+class ThrottledFunc<> : public std::enable_shared_from_this<ThrottledFunc<>>
+{
+public:
+    using Func = std::function<void()>;
+
+    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher);
+
+    void Run();
+
+private:
+    Func _func;
+    winrt::Windows::Foundation::TimeSpan _delay;
+    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+
+    std::atomic_flag _isRunPending;
 };
