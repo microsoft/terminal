@@ -52,6 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECKPNM,
             DSR,
             DA,
+            DA2,
             VPA,
             HPR,
             VPR,
