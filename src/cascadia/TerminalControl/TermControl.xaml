@@ -19,6 +19,7 @@
     Tapped="_TappedHandler"
     PointerWheelChanged="_MouseWheelHandler"
     PreviewKeyDown="_KeyDownHandler"
+    KeyUp="_KeyUpHandler"
     CharacterReceived="_CharacterHandler"
     GotFocus="_GotFocusHandler"
     LostFocus="_LostFocusHandler">

@@ -20,14 +20,12 @@ using namespace Microsoft::Console::Render;
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
 // - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
-                                   std::basic_string_view<Cluster> const clusters,
                                    size_t const width,
                                    IBoxDrawingEffect* const boxEffect) :
     _factory{ factory.get() },
@@ -41,13 +39,43 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ width }
+    _width{ width },
+    _isEntireTextSimple{ false }
 {
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+}
 
-    _textClusterColumns.reserve(clusters.size());
+//Routine Description:
+// - Resets this custom text layout to the freshly allocated state in terms of text analysis.
+// Arguments:
+// - <none>, modifies internal state
+// Return Value:
+// - S_OK or suitable memory management issue
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Reset() noexcept
+try
+{
+    _runs.clear();
+    _breakpoints.clear();
+    _runIndex = 0;
+    _isEntireTextSimple = false;
+    _textClusterColumns.clear();
+    _text.clear();
+    return S_OK;
+}
+CATCH_RETURN()
+
+// Routine Description:
+// - Appends text to this layout for analysis/processing.
+// Arguments:
+// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
+// Return Value:
+// - S_OK or suitable memory management issue.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters)
+try
+{
+    _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());
 
     for (const auto& cluster : clusters)
     {
@@ -63,7 +91,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         _text += text;
     }
+
+    return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Figures out how many columns this layout should take. This will use the analyze step only.
@@ -76,6 +107,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
+    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
 
@@ -106,6 +138,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
 {
+    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
     RETURN_IF_FAILED(_CorrectGlyphRuns());
@@ -116,6 +149,44 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
     RETURN_IF_FAILED(_DrawGlyphRuns(clientDrawingContext, renderer, { originX, originY }));
 
+    return S_OK;
+}
+
+// Routine Description:
+// - Uses the internal text information and the analyzers/font information from construction
+//   to determine the complexity of the text. If the text is determined to be entirely simple,
+//   we'll have more chances to optimize the layout process.
+// Arguments:
+// - <none> - Uses internal state
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeTextComplexity() noexcept
+{
+    try
+    {
+        const auto textLength = gsl::narrow<UINT32>(_text.size());
+
+        BOOL isTextSimple = FALSE;
+        UINT32 uiLengthRead = 0;
+
+        // Start from the beginning.
+        const UINT32 glyphStart = 0;
+
+        _glyphIndices.resize(textLength);
+
+        const HRESULT hr = _analyzer->GetTextComplexity(
+            _text.c_str(),
+            textLength,
+            _font.Get(),
+            &isTextSimple,
+            &uiLengthRead,
+            &_glyphIndices.at(glyphStart));
+
+        RETURN_IF_FAILED(hr);
+
+        _isEntireTextSimple = isTextSimple && uiLengthRead == textLength;
+    }
+    CATCH_RETURN();
     return S_OK;
 }
 
@@ -149,11 +220,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        BOOL isTextSimple = FALSE;
-        UINT32 uiLengthRead = 0;
-        RETURN_IF_FAILED(_analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, NULL));
-
-        if (!(isTextSimple && uiLengthRead == _text.size()))
+        if (!_isEntireTextSimple)
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
@@ -274,6 +341,39 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
+        if (_isEntireTextSimple)
+        {
+            // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
+            // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
+            // advances without the need of GetGlyphPlacements. This shortcut will significantly reduce the time
+            // needed for text analysis.
+            DWRITE_FONT_METRICS1 metrics;
+            run.fontFace->GetMetrics(&metrics);
+
+            // With simple text, there's only one run. The actual glyph count is the same as textLength.
+            _glyphDesignUnitAdvances.resize(textLength);
+            _glyphAdvances.resize(textLength);
+            _glyphOffsets.resize(textLength);
+
+            USHORT designUnitsPerEm = metrics.designUnitsPerEm;
+
+            RETURN_IF_FAILED(_font->GetDesignGlyphAdvances(
+                textLength,
+                &_glyphIndices.at(glyphStart),
+                &_glyphDesignUnitAdvances.at(glyphStart),
+                run.isSideways));
+
+            for (size_t i = glyphStart; i < _glyphAdvances.size(); i++)
+            {
+                _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
+            }
+
+            run.glyphCount = textLength;
+            glyphStart += textLength;
+
+            return S_OK;
+        }
+
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
@@ -371,6 +471,12 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 {
     try
     {
+        // For simple text, there is no need to correct runs.
+        if (_isEntireTextSimple)
+        {
+            return S_OK;
+        }
+
         // Correct each run separately. This is needed whenever script, locale,
         // or reading direction changes.
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
@@ -507,9 +613,6 @@ try
     }
 
     // We're going to walk through and check for advances that don't match the space that we expect to give out.
-
-    DWRITE_FONT_METRICS1 metrics;
-    run.fontFace->GetMetrics(&metrics);
 
     // Glyph Indices represents the number inside the selected font where the glyph image/paths are found.
     // Text represents the original text we gave in.
@@ -1754,21 +1857,13 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 // - <none>
 void CustomTextLayout::_OrderRuns()
 {
-    const size_t totalRuns = _runs.size();
-    std::vector<LinkedRun> runs;
-    runs.resize(totalRuns);
-
-    UINT32 nextRunIndex = 0;
-    for (UINT32 i = 0; i < totalRuns; ++i)
+    std::sort(_runs.begin(), _runs.end(), [](auto& a, auto& b) { return a.textStart < b.textStart; });
+    for (UINT32 i = 0; i < _runs.size() - 1; ++i)
     {
-        runs.at(i) = _runs.at(nextRunIndex);
-        runs.at(i).nextRunIndex = i + 1;
-        nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
+        til::at(_runs, i).nextRunIndex = i + 1;
     }
 
-    runs.back().nextRunIndex = 0;
-
-    _runs.swap(runs);
+    _runs.back().nextRunIndex = 0;
 }
 
 #pragma endregion

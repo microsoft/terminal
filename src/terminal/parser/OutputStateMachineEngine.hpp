@@ -36,6 +36,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionEscDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates) override;
 
+        bool ActionVt52EscDispatch(const wchar_t wch,
+                                   const std::basic_string_view<wchar_t> intermediates,
+                                   const std::basic_string_view<size_t> parameters) override;
+
         bool ActionCsiDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
@@ -51,6 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionSs3Dispatch(const wchar_t wch,
                                const std::basic_string_view<size_t> parameters) noexcept override;
 
+        bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
@@ -66,7 +71,10 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
+        bool _IntermediateScsDispatch(const wchar_t wch,
+                                      const std::basic_string_view<wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const std::basic_string_view<size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
@@ -123,7 +131,33 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
             DTTERM_WindowManipulation = L't',
             REP_RepeatCharacter = L'b',
+            SS2_SingleShift = L'N',
+            SS3_SingleShift = L'O',
+            LS2_LockingShift = L'n',
+            LS3_LockingShift = L'o',
+            LS1R_LockingShift = L'~',
+            LS2R_LockingShift = L'}',
+            LS3R_LockingShift = L'|',
             DECALN_ScreenAlignmentPattern = L'8'
+        };
+
+        enum Vt52ActionCodes : wchar_t
+        {
+            CursorUp = L'A',
+            CursorDown = L'B',
+            CursorRight = L'C',
+            CursorLeft = L'D',
+            EnterGraphicsMode = L'F',
+            ExitGraphicsMode = L'G',
+            CursorToHome = L'H',
+            ReverseLineFeed = L'I',
+            EraseToEndOfScreen = L'J',
+            EraseToEndOfLine = L'K',
+            DirectCursorAddress = L'Y',
+            Identify = L'Z',
+            EnterAlternateKeypadMode = L'=',
+            ExitAlternateKeypadMode = L'>',
+            ExitVt52Mode = L'<'
         };
 
         enum OscActionCodes : unsigned int
@@ -138,15 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetCursorColor = 12,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112,
-        };
-
-        enum class DesignateCharsetTypes
-        {
-            G0,
-            G1,
-            G2,
-            G3
+            ResetCursorColor = 112
         };
 
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
@@ -201,10 +227,6 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr size_t DefaultTabClearType = 0;
         bool _GetTabClearType(const std::basic_string_view<size_t> parameters,
                               size_t& clearType) const noexcept;
-
-        static constexpr DesignateCharsetTypes DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
-        bool _GetDesignateType(const wchar_t intermediate,
-                               DesignateCharsetTypes& designateType) const noexcept;
 
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,

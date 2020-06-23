@@ -59,7 +59,8 @@
     <Midl Include="TelnetConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -95,4 +96,6 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets" Condition="Exists('..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets')" />
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

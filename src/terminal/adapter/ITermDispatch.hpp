@@ -53,7 +53,9 @@ public:
     virtual bool SetColumns(const size_t columns) = 0; // DECCOLM
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
+    virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
+    virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
     virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
@@ -92,8 +94,14 @@ public:
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
+    virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
-    virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // SCS
+    virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
+    virtual bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
+    virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
+    virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
