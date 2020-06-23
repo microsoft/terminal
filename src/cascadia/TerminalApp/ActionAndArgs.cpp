@@ -212,7 +212,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring ActionAndArgs::GenerateName()
+    winrt::hstring ActionAndArgs::GenerateName() const
     {
         // Use a magic static to initialize this map, because we won't be able
         // to load the resources at _init_, only at runtime.

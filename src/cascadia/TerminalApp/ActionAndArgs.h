@@ -12,7 +12,7 @@ namespace winrt::TerminalApp::implementation
                                                       std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         ActionAndArgs() = default;
-        hstring GenerateName();
+        hstring GenerateName() const;
 
         GETSET_PROPERTY(TerminalApp::ShortcutAction, Action, TerminalApp::ShortcutAction::Invalid);
         GETSET_PROPERTY(IActionArgs, Args, nullptr);

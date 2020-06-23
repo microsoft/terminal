@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Get the name for the command specified in `json`. If there is no "name"
-    //   proprty in the provided json object, then instead generate a name for
+    //   property in the provided json object, then instead generate a name for
     //   the provided ActionAndArgs.
     // Arguments:
     // - json: json for the command to generate a name for.

@@ -133,6 +133,10 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring AdjustFontSizeArgs::GenerateName() const
     {
+        // If the amount is just 1 (or -1), we'll just return "Increase font
+        // size" (or "Decrease font size"). If the amount delta has a greater
+        // absolute value, we'll include it like"
+        // * Decrease font size, amount: {delta}"
         if (_Delta < 0)
         {
             return _Delta == -1 ? winrt::hstring{ fmt::format(RS_(L"DecreaseFontSizeCommandKey").c_str()) } :
@@ -147,6 +151,15 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
+        // The string will be similar to the following:
+        // * "Duplicate pane[, split: <direction>][, new terminal arguments...]"
+        // * "Split pane[, split: <direction>][, new terminal arguments...]"
+        //
+        // Direction will only be added to the string if the split direction is
+        // not "auto".
+        // If this is a "duplicate pane" action, then the new terminal arguments
+        // will be omitted (as they're unused)
+
         std::wstringstream ss;
         if (_SplitMode == SplitType::Duplicate)
         {
@@ -158,13 +171,15 @@ namespace winrt::TerminalApp::implementation
         }
         ss << L", ";
 
+        // This text is intentionally _not_ localized, to attempt to mirror the
+        // exact syntax that the property would have in JSON.
         switch (_SplitStyle)
         {
         case SplitState::Vertical:
-            ss << L"direction: vertical, ";
+            ss << L"split: vertical, ";
             break;
         case SplitState::Horizontal:
-            ss << L"direction: horizontal, ";
+            ss << L"split: horizontal, ";
             break;
         }
 

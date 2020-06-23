@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "CommandPalette.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -19,7 +17,7 @@ namespace winrt::TerminalApp::implementation
         void ToggleVisibility();
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(Closed, _closeHandlers, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Closed, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
@@ -44,7 +42,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct CommandPalette : CommandPaletteT<CommandPalette, implementation::CommandPalette>
-    {
-    };
+    BASIC_FACTORY(CommandPalette);
 }

@@ -325,14 +325,10 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);
-        // TODO: Do we want to clear the text box each time we close the dialog? Or leave it?
-        // I think if we decide to leave it, we should auto-select all the text
-        // in it, so a user can start typing right away, or continue with the
-        // current selection.
 
-        // _SearchBox().Text(L"");
-        _closeHandlers(*this, RoutedEventArgs{});
+        // Clear the text box each time we close the dialog. This is consistent with VsCode.
+        _SearchBox().Text(L"");
+        _ClosedHandlers(*this, RoutedEventArgs{});
     }
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(CommandPalette, Closed, _closeHandlers, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);
 }
