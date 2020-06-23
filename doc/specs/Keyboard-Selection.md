@@ -1,8 +1,8 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2020-05-7
-issue id: #715
+last updated: 2020-06-23
+issue id: 715
 ---
 
 # Keyboard Selection
@@ -72,34 +72,34 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 |--|--|--|
 | `moveSelectionPoint` |                                                               | If a selection exists, moves the last selection anchor.
 |                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
-|                       | `Enum expansionMode { cell, word, line, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
+|                       | `Enum expansionMode { cell, word, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectEntireBuffer`  | | Select the entire text buffer.
 
 
 By default, the following keybindings will be set:
 ```JS
 // Cell Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "down" },  "keys": ["shift+down"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "up" },    "keys": ["shift+up"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "left" },  "keys": ["shift+left"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "right" }, "keys": ["shift+right"] },
+{ "command": { "action": "moveSelectionPoint", "direction": "down" },  "keys": "shift+down" },
+{ "command": { "action": "moveSelectionPoint", "direction": "up" },    "keys": "shift+up" },
+{ "command": { "action": "moveSelectionPoint", "direction": "left" },  "keys": "shift+left" },
+{ "command": { "action": "moveSelectionPoint", "direction": "right" }, "keys": "shift+right" },
 
 // Word Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "word" }, "keys": ["ctrl+shift+left"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "word" }, "keys": ["ctrl+shift+right"] },
+{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "word" }, "keys": "ctrl+shift+left" },
+{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "word" }, "keys": "ctrl+shift+right" },
 
 // Viewport Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "viewport" }, "keys": ["shift+home"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "viewport" }, "keys": ["shift+end"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "viewport" }, "keys": ["ctrl+shift+up"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "viewport" }, "keys": ["ctrl+shift+down"] },
+{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "viewport" }, "keys": "shift+home" },
+{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "viewport" }, "keys": "shift+end" },
+{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "viewport" }, "keys": "shift+pgup" },
+{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "viewport" }, "keys": "shift+pgdn" },
 
 // Buffer Corner Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "buffer" }, "keys": ["ctrl+shift+home"] },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "buffer" }, "keys": ["ctrl+shift+end"] },
+{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "buffer" }, "keys": "ctrl+shift+home" },
+{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "buffer" }, "keys": "ctrl+shift+end" },
 
 // Select All
-{ "command": "selectEntireBuffer", "keys": ["ctrl+shift+a"] },
+{ "command": "selectEntireBuffer", "keys": "ctrl+shift+a" },
 ```
 
 ## Capabilities
