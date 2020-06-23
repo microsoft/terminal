@@ -149,7 +149,7 @@ namespace winrt::TerminalApp::implementation
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
-        static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs, bool removeTabs);
+        static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs, std::optional<int> numSpacesToReplaceTab);
 
         fire_and_forget _LaunchSettings(const bool openDefaults);
 

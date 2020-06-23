@@ -1487,12 +1487,12 @@ namespace winrt::TerminalApp::implementation
         
         if (auto strongThis{ weakThis.get() })
         {
-            TerminalPage::PasteFromClipboard(eventArgs, strongThis->_settings->GlobalSettings().RemoveTabsOnPaste());
+            TerminalPage::PasteFromClipboard(eventArgs, strongThis->_settings->GlobalSettings().ReplaceTabsWithSpacesOnPaste());
         }
 
     }
 
-    fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs, bool removeTabs)
+    fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs, std::optional<int> numSpacesToReplaceTab)
     {
         const DataPackageView data = Clipboard::GetContent();
 
@@ -1519,12 +1519,25 @@ namespace winrt::TerminalApp::implementation
                     text = item.Path();
                 }
             }
-            //The following removes all tab characters when pasting from clipboard.
-            if (removeTabs) 
+            //The following changes tabs to a user-defined number of spaces
+            if (numSpacesToReplaceTab.has_value()) 
             {
                 std::wstring temporary;
                 temporary.reserve(text.size());
-                std::copy_if(text.cbegin(), text.cend(), std::back_inserter(temporary), [](const wchar_t c) { return c != L'\t'; });
+                for (winrt::hstring::value_type b : text)
+                {
+                    if (b == L'\t')
+                    {
+                        for (int i = 0; i < numSpacesToReplaceTab.value(); ++i)
+                        {
+                            temporary.push_back(L' ');
+                        }
+                    }
+                    else
+                    {
+                        temporary.push_back(b);
+                    }
+                }
                 text = temporary;
             }
             eventArgs.HandleClipboardData(text);

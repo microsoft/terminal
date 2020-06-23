@@ -31,6 +31,10 @@ namespace TerminalApp::JsonUtils
                            std::string_view key,
                            std::optional<double>& target);
 
+    void GetOptionalInt(const Json::Value& json,
+                           std::string_view key,
+                           std::optional<int>& target);
+
     // Method Description:
     // - Helper that can be used for retrieving an optional value from a json
     //   object, and parsing it's value to layer on a given target object.

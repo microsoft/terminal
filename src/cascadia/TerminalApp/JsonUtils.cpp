@@ -62,6 +62,23 @@ void TerminalApp::JsonUtils::GetOptionalDouble(const Json::Value& json,
                      validationFn);
 }
 
+void TerminalApp::JsonUtils::GetOptionalInt(const Json::Value& json,
+                                            std::string_view key,
+                                            std::optional<int>& target)
+{
+    const auto conversionFn = [](const Json::Value& value) -> int {
+        return value.asInt();
+    };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isInt();
+    };
+    GetOptionalValue(json,
+                     key,
+                     target,
+                     conversionFn,
+                     validationFn);
+}
+
 void TerminalApp::JsonUtils::GetInt(const Json::Value& json,
                                     std::string_view key,
                                     int& target)
