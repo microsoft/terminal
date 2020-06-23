@@ -51,6 +51,7 @@ public:
     short GetHeight() const;
     bool GetInheritCursor() const;
     bool IsResizeQuirkEnabled() const;
+    bool IsWin32InputModeEnabled() const;
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
@@ -70,6 +71,7 @@ public:
     static const std::wstring_view HEIGHT_ARG;
     static const std::wstring_view INHERIT_CURSOR_ARG;
     static const std::wstring_view RESIZE_QUIRK;
+    static const std::wstring_view WIN32_INPUT_MODE;
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
 
@@ -131,6 +133,7 @@ private:
     DWORD _signalHandle;
     bool _inheritCursor;
     bool _resizeQuirk{ false };
+    bool _win32InputMode{ false };
 
     bool _receivedEarlySizeChange;
     short _originalWidth;

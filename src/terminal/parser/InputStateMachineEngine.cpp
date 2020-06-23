@@ -129,7 +129,8 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
-        success = _pDispatch->WriteCtrlC();
+        const auto [keyDown, keyUp] = KeyEvent::MakePair(1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+        success = _pDispatch->WriteCtrlKey(keyDown) && _pDispatch->WriteCtrlKey(keyUp);
     }
     else if (wch >= '\x0' && wch < '\x20')
     {
@@ -365,7 +366,17 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                 const std::basic_string_view<wchar_t> intermediates,
                                                 const std::basic_string_view<size_t> parameters)
 {
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    const auto actionCode = static_cast<CsiActionCodes>(wch);
+
+    // GH#4999 - If the client was in VT input mode, but we received a
+    // win32-input-mode sequence, then _don't_ passthrough the sequence to the
+    // client. It's impossibly unlikely that the client actually wanted
+    // win32-input-mode, and if they did, then we'll just translate the
+    // INPUT_RECORD back to the same sequence we say here later on, when the
+    // client reads it.
+    if (_pDispatch->IsVtInputEnabled() &&
+        _pfnFlushToInputQueue &&
+        actionCode != CsiActionCodes::Win32KeyboardInput)
     {
         return _pfnFlushToInputQueue();
     }
@@ -375,6 +386,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     unsigned int function = 0;
     size_t col = 0;
     size_t row = 0;
+    KeyEvent key;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
@@ -403,7 +415,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         }
         return success;
     }
-    switch (static_cast<CsiActionCodes>(wch))
+    switch (actionCode)
     {
     case CsiActionCodes::Generic:
         modifierState = _GetGenericKeysModifierState(parameters);
@@ -439,6 +451,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
+        break;
+    case CsiActionCodes::Win32KeyboardInput:
+        success = _GenerateWin32Key(parameters, key);
         break;
     default:
         success = false;
@@ -480,6 +495,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
                                                      remainingArgs);
             break;
+        case CsiActionCodes::Win32KeyboardInput:
+        {
+            // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
+            // because that will take extra steps to make sure things like
+            // Ctrl+C, Ctrl+Break are handled correctly.
+            success = _pDispatch->WriteCtrlKey(key);
+            break;
+        }
         default:
             success = false;
             break;
@@ -1287,6 +1310,60 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
     if (column == 0)
     {
         column = DefaultColumn;
+    }
+
+    return true;
+}
+
+// Method Description:
+// - Attempt to parse our parameters into a win32-input-mode serialized KeyEvent.
+// Arguments:
+// - parameters: the list of numbers to parse into values for the KeyEvent.
+// - key: receives the values of the deserialized KeyEvent.
+// Return Value:
+// - true if we successfully parsed the key event.
+bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<size_t> parameters,
+                                                KeyEvent& key)
+{
+    // Sequences are formatted as follows:
+    //
+    // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
+    //
+    //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+    //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+    //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+    //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+    //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
+
+    if (parameters.size() > 6)
+    {
+        return false;
+    }
+
+    key = KeyEvent();
+    key.SetRepeatCount(1);
+    switch (parameters.size())
+    {
+    case 6:
+        key.SetRepeatCount(::base::saturated_cast<WORD>(parameters.at(5)));
+        [[fallthrough]];
+    case 5:
+        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(parameters.at(4)));
+        [[fallthrough]];
+    case 4:
+        key.SetKeyDown(static_cast<bool>(parameters.at(3)));
+        [[fallthrough]];
+    case 3:
+        key.SetCharData(static_cast<wchar_t>(parameters.at(2)));
+        [[fallthrough]];
+    case 2:
+        key.SetVirtualScanCode(::base::saturated_cast<WORD>(parameters.at(1)));
+        [[fallthrough]];
+    case 1:
+        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(parameters.at(0)));
+        break;
     }
 
     return true;

@@ -68,6 +68,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
         bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
@@ -162,6 +163,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ClearAllTabStops() noexcept;
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
+
+        bool _ShouldPassThroughInputModeChange() const;
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;

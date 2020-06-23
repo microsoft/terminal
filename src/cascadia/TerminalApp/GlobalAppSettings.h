@@ -77,6 +77,7 @@ public:
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
     GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
     GETSET_PROPERTY(bool, SoftwareRendering, false);
+    GETSET_PROPERTY(bool, ForceVTInput, false);
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
 
     GETSET_PROPERTY(bool, StartOnUserLogin, false);

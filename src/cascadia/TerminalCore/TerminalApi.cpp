@@ -409,10 +409,11 @@ CATCH_LOG_RETURN_FALSE()
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
 {
-    _title = _suppressApplicationTitle ? _startingTitle : title;
-
-    _pfnTitleChanged(_title);
-
+    if (!_suppressApplicationTitle)
+    {
+        _title.emplace(title);
+        _pfnTitleChanged(_title.value());
+    }
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
@@ -520,6 +521,12 @@ try
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
+
+bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    return true;
+}
 
 bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
 {

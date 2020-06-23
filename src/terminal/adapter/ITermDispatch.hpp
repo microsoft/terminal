@@ -53,6 +53,7 @@ public:
     virtual bool SetColumns(const size_t columns) = 0; // DECCOLM
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
+    virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM

@@ -1746,6 +1746,7 @@ popup
 POPUPATTR
 PORFLG
 positionals
+posix
 POSTCHARBREAKS
 POSX
 POSXSCROLL
@@ -1976,6 +1977,7 @@ robomac
 roundtrip
 ROWSTOSCROLL
 RRF
+RRRGGGBB
 rtcore
 RTEXT
 rtf
@@ -2253,6 +2255,7 @@ targetnametoken
 targetver
 taskbar
 tbar
+TBase
 tbc
 tbi
 Tbl
@@ -2295,6 +2298,7 @@ testtestabc
 testtesttesttesttest
 TEXCOORD
 texel
+TExpected
 textattribute
 TEXTATTRIBUTEID
 Textbox
@@ -2319,6 +2323,7 @@ tilunittests
 Timeline
 titlebar
 TITLEISLINKNAME
+TJson
 tl
 TLEN
 Tlg
@@ -2341,6 +2346,7 @@ tooltip
 TOPDOWNDIB
 TOPLEFT
 TOPRIGHT
+TOpt
 tosign
 touchpad
 towlower
@@ -2383,6 +2389,7 @@ Txtev
 typechecked
 typechecking
 typedef
+typeid
 typeinfo
 typelib
 typename

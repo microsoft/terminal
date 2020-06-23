@@ -53,7 +53,6 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
-    <ClInclude Include="WindowUiaProvider.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -63,7 +62,6 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
-    <ClCompile Include="WindowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />
@@ -115,21 +113,6 @@
     <Error Condition="!Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets'))" />
   </Target>
 
-  <!-- **BEGIN VC LIBS HACK** -->
-  <PropertyGroup>
-    <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
-    <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
-    <!-- Add all the CRT libs as content -->
-    <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll">
-      <TargetPath>%(Filename)%(Extension)</TargetPath>
-    </_OpenConsoleVCLibToCopy>
-  </ItemGroup>
-  <!-- **END VC LIBS HACK** -->
-
-
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into
        the package, we tell it.
@@ -154,13 +137,25 @@
 
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
-      <!-- (part of the VC LIBS HACK above) -->
+    </ItemGroup>
+
+    <!-- **BEGIN VC LIBS HACK** -->
+    <PropertyGroup>
+      <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
+      <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
+      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
+
       <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
-
+    <!-- **END VC LIBS HACK** -->
   </Target>
 
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />

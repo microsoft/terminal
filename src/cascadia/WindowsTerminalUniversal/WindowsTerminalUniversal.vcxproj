@@ -123,9 +123,10 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\*\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
     <PRIResource Include="Resources\Resources.devicefamily-core.resw" />
+    <OCResourceDirectory Include="Resources" />
   </ItemGroup>
   <PropertyGroup>
     <!-- This is picked up by CascadiaResources.build.items. -->
@@ -173,4 +174,6 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

@@ -660,17 +660,20 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     //  ALT+n => fg,  CTRL+n => bg
     if (fAltPressed || fCtrlPressed)
     {
-        ULONG ulAttr = wVirtualKeyCode - '0' + 6;
+        TextAttribute selectionAttr;
+        const BYTE colorIndex = gsl::narrow_cast<BYTE>(wVirtualKeyCode - '0' + 6);
 
         if (fCtrlPressed)
         {
             //  Setting background color.  Set fg color to black.
-            ulAttr <<= 4;
+            selectionAttr.SetIndexedBackground256(colorIndex);
+            selectionAttr.SetIndexedForeground256(0);
         }
         else
         {
             // Set foreground color. Maintain the current console bg color.
-            ulAttr |= gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes() & 0xf0;
+            selectionAttr = gci.GetActiveOutputBuffer().GetAttributes();
+            selectionAttr.SetIndexedForeground256(colorIndex);
         }
 
         // If shift was pressed as well, then this is actually a
@@ -706,7 +709,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
                     Search search(gci.renderData, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
                     while (search.FindNext())
                     {
-                        search.Color(TextAttribute{ static_cast<WORD>(ulAttr) });
+                        search.Color(selectionAttr);
                     }
                 }
             }
@@ -714,7 +717,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         }
         else
         {
-            ColorSelection(_srSelectionRect, TextAttribute{ static_cast<WORD>(ulAttr) });
+            ColorSelection(_srSelectionRect, selectionAttr);
             ClearSelection();
         }
 
