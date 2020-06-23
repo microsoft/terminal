@@ -1252,6 +1252,7 @@ Loremipsumdolorsitamet
 lowercased
 loword
 lparam
+lparen
 LPBYTE
 LPCCH
 lpch
@@ -1976,6 +1977,7 @@ roadmap
 robomac
 roundtrip
 ROWSTOSCROLL
+rparen
 RRF
 RRRGGGBB
 rtcore
