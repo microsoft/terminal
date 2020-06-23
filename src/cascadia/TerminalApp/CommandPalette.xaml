@@ -10,6 +10,70 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
     mc:Ignorable="d">
 
+    <Grid.Resources>
+        <ResourceDictionary>
+
+
+            <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit adds
+        it conditionally -->
+            <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="#333333" />
+                    </Style>
+                    <!-- TextBox colors !-->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
+                    <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
+                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="#CCCCCC" />
+                    </Style>
+                    <!-- TextBox colors !-->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+
+        
+    </Grid.Resources>
+
+
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="8*" />
@@ -21,11 +85,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
-    <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit adds it
-    conditionally -->
-    <Grid.Resources>
-        <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
-    </Grid.Resources>
 
     <Grid
         x:Name="ShadowBackdrop"
@@ -38,7 +97,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <Grid
         x:Name="Backdrop"
-        Background="{ThemeResource SystemChromeMediumLowColor}"
+        Style="{ThemeResource CommandPaletteBackground}"
         CornerRadius="{ThemeResource ControlCornerRadius}"
         Margin="8"
         Grid.Column="1"
