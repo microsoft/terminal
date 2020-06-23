@@ -56,7 +56,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Moves the focus up or down the list of commands. If we're att the top,
+    // - Moves the focus up or down the list of commands. If we're at the top,
     //   we'll loop around to the bottom, and vice-versa.
     // Arguments:
     // - moveDown: if true, we're attempting to move to the next item in the
@@ -177,7 +177,7 @@ namespace winrt::TerminalApp::implementation
         // - Matching the first character of a word, then the first char of a
         //   subsequent word seems better than just "the order they appear in
         //   the list".
-        // - TODO GH#TODO:"Recently used commands" ordering also seems valuable.
+        // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
 
         auto compare = [searchText](const Command& left, const Command& right) {
             const int leftWeight = _getWeight(left.Name(), searchText);
@@ -209,7 +209,7 @@ namespace winrt::TerminalApp::implementation
     // Function Description:
     // - Determine if a command with the given `name` should be shown if the
     //   input box contains the string `searchText`. If all the characters of
-    //   search text appear in order in `name`, then this fuction will return
+    //   search text appear in order in `name`, then this function will return
     //   true. There can be any number of characters separating consecutive
     //   characters in searchText.
     //   * For example:

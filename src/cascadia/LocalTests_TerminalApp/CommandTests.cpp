@@ -264,7 +264,7 @@ namespace TerminalAppLocalTests
         // that don't have given names, pursuant to the spec in GH#6532.
 
         // NOTE: The keys used to look up these commands are partially generated
-        // from strings in our Resources.resw. If those string values sohuld
+        // from strings in our Resources.resw. If those string values should
         // change, it's likely that this test will break.
 
         const std::string commands0String{ R"([

@@ -20,7 +20,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    winrt::hstring NewTerminalArgs::GenerateName()
+    winrt::hstring NewTerminalArgs::GenerateName() const
     {
         std::wstringstream ss;
 
@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ s.substr(0, s.size() - 2) };
     }
 
-    winrt::hstring CopyTextArgs::GenerateName()
+    winrt::hstring CopyTextArgs::GenerateName() const
     {
         if (_SingleLine)
         {
@@ -66,7 +66,7 @@ namespace winrt::TerminalApp::implementation
         return RS_(L"CopyTextCommandKey");
     }
 
-    winrt::hstring NewTabArgs::GenerateName()
+    winrt::hstring NewTabArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
         if (_TerminalArgs)
@@ -84,12 +84,12 @@ namespace winrt::TerminalApp::implementation
         return L"NewTabArgs";
     }
 
-    winrt::hstring SwitchToTabArgs::GenerateName()
+    winrt::hstring SwitchToTabArgs::GenerateName() const
     {
         return winrt::hstring{ fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), _TabIndex) };
     }
 
-    winrt::hstring ResizePaneArgs::GenerateName()
+    winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
         switch (_Direction)
@@ -110,7 +110,7 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ fmt::format(RS_(L"ResizePaneWithArgCommandKey").c_str(), directionString) };
     }
 
-    winrt::hstring MoveFocusArgs::GenerateName()
+    winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
         switch (_Direction)
@@ -131,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ fmt::format(RS_(L"MoveFocusWithArgCommandKey").c_str(), directionString) };
     }
 
-    winrt::hstring AdjustFontSizeArgs::GenerateName()
+    winrt::hstring AdjustFontSizeArgs::GenerateName() const
     {
         if (_Delta < 0)
         {
@@ -145,7 +145,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring SplitPaneArgs::GenerateName()
+    winrt::hstring SplitPaneArgs::GenerateName() const
     {
         std::wstringstream ss;
         if (_SplitMode == SplitType::Duplicate)
@@ -161,10 +161,10 @@ namespace winrt::TerminalApp::implementation
         switch (_SplitStyle)
         {
         case SplitState::Vertical:
-            ss << L"direction: Vertical, ";
+            ss << L"direction: vertical, ";
             break;
         case SplitState::Horizontal:
-            ss << L"direction: Horizontal, ";
+            ss << L"direction: horizontal, ";
             break;
         }
 
@@ -185,7 +185,7 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ s.substr(0, s.size() - 2) };
     }
 
-    winrt::hstring OpenSettingsArgs::GenerateName()
+    winrt::hstring OpenSettingsArgs::GenerateName() const
     {
         switch (_Target)
         {

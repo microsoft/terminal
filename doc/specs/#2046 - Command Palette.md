@@ -786,4 +786,3 @@ Spec: Introduce a mini-specification for localized resource use from JSON [#5280
 [#3327]: https://github.com/microsoft/terminal/issues/3327
 [#3753]: https://github.com/microsoft/terminal/pulls/3753
 [#5888]: https://github.com/microsoft/terminal/pulls/5888
-

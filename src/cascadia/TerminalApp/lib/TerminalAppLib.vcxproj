@@ -181,7 +181,6 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
-    <ClCompile Include="../CommandSerialization.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

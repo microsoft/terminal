@@ -7,15 +7,15 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:local="using:TerminalApp"
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
     mc:Ignorable="d">
 
     <Grid.Resources>
         <ResourceDictionary>
 
-
-            <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit adds
-        it conditionally -->
+            <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit
+            adds it conditionally -->
             <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
 
             <ResourceDictionary.ThemeDictionaries>
@@ -70,9 +70,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
 
-        
     </Grid.Resources>
-
 
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
@@ -84,7 +82,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <RowDefinition Height="9*"/>
         <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
-
 
     <Grid
         x:Name="ShadowBackdrop"
@@ -138,7 +135,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <!-- This HorizontalContentAlignment="Stretch" is important
                     to make sure it takes the entire width of the line -->
-                    <ListViewItem HorizontalContentAlignment="Stretch">
+                    <ListViewItem HorizontalContentAlignment="Stretch"
+                                  AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
 
                         <Grid HorizontalAlignment="Stretch"  >
 
@@ -148,7 +147,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- TODO: Add Icon to command palette entries, in column 0 -->
+                            <!-- TODO GH#6644: Add Icon to command palette entries, in column 0 -->
 
                             <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"

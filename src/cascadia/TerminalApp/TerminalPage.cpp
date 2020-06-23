@@ -44,35 +44,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    // Method Description:
-    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
-    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
-    //      in the same order that XAML would put them as well.
-    // Return Value:
-    // - a string representation of the key modifiers for the shortcut
-    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
-    {
-        std::wstring buffer{ L"" };
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
-        {
-            buffer += L"Ctrl+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
-        {
-            buffer += L"Shift+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
-        {
-            buffer += L"Alt+";
-        }
-
-        return buffer;
-    }
-
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() }
     {
@@ -1401,6 +1372,35 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return { L"Windows Terminal" };
+    }
+
+    // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a string representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
+    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return buffer;
     }
 
     // Method Description:

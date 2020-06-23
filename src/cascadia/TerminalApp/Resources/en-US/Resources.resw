@@ -386,16 +386,16 @@
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="DirectionLeft" xml:space="preserve">
-    <value>Left</value>
+    <value>left</value>
   </data>
   <data name="DirectionRight" xml:space="preserve">
-    <value>Right</value>
+    <value>right</value>
   </data>
   <data name="DirectionUp" xml:space="preserve">
-    <value>Up</value>
+    <value>up</value>
   </data>
   <data name="DirectionDown" xml:space="preserve">
-    <value>Down</value>
+    <value>down</value>
   </data>
   <data name="SwitchToTabCommandKey" xml:space="preserve">
     <value>Switch to tab</value>

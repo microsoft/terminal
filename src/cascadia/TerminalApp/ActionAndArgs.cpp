@@ -215,7 +215,7 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring ActionAndArgs::GenerateName()
     {
         // Use a magic static to initialize this map, because we won't be able
-        // to load the resoruces at _init_, only at runtime.
+        // to load the resources at _init_, only at runtime.
         static const auto GeneratedActionNames = []() {
             return std::map<ShortcutAction, winrt::hstring>{
                 { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },

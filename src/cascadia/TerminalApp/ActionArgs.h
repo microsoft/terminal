@@ -56,7 +56,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const winrt::TerminalApp::NewTerminalArgs& other)
         {
             return other.Commandline() == _Commandline &&
@@ -101,7 +102,7 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view SingleLineKey{ "singleLine" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
 
         bool Equals(const IActionArgs& other)
         {
@@ -130,7 +131,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<NewTabArgs>();
@@ -157,7 +159,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TabIndexKey{ "index" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<SwitchToTabArgs>();
@@ -222,7 +225,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<ResizePaneArgs>();
@@ -259,7 +263,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<MoveFocusArgs>();
@@ -296,7 +301,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<AdjustFontSizeArgs>();
@@ -363,7 +369,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view SplitModeKey{ "splitMode" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<SplitPaneArgs>();
@@ -431,7 +438,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TargetKey{ "target" };
 
     public:
-        hstring GenerateName();
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<OpenSettingsArgs>();
