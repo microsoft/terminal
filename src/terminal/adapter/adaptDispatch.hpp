@@ -59,6 +59,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
+        bool TertiaryDeviceAttributes() override; // DA3
         bool Vt52DeviceAttributes() override; // VT52 Identify
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD

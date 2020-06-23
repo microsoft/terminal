@@ -745,6 +745,18 @@ bool AdaptDispatch::SecondaryDeviceAttributes()
 }
 
 // Routine Description:
+// - DA3 - Reports the terminal unit identification code. Terminal emulators
+//   typically return a hardcoded value, the most common being all zeros.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TertiaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1bP!|00000000\x1b\\");
+}
+
+// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
