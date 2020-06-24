@@ -611,6 +611,7 @@ public:
         _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
+        _win32InputMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
     {
     }
@@ -813,6 +814,9 @@ public:
         case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
+        case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+            fSuccess = EnableWin32InputMode(fEnable);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
@@ -851,6 +855,12 @@ public:
     bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
     {
         _cursorKeysMode = fApplicationMode;
+        return true;
+    }
+
+    bool EnableWin32InputMode(const bool enable) noexcept
+    {
+        _win32InputMode = enable;
         return true;
     }
 
@@ -977,6 +987,7 @@ public:
     size_t _numTabs;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
+    bool _win32InputMode;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;

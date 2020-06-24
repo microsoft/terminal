@@ -71,6 +71,7 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
         bool _IntermediateScsDispatch(const wchar_t wch,
                                       const std::basic_string_view<wchar_t> intermediates);
@@ -171,7 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetCursorColor = 12,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112,
+            ResetCursorColor = 112
         };
 
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;

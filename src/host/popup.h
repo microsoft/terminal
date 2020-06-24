@@ -39,11 +39,6 @@ public:
 
     void Draw();
 
-    void UpdateStoredColors(const TextAttribute& newAttr,
-                            const TextAttribute& newPopupAttr,
-                            const TextAttribute& oldAttr,
-                            const TextAttribute& oldPopupAttr);
-
     void End();
 
     SHORT Width() const noexcept;

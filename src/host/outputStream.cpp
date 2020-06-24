@@ -240,6 +240,20 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 }
 
 // Routine Description:
+// - Connects the PrivateEnableWin32InputMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateEnableWin32InputMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return Value:
+// - true always
+bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    DoSrvPrivateEnableWin32InputMode(win32InputMode);
+    return true;
+}
+
+// Routine Description:
 // - Sets the terminal emulation mode to either ANSI-compatible or VT52.
 //   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.

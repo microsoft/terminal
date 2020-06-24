@@ -15,6 +15,7 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
+#include "ThrottledFunc.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -84,7 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
-        bool OnF7Pressed();
+        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 
@@ -135,8 +136,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        bool _isTerminalInitiatedScroll;
-        std::atomic<bool> _willUpdateScrollBarToMatchViewport;
+        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
+
+        struct ScrollBarUpdate
+        {
+            std::optional<double> newValue;
+            double newMaximum;
+            double newMinimum;
+            double newViewportSize;
+        };
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        bool _isInternalScrollBarUpdate;
 
         int _rowsToScroll;
 
@@ -180,6 +190,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SetFontSize(int fontSize);
         void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _KeyUpHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -200,8 +211,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
-        winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
-        winrt::fire_and_forget _TerminalCursorPositionChanged();
+        void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        void _TerminalCursorPositionChanged();
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
@@ -215,11 +226,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TryStopAutoScroll(const uint32_t pointerId);
         void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
-        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
+        void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
-        bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
+        bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
 
@@ -236,12 +248,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _AsyncCloseConnection();
-
-        // this atomic is to be used as a guard against dispatching billions of coroutines for
-        // routine state changes that might happen millions of times a second.
-        // Unbounded main dispatcher use leads to massive memory leaks and intense slowdowns
-        // on the UI thread.
-        std::atomic<bool> _coroutineDispatchStateUpdateInProgress{ false };
     };
 }
 

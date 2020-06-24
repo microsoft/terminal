@@ -37,6 +37,9 @@ namespace Microsoft.Terminal.Wpf
             /// </summary>
             WM_MOUSEACTIVATE = 0x0021,
 
+            /// <summary>
+            /// The WM_GETOBJECT message is sent by Active Accessibility when a client calls AccessibleObjectFromWindow or any of the other AccessibleObjectFromX APIs that retrieve an interface to an object.
+            /// </summary>
             WM_GETOBJECT = 0x003D,
 
             /// <summary>
@@ -48,6 +51,11 @@ namespace Microsoft.Terminal.Wpf
             /// The WM_KEYDOWN message is posted to the window with the keyboard focus when a nonsystem key is pressed. A nonsystem key is a key that is pressed when the ALT key is not pressed.
             /// </summary>
             WM_KEYDOWN = 0x0100,
+
+            /// <summary>
+            /// The WM_KEYUP message is posted to the window with the keyboard focus when a nonsystem key is released. A nonsystem key is a key that is pressed when the ALT key is not pressed, or a keyboard key that is pressed when a window has the keyboard focus.
+            /// </summary>
+            WM_KEYUP = 0x0101,
 
             /// <summary>
             /// The WM_CHAR message is posted to the window with the keyboard focus when a WM_KEYDOWN message is translated by the TranslateMessage function. The WM_CHAR message contains the character code of the key that was pressed.
@@ -207,7 +215,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode, bool keyDown);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode);

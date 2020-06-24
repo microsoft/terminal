@@ -63,7 +63,7 @@ class ObjectTests
                                                              existingOutput.GetCurrentFont(),
                                                              existingOutput.GetBufferSize().Dimensions(),
                                                              existingOutput.GetAttributes(),
-                                                             *existingOutput.GetPopupAttributes(),
+                                                             existingOutput.GetPopupAttributes(),
                                                              existingOutput.GetTextBuffer().GetCursor().GetSize(),
                                                              &newOutput));
 

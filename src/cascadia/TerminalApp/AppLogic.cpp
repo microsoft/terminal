@@ -906,20 +906,21 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Implements the F7 handler (per GH#638)
+    // - Implements the Alt handler (per GH#6421)
     // Return value:
-    // - whether F7 was handled
-    bool AppLogic::OnF7Pressed()
+    // - whether the key was handled
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
         if (_root)
         {
-            // Manually bubble the OnF7Pressed event up through the focus tree.
+            // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
+                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (f7Listener.OnF7Pressed())
+                    if (keyListener.OnDirectKeyEvent(vkey, down))
                     {
                         return true;
                     }

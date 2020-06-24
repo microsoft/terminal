@@ -3,15 +3,12 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include "../types/IUiaWindow.h"
-#include "WindowUiaProvider.hpp"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 class IslandWindow :
-    public BaseWindow<IslandWindow>,
-    public IUiaWindow
+    public BaseWindow<IslandWindow>
 {
 public:
     IslandWindow() noexcept;
@@ -22,7 +19,6 @@ public:
     virtual void OnSize(const UINT width, const UINT height);
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
-    IRawElementProviderSimple* _GetUiaProvider();
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
@@ -37,36 +33,6 @@ public:
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void ToggleFullscreen();
-
-#pragma region IUiaWindow
-    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
-    {
-        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
-        // Relevant comment from zadjii-msft:
-        /*
-        In my head for designing this, I'd then have IslandWindow::ChangeViewport
-        call a callback that AppHost sets, where AppHost will then call into the
-        TerminalApp to have TerminalApp handle the ChangeViewport call.
-        (See IslandWindow::SetCreateCallback as an example of a similar
-        pattern we're using today.) That way, if someone else were trying
-        to reuse this, they could have their own AppHost (or TerminalApp
-        equivalent) handle the ChangeViewport call their own way.
-        */
-        return;
-    };
-
-    HWND GetWindowHandle() const noexcept override
-    {
-        return BaseWindow::GetHandle();
-    };
-
-    [[nodiscard]] HRESULT SignalUia(_In_ EVENTID /*id*/) override { return E_NOTIMPL; };
-    [[nodiscard]] HRESULT UiaSetTextAreaFocus() override { return E_NOTIMPL; };
-
-    RECT GetWindowRect() const noexcept override
-    {
-        return BaseWindow::GetWindowRect();
-    };
 
 #pragma endregion
 
@@ -83,7 +49,6 @@ protected:
     }
 
     HWND _interopWindowHandle;
-    WindowUiaProvider* _pUiaProvider;
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
 

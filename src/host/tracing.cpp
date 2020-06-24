@@ -6,8 +6,6 @@
 #include "../types/UiaTextRangeBase.hpp"
 #include "../types/ScreenInfoUiaProviderBase.h"
 
-#include "../types/WindowUiaProviderBase.hpp"
-
 using namespace Microsoft::Console::Types;
 
 enum TraceKeywords

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 #include "precomp.h"
 
 #include "screenInfoUiaProvider.hpp"
@@ -12,9 +13,10 @@
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindow)
+HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindow) noexcept
+try
 {
-    RETURN_IF_FAILED(WindowUiaProviderBase::RuntimeClassInitialize(baseWindow));
+    _baseWindow = baseWindow;
 
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
@@ -27,15 +29,7 @@ HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindo
 
     return S_OK;
 }
-
-[[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
-{
-    try
-    {
-        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
-    }
-    CATCH_RETURN();
-}
+CATCH_RETURN();
 
 [[nodiscard]] HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
@@ -75,6 +69,114 @@ HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindo
     return hr;
 }
 
+[[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
+{
+    try
+    {
+        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+    }
+    CATCH_RETURN();
+}
+
+#pragma region IRawElementProviderSimple
+
+// Implementation of IRawElementProviderSimple::get_ProviderOptions.
+// Gets UI Automation provider options.
+IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    *pOptions = ProviderOptions_ServerSideProvider;
+    return S_OK;
+}
+
+// Implementation of IRawElementProviderSimple::get_PatternProvider.
+// Gets the object that supports ISelectionPattern.
+IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*/,
+                                                     _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
+    *ppInterface = nullptr;
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    return S_OK;
+}
+
+// Implementation of IRawElementProviderSimple::get_PropertyValue.
+// Gets custom properties.
+IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pVariant);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    pVariant->vt = VT_EMPTY;
+
+    // Returning the default will leave the property as the default
+    // so we only really need to touch it for the properties we want to implement
+    if (propertyId == UIA_ControlTypePropertyId)
+    {
+        pVariant->vt = VT_I4;
+        pVariant->lVal = UIA_WindowControlTypeId;
+    }
+    else if (propertyId == UIA_AutomationIdPropertyId)
+    {
+        pVariant->bstrVal = SysAllocString(AutomationIdPropertyName);
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+    }
+    else if (propertyId == UIA_IsControlElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
+    else if (propertyId == UIA_IsContentElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
+    else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
+    else if (propertyId == UIA_HasKeyboardFocusPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
+    else if (propertyId == UIA_ProviderDescriptionPropertyId)
+    {
+        pVariant->bstrVal = SysAllocString(ProviderDescriptionPropertyName);
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+    }
+
+    return S_OK;
+}
+
+// Implementation of IRawElementProviderSimple::get_HostRawElementProvider.
+// Gets the default UI Automation provider for the host window. This provider
+// supplies many properties.
+IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
+    try
+    {
+        const HWND hwnd = GetWindowHandle();
+        return UiaHostProviderFromHwnd(hwnd, ppProvider);
+    }
+    catch (...)
+    {
+        return gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
+    }
+}
+#pragma endregion
+
 #pragma region IRawElementProviderFragment
 
 IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
@@ -95,11 +197,62 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     return hr;
 }
 
+IFACEMETHODIMP WindowUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRuntimeId);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+    // Root defers this to host, others must implement it...
+    *ppRuntimeId = nullptr;
+
+    return S_OK;
+}
+
+IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRect);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _baseWindow);
+
+    RECT const rc = _baseWindow->GetWindowRect();
+
+    pRect->left = rc.left;
+    pRect->top = rc.top;
+
+    LONG longWidth = 0;
+    RETURN_IF_FAILED(LongSub(rc.right, rc.left, &longWidth));
+    pRect->width = longWidth;
+    LONG longHeight = 0;
+    RETURN_IF_FAILED(LongSub(rc.bottom, rc.top, &longHeight));
+    pRect->height = longHeight;
+
+    return S_OK;
+}
+
+IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRoots);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    *ppRoots = nullptr;
+    return S_OK;
+}
+
 IFACEMETHODIMP WindowUiaProvider::SetFocus()
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     return Signal(UIA_AutomationFocusChangedEventId);
 }
+
+IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(ppProvider)));
+    return S_OK;
+}
+
 #pragma endregion
 
 #pragma region IRawElementProviderFragmentRoot
@@ -122,3 +275,36 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 }
 
 #pragma endregion
+
+HWND WindowUiaProvider::GetWindowHandle() const
+{
+    if (_baseWindow)
+    {
+        return _baseWindow->GetWindowHandle();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+[[nodiscard]] HRESULT WindowUiaProvider::_EnsureValidHwnd() const
+{
+    try
+    {
+        HWND const hwnd = GetWindowHandle();
+        RETURN_HR_IF((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, !(IsWindow(hwnd)));
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+void WindowUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    _baseWindow->ChangeViewport(NewWindow);
+}
+
+RECT WindowUiaProvider::GetWindowRect() const noexcept
+{
+    return _baseWindow->GetWindowRect();
+}

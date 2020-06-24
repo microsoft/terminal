@@ -44,6 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -92,11 +93,6 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
-
-    if (_suppressApplicationTitle)
-    {
-        _title = _startingTitle;
-    }
 }
 
 // Method Description:
@@ -130,9 +126,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         break;
     }
 
-    _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                  settings.CursorColor(),
-                                  cursorShape);
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
+                                      settings.CursorColor(),
+                                      cursorShape);
+    }
 
     for (int i = 0; i < 16; i++)
     {
@@ -144,6 +143,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
+
+    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -408,12 +409,24 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - keyDown: If true, the key was pressed, otherwise the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey,
+                            const WORD scanCode,
+                            const ControlKeyStates states,
+                            const bool keyDown)
 {
-    TrySnapOnInput();
+    // GH#6423 - don't snap on this key if the key that was pressed was a
+    // modifier key. We'll wait for a real keystroke to snap to the bottom.
+    // GH#6481 - Additionally, make sure the key was actually pressed. This
+    // check will make sure we behave the same as before GH#6309
+    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
+    {
+        TrySnapOnInput();
+    }
+
     _StoreKeyEvent(vkey, scanCode);
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
@@ -452,7 +465,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
         return false;
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -513,8 +526,15 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    // Unfortunately, the UI doesn't give us both a character down and a
+    // character up event, only a character received event. So fake sending both
+    // to the terminal input translator. Unless it's in win32-input-mode, it'll
+    // ignore the keyup.
+    KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
+    const auto handledDown = _terminalInput->HandleKey(&keyDown);
+    const auto handledUp = _terminalInput->HandleKey(&keyUp);
+    return handledDown || handledUp;
 }
 
 // Method Description:
@@ -764,48 +784,49 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     auto proposedCursorPosition = proposedPosition;
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
-    bool notifyScroll = false;
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
-    // GH#5540 - Make sure this is a positive number. We can't create a
-    // negative number of new rows.
-    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
-    if (newRows > 0)
+    SHORT rowsPushedOffTopOfBuffer = 0;
+    if (proposedCursorPosition.Y >= bufferSize.Height())
     {
+        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
+            rowsPushedOffTopOfBuffer++;
         }
-        notifyScroll = true;
     }
 
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
-    const COORD cursorPosAfter = cursor.GetPosition();
-
     // Move the viewport down if the cursor moved below the viewport.
-    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    bool updatedViewport = false;
+    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
     {
-        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
         {
             _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
                                                         _mutableViewport.Dimensions());
-            notifyScroll = true;
+            updatedViewport = true;
         }
     }
 
-    if (notifyScroll)
+    if (updatedViewport)
+    {
+        _NotifyScrollEvent();
+    }
+
+    if (rowsPushedOffTopOfBuffer != 0)
     {
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, -gsl::narrow<SHORT>(newRows) };
+        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
-        _NotifyScrollEvent();
     }
 
     _NotifyTerminalCursorPositionChanged();

@@ -37,6 +37,13 @@ namespace TerminalApp
         Duplicate = 1
     };
 
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -90,6 +97,12 @@ namespace TerminalApp
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
     };
+    
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    {
+        SettingsTarget Target { get; };
+    };
+
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
     {
         String Title { get; };
