@@ -35,6 +35,7 @@ static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
+static constexpr std::string_view ConfirmCloseTabKey{ "confirmCloseTab" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
@@ -288,6 +289,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, AlwaysShowTabsKey, _alwaysShowTabs);
 
     JsonUtils::GetBool(json, ConfirmCloseAllKey, _confirmCloseAllTabs);
+    
+    JsonUtils::GetBool(json, ConfirmCloseTabKey, _ConfirmCloseTab);
 
     JsonUtils::GetInt(json, InitialRowsKey, _initialRows);
 
