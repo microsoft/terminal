@@ -23,7 +23,7 @@ std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
     std::wstring dst;
     wchar_t input[3];
 
-    auto len = (src.size() + 2) / 3 * 4;
+    const auto len = (src.size() + 2) / 3 * 4;
     if (len == 0)
     {
         return dst;
@@ -78,7 +78,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
     int state = 0;
     wchar_t tmp;
 
-    auto len = src.size() / 4 * 3;
+    const auto len = src.size() / 4 * 3;
     if (len == 0)
     {
         return false;
