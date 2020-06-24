@@ -22,6 +22,10 @@ Author(s):
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <wil/resource.h>
+#include <windows.ui.viewmanagement.h>
+#include <UIViewSettingsInterop.h>
+#include <wrl/client.h>
+#include <wrl/wrappers/corewrappers.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -61,6 +65,7 @@ private:
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
+    bool _isTabletMode;
 
     [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
     [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
@@ -77,10 +82,13 @@ private:
     [[nodiscard]] LRESULT _OnPaint() noexcept;
     [[nodiscard]] LRESULT _OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept;
     void _OnMaximizeChange() noexcept;
+    void _OnFullscreenChange() noexcept;
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     void _SetIsFullscreen(const bool fFullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
+
+    void _CheckTabletMode(HWND hwnd) noexcept;
 
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();

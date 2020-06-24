@@ -79,6 +79,13 @@ namespace winrt::TerminalApp::implementation
             CloseButton().Height(maximizedHeight);
             break;
 
+
+        case WindowVisualState::WindowVisualStateTablet:
+           VisualStateManager::GoToState(MaximizeButton(), L"WindowStateTablet", false);
+           VisualStateManager::GoToState(MinimizeButton(), L"WindowStateTablet", false);
+            VisualStateManager::GoToState(CloseButton(), L"WindowStateTablet", false);
+            break;
+
         case WindowVisualState::WindowVisualStateNormal:
         case WindowVisualState::WindowVisualStateIconified:
         default:

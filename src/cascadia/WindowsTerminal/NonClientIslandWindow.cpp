@@ -16,6 +16,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+namespace vm = winrt::Windows::UI::ViewManagement;
+
 static constexpr int AutohideTaskbarSize = 2;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
@@ -304,6 +306,7 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 {
     _UpdateMaximizedState();
+    _CheckTabletMode();
 
     if (_interopWindowHandle)
     {
@@ -354,6 +357,25 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
     _UpdateFrameMargins();
 }
 
+
+void NonClientIslandWindows::_CheckTabletMode(HWND hwnd)
+{
+	winrt::com_ptr<vm::IUIViewSettings> viewSettings;
+    vm::UserInteractionMode mode = vm::UserInteractionMode_Mouse;
+    
+    if (viewSettings)
+      {
+        vm::UserInteractionMode currentMode;
+        viewSettings->get_UserInteractionMode(&currentMode);
+        if (g_mode != currentMode)
+        {
+          g_mode = currentMode;
+          _isTabletMode = true;
+          const auto state = winrt::TerminalApp::WindowVisualState::WindowVisualStateTablet
+          _titlebar.SetWindowVisualState(state);
+    }
+  }
+}
 // Method Description:
 // - Called when the size of the window changes for any reason. Updates the
 //   sizes of our child XAML Islands to match our new sizing.
@@ -787,6 +809,15 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     {
         return FALSE;
     }
+
+    WRL::ComPtr<IUIViewSettingsInterop> interop;
+    Windows::Foundation::GetActivationFactory(WRL::Wrappers::HStringReference(
+    RuntimeClass_Windows_UI_ViewManagement_UIViewSettings).Get(),
+    &interop);
+
+    interop->GetForWindow(hwnd, IID_PPV_ARGS(&g_viewSettings));
+
+    _CheckTabletMode(hwnd);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with
