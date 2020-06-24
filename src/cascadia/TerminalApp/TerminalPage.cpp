@@ -1655,7 +1655,11 @@ namespace winrt::TerminalApp::implementation
                 const auto tabViewItem = eventArgs.Tab();
                 _RemoveTabViewItem(tabViewItem);
             }
-            else if (focusedTab->_GetLeafPaneCount() > 1)
+            else if (!_settings->GlobalSettings().ConfirmCloseTab())
+            {
+                _CloseFocusedTab();
+            }
+            else if (focusedTab->_GetLeafPaneCount() > 1 && _settings->GlobalSettings().ConfirmCloseTab())
             {
                 _ShowCloseTabWarningDialog();
             }
