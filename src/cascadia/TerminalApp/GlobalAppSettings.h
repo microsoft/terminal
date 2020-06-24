@@ -88,6 +88,7 @@ public:
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
+    GETSET_PROPERTY(bool, ConfirmCloseTab, true);
 
 private:
     GUID _defaultProfile;
