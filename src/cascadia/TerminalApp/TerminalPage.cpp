@@ -322,7 +322,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"LargePasteWarningDialog").try_as<WUX::Controls::ContentDialog>());
+            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
