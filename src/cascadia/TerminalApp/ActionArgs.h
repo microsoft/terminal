@@ -15,6 +15,7 @@
 #include "AdjustFontSizeArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "RenameTabArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -437,6 +438,35 @@ namespace winrt::TerminalApp::implementation
             if (auto targetString{ json[JsonKey(TargetKey)] })
             {
                 args->_Target = ParseSettingsTarget(targetString.asString());
+            }
+            return { *args, {} };
+        }
+    };
+
+    struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
+    {
+        RenameTabArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Title, L"");
+
+        static constexpr std::string_view TitleKey{ "title" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<RenameTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Title == _Title;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<RenameTabArgs>();
+            if (auto title{ json[JsonKey(TitleKey)] })
+            {
+                args->_Title = winrt::to_hstring(title.asString());
             }
             return { *args, {} };
         }

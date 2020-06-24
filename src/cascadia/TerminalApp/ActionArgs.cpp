@@ -15,3 +15,4 @@
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "RenameTabArgs.g.cpp"
