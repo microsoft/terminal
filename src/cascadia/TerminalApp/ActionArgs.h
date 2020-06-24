@@ -420,7 +420,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(TerminalApp::SettingsTarget, Target, TerminalApp::SettingsTarget::SettingsFile);
 
         static constexpr std::string_view TargetKey{ "target" };
-        
+
     public:
         bool Equals(const IActionArgs& other)
         {
@@ -442,14 +442,14 @@ namespace winrt::TerminalApp::implementation
             return { *args, {} };
         }
     };
-    
+
     struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
     {
         RenameTabArgs() = default;
         GETSET_PROPERTY(winrt::hstring, Title, L"");
 
         static constexpr std::string_view TitleKey{ "title" };
-        
+
     public:
         bool Equals(const IActionArgs& other)
         {
@@ -466,7 +466,7 @@ namespace winrt::TerminalApp::implementation
             auto args = winrt::make_self<RenameTabArgs>();
             if (auto title{ json[JsonKey(TitleKey)] })
             {
-               args->_Title = winrt::to_hstring(title.asString());
+                args->_Title = winrt::to_hstring(title.asString());
             }
             return { *args, {} };
         }

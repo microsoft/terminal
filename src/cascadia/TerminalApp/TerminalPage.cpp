@@ -756,7 +756,6 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
-
     }
 
     // Method Description:
@@ -1097,7 +1096,6 @@ namespace winrt::TerminalApp::implementation
         }
         return std::nullopt;
     }
-
 
     // Method Description:
     // - returns a com_ptr to the currently focused tab. This might return null,

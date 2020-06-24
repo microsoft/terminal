@@ -239,7 +239,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
-                                          const TerminalApp::ActionEventArgs& args)
+                                        const TerminalApp::ActionEventArgs& args)
     {
         std::optional<winrt::hstring> title;
 
@@ -262,6 +262,5 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
-    
 
 }
