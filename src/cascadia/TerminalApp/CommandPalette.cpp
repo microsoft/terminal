@@ -163,6 +163,8 @@ namespace winrt::TerminalApp::implementation
         const bool addAll = searchText.empty();
 
         // If there's no filter text, then just add all the commands in order to the list.
+        // - TODO GH#6647:Possibly add the MRU commands first in order, followed
+        //   by the rest of the comamnds.
         if (addAll)
         {
             for (auto action : _allActions)
@@ -178,7 +180,6 @@ namespace winrt::TerminalApp::implementation
         //   subsequent word seems better than just "the order they appear in
         //   the list".
         // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
-
         auto compare = [searchText](const Command& left, const Command& right) {
             const int leftWeight = _getWeight(left.Name(), searchText);
             const int rightWeight = _getWeight(right.Name(), searchText);

@@ -140,7 +140,7 @@ namespace TerminalAppLocalTests
     void CommandTests::TestSplitPaneArgs()
     {
         // This is the same as KeyBindingsTests::TestSplitPaneArgs, but with
-        // looking up the action and it's args from a map of commands, instead
+        // looking up the action and its args from a map of commands, instead
         // of from keybindings.
 
         const std::string commands0String{ R"([

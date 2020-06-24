@@ -1,6 +1,21 @@
-﻿// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+﻿/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
+Module Name:
+- Command.h
+
+Abstract:
+- A command represents a single entry in the Command Palette. This is an object
+  that has a user facing "name" to display to the user, and an associated action
+  which can be dispatched.
+
+- For more information, see GH#2046, #5400, #5674, and #6635
+
+Author(s):
+- Mike Griese - June 2020
+
+--*/
 #pragma once
 
 #include "Command.g.h"

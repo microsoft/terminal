@@ -29,7 +29,7 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-static constexpr std::string_view ToggleCommandPaletteKey{ "toggleCommandPalette" };
+static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 
 static constexpr std::string_view ActionKey{ "action" };
 

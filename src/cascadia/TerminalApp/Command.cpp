@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
     // - json: The Json::Value representing the command object we should get the name for.
     // Return Value:
     // - the empty string if we couldn't find a name, otherwise the command's name.
-    winrt::hstring _nameFromJson(const Json::Value& json)
+    static winrt::hstring _nameFromJson(const Json::Value& json)
     {
         if (const auto name{ json[JsonKey(NameKey)] })
         {
@@ -70,7 +70,8 @@ namespace winrt::TerminalApp::implementation
     //   if the json object doesn't contain a "name".
     // Return Value:
     // - The "name" from the json, or the generated name from ActionAndArgs::GenerateName
-    winrt::hstring _nameFromJsonOrAction(const Json::Value& json, winrt::com_ptr<ActionAndArgs> actionAndArgs)
+    static winrt::hstring _nameFromJsonOrAction(const Json::Value& json,
+                                                winrt::com_ptr<ActionAndArgs> actionAndArgs)
     {
         auto manualName = _nameFromJson(json);
         if (!manualName.empty())

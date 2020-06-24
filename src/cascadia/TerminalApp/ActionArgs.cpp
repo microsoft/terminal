@@ -73,15 +73,12 @@ namespace winrt::TerminalApp::implementation
         {
             newTerminalArgsStr = _TerminalArgs.GenerateName();
         }
+
         if (newTerminalArgsStr.empty())
         {
             return RS_(L"NewTabCommandKey");
         }
-        else
-        {
-            return winrt::hstring{ fmt::format(L"{}, {}", RS_(L"NewTabCommandKey"), newTerminalArgsStr) };
-        }
-        return L"NewTabArgs";
+        return winrt::hstring{ fmt::format(L"{}, {}", RS_(L"NewTabCommandKey"), newTerminalArgsStr) };
     }
 
     winrt::hstring SwitchToTabArgs::GenerateName() const
