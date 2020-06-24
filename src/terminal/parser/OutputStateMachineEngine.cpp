@@ -946,7 +946,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             {
                 success = _dispatch->SetClipboard(setClipboardContent);
             }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
             break;
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);

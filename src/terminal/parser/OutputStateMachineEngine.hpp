@@ -254,7 +254,7 @@ namespace Microsoft::Console::VirtualTerminal
                              size_t& repeatCount) const noexcept;
 
         bool _GetOscSetClipboard(const std::wstring_view string,
-                                 std::wstring& title,
+                                 std::wstring& content,
                                  bool& queryClipboard) const noexcept;
 
         void _ClearLastChar() noexcept;
