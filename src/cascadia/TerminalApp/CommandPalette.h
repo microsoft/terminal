@@ -34,7 +34,6 @@ namespace winrt::TerminalApp::implementation
         void _selectNextItem(const bool moveDown);
 
         void _updateFilteredActions();
-        static bool _filterMatchesName(const winrt::hstring& searchText, const winrt::hstring& name);
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
     };

@@ -171,7 +171,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Update our list of filtered actions to reflect the current contents of
     //   the input box. For more details on which commands will be displayed,
-    //   see `_filterMatchesName`.
+    //   see `_getWeight`.
     // Arguments:
     // - <none>
     // Return Value:
@@ -285,11 +285,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Determine if a command with the given `name` should be shown if the
-    //   input box contains the string `searchText`. If all the characters of
-    //   search text appear in order in `name`, then this function will return
-    //   true. There can be any number of characters separating consecutive
-    //   characters in searchText.
+    // - Calculates a "weighting" by which should be used to order a command
+    //   name relative to other names, given a specific search string.
+    //   Currently, this is based off of two factors:
+    //   * The weight is incremented once for each matched character of the
+    //     search text.
+    //   * If a matching character from the search text was found at the start
+    //     of a word in the name, then we increment the weight again.
+    //     * For example, for a search string "sp", we want "Split Pane" to
+    //       appear in the list before "Close Pane"
+    //   * Consecutive matches will be weighted higher than matches with
+    //     characters in between the search characters.
+    // - This will return 0 if the command should not be shown. If all the
+    //   characters of search text appear in order in `name`, then this function
+    //   will return a positive number. There can be any number of characters
+    //   separating consecutive characters in searchText.
     //   * For example:
     //      "name": "New Tab"
     //      "name": "Close Tab"
@@ -312,86 +322,51 @@ namespace winrt::TerminalApp::implementation
     // - searchText: the string of text to search for in `name`
     // - name: the name to check
     // Return Value:
-    // - true if name contained all the characters of searchText
-    bool CommandPalette::_filterMatchesName(const winrt::hstring& searchText, const winrt::hstring& name)
-    {
-        std::wstring lowercaseSearchText{ searchText.c_str() };
-        std::wstring lowercaseName{ name.c_str() };
-        std::transform(lowercaseSearchText.begin(), lowercaseSearchText.end(), lowercaseSearchText.begin(), std::towlower);
-        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), std::towlower);
-
-        const wchar_t* namePtr = lowercaseName.c_str();
-        const wchar_t* endOfName = lowercaseName.c_str() + lowercaseName.size();
-        for (const auto& wch : lowercaseSearchText)
-        {
-            while (wch != *namePtr)
-            {
-                // increment the character to look at in the name string
-                namePtr++;
-                if (namePtr >= endOfName)
-                {
-                    // If we are at the end of the name string, we haven't found all the search chars
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    // Function Description:
-    // - Calculates a "weighting" by which should be used to order a command
-    //   name relative to other names, given a specific search string.
-    //   Currently, this is based off of two factors:
-    //   * The weight is incremented once for each matched character of the
-    //     search text.
-    //   * If a matching character from the search text was found at the start
-    //     of a word in the name, then we increment the weight again.
-    //     * For example, for a search string "sp", we want "Split Pane" to
-    //       appear in the list before "Close Pane"
-    //   * Consecutive matches will be weighted higher than matches with
-    //     characters in between the search characters.
-    // Arguments:
-    // - searchText: the string of text to search for in `name`
-    // - name: the name to check
-    // Return Value:
     // - the relative weight of this match
     int CommandPalette::_getWeight(const winrt::hstring& searchText,
                                    const winrt::hstring& name)
     {
-        std::wstring lowercaseSearchText{ searchText.c_str() };
-        std::wstring lowercaseName{ name.c_str() };
-        std::transform(lowercaseSearchText.begin(), lowercaseSearchText.end(), lowercaseSearchText.begin(), std::towlower);
-        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), std::towlower);
-
         int totalWeight = 0;
-        bool lastCharWasSpace = true;
-        const wchar_t* namePtr = lowercaseName.c_str();
-        const wchar_t* endOfName = lowercaseName.c_str() + lowercaseName.size();
-        for (const auto& wch : lowercaseSearchText)
+        bool lastWasSpace = true;
+
+        auto it = name.cbegin();
+
+        for (auto searchChar : searchText)
         {
-            int checkedCharacters = 0;
-            while (wch != *namePtr)
+            searchChar = std::towlower(searchChar);
+            // Advance the iterator to the next character that we're looking
+            // for.
+
+            bool lastWasMatch = true;
+            while (true)
             {
-                // increment the character to look at in the name string
-                namePtr++;
-                if (namePtr >= endOfName)
+                // If we are at the end of the name string, we haven't found
+                // it.
+                if (it == name.cend())
                 {
-                    // If we are at the end of the name string, we haven't found
-                    // all the search chars. Return 0, so the command is
-                    // omitted.
-                    return 0;
+                    return false;
                 }
-                lastCharWasSpace = *namePtr == L' ';
-                checkedCharacters++;
+
+                // found it
+                if (std::towlower(*it) == searchChar)
+                {
+                    break;
+                }
+
+                lastWasSpace = *it == L' ';
+                ++it;
+                lastWasMatch = false;
             }
 
-            // We found the char, increment weight
-            totalWeight++;
-            totalWeight += lastCharWasSpace ? 1 : 0;
-            // checkedCharacters will be 1 if the previous character was a match
-            // (because it will always be incremented in the above loop).
-            totalWeight += (checkedCharacters <= 1) ? 1 : 0;
+            // Advance the iterator by one character so that we don't
+            // end up on the same character in the next iteration.
+            ++it;
+
+            totalWeight += 1;
+            totalWeight += lastWasSpace ? 1 : 0;
+            totalWeight += (lastWasMatch) ? 1 : 0;
         }
+
         return totalWeight;
     }
 
