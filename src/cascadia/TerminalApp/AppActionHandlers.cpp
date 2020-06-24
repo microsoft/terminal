@@ -120,9 +120,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
-        // TODO:GH#2557 Add an optional arg for opening the defaults here
-        _LaunchSettings(false);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::OpenSettingsArgs>())
+        {
+            _LaunchSettings(realArgs.Target());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
@@ -235,4 +237,30 @@ namespace winrt::TerminalApp::implementation
         ToggleFullscreen();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<winrt::hstring> title;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
+        {
+            title = realArgs.Title();
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (title.has_value())
+            {
+                activeTab->SetTabText(title.value());
+            }
+            else
+            {
+                activeTab->ResetTabText();
+            }
+        }
+        args.Handled(true);
+    }
+
 }

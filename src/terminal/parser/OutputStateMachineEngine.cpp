@@ -463,7 +463,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     size_t clearType = 0;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
-    std::vector<DispatchTypes::GraphicsOptions> graphicsOptions;
+    // We hold the vector in the class because client applications that do a lot of color work
+    // would spend a lot of time reallocating/resizing the vector.
+    _graphicsOptions.clear();
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
@@ -502,7 +504,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _GetEraseOperation(parameters, eraseType);
             break;
         case VTActionCodes::SGR_SetGraphicsRendition:
-            success = _GetGraphicsOptions(parameters, graphicsOptions);
+            success = _GetGraphicsOptions(parameters, _graphicsOptions);
             break;
         case VTActionCodes::DSR_DeviceStatusReport:
             success = _GetDeviceStatusOperation(parameters, deviceStatusType);
@@ -613,7 +615,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
                 break;
             case VTActionCodes::SGR_SetGraphicsRendition:
-                success = _dispatch->SetGraphicsRendition({ graphicsOptions.data(), graphicsOptions.size() });
+                success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
                 break;
             case VTActionCodes::DSR_DeviceStatusReport:

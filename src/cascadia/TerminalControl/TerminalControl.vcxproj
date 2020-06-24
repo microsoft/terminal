@@ -43,6 +43,7 @@
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ThrottledFunc.h" />
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
@@ -59,6 +60,7 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ThrottledFunc.cpp" />
     <ClCompile Include="TSFInputControl.cpp">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClCompile>

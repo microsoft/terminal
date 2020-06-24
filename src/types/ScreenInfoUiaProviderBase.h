@@ -32,7 +32,6 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class WindowUiaProviderBase;
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
@@ -122,7 +121,7 @@ namespace Microsoft::Console::Types
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalFiringMapping{};
+        std::unordered_map<EVENTID, bool> _signalFiringMapping{};
 
         const COORD _getScreenBufferCoords() const;
         const TextBuffer& _getTextBuffer() const noexcept;

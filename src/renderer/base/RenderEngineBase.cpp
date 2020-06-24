@@ -40,3 +40,10 @@ HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noe
 {
     return S_FALSE;
 }
+
+// Method Description:
+// - Blocks until the engine is able to render without blocking.
+void RenderEngineBase::WaitUntilCanRender() noexcept
+{
+    // do nothing by default
+}

@@ -36,7 +36,7 @@ namespace TerminalCoreUnitTests
     class TerminalBufferTests;
     class TerminalApiTest;
     class ConptyRoundtripTests;
-    class TerminalAndRendererTests;
+    class ScrollTest;
 };
 #endif
 
@@ -205,7 +205,7 @@ private:
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
-    std::wstring _title;
+    std::optional<std::wstring> _title;
     std::wstring _startingTitle;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
@@ -301,6 +301,6 @@ private:
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
-    friend class TerminalCoreUnitTests::TerminalAndRendererTests;
+    friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

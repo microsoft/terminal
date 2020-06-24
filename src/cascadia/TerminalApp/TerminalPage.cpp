@@ -682,7 +682,8 @@ namespace winrt::TerminalApp::implementation
         const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        _LaunchSettings(altPressed);
+        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        _LaunchSettings(target);
     }
 
     // Method Description:
@@ -754,6 +755,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
     }
 
     // Method Description:
@@ -1093,6 +1095,18 @@ namespace winrt::TerminalApp::implementation
             return focusedIndex;
         }
         return std::nullopt;
+    }
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<Tab> TerminalPage::_GetFocusedTab()
+    {
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            return _GetStrongTabImpl(*index);
+        }
+        return nullptr;
     }
 
     // Method Description:
@@ -1545,7 +1559,7 @@ namespace winrt::TerminalApp::implementation
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget TerminalPage::_LaunchSettings(const bool openDefaults)
+    fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget target)
     {
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the Windows.Storage API's
@@ -1553,13 +1567,26 @@ namespace winrt::TerminalApp::implementation
         // thread, because the main thread is a STA.
         co_await winrt::resume_background();
 
-        const auto settingsPath = openDefaults ? CascadiaSettings::GetDefaultSettingsPath() :
-                                                 CascadiaSettings::GetSettingsPath();
+        auto openFile = [](const auto& filePath) {
+            HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+            if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+            {
+                ShellExecute(nullptr, nullptr, L"notepad", filePath.c_str(), nullptr, SW_SHOW);
+            }
+        };
 
-        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
-        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        switch (target)
         {
-            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        case SettingsTarget::DefaultsFile:
+            openFile(CascadiaSettings::GetDefaultSettingsPath());
+            break;
+        case SettingsTarget::SettingsFile:
+            openFile(CascadiaSettings::GetSettingsPath());
+            break;
+        case SettingsTarget::AllFiles:
+            openFile(CascadiaSettings::GetDefaultSettingsPath());
+            openFile(CascadiaSettings::GetSettingsPath());
+            break;
         }
     }
 

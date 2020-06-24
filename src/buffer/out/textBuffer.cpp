@@ -872,7 +872,7 @@ UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
 // - newRowWidth - Optional new value for the row width.
 void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
 {
-    std::map<SHORT, SHORT> rowMap;
+    std::unordered_map<SHORT, SHORT> rowMap;
     SHORT i = 0;
     for (auto& it : _storage)
     {
