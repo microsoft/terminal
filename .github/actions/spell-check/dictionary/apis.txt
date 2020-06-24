@@ -13,6 +13,7 @@ IBind
 IClass
 IComparable
 ICustom
+IDialog
 IDirect
 IExplorer
 IMap
