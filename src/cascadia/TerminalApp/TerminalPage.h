@@ -89,7 +89,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
-        winrt::TerminalApp::IDialogPresenter _dialogPresenter;
+        // use a weak reference to prevent circular dependency with AppLogic
+        winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
