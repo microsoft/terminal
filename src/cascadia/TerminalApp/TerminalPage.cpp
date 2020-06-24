@@ -23,6 +23,7 @@
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -300,11 +301,9 @@ namespace winrt::TerminalApp::implementation
     //   of a command.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void TerminalPage::_ShowMultiLinePasteWarningDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
-        if (!_dialogPresenter)
-            return;
-        _dialogPresenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        return _dialogPresenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:
@@ -313,11 +312,9 @@ namespace winrt::TerminalApp::implementation
     //   paste it but pressed the paste shortcut by accident.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void TerminalPage::_ShowLargePasteWarningDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
-        if (!_dialogPresenter)
-            return;
-        _dialogPresenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        return _dialogPresenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:
@@ -1552,24 +1549,23 @@ namespace winrt::TerminalApp::implementation
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
                                        _settings->GlobalSettings().WarnAboutLargePaste();
 
-            if (!warnMultiLine && !warnLargeText)
-            {
-                eventArgs.HandleClipboardData(text);
-                co_return;
-            }
-
-            /* _acceptPaste = [=]() {
-                eventArgs.HandleClipboardData(text);
-            }; */
-
+            ContentDialogResult warningResult = ContentDialogResult::Primary;
             if (warnMultiLine)
             {
-                _ShowMultiLinePasteWarningDialog();
+                warningResult = co_await _ShowMultiLinePasteWarningDialog();
             }
             else if (warnLargeText)
             {
-                _ShowLargePasteWarningDialog();
+                warningResult = co_await _ShowLargePasteWarningDialog();
             }
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                // user rejected the paste
+                co_return;
+            }
+
+            eventArgs.HandleClipboardData(text);
         }
         CATCH_LOG();
     }
@@ -1771,36 +1767,6 @@ namespace winrt::TerminalApp::implementation
                                                          WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
-    }
-
-    // Method Description:
-    // - Called when the user wants to paste the text anyway after a paste
-    //   warning.
-    // - Sends the clipboard's text to the `TermControl`.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_AcceptPasteButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                 WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        /* if (_acceptPaste)
-        {
-            _acceptPaste();
-            _acceptPaste = nullptr;
-        } */
-    }
-
-    // Method Description:
-    // - Called when the user closes a warning dialog about pasting text.
-    // - Destroys the callback to send the clipboard's text to the
-    //   `TermControl` because the user cancelled the paste operation.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_RejectPasteButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                 WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        /* _acceptPaste = nullptr; */
     }
 
     // Method Description:
