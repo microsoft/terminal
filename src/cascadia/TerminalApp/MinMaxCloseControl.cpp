@@ -85,13 +85,15 @@ namespace winrt::TerminalApp::implementation
             break;
 
         case WindowVisualState::WindowVisualStateFocused:
+            VisualStateManager::GoToState(MaximizeButton(), L"WindowStateFocused", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"WindowStateFocused", false);
+            VisualStateManager::GoToState(CloseButton(), L"WindowStateFocused", false);
+            break;
+
         case WindowVisualState::WindowVisualStateNormal:
         case WindowVisualState::WindowVisualStateIconified:
         default:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"WindowStateFocused", false);
-            VisualStateManager::GoToState(MinimizeButton(), L"WindowStateFocused", false);
-            VisualStateManager::GoToState(CloseButton(), L"WindowStateFocused", false);
 
             MinimizeButton().Height(windowedHeight);
             MaximizeButton().Height(windowedHeight);
