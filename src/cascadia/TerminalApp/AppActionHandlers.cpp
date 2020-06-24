@@ -243,10 +243,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
         {
-            //if (realArgs.Title() != nullptr)
-            //{
             title = realArgs.Title();
-            //}
         }
 
         auto activeTab = _GetFocusedTab();

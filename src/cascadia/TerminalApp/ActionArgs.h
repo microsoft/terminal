@@ -407,7 +407,6 @@ namespace winrt::TerminalApp::implementation
             {
                args->_Title = winrt::to_hstring(title.asString());
             }
-            //args->_Title = RenameTabArgs::FromJson(json);
             return { *args, {} };
         }
     };
