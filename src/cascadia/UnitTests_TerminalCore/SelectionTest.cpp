@@ -710,30 +710,83 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 21, 10 }));
             }
 
-            // Step 3: Shift+Double-Click to "dragThroughHere"
+            // Step 3: Shift+Double-Click at "dragThroughHere"
             {
                 // Simulate Shift+DoubleClick at (x,y) = (21,10)
                 //
                 // buffer: doubleClickMe dragThroughHere
-                //         ^                ^
-                //       start            finish
+                //         ^                ^          ^
+                //       start            click      finish
                 term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
                 ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
             }
 
-            // Step 4: Shift+Double-Click to "dragThroughHere"
+            // Step 4: Shift+Triple-Click at "dragThroughHere"
             {
                 // Simulate Shift+TripleClick at (x,y) = (21,10)
                 //
-                // buffer: doubleClickMe dragThroughHere
-                //         ^                ^
-                //       start            finish
+                // buffer: doubleClickMe dragThroughHere     |
+                //         ^                ^                ^
+                //       start            click            finish (boundary)
                 term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Line);
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
                 ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+            }
+
+            // Step 5: Shift+Double-Click at "dragThroughHere"
+            {
+                // Simulate Shift+DoubleClick at (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^          ^
+                //       start            click      finish
+                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
+
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+
+            // Step 6: Drag past "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (35,10)
+                // Since we were preceded by a double-click, we're in "word" expansion mode
+                //
+                // buffer: doubleClickMe dragThroughHere     |
+                //         ^                                 ^
+                //       start                             finish (boundary)
+                term.SetSelectionEnd({ 35, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere..." selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+            }
+
+            // Step 6: Drag back to "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^          ^
+                //       start             drag      finish
+                term.SetSelectionEnd({ 21, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+
+            // Step 7: Drag within "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (25,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                    ^      ^
+                //       start                 drag  finish
+                term.SetSelectionEnd({ 25, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere" still selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
             }
         }
 
@@ -752,7 +805,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
             }
 
-            // Step 2: Pivot to (5,10)
+            // Step 2: Drag to (5,10)
             {
                 term.SetSelectionEnd({ 5, 10 });
 
@@ -761,7 +814,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
             }
 
-            // Step 3: Pivot back to (20,10)
+            // Step 3: Drag back to (20,10)
             {
                 term.SetSelectionEnd({ 20, 10 });
 
@@ -770,7 +823,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
             }
 
-            // Step 4: Pivot back to (5,10) with Shift+Click
+            // Step 4: Shift+Click at (5,10)
             {
                 term.SetSelectionEnd({ 5, 10 }, ::Terminal::SelectionExpansionMode::Cell);
 
@@ -779,7 +832,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
             }
 
-            // Step 5: Pivot back to (20,10) with Shift+Click
+            // Step 5: Shift+Click back at (20,10)
             {
                 term.SetSelectionEnd({ 20, 10 }, ::Terminal::SelectionExpansionMode::Cell);
 

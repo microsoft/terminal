@@ -1082,7 +1082,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (multiClickMapper == 1)
                 {
                     mode = ::Terminal::SelectionExpansionMode::Cell;
-                    _singleClickTouchdownPos = cursorPosition;
                 }
                 else if (multiClickMapper == 2)
                 {
@@ -1104,6 +1103,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
+                    _singleClickTouchdownPos = cursorPosition;
                     _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
                 else
