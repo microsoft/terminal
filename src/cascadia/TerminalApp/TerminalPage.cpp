@@ -1550,8 +1550,6 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            co_await winrt::resume_foreground(Dispatcher());
-
             const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
             const bool warnMultiLine = hasNewLine && _settings->GlobalSettings().WarnAboutMultiLinePaste();
 
@@ -1559,20 +1557,25 @@ namespace winrt::TerminalApp::implementation
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
                                        _settings->GlobalSettings().WarnAboutLargePaste();
 
-            ContentDialogResult warningResult = ContentDialogResult::Primary;
-            if (warnMultiLine)
+            if (warnMultiLine || warnLargeText)
             {
-                warningResult = co_await _ShowMultiLinePasteWarningDialog();
-            }
-            else if (warnLargeText)
-            {
-                warningResult = co_await _ShowLargePasteWarningDialog();
-            }
+                co_await winrt::resume_foreground(Dispatcher());
 
-            if (warningResult != ContentDialogResult::Primary)
-            {
-                // user rejected the paste
-                co_return;
+                ContentDialogResult warningResult;
+                if (warnMultiLine)
+                {
+                    warningResult = co_await _ShowMultiLinePasteWarningDialog();
+                }
+                else if (warnLargeText)
+                {
+                    warningResult = co_await _ShowLargePasteWarningDialog();
+                }
+
+                if (warningResult != ContentDialogResult::Primary)
+                {
+                    // user rejected the paste
+                    co_return;
+                }
             }
 
             eventArgs.HandleClipboardData(text);
