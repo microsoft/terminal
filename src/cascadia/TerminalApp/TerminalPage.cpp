@@ -1108,6 +1108,7 @@ namespace winrt::TerminalApp::implementation
         }
         return nullptr;
     }
+
     // Method Description:
     // - An async method for changing the focused tab on the UI thread. This
     //   method will _only_ set the selected item of the TabView, which will

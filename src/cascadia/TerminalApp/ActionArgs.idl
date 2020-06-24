@@ -97,7 +97,7 @@ namespace TerminalApp
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
     };
-    
+
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
         SettingsTarget Target { get; };
