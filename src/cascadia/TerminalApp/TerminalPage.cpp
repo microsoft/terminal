@@ -246,7 +246,9 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        _showDialogHandlers(*this, FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+        if (!_dialogPresenter)
+            return;
+        _dialogPresenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -285,7 +287,9 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        _showDialogHandlers(*this, FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+        if (!_dialogPresenter)
+            return;
+        _dialogPresenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:
@@ -298,7 +302,9 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
-        _showDialogHandlers(*this, FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        if (!_dialogPresenter)
+            return;
+        _dialogPresenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:
@@ -309,7 +315,9 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowLargePasteWarningDialog()
     {
-        _showDialogHandlers(*this, FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        if (!_dialogPresenter)
+            return;
+        _dialogPresenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
     }
 
     // Method Description:
@@ -1550,9 +1558,9 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
-            _acceptPaste = [=]() {
+            /* _acceptPaste = [=]() {
                 eventArgs.HandleClipboardData(text);
-            };
+            }; */
 
             if (warnMultiLine)
             {
@@ -1775,11 +1783,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_AcceptPasteButtonOnClick(WUX::Controls::ContentDialog /* sender */,
                                                  WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
-        if (_acceptPaste)
+        /* if (_acceptPaste)
         {
             _acceptPaste();
             _acceptPaste = nullptr;
-        }
+        } */
     }
 
     // Method Description:
@@ -1792,7 +1800,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RejectPasteButtonOnClick(WUX::Controls::ContentDialog /* sender */,
                                                  WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
-        _acceptPaste = nullptr;
+        /* _acceptPaste = nullptr; */
     }
 
     // Method Description:
@@ -1865,6 +1873,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
     {
         _startupActions = actions;
+    }
+
+    winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
+    {
+        return _dialogPresenter;
+    }
+
+    void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
+    {
+        _dialogPresenter = dialogPresenter;
     }
 
     // Method Description:
@@ -2096,6 +2114,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 }

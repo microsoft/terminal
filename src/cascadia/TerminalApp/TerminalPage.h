@@ -53,11 +53,13 @@ namespace winrt::TerminalApp::implementation
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
 
+        winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
+        void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
@@ -87,6 +89,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        winrt::TerminalApp::IDialogPresenter _dialogPresenter;
+
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
@@ -94,8 +98,6 @@ namespace winrt::TerminalApp::implementation
 
         std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
         winrt::fire_and_forget _ProcessStartupActions();
-
-        std::function<void()> _acceptPaste;
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
