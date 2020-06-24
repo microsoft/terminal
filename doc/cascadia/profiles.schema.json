@@ -387,7 +387,7 @@
         },
         "confirmCloseTab": {
           "default": true,
-          "description": "When set to \"true\" closing a tab with mutiple panes open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
+          "description": "When set to \"true\" closing a tab with multiple panes open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
         }
       },
