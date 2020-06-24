@@ -1447,9 +1447,9 @@ namespace winrt::TerminalApp::implementation
         // The EventArgs.Formats() is an override for the global setting "copyFormatting"
         //   if and only if it is not set
         // Since 'Formats' cannot be represented as an optional in the EventArgs,
-        //   a sentinel value of -1 represents that "Formats" was not set.
-        auto copyFormats = copiedData.Formats() == -1 ?
-                               _settings->GlobalSettings().GetCopyFormatting() :
+        //   a sentinel value of 0 represents that "Formats" was not set.
+        auto copyFormats = copiedData.Formats() == 0 ?
+                               _settings->GlobalSettings().CopyFormatting() :
                                copiedData.Formats();
 
         if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::Plain)))

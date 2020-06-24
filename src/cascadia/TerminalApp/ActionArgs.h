@@ -139,7 +139,7 @@ namespace winrt::TerminalApp::implementation
         // - json: The string value from the settings file to parse
         // Return Value:
         // - The serialized enum values which map to the bool or array of strings provided by the user
-        // - -1 represents parsing failure or null. Behavior falls back to the global setting.
+        // - 0 represents parsing failure or null. Behavior falls back to the global setting.
         static int _ParseCopyFormatting(const Json::Value& json) noexcept
         {
             if (json.isArray())
@@ -176,7 +176,7 @@ namespace winrt::TerminalApp::implementation
                     return static_cast<int>(CopyFormat::Plain);
                 }
             }
-            return -1;
+            return 0;
         }
     };
 
