@@ -1078,35 +1078,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const unsigned int MAX_CLICK_COUNT = 3;
                 const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                if (multiClickMapper == 3)
+                ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+                if (multiClickMapper == 1)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
-                    _selectionNeedsToBeCopied = true;
+                    mode = ::Terminal::SelectionExpansionMode::Cell;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    mode = ::Terminal::SelectionExpansionMode::Word;
+                }
+                else if (multiClickMapper == 3)
+                {
+                    mode = ::Terminal::SelectionExpansionMode::Line;
+                }
+
+                // Update the selection appropriately
+                if (shiftEnabled && _terminal->IsSelectionActive())
+                {
+                    // Shift+Click: only set expand on the "end" selection point
+                    _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                {
+                    // Single Click: reset the selection and begin a new one
+                    _terminal->ClearSelection();
+                    _singleClickTouchdownPos = cursorPosition;
+                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
                 else
                 {
-                    if (shiftEnabled && _terminal->IsSelectionActive())
-                    {
-                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
-                        _selectionNeedsToBeCopied = true;
-                    }
-                    else
-                    {
-                        // A single click down resets the selection and begins a new one.
-                        _terminal->ClearSelection();
-                        _singleClickTouchdownPos = cursorPosition;
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                    }
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
+                    // Multi-Click Selection: expand both "start" and "end" selection points
+                    _terminal->MultiClickSelection(terminalPosition, mode);
+                    _selectionNeedsToBeCopied = true;
                 }
 
+                _lastMouseClickTimestamp = point.Timestamp();
+                _lastMouseClickPos = cursorPosition;
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
