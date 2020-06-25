@@ -27,9 +27,9 @@ namespace winrt::TerminalApp::implementation
             // will actually show it. This needs to be done at runtime, and only
             // if the shadow actually exists. ThemeShadow isn't supported below
             // version 18362.
-            CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
+            CommandPaletteShadow().Receivers().Append(_shadowBackdrop());
             // "raise" the command palette up by 16 units, so it will cast a shadow.
-            Backdrop().Translation({ 0, 0, 16 });
+            _backdrop().Translation({ 0, 0, 16 });
         }
     }
 
@@ -45,8 +45,8 @@ namespace winrt::TerminalApp::implementation
         {
             // Become visible
             Visibility(Visibility::Visible);
-            _SearchBox().Focus(FocusState::Programmatic);
-            _FilteredActionsView().SelectedIndex(0);
+            _searchBox().Focus(FocusState::Programmatic);
+            _filteredActionsView().SelectedIndex(0);
         }
         else
         {
@@ -65,14 +65,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_selectNextItem(const bool moveDown)
     {
-        const auto selected = _FilteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_FilteredActionsView().Items().Size());
+        const auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
         const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
-        _FilteredActionsView().SelectedIndex(newIndex);
-        _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
     // Method Description:
@@ -104,7 +104,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Dispatch the action of the selected command.
 
-            if (const auto selectedItem = _FilteredActionsView().SelectedItem())
+            if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
                 if (const auto data = selectedItem.try_as<Command>())
                 {
@@ -119,13 +119,13 @@ namespace winrt::TerminalApp::implementation
         else if (key == VirtualKey::Escape)
         {
             // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
-            if (_SearchBox().Text().empty())
+            if (_searchBox().Text().empty())
             {
                 _close();
             }
             else
             {
-                _SearchBox().Text(L"");
+                _searchBox().Text(L"");
             }
         }
     }
@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
     //   the window that's _not_ the command palette UI. When that happens,
     //   we'll want to dismiss the palette.
     // Arguments:
-    // - <none>
+    // - <unused>
     // Return Value:
     // - <none>
     void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
@@ -149,7 +149,7 @@ namespace winrt::TerminalApp::implementation
     //   next to the text box in the command palette. We _don't_ want that click
     //   to light dismiss the palette, so we'll mark it handled here.
     // Arguments:
-    // - <none>
+    // - e: the PointerRoutedEventArgs that we want to mark as handled
     // Return Value:
     // - <none>
     void CommandPalette::_backdropPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
@@ -157,6 +157,26 @@ namespace winrt::TerminalApp::implementation
     {
         e.Handled(true);
     }
+
+    // Method Description:
+    // - This event is called when the user clicks on an individual item from
+    //   the list. We'll get the tiem that was clicked and dispatch the command
+    //   that the user clicked on.
+    // Arguments:
+    // - e: an ItemClickEventArgs who's ClickedItem() will be the command that was clicked on.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
+                                          Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
+    {
+        if (auto command{ e.ClickedItem().try_as<TerminalApp::Command>() })
+        {
+            const auto actionAndArgs = command.Action();
+            _dispatch.DoAction(actionAndArgs);
+            _close();
+        }
+    }
+
     // Method Description:
     // - Event handler for when the text in the input box changes. In Action
     //   Mode, we'll update the list of displayed commands, and select the first one.
@@ -168,7 +188,7 @@ namespace winrt::TerminalApp::implementation
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
         _updateFilteredActions();
-        _FilteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(0);
     }
 
     Collections::IObservableVector<Command> CommandPalette::FilteredActions()
@@ -218,7 +238,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateFilteredActions()
     {
         _filteredActions.Clear();
-        auto searchText = _SearchBox().Text();
+        auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
         // If there's no filter text, then just add all the commands in order to the list.
@@ -389,7 +409,7 @@ namespace winrt::TerminalApp::implementation
         Visibility(Visibility::Collapsed);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
-        _SearchBox().Text(L"");
+        _searchBox().Text(L"");
         _ClosedHandlers(*this, RoutedEventArgs{});
     }
 

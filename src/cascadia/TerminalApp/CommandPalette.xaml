@@ -88,12 +88,12 @@ the MIT License. See LICENSE in the project root for license information. -->
     order to receive pointer events, an element needs to be _not_ transparent.
     However, we want to be able to eat all the clicks outside the immediate
     bounds of the command palette, and we don't want a semi-transparent overlay
-    over all of the UI. Fortunately, if we make this ShadowBackdrop the size of
+    over all of the UI. Fortunately, if we make this _shadowBackdrop the size of
     the entire page, then it can be mostly transparent, and cause the root grid
     to recieve clicks _anywhere_ in its bounds. -->
 
     <Grid
-        x:Name="ShadowBackdrop"
+        x:Name="_shadowBackdrop"
         Background="Transparent"
         Grid.Column="0"
         Grid.Row="0"
@@ -104,7 +104,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Grid>
 
     <Grid
-        x:Name="Backdrop"
+        x:Name="_backdrop"
         Style="{ThemeResource CommandPaletteBackground}"
         CornerRadius="{ThemeResource ControlCornerRadius}"
         PointerPressed="_backdropPointerPressed"
@@ -123,7 +123,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <TextBox
             Grid.Row="0"
             x:Uid="CommandPalette_SearchBox"
-            x:Name="_SearchBox"
+            x:Name="_searchBox"
             Margin="8"
             IsSpellCheckEnabled="False"
             TextChanged="_filterTextChanged"
@@ -133,12 +133,14 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <ListView
             Grid.Row="1"
-            x:Name="_FilteredActionsView"
+            x:Name="_filteredActionsView"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             SelectionMode="Single"
             CanReorderItems="False"
             AllowDrop="False"
+            IsItemClickEnabled="True"
+            ItemClick="_listItemClicked"
             ItemsSource="{x:Bind FilteredActions}">
 
             <ItemsControl.ItemTemplate >
