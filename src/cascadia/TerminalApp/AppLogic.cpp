@@ -323,7 +323,7 @@ namespace winrt::TerminalApp::implementation
         auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
-        return co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        co_return co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
