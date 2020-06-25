@@ -754,6 +754,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
+        _actionDispatch->ToggleRetroEffect({ this, &TerminalPage::_HandleToggleRetroEffect });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 

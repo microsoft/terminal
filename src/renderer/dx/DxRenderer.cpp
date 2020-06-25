@@ -785,6 +785,11 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
+bool DxEngine::GetRetroTerminalEffects() const noexcept
+{
+    return _retroTerminalEffects;
+}
+
 void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
 try
 {

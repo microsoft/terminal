@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
+        void ToggleRetroEffect();
+
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState();
