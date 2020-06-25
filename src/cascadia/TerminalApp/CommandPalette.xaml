@@ -115,6 +115,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Uid="CommandPalette_SearchBox"
             x:Name="_SearchBox"
             Margin="8"
+            IsSpellCheckEnabled="False"
             TextChanged="_filterTextChanged"
             KeyDown="_keyDownHandler"
             Text="">

@@ -154,7 +154,7 @@ namespace winrt::TerminalApp::implementation
     // - json: A Json::Value containing an array of serialized commands
     // Return Value:
     // - A vector containing any warnings detected while parsing
-    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                         const Json::Value& json)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;

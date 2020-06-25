@@ -227,7 +227,7 @@ namespace winrt::TerminalApp::implementation
         // Use a magic static to initialize this map, because we won't be able
         // to load the resources at _init_, only at runtime.
         static const auto GeneratedActionNames = []() {
-            return std::map<ShortcutAction, winrt::hstring>{
+            return std::unordered_map<ShortcutAction, winrt::hstring>{
                 { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
                 { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
                 { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },

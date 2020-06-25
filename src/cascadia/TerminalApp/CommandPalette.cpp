@@ -118,8 +118,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action Mode: Dismiss the palette.
-            _close();
+            // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
+            if (_SearchBox().Text().empty())
+            {
+                _close();
+            }
+            else
+            {
+                _SearchBox().Text(L"");
+            }
         }
     }
 
@@ -148,6 +155,14 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    {
+        std::wstring_view leftName{ lhs.Name() };
+        std::wstring_view rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
@@ -156,17 +171,14 @@ namespace winrt::TerminalApp::implementation
 
         bool operator<(const WeightedCommand& other) const
         {
+            // If two commands have the same weight, then we'll sort them alphabetically.
+            if (weight == other.weight)
+            {
+                return !_compareCommandNames(command, other.command);
+            }
             return weight < other.weight;
         }
     };
-
-    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
-    {
-        std::wstring_view leftName{ lhs.Name() };
-        std::wstring_view rightName{ rhs.Name() };
-        return leftName.compare(rightName) < 0;
-    }
 
     // Method Description:
     // - Update our list of filtered actions to reflect the current contents of
@@ -184,7 +196,7 @@ namespace winrt::TerminalApp::implementation
 
         // If there's no filter text, then just add all the commands in order to the list.
         // - TODO GH#6647:Possibly add the MRU commands first in order, followed
-        //   by the rest of the comamnds.
+        //   by the rest of the commands.
         if (addAll)
         {
             // Add all the commands, but make sure they're sorted alphabetically.
@@ -214,7 +226,7 @@ namespace winrt::TerminalApp::implementation
         //   the list".
         // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
         //      * This could be done by weighting the recently used commands
-        //        heigher the more recently they were used, then weighting all
+        //        higher the more recently they were used, then weighting all
         //        the unused commands as 1
 
         // Use a priority queue to order commands so that "better" matches
@@ -233,55 +245,16 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // At this point, all the commands in heap are matches. We want to
-        // include all these commands, but to keep some semblance of
-        // determination, let's sort the commands with the same weight
-        // alphabetically by name. Otherwise, something like ["Switch to tab 0",
-        // "Switch to tab 1", "Switch to tab 2"] might show up in any order when
-        // popped from the top of the heap.
-        std::vector<TerminalApp::Command> currentWeightedCommands;
-        int currentWeight = 0;
-
-        // This is a helper lambda to sort all the commands currently in
-        // currentWeightedCommands, and add them into _filteredActions. It will
-        // then clear currentWeightedCommands
-        auto flushCurrentCommands = [&currentWeightedCommands, this]() {
-            std::sort(currentWeightedCommands.begin(),
-                      currentWeightedCommands.end(),
-                      _compareCommandNames);
-
-            for (auto& c : currentWeightedCommands)
-            {
-                _filteredActions.Append(c);
-            }
-            currentWeightedCommands.clear();
-        };
-
+        // At this point, all the commands in heap are matches. We've also
+        // sorted commands with the same weight alphabetically.
         // Remove everything in-order from the queue, and add to the list of
         // filtered actions.
         while (!heap.empty())
         {
             auto top = heap.top();
             heap.pop();
-            // If we haven't inspected a command yet, set our current weight to this commands weight.
-            if (currentWeightedCommands.empty())
-            {
-                currentWeight = top.weight;
-            }
-
-            // Otherwise, if this command's weight is different, then we should
-            // flush out all the commands with the old weight, and start
-            // accumulating new commands.
-            if (top.weight != currentWeight)
-            {
-                flushCurrentCommands();
-                currentWeight = top.weight;
-            }
-
-            currentWeightedCommands.push_back(top.command);
+            _filteredActions.Append(top.command);
         }
-        // If we had any leftover commands we had buffered from the heap, add them now.
-        flushCurrentCommands();
     }
 
     // Function Description:
