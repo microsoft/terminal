@@ -187,6 +187,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
         [[nodiscard]] HRESULT _SetUnderline(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetOverline(const bool isUnderlined) noexcept;
         [[nodiscard]] HRESULT _SetItalics(const bool isItalic) noexcept;
         [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
         [[nodiscard]] HRESULT _SetInvisible(const bool isInvisible) noexcept;
