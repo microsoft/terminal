@@ -55,6 +55,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundWhite = 47,
         BackgroundExtended = 48,
         BackgroundDefault = 49,
+        Overline = 53,
+        NoOverline = 55,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,

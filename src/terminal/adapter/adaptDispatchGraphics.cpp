@@ -166,6 +166,12 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             case NoUnderline:
                 attr.SetUnderline(false);
                 break;
+            case Overline:
+                attr.SetOverline(true);
+                break;
+            case NoOverline:
+                attr.SetOverline(false);
+                break;
             case ForegroundBlack:
                 attr.SetIndexedForeground(DARK_BLACK);
                 break;
