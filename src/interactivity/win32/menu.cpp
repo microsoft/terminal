@@ -583,6 +583,9 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
+    // Make sure the updated fill attributes are passed on to the TextAttribute class.
+    TextAttribute::SetLegacyDefaultAttributes(pStateInfo->ScreenAttributes);
+
     // Set the screen info's default text attributes to defaults -
     ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
 

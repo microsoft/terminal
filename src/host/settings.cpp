@@ -349,6 +349,10 @@ void Settings::Validate()
         }
     }
 
+    // At this point the default fill attributes are fully initialized
+    // so we can pass on the final colors to the TextAttribute class.
+    TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
+
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
     FAIL_FAST_IF(!(_dwScreenBufferSize.X > 0));
@@ -767,7 +771,7 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
 // - A WORD representing the legacy attributes that most closely represent the given fullcolor attributes.
 WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 {
-    return attributes.GetLegacyAttributes(_wFillAttribute);
+    return attributes.GetLegacyAttributes();
 }
 
 COLORREF Settings::GetCursorColor() const noexcept

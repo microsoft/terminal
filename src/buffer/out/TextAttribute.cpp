@@ -5,16 +5,31 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+BYTE TextAttribute::s_legacyDefaultForeground = 7;
+BYTE TextAttribute::s_legacyDefaultBackground = 0;
+
 // Routine Description:
-// - Returns a WORD with legacy-style attributes for this textattribute.
+// - Sets the legacy attributes which map to and from the default colors.
 // Parameters:
 // - defaultAttributes: the attribute values to be used for default colors.
 // Return value:
-// - a WORD with legacy-style attributes for this textattribute.
-WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noexcept
+// - None
+void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
-    const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
+    s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
+    s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+}
+
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - None
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes() const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
     const bool brighten = _foreground.IsIndex16() && IsBold();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);

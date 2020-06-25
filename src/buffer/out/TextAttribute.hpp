@@ -59,7 +59,8 @@ public:
     {
     }
 
-    WORD GetLegacyAttributes(const WORD defaultAttributes = 0x07) const noexcept;
+    static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
+    WORD GetLegacyAttributes() const noexcept;
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
@@ -150,6 +151,9 @@ private:
                                COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
+
+    static BYTE s_legacyDefaultForeground;
+    static BYTE s_legacyDefaultBackground;
 
     WORD _wAttrLegacy;
     TextColor _foreground;
