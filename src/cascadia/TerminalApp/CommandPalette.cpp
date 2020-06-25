@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Toggles the visibility of the command palette. This will auto-focus the
     //   input box within the palette.
-    // - TODO GH#TODO: When we add support for commandline mode, accept a parameter here
+    // - TODO GH#6677: When we add support for commandline mode, accept a parameter here
     //   for which mode we should enter in.
     void CommandPalette::ToggleVisibility()
     {

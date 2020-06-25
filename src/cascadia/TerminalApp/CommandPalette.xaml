@@ -90,7 +90,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     bounds of the command palette, and we don't want a semi-transparent overlay
     over all of the UI. Fortunately, if we make this _shadowBackdrop the size of
     the entire page, then it can be mostly transparent, and cause the root grid
-    to recieve clicks _anywhere_ in its bounds. -->
+    to receive clicks _anywhere_ in its bounds. -->
 
     <Grid
         x:Name="_shadowBackdrop"
