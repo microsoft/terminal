@@ -5,9 +5,11 @@
 #include "CommandPalette.h"
 
 #include "CommandPalette.g.cpp"
+#include <winrt/Microsoft.Terminal.Settings.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
@@ -88,6 +90,25 @@ namespace winrt::TerminalApp::implementation
     {
         auto key = e.OriginalKey();
 
+        if (_keyBindings)
+        {
+            // First, try letting the keybindings handle this key. The user can
+            // see a list of keybindings, they should be able to use them.
+            CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto ctrl = WI_IsFlagSet(window.GetKeyState(VirtualKey::RightControl), CoreVirtualKeyStates::Down) ||
+                              WI_IsFlagSet(window.GetKeyState(VirtualKey::LeftControl), CoreVirtualKeyStates::Down);
+            const auto alt = WI_IsFlagSet(window.GetKeyState(VirtualKey::RightMenu), CoreVirtualKeyStates::Down) ||
+                             WI_IsFlagSet(window.GetKeyState(VirtualKey::LeftMenu), CoreVirtualKeyStates::Down);
+            const auto shift = WI_IsFlagSet(window.GetKeyState(VirtualKey::Shift), CoreVirtualKeyStates::Down);
+            winrt::Microsoft::Terminal::Settings::KeyChord kc{ ctrl, alt, shift, static_cast<int32_t>(key) };
+            if (_keyBindings.TryKeyChord(kc))
+            {
+                // if the keybindings handled the key, then we can go ahead and close ourself.
+                _close();
+                return;
+            }
+        }
+
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
@@ -160,7 +181,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - This event is called when the user clicks on an individual item from
-    //   the list. We'll get the tiem that was clicked and dispatch the command
+    //   the list. We'll get the item that was clicked and dispatch the command
     //   that the user clicked on.
     // Arguments:
     // - e: an ItemClickEventArgs who's ClickedItem() will be the command that was clicked on.
@@ -395,6 +416,11 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
+    }
+
+    void CommandPalette::SetKeyBindings(const winrt::Microsoft::Terminal::Settings::IKeyBindings& bindings)
+    {
+        _keyBindings = bindings;
     }
 
     // Method Description:

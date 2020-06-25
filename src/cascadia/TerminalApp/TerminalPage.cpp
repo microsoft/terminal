@@ -179,6 +179,7 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
         CommandPalette().SetDispatch(*_actionDispatch);
+        CommandPalette().SetKeyBindings(_settings->GetKeybindings());
         CommandPalette().Closed({ this, &TerminalPage::_CommandPaletteClosed });
 
         // Once the page is actually laid out on the screen, trigger all our

@@ -15,6 +15,7 @@ namespace TerminalApp
 
         void ToggleVisibility();
         void SetDispatch(ShortcutActionDispatch dispatch);
+        void SetKeyBindings(Microsoft.Terminal.Settings.IKeyBindings keyBindings);
 
         event Windows.Foundation.TypedEventHandler<CommandPalette, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
