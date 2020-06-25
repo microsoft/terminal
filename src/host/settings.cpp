@@ -824,20 +824,6 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
     _DefaultBackground = defaultBackground;
 }
 
-TextAttribute Settings::GetDefaultAttributes() const noexcept
-{
-    auto attrs = TextAttribute{ _wFillAttribute };
-    if (_DefaultForeground != INVALID_COLOR)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (_DefaultBackground != INVALID_COLOR)
-    {
-        attrs.SetDefaultBackground();
-    }
-    return attrs;
-}
-
 bool Settings::IsTerminalScrolling() const noexcept
 {
     return _TerminalScrolling;

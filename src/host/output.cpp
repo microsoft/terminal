@@ -41,7 +41,7 @@ using namespace Microsoft::Console::Interactivity;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
                                                          fiFont,
                                                          gci.GetScreenBufferSize(),
-                                                         gci.GetDefaultAttributes(),
+                                                         TextAttribute{},
                                                          TextAttribute{ gci.GetPopupFillAttribute() },
                                                          gci.GetCursorSize(),
                                                          &gci.ScreenBuffers);

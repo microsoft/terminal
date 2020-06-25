@@ -179,8 +179,6 @@ public:
     COLORREF GetDefaultBackgroundColor() const noexcept;
     void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
 
-    TextAttribute GetDefaultAttributes() const noexcept;
-
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
