@@ -131,6 +131,33 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - This event is triggered when someone clicks anywhere in the bounds of
+    //   the window that's _not_ the command palette UI. When that happens,
+    //   we'll want to dismiss the palette.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
+                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _close();
+    }
+
+    // Method Description:
+    // - This event is only triggered when someone clicks in the space right
+    //   next to the text box in the command palette. We _don't_ want that click
+    //   to light dismiss the palette, so we'll mark it handled here.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_backdropPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
+                                                 Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
+    }
+    // Method Description:
     // - Event handler for when the text in the input box changes. In Action
     //   Mode, we'll update the list of displayed commands, and select the first one.
     // Arguments:
