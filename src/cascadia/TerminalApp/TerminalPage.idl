@@ -19,7 +19,9 @@ namespace TerminalApp
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };
 
-        // We cannot use the default XAML APIs because of a bug, see GH#5224.
+        // We cannot use the default XAML APIs because we want to make sure
+        // that there's only one application-global dialog visible at a time,
+        // and because of GH#5224.
         IDialogPresenter DialogPresenter;
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
