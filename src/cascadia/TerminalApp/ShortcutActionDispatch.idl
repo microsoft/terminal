@@ -34,7 +34,8 @@ namespace TerminalApp
         ToggleFullscreen,
         SetTabColor,
         OpenTabColorPicker,
-        OpenSettings
+        OpenSettings,
+        RenameTab
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -74,5 +75,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
     }
 }

@@ -16,3 +16,4 @@
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
+#include "RenameTabArgs.g.cpp"

@@ -136,6 +136,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
+        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -210,7 +212,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
-        winrt::fire_and_forget _TerminalCursorPositionChanged();
+        void _TerminalCursorPositionChanged();
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
@@ -228,6 +230,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
+        bool _TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
@@ -245,12 +248,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _AsyncCloseConnection();
-
-        // this atomic is to be used as a guard against dispatching billions of coroutines for
-        // routine state changes that might happen millions of times a second.
-        // Unbounded main dispatcher use leads to massive memory leaks and intense slowdowns
-        // on the UI thread.
-        std::atomic<bool> _coroutineDispatchStateUpdateInProgress{ false };
     };
 }
 

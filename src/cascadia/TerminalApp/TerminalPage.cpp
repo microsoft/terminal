@@ -757,6 +757,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
+        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
     }
 
     // Method Description:

@@ -107,4 +107,9 @@ namespace TerminalApp
     {
         Windows.Foundation.IReference<UInt32> TabColor { get; };
     };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    {
+        String Title { get; };
+    };
 }

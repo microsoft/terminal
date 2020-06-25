@@ -35,6 +35,7 @@ static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
+static constexpr std::string_view RenameTabKey{ "renameTab" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -73,7 +74,8 @@ namespace winrt::TerminalApp::implementation
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
-        { FindKey, ShortcutAction::Find }
+        { FindKey, ShortcutAction::Find },
+        { RenameTabKey, ShortcutAction::RenameTab }
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -102,6 +104,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
 
         { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
+
+        { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
