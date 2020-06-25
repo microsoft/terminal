@@ -189,6 +189,8 @@ namespace winrt::TerminalApp::implementation
     {
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
+
+        _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
     Collections::IObservableVector<Command> CommandPalette::FilteredActions()

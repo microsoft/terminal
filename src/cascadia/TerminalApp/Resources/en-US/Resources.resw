@@ -350,6 +350,9 @@
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
     <value>Type a command name...</value>
   </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>No matches found</value>
+  </data>
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close window</value>
   </data>

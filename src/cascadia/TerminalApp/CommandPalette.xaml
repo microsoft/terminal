@@ -117,6 +117,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -131,8 +132,17 @@ the MIT License. See LICENSE in the project root for license information. -->
             Text="">
         </TextBox>
 
+        <TextBlock
+            Padding="16"
+            x:Name="_noMatchesText"
+            x:Uid="CommandPalette_NoMatchesText"
+            FontStyle="Italic"
+            Visibility="Collapsed"
+            Grid.Row="1">
+        </TextBlock>
+
         <ListView
-            Grid.Row="1"
+            Grid.Row="2"
             x:Name="_filteredActionsView"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
