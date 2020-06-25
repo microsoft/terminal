@@ -250,7 +250,4 @@ private:
     COLORREF _DefaultBackground;
     bool _TerminalScrolling;
     friend class RegistrySerialization;
-
-public:
-    WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
 };

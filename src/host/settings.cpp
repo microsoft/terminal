@@ -761,19 +761,6 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
     return _colorTable.at(index);
 }
 
-// Routine Description:
-// - Generates a legacy attribute from the given TextAttributes.
-//     This needs to be a method on the Settings because the generated index
-//     is dependent upon the default fill attributes.
-// Parameters:
-// - attributes - The TextAttributes to generate a legacy attribute for.
-// Return value:
-// - A WORD representing the legacy attributes that most closely represent the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
-{
-    return attributes.GetLegacyAttributes();
-}
-
 COLORREF Settings::GetCursorColor() const noexcept
 {
     return _CursorColor;
