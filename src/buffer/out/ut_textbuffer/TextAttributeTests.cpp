@@ -117,13 +117,10 @@ void TextAttributeTests::TestRoundtripExhaustive()
 
         auto attr = TextAttribute(wLegacy);
 
-        bool isLegacy = attr.IsLegacy();
-        bool areEqual = (wLegacy == attr.GetLegacyAttributes());
-        if (!(isLegacy && areEqual))
+        if (wLegacy != attr.GetLegacyAttributes())
         {
             Log::Comment(NoThrowString().Format(
                 L"Failed on wLegacy=0x%x", wLegacy));
-            VERIFY_IS_TRUE(attr.IsLegacy());
             VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
         }
     }
