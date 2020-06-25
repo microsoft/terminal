@@ -198,8 +198,9 @@ namespace winrt::TerminalApp::implementation
         void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;

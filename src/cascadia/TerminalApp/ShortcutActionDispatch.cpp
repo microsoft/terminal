@@ -159,6 +159,16 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::SetTabColor:
+        {
+            _SetTabColorHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::OpenTabColorPicker:
+        {
+            _OpenTabColorPickerHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::RenameTab:
         {
             _RenameTabHandlers(*this, *eventArgs);

@@ -238,6 +238,45 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<til::color> tabColor;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetTabColorArgs>())
+        {
+            if (realArgs.TabColor() != nullptr)
+            {
+                tabColor = realArgs.TabColor().Value();
+            }
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (tabColor.has_value())
+            {
+                activeTab->SetTabColor(tabColor.value());
+            }
+            else
+            {
+                activeTab->ResetTabColor();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            activeTab->ActivateColorPicker();
+        }
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
                                         const TerminalApp::ActionEventArgs& args)
     {
@@ -262,5 +301,4 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
-
 }

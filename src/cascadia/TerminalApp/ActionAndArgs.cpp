@@ -33,6 +33,8 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view SetTabColorKey{ "setTabColor" };
+static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
 
 namespace winrt::TerminalApp::implementation
@@ -69,6 +71,8 @@ namespace winrt::TerminalApp::implementation
         { OpenSettingsKey, ShortcutAction::OpenSettings },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { SetTabColorKey, ShortcutAction::SetTabColor },
+        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
         { FindKey, ShortcutAction::Find },
         { RenameTabKey, ShortcutAction::RenameTab }
@@ -98,6 +102,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
         { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
 
