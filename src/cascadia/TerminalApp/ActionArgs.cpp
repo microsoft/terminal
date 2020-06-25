@@ -15,6 +15,8 @@
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetTabColorArgs.g.cpp"
+#include "RenameTabArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -209,4 +211,29 @@ namespace winrt::TerminalApp::implementation
             return RS_(L"OpenSettingsCommandKey");
         }
     }
+
+    winrt::hstring SetTabColorArgs::GenerateName() const
+    {
+        // "Set tab color to #RRGGBB"
+        // "Reset tab color"
+        if (_TabColor)
+        {
+            til::color c{ _TabColor.Value() };
+            return winrt::hstring{ fmt::format(RS_(L"SetTabColorCommandKey").c_str(), c.ToHexString(true)) };
+        }
+
+        return RS_(L"ResetTabColorCommandKey");
+    }
+
+    winrt::hstring RenameTabArgs::GenerateName() const
+    {
+        // "Rename tab to \"{_Title}\""
+        // "Reset tab title"
+        if (!_Title.empty())
+        {
+            return winrt::hstring{ fmt::format(RS_(L"RenameTabCommandKey").c_str(), _Title.c_str()) };
+        }
+        return RS_(L"ResetTabNameCommandKey");
+    }
+
 }

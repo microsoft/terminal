@@ -403,7 +403,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 //   window frame.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
 {
-    if (wParam == false)
+    if (!wParam)
     {
         return 0;
     }
@@ -417,7 +417,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     const auto originalSize = params->rgrc[0];
 
     // apply the default frame
-    auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
+    const auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
     {
         return ret;
@@ -783,9 +783,9 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
     const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (ret == FALSE)
+    if (!ret)
     {
-        return ret;
+        return FALSE;
     }
 
     // This is a hack to make the window borders dark instead of light.

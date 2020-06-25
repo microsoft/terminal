@@ -23,6 +23,7 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
 
 #include "../../types/inc/Viewport.hpp"
@@ -173,6 +174,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
@@ -195,6 +197,7 @@ namespace Microsoft::Console::Render
         DXGI_SWAP_CHAIN_DESC1 _swapChainDesc;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
+        std::unique_ptr<DrawingContext> _drawingContext;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;
@@ -215,8 +218,6 @@ namespace Microsoft::Console::Render
 
         float _defaultTextBackgroundOpacity;
 
-        RenderFrameInfo _frameInfo;
-
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
@@ -232,6 +233,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
         void _ReleaseDeviceResources() noexcept;
+
+        bool _ShouldForceGrayscaleAA() noexcept;
 
         [[nodiscard]] HRESULT _CreateTextLayout(
             _In_reads_(StringLength) PCWCHAR String,

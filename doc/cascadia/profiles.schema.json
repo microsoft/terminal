@@ -56,6 +56,8 @@
         "switchToTab",
         "toggleFullscreen",
         "find",
+        "setTabColor",
+        "openTabColorPicker",
         "unbound"
       ],
       "type": "string"
@@ -257,6 +259,22 @@
         }
       ]
     },
+    "SetTabColorAction": {
+      "description": "Arguments corresponding to a Set Tab Color Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setTabColor" },
+            "color": {
+              "$ref": "#/definitions/Color",
+              "default": null,
+              "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -272,6 +290,7 @@
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
+              { "$ref": "#/definitions/SetTabColorAction" },
               { "type": "null" }
             ]
         },

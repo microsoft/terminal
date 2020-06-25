@@ -244,4 +244,68 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().ToggleVisibility();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<til::color> tabColor;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetTabColorArgs>())
+        {
+            if (realArgs.TabColor() != nullptr)
+            {
+                tabColor = realArgs.TabColor().Value();
+            }
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (tabColor.has_value())
+            {
+                activeTab->SetTabColor(tabColor.value());
+            }
+            else
+            {
+                activeTab->ResetTabColor();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            activeTab->ActivateColorPicker();
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<winrt::hstring> title;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
+        {
+            title = realArgs.Title();
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (title.has_value())
+            {
+                activeTab->SetTabText(title.value());
+            }
+            else
+            {
+                activeTab->ResetTabText();
+            }
+        }
+        args.Handled(true);
+    }
 }
