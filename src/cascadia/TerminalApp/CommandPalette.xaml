@@ -176,12 +176,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        HorizontalAlignment="Left"
                                        Text="{x:Bind Name, Mode=OneWay}" />
 
-                            <TextBlock Grid.Column="2"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                       FontSize="12"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Text="{x:Bind KeyChordText, Mode=OneWay}" />
+
+                            <Grid Grid.Column="2"
+                                  Background="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                  BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                  BorderThickness="1"
+                                  CornerRadius="1"
+                                  Padding="2,0,2,0"
+                                  HorizontalAlignment="Right">
+                                <TextBlock Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                           FontSize="12"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                            </Grid>
+
                         </Grid>
                     </ListViewItem>
                 </DataTemplate>
