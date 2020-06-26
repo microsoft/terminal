@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
+#include "JsonUtilsNew.h"
 #include <sstream>
 
 using namespace TerminalApp;
@@ -57,10 +58,32 @@ static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
-// copyFormatting values
-static constexpr std::string_view PlainKey{ "plain" };
-static constexpr std::string_view HtmlKey{ "html" };
-static constexpr std::string_view RtfKey{ "rtf" };
+JSON_FLAG_MAPPER(CopyFormat)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "none", AllClear },
+        pair_type{ "plain", CopyFormat::Plain },
+        pair_type{ "html", CopyFormat::HTML },
+        pair_type{ "rtf", CopyFormat::RTF },
+        pair_type{ "all", AllSet },
+    };
+
+    // TODO: @Dustin how do I define the default value to be AllSet
+
+    CopyFormat FromJson(const Json::Value & json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : CopyFormat::Plain;
+        }
+        return FlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return FlagMapper::CanConvert(json) || json.isBool();
+    }
+};
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -193,10 +216,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
 
-    if (auto copyFormatting{ json[JsonKey(CopyFormattingKey)] })
-    {
-        _CopyFormatting = _ParseCopyFormatting(copyFormatting);
-    }
+    JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
@@ -325,54 +345,6 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
     }
 
     return LaunchMode::DefaultMode;
-}
-
-// Method Description:
-// - Helper function for converting the user-specified copyFormatting value(s)
-//   to a set of CopyFormat enum values
-// Arguments:
-// - json: The string value from the settings file to parse
-// Return Value:
-// - The serialized enum values which map to the bool or array of strings provided by the user
-int GlobalAppSettings::_ParseCopyFormatting(const Json::Value& json) noexcept
-{
-    if (json.isArray())
-    {
-        int result = 0;
-        for (const auto value : json)
-        {
-            const auto format = value.asString();
-            if (format == PlainKey)
-            {
-                result |= static_cast<int>(CopyFormat::Plain);
-            }
-            else if (format == HtmlKey)
-            {
-                result |= static_cast<int>(CopyFormat::HTML);
-            }
-            if (format == RtfKey)
-            {
-                result |= static_cast<int>(CopyFormat::RTF);
-            }
-        }
-        return result;
-    }
-    else if (json.isBool())
-    {
-        if (json.asBool())
-        {
-            return static_cast<int>(CopyFormat::Plain) |
-                   static_cast<int>(CopyFormat::HTML) |
-                   static_cast<int>(CopyFormat::RTF);
-        }
-        else
-        {
-            return static_cast<short>(CopyFormat::Plain);
-        }
-    }
-    return static_cast<int>(CopyFormat::Plain) |
-           static_cast<int>(CopyFormat::HTML) |
-           static_cast<int>(CopyFormat::RTF);
 }
 
 // Method Description:

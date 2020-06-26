@@ -19,12 +19,41 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
 #include "TerminalWarnings.h"
+#include "JsonUtils.h"
+#include "JsonUtilsNew.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
 //   class that implements IActionArgs
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
+
+JSON_FLAG_MAPPER(winrt::TerminalApp::CopyFormat)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "none", AllClear },
+        pair_type{ "plain", winrt::TerminalApp::CopyFormat::Plain },
+        pair_type{ "html", winrt::TerminalApp::CopyFormat::HTML },
+        pair_type{ "rtf", winrt::TerminalApp::CopyFormat::RTF },
+        pair_type{ "all", AllSet },
+    };
+
+    // TODO: @Dustin how do I define the default value to be 0 (inherit from global)
+
+    winrt::TerminalApp::CopyFormat FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : winrt::TerminalApp::CopyFormat::Plain;
+        }
+        return FlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return FlagMapper::CanConvert(json) || json.isBool();
+    }
+};
 
 namespace winrt::TerminalApp::implementation
 {
@@ -120,63 +149,8 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SingleLine = singleLine.asBool();
             }
-            if (auto copyFormatting{ json[JsonKey(CopyFormattingKey)] })
-            {
-                args->_CopyFormatting = _ParseCopyFormatting(copyFormatting);
-            }
+            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
             return { *args, {} };
-        }
-
-        // accepted copyFormatting values
-        static constexpr std::string_view PlainKey{ "plain" };
-        static constexpr std::string_view HtmlKey{ "html" };
-        static constexpr std::string_view RtfKey{ "rtf" };
-
-        // Method Description:
-        // - Helper function for converting the user-specified copyFormatting value(s)
-        //   to a set of CopyFormat enum values
-        // Arguments:
-        // - json: The string value from the settings file to parse
-        // Return Value:
-        // - The serialized enum values which map to the bool or array of strings provided by the user
-        // - 0 represents parsing failure or null. Behavior falls back to the global setting.
-        static int _ParseCopyFormatting(const Json::Value& json) noexcept
-        {
-            if (json.isArray())
-            {
-                int result = 0;
-                for (const auto value : json)
-                {
-                    const auto format = value.asString();
-                    if (format == PlainKey)
-                    {
-                        result |= static_cast<int>(CopyFormat::Plain);
-                    }
-                    else if (format == HtmlKey)
-                    {
-                        result |= static_cast<int>(CopyFormat::HTML);
-                    }
-                    if (format == RtfKey)
-                    {
-                        result |= static_cast<int>(CopyFormat::RTF);
-                    }
-                }
-                return result;
-            }
-            else if (json.isBool())
-            {
-                if (json.asBool())
-                {
-                    return static_cast<int>(CopyFormat::Plain) |
-                           static_cast<int>(CopyFormat::HTML) |
-                           static_cast<int>(CopyFormat::RTF);
-                }
-                else
-                {
-                    return static_cast<int>(CopyFormat::Plain);
-                }
-            }
-            return 0;
         }
     };
 
