@@ -10,7 +10,7 @@ namespace TerminalApp
         Command();
 
         String Name;
-        String IconPath;
         ActionAndArgs Action;
+        String KeyChordText;
     }
 }

@@ -120,9 +120,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
-        // TODO:GH#2557 Add an optional arg for opening the defaults here
-        _LaunchSettings(false);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::OpenSettingsArgs>())
+        {
+            _LaunchSettings(realArgs.Target());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
@@ -239,7 +241,75 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const TerminalApp::ActionEventArgs& args)
     {
-        CommandPalette().ToggleVisibility();
+        // TODO GH#6677: When we add support for commandline mode, first set the
+        // mode that the command palette should be in, before making it visible.
+        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                        Visibility::Collapsed :
+                                        Visibility::Visible);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<til::color> tabColor;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetTabColorArgs>())
+        {
+            if (realArgs.TabColor() != nullptr)
+            {
+                tabColor = realArgs.TabColor().Value();
+            }
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (tabColor.has_value())
+            {
+                activeTab->SetTabColor(tabColor.value());
+            }
+            else
+            {
+                activeTab->ResetTabColor();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            activeTab->ActivateColorPicker();
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<winrt::hstring> title;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
+        {
+            title = realArgs.Title();
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (title.has_value())
+            {
+                activeTab->SetTabText(title.value());
+            }
+            else
+            {
+                activeTab->ResetTabText();
+            }
+        }
         args.Handled(true);
     }
 

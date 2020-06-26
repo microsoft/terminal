@@ -63,11 +63,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnF7Pressed()
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnF7Pressed();
+        return _logic.OnDirectKeyEvent(vkey, down);
     }
     return false;
 }

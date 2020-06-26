@@ -8,6 +8,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
+#include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -46,7 +47,15 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
 // - <none>
 void AdaptDispatch::Print(const wchar_t wchPrintable)
 {
-    _pDefaults->Print(_termOutput.TranslateKey(wchPrintable));
+    const auto wchTranslated = _termOutput.TranslateKey(wchPrintable);
+    // By default the DEL character is meant to be ignored in the same way as a
+    // NUL character. However, it's possible that it could be translated to a
+    // printable character in a 96-character set. This condition makes sure that
+    // a character is only output if the DEL is translated to something else.
+    if (wchTranslated != AsciiChars::DEL)
+    {
+        _pDefaults->Print(wchTranslated);
+    }
 }
 
 // Routine Description
@@ -335,6 +344,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
     return success;
@@ -375,6 +385,12 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the code page if it was previously saved.
+    if (savedCursorState.CodePage != 0)
+    {
+        success = _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
+    }
 
     return success;
 }
@@ -1015,6 +1031,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
+    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        success = EnableWin32InputMode(enable);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -1077,8 +1096,27 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
+    {
+        return false;
+    }
+
+    return success;
+}
+
+// Method Description:
+// - win32-input-mode: Enable sending full input records encoded as a string of
+//   characters to the client application.
+// Arguments:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
+{
+    bool success = true;
+    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
+
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1096,8 +1134,7 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
     bool success = true;
     success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1590,18 +1627,107 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 }
 
 //Routine Description:
-// Designate Charset - Sets the active charset to be the one mapped to wch.
-//     See DispatchTypes::VTCharacterSets for a list of supported charsets.
-//     Also http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Controls-beginning-with-ESC
-//       For a list of all charsets and their codes.
-//     If the specified charset is unsupported, we do nothing (remain on the current one)
+// DOCS - Selects the coding system through which character sets are activated.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
+//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
+//     the code page is set to UTF-8, and only the GL area can be remapped.
 //Arguments:
-// - wchCharset - The character indicating the charset we should switch to.
+// - codingSystem - The coding system that will be selected.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
+bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 {
-    return _termOutput.DesignateCharset(wchCharset);
+    // If we haven't previously saved the initial code page, do so now.
+    // This will be used to restore the code page in response to a reset.
+    if (!_initialCodePage.has_value())
+    {
+        unsigned int currentCodePage;
+        _pConApi->GetConsoleOutputCP(currentCodePage);
+        _initialCodePage = currentCodePage;
+    }
+
+    bool success = false;
+    switch (codingSystem)
+    {
+    case DispatchTypes::CodingSystem::ISO2022:
+        success = _pConApi->SetConsoleOutputCP(28591);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(true);
+        }
+        break;
+    case DispatchTypes::CodingSystem::UTF8:
+        success = _pConApi->SetConsoleOutputCP(CP_UTF8);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(false);
+        }
+        break;
+    }
+    return success;
+}
+
+//Routine Description:
+// Designate Charset - Selects a specific 94-character set into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
+//     If the specified charset is unsupported, we do nothing (remain on the current one)
+//Arguments:
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The characters indicating the charset that will be used.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    return _termOutput.Designate94Charset(gsetNumber, charset);
+}
+
+//Routine Description:
+// Designate Charset - Selects a specific 96-character set into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
+//     If the specified charset is unsupported, we do nothing (remain on the current one)
+//Arguments:
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The characters indicating the charset that will be used.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+{
+    return _termOutput.Designate96Charset(gsetNumber, charset);
+}
+
+//Routine Description:
+// Locking Shift - Invoke one of the G-sets into the left half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShift(const size_t gsetNumber)
+{
+    return _termOutput.LockingShift(gsetNumber);
+}
+
+//Routine Description:
+// Locking Shift Right - Invoke one of the G-sets into the right half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShiftRight(const size_t gsetNumber)
+{
+    return _termOutput.LockingShiftRight(gsetNumber);
+}
+
+//Routine Description:
+// Single Shift - Temporarily invoke one of the G-sets into the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::SingleShift(const size_t gsetNumber)
+{
+    return _termOutput.SingleShift(gsetNumber);
 }
 
 //Routine Description:
@@ -1667,7 +1793,12 @@ bool AdaptDispatch::SoftReset()
     }
     if (success)
     {
-        success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
+        _termOutput = {}; // Reset all character set designations.
+        if (_initialCodePage.has_value())
+        {
+            // Restore initial code page if previously changed by a DOCS sequence.
+            success = _pConApi->SetConsoleOutputCP(_initialCodePage.value());
+        }
     }
     if (success)
     {
@@ -1911,8 +2042,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableVT200MouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1932,8 +2062,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1953,8 +2082,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1973,8 +2101,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -1994,8 +2121,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -2015,8 +2141,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAlternateScroll(enabled);
 
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
+    if (_ShouldPassThroughInputModeChange())
     {
         return false;
     }
@@ -2206,4 +2331,23 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     }
 
     return success;
+}
+
+// Routine Description:
+// - Determines whether we should pass any sequence that manipulates
+//   TerminalInput's input generator through the PTY. It encapsulates
+//   a check for whether the PTY is in use.
+// Return value:
+// True if the request should be passed.
+bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
+{
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input.
+    // The original comment said, "Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911". Unfortunately, time has shown
+    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+    // impact on the actual connected terminal. We can't remove this check,
+    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
+    return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
 }

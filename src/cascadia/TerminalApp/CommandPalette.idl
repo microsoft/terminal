@@ -13,9 +13,6 @@ namespace TerminalApp
 
         void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
 
-        void ToggleVisibility();
         void SetDispatch(ShortcutActionDispatch dispatch);
-
-        event Windows.Foundation.TypedEventHandler<CommandPalette, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
 }

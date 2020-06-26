@@ -9,7 +9,6 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/vt/WinTelnetEngine.hpp"
 #include "../Settings.hpp"
 
 #include "CommonState.hpp"

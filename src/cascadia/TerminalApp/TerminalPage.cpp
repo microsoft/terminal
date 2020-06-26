@@ -14,6 +14,7 @@
 #include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include "KeyChordSerialization.h"
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
@@ -49,7 +50,8 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                     bool needRefreshUI)
     {
         _settings = settings;
         if (needRefreshUI)
@@ -63,9 +65,21 @@ namespace winrt::TerminalApp::implementation
         {
             // Update the command palette when settings reload
             auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-            for (auto& action : _settings->GlobalSettings().GetCommands())
+            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
             {
-                commandsCollection.Append(action.second);
+                auto command = nameAndCommand.second;
+
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the string for that keychord and display it as a
+                // part of the command in the UI. Each Command's KeyChordText is
+                // unset by default, so we don't need to worry about clearing it
+                // if there isn't a key associated with it.
+                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+                if (keyChord)
+                {
+                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
+                }
+                commandsCollection.Append(command);
             }
             CommandPalette().SetActions(commandsCollection);
         }
@@ -165,7 +179,15 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
         CommandPalette().SetDispatch(*_actionDispatch);
-        CommandPalette().Closed({ this, &TerminalPage::_CommandPaletteClosed });
+        // When the visibility of the command palette changes to "collapsed",
+        // the palette has been closed. Toss focus back to the currently active
+        // control.
+        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (CommandPalette().Visibility() == Visibility::Collapsed)
+            {
+                _CommandPaletteClosed(nullptr, nullptr);
+            }
+        });
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
@@ -708,7 +730,8 @@ namespace winrt::TerminalApp::implementation
         const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        _LaunchSettings(altPressed);
+        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        _LaunchSettings(target);
     }
 
     // Method Description:
@@ -782,6 +805,9 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
+        _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
+        _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
+        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
     }
 
     // Method Description:
@@ -1121,6 +1147,18 @@ namespace winrt::TerminalApp::implementation
             return focusedIndex;
         }
         return std::nullopt;
+    }
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<Tab> TerminalPage::_GetFocusedTab()
+    {
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            return _GetStrongTabImpl(*index);
+        }
+        return nullptr;
     }
 
     // Method Description:
@@ -1574,7 +1612,7 @@ namespace winrt::TerminalApp::implementation
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget TerminalPage::_LaunchSettings(const bool openDefaults)
+    fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget target)
     {
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the Windows.Storage API's
@@ -1582,13 +1620,26 @@ namespace winrt::TerminalApp::implementation
         // thread, because the main thread is a STA.
         co_await winrt::resume_background();
 
-        const auto settingsPath = openDefaults ? CascadiaSettings::GetDefaultSettingsPath() :
-                                                 CascadiaSettings::GetSettingsPath();
+        auto openFile = [](const auto& filePath) {
+            HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+            if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+            {
+                ShellExecute(nullptr, nullptr, L"notepad", filePath.c_str(), nullptr, SW_SHOW);
+            }
+        };
 
-        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
-        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        switch (target)
         {
-            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        case SettingsTarget::DefaultsFile:
+            openFile(CascadiaSettings::GetDefaultSettingsPath());
+            break;
+        case SettingsTarget::SettingsFile:
+            openFile(CascadiaSettings::GetSettingsPath());
+            break;
+        case SettingsTarget::AllFiles:
+            openFile(CascadiaSettings::GetDefaultSettingsPath());
+            openFile(CascadiaSettings::GetSettingsPath());
+            break;
         }
     }
 

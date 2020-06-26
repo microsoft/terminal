@@ -167,6 +167,20 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ExecuteCommandline:
         {
             _ExecuteCommandlineHandlers(*this, *eventArgs);
+        }
+        case ShortcutAction::SetTabColor:
+        {
+            _SetTabColorHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::OpenTabColorPicker:
+        {
+            _OpenTabColorPickerHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::RenameTab:
+        {
+            _RenameTabHandlers(*this, *eventArgs);
             break;
         }
         default:

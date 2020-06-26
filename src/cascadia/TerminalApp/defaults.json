@@ -42,6 +42,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         },
@@ -60,6 +61,7 @@
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         }
@@ -277,6 +279,7 @@
         { "command": "toggleFullscreen", "keys": "f11" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
 
         // Tab Management
@@ -334,38 +337,5 @@
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
         { "command": "resetFontSize", "keys": "ctrl+0" }
-    ],
-
-    "commands": [
-        { "icon": null, "name": { "key": "NewTabCommandKey" }, "action": "newTab" },
-        { "icon": null, "name": { "key": "DuplicateTabCommandKey" }, "action": "duplicateTab" },
-        { "icon": null, "name": { "key": "DuplicatePaneCommandKey" }, "action": { "action": "splitPane", "split":"auto", "splitMode": "duplicate" } },
-        { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": { "action": "splitPane", "split": "horizontal" } },
-        { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": { "action": "splitPane", "split": "vertical" } },
-
-        { "icon": null, "name": { "key": "CloseWindowCommandKey" }, "action": "closeWindow" },
-        { "icon": null, "name": { "key": "ClosePaneCommandKey" }, "action": "closePane" },
-
-        { "icon": null, "name": { "key": "OpenNewTabDropdownCommandKey" }, "action": "openNewTabDropdown" },
-        { "icon": null, "name": { "key": "OpenSettingsCommandKey" }, "action": "openSettings" },
-
-        { "icon": null, "name": { "key": "FindCommandKey" }, "action": "find" },
-
-        { "icon": null, "name": { "key": "NextTabCommandKey" }, "action": "nextTab" },
-        { "icon": null, "name": { "key": "PrevTabCommandKey" }, "action": "prevTab" },
-
-        { "icon": null, "name": { "key": "ToggleFullscreenCommandKey" }, "action": "toggleFullscreen" },
-
-        { "icon": null, "name": { "key": "CopyTextCommandKey" }, "action": { "action": "copy", "singleLine": false } },
-        { "icon": null, "name": { "key": "PasteCommandKey" }, "action": "paste" },
-
-        { "icon": null, "name": { "key": "IncreaseFontSizeCommandKey" }, "action": { "action": "adjustFontSize", "delta": 1 } },
-        { "icon": null, "name": { "key": "DecreaseFontSizeCommandKey" }, "action": { "action": "adjustFontSize", "delta": -1 } },
-        { "icon": null, "name": { "key": "ResetFontSizeCommandKey" }, "action": "resetFontSize"  },
-
-        { "icon": null, "name": { "key": "ScrollDownCommandKey" }, "action": "scrollDown" },
-        { "icon": null, "name": { "key": "ScrollDownPageCommandKey" }, "action": "scrollDownPage" },
-        { "icon": null, "name": { "key": "ScrollUpCommandKey" }, "action": "scrollUp" },
-        { "icon": null, "name": { "key": "ScrollUpPageCommandKey" }, "action": "scrollUpPage" }
     ]
 }

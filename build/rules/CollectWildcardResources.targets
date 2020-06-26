@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <Target Name="BeforeGenerateProjectPriFile" DependsOnTargets="OpenConsoleCollectWildcardPRIFiles" />
+
+  <!--
+    The vcxproj system does not support wildcards at the root level of a project.
+    This poses a problem, as we want to include resw files that are not checked into the
+    repository. Since they're usually localized and stored in directories named after
+    their languages, we can't exactly explicitly simultaneously list them all and remain
+    sane. We want to use wildcards to make our lives easier.
+
+    This rule takes OCResourceDirectory items and includes all resw files that live
+    underneath them.
+
+    ** TIRED **
+    (does not work because of wildcards)
+    <PRIResource Include="Resources/*/Resources.resw" />
+
+    ** WIRED **
+    (keep the en-US resource in the project, because it is checked in and VS will show it)
+    <PRIResource Include="Resources/en-US/Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
+  -->
+  <Target Name="OpenConsoleCollectWildcardPRIFiles">
+    <CreateItem Include="@(OCResourceDirectory->'%(Identity)\**\*.resw')">
+      <Output TaskParameter="Include" ItemName="_OCFoundPRIFiles" />
+    </CreateItem>
+    <ItemGroup>
+      <_OCFoundPRIFiles Include="@(PRIResource)" />
+      <PRIResource Remove="@(PRIResource)" />
+      <PRIResource Include="@(_OCFoundPRIFiles->Distinct())" />
+    </ItemGroup>
+    <Message Text="$(ProjectName) (wildcard PRIs) -> @(PRIResource)" />
+  </Target>
+</Project>
