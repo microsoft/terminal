@@ -560,7 +560,7 @@ namespace winrt::TerminalApp::implementation
     struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
     {
         ToggleTabSwitcherArgs() = default;
-        GETSET_PROPERTY(TerminalApp::AnchorKey, Key, TerminalApp::AnchorKey::Ctrl);
+        GETSET_PROPERTY(TerminalApp::AnchorKey, Key, TerminalApp::AnchorKey::None);
 
         static constexpr std::string_view AnchorKey{ "anchor" };
 

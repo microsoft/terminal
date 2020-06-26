@@ -76,6 +76,17 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
+    void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
+                                         Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        auto key = e.OriginalKey();
+        if (_tabSwitcherMode && key == VirtualKey::Tab)
+        {
+            _selectNextItem(true);
+            e.Handled(true);
+        }
+    }
+
     // Method Description:
     // - Process keystrokes in the input box. This is used for moving focus up
     //   and down the list of commands in Action mode, and for executing
@@ -130,6 +141,35 @@ namespace winrt::TerminalApp::implementation
             }
 
             e.Handled(true);
+        }
+    }
+
+    void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
+                                       Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        auto key = e.OriginalKey();
+
+        if (_tabSwitcherMode)
+        {
+            if (_anchorKey && key == _anchorKey.value())
+            {
+                // Once the user lifts the anchor key, we'll switch to the currently selected tab
+                // then close the tab switcher.
+
+                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                {
+                    if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+                    {
+                        const auto actionAndArgs = data.Action();
+                        _dispatch.DoAction(actionAndArgs);
+                        _tabSwitcherMode = false;
+                        _updateFilteredActions();
+                        _close();
+                    }
+                }
+
+                e.Handled(true);
+            }
         }
     }
 
@@ -494,10 +534,28 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey)
     {
-        _anchorKey = anchorKey;
-        _tabSwitcherMode = true;
-        _allActions = _allTabActions;
-        _updateFilteredActions();
+        if (!_tabSwitcherMode)
+        {
+            if (anchorKey == TerminalApp::AnchorKey::Ctrl)
+            {
+                _anchorKey = VirtualKey::Control;
+            }
+            else if (anchorKey == TerminalApp::AnchorKey::Alt)
+            {
+                _anchorKey = VirtualKey::Menu;
+            }
+            else if (anchorKey == TerminalApp::AnchorKey::Shift)
+            {
+                _anchorKey = VirtualKey::Shift;
+            }
+            else
+            {
+                _anchorKey = std::nullopt;
+            }
+            _tabSwitcherMode = true;
+            _allActions = _allTabActions;
+            _updateFilteredActions();
+        }
     }
 
 }
