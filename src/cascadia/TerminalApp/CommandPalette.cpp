@@ -33,28 +33,21 @@ namespace winrt::TerminalApp::implementation
             // "raise" the command palette up by 16 units, so it will cast a shadow.
             _backdrop().Translation({ 0, 0, 16 });
         }
-    }
 
-    // Method Description:
-    // - Toggles the visibility of the command palette. This will auto-focus the
-    //   input box within the palette.
-    // - TODO GH#6677: When we add support for commandline mode, accept a parameter here
-    //   for which mode we should enter in.
-    void CommandPalette::ToggleVisibility()
-    {
-        const bool isVisible = Visibility() == Visibility::Visible;
-        if (!isVisible)
-        {
-            // Become visible
-            Visibility(Visibility::Visible);
-            _searchBox().Focus(FocusState::Programmatic);
-            _filteredActionsView().SelectedIndex(0);
-        }
-        else
-        {
-            // Raise an event to return control to the Terminal.
-            _close();
-        }
+        // Whatever is hosting us will enable us by setting our visibility to
+        // "Visible". When that happens, set focus to our search box.
+        RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (Visibility() == Visibility::Visible)
+            {
+                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().SelectedIndex(0);
+            }
+            else
+            {
+                // Raise an event to return control to the Terminal.
+                _close();
+            }
+        });
     }
 
     // Method Description:
@@ -89,25 +82,6 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
-
-        if (_keyBindings)
-        {
-            // First, try letting the keybindings handle this key. The user can
-            // see a list of keybindings, they should be able to use them.
-            CoreWindow window = CoreWindow::GetForCurrentThread();
-            const auto ctrl = WI_IsFlagSet(window.GetKeyState(VirtualKey::RightControl), CoreVirtualKeyStates::Down) ||
-                              WI_IsFlagSet(window.GetKeyState(VirtualKey::LeftControl), CoreVirtualKeyStates::Down);
-            const auto alt = WI_IsFlagSet(window.GetKeyState(VirtualKey::RightMenu), CoreVirtualKeyStates::Down) ||
-                             WI_IsFlagSet(window.GetKeyState(VirtualKey::LeftMenu), CoreVirtualKeyStates::Down);
-            const auto shift = WI_IsFlagSet(window.GetKeyState(VirtualKey::Shift), CoreVirtualKeyStates::Down);
-            winrt::Microsoft::Terminal::Settings::KeyChord kc{ ctrl, alt, shift, static_cast<int32_t>(key) };
-            if (_keyBindings.TryKeyChord(kc))
-            {
-                // if the keybindings handled the key, then we can go ahead and close ourself.
-                _close();
-                return;
-            }
-        }
 
         if (key == VirtualKey::Up)
         {
@@ -148,6 +122,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _searchBox().Text(L"");
             }
+
+            e.Handled(true);
         }
     }
 
@@ -418,11 +394,6 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void CommandPalette::SetKeyBindings(const winrt::Microsoft::Terminal::Settings::IKeyBindings& bindings)
-    {
-        _keyBindings = bindings;
-    }
-
     // Method Description:
     // - Dismiss the command palette. This will:
     //   * select all the current text in the input box
@@ -438,7 +409,6 @@ namespace winrt::TerminalApp::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
-        _ClosedHandlers(*this, RoutedEventArgs{});
     }
 
 }

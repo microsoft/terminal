@@ -351,7 +351,7 @@
     <value>Type a command name...</value>
   </data>
   <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
-    <value>No matches found</value>
+    <value>No matching commands</value>
   </data>
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close window</value>

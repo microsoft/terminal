@@ -80,12 +80,16 @@ namespace winrt::TerminalApp::implementation
         {
             return RS_(L"NewTabCommandKey");
         }
-        return winrt::hstring{ fmt::format(L"{}, {}", RS_(L"NewTabCommandKey"), newTerminalArgsStr) };
+        return winrt::hstring{
+            fmt::format(L"{}, {}", RS_(L"NewTabCommandKey"), newTerminalArgsStr)
+        };
     }
 
     winrt::hstring SwitchToTabArgs::GenerateName() const
     {
-        return winrt::hstring{ fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), _TabIndex) };
+        return winrt::hstring{
+            fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), _TabIndex)
+        };
     }
 
     winrt::hstring ResizePaneArgs::GenerateName() const
@@ -106,7 +110,10 @@ namespace winrt::TerminalApp::implementation
             directionString = RS_(L"DirectionDown");
             break;
         }
-        return winrt::hstring{ fmt::format(RS_(L"ResizePaneWithArgCommandKey").c_str(), directionString) };
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"ResizePaneWithArgCommandKey")),
+                        directionString)
+        };
     }
 
     winrt::hstring MoveFocusArgs::GenerateName() const
@@ -127,7 +134,10 @@ namespace winrt::TerminalApp::implementation
             directionString = RS_(L"DirectionDown");
             break;
         }
-        return winrt::hstring{ fmt::format(RS_(L"MoveFocusWithArgCommandKey").c_str(), directionString) };
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
+                        directionString)
+        };
     }
 
     winrt::hstring AdjustFontSizeArgs::GenerateName() const
@@ -138,13 +148,19 @@ namespace winrt::TerminalApp::implementation
         // * Decrease font size, amount: {delta}"
         if (_Delta < 0)
         {
-            return _Delta == -1 ? winrt::hstring{ fmt::format(RS_(L"DecreaseFontSizeCommandKey").c_str()) } :
-                                  winrt::hstring{ fmt::format(RS_(L"DecreaseFontSizeWithAmountCommandKey").c_str(), -_Delta) };
+            return _Delta == -1 ? RS_(L"DecreaseFontSizeCommandKey") :
+                                  winrt::hstring{
+                                      fmt::format(std::wstring_view(RS_(L"DecreaseFontSizeWithAmountCommandKey")),
+                                                  -_Delta)
+                                  };
         }
         else
         {
-            return _Delta == 1 ? winrt::hstring{ fmt::format(RS_(L"IncreaseFontSizeCommandKey").c_str()) } :
-                                 winrt::hstring{ fmt::format(RS_(L"IncreaseFontSizeWithAmountCommandKey").c_str(), _Delta) };
+            return _Delta == 1 ? RS_(L"IncreaseFontSizeCommandKey") :
+                                 winrt::hstring{
+                                     fmt::format(std::wstring_view(RS_(L"IncreaseFontSizeWithAmountCommandKey")),
+                                                 _Delta)
+                                 };
         }
     }
 
@@ -162,11 +178,11 @@ namespace winrt::TerminalApp::implementation
         std::wstringstream ss;
         if (_SplitMode == SplitType::Duplicate)
         {
-            ss << RS_(L"DuplicatePaneCommandKey").c_str();
+            ss << std::wstring_view(RS_(L"DuplicatePaneCommandKey"));
         }
         else
         {
-            ss << RS_(L"SplitPaneCommandKey").c_str();
+            ss << std::wstring_view(RS_(L"SplitPaneCommandKey"));
         }
         ss << L", ";
 
@@ -219,7 +235,10 @@ namespace winrt::TerminalApp::implementation
         if (_TabColor)
         {
             til::color c{ _TabColor.Value() };
-            return winrt::hstring{ fmt::format(RS_(L"SetTabColorCommandKey").c_str(), c.ToHexString(true)) };
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SetTabColorCommandKey")),
+                            c.ToHexString(true))
+            };
         }
 
         return RS_(L"ResetTabColorCommandKey");
@@ -231,7 +250,10 @@ namespace winrt::TerminalApp::implementation
         // "Reset tab title"
         if (!_Title.empty())
         {
-            return winrt::hstring{ fmt::format(RS_(L"RenameTabCommandKey").c_str(), _Title.c_str()) };
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameTabCommandKey")),
+                            _Title.c_str())
+            };
         }
         return RS_(L"ResetTabNameCommandKey");
     }

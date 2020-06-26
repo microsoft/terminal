@@ -179,8 +179,15 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
         CommandPalette().SetDispatch(*_actionDispatch);
-        CommandPalette().SetKeyBindings(_settings->GetKeybindings());
-        CommandPalette().Closed({ this, &TerminalPage::_CommandPaletteClosed });
+        // When the visibility of the command palette changes to "collapsed",
+        // the palette has been closed. Toss focus back to the currently active
+        // control.
+        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (CommandPalette().Visibility() == Visibility::Collapsed)
+            {
+                _CommandPaletteClosed(nullptr, nullptr);
+            }
+        });
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the

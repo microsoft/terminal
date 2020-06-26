@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Deserialize an Command from the `json` object. The json object should
+    // - Deserialize a Command from the `json` object. The json object should
     //   contain a "name" and "action", and optionally an "icon".
     //   * "name": string|object - the name of the command to display in the
     //     command palette. If this is an object, look for the "key" property,

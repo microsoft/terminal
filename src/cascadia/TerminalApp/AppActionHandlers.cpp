@@ -241,7 +241,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const TerminalApp::ActionEventArgs& args)
     {
-        CommandPalette().ToggleVisibility();
+        // TODO GH#6677: When we add support for commandline mode, first set the
+        // mode that the command palette should be in, before making it visible.
+        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                        Visibility::Collapsed :
+                                        Visibility::Visible);
         args.Handled(true);
     }
 
