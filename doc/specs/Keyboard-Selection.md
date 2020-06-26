@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2020-06-23
+last updated: 2020-06-26
 issue id: 715
 ---
 
@@ -44,17 +44,25 @@ The Terminal Core will need to expose a `MoveSelectionEndpoint()` function that 
 - `enum Direction`: the direction that the selection anchor will attempt to move to. Possible values include `Up`, `Down`, `Left`, and `Right`.
 - `enum SelectionExpansionMode`: the selection expansion mode that the selection anchor will adhere to. Possible values include `Cell`, `Word`, `Viewport`, `Buffer`.
 
+#### Moving by Cell
 For `SelectionExpansionMode = Cell`, the selection anchor will be updated according to the buffer's output pattern. For **horizontal movements**, the selection anchor will attempt to move left or right. If a viewport boundary is hit, the anchor will wrap appropriately (i.e.: hitting the left boundary moves it to the last cell of the line above it).
 
 For **vertical movements**, the selection anchor will attempt to move up or down. If a **viewport boundary** is hit and there is a scroll buffer, the anchor will move and scroll accordingly by a line. If a **buffer boundary** is hit, the anchor will not move. In this case, however, the event will still be considered handled.
 
-For `SelectionExpansionMode = Word`, the selection anchor will also be updated according to the buffer's output pattern, as above. However, the selection will be updated in accordance with "chunk selection" (performing a double-click and dragging the mouse to expand the selection). For **horizontal movements**, the selection anchor will be updated according to the `_ExpandDoubleClickSelection` functions. The result must be saved to the anchor. As before, if a boundary is hit, the anchor will wrap appropriately.
+**NOTE**: An important thing to handle properly in all cases is wide glyphs. The user should not be allowed to select a portion of a wide glyph; it should be all or none of it. When calling `_ExpandWideGlyphSelection` functions, the result must be saved to the anchor.
+
+#### Moving by Word
+For `SelectionExpansionMode = Word`, the selection anchor will also be updated according to the buffer's output pattern, as above. However, the selection will be updated in accordance with "chunk selection" (performing a double-click and dragging the mouse to expand the selection). For **horizontal movements**, the selection anchor will be updated according to the `_ExpandDoubleClickSelection` functions. The result must be saved to the anchor. As before, if a boundary is hit, the anchor will wrap appropriately. See [Future Considerations](#FutureConsiderations) for how this will interact with line wrapping.
 
 For **vertical movements**, the movement is a little more complicated than before. The selection will still respond to buffer and viewport boundaries as before. If the user is trying to move up, the selection anchor will attempt to move up by one line, then selection will be expanded leftwards. Alternatively, if the user is trying to move down, the selection anchor will attempt to move down by one line, then the selection will be expanded rightwards.
 
+#### Moving by Viewport
 For `SelectionExpansionMode = Viewport`, the selection anchor will be updated according to the viewport's height. Horizontal movements will be updated according to the viewport's width, thus resulting in the anchor being moved to the left/right boundary of the viewport.
 
-**NOTE**: An important thing to handle properly in all cases is wide glyphs. The user should not be allowed to select a portion of a wide glyph; it should be all or none of it. When calling `_ExpandWideGlyphSelection` functions, the result must be saved to the anchor.
+#### Moving by Buffer
+
+For `SelectionExpansionMode = Buffer`, the selection anchor will be moved to the beginning or end of all the text within the buffer. If moving up or left, set the position to 0,0 (the origin of the buffer). If moving down or right, set the position to the last character in the buffer.
+
 
 **NOTE**: In all cases, horizontal movements attempting to move past the left/right viewport boundaries result in a wrap. Vertical movements attempting to move past the top/bottom viewport boundaries will scroll such that the selection is at the edge of the screen. Vertical movements attempting to move past the top/bottom buffer boundaries will be clamped to be within buffer boundaries.
 
@@ -71,9 +79,9 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 | Action | Keybinding Args | Description |
 |--|--|--|
 | `moveSelectionPoint` |                                                               | If a selection exists, moves the last selection anchor.
-|                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
-|                       | `Enum expansionMode { cell, word, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
-| `selectEntireBuffer`  | | Select the entire text buffer.
+|                       | `Enum direction { up, down, left, right }`                     | The direction the selection will be moved in. |
+|                       | `Enum expandBy { cell, word, page, all }`   | The context for which to move the selection anchor to. (defaults to `cell`)
+| `selectAll`  | | Select the entire text buffer.
 
 
 By default, the following keybindings will be set:
@@ -85,22 +93,23 @@ By default, the following keybindings will be set:
 { "command": { "action": "moveSelectionPoint", "direction": "right" }, "keys": "shift+right" },
 
 // Word Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "word" }, "keys": "ctrl+shift+left" },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "word" }, "keys": "ctrl+shift+right" },
+{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expandBy": "word" }, "keys": "ctrl+shift+left" },
+{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expandBy": "word" }, "keys": "ctrl+shift+right" },
 
 // Viewport Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expansionMode": "viewport" }, "keys": "shift+home" },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expansionMode": "viewport" }, "keys": "shift+end" },
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "viewport" }, "keys": "shift+pgup" },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "viewport" }, "keys": "shift+pgdn" },
+{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expandBy": "page" }, "keys": "shift+home" },
+{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expandBy": "page" }, "keys": "shift+end" },
+{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expandBy": "page" }, "keys": "shift+pgup" },
+{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expandBy": "page" }, "keys": "shift+pgdn" },
 
 // Buffer Corner Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expansionMode": "buffer" }, "keys": "ctrl+shift+home" },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expansionMode": "buffer" }, "keys": "ctrl+shift+end" },
+{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expandBy": "all" }, "keys": "ctrl+shift+home" },
+{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expandBy": "all" }, "keys": "ctrl+shift+end" },
 
 // Select All
-{ "command": "selectEntireBuffer", "keys": "ctrl+shift+a" },
+{ "command": "selectAll", "keys": "ctrl+shift+a" },
 ```
+These are in accordance with ConHost's keyboard selection model.
 
 ## Capabilities
 
@@ -129,6 +138,17 @@ N/A
 The settings model makes all of these features easy to disable, if the user wishes to do so.
 
 ## Future considerations
+
+### Graphene Clusters
+When graphene cluster support is inevitably added to the Text Buffer, moving by "cell" is expected to move by "character" or "cluster". This is similar to how wide glyphs are handled today. Either all of it is selected, or none of it.
+
+### Word Selection Wrap
+At the time of writing this spec, expanding or moving by word is interrupted by the beginning or end of the line, regardless of the wrap flag being set. In the future, selection and the accessibility models will respect the wrap flag on the text buffer.
+
+### Contextual Keybindings
+This feature introduces a large number of keybindings that only work if a selection is active. Currently, key bindings cannot be bound to a context, so if a user binds `moveSelectionPoint` to `shift+up` and there is no selection, `shift+up` is sent directly to the Terminal. In the future, a `context` key could be added to new bindings to get around this problem. That way, users could bind other actions to `shift+up` to run specifically when a selection is not active.
+
+## Mark Mode
 
 This functionality will be expanded to create a feature similar to Mark Mode. This will allow a user to create a selection using only the keyboard.
 
