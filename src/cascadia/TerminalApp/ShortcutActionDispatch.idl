@@ -36,7 +36,8 @@ namespace TerminalApp
         OpenTabColorPicker,
         OpenSettings,
         RenameTab,
-        ToggleCommandPalette
+        ToggleCommandPalette,
+        ToggleTabSwitcher
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -78,5 +79,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleTabSwitcher;
     }
 }

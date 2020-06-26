@@ -4,6 +4,10 @@
 #include "pch.h"
 #include "CommandPalette.h"
 
+#include "ActionAndArgs.h"
+#include "ActionArgs.h"
+#include "Command.h"
+
 #include "CommandPalette.g.cpp"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
@@ -13,6 +17,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -101,7 +106,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                if (const auto data = selectedItem.try_as<Command>())
+                if (const auto data = selectedItem.try_as<TerminalApp::Command>())
                 {
                     const auto actionAndArgs = data.Action();
                     _dispatch.DoAction(actionAndArgs);
@@ -190,7 +195,7 @@ namespace winrt::TerminalApp::implementation
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
-    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -409,6 +414,89 @@ namespace winrt::TerminalApp::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
+    }
+
+    void CommandPalette::OnTabsChanged(const IInspectable& s, const IVectorChangedEventArgs& e)
+    {
+        if (auto tabList = s.try_as<IObservableVector<TerminalApp::Tab>>())
+        {
+            auto idx = e.Index();
+            auto changedEvent = e.CollectionChange();
+            auto tab = tabList.GetAt(idx);
+
+            switch (changedEvent)
+            {
+                case CollectionChange::ItemChanged:
+                {
+                    GenerateCommandForTab(idx, false, tab);
+                    break;
+                }
+                case CollectionChange::ItemInserted:
+                {
+                    GenerateCommandForTab(idx, true, tab);
+                    break;
+                }
+                case CollectionChange::ItemRemoved:
+                {
+                    _allTabActions.RemoveAt(idx);
+                    break;
+                }
+            }
+        }
+    }
+
+    void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::Tab& tab)
+    {
+        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
+        args->TabIndex(idx);
+
+        focusTabAction->Action(ShortcutAction::SwitchToTab);
+        focusTabAction->Args(*args);
+
+        auto command = winrt::make_self<implementation::Command>();
+        command->Action(*focusTabAction);
+        command->KeyChordText(L"index : " + to_hstring(idx));
+        command->Name(tab.Title());
+
+        // Listen for changes to this particular Tab's title so we can update the corresponding Command name.
+        auto weakThis{ get_weak() };
+        auto weakCommand{ command->get_weak() };
+        tab.PropertyChanged([weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+            auto palette{ weakThis.get() };
+            auto command{ weakCommand.get() };
+            if (palette && command)
+            {
+                if (args.PropertyName() == L"Title")
+                {
+                    command->Name(tab.Title());
+                }
+            }
+        });
+
+        if (inserted)
+        {
+            _allTabActions.InsertAt(idx, *command);
+        }
+        else
+        {
+            _allTabActions.SetAt(idx, *command);
+        }
+
+        // We don't need to update the filtered actions if the
+        // command palette's actions aren't tab switcher actions.
+        if (_tabSwitcherMode)
+        {
+            _updateFilteredActions();
+        }
+    }
+
+    void CommandPalette::ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey)
+    {
+        _anchorKey = anchorKey;
+        _tabSwitcherMode = true;
+        _allActions = _allTabActions;
+        _updateFilteredActions();
     }
 
 }

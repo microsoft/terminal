@@ -17,6 +17,10 @@ namespace winrt::TerminalApp::implementation
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
+        // TabSwitcherMode Specific
+        void ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey);
+        void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
+
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
@@ -39,6 +43,12 @@ namespace winrt::TerminalApp::implementation
         void _updateFilteredActions();
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
+
+        // TabSwitcher
+        TerminalApp::AnchorKey _anchorKey;
+        bool _tabSwitcherMode{ true };
+        void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
     };
 }
 

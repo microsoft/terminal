@@ -11,6 +11,9 @@ namespace TerminalApp
 
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
+        void ToggleTabSwitcher(TerminalApp.AnchorKey anchorKey);
+        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
+
         void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
 
         void SetDispatch(ShortcutActionDispatch dispatch);

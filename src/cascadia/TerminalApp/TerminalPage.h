@@ -204,6 +204,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleTabSwitcher(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

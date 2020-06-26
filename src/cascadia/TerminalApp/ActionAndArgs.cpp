@@ -33,6 +33,7 @@ static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view ToggleTabSwitcherKey{ "tabSwitcher" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -79,6 +80,7 @@ namespace winrt::TerminalApp::implementation
         { FindKey, ShortcutAction::Find },
         { RenameTabKey, ShortcutAction::RenameTab },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
+        { ToggleTabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -109,6 +111,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
         { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
+
+        { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -257,6 +261,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleTabSwitcher, RS_(L"ToggleTabSwitcherCommandKey") },
             };
         }();
 
