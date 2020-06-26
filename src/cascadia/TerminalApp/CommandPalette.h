@@ -52,6 +52,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
         bool _tabSwitcherMode{ false };
         void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
+        void UpdateTabIndices(const uint32_t startIdx);
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
     };
 }

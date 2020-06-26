@@ -475,14 +475,28 @@ namespace winrt::TerminalApp::implementation
                 case CollectionChange::ItemInserted:
                 {
                     GenerateCommandForTab(idx, true, tab);
+                    UpdateTabIndices(idx);
                     break;
                 }
                 case CollectionChange::ItemRemoved:
                 {
                     _allTabActions.RemoveAt(idx);
+                    UpdateTabIndices(idx);
                     break;
                 }
             }
+        }
+    }
+
+    void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
+    {
+        for (auto i = startIdx + 1; i < _allTabActions.Size(); ++i)
+        {
+            auto command = _allTabActions.GetAt(i);
+
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
+
+            command.KeyChordText(L"index : " + to_hstring(i));
         }
     }
 
