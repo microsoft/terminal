@@ -504,11 +504,15 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     if (_borderless && !_fullscreen)
     {
         WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-        WI_SetFlag(windowStyle, WS_POPUP);
+        // WI_SetFlag(windowStyle, WS_POPUP);
+        WI_SetFlag(windowStyle, WS_BORDER);
+        WI_SetFlag(windowStyle, WS_SIZEBOX);
     }
-    else if (_borderless && !_fullscreen)
+    else if (!_borderless && !_fullscreen)
     {
-        WI_ClearFlag(windowStyle, WS_POPUP);
+        // WI_ClearFlag(windowStyle, WS_POPUP);
+        WI_ClearFlag(windowStyle, WS_BORDER);
+        WI_ClearFlag(windowStyle, WS_SIZEBOX);
         WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
     }
 
@@ -521,8 +525,16 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
     _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
 
-    // _BackupWindowSizes(oldIsInFullscreen);
-    // _ApplyWindowSize();
+    // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
+    // recalculate the non/client areas
+    const til::rectangle windowPos{ GetWindowRect() };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 windowPos.left<int>(),
+                 windowPos.top<int>(),
+                 windowPos.width<int>(),
+                 windowPos.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // Method Description:
@@ -566,8 +578,11 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     else
     {
         WI_ClearFlag(windowStyle, WS_POPUP);
-        WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
     }
+    // if (!_borderless)
+    // {
+    //     WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    // }
 
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
