@@ -231,6 +231,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleBorderless(const IInspectable& /*sender*/,
+                                               const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleBorderless();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {

@@ -5,6 +5,7 @@ namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
     delegate void ToggleFullscreenEventArgs();
+    delegate void ToggleBorderlessEventArgs();
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
@@ -19,6 +20,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleBorderlessEventArgs> ToggleBorderless;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
     }
 }

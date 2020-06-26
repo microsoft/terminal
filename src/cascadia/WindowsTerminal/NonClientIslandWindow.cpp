@@ -263,7 +263,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
-    if (_isMaximized || _fullscreen)
+    if (_isMaximized || (!_IsTitlebarVisible()))
     {
         // no border when maximized
         return 0;
@@ -811,6 +811,22 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
     _theme = requestedTheme;
 }
 
+void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
+{
+    _borderless = borderlessEnabled;
+
+    // IslandWindow::_SetIsBorderless(borderlessEnabled);
+    if (_titlebar)
+    {
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
+    }
+    // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
+    // always get another window message to trigger us to remove the drag bar.
+    // So, make sure to update the size of the drag region here, so that it
+    // _definitely_ goes away.
+    _ResizeDragBarWindow();
+}
+
 // Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
 //   need to manually hide the entire titlebar.
@@ -824,7 +840,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     if (_titlebar)
     {
-        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
@@ -844,7 +860,7 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
     // updated to include that mode.
-    return !_fullscreen;
+    return !(_fullscreen || _borderless);
 }
 
 // Method Description:

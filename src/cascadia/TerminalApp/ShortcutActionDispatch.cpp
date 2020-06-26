@@ -154,6 +154,11 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleBorderless:
+        {
+            _ToggleBorderlessHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);

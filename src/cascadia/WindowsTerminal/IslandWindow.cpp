@@ -447,6 +447,17 @@ void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::Ele
 // - <none>
 // Return Value:
 // - <none>
+void IslandWindow::ToggleBorderless()
+{
+    _SetIsBorderless(!_borderless);
+}
+
+// Method Description:
+// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::ToggleFullscreen()
 {
     _SetIsFullscreen(!_fullscreen);
@@ -469,6 +480,49 @@ void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLo
     {
         LOG_LAST_ERROR_IF(0 != GetLastError());
     }
+}
+
+void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
+{
+    // It is possible to enter _SetIsFullscreen even if we're already in full
+    // screen. Use the old is in fullscreen flag to gate checks that rely on the
+    // current state.
+    // const auto oldIsInBorderless = _borderless;
+    _borderless = borderlessEnabled;
+
+    HWND const hWnd = GetHandle();
+
+    // First, modify regular window styles as appropriate
+    auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
+
+    // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
+    // styles for non-fullscreen windows (e.g. caption bar), and add the
+    // WS_POPUP style to allow us to size ourselves to the monitor size.
+    // Do the reverse when restoring from fullscreen.
+    // Doing these modifications to that window will cause a vista-style
+    // window frame to briefly appear when entering and exiting fullscreen.
+    if (_borderless && !_fullscreen)
+    {
+        WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+        WI_SetFlag(windowStyle, WS_POPUP);
+    }
+    else if (_borderless && !_fullscreen)
+    {
+        WI_ClearFlag(windowStyle, WS_POPUP);
+        WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    }
+
+    _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+
+    // Now modify extended window styles as appropriate
+    // When moving to fullscreen, remove the window edge style to avoid an
+    // ugly border when not focused.
+    auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
+    WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
+    _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
+
+    // _BackupWindowSizes(oldIsInFullscreen);
+    // _ApplyWindowSize();
 }
 
 // Method Description:
