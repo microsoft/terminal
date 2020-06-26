@@ -321,6 +321,9 @@ namespace winrt::TerminalApp::implementation
             auto anchorKey = realArgs.Key();
             // TODO: Allow TerminalPage to control visibility
             CommandPalette().ToggleTabSwitcher(anchorKey);
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
         }
         args.Handled(true);
     }

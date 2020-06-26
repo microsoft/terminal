@@ -27,6 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
         if (CommandPaletteShadow())
         {
