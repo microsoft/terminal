@@ -4,10 +4,13 @@
 #include "pch.h"
 #include "CommandPalette.h"
 
+<<<<<<< HEAD
 #include "ActionAndArgs.h"
 #include "ActionArgs.h"
 #include "Command.h"
 
+=======
+>>>>>>> master
 #include "CommandPalette.g.cpp"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
@@ -17,7 +20,10 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
+<<<<<<< HEAD
 using namespace winrt::Windows::Foundation::Collections;
+=======
+>>>>>>> master
 
 namespace winrt::TerminalApp::implementation
 {
@@ -27,7 +33,10 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+<<<<<<< HEAD
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+=======
+>>>>>>> master
 
         if (CommandPaletteShadow())
         {
@@ -76,6 +85,7 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
+<<<<<<< HEAD
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
@@ -87,6 +97,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+=======
+>>>>>>> master
     // Method Description:
     // - Process keystrokes in the input box. This is used for moving focus up
     //   and down the list of commands in Action mode, and for executing
@@ -118,7 +130,11 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
+<<<<<<< HEAD
                 if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+=======
+                if (const auto data = selectedItem.try_as<Command>())
+>>>>>>> master
                 {
                     const auto actionAndArgs = data.Action();
                     _dispatch.DoAction(actionAndArgs);
@@ -144,6 +160,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+<<<<<<< HEAD
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
@@ -173,6 +190,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+=======
+>>>>>>> master
     // Method Description:
     // - This event is triggered when someone clicks anywhere in the bounds of
     //   the window that's _not_ the command palette UI. When that happens,
@@ -236,7 +255,11 @@ namespace winrt::TerminalApp::implementation
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
+<<<<<<< HEAD
     Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
+=======
+    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
+>>>>>>> master
     {
         return _filteredActions;
     }
@@ -571,5 +594,4 @@ namespace winrt::TerminalApp::implementation
             _updateFilteredActions();
         }
     }
-
 }

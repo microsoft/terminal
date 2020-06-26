@@ -36,8 +36,12 @@ namespace TerminalApp
         OpenTabColorPicker,
         OpenSettings,
         RenameTab,
+<<<<<<< HEAD
         ToggleCommandPalette,
         ToggleTabSwitcher
+=======
+        ToggleCommandPalette
+>>>>>>> master
     };
 
     [default_interface] runtimeclass ActionAndArgs {

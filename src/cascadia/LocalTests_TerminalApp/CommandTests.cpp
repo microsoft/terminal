@@ -61,7 +61,7 @@ namespace TerminalAppLocalTests
         const auto commands1Json = VerifyParseSucceeded(commands1String);
         const auto commands2Json = VerifyParseSucceeded(commands2String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -95,7 +95,7 @@ namespace TerminalAppLocalTests
         const auto commands2Json = VerifyParseSucceeded(commands2String);
         const auto commands3Json = VerifyParseSucceeded(commands3String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -155,7 +155,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -239,7 +239,7 @@ namespace TerminalAppLocalTests
         const std::string commands0String{ R"([ { "name": { "key": "DuplicateTabCommandKey"}, "command": "copy" } ])" };
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -279,7 +279,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -300,7 +300,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"Split pane, direction: Vertical");
+            auto command = commands.at(L"Split pane, direction: vertical");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -310,7 +310,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"Split pane, direction: Horizontal");
+            auto command = commands.at(L"Split pane, direction: horizontal");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -329,7 +329,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::map<winrt::hstring, Command> commands;
+        std::unordered_map<winrt::hstring, Command> commands;
         VERIFY_ARE_EQUAL(0u, commands.size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
