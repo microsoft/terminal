@@ -353,7 +353,6 @@ CATCH_RETURN()
             // With simple text, there's only one run. The actual glyph count is the same as textLength.
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
-            _glyphOffsets.resize(textLength);
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
@@ -367,6 +366,13 @@ CATCH_RETURN()
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
             }
+
+            // Empty all the offsets, we're not going to use them
+            _glyphOffsets.assign(textLength, {});
+
+            // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
+            // Fill the clusters sequentially from 0 to N-1.
+            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
