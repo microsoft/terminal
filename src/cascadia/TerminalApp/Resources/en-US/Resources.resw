@@ -351,7 +351,7 @@
     <value>Cancel</value>
   </data>
   <data name="LargePasteDialog.Content" xml:space="preserve">
-    <value>You are about to paste text that is longer than 5 KiB. This can make the terminal unresponsive while the text is being received on the other end. Are you sure you want to continue?</value>
+    <value>You are about to paste text that is longer than 5 KiB. Do you wish to continue?</value>
   </data>
   <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
     <value>Paste anyway</value>
@@ -363,7 +363,7 @@
     <value>Cancel</value>
   </data>
   <data name="MultiLinePasteDialog.Content" xml:space="preserve">
-    <value>You are about to paste text that contains the "new line" character. If you paste text that contains the "new line" character into a shell, one or more command(s) will be executed automatically upon paste. Are you sure you want to continue?</value>
+    <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
     <value>Paste anyway</value>
