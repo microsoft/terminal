@@ -403,7 +403,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 //   window frame.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
 {
-    if (wParam == false)
+    if (!wParam)
     {
         return 0;
     }
@@ -417,7 +417,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     const auto originalSize = params->rgrc[0];
 
     // apply the default frame
-    auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
+    const auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
     {
         return ret;
@@ -783,42 +783,18 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
     const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (ret == FALSE)
+    if (!ret)
     {
-        return ret;
+        return FALSE;
     }
 
-    // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
-    // rendered with the correct theme.
-    _UpdateFrameTheme();
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
 
     return TRUE;
-}
-
-// Method Description:
-// - Updates the window frame's theme depending on the application theme (light
-//   or dark). This doesn't invalidate the old frame so it will not be
-//   rerendered until the user resizes or focuses/unfocuses the window.
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_UpdateFrameTheme() const
-{
-    bool isDarkMode;
-
-    switch (_theme)
-    {
-    case ElementTheme::Light:
-        isDarkMode = false;
-        break;
-    case ElementTheme::Dark:
-        isDarkMode = true;
-        break;
-    default:
-        isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
-        break;
-    }
-
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), isDarkMode));
 }
 
 // Method Description:
@@ -833,7 +809,6 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
     IslandWindow::OnApplicationThemeChanged(requestedTheme);
 
     _theme = requestedTheme;
-    _UpdateFrameTheme();
 }
 
 // Method Description:

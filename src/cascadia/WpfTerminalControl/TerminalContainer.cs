@@ -72,6 +72,9 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         internal int Columns { get; private set; }
 
+        /// <summary>
+        /// Gets the window handle of the terminal.
+        /// </summary>
         internal IntPtr Hwnd => this.hwnd;
 
         /// <summary>
@@ -238,7 +241,7 @@ namespace Microsoft.Terminal.Wpf
                             NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                             ulong scanCode = (((ulong)lParam) & 0x00FF0000) >> 16;
 
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)(scanCode), true);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)scanCode, true);
                             this.blinkTimer?.Start();
                             break;
                         }
@@ -247,7 +250,7 @@ namespace Microsoft.Terminal.Wpf
                         {
                             // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
                             ulong scanCode = (((ulong)lParam) & 0x00FF0000) >> 16;
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)(scanCode), false);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)scanCode, false);
                             break;
                         }
 

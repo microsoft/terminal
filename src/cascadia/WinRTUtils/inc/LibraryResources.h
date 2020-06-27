@@ -68,3 +68,4 @@ namespace Microsoft::Console::Utils
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);
+bool HasLibraryResourceWithName(const std::wstring_view key);

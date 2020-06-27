@@ -107,15 +107,16 @@ public:                                                        \
 private:                                                       \
     type _##name{ __VA_ARGS__ };
 
-// Use this macro to quickly implement both the getter and setter for an observable property.
-// This is similar to the GETSET_PROPERTY macro above, except this will also raise a
-// PropertyChanged event with the name of the property that has changed inside of the setter.
+// Use this macro to quickly implement both the getter and setter for an
+// observable property. This is similar to the GETSET_PROPERTY macro above,
+// except this will also raise a PropertyChanged event with the name of the
+// property that has changed inside of the setter. This also implements a
+// private _setName() method, that the class can internally use to change the
+// value when it _knows_ it doesn't need to raise the PropertyChanged event
+// (like when the class is being initialized).
 #define OBSERVABLE_GETSET_PROPERTY(type, name, event)                                  \
 public:                                                                                \
     type name() { return _##name; };                                                   \
-                                                                                       \
-private:                                                                               \
-    const type _##name;                                                                \
     void name(const type& value)                                                       \
     {                                                                                  \
         if (_##name != value)                                                          \
@@ -123,6 +124,13 @@ private:                                                                        
             const_cast<type&>(_##name) = value;                                        \
             event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
         }                                                                              \
+    };                                                                                 \
+                                                                                       \
+private:                                                                               \
+    const type _##name;                                                                \
+    void _set##name(const type& value)                                                 \
+    {                                                                                  \
+        const_cast<type&>(_##name) = value;                                            \
     };
 
 // Use this macro for quickly defining the factory_implementation part of a

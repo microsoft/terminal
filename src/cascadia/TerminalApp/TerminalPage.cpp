@@ -14,6 +14,7 @@
 #include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include "KeyChordSerialization.h"
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
@@ -50,12 +51,38 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    void TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                     bool needRefreshUI)
     {
         _settings = settings;
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
+        }
+
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // Update the command palette when settings reload
+            auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
+            {
+                auto command = nameAndCommand.second;
+
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the string for that keychord and display it as a
+                // part of the command in the UI. Each Command's KeyChordText is
+                // unset by default, so we don't need to worry about clearing it
+                // if there isn't a key associated with it.
+                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+                if (keyChord)
+                {
+                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
+                }
+                commandsCollection.Append(command);
+            }
+            CommandPalette().SetActions(commandsCollection);
         }
     }
 
@@ -151,6 +178,17 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabWidthMode();
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
+
+        CommandPalette().SetDispatch(*_actionDispatch);
+        // When the visibility of the command palette changes to "collapsed",
+        // the palette has been closed. Toss focus back to the currently active
+        // control.
+        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (CommandPalette().Visibility() == Visibility::Collapsed)
+            {
+                _CommandPaletteClosed(nullptr, nullptr);
+            }
+        });
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
@@ -596,6 +634,16 @@ namespace winrt::TerminalApp::implementation
 
         auto tabViewItem = newTabImpl->GetTabViewItem();
         _tabView.TabItems().Append(tabViewItem);
+        // GH#6570
+        // The TabView does not apply compact sizing to items added after Compact is enabled.
+        // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
+        // that it works.
+        // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
+        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
+        {
+            _tabView.UpdateLayout();
+            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
+        }
 
         // Set this tab's icon to the icon from the user's profile
         const auto* const profile = _settings->FindProfile(profileGuid);
@@ -794,6 +842,10 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
+        _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
+        _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
+        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
     }
 
     // Method Description:
@@ -1133,6 +1185,18 @@ namespace winrt::TerminalApp::implementation
             return focusedIndex;
         }
         return std::nullopt;
+    }
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<Tab> TerminalPage::_GetFocusedTab()
+    {
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            return _GetStrongTabImpl(*index);
+        }
+        return nullptr;
     }
 
     // Method Description:
@@ -2085,6 +2149,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ClearNonClientAreaColors()
     {
         // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
+    }
+
+    void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
+                                             const RoutedEventArgs& /*eventArgs*/)
+    {
+        // Return focus to the active control
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            _GetStrongTabImpl(index.value())->SetFocused(true);
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

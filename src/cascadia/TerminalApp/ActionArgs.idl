@@ -6,6 +6,7 @@ namespace TerminalApp
     interface IActionArgs
     {
         Boolean Equals(IActionArgs other);
+        String GenerateName();
     };
 
     interface IActionEventArgs
@@ -53,7 +54,9 @@ namespace TerminalApp
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+
         Boolean Equals(NewTerminalArgs other);
+        String GenerateName();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -101,5 +104,15 @@ namespace TerminalApp
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
         SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> TabColor { get; };
+    };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    {
+        String Title { get; };
     };
 }
