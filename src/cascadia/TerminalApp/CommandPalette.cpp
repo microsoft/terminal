@@ -266,7 +266,7 @@ namespace winrt::TerminalApp::implementation
             // If two commands have the same weight, then we'll sort them alphabetically.
             if (weight == other.weight)
             {
-                return !_compareCommandNames(command, other.command);
+                return _compareCommandNames(command, other.command);
             }
             return weight < other.weight;
         }
@@ -482,6 +482,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     _allTabActions.RemoveAt(idx);
                     UpdateTabIndices(idx);
+                    _updateFilteredActions();
                     break;
                 }
             }
@@ -490,13 +491,16 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
-        for (auto i = startIdx + 1; i < _allTabActions.Size(); ++i)
+        if (startIdx != _allTabActions.Size() - 1)
         {
-            auto command = _allTabActions.GetAt(i);
+            for (auto i = startIdx + 1; i < _allTabActions.Size(); ++i)
+            {
+                auto command = _allTabActions.GetAt(i);
 
-            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
+                command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
 
-            command.KeyChordText(L"index : " + to_hstring(i));
+                command.KeyChordText(L"index : " + to_hstring(i));
+            }
         }
     }
 
@@ -548,27 +552,24 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey)
     {
-        if (!_tabSwitcherMode)
+        if (anchorKey == TerminalApp::AnchorKey::Ctrl)
         {
-            if (anchorKey == TerminalApp::AnchorKey::Ctrl)
-            {
-                _anchorKey = VirtualKey::Control;
-            }
-            else if (anchorKey == TerminalApp::AnchorKey::Alt)
-            {
-                _anchorKey = VirtualKey::Menu;
-            }
-            else if (anchorKey == TerminalApp::AnchorKey::Shift)
-            {
-                _anchorKey = VirtualKey::Shift;
-            }
-            else
-            {
-                _anchorKey = std::nullopt;
-            }
-            _tabSwitcherMode = true;
-            _allActions = _allTabActions;
-            _updateFilteredActions();
+            _anchorKey = VirtualKey::Control;
         }
+        else if (anchorKey == TerminalApp::AnchorKey::Alt)
+        {
+            _anchorKey = VirtualKey::Menu;
+        }
+        else if (anchorKey == TerminalApp::AnchorKey::Shift)
+        {
+            _anchorKey = VirtualKey::Shift;
+        }
+        else
+        {
+            _anchorKey = std::nullopt;
+        }
+        _tabSwitcherMode = true;
+        _allActions = _allTabActions;
+        _updateFilteredActions();
     }
 }
