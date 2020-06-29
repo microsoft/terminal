@@ -436,8 +436,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                     goto EndWhile;
                     break;
-                case UNICODE_TAB:
-                {
+                case UNICODE_TAB: {
                     const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
                     XPosition = (SHORT)(XPosition + TabSize);
                     if (XPosition >= coordScreenBufferSize.X)
@@ -585,8 +584,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
         switch (*lpString)
         {
-        case UNICODE_BACKSPACE:
-        {
+        case UNICODE_BACKSPACE: {
             // move cursor backwards one space. overwrite current char with blank.
             // we get here because we have to backspace from the beginning of the line
             TempNumSpaces -= 1;
@@ -734,8 +732,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             }
             break;
         }
-        case UNICODE_TAB:
-        {
+        case UNICODE_TAB: {
             const size_t TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
             CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
@@ -773,8 +770,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
-        case UNICODE_CARRIAGERETURN:
-        {
+        case UNICODE_CARRIAGERETURN: {
             // Carriage return moves the cursor to the beginning of the line.
             // We don't need to worry about handling cr or lf for
             // backspace because input is sent to the user on cr or lf.
@@ -784,8 +780,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
-        case UNICODE_LINEFEED:
-        {
+        case UNICODE_LINEFEED: {
             // move cursor to the next line.
             pwchBuffer++;
 
@@ -1062,7 +1057,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT WriteConsoleAImplForReals(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
                                                      size_t& read,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
@@ -1237,6 +1232,64 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     }
     CATCH_RETURN();
 }
+
+static IConsoleOutputObject* obj = nullptr;
+static std::condition_variable condvar;
+static std::mutex bufflock;
+static std::queue<std::string> buff;
+void threadMethod()
+{
+    size_t read = 0;
+    std::unique_ptr<IWaitRoutine> wait;
+
+    std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
+
+    std::string str;
+
+    while (true)
+    {
+        lk.lock();
+        condvar.wait(lk, [&] {
+            if (!buff.empty())
+            {
+                str = buff.front();
+                buff.pop();
+                return true;
+            }
+            return false;
+        });
+        lk.unlock();
+        
+        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));
+    }
+}
+
+static std::thread th(threadMethod);
+
+
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
+                                                    const std::string_view buffer,
+                                                    size_t& read,
+                                                    std::unique_ptr<IWaitRoutine>& waiter) noexcept
+try
+{
+    read = buffer.size();
+    waiter.reset();
+
+    bufflock.lock();
+    if (!obj)
+    {
+        obj = &context;
+    }
+    buff.emplace(buffer);
+    bufflock.unlock();
+    condvar.notify_one();
+
+    return S_OK;
+}
+CATCH_RETURN()
+
+
 
 // Routine Description:
 // - Writes Unicode formatted data into the given console output object.
