@@ -370,6 +370,7 @@
   </data>
   <data name="MultiLinePasteDialog.Title" xml:space="preserve">
     <value>Warning</value>
+  </data>
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
     <value>Type a command name...</value>
   </data>
