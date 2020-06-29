@@ -534,7 +534,6 @@ namespace winrt::TerminalApp::implementation
     };
 
     // Possible AnchorKey values
-    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
     static constexpr std::string_view ControlString{ "ctrl" };
     static constexpr std::string_view AltString{ "alt" };
     static constexpr std::string_view ShiftString{ "shift" };
