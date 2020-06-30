@@ -21,15 +21,6 @@ namespace Microsoft::Terminal::Core
 
         virtual TextAttribute GetTextAttributes() const noexcept = 0;
         virtual void SetTextAttributes(const TextAttribute& attrs) noexcept = 0;
-        virtual bool SetTextToDefaults(bool foreground, bool background) noexcept = 0;
-        virtual bool SetTextForegroundIndex(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextBackgroundIndex(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextForegroundIndex256(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextRgbColor(COLORREF color, bool foreground) noexcept = 0;
-        virtual bool BoldText(bool boldOn) noexcept = 0;
-        virtual bool UnderlineText(bool underlineOn) noexcept = 0;
-        virtual bool ReverseText(bool reversed) noexcept = 0;
 
         virtual bool SetCursorPosition(short x, short y) noexcept = 0;
         virtual COORD GetCursorPosition() noexcept = 0;
