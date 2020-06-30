@@ -14,5 +14,8 @@ namespace TerminalApp
         void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
 
         void SetDispatch(ShortcutActionDispatch dispatch);
+
+        void ToggleTabSwitcher(TerminalApp.AnchorKey anchorKey);
+        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }

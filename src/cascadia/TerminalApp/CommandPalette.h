@@ -17,6 +17,10 @@ namespace winrt::TerminalApp::implementation
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
+        // TabSwitcherMode Specific
+        void ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey);
+        void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
+
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
@@ -26,8 +30,12 @@ namespace winrt::TerminalApp::implementation
 
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
+        void _previewKeyDownHandler(Windows::Foundation::IInspectable const& sender,
+                                    Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
                              Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
+                           Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _backdropPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -39,6 +47,13 @@ namespace winrt::TerminalApp::implementation
         void _updateFilteredActions();
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
+
+        // TabSwitcher
+        std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
+        bool _tabSwitcherMode{ false };
+        void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
+        void UpdateTabIndices(const uint32_t startIdx);
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
     };
 }
 

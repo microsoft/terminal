@@ -93,6 +93,7 @@ namespace winrt::TerminalApp::implementation
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
+        _commandPalette = this->CommandPalette();
         _rearranging = false;
 
         // GH#2455 - Make sure to try/catch calls to Application::Current,
@@ -188,6 +189,8 @@ namespace winrt::TerminalApp::implementation
                 _CommandPaletteClosed(nullptr, nullptr);
             }
         });
+
+        _tabs.VectorChanged({ &_commandPalette, &CommandPalette::OnTabsChanged });
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
@@ -807,6 +810,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
+        _actionDispatch->ToggleTabSwitcher({ this, &TerminalPage::_HandleToggleTabSwitcher });
     }
 
     // Method Description:

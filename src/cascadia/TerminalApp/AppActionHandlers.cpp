@@ -312,4 +312,20 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleToggleTabSwitcher(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
+        {
+            // TODO: Maybe instead of passing in the TerminalApp::AnchorKey, we can just pass
+            // in a VirtualKey
+            auto anchorKey = realArgs.Key();
+            CommandPalette().ToggleTabSwitcher(anchorKey);
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+        }
+        args.Handled(true);
+    }
 }

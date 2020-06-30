@@ -497,4 +497,7 @@
   <data name="ResetTabNameCommandKey" xml:space="preserve">
     <value>Reset tab title</value>
   </data>
+  <data name="ToggleTabSwitcherCommandKey" xml:space="preserve">
+    <value>Toggle tab switcher</value>
+  </data>
 </root>

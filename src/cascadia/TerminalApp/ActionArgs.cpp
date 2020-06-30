@@ -17,6 +17,7 @@
 #include "OpenSettingsArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
+#include "ToggleTabSwitcherArgs.g.h"
 
 #include <LibraryResources.h>
 
@@ -255,6 +256,12 @@ namespace winrt::TerminalApp::implementation
                             _Title.c_str())
             };
         }
+        return RS_(L"ResetTabNameCommandKey");
+    }
+
+    winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
+    {
+        // TODO: MAKE SURE THIS WORKS
         return RS_(L"ResetTabNameCommandKey");
     }
 
