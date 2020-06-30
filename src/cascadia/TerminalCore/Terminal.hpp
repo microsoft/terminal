@@ -78,6 +78,8 @@ public:
     // These methods are defined in TerminalApi.cpp
     bool PrintString(std::wstring_view stringView) noexcept override;
     bool ExecuteChar(wchar_t wch) noexcept override;
+    TextAttribute GetTextAttributes() const noexcept override;
+    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     bool SetTextToDefaults(bool foreground, bool background) noexcept override;
     bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
     bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;

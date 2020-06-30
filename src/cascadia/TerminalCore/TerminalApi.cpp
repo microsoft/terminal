@@ -26,6 +26,16 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+TextAttribute Terminal::GetTextAttributes() const noexcept
+{
+    return _buffer->GetCurrentAttributes();
+}
+
+void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
+{
+    _buffer->SetCurrentAttributes(attrs);
+}
+
 bool Terminal::SetTextToDefaults(bool foreground, bool background) noexcept
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();

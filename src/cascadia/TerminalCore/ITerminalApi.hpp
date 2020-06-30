@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../../terminal/adapter/DispatchTypes.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
 
 namespace Microsoft::Terminal::Core
 {
@@ -18,6 +19,8 @@ namespace Microsoft::Terminal::Core
         virtual bool PrintString(std::wstring_view string) noexcept = 0;
         virtual bool ExecuteChar(wchar_t wch) noexcept = 0;
 
+        virtual TextAttribute GetTextAttributes() const noexcept = 0;
+        virtual void SetTextAttributes(const TextAttribute& attrs) noexcept = 0;
         virtual bool SetTextToDefaults(bool foreground, bool background) noexcept = 0;
         virtual bool SetTextForegroundIndex(BYTE colorIndex) noexcept = 0;
         virtual bool SetTextBackgroundIndex(BYTE colorIndex) noexcept = 0;
