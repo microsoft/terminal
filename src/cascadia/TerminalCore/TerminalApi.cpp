@@ -601,3 +601,12 @@ bool Terminal::EnableCursorBlinking(const bool enable) noexcept
     _buffer->GetCursor().SetIsOn(true);
     return true;
 }
+
+bool Terminal::CopyToClipboard(std::wstring_view content) noexcept
+try
+{
+    _pfnCopyToClipboard(content);
+
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()

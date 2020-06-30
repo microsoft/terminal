@@ -96,6 +96,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTerminalCursorPositionChanged = std::bind(&TermControl::_TerminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
+        auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
+        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -2023,6 +2026,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
         _titleChangedHandlers(winrt::hstring{ wstr });
+    }
+
+    void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
+    {
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
+                                                                   winrt::hstring(L""),
+                                                                   winrt::hstring(L""));
+        _clipboardCopyHandlers(*this, *copyArgs);
     }
 
     // Method Description:

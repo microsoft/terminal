@@ -944,6 +944,12 @@ public:
         return true;
     }
 
+    bool SetClipboard(std::wstring_view content) noexcept override
+    {
+        _copyContent = { content.begin(), content.end() };
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -988,6 +994,7 @@ public:
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
     bool _win32InputMode;
+    std::wstring _copyContent;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
@@ -2079,5 +2086,73 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
+    }
+
+    TEST_METHOD(TestSetClipboard)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // Passing an empty `Pc` param and a base64-encoded simple text `Pd` param works.
+        mach.ProcessString(L"\x1b]52;;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing an empty `Pc` param and a base64-encoded multi-lines text `Pd` works.
+        mach.ProcessString(L"\x1b]52;;Zm9vDQpiYXI=\x07");
+        VERIFY_ARE_EQUAL(L"foo\r\nbar", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing a non-empty `Pc` param (`s0` is ignored) and a valid `Pd` param works.
+        mach.ProcessString(L"\x1b]52;s0;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing only base64 `Pd` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a non-base64 `Pd` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;foo\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a valid `Pc;Pd` with one more extra param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character won't change the content.
+        mach.ProcessString(L"\x1b]52;;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character with missing `Pc` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character with one more extra param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
     }
 };

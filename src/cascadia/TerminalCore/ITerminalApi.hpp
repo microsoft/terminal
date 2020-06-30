@@ -61,6 +61,8 @@ namespace Microsoft::Terminal::Core
 
         virtual bool IsVtInputEnabled() const = 0;
 
+        virtual bool CopyToClipboard(std::wstring_view content) noexcept = 0;
+
     protected:
         ITerminalApi() = default;
     };
