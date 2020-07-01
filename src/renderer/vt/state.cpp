@@ -8,7 +8,7 @@
 
 // For _vcprintf
 #include <conio.h>
-#include <stdarg.h>
+#include <cstdarg>
 
 #pragma hdrstop
 

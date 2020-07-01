@@ -15,7 +15,7 @@ Author(s):
 
 #include "precomp.h"
 #include "..\inc\conattrs.hpp"
-#include <math.h>
+#include <cmath>
 
 struct _HSL
 {
