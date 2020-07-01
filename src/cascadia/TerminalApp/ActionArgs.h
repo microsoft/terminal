@@ -539,28 +539,29 @@ namespace winrt::TerminalApp::implementation
     static constexpr std::string_view AltString{ "alt" };
     static constexpr std::string_view ShiftString{ "shift" };
 
-    static TerminalApp::AnchorKey ParseAnchorKey(const std::string& anchorString)
+    static Windows::System::VirtualKey ParseAnchorKey(const std::string& anchorString)
     {
         if (anchorString == ControlString)
         {
-            return TerminalApp::AnchorKey::Ctrl;
+            return Windows::System::VirtualKey::Control;
         }
         else if (anchorString == AltString)
         {
-            return TerminalApp::AnchorKey::Alt;
+            return Windows::System::VirtualKey::Menu;
         }
         else if (anchorString == ShiftString)
         {
-            return TerminalApp::AnchorKey::Shift;
+            return Windows::System::VirtualKey::Shift;
         }
+
         // default behavior for invalid data
-        return TerminalApp::AnchorKey::None;
+        return Windows::System::VirtualKey::None;
     };
 
     struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
     {
         ToggleTabSwitcherArgs() = default;
-        GETSET_PROPERTY(TerminalApp::AnchorKey, Key, TerminalApp::AnchorKey::None);
+        GETSET_PROPERTY(Windows::System::VirtualKey, Key, Windows::System::VirtualKey::None);
 
         static constexpr std::string_view AnchorKey{ "anchor" };
 

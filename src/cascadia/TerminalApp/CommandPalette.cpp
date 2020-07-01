@@ -150,7 +150,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_tabSwitcherMode)
         {
-            if (_anchorKey && key == _anchorKey.value())
+            if (key == _anchorKey.value())
             {
                 // Once the user lifts the anchor key, we'll switch to the currently selected tab
                 // then close the tab switcher.
@@ -571,24 +571,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const TerminalApp::AnchorKey& anchorKey)
+    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey)
     {
-        if (anchorKey == TerminalApp::AnchorKey::Ctrl)
-        {
-            _anchorKey = VirtualKey::Control;
-        }
-        else if (anchorKey == TerminalApp::AnchorKey::Alt)
-        {
-            _anchorKey = VirtualKey::Menu;
-        }
-        else if (anchorKey == TerminalApp::AnchorKey::Shift)
-        {
-            _anchorKey = VirtualKey::Shift;
-        }
-        else
-        {
-            _anchorKey = std::nullopt;
-        }
+        _anchorKey = anchorKey;
         _tabSwitcherMode = true;
         _allActions = _allTabActions;
         _updateFilteredActions();

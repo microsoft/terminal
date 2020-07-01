@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
         // TabSwitcherMode Specific
-        void EnableTabSwitcherMode(const TerminalApp::AnchorKey& anchorKey);
+        void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
     private:
