@@ -356,8 +356,8 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - Generates a CHAR_INFO for this output cell, using our
-//      GenerateLegacyAttributes method to generate the legacy style attributes.
+// - Generates a CHAR_INFO for this output cell, using the TextAttribute
+//      GetLegacyAttributes method to generate the legacy style attributes.
 // Arguments:
 // - cell: The cell to get the CHAR_INFO from
 // Return Value:
@@ -371,8 +371,7 @@ CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noex
     //    use gci to look up the correct legacy attributes to use
     //    (for mapping RGB values to the nearest table value)
     const auto& attr = cell.TextAttr();
-    ci.Attributes = GenerateLegacyAttributes(attr);
-    ;
+    ci.Attributes = attr.GetLegacyAttributes();
     ci.Attributes |= cell.DbcsAttr().GeneratePublicApiAttributeFormat();
     return ci;
 }
