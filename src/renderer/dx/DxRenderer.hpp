@@ -56,6 +56,7 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        bool GetRetroTerminalEffects() const noexcept;
         void SetRetroTerminalEffects(bool enable) noexcept;
 
         void SetForceFullRepaintRendering(bool enable) noexcept;

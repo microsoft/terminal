@@ -297,6 +297,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+    void TermControl::ToggleRetroEffect()
+    {
+        auto lock = _terminal->LockForWriting();
+        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+    }
 
     // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
