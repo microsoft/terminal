@@ -81,7 +81,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 commandsCollection.Append(command);
             }
-            CommandPalette().SetActions(commandsCollection);
+            CommandPalette().SetCommandPaletteActions(commandsCollection);
         }
     }
 

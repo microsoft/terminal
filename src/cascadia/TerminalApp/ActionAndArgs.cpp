@@ -112,7 +112,7 @@ namespace winrt::TerminalApp::implementation
 
         { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
 
-                { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
+        { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };

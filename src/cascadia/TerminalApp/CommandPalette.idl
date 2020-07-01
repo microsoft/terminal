@@ -11,11 +11,12 @@ namespace TerminalApp
 
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
-        void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetCommandPaletteActions(Windows.Foundation.Collections.IVector<Command> actions);
+        void EnableCommandPaletteMode();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
 
-        void ToggleTabSwitcher(TerminalApp.AnchorKey anchorKey);
+        void EnableTabSwitcherMode(TerminalApp.AnchorKey anchorKey);
         void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }

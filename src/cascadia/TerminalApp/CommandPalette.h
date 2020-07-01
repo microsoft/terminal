@@ -13,12 +13,14 @@ namespace winrt::TerminalApp::implementation
         CommandPalette();
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
-        void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
+
+        void SetCommandPaletteActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
+        void EnableCommandPaletteMode();
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
         // TabSwitcherMode Specific
-        void ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey);
+        void EnableTabSwitcherMode(const TerminalApp::AnchorKey& anchorKey);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
     private:
@@ -26,6 +28,8 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allActions{ nullptr };
+
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommandPaletteActions{ nullptr };
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,

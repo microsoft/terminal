@@ -240,9 +240,15 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetActions(Collections::IVector<TerminalApp::Command> const& actions)
+    void CommandPalette::SetCommandPaletteActions(Collections::IVector<TerminalApp::Command> const& actions)
     {
-        _allActions = actions;
+        _allCommandPaletteActions = actions;
+        _updateFilteredActions();
+    }
+
+    void CommandPalette::EnableCommandPaletteMode()
+    {
+        _allActions = _allCommandPaletteActions;
         _updateFilteredActions();
     }
 
@@ -254,18 +260,31 @@ namespace winrt::TerminalApp::implementation
         return leftName.compare(rightName) < 0;
     }
 
+    // This is a helper to sort entries when in Tab Switcher mode.
+    // This compares the KeyChordText, which is used to indicate the Tab index on the Tab View.
+    static bool _compareTabIndex(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    {
+        std::wstring_view leftIndex{ lhs.KeyChordText() };
+        std::wstring_view rightIndex{ rhs.KeyChordText() };
+        return leftIndex.compare(rightIndex) > 0;
+    }
+
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
         TerminalApp::Command command;
         int weight;
+        bool orderByTabIndex;
 
         bool operator<(const WeightedCommand& other) const
         {
             // If two commands have the same weight, then we'll sort them alphabetically.
             if (weight == other.weight)
             {
-                // TODO: We might need to get rid of the ! here.
+                if (orderByTabIndex)
+                {
+                    return _compareTabIndex(command, other.command);
+                }
                 return !_compareCommandNames(command, other.command);
             }
             return weight < other.weight;
@@ -333,6 +352,11 @@ namespace winrt::TerminalApp::implementation
                 WeightedCommand wc;
                 wc.command = action;
                 wc.weight = weight;
+
+                // If we're in Tab Switcher mode, we want to fall back to Index
+                // order, not Command Name alphabetical order.
+                wc.orderByTabIndex = _tabSwitcherMode;
+
                 heap.push(wc);
             }
         }
@@ -547,7 +571,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::ToggleTabSwitcher(const TerminalApp::AnchorKey& anchorKey)
+    void CommandPalette::EnableTabSwitcherMode(const TerminalApp::AnchorKey& anchorKey)
     {
         if (anchorKey == TerminalApp::AnchorKey::Ctrl)
         {
