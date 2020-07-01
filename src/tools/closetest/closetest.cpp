@@ -193,12 +193,12 @@ EXAMPLE 3: race condition between process cleanup and close signaling
 #endif
 
 #include <windows.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-#include <locale.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
+#include <clocale>
 
 #include <algorithm>
 #include <array>

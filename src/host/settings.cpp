@@ -349,6 +349,10 @@ void Settings::Validate()
         }
     }
 
+    // At this point the default fill attributes are fully initialized
+    // so we can pass on the final colors to the TextAttribute class.
+    TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
+
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
     FAIL_FAST_IF(!(_dwScreenBufferSize.X > 0));
@@ -757,19 +761,6 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
     return _colorTable.at(index);
 }
 
-// Routine Description:
-// - Generates a legacy attribute from the given TextAttributes.
-//     This needs to be a method on the Settings because the generated index
-//     is dependent upon the default fill attributes.
-// Parameters:
-// - attributes - The TextAttributes to generate a legacy attribute for.
-// Return value:
-// - A WORD representing the legacy attributes that most closely represent the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
-{
-    return attributes.GetLegacyAttributes(_wFillAttribute);
-}
-
 COLORREF Settings::GetCursorColor() const noexcept
 {
     return _CursorColor;
@@ -818,20 +809,6 @@ COLORREF Settings::GetDefaultBackgroundColor() const noexcept
 void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept
 {
     _DefaultBackground = defaultBackground;
-}
-
-TextAttribute Settings::GetDefaultAttributes() const noexcept
-{
-    auto attrs = TextAttribute{ _wFillAttribute };
-    if (_DefaultForeground != INVALID_COLOR)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (_DefaultBackground != INVALID_COLOR)
-    {
-        attrs.SetDefaultBackground();
-    }
-    return attrs;
 }
 
 bool Settings::IsTerminalScrolling() const noexcept

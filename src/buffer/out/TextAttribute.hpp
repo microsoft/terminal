@@ -42,8 +42,8 @@ public:
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS), true },
-        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4), true },
+        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
+        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
@@ -59,7 +59,8 @@ public:
     {
     }
 
-    WORD GetLegacyAttributes(const WORD defaultAttributes = 0x07) const noexcept;
+    static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
+    WORD GetLegacyAttributes() const noexcept;
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
@@ -106,6 +107,10 @@ public:
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
 
+    TextColor GetForeground() const noexcept;
+    TextColor GetBackground() const noexcept;
+    void SetForeground(const TextColor foreground) noexcept;
+    void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
@@ -150,6 +155,14 @@ private:
                                COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
+
+    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
+    {
+        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
+    }
+
+    static BYTE s_legacyDefaultForeground;
+    static BYTE s_legacyDefaultBackground;
 
     WORD _wAttrLegacy;
     TextColor _foreground;

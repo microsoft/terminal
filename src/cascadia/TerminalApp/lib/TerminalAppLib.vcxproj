@@ -63,6 +63,9 @@
     <Page Include="../ColorPickupFlyout.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../CommandPalette.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -85,6 +88,12 @@
     <ClInclude Include="../ColorPickupFlyout.h">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../CommandPalette.h">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../Command.h">
+      <DependentUpon>../Command.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Tab.h">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClInclude>
@@ -103,7 +112,7 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
-    <ClInclude Include="..\ColorHelper.h" />
+    <ClInclude Include="../ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
@@ -145,6 +154,12 @@
     </ClCompile>
     <ClCompile Include="../ColorPickupFlyout.cpp">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../CommandPalette.cpp">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../Command.cpp">
+      <DependentUpon>../Command.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <DependentUpon>../Tab.idl</DependentUpon>
@@ -229,7 +244,12 @@
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="../Tab.idl"/>
+    <Midl Include="../CommandPalette.idl">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../Command.idl" />
+    <Midl Include="../Tab.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

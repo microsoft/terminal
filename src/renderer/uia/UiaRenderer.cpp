@@ -361,17 +361,13 @@ CATCH_RETURN();
 // - Updates the default brush colors used for drawing
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
-// - colorForeground - <unused>
-// - colorBackground - <unused>
-// - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - textAttributes - <unused>
+// - pData - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
-[[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const COLORREF /*colorForeground*/,
-                                                      const COLORREF /*colorBackground*/,
-                                                      const WORD /*legacyColorAttribute*/,
-                                                      const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
+                                                      const gsl::not_null<IRenderData*> /*pData*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;

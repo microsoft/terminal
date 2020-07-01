@@ -14,5 +14,8 @@ Scro\&ll
 # selectionInput.cpp
  :\\windows\\syste\b
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
-hostSm\.ProcessString\(L"[^"]+"
+(?:hostSm|mach)\.ProcessString\(L"[^"]+"
 \b([A-Za-z])\1{3,}\b
+Base64::s_(?:En|De)code\(L"[^"]+"
+VERIFY_ARE_EQUAL\(L"[^"]+"
+L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"

@@ -56,6 +56,8 @@
         "switchToTab",
         "toggleFullscreen",
         "find",
+        "setTabColor",
+        "openTabColorPicker",
         "unbound"
       ],
       "type": "string"
@@ -257,6 +259,22 @@
         }
       ]
     },
+    "SetTabColorAction": {
+      "description": "Arguments corresponding to a Set Tab Color Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setTabColor" },
+            "color": {
+              "$ref": "#/definitions/Color",
+              "default": null,
+              "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -272,6 +290,7 @@
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
+              { "$ref": "#/definitions/SetTabColorAction" },
               { "type": "null" }
             ]
         },
@@ -314,6 +333,16 @@
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
+          "type": "boolean"
+        },
+        "largePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
+          "type": "boolean"
+        },
+        "multiLinePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
         "defaultProfile": {
