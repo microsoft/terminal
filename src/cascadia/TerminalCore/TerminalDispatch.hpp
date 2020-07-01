@@ -64,11 +64,9 @@ public:
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 
-    bool _SetRgbColorsHelper(const std::basic_string_view<::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options,
-                             size_t& optionsConsumed) noexcept;
-    bool _SetBoldColorHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions opt) noexcept;
-    bool _SetDefaultColorHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions opt) noexcept;
-    void _SetGraphicsOptionHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions opt) noexcept;
+    size_t _SetRgbColorsHelper(const std::basic_string_view<::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options,
+                               TextAttribute& attr,
+                               const bool isForeground) noexcept;
 
     bool _SetResetPrivateModes(const std::basic_string_view<::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> params, const bool enable) noexcept;
     bool _PrivateModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams param, const bool enable) noexcept;
