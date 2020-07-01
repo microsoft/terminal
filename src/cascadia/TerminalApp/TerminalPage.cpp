@@ -24,6 +24,7 @@
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -284,7 +285,10 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        _showDialogHandlers(*this, FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+        }
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -323,7 +327,42 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        _showDialogHandlers(*this, FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+    }
+
+    // Method Description:
+    // - Displays a dialog to warn the user about the fact that the text that
+    //   they are trying to paste contains the "new line" character which can
+    //   have the effect of starting commands without the user's knowledge if
+    //   it is pasted on a shell where the "new line" character marks the end
+    //   of a command.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
+    // - Displays a dialog to warn the user about the fact that the text that
+    //   they are trying to paste is very long, in case they did not mean to
+    //   paste it but pressed the paste shortcut by accident.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
     }
 
     // Method Description:
@@ -1536,26 +1575,19 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    // Method Description:
-    // - Fires an async event to get data from the clipboard, and paste it to
-    //   the terminal. Triggered when the Terminal Control requests clipboard
-    //   data with it's PasteFromClipboard event.
-    // Arguments:
-    // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
-                                                                    const PasteFromClipboardEventArgs eventArgs)
-    {
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-        TerminalPage::PasteFromClipboard(eventArgs);
-    }
-
     // Function Description:
-    // - Copies and processes the text data from the Windows Clipboard.
-    //   Does some of this in a background thread, as to not hang/crash the UI thread.
+    // - This function is called when the `TermControl` requests that we send
+    //   it the clipboard's content.
+    // - Retrieves the data from the Windows Clipboard and converts it to text.
+    // - Shows warnings if the clipboard is too big or contains multiple lines
+    //   of text.
+    // - Sends the text back to the TermControl through the event's
+    //   `HandleClipboardData` member function.
+    // - Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    fire_and_forget TerminalPage::PasteFromClipboard(PasteFromClipboardEventArgs eventArgs)
+    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
+                                                             const PasteFromClipboardEventArgs eventArgs)
     {
         const DataPackageView data = Clipboard::GetContent();
 
@@ -1581,6 +1613,35 @@ namespace winrt::TerminalApp::implementation
                     text = item.Path();
                 }
             }
+
+            const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
+            const bool warnMultiLine = hasNewLine && _settings->GlobalSettings().WarnAboutMultiLinePaste();
+
+            constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
+            const bool warnLargeText = text.size() > minimumSizeForWarning &&
+                                       _settings->GlobalSettings().WarnAboutLargePaste();
+
+            if (warnMultiLine || warnLargeText)
+            {
+                co_await winrt::resume_foreground(Dispatcher());
+
+                ContentDialogResult warningResult;
+                if (warnMultiLine)
+                {
+                    warningResult = co_await _ShowMultiLinePasteWarningDialog();
+                }
+                else if (warnLargeText)
+                {
+                    warningResult = co_await _ShowLargePasteWarningDialog();
+                }
+
+                if (warningResult != ContentDialogResult::Primary)
+                {
+                    // user rejected the paste
+                    co_return;
+                }
+            }
+
             eventArgs.HandleClipboardData(text);
         }
         CATCH_LOG();
@@ -1857,6 +1918,16 @@ namespace winrt::TerminalApp::implementation
         _startupActions = actions;
     }
 
+    winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
+    {
+        return _dialogPresenter.get();
+    }
+
+    void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
+    {
+        _dialogPresenter = dialogPresenter;
+    }
+
     // Method Description:
     // - This is the method that App will call when the titlebar
     //   has been clicked. It dismisses any open flyouts.
@@ -2096,6 +2167,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 }

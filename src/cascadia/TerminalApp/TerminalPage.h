@@ -53,11 +53,13 @@ namespace winrt::TerminalApp::implementation
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
 
+        winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
+        void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
@@ -87,6 +89,9 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        // use a weak reference to prevent circular dependency with AppLogic
+        winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
+
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
@@ -97,6 +102,8 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
@@ -150,7 +157,6 @@ namespace winrt::TerminalApp::implementation
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
-        static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
         fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);
 

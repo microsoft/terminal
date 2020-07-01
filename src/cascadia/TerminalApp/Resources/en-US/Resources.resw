@@ -347,6 +347,30 @@
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
   </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>You are about to paste text that is longer than 5 KiB. Do you wish to continue?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Paste anyway</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="MultiLinePasteDialog.Content" xml:space="preserve">
+    <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Paste anyway</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
     <value>Type a command name...</value>
   </data>

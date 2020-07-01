@@ -75,6 +75,8 @@ public:
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
     GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
+    GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
     GETSET_PROPERTY(LaunchPosition, InitialPosition);
     GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);

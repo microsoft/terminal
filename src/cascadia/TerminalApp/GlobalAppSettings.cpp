@@ -31,6 +31,8 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
+static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
+static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
@@ -189,6 +191,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
 
     JsonUtils::GetBool(json, CopyFormattingKey, _CopyFormatting);
+
+    JsonUtils::GetBool(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
+
+    JsonUtils::GetBool(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
