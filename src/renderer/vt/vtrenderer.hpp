@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
-#include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -42,7 +41,6 @@ namespace Microsoft::Console::Render
         static const COORD INVALID_COORDS;
 
         VtEngine(_In_ wil::unique_hfile hPipe,
-                 const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
         virtual ~VtEngine() override = default;
@@ -75,10 +73,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
@@ -118,11 +114,7 @@ namespace Microsoft::Console::Render
 
         std::string _formatBuffer;
 
-        const Microsoft::Console::IDefaultColorProvider& _colorProvider;
-
-        COLORREF _LastFG;
-        COLORREF _LastBG;
-        bool _lastWasBold;
+        TextAttribute _lastTextAttributes;
 
         Microsoft::Console::Types::Viewport _lastViewport;
 
@@ -157,7 +149,7 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
-        std::optional<COLORREF> _newBottomLineBG{ std::nullopt };
+        std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -183,44 +175,31 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ChangeTitle(const std::string& title) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
                                                            const bool fIsForeground) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRendition256Color(const WORD index,
+                                                            const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
-
-        [[nodiscard]] HRESULT _SetGraphicsBoldness(const bool isBold) noexcept;
 
         [[nodiscard]] HRESULT _SetGraphicsDefault() noexcept;
 
         [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
-        [[nodiscard]] HRESULT _BeginUnderline() noexcept;
-        [[nodiscard]] HRESULT _EndUnderline() noexcept;
-
-        [[nodiscard]] HRESULT _BeginItalics() noexcept;
-        [[nodiscard]] HRESULT _EndItalics() noexcept;
-
-        [[nodiscard]] HRESULT _BeginBlink() noexcept;
-        [[nodiscard]] HRESULT _EndBlink() noexcept;
-
-        [[nodiscard]] HRESULT _BeginInvisible() noexcept;
-        [[nodiscard]] HRESULT _EndInvisible() noexcept;
-
-        [[nodiscard]] HRESULT _BeginCrossedOut() noexcept;
-        [[nodiscard]] HRESULT _EndCrossedOut() noexcept;
+        [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
+        [[nodiscard]] HRESULT _SetUnderline(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetItalics(const bool isItalic) noexcept;
+        [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
+        [[nodiscard]] HRESULT _SetInvisible(const bool isInvisible) noexcept;
+        [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
+        [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
-        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                       const COLORREF colorBackground,
-                                                       const bool isBold,
-                                                       const std::basic_string_view<COLORREF> colorTable) noexcept;
-        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const bool isBold,
-                                                           const std::basic_string_view<COLORREF> colorTable) noexcept;
+        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
+        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
 
         bool _WillWriteSingleChar() const;
 

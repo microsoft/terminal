@@ -50,6 +50,11 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // clang-format on
 
+bool TextColor::CanBeBrightened() const noexcept
+{
+    return IsIndex16() || IsDefault();
+}
+
 bool TextColor::IsLegacy() const noexcept
 {
     return IsIndex16() || (IsIndex256() && _index < 16);
@@ -164,7 +169,7 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
     }
     else if (IsRgb())
     {
-        return _GetRGB();
+        return GetRGB();
     }
     else if (IsIndex16() && brighten)
     {
@@ -214,7 +219,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
 // - <none>
 // Return Value:
 // - a COLORREF containing our stored value
-COLORREF TextColor::_GetRGB() const noexcept
+COLORREF TextColor::GetRGB() const noexcept
 {
     return RGB(_red, _green, _blue);
 }

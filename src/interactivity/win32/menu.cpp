@@ -375,8 +375,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
 
-    // Get the properties from the settings - CONSOLE_INFORMATION overloads
-    //  these methods to implement IDefaultColorProvider
+    // Get the properties from the settings
     pStateInfo->DefaultForeground = gci.GetDefaultForegroundColor();
     pStateInfo->DefaultBackground = gci.GetDefaultBackgroundColor();
 
