@@ -69,7 +69,6 @@ public:
     static std::filesystem::path GetSettingsPath();
     static std::filesystem::path GetDefaultSettingsPath();
 
-    std::optional<GUID> FindGuid(const std::wstring_view profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
@@ -106,7 +105,8 @@ private:
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    GUID _GetProfileForIndex(std::optional<int> index) const;
+    std::optional<GUID> _GetProfileGuidByName(const std::wstring_view) const;
+    std::optional<GUID> _GetProfileGuidByIndex(std::optional<int> index) const;
     GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
@@ -114,6 +114,7 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
+    void _ResolveDefaultProfile();
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();

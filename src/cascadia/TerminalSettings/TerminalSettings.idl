@@ -34,14 +34,21 @@ namespace Microsoft.Terminal.Settings
     {
         Automatic = -1,
         None = 0,
-        Vertical,
-        Horizontal
+        Vertical = 1,
+        Horizontal = 2
     };
 
     enum SplitType
     {
         Manual = 0,
         Duplicate = 1
+    };
+
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles
     };
 
     // Class Description:

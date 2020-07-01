@@ -15,10 +15,14 @@
 #include "AdjustFontSizeArgs.g.h"
 #include "MoveSelectionPointArgs.g.h"
 #include "SplitPaneArgs.g.h"
+#include "OpenSettingsArgs.g.h"
+#include "SetTabColorArgs.g.h"
+#include "RenameTabArgs.g.h"
 
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include "TerminalWarnings.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -57,7 +61,9 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
-        bool Equals(const TerminalApp::NewTerminalArgs& other)
+        hstring GenerateName() const;
+
+        bool Equals(const winrt::TerminalApp::NewTerminalArgs& other)
         {
             return other.Commandline() == _Commandline &&
                    other.StartingDirectory() == _StartingDirectory &&
@@ -101,6 +107,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view SingleLineKey{ "singleLine" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<CopyTextArgs>();
@@ -128,6 +136,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<NewTabArgs>();
@@ -154,6 +164,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TabIndexKey{ "index" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<SwitchToTabArgs>();
@@ -218,6 +230,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<ResizePaneArgs>();
@@ -254,6 +268,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<MoveFocusArgs>();
@@ -290,6 +306,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<AdjustFontSizeArgs>();
@@ -356,6 +374,8 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ExpansionModeKey{ "expansionMode" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<MoveSelectionPointArgs>();
@@ -434,13 +454,16 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view SplitModeKey{ "splitMode" };
 
     public:
+        hstring GenerateName() const;
+
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<SplitPaneArgs>();
             if (otherAsUs)
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
-                       otherAsUs->_TerminalArgs == _TerminalArgs &&
+                       (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
+                                                   otherAsUs->_TerminalArgs == _TerminalArgs) &&
                        otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
@@ -457,6 +480,135 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
             {
                 args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
+            }
+            return { *args, {} };
+        }
+    };
+
+    // Possible SettingsTarget values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view SettingsFileString{ "settingsFile" };
+    static constexpr std::string_view DefaultsFileString{ "defaultsFile" };
+    static constexpr std::string_view AllFilesString{ "allFiles" };
+
+    // Function Description:
+    // - Helper function for parsing a SettingsTarget from a string
+    // Arguments:
+    // - targetString: the string to attempt to parse
+    // Return Value:
+    // - The encoded SettingsTarget value, or SettingsTarget::SettingsFile if it was an invalid string
+    static Microsoft::Terminal::Settings::SettingsTarget ParseSettingsTarget(const std::string& targetString)
+    {
+        if (targetString == SettingsFileString)
+        {
+            return Microsoft::Terminal::Settings::SettingsTarget::SettingsFile;
+        }
+        else if (targetString == DefaultsFileString)
+        {
+            return Microsoft::Terminal::Settings::SettingsTarget::DefaultsFile;
+        }
+        else if (targetString == AllFilesString)
+        {
+            return Microsoft::Terminal::Settings::SettingsTarget::AllFiles;
+        }
+        // default behavior for invalid data
+        return Microsoft::Terminal::Settings::SettingsTarget::SettingsFile;
+    };
+
+    struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
+    {
+        OpenSettingsArgs() = default;
+        GETSET_PROPERTY(Microsoft::Terminal::Settings::SettingsTarget, Target, Microsoft::Terminal::Settings::SettingsTarget::SettingsFile);
+
+        static constexpr std::string_view TargetKey{ "target" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<OpenSettingsArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Target == _Target;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<OpenSettingsArgs>();
+            if (auto targetString{ json[JsonKey(TargetKey)] })
+            {
+                args->_Target = ParseSettingsTarget(targetString.asString());
+            }
+            return { *args, {} };
+        }
+    };
+
+    struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
+    {
+        SetTabColorArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+
+        static constexpr std::string_view ColorKey{ "color" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SetTabColorArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TabColor == _TabColor;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SetTabColorArgs>();
+            std::optional<til::color> temp;
+            try
+            {
+                ::TerminalApp::JsonUtils::GetOptionalColor(json, ColorKey, temp);
+                if (temp.has_value())
+                {
+                    args->_TabColor = static_cast<uint32_t>(temp.value());
+                }
+            }
+            CATCH_LOG();
+            return { *args, {} };
+        }
+    };
+
+    struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
+    {
+        RenameTabArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Title, L"");
+
+        static constexpr std::string_view TitleKey{ "title" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<RenameTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Title == _Title;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<RenameTabArgs>();
+            if (auto title{ json[JsonKey(TitleKey)] })
+            {
+                args->_Title = winrt::to_hstring(title.asString());
             }
             return { *args, {} };
         }

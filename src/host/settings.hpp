@@ -159,9 +159,8 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    const COLORREF* const GetColorTable() const;
-    const size_t GetColorTableSize() const;
-    void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize);
+    std::basic_string_view<COLORREF> Get16ColorTable() const;
+    std::basic_string_view<COLORREF> Get256ColorTable() const;
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
 
@@ -217,7 +216,6 @@ private:
     UINT _uHistoryBufferSize;
     UINT _uNumberOfHistoryBuffers;
     BOOL _bHistoryNoDup;
-    COLORREF _ColorTable[COLOR_TABLE_SIZE];
     // END - memcpy
     UINT _uCodePage;
     UINT _uScrollScale;
@@ -238,7 +236,7 @@ private:
     bool _fUseDx;
     bool _fCopyColor;
 
-    COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
+    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
@@ -257,5 +255,4 @@ private:
 
 public:
     WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
-    WORD FindNearestTableIndex(const COLORREF Color) const;
 };

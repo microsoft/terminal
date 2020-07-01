@@ -4,9 +4,6 @@ import "../ActionArgs.idl";
 
 namespace TerminalApp
 {
-    // TODO: GH#1069 - Many of these shortcut actions are "legacy" now that we
-    // have support for arbitrary args (#1142). We should remove them, and our
-    // legacy deserializers.
     enum ShortcutAction
     {
         Invalid = 0,
@@ -36,7 +33,11 @@ namespace TerminalApp
         MoveSelectionPoint,
         Find,
         ToggleFullscreen,
-        OpenSettings
+        SetTabColor,
+        OpenTabColorPicker,
+        OpenSettings,
+        RenameTab,
+        ToggleCommandPalette
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -74,5 +75,9 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> Find;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> MoveFocus;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleCommandPalette;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
     }
 }

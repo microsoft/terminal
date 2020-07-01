@@ -32,7 +32,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     _screenInfo(screenInfo),
     _userInputFunction(&Popup::_getUserInputInternal)
 {
-    _attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
+    _attributes = screenInfo.GetPopupAttributes();
 
     const COORD size = _CalculateSize(screenInfo, proposedSize);
     const COORD origin = _CalculateOrigin(screenInfo, size);
@@ -173,55 +173,6 @@ void Popup::_DrawPrompt(const UINT id)
                                                                                        text,
                                                                                        WriteCoord,
                                                                                        used));
-}
-
-// Routine Description:
-// - Updates the colors of the backed up information inside this popup.
-// - This is useful if user preferences change while a popup is displayed.
-// Arguments:
-// - newAttr - The new default color for text in the buffer
-// - newPopupAttr - The new color for text in popups
-// - oldAttr - The previous default color for text in the buffer
-// - oldPopupAttr - The previous color for text in popups
-void Popup::UpdateStoredColors(const TextAttribute& newAttr,
-                               const TextAttribute& newPopupAttr,
-                               const TextAttribute& oldAttr,
-                               const TextAttribute& oldPopupAttr)
-{
-    // We also want to find and replace the inversion of the popup colors in case there are highlights
-    const WORD wOldPopupLegacy = oldPopupAttr.GetLegacyAttributes();
-    const WORD wNewPopupLegacy = newPopupAttr.GetLegacyAttributes();
-
-    const WORD wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
-    const WORD wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
-
-    const TextAttribute oldPopupInv{ wOldPopupAttrInv };
-    const TextAttribute newPopupInv{ wNewPopupAttrInv };
-
-    // Walk through every row in the rectangle
-    for (size_t i = 0; i < _oldContents.Height(); i++)
-    {
-        auto row = _oldContents.GetRow(i);
-
-        // Walk through every cell
-        for (auto& cell : row)
-        {
-            auto& attr = cell.TextAttr();
-
-            if (attr == oldAttr)
-            {
-                attr = newAttr;
-            }
-            else if (attr == oldPopupAttr)
-            {
-                attr = newPopupAttr;
-            }
-            else if (attr == oldPopupInv)
-            {
-                attr = newPopupInv;
-            }
-        }
-    }
 }
 
 // Routine Description:

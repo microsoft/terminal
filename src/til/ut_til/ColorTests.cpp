@@ -4,19 +4,6 @@
 #include "precomp.h"
 #include "WexTestClass.h"
 
-namespace WEX::TestExecution
-{
-    template<>
-    class VerifyOutputTraits<til::color>
-    {
-    public:
-        static WEX::Common::NoThrowString ToString(const til::color& c)
-        {
-            return WEX::Common::NoThrowString().Format(L"(RGBA: %2.02x%2.02x%2.02x%2.02x)", c.r, c.g, c.b, c.a);
-        }
-    };
-}
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -100,5 +87,25 @@ class ColorTests
         til::color t2{ 0xde, 0xad, 0xfa, 0x11 };
 
         VERIFY_ARE_EQUAL(t2, static_cast<til::color>(q2));
+    }
+
+    TEST_METHOD(WithAlpha)
+    {
+        const COLORREF c = 0x00FEEDFAu; // remember, this one is in 0BGR
+        const til::color fromColorRef{ c };
+
+        VERIFY_ARE_EQUAL(0xfa, fromColorRef.r);
+        VERIFY_ARE_EQUAL(0xed, fromColorRef.g);
+        VERIFY_ARE_EQUAL(0xfe, fromColorRef.b);
+        VERIFY_ARE_EQUAL(0xff, fromColorRef.a); // COLORREF do not have an alpha channel
+
+        const auto colorWithAlpha{ fromColorRef.with_alpha(0x7f) };
+
+        VERIFY_ARE_NOT_EQUAL(colorWithAlpha, fromColorRef);
+
+        VERIFY_ARE_EQUAL(0xfa, colorWithAlpha.r);
+        VERIFY_ARE_EQUAL(0xed, colorWithAlpha.g);
+        VERIFY_ARE_EQUAL(0xfe, colorWithAlpha.b);
+        VERIFY_ARE_EQUAL(0x7f, colorWithAlpha.a);
     }
 };

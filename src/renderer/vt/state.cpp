@@ -509,3 +509,19 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     return S_OK;
 }
+
+// Method Description:
+// - Send a sequence to the connected terminal to request win32-input-mode from
+//   them. This will enable the connected terminal to send us full INPUT_RECORDs
+//   as input. If the terminal doesn't understand this sequence, it'll just
+//   ignore it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestWin32Input() noexcept
+{
+    RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}

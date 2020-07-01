@@ -44,7 +44,7 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\winconpty\winconpty.vcxproj">
+    <ProjectReference Include="..\..\winconpty\lib\winconptylib.vcxproj">
       <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -59,9 +59,4 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>$(OutDir)\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
 </Project>

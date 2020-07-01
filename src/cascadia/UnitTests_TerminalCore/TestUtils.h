@@ -68,13 +68,26 @@ public:
     static void VerifyExpectedString(std::wstring_view expectedString,
                                      TextBufferCellIterator& iter)
     {
+        size_t currentCharIndex = 0;
         for (const auto wch : expectedString)
         {
+            // This test spews out a lot of verify logging by default because of
+            // the loops, so suppress that to only show the failures.
+            WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+
             wchar_t buffer[]{ wch, L'\0' };
             std::wstring_view view{ buffer, 1 };
             VERIFY_IS_TRUE(iter, L"Ensure iterator is still valid");
+
+            if (view != (iter)->Chars())
+            {
+                WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(L"character [%d] was mismatched", currentCharIndex));
+            }
+
             VERIFY_ARE_EQUAL(view, (iter++)->Chars(), WEX::Common::NoThrowString().Format(L"%s", view.data()));
         }
+        WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
+            L"Successfully validated %d characters were '%s'", expectedString.size(), expectedString.data()));
     };
 
     // Function Description:

@@ -82,6 +82,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum PrivateModeParams : unsigned short
     {
         DECCKM_CursorKeysMode = 1,
+        DECANM_AnsiMode = 2,
         DECCOLM_SetNumberOfColumns = 3,
         DECSCNM_ScreenMode = 5,
         DECOM_OriginMode = 6,
@@ -95,13 +96,20 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8_EXTENDED_MODE = 1005,
         SGR_EXTENDED_MODE = 1006,
         ALTERNATE_SCROLL = 1007,
-        ASB_AlternateScreenBuffer = 1049
+        ASB_AlternateScreenBuffer = 1049,
+        W32IM_Win32InputMode = 9001
     };
 
-    enum VTCharacterSets : wchar_t
+    namespace CharacterSets
     {
-        DEC_LineDrawing = L'0',
-        USASCII = L'B'
+        constexpr auto DecSpecialGraphics = std::make_pair(L'0', L'\0');
+        constexpr auto ASCII = std::make_pair(L'B', L'\0');
+    }
+
+    enum CodingSystem : wchar_t
+    {
+        ISO2022 = L'@',
+        UTF8 = L'G'
     };
 
     enum TabClearType : unsigned short

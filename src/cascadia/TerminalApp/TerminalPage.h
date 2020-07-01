@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
         void Create();
 
@@ -49,9 +49,9 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
-        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
-        winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
+        void ToggleFullscreen();
+
+        void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, Windows::Foundation::IInspectable, winrt::hstring);
@@ -92,8 +92,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
+        std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
         winrt::fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();
@@ -130,6 +129,7 @@ namespace winrt::TerminalApp::implementation
 
         Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
+        winrt::com_ptr<Tab> _GetFocusedTab();
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
@@ -152,7 +152,7 @@ namespace winrt::TerminalApp::implementation
         void _PasteText();
         static fire_and_forget PasteFromClipboard(Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
-        fire_and_forget _LaunchSettings(const bool openDefaults);
+        fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::SettingsTarget target);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
@@ -166,12 +166,14 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
-        void _ToggleFullscreen();
-
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
         void _ClearNonClientAreaColors();
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
+
+        void _CompleteInitialization();
+
+        void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
@@ -199,6 +201,11 @@ namespace winrt::TerminalApp::implementation
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveSelectionPoint(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;
