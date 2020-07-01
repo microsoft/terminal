@@ -6,30 +6,6 @@ import "IControlSettings.idl";
 
 namespace Microsoft.Terminal.Settings
 {
-    enum Direction
-    {
-        None = 0,
-        Left,
-        Right,
-        Up,
-        Down
-    };
-
-    enum SelectionExpansionMode
-    {
-        Cell = 0,
-        Word,
-        Line,
-        Viewport,
-        Buffer
-    };
-
-    enum SelectionAnchorTarget
-    {
-        End = 0,
-        Start
-    };
-
     enum SplitState
     {
         Automatic = -1,

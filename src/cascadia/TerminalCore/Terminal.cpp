@@ -10,8 +10,6 @@
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
-
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;

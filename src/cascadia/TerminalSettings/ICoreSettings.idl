@@ -12,6 +12,30 @@ namespace Microsoft.Terminal.Settings
         EmptyBox
     };
 
+    enum Direction
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum SelectionExpansionMode
+    {
+        Cell = 0,
+        Word,
+        Line,
+        Viewport,
+        Buffer
+    };
+
+    enum SelectionEndpoint
+    {
+        End = 0,
+        Start
+    };
+
     interface ICoreSettings
     {
         UInt32 DefaultForeground;

@@ -1077,18 +1077,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const unsigned int MAX_CLICK_COUNT = 3;
                 const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+                SelectionExpansionMode mode = SelectionExpansionMode::Cell;
                 if (multiClickMapper == 1)
                 {
-                    mode = ::Terminal::SelectionExpansionMode::Cell;
+                    mode = SelectionExpansionMode::Cell;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    mode = ::Terminal::SelectionExpansionMode::Word;
+                    mode = SelectionExpansionMode::Word;
                 }
                 else if (multiClickMapper == 3)
                 {
-                    mode = ::Terminal::SelectionExpansionMode::Line;
+                    mode = SelectionExpansionMode::Line;
                 }
 
                 // Update the selection appropriately
@@ -1098,7 +1098,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                else if (mode == SelectionExpansionMode::Cell)
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
@@ -1475,55 +1475,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - expansionMode: The movement mode in use for movement
     // Return Value:
     // - true, if the action was handled. false, otherwise.
-    bool TermControl::MoveSelectionPoint(Settings::Direction dir, Settings::SelectionExpansionMode mode)
+    bool TermControl::MoveSelectionPoint(Direction dir, SelectionExpansionMode mode)
     {
-        // no selection --> not valid
-        if (_terminal == nullptr || !_terminal->IsSelectionActive())
+        // no selection/direction --> not valid
+        if (_terminal == nullptr || !_terminal->IsSelectionActive() || dir == Direction::None)
         {
             return false;
         }
 
-        // translate Settings::Direction to Terminal::Direction
-        ::Microsoft::Terminal::Core::Terminal::Direction selectionDir;
-        switch (dir)
-        {
-        case Settings::Direction::Left:
-            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Left;
-            break;
-        case Settings::Direction::Right:
-            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Right;
-            break;
-        case Settings::Direction::Up:
-            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Up;
-            break;
-        case Settings::Direction::Down:
-            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Down;
-            break;
-        case Settings::Direction::None:
-        default:
-            return false;
-        }
-
-        // translate Settings::SelectionExpansionMode to Terminal::SelectionExpansionMode
-        ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode selectionMode;
-        switch (mode)
-        {
-        case Settings::SelectionExpansionMode::Buffer:
-            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Buffer;
-            break;
-        case Settings::SelectionExpansionMode::Viewport:
-            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Viewport;
-            break;
-        case Settings::SelectionExpansionMode::Word:
-            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Word;
-            break;
-        case Settings::SelectionExpansionMode::Cell:
-        default:
-            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Cell;
-            break;
-        }
-
-        _terminal->MoveSelectionAnchor(selectionDir, selectionMode);
+        _terminal->MoveSelectionAnchor(dir, mode);
         _renderer->TriggerSelection();
         return true;
     }

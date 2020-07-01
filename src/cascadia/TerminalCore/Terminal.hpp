@@ -16,6 +16,8 @@
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+#include "winrt/Microsoft.Terminal.Settings.h"
+
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
 //      headers that include Terminal.hpp
@@ -181,34 +183,14 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    enum class SelectionExpansionMode
-    {
-        Cell,
-        Word,
-        Line,
-        Viewport,
-        Buffer
-    };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
+    void MultiClickSelection(const COORD viewportPos, winrt::Microsoft::Terminal::Settings::SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<winrt::Microsoft::Terminal::Settings::SelectionExpansionMode> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
 
-    enum class Direction
-    {
-        Left,
-        Right,
-        Up,
-        Down
-    };
-    enum class SelectionEndpoint
-    {
-        End,
-        Start
-    };
-    void MoveSelectionAnchor(Direction dir,
-                             SelectionExpansionMode mode,
-                             SelectionEndpoint target = SelectionEndpoint::End);
+    void MoveSelectionAnchor(winrt::Microsoft::Terminal::Settings::Direction dir,
+                             winrt::Microsoft::Terminal::Settings::SelectionExpansionMode mode,
+                             winrt::Microsoft::Terminal::Settings::SelectionEndpoint target = winrt::Microsoft::Terminal::Settings::SelectionEndpoint::End);
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
@@ -247,7 +229,7 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    winrt::Microsoft::Terminal::Settings::SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
 
     std::shared_mutex _readWriteLock;
@@ -314,10 +296,10 @@ private:
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
 
     // These methods are used by Keyboard Selection
-    void _UpdateAnchorByCell(Direction dir, COORD& anchor);
-    void _UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionEndpoint target = SelectionEndpoint::End);
-    void _UpdateAnchorByViewport(Direction dir, COORD& anchor);
-    void _UpdateAnchorByBuffer(Direction dir, COORD& anchor);
+    void _UpdateAnchorByCell(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
+    void _UpdateAnchorByWord(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor, winrt::Microsoft::Terminal::Settings::SelectionEndpoint target = winrt::Microsoft::Terminal::Settings::SelectionEndpoint::End);
+    void _UpdateAnchorByViewport(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
+    void _UpdateAnchorByBuffer(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
 #pragma endregion
 
 #ifdef UNIT_TESTING

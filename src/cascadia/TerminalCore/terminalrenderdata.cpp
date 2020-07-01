@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "Terminal.hpp"
 #include <DefaultSettings.h>
+
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
