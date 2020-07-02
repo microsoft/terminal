@@ -1205,6 +1205,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetScreenMode(const bool reverseMode)
 {
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
     return _pConApi->PrivateSetScreenMode(reverseMode);
 }
 
