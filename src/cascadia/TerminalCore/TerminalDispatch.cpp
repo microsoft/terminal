@@ -146,6 +146,13 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::SetClipboard(std::wstring_view content) noexcept
+try
+{
+    return _terminalApi.CopyToClipboard(content);
+}
+CATCH_LOG_RETURN_FALSE()
+
 // Method Description:
 // - Sets the default foreground color to a new value
 // Arguments:

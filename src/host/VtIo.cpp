@@ -155,22 +155,16 @@ VtIo::VtIo() :
             {
             case VtIoMode::XTERM_256:
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                    gci,
-                                                                    initialViewport,
-                                                                    gci.Get16ColorTable());
+                                                                    initialViewport);
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 gci,
                                                                  initialViewport,
-                                                                 gci.Get16ColorTable(),
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 gci,
                                                                  initialViewport,
-                                                                 gci.Get16ColorTable(),
                                                                  true);
                 break;
             default:

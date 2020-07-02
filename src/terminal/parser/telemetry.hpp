@@ -14,7 +14,7 @@ Abstract:
 #include <windows.h>
 #include <winmeta.h>
 #include <TraceLoggingProvider.h>
-#include "limits.h"
+#include "climits"
 
 TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider);
 
@@ -97,6 +97,7 @@ namespace Microsoft::Console::VirtualTerminal
             OSCFG,
             OSCBG,
             DECALN,
+            OSCSCB,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };

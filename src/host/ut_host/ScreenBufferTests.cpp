@@ -1317,7 +1317,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
     const COLORREF magenta = RGB(255, 0, 255);
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
-    const TextAttribute defaultAttrs = gci.GetDefaultAttributes();
+    const TextAttribute defaultAttrs = {};
     si.SetAttributes(defaultAttrs);
 
     Log::Comment(NoThrowString().Format(L"Begin by clearing the screen."));
@@ -2071,7 +2071,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     // Make sure we're suing the default attributes at the start of the test,
     // Otherwise they could be polluted from a previous test.
-    mainBuffer.SetAttributes(gci.GetDefaultAttributes());
+    mainBuffer.SetAttributes({});
 
     VERIFY_IS_NULL(mainBuffer._psiAlternateBuffer);
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
@@ -2121,7 +2121,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         // recall: vt coordinates are (row, column), 1-indexed
         VERIFY_ARE_EQUAL(COORD({ 5, 4 }), altCursor.GetPosition());
 
-        const TextAttribute expectedDefaults = gci.GetDefaultAttributes();
+        const TextAttribute expectedDefaults = {};
         TextAttribute expectedRgb = expectedDefaults;
         expectedRgb.SetBackground(RGB(255, 0, 255));
 
@@ -2194,7 +2194,7 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
@@ -2303,7 +2303,7 @@ void ScreenBufferTests::SetDefaultsTogether()
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
@@ -2378,7 +2378,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     gci.SetDefaultForegroundColor(INVALID_COLOR);
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
     Log::Comment(NoThrowString().Format(L"  The first in default-attr on default color (magenta)"));
@@ -2446,7 +2446,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
@@ -2509,7 +2509,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
@@ -2577,7 +2577,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetDefaultBackgroundColor(magenta);
-    si.SetDefaultAttributes(gci.GetDefaultAttributes(), TextAttribute{ gci.GetPopupFillAttribute() });
+    si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
     TextAttribute expectedDefaults{};
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's, move to the left, then delete-char the second."));

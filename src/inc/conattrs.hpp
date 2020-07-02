@@ -23,13 +23,6 @@ enum class ExtendedAttributes : BYTE
 };
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
 
-WORD FindNearestTableIndex(const COLORREF Color,
-                           const std::basic_string_view<COLORREF> ColorTable);
-
-bool FindTableIndex(const COLORREF Color,
-                    const std::basic_string_view<COLORREF> ColorTable,
-                    _Out_ WORD* const pFoundIndex);
-
 WORD XtermToWindowsIndex(const size_t index) noexcept;
 WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
 WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);

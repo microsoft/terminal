@@ -891,6 +891,11 @@ void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_vie
     _pfnTitleChanged.swap(pfn);
 }
 
+void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+{
+    _pfnCopyToClipboard.swap(pfn);
+}
+
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);

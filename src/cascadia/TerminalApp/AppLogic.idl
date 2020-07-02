@@ -22,7 +22,7 @@ namespace TerminalApp
         RTF = 0x4
     };
 
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener
+    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
 
@@ -57,6 +57,10 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        // See IDialogPresenter and TerminalPage's DialogPresenter for more
+        // information.
+        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
