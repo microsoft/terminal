@@ -438,44 +438,29 @@ bool TerminalDispatch::SoftReset() noexcept
     // of what needs to be done.
 
     bool success = CursorVisibility(true); // Cursor enabled.
-    // if (success)
+    // success = SetOriginMode(false) && success; // Absolute cursor addressing.
+    // success = SetAutoWrapMode(true) && success; // Wrap at end of line.
+    success = SetCursorKeysMode(false) && success; // Normal characters.
+    success = SetKeypadMode(false) && success; // Numeric characters.
+
+    // // Top margin = 1; bottom margin = page length.
+    // success = _DoSetTopBottomScrollingMargins(0, 0) && success;
+
+    // _termOutput = {}; // Reset all character set designations.
+    // if (_initialCodePage.has_value())
     // {
-    //     success = SetOriginMode(false); // Absolute cursor addressing.
+    //     // Restore initial code page if previously changed by a DOCS sequence.
+    //     success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     // }
-    // if (success)
-    // {
-    //     success = SetAutoWrapMode(true); // Wrap at end of line.
-    // }
-    if (success)
-    {
-        success = SetCursorKeysMode(false); // Normal characters.
-    }
-    if (success)
-    {
-        success = SetKeypadMode(false); // Numeric characters.
-    }
-    // if (success)
-    // {
-    //     // Top margin = 1; bottom margin = page length.
-    //     success = _DoSetTopBottomScrollingMargins(0, 0);
-    // }
-    // if (success)
-    // {
-    //     success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
-    // }
-    if (success)
-    {
-        const auto opt = DispatchTypes::GraphicsOptions::Off;
-        success = SetGraphicsRendition({ &opt, 1 }); // Normal rendition.
-    }
-    // if (success)
-    // {
-    //     // Reset the saved cursor state.
-    //     // Note that XTerm only resets the main buffer state, but that
-    //     // seems likely to be a bug. Most other terminals reset both.
-    //     _savedCursorState.at(0) = {}; // Main buffer
-    //     _savedCursorState.at(1) = {}; // Alt buffer
-    // }
+
+    const auto opt = DispatchTypes::GraphicsOptions::Off;
+    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+
+    // // Reset the saved cursor state.
+    // // Note that XTerm only resets the main buffer state, but that
+    // // seems likely to be a bug. Most other terminals reset both.
+    // _savedCursorState.at(0) = {}; // Main buffer
+    // _savedCursorState.at(1) = {}; // Alt buffer
 
     return success;
 }
@@ -491,34 +476,31 @@ bool TerminalDispatch::HardReset() noexcept
     // This code is left here (from its original form in conhost) as a reminder
     // of what needs to be done.
 
-    // Sets the SGR state to normal - this must be done before EraseInDisplay
-    //      to ensure that it clears with the default background color.
-    bool success = SoftReset();
+    bool success = true;
 
-    // Clears the screen - Needs to be done in two operations.
-    if (success)
-    {
-        success = EraseInDisplay(DispatchTypes::EraseType::All);
-    }
-    if (success)
-    {
-        success = EraseInDisplay(DispatchTypes::EraseType::Scrollback);
-    }
-
-    // // Set the DECSCNM screen mode back to normal.
-    // if (success)
+    // // If in the alt buffer, switch back to main before doing anything else.
+    // if (_usingAltBuffer)
     // {
-    //     success = SetScreenMode(false);
+    //     success = _pConApi->PrivateUseMainScreenBuffer();
+    //     _usingAltBuffer = !success;
     // }
 
-    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    if (success)
-    {
-        success = CursorPosition(1, 1);
-    }
+    // Sets the SGR state to normal - this must be done before EraseInDisplay
+    //      to ensure that it clears with the default background color.
+    success = SoftReset() && success;
 
-    // // delete all current tab stops and reapply
-    // _pConApi->PrivateSetDefaultTabStops();
+    // Clears the screen - Needs to be done in two operations.
+    success = EraseInDisplay(DispatchTypes::EraseType::All) && success;
+    success = EraseInDisplay(DispatchTypes::EraseType::Scrollback) && success;
+
+    // // Set the DECSCNM screen mode back to normal.
+    // success = SetScreenMode(false) && success;
+
+    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
+    success = CursorPosition(1, 1) && success;
+
+    // // Delete all current tab stops and reapply
+    // _ResetTabStops();
 
     return success;
 }
