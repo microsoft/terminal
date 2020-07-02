@@ -997,7 +997,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, { props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() });
     }
 
     // Method Description:

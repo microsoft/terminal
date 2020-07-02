@@ -483,7 +483,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
+bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
 {
     // viewportPos must be within the dimensions of the viewport
     const auto viewportDimensions = _mutableViewport.Dimensions();
@@ -492,7 +492,7 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
         return false;
     }
 
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
 // Method Description:

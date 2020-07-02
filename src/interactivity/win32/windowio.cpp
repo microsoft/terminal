@@ -123,7 +123,15 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+        using namespace Microsoft::Console::VirtualTerminal;
+
+        TerminalInput::MouseButtonState state {
+            WI_IsFlagSet(GetKeyState(VK_LBUTTON), TerminalInput::KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_MBUTTON), TerminalInput::KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_RBUTTON), TerminalInput::KeyPressed)
+        };
+
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
