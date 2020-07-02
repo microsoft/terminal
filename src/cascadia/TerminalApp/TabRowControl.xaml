@@ -31,6 +31,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 FontFamily="Segoe MDL2 Assets"
                 FontWeight="SemiLight"
                 FontSize="12"
+                BorderThickness="0"
+                CornerRadius="{Binding Source={ThemeResource OverlayCornerRadius}, Converter={StaticResource TopCornerRadiusFilterConverter}}"
                 AutomationProperties.AccessibilityView="Control">
                 <!-- U+E710 is the fancy plus icon. -->
                 <mux:SplitButton.Resources>
