@@ -334,26 +334,6 @@ std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.LookupAttributeColors(attr);
 }
-
-// Routine Description:
-// - Converts a text attribute into the foreground RGB value that should be presented, applying
-//   relevant table translation information and preferences.
-// Return Value:
-// - ARGB color value
-const COLORREF RenderData::GetForegroundColor(const TextAttribute& attr) const noexcept
-{
-    return GetAttributeColors(attr).first;
-}
-
-// Routine Description:
-// - Converts a text attribute into the background RGB value that should be presented, applying
-//   relevant table translation information and preferences.
-// Return Value:
-// - ARGB color value
-const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    return GetAttributeColors(attr).second;
-}
 #pragma endregion
 
 #pragma region IUiaData

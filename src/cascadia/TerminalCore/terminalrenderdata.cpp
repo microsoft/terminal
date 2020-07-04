@@ -66,16 +66,6 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     return colors;
 }
 
-const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noexcept
-{
-    return GetAttributeColors(attr).first;
-}
-
-const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    return GetAttributeColors(attr).second;
-}
-
 COORD Terminal::GetCursorPosition() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
