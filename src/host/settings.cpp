@@ -876,30 +876,6 @@ std::pair<COLORREF, COLORREF> Settings::LookupAttributeColors(const TextAttribut
                                    _fScreenReversed);
 }
 
-// Method Description:
-// - Get the foreground color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground color of.
-// Return Value:
-// - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
-{
-    return LookupAttributeColors(attr).first;
-}
-
-// Method Description:
-// - Get the background color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the background color of.
-// Return Value:
-// - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    return LookupAttributeColors(attr).second;
-}
-
 bool Settings::GetCopyColor() const noexcept
 {
     return _fCopyColor;

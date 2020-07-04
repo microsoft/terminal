@@ -188,8 +188,6 @@ public:
     COLORREF CalculateDefaultForeground() const noexcept;
     COLORREF CalculateDefaultBackground() const noexcept;
     std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
-    COLORREF LookupForegroundColor(const TextAttribute& attr) const noexcept;
-    COLORREF LookupBackgroundColor(const TextAttribute& attr) const noexcept;
 
 private:
     DWORD _dwHotKey;
