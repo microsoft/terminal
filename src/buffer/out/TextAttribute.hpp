@@ -66,12 +66,6 @@ public:
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
                                                      const bool reverseScreenMode = false) const noexcept;
-    COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const noexcept;
-    COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -157,11 +151,6 @@ public:
     }
 
 private:
-    COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const noexcept;
-    COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const noexcept;
-
     static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
     {
         return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };

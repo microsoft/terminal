@@ -63,56 +63,6 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic
     return { fg, bg };
 }
 
-// Arguments:
-// - None
-// Return Value:
-// - color that should be displayed as the foreground color
-COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
-{
-    return CalculateRgbColors(colorTable, defaultFgColor, defaultBgColor, false).first;
-}
-
-// Routine Description:
-// - Calculates rgb background color based off of current color table and active modification attributes
-// Arguments:
-// - None
-// Return Value:
-// - color that should be displayed as the background color
-COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
-{
-    return CalculateRgbColors(colorTable, defaultFgColor, defaultBgColor, false).second;
-}
-
-// Routine Description:
-// - gets rgb foreground color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the foreground color
-COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
-{
-    return _foreground.GetColor(colorTable, defaultColor, IsBold());
-}
-
-// Routine Description:
-// - gets rgb background color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the background color
-COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
-{
-    return _background.GetColor(colorTable, defaultColor, false);
-}
-
 TextColor TextAttribute::GetForeground() const noexcept
 {
     return _foreground;
