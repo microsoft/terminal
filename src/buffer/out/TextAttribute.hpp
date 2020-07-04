@@ -62,6 +62,10 @@ public:
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
+    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+                                                     const COLORREF defaultFgColor,
+                                                     const COLORREF defaultBgColor,
+                                                     const bool reverseScreenMode = false) const noexcept;
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
                                     COLORREF defaultBgColor) const noexcept;

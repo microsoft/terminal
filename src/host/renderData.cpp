@@ -325,14 +325,24 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
 }
 
 // Routine Description:
+// - Converts a text attribute into the RGB values that should be presented, applying
+//   relevant table translation information and preferences.
+// Return Value:
+// - ARGB color values for the foreground and background
+std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.LookupAttributeColors(attr);
+}
+
+// Routine Description:
 // - Converts a text attribute into the foreground RGB value that should be presented, applying
 //   relevant table translation information and preferences.
 // Return Value:
 // - ARGB color value
 const COLORREF RenderData::GetForegroundColor(const TextAttribute& attr) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupForegroundColor(attr);
+    return GetAttributeColors(attr).first;
 }
 
 // Routine Description:
@@ -342,8 +352,7 @@ const COLORREF RenderData::GetForegroundColor(const TextAttribute& attr) const n
 // - ARGB color value
 const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupBackgroundColor(attr);
+    return GetAttributeColors(attr).second;
 }
 #pragma endregion
 

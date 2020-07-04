@@ -40,6 +40,29 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
+// Routine Description:
+// - Calculates rgb colors based off of current color table and active modification attributes.
+// Arguments:
+// - colorTable: the current color table rgb values.
+// - defaultFgColor: the default foreground color rgb value.
+// - defaultBgColor: the default background color rgb value.
+// - reverseScreenMode: true if the screen mode is reversed.
+// Return Value:
+// - the foreground and background colors that should be displayed.
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+                                                                const COLORREF defaultFgColor,
+                                                                const COLORREF defaultBgColor,
+                                                                const bool reverseScreenMode) const noexcept
+{
+    auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
+    auto bg = _background.GetColor(colorTable, defaultBgColor);
+    if (IsReverseVideo() ^ reverseScreenMode)
+    {
+        std::swap(fg, bg);
+    }
+    return { fg, bg };
+}
+
 // Arguments:
 // - None
 // Return Value:
@@ -48,7 +71,7 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
                                                COLORREF defaultFgColor,
                                                COLORREF defaultBgColor) const noexcept
 {
-    return IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
+    return CalculateRgbColors(colorTable, defaultFgColor, defaultBgColor, false).first;
 }
 
 // Routine Description:
@@ -61,7 +84,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
                                                COLORREF defaultFgColor,
                                                COLORREF defaultBgColor) const noexcept
 {
-    return IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
+    return CalculateRgbColors(colorTable, defaultFgColor, defaultBgColor, false).second;
 }
 
 // Routine Description:
