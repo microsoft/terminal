@@ -442,9 +442,6 @@ using namespace Microsoft::Console::Render;
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 [[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
-    // Return early if there are no lines to paint.
-    RETURN_HR_IF(S_OK, GridLines::None == lines);
-
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
