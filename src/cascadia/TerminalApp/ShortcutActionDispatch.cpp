@@ -154,6 +154,11 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleRetroEffect:
+        {
+            _ToggleRetroEffectHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleBorderless:
         {
             _ToggleBorderlessHandlers(*this, *eventArgs);
@@ -162,6 +167,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ToggleCommandPalette:
+        {
+            _ToggleCommandPaletteHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::SetTabColor:
