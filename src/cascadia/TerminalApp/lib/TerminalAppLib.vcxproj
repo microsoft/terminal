@@ -113,6 +113,7 @@
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
     <ClInclude Include="../ColorHelper.h" />
+    <ClInclude Include="..\TerminalSettingsSerializationHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>

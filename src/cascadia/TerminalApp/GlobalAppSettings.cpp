@@ -61,33 +61,6 @@ static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
-JSON_FLAG_MAPPER(CopyFormat)
-{
-    JSON_MAPPINGS(5) = {
-        pair_type{ "none", AllClear },
-        pair_type{ "plain", CopyFormat::Plain },
-        pair_type{ "html", CopyFormat::HTML },
-        pair_type{ "rtf", CopyFormat::RTF },
-        pair_type{ "all", AllSet },
-    };
-
-    // TODO: @Dustin how do I define the default value to be AllSet
-
-    CopyFormat FromJson(const Json::Value & json)
-    {
-        if (json.isBool())
-        {
-            return json.asBool() ? AllSet : CopyFormat::Plain;
-        }
-        return FlagMapper::FromJson(json);
-    }
-
-    bool CanConvert(const Json::Value& json)
-    {
-        return FlagMapper::CanConvert(json) || json.isBool();
-    }
-};
-
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
 #else

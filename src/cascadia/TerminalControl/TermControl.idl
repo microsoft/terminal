@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
         String Text { get; };
         String Html { get; };
         String Rtf { get; };
-        Int32 Formats { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Settings.CopyFormat> Formats { get; };
     }
 
     runtimeclass PasteFromClipboardEventArgs
@@ -53,7 +53,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Int32 formats);
+        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<Microsoft.Terminal.Settings.CopyFormat> formats);
         void PasteTextFromClipboard();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };

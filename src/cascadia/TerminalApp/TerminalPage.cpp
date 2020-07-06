@@ -1552,17 +1552,19 @@ namespace winrt::TerminalApp::implementation
         //   if and only if it is not set
         // Since 'Formats' cannot be represented as an optional in the EventArgs,
         //   a sentinel value of 0 represents that "Formats" was not set.
-        auto copyFormats = copiedData.Formats() == 0 ?
+        auto copyFormats = copiedData.Formats() == nullptr ?
                                _settings->GlobalSettings().CopyFormatting() :
-                               copiedData.Formats();
+                               copiedData.Formats().Value();
 
-        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::Plain)))
+        // TODO CARLOS
+        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::Plain)*/)
         {
             // copy text to dataPack
             dataPack.SetText(copiedData.Text());
         }
 
-        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::HTML)))
+        // TODO CARLOS
+        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::HTML)*/)
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1572,7 +1574,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (WI_IsFlagSet(copyFormats, static_cast<int>(CopyFormat::RTF)))
+        // TODO CARLOS
+        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::RTF)*/)
         {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();
@@ -1666,9 +1669,10 @@ namespace winrt::TerminalApp::implementation
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
     // - singleLine: if enabled, copy contents as a single line of text
+    // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const int formats)
+    bool TerminalPage::_CopyText(const bool singleLine, Windows::Foundation::IReference<Settings::CopyFormat> formats)
     {
         const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(singleLine, formats);

@@ -23,7 +23,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, int formats) :
+        CopyToClipboardEventArgs(hstring text) :
+            _text(text),
+            _html(),
+            _rtf(),
+            _formats(Settings::CopyFormat::Plain) {}
+
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<Settings::CopyFormat> formats = nullptr) :
             _text(text),
             _html(html),
             _rtf(rtf),
@@ -32,13 +38,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Text() { return _text; };
         hstring Html() { return _html; };
         hstring Rtf() { return _rtf; };
-        int Formats() { return _formats; };
+        Windows::Foundation::IReference<Settings::CopyFormat> Formats() { return _formats; };
 
     private:
         hstring _text;
         hstring _html;
         hstring _rtf;
-        int _formats;
+        Windows::Foundation::IReference<Settings::CopyFormat> _formats;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -67,7 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool singleLine = false, int formats = -1);
+        bool CopySelectionToClipboard(bool singleLine = false, Windows::Foundation::IReference<Settings::CopyFormat> formats = Settings::CopyFormat::All);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;

@@ -2035,9 +2035,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
-                                                                   winrt::hstring(L""),
-                                                                   winrt::hstring(L""));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _clipboardCopyHandlers(*this, *copyArgs);
     }
 
@@ -2101,7 +2099,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool singleLine, int formats)
+    bool TermControl::CopySelectionToClipboard(bool singleLine, Windows::Foundation::IReference<CopyFormat> formats)
     {
         if (_closing)
         {
@@ -2131,16 +2129,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        const auto htmlData = TextBuffer::GenHTML(bufferData,
-                                                  _actualFont.GetUnscaledSize().Y,
-                                                  _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground());
+        // TODO CARLOS
+        const auto htmlData = formats == nullptr /*|| WI_IsFlagSet(formats.Value(), CopyFormat::HTML)*/ ?
+                                  TextBuffer::GenHTML(bufferData,
+                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetFaceName(),
+                                                      _settings.DefaultBackground()) :
+                                  "";
 
         // convert to RTF format
-        const auto rtfData = TextBuffer::GenRTF(bufferData,
-                                                _actualFont.GetUnscaledSize().Y,
-                                                _actualFont.GetFaceName(),
-                                                _settings.DefaultBackground());
+        // TODO CARLOS
+        const auto rtfData = formats == nullptr /*|| WI_IsFlagSet(formats.Value(), CopyFormat::RTF)*/ ?
+                                 TextBuffer::GenRTF(bufferData,
+                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetFaceName(),
+                                                    _settings.DefaultBackground()) :
+                                 "";
 
         if (!_settings.CopyOnSelect())
         {

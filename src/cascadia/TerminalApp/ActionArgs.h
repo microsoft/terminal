@@ -21,42 +21,14 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include "TerminalWarnings.h"
-#include "JsonUtils.h"
 #include "JsonUtilsNew.h"
+#include "TerminalWarnings.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
 //   class that implements IActionArgs
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
-
-JSON_FLAG_MAPPER(winrt::TerminalApp::CopyFormat)
-{
-    JSON_MAPPINGS(5) = {
-        pair_type{ "none", AllClear },
-        pair_type{ "plain", winrt::TerminalApp::CopyFormat::Plain },
-        pair_type{ "html", winrt::TerminalApp::CopyFormat::HTML },
-        pair_type{ "rtf", winrt::TerminalApp::CopyFormat::RTF },
-        pair_type{ "all", AllSet },
-    };
-
-    // TODO: @Dustin how do I define the default value to be 0 (inherit from global)
-
-    winrt::TerminalApp::CopyFormat FromJson(const Json::Value& json)
-    {
-        if (json.isBool())
-        {
-            return json.asBool() ? AllSet : winrt::TerminalApp::CopyFormat::Plain;
-        }
-        return FlagMapper::FromJson(json);
-    }
-
-    bool CanConvert(const Json::Value& json)
-    {
-        return FlagMapper::CanConvert(json) || json.isBool();
-    }
-};
 
 namespace winrt::TerminalApp::implementation
 {
@@ -130,7 +102,7 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
-        GETSET_PROPERTY(int, CopyFormatting, -1);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::Settings::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
