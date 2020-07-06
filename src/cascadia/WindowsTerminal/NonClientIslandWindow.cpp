@@ -144,13 +144,11 @@ void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
     const til::rectangle rect{ _GetDragAreaRect() };
     if (_IsTitlebarVisible() && rect.size().area() > 0)
-    // if ((_IsTitlebarVisible() || _borderless) && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
                      rect.left<int>(),
                      rect.top<int>() + _GetTopBorderHeight(),
-                     // rect.top<int>() + (_borderless ? 1 : _GetTopBorderHeight()),
                      rect.width<int>(),
                      rect.height<int>(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
@@ -268,7 +266,6 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
     if (_isMaximized || (!_IsTitlebarVisible()))
     {
         // no border when maximized
-        // return (_borderless && !_fullscreen) ? 1 : 0; // This line seems to work really well, but the titlebar is then white when we lose focus, and that's horrible.
         return 0;
     }
 
@@ -619,8 +616,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
-    auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
-    titleBarHeight += (_borderless && !_fullscreen) ? 1 : 0;
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
 
     return {
         islandFrame.right - islandFrame.left,
@@ -660,10 +656,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  so it should work fine.
         margins.cyTopHeight = -frame.top;
     }
-    // else if (_borderless)
-    // {
-    //     margins.cyTopHeight = -1;
-    // }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
     // the failure here, don't crash. If DWM crashes for any reason, calling
@@ -819,11 +811,23 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
     _theme = requestedTheme;
 }
 
+// Method Description:
+// - Enable or disable borderless mode. When entering borderless mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsBorderless, which does similar, but different work.
+// Arguments:
+// - borderlessEnabled: If true, we're entering borderless mode. If false, we're leaving.
+// Return Value:
+// - <none>
 void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 {
     _borderless = borderlessEnabled;
 
-    // IslandWindow::_SetIsBorderless(borderlessEnabled);
+    // Explicitly _don't_ call IslandWindow::_SetIsBorderless. That version will
+    // change the window styles appropriately for the window with the detault
+    // titlebar, but for the tabs-in-titlebar mode, we can just get rid of the
+    // title bar entirely.
+
     if (_titlebar)
     {
         _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
