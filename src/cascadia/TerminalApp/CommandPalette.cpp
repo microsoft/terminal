@@ -86,8 +86,17 @@ namespace winrt::TerminalApp::implementation
         // they do raise PreviewKeyDown events.
         if (_tabSwitcherMode && key == VirtualKey::Tab)
         {
-            _selectNextItem(true);
-            e.Handled(true);
+            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            {
+                _selectNextItem(false);
+                e.Handled(true);
+            }
+            else
+            {
+                _selectNextItem(true);
+                e.Handled(true);
+            }
         }
     }
 
