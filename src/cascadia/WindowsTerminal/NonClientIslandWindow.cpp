@@ -824,7 +824,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     _borderless = borderlessEnabled;
 
     // Explicitly _don't_ call IslandWindow::_SetIsBorderless. That version will
-    // change the window styles appropriately for the window with the detault
+    // change the window styles appropriately for the window with the default
     // titlebar, but for the tabs-in-titlebar mode, we can just get rid of the
     // title bar entirely.
 
