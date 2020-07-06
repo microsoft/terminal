@@ -42,6 +42,7 @@ namespace winrt::TerminalApp::implementation
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+
             if (Visibility() == Visibility::Visible)
             {
                 _searchBox().Focus(FocusState::Programmatic);
@@ -79,6 +80,10 @@ namespace winrt::TerminalApp::implementation
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+
+        // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
+        // they're not considered input key presses. While they don't raise KeyDown events,
+        // they do raise PreviewKeyDown events.
         if (_tabSwitcherMode && key == VirtualKey::Tab)
         {
             _selectNextItem(true);
@@ -150,7 +155,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_tabSwitcherMode)
         {
-            if (key == _anchorKey.value())
+            if (_anchorKey && key == _anchorKey.value())
             {
                 // Once the user lifts the anchor key, we'll switch to the currently selected tab
                 // then close the tab switcher.
@@ -310,6 +315,17 @@ namespace winrt::TerminalApp::implementation
         //   by the rest of the commands.
         if (addAll)
         {
+            // If TabSwitcherMode, just all add as is.
+            if (_tabSwitcherMode)
+            {
+                for (auto action : _allActions)
+                {
+                    _filteredActions.Append(action);
+                }
+
+                return;
+            }
+
             // Add all the commands, but make sure they're sorted alphabetically.
             std::vector<TerminalApp::Command> sortedCommands;
             sortedCommands.reserve(_allActions.Size());
@@ -487,25 +503,26 @@ namespace winrt::TerminalApp::implementation
         {
             auto idx = e.Index();
             auto changedEvent = e.CollectionChange();
-            auto tab = tabList.GetAt(idx);
 
             switch (changedEvent)
             {
-            case CollectionChange::ItemChanged: {
-                GenerateCommandForTab(idx, false, tab);
-                break;
-            }
-            case CollectionChange::ItemInserted: {
-                GenerateCommandForTab(idx, true, tab);
-                UpdateTabIndices(idx);
-                break;
-            }
-            case CollectionChange::ItemRemoved: {
-                _allTabActions.RemoveAt(idx);
-                UpdateTabIndices(idx);
-                _updateFilteredActions();
-                break;
-            }
+                case CollectionChange::ItemChanged: {
+                    auto tab = tabList.GetAt(idx);
+                    GenerateCommandForTab(idx, false, tab);
+                    break;
+                }
+                case CollectionChange::ItemInserted: {
+                    auto tab = tabList.GetAt(idx);
+                    GenerateCommandForTab(idx, true, tab);
+                    UpdateTabIndices(idx);
+                    break;
+                }
+                case CollectionChange::ItemRemoved: {
+                    _allTabActions.RemoveAt(idx);
+                    UpdateTabIndices(idx);
+                    _updateFilteredActions();
+                    break;
+                }
             }
         }
     }
