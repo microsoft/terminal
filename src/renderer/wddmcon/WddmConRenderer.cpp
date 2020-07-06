@@ -305,13 +305,11 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
-                                                          COLORREF const /*colorBackground*/,
-                                                          const WORD legacyColorAttribute,
-                                                          const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                          const gsl::not_null<IRenderData*> /*pData*/,
                                                           bool const /*isSettingDefaultBrushes*/) noexcept
 {
-    _currentLegacyColorAttribute = legacyColorAttribute;
+    _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
     return S_OK;
 }

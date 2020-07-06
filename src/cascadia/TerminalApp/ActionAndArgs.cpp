@@ -28,6 +28,7 @@ static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
+static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
@@ -71,6 +72,7 @@ namespace winrt::TerminalApp::implementation
         { ResizePaneKey, ShortcutAction::ResizePane },
         { MoveFocusKey, ShortcutAction::MoveFocus },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
+        { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { SetTabColorKey, ShortcutAction::SetTabColor },

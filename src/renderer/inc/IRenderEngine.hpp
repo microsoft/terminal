@@ -17,6 +17,7 @@ Author(s):
 #include "CursorOptions.h"
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
+#include "IRenderData.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -82,10 +83,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;

@@ -231,6 +231,14 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.ToggleRetroEffect();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {

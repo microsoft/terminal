@@ -6,7 +6,7 @@
 #include <Intsafe.h>
 #include "Shlwapi.h"
 #include "telemetry.hpp"
-#include <time.h>
+#include <ctime>
 
 #include "history.h"
 

@@ -202,6 +202,7 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
+cassert
 catid
 cazamor
 CBash
@@ -268,12 +269,14 @@ clipbrd
 CLIPCHILDREN
 CLIPSIBLINGS
 cliutils
+clocale
 closetest
 cloudconsole
 cls
 CLSCTX
 clsid
 CLUSTERMAP
+cmath
 cmatrix
 cmder
 CMDEXT
@@ -416,12 +419,16 @@ Csr
 csrmsg
 CSRSS
 csrutil
+cstdarg
+cstddef
 cstdio
+cstdlib
 cstr
 cstring
 cstyle
 CSwitch
 CText
+ctime
 ctl
 ctlseqs
 Ctlv
@@ -1611,6 +1618,7 @@ OSCCT
 OSCFG
 OSCRCC
 OSCSCC
+OSCSCB
 OSCWT
 OSDEPENDSROOT
 osfhandle

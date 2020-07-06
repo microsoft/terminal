@@ -881,7 +881,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                       (target.Y == -currentBufferDimensions.Y);
             const bool noClipProvided = clip == std::nullopt;
             const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
-                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+                                     (fillAttribute == buffer.GetAttributes().GetLegacyAttributes());
 
             if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
             {
