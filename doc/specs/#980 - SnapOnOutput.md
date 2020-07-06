@@ -9,13 +9,11 @@ issue id: 980
 
 ## Abstract
 
-The goal of this change is to introduce a new profile-level setting `snapOnOutput` that allows users to control the Terminal's scroll response to newly generated output.
+The goal of this change is to determine the Terminal's scroll response to newly generated output.
 
-Currently, new output causes the Terminal to always scroll to it. Some users want to be able to scroll through the buffer without interruptions. This setting allows the Terminal to conditionally or never scroll to the new output.
+Currently, new output causes the Terminal to always scroll to it. Some users want to be able to scroll through the buffer without interruptions.
 
 ## Inspiration
-
-Creating a selection when the terminal is generating more output is difficult. This is because the terminal scrolls to the new output.
 
 In ConHost, a selection causes the active process to be completely paused. When the selection is removed, the process continues.
 
@@ -23,6 +21,19 @@ Typical Unix terminals work differently. Rather than disabling the output, they 
 
 ## Solution Design
 
+By default, the viewport will scroll to new output if the following conditions are met:
+- no selection is active
+- the viewport is at the "virtual bottom" (the bottom of the scroll history)
+
+This behavior will not be configurable. If the user wants the viewport to stop autoscrolling, the user will simply create a selection or scroll any distance above the virtual bottom. Conversely, if the user wants the viewport to autoscroll, the user must scroll to the bottom. Scrolling to the bottom is most easily achieved using the `snapOnInput` functionality.
+
+Alternative solutions were considered and are recorded below. These solutions may be revisited if users desire an additional level of configurability.
+
+Researching other terminal emulators has shown that this behavior is not configurable.
+
+## Alternative Solutions
+
+### Solution 1: `snapOnOutput` profile setting - enum flags
 `SnapOnOutput` will be a profile-level `ICoreSettings` setting of type enum or enum array. It can be set to one or multiple of the following values:
 - `never`: new output does not cause the viewport to update to the bottom of the scroll region
 - `noSelection`: new output causes the viewport to update to the bottom of the scroll region **IF** no selection is active
@@ -33,8 +44,6 @@ The `TerminalCore` is responsible for moving the viewport on a scroll event. All
 
 A new private enum array `_snapOnOutput` will be introduced to save which of these settings are included. The `_NotifyScrollEvent()` calls (and nearby code) will be surrounded by conditional checks for the enums above. This allows it to be used to determine if the viewport should update given a specific situation.
 
-## UI/UX Design
-
 The `snapOnOutput` setting is introduced as a profile setting to match `snapOnInput`.
 
 The default `snapOnOutput` value will be `[ "noSelection", "atBottom" ]`.
@@ -42,6 +51,21 @@ The default `snapOnOutput` value will be `[ "noSelection", "atBottom" ]`.
 When an enum array is defined in the settings, it will be interpreted using boolean logic. The following scenarios will be invalid using the FlagMapper:
 - `[ "always", "atBottom" ]`
 - `[ "never", "atBottom" ]`
+
+### Solution 2: `scrollLock` keybinding action
+
+A `scrollLock` keybinding action would toggle automatically scrolling to new output.
+
+**NOTE**: This can be easily confused with the <kbd>ScrollLock</kbd> key. Researching the use of the <kbd>ScrollLock</kbd> key has shown that programs rarely use this key. In most apps, pressing the <kbd>ScrollLock</kbd> key does not actually prevent scrolling the application. Additionally, finding a way to bing the `scrollLock` action to the <kbd>ScrollLock</kbd> key would be difficult. A physical keyboard may not necessarily have a <kbd>ScrollLock</kbd> key. Also, we would have to poll for the internal state of "is the scroll lock key enabled", which may change while the user is not necessarily using Terminal.
+
+The introduction of a `scrollLock` action would require a visual indicator for the user to know when scrolling has been disabled. However, this introduces a number of problems:
+- if the indicator is persistent, it may block the view
+- if the indicator is not persistent, the user may be unaware of being in a state where scrolling doesn't work properly
+
+**Additionally relevant research**:
+- In Unix consoles, <kbd>ctrl+s</kbd> and <kbd>ctrl+q</kbd> freeze and unfreeze output respectively. However, this is a feature that is implemented outside of the scope for Terminal. Other shells like PowerShell do not have this feature, for example. There, <kbd>ctrl+s</kbd> does a 'Forward Search History' instead.
+- Additionally, there is a <kbd>Pause</kbd> key that pauses the output in the conhost console. Pressing any other key will resume scrolling.
+
 
 ## Capabilities
 
