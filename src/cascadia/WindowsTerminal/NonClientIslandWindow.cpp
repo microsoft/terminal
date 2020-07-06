@@ -144,11 +144,13 @@ void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
     const til::rectangle rect{ _GetDragAreaRect() };
     if (_IsTitlebarVisible() && rect.size().area() > 0)
+    // if ((_IsTitlebarVisible() || _borderless) && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
                      rect.left<int>(),
                      rect.top<int>() + _GetTopBorderHeight(),
+                     // rect.top<int>() + (_borderless ? 1 : _GetTopBorderHeight()),
                      rect.width<int>(),
                      rect.height<int>(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
@@ -266,6 +268,7 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
     if (_isMaximized || (!_IsTitlebarVisible()))
     {
         // no border when maximized
+        // return (_borderless && !_fullscreen) ? 1 : 0; // This line seems to work really well, but the titlebar is then white when we lose focus, and that's horrible.
         return 0;
     }
 
@@ -616,7 +619,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
-    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    titleBarHeight += (_borderless && !_fullscreen) ? 1 : 0;
 
     return {
         islandFrame.right - islandFrame.left,
@@ -656,6 +660,10 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  so it should work fine.
         margins.cyTopHeight = -frame.top;
     }
+    // else if (_borderless)
+    // {
+    //     margins.cyTopHeight = -1;
+    // }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
     // the failure here, don't crash. If DWM crashes for any reason, calling
@@ -820,11 +828,23 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     {
         _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
+
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
     _ResizeDragBarWindow();
+
+    // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
+    // recalculate the non/client areas
+    const til::rectangle windowPos{ GetWindowRect() };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 windowPos.left<int>(),
+                 windowPos.top<int>(),
+                 windowPos.width<int>(),
+                 windowPos.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // Method Description:
