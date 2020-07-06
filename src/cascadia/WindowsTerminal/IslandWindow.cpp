@@ -482,6 +482,33 @@ void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLo
     }
 }
 
+LONG IslandWindow::_getCurrentWindowStyle() const
+{
+    auto windowStyle = GetWindowLongW(GetHandle(), GWL_STYLE);
+
+    if (_fullscreen)
+    {
+        WI_ClearFlag(windowStyle, WS_BORDER);
+        WI_ClearFlag(windowStyle, WS_SIZEBOX);
+        WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+        WI_SetFlag(windowStyle, WS_POPUP);
+        return windowStyle;
+    }
+    else if (_borderless && !_fullscreen)
+    {
+        WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+        WI_ClearFlag(windowStyle, WS_POPUP);
+        WI_SetFlag(windowStyle, WS_BORDER);
+        WI_SetFlag(windowStyle, WS_SIZEBOX);
+        return windowStyle;
+    }
+    WI_ClearFlag(windowStyle, WS_POPUP);
+    WI_ClearFlag(windowStyle, WS_BORDER);
+    WI_ClearFlag(windowStyle, WS_SIZEBOX);
+    WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    return windowStyle;
+}
+
 void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 {
     // It is possible to enter _SetIsFullscreen even if we're already in full
@@ -492,30 +519,31 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     HWND const hWnd = GetHandle();
 
-    // First, modify regular window styles as appropriate
-    auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
+    // // First, modify regular window styles as appropriate
+    // auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
 
-    // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
-    // styles for non-fullscreen windows (e.g. caption bar), and add the
-    // WS_POPUP style to allow us to size ourselves to the monitor size.
-    // Do the reverse when restoring from fullscreen.
-    // Doing these modifications to that window will cause a vista-style
-    // window frame to briefly appear when entering and exiting fullscreen.
-    if (_borderless && !_fullscreen)
-    {
-        WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-        // WI_SetFlag(windowStyle, WS_POPUP);
-        WI_SetFlag(windowStyle, WS_BORDER);
-        WI_SetFlag(windowStyle, WS_SIZEBOX);
-    }
-    else if (!_borderless && !_fullscreen)
-    {
-        // WI_ClearFlag(windowStyle, WS_POPUP);
-        WI_ClearFlag(windowStyle, WS_BORDER);
-        WI_ClearFlag(windowStyle, WS_SIZEBOX);
-        WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-    }
+    // // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
+    // // styles for non-fullscreen windows (e.g. caption bar), and add the
+    // // WS_POPUP style to allow us to size ourselves to the monitor size.
+    // // Do the reverse when restoring from fullscreen.
+    // // Doing these modifications to that window will cause a vista-style
+    // // window frame to briefly appear when entering and exiting fullscreen.
+    // if (_borderless && !_fullscreen)
+    // {
+    //     WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    //     // WI_SetFlag(windowStyle, WS_POPUP);
+    //     WI_SetFlag(windowStyle, WS_BORDER);
+    //     WI_SetFlag(windowStyle, WS_SIZEBOX);
+    // }
+    // else if (!_borderless && !_fullscreen)
+    // {
+    //     // WI_ClearFlag(windowStyle, WS_POPUP);
+    //     WI_ClearFlag(windowStyle, WS_BORDER);
+    //     WI_ClearFlag(windowStyle, WS_SIZEBOX);
+    //     WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    // }
 
+    auto windowStyle = _getCurrentWindowStyle();
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
@@ -562,26 +590,33 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
-    auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
-
-    // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
-    // styles for non-fullscreen windows (e.g. caption bar), and add the
-    // WS_POPUP style to allow us to size ourselves to the monitor size.
-    // Do the reverse when restoring from fullscreen.
-    // Doing these modifications to that window will cause a vista-style
-    // window frame to briefly appear when entering and exiting fullscreen.
-    if (_fullscreen)
-    {
-        WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-        WI_SetFlag(windowStyle, WS_POPUP);
-    }
-    else
-    {
-        WI_ClearFlag(windowStyle, WS_POPUP);
-    }
+    // auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
+    auto windowStyle = _getCurrentWindowStyle();
+    // // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
+    // // styles for non-fullscreen windows (e.g. caption bar), and add the
+    // // WS_POPUP style to allow us to size ourselves to the monitor size.
+    // // Do the reverse when restoring from fullscreen.
+    // // Doing these modifications to that window will cause a vista-style
+    // // window frame to briefly appear when entering and exiting fullscreen.
+    // if (_fullscreen)
+    // {
+    //     WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    //     WI_SetFlag(windowStyle, WS_POPUP);
+    // }
+    // else
+    // {
+    //     WI_ClearFlag(windowStyle, WS_POPUP);
+    // }
     // if (!_borderless)
     // {
     //     WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    // }
+    // else
+    // {
+    //     WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+    //     // WI_SetFlag(windowStyle, WS_POPUP);
+    //     WI_SetFlag(windowStyle, WS_BORDER);
+    //     WI_SetFlag(windowStyle, WS_SIZEBOX);
     // }
 
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
