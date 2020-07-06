@@ -54,6 +54,7 @@
         "scrollUpPage",
         "splitPane",
         "switchToTab",
+        "toggleBorderless",
         "toggleFullscreen",
         "find",
         "setTabColor",
