@@ -36,6 +36,13 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
+
+    public:
+        winrt::Windows::UI::Xaml::Controls::IconSource IconSource();
+        void SetIconPath(const winrt::hstring& value);
+
+    private:
+            const winrt::hstring IconPath;
     };
 }
 

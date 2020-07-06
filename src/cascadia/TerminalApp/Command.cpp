@@ -188,4 +188,25 @@ namespace winrt::TerminalApp::implementation
         }
         return warnings;
     }
+
+    void Command::SetIconPath(const winrt::hstring& value)
+    {
+        if (IconPath != value)
+        {
+            const_cast<winrt::hstring&>(IconPath) = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IconSource" });
+        }
+    }
+
+    winrt::Windows::UI::Xaml::Controls::IconSource Command::IconSource()
+    {
+        if (!IconPath.empty())
+        {
+            return GetColoredIcon<winrt::Windows::UI::Xaml::Controls::IconSource>(IconPath);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
 }

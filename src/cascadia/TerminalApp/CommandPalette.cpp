@@ -175,7 +175,6 @@ namespace winrt::TerminalApp::implementation
                     {
                         const auto actionAndArgs = data.Action();
                         _dispatch.DoAction(actionAndArgs);
-                        _tabSwitcherMode = false;
                         _updateFilteredActions();
                         _close();
                     }
@@ -262,6 +261,9 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableCommandPaletteMode()
     {
+        // Make sure we're not in TabSwitcherMode
+        _tabSwitcherMode = false;
+
         _allActions = _allCommandPaletteActions;
         _updateFilteredActions();
     }
@@ -564,6 +566,7 @@ namespace winrt::TerminalApp::implementation
         command->Action(*focusTabAction);
         command->KeyChordText(L"index : " + to_hstring(idx));
         command->Name(tab.Title());
+        command->SetIconPath(tab.IconPath());
 
         // Listen for changes to this particular Tab's title so we can update the corresponding Command name.
         auto weakThis{ get_weak() };
@@ -576,6 +579,10 @@ namespace winrt::TerminalApp::implementation
                 if (args.PropertyName() == L"Title")
                 {
                     command->Name(tab.Title());
+                }
+                if (args.PropertyName() == L"IconPath")
+                {
+                    command->SetIconPath(tab.IconPath());
                 }
             }
         });
