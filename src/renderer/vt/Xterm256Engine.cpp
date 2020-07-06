@@ -53,6 +53,12 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
     }
 
+    if (textAttributes.IsOverlined() != _lastTextAttributes.IsOverlined())
+    {
+        RETURN_IF_FAILED(_SetOverline(textAttributes.IsOverlined()));
+        _lastTextAttributes.SetOverline(textAttributes.IsOverlined());
+    }
+
     if (textAttributes.IsItalic() != _lastTextAttributes.IsItalic())
     {
         RETURN_IF_FAILED(_SetItalics(textAttributes.IsItalic()));

@@ -356,6 +356,17 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the overline of the following text.
+// Arguments:
+// - isOverlined: If true, we'll overline the text. Otherwise we'll remove the overline.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetOverline(const bool isOverlined) noexcept
+{
+    return _Write(isOverlined ? "\x1b[53m" : "\x1b[55m");
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the italics of the following text.
 // Arguments:
 // - isItalic: If true, we'll italicize the text. Otherwise we'll remove the italics.
