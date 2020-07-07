@@ -326,7 +326,7 @@ namespace winrt::TerminalApp::implementation
         //   by the rest of the commands.
         if (addAll)
         {
-            // If TabSwitcherMode, just all add as is.
+            // If TabSwitcherMode, just add all as is.
             if (_tabSwitcherMode)
             {
                 for (auto action : _allActions)
@@ -564,9 +564,8 @@ namespace winrt::TerminalApp::implementation
 
         auto command = winrt::make_self<implementation::Command>();
         command->Action(*focusTabAction);
-        command->KeyChordText(L"index : " + to_hstring(idx));
+        command->KeyChordText(L"Index : " + to_hstring(idx));
         command->Name(tab.Title());
-        command->SetIconPath(tab.IconPath());
 
         // Listen for changes to this particular Tab's title so we can update the corresponding Command name.
         auto weakThis{ get_weak() };
@@ -579,10 +578,6 @@ namespace winrt::TerminalApp::implementation
                 if (args.PropertyName() == L"Title")
                 {
                     command->Name(tab.Title());
-                }
-                if (args.PropertyName() == L"IconPath")
-                {
-                    command->SetIconPath(tab.IconPath());
                 }
             }
         });

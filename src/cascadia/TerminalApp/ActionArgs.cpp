@@ -261,8 +261,26 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
     {
-        // TODO: MAKE SURE THIS WORKS
-        return RS_(L"ResetTabNameCommandKey");
+        std::wstringstream ss;
+        ss << std::wstring_view(RS_(L"ToggleTabSwitcherCommandKey"));
+        if (_Key != Windows::System::VirtualKey::None)
+        {
+            ss << " Anchor: ";
+            switch (_Key)
+            {
+            case Windows::System::VirtualKey::Shift:
+                ss << "Shift";
+                break;
+            case Windows::System::VirtualKey::Menu:
+                ss << "Alt";
+                break;
+            case Windows::System::VirtualKey::Control:
+                ss << "Ctrl";
+                break;
+            }
+        }
+        
+        return winrt::hstring{ ss.str() };
     }
 
 }
