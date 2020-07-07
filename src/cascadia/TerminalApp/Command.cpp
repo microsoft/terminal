@@ -21,7 +21,7 @@ static constexpr std::string_view IterateOnKey{ "iterateOn" };
 
 static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 
-static constexpr std::wstring_view ProfileName{ L"{$profile.name}" };
+static constexpr std::wstring_view ProfileName{ L"${profile.name}" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -112,7 +112,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto result = winrt::make_self<Command>();
 
-        bool parseActionLater = false;
+        // bool parseActionLater = false;
 
         if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
         {
@@ -120,47 +120,47 @@ namespace winrt::TerminalApp::implementation
             if (s == IterateOnProfilesValue)
             {
                 result->_IterateOn = ExpandCommandType::Profiles;
-                parseActionLater = true;
+                // parseActionLater = true;
             }
         }
 
-        if (!parseActionLater)
+        // if (!parseActionLater)
+        // {
+        // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
+        // the binding quite right. Additionally, do we want it to be an image,
+        // or a FontIcon? I've had difficulty binding either/or.
+
+        if (const auto actionJson{ json[JsonKey(ActionKey)] })
         {
-            // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
-            // the binding quite right. Additionally, do we want it to be an image,
-            // or a FontIcon? I've had difficulty binding either/or.
+            auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
 
-            if (const auto actionJson{ json[JsonKey(ActionKey)] })
+            if (actionAndArgs)
             {
-                auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
-
-                if (actionAndArgs)
-                {
-                    result->_setAction(*actionAndArgs);
-                }
-                else
-                {
-                    // Something like
-                    //      { name: "foo", action: "unbound" }
-                    // will _remove_ the "foo" command, by returning null here.
-                    return nullptr;
-                }
-
-                result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
+                result->_setAction(*actionAndArgs);
             }
             else
             {
-                // { name: "foo", action: null } will land in this case, which
-                // should also be used for unbinding.
+                // Something like
+                //      { name: "foo", action: "unbound" }
+                // will _remove_ the "foo" command, by returning null here.
                 return nullptr;
             }
+
+            result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
         }
         else
         {
-            // Just use the current string as the name for now.
-            result->_setName(_nameFromJson(json));
-            result->_originalJson = json;
+            // { name: "foo", action: null } will land in this case, which
+            // should also be used for unbinding.
+            return nullptr;
         }
+        // }
+        // else
+        // {
+        // // Just use the current string as the name for now.
+        // result->_setName(_nameFromJson(json));
+        result->_originalJson = json;
+        // }
 
         // TODO: an iterable command might not have a name set at all, and might
         // be relying on the command to be expanded, then have the name auto
