@@ -1907,6 +1907,9 @@ namespace winrt::TerminalApp::implementation
             _CreateNewTabFlyout();
         }
 
+        // Reload the current value of alwaysOnTop from the settings file. This
+        // will let the user hot-reload this setting, but any runtime changes to
+        // the alwaysOnTop setting will be lost.
         _isAlwayOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
@@ -1991,6 +1994,12 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabView();
     }
 
+    // Method Description:
+    // - Toggles always on top mode. Raises our AlwaysOnTopChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwayOnTop = !_isAlwayOnTop;
@@ -2185,6 +2194,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Returns true if we're currently in "Always on top" mode. When we're in
+    //   always on top mode, the window should be on top of all other windows.
+    //   If multiple windows are all "always on top", they'll maintain their own
+    //   z-order, with all the windows on top of all other non-topmost windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if we should be in "always on top" mode
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwayOnTop;

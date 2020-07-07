@@ -6,6 +6,7 @@
     "initialCols": 120,
     "initialRows": 30,
     "launchMode": "default",
+    "alwaysOnTop": false,
 
     // Selection
     "copyOnSelect": false,

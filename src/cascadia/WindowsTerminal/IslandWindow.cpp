@@ -464,6 +464,15 @@ void IslandWindow::ToggleFullscreen()
     _SetIsFullscreen(!_fullscreen);
 }
 
+// Method Description:
+// - Enter or exit the "always on top" state. Before the window is created, this
+//   value will later be used when we create the window to create the window on
+//   top of all others. After the window is created, it will either enter the
+//   group of topmost windows, or exit the group of topmost windows.
+// Arguments:
+// - alwaysOnTop: whether we should be entering or exiting always on top mode.
+// Return Value:
+// - <none>
 void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 {
     _alwaysOnTop = alwaysOnTop;
@@ -472,7 +481,7 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
     if (hwnd)
     {
         const til::rectangle windowPos{ GetWindowRect() };
-        SetWindowPos(GetHandle(),
+        SetWindowPos(hwnd,
                      _alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST,
                      windowPos.left<int>(),
                      windowPos.top<int>(),
