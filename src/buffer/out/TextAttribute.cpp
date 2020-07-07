@@ -21,6 +21,14 @@ void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noe
 }
 
 // Routine Description:
+// - Returns whether the color passed in is an analogue of the default background color
+//   represented as a 16-color palette index.
+// - Do not use this function.
+bool TextAttribute::IsColorVT16VersionOfLegacyDefaultBackground(const TextColor& color) noexcept {
+    return color.IsIndex16() && color.GetIndex() == s_legacyDefaultBackground;
+}
+
+// Routine Description:
 // - Returns a WORD with legacy-style attributes for this textattribute.
 // Parameters:
 // - None

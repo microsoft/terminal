@@ -60,6 +60,7 @@ public:
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
+    static bool IsColorVT16VersionOfLegacyDefaultBackground(const TextColor& textColor) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
