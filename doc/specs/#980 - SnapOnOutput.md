@@ -25,7 +25,7 @@ By default, the viewport will scroll to new output if the following conditions a
 - no selection is active
 - the viewport is at the "virtual bottom" (the bottom of the scroll history)
 
-This behavior will not be configurable. If the user wants the viewport to stop autoscrolling, the user will simply create a selection or scroll any distance above the virtual bottom. Conversely, if the user wants the viewport to autoscroll, the user must scroll to the bottom. Scrolling to the bottom is most easily achieved using the `snapOnInput` functionality.
+This behavior will not be configurable. If the user wants the viewport to stop autoscrolling, the user will simply create a selection or scroll any distance above the virtual bottom. Conversely, if the user wants the viewport to automatically scroll, the user must scroll to the bottom. Scrolling to the bottom is most easily achieved using the `snapOnInput` functionality.
 
 Alternative solutions were considered and are recorded below. These solutions may be revisited if users desire an additional level of configurability.
 
