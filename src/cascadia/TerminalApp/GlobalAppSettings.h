@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
+#include "Command.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -54,6 +55,8 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
+    const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
+
     // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.
     void DefaultProfile(const GUID defaultProfile) noexcept;
@@ -72,6 +75,8 @@ public:
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
     GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
+    GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
     GETSET_PROPERTY(LaunchPosition, InitialPosition);
     GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
@@ -79,7 +84,6 @@ public:
     GETSET_PROPERTY(bool, SoftwareRendering, false);
     GETSET_PROPERTY(bool, ForceVTInput, false);
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
-
     GETSET_PROPERTY(bool, StartOnUserLogin, false);
 
 private:
@@ -90,6 +94,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
+    std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
 

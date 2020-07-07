@@ -45,6 +45,15 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+
+        _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_inRename = true;
+                tab->_UpdateTabHeader();
+            }
+        });
+
         _UpdateTitle();
     }
 
@@ -378,6 +387,18 @@ namespace winrt::TerminalApp::implementation
         _activePane->Close();
     }
 
+    void Tab::SetTabText(winrt::hstring title)
+    {
+        _runtimeTabText = title;
+        _UpdateTitle();
+    }
+
+    void Tab::ResetTabText()
+    {
+        _runtimeTabText = L"";
+        _UpdateTitle();
+    }
+
     // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
@@ -499,7 +520,7 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_tabColorPickup.ShowAt(tab->_tabViewItem);
+                tab->ActivateColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
@@ -509,14 +530,14 @@ namespace winrt::TerminalApp::implementation
         _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_SetTabColor(newTabColor);
+                tab->SetTabColor(newTabColor);
             }
         });
 
         _tabColorPickup.ColorCleared([weakThis]() {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ResetTabColor();
+                tab->ResetTabColor();
             }
         });
 
@@ -697,7 +718,7 @@ namespace winrt::TerminalApp::implementation
     // - color: the shiny color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
+    void Tab::SetTabColor(const winrt::Windows::UI::Color& color)
     {
         auto weakThis{ get_weak() };
 
@@ -758,7 +779,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_ResetTabColor()
+    void Tab::ResetTabColor()
     {
         auto weakThis{ get_weak() };
 
@@ -794,6 +815,17 @@ namespace winrt::TerminalApp::implementation
             tab->_tabColor.reset();
             tab->_colorCleared();
         });
+    }
+
+    // Method Description:
+    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ActivateColorPicker()
+    {
+        _tabColorPickup.ShowAt(_tabViewItem);
     }
 
     // Method Description:

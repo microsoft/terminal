@@ -71,7 +71,7 @@ public:
     void SetGuid(GUID guid) noexcept { _guid = guid; }
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
-    std::optional<std::wstring>& GetSchemeName() noexcept;
+    const std::optional<std::wstring>& GetSchemeName() const noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;
     void SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;

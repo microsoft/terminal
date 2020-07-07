@@ -173,18 +173,14 @@ GdiEngine::~GdiEngine()
 // Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
-// - colorForeground - Foreground Color
-// - colorBackground - Background colo
-// - legacyColorAttribute - <unused>
-// - extendedAttrs - <unused>
+// - textAttributes - Text attributes to use for the brush color
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-[[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                      const COLORREF colorBackground,
-                                                      const WORD /*legacyColorAttribute*/,
-                                                      const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                      const gsl::not_null<IRenderData*> pData,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());
@@ -192,6 +188,9 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
+    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
+    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
+
     if (colorForeground != _lastFg)
     {
         RETURN_HR_IF(E_FAIL, CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));

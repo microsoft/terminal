@@ -44,6 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -888,6 +889,11 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
+}
+
+void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+{
+    _pfnCopyToClipboard.swap(pfn);
 }
 
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept

@@ -5,18 +5,33 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+BYTE TextAttribute::s_legacyDefaultForeground = 7;
+BYTE TextAttribute::s_legacyDefaultBackground = 0;
+
 // Routine Description:
-// - Returns a WORD with legacy-style attributes for this textattribute.
+// - Sets the legacy attributes which map to and from the default colors.
 // Parameters:
 // - defaultAttributes: the attribute values to be used for default colors.
 // Return value:
-// - a WORD with legacy-style attributes for this textattribute.
-WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noexcept
+// - None
+void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
-    const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
+    s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
+    s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+}
+
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - None
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes() const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = _foreground.IsIndex16() && IsBold();
+    const bool brighten = IsBold() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 
@@ -73,6 +88,26 @@ COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> color
                                           COLORREF defaultColor) const noexcept
 {
     return _background.GetColor(colorTable, defaultColor, false);
+}
+
+TextColor TextAttribute::GetForeground() const noexcept
+{
+    return _foreground;
+}
+
+TextColor TextAttribute::GetBackground() const noexcept
+{
+    return _background;
+}
+
+void TextAttribute::SetForeground(const TextColor foreground) noexcept
+{
+    _foreground = foreground;
+}
+
+void TextAttribute::SetBackground(const TextColor background) noexcept
+{
+    _background = background;
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
@@ -188,6 +223,11 @@ bool TextAttribute::IsUnderlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
 }
 
+bool TextAttribute::IsOverlined() const noexcept
+{
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+}
+
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -222,6 +262,11 @@ void TextAttribute::SetUnderline(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+}
+
+void TextAttribute::SetOverline(bool isOverlined) noexcept
+{
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept

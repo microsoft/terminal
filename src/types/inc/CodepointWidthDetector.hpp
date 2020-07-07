@@ -46,6 +46,6 @@ private:
     bool _checkFallbackViaCache(const std::wstring_view glyph) const;
     static unsigned int _extractCodepoint(const std::wstring_view glyph) noexcept;
 
-    mutable std::map<std::wstring, bool> _fallbackCache;
+    mutable std::unordered_map<std::wstring, bool> _fallbackCache;
     std::function<bool(std::wstring_view)> _pfnFallbackMethod;
 };
