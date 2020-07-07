@@ -1121,6 +1121,11 @@ namespace winrt::TerminalApp::implementation
         return RS_(L"ApplicationVersionUnknown");
     }
 
+    bool AppLogic::AlwaysOnTop() const
+    {
+        return _root ? _root->AlwaysOnTop() : false;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

@@ -52,6 +52,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
     _window->MakeWindow();
 }
 
@@ -158,6 +159,7 @@ void AppHost::Initialize()
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
     _logic.ToggleBorderless({ this, &AppHost::_ToggleBorderless });
+    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
 
     _logic.Create();
 
@@ -363,6 +365,12 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::TerminalApp::ToggleFullscreenEventArgs&)
 {
     _window->ToggleFullscreen();
+}
+
+void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
+                                  const winrt::TerminalApp::AlwaysOnTopChangedEventArgs&)
+{
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
 // Method Description:

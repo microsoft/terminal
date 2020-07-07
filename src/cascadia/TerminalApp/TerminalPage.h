@@ -51,6 +51,8 @@ namespace winrt::TerminalApp::implementation
 
         void ToggleBorderless();
         void ToggleFullscreen();
+        void ToggleAlwaysOnTop();
+        bool AlwaysOnTop() const;
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
 
@@ -63,6 +65,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleBorderless, _toggleBorderlessHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleBorderlessEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::AlwaysOnTopChangedEventArgs);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -87,6 +90,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _isBorderless{ false };
         bool _isFullscreen{ false };
+        bool _isAlwayOnTop{ false };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
@@ -211,6 +215,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleRetroEffect(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleBorderless(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

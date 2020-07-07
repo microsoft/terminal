@@ -34,6 +34,7 @@ public:
 
     void ToggleBorderless();
     void ToggleFullscreen();
+    void SetAlwaysOnTop(const bool alwaysOnTop);
 
 #pragma endregion
 
@@ -63,6 +64,7 @@ protected:
 
     bool _borderless{ false };
     bool _fullscreen{ false };
+    bool _alwaysOnTop{ false };
     RECT _fullscreenWindowSize;
     RECT _nonFullscreenWindowSize;
 

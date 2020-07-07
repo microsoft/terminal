@@ -51,17 +51,18 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-                              L"Windows Terminal",
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              nullptr,
-                              nullptr,
-                              wc.hInstance,
-                              this));
+    WINRT_VERIFY(CreateWindowEx(_alwaysOnTop ? WS_EX_TOPMOST : 0,
+                                wc.lpszClassName,
+                                L"Windows Terminal",
+                                WS_OVERLAPPEDWINDOW,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                nullptr,
+                                nullptr,
+                                wc.hInstance,
+                                this));
 
     WINRT_ASSERT(_window);
 }
@@ -461,6 +462,24 @@ void IslandWindow::ToggleBorderless()
 void IslandWindow::ToggleFullscreen()
 {
     _SetIsFullscreen(!_fullscreen);
+}
+
+void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
+{
+    _alwaysOnTop = alwaysOnTop;
+
+    const auto hwnd = GetHandle();
+    if (hwnd)
+    {
+        const til::rectangle windowPos{ GetWindowRect() };
+        SetWindowPos(GetHandle(),
+                     _alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST,
+                     windowPos.left<int>(),
+                     windowPos.top<int>(),
+                     windowPos.width<int>(),
+                     windowPos.height<int>(),
+                     SWP_NOMOVE | SWP_NOSIZE);
+    }
 }
 
 // From GdiEngine::s_SetWindowLongWHelper

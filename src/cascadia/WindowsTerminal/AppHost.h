@@ -37,5 +37,7 @@ private:
                            const winrt::TerminalApp::ToggleBorderlessEventArgs& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
+    void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                             const winrt::TerminalApp::AlwaysOnTopChangedEventArgs& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
 };

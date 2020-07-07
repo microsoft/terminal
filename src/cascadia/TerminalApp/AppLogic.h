@@ -33,6 +33,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring ApplicationDisplayName() const;
         winrt::hstring ApplicationVersion() const;
+        bool AlwaysOnTop() const;
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
@@ -106,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
         FORWARDED_TYPED_EVENT(ToggleBorderless, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleBorderlessEventArgs, _root, ToggleBorderless);
         FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
+        FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::AlwaysOnTopChangedEventArgs, _root, AlwaysOnTopChanged);
     };
 }
 

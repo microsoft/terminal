@@ -843,7 +843,8 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
     SetWindowPos(GetHandle(),
-                 HWND_TOP,
+                 // _borderless ? HWND_TOPMOST : HWND_NOTOPMOST,
+                 0,
                  windowPos.left<int>(),
                  windowPos.top<int>(),
                  windowPos.width<int>(),

@@ -4,8 +4,9 @@
 namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
-    delegate void ToggleFullscreenEventArgs();
     delegate void ToggleBorderlessEventArgs();
+    delegate void ToggleFullscreenEventArgs();
+    delegate void AlwaysOnTopChangedEventArgs();
 
     interface IDialogPresenter
     {
@@ -20,6 +21,8 @@ namespace TerminalApp
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };
 
+        Boolean AlwaysOnTop { get; };
+
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
@@ -28,8 +31,9 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<Object, ToggleBorderlessEventArgs> ToggleBorderless;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<Object, AlwaysOnTopChangedEventArgs> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
     }
 }
