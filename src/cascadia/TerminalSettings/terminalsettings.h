@@ -43,8 +43,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void RowsToScroll(int32_t value) noexcept;
         bool SnapOnInput() noexcept;
         void SnapOnInput(bool value) noexcept;
-        int32_t SnapOnOutput() noexcept;
-        void SnapOnOutput(int32_t value) noexcept;
         uint32_t CursorColor() noexcept;
         void CursorColor(uint32_t value) noexcept;
         CursorStyle CursorShape() const noexcept;
@@ -125,7 +123,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         int32_t _initialCols;
         int32_t _rowsToScroll;
         bool _snapOnInput;
-        int32_t _snapOnOutput;
         uint32_t _cursorColor;
         Settings::CursorStyle _cursorShape;
         uint32_t _cursorHeight;

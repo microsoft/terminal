@@ -12,14 +12,6 @@ namespace Microsoft.Terminal.Settings
         EmptyBox
     };
 
-    enum SnapOnOutputFlag
-    {
-        Never = -1,
-        NoSelection = 0x1,
-        AtBottom = 0x2,
-        Always = 0x4
-    };
-
     interface ICoreSettings
     {
         UInt32 DefaultForeground;
@@ -33,7 +25,6 @@ namespace Microsoft.Terminal.Settings
         Int32 RowsToScroll;
 
         Boolean SnapOnInput;
-        Int32 SnapOnOutput;
 
         UInt32 CursorColor;
         CursorStyle CursorShape;

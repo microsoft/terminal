@@ -44,7 +44,6 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _snapOnOutput{ static_cast<int>(SnapOnOutputFlag::NoSelection) | static_cast<int>(SnapOnOutputFlag::AtBottom) },
     _blockSelection{ false },
     _selection{ std::nullopt }
 {
@@ -141,8 +140,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _snapOnInput = settings.SnapOnInput();
-
-    _snapOnOutput = settings.SnapOnOutput();
 
     _wordDelimiters = settings.WordDelimiters();
 
@@ -776,7 +773,6 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     }
 
     // detect if viewport was already at the bottom of the scroll history
-    // This is used for SnapOnOutput::AtBottom
     bool viewportAtBottom = false;
     if (cursor.GetPosition().Y <= _mutableViewport.BottomInclusive() - _scrollOffset)
     {
@@ -803,33 +799,11 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
-        // scrollToOutput:
-        //   - true: we want the visible viewport to show the new output
-        //   - false: keep the visible viewport in its current position
-        bool scrollToOutput = true;
+        // scroll if...
+        //   - no selection is active
+        //   - viewport is already at the bottom
+        const bool scrollToOutput = !IsSelectionActive() && viewportAtBottom;
 
-        // modify scrollOffset based on SnapOnOutput value
-        if (_snapOnOutput == static_cast<int>(SnapOnOutputFlag::Always))
-        {
-            scrollToOutput = true;
-        }
-        else if (_snapOnOutput == static_cast<int>(SnapOnOutputFlag::Never))
-        {
-            scrollToOutput = false;
-        }
-
-        // IMPORTANT: we need to use && below. This allows multiple of these flags to be set
-        if (WI_IsFlagSet(_snapOnOutput, static_cast<int>(SnapOnOutputFlag::NoSelection)))
-        {
-            // scroll if no selection is active
-            scrollToOutput = scrollToOutput && !IsSelectionActive();
-        }
-        if (WI_IsFlagSet(_snapOnOutput, static_cast<int>(SnapOnOutputFlag::AtBottom)))
-        {
-            scrollToOutput = scrollToOutput && viewportAtBottom;
-        }
-
-        // use scrollToOutput to enforce SnapOnInput
         _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
         // We have to report the delta here because we might have circled the text buffer.

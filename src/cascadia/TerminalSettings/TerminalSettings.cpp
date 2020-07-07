@@ -148,16 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _snapOnInput = value;
     }
 
-    int32_t TerminalSettings::SnapOnOutput() noexcept
-    {
-        return _snapOnOutput;
-    }
-
-    void TerminalSettings::SnapOnOutput(int32_t value) noexcept
-    {
-        _snapOnOutput = value;
-    }
-
     uint32_t TerminalSettings::CursorColor() noexcept
     {
         return _cursorColor;

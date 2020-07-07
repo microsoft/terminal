@@ -210,7 +210,6 @@ private:
     COLORREF _defaultBg;
 
     bool _snapOnInput;
-    int _snapOnOutput;
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection

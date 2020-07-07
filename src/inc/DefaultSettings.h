@@ -42,5 +42,4 @@ constexpr COLORREF DEFAULT_CURSOR_COLOR = COLOR_WHITE;
 constexpr COLORREF DEFAULT_CURSOR_HEIGHT = 25;
 
 const std::wstring DEFAULT_WORD_DELIMITERS{ L" ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?\u2502" };
-constexpr int32_t DEFAULT_SNAP_ON_OUTPUT = 0x1 | 0x2;
 #pragma warning(pop)
