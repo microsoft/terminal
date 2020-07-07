@@ -799,13 +799,6 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
     }
 
-    // detect if viewport was already at the bottom of the scroll history
-    bool viewportAtBottom = false;
-    if (cursor.GetPosition().Y <= _mutableViewport.BottomInclusive() - _scrollOffset)
-    {
-        viewportAtBottom = true;
-    }
-
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
@@ -828,7 +821,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // scroll if...
         //   - no selection is active
         //   - viewport is already at the bottom
-        const bool scrollToOutput = !IsSelectionActive() && viewportAtBottom;
+        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
 
         _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
