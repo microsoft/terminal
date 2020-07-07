@@ -503,8 +503,6 @@ LONG IslandWindow::_getCurrentWindowStyle() const
         // Do the reverse when restoring from fullscreen.
         // Doing these modifications to that window will cause a vista-style
         // window frame to briefly appear when entering and exiting fullscreen.
-        WI_ClearFlag(windowStyle, WS_BORDER);
-        WI_ClearFlag(windowStyle, WS_SIZEBOX);
         WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
 
         WI_SetFlag(windowStyle, WS_POPUP);
@@ -513,24 +511,18 @@ LONG IslandWindow::_getCurrentWindowStyle() const
     else if (_borderless && !_fullscreen)
     {
         // When moving to borderless, remove WS_OVERLAPPEDWINDOW, which
-        // specifies styles for non-fullscreen windows (e.g. caption bar), and
-        // add the WS_BORDER and WS_SIZEBOX styles. This allows us to still have
-        // a small resizing frame, but without a full titlebar, nor caption
-        // buttons.
+        // specifies styles for non-fullscreen windows (e.g. caption bar). We'll
+        // have no frame, no caption buttons, no shadow, nothing.
 
         WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
         WI_ClearFlag(windowStyle, WS_POPUP);
 
-        WI_SetFlag(windowStyle, WS_BORDER);
-        WI_SetFlag(windowStyle, WS_SIZEBOX);
         return windowStyle;
     }
 
     // Here, we're not in either fullscreen or borderless mode. Return to
     // WS_OVERLAPPEDWINDOW.
     WI_ClearFlag(windowStyle, WS_POPUP);
-    WI_ClearFlag(windowStyle, WS_BORDER);
-    WI_ClearFlag(windowStyle, WS_SIZEBOX);
 
     WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
 
