@@ -191,33 +191,9 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept
 {
     const auto fg = textAttributes.GetForeground();
-    auto bg = textAttributes.GetBackground();
+    const auto bg = textAttributes.GetBackground();
     auto lastFg = _lastTextAttributes.GetForeground();
     auto lastBg = _lastTextAttributes.GetBackground();
-
-    // GH#6807
-    // Replace a background color that explicitly matches the console host's
-    // active background with the "default" background.
-    //
-    // There is going to be a very long tail of applications that will
-    // explicitly request VT SGR 40 when what they really want is to
-    // SetConsoleTextAttribute() with a black background. Instead of making
-    // those applications look bad (and therefore making us look bad, because
-    // we're releasing this as an update to something that "looks good"
-    // already), we're introducing this compatibility hack. Before the color
-    // reckoning in GH#6698 + GH#6506, *every* color was subject to being
-    // spontaneously and erroneously turned into the default color. Now, only
-    // the 16-color palette value that matches the active console background
-    // color will be destroyed.
-    // This is not intended to be a long-term solution. This comment will be
-    // discovered in forty years(*) time and people will laugh at our hubris.
-    //
-    // *it doesn't matter when you're reading this, it will always be 40 years
-    // from now.
-    if (TextAttribute::IsColorVT16VersionOfLegacyDefaultBackground(bg))
-    {
-        bg = {};
-    }
 
     // If both the FG and BG should be the defaults, emit a SGR reset.
     if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
@@ -285,15 +261,9 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept
 {
     const auto fg = textAttributes.GetForeground();
-    auto bg = textAttributes.GetBackground();
+    const auto bg = textAttributes.GetBackground();
     auto lastFg = _lastTextAttributes.GetForeground();
     auto lastBg = _lastTextAttributes.GetBackground();
-
-    // As above in _RgbUpdateDrawingBrushes; see GH#6807 for details.
-    if (TextAttribute::IsColorVT16VersionOfLegacyDefaultBackground(bg))
-    {
-        bg = {};
-    }
 
     // If either FG or BG have changed to default, emit a SGR reset.
     // We can't reset FG and BG to default individually.
