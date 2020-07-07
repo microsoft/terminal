@@ -94,6 +94,9 @@
     <ClInclude Include="../Command.h">
       <DependentUpon>../Command.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../CommandKeyChordVisibilityConverter.h">
+      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Tab.h">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClInclude>
@@ -160,6 +163,9 @@
     </ClCompile>
     <ClCompile Include="../Command.cpp">
       <DependentUpon>../Command.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../CommandKeyChordVisibilityConverter.cpp">
+      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <DependentUpon>../Tab.idl</DependentUpon>
@@ -249,6 +255,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../Command.idl" />
+    <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="../Tab.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
