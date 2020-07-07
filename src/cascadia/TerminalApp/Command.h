@@ -1,5 +1,4 @@
-
-﻿ /*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -24,7 +23,7 @@ Author(s):
 #include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
 
-    namespace winrt::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     enum class ExpandCommandType : uint32_t
     {

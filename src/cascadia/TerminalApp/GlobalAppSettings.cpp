@@ -390,7 +390,7 @@ const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalApp
     return _commands;
 }
 
-std::map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
+std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
 {
     return _commands;
 }
