@@ -11,6 +11,7 @@
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
@@ -232,7 +233,7 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        _root->ShowDialog({ this, &AppLogic::_ShowDialog });
+        _root->DialogPresenter(*this);
 
         // In UWP mode, we cannot handle taking over the title bar for tabs,
         // so this setting is overridden to false no matter what the preference is.
@@ -278,9 +279,10 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // sender: unused
-    // dialog: the dialog object that is going to show up
-    fire_and_forget AppLogic::_ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
+    // - dialog: the dialog object that is going to show up
+    // Return value:
+    // - an IAsyncOperation with the dialog result
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> AppLogic::ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -288,7 +290,7 @@ namespace winrt::TerminalApp::implementation
         if (!lock)
         {
             // Another dialog is visible.
-            return;
+            co_return ContentDialogResult::None;
         }
 
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
@@ -322,7 +324,7 @@ namespace winrt::TerminalApp::implementation
         auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
-        co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        co_return co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
@@ -334,7 +336,7 @@ namespace winrt::TerminalApp::implementation
     //   as the title and first content of the dialog, then also displays a
     //   message for whatever exception was found while validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
+    //   when this is called, nothing happens. See ShowDialog for details
     // Arguments:
     // - titleKey: The key to use to lookup the title text from our resources.
     // - contentKey: The key to use to lookup the content text from our resources.
@@ -379,7 +381,7 @@ namespace winrt::TerminalApp::implementation
         dialog.CloseButtonText(buttonText);
         dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
-        _ShowDialog(nullptr, dialog);
+        ShowDialog(dialog);
     }
 
     // Method Description:
@@ -387,7 +389,7 @@ namespace winrt::TerminalApp::implementation
     //   settings. Displays messages for whatever warnings were found while
     //   validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
+    //   when this is called, nothing happens. See ShowDialog for details
     void AppLogic::_ShowLoadWarningsDialog()
     {
         auto title = RS_(L"SettingsValidateErrorTitle");
@@ -438,7 +440,7 @@ namespace winrt::TerminalApp::implementation
         dialog.CloseButtonText(buttonText);
         dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
-        _ShowDialog(nullptr, dialog);
+        ShowDialog(dialog);
     }
 
     // Method Description:
@@ -907,20 +909,21 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Implements the F7 handler (per GH#638)
+    // - Implements the Alt handler (per GH#6421)
     // Return value:
-    // - whether F7 was handled
-    bool AppLogic::OnF7Pressed()
+    // - whether the key was handled
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
         if (_root)
         {
-            // Manually bubble the OnF7Pressed event up through the focus tree.
+            // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
+                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (f7Listener.OnF7Pressed())
+                    if (keyListener.OnDirectKeyEvent(vkey, down))
                     {
                         return true;
                     }

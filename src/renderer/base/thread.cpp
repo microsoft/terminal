@@ -201,6 +201,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
         ResetEvent(_hPaintCompletedEvent);
 
+        _pRenderer->WaitUntilCanRender();
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
         SetEvent(_hPaintCompletedEvent);

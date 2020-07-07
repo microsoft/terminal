@@ -37,6 +37,9 @@ namespace Microsoft.Terminal.Wpf
             /// </summary>
             WM_MOUSEACTIVATE = 0x0021,
 
+            /// <summary>
+            /// The WM_GETOBJECT message is sent by Active Accessibility when a client calls AccessibleObjectFromWindow or any of the other AccessibleObjectFromX APIs that retrieve an interface to an object.
+            /// </summary>
             WM_GETOBJECT = 0x003D,
 
             /// <summary>

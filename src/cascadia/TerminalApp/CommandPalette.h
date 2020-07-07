@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "CommandPalette.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -16,10 +14,8 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
         void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
-        void ToggleVisibility();
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(Closed, _closeHandlers, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
@@ -33,10 +29,15 @@ namespace winrt::TerminalApp::implementation
         void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
                              Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
+        void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _backdropPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+
+        void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
+
         void _selectNextItem(const bool moveDown);
 
         void _updateFilteredActions();
-        static bool _filterMatchesName(const winrt::hstring& searchText, const winrt::hstring& name);
+
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
     };
@@ -44,7 +45,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct CommandPalette : CommandPaletteT<CommandPalette, implementation::CommandPalette>
-    {
-    };
+    BASIC_FACTORY(CommandPalette);
 }

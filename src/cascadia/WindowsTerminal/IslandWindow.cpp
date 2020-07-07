@@ -284,16 +284,6 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     {
         if (_interopWindowHandle != nullptr)
         {
-            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
-            /*
-                // set the text area to have focus for accessibility consumers
-                if (_pUiaProvider)
-                {
-                    LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
-                }
-                break;
-            */
-
             // send focus to the child window
             SetFocus(_interopWindowHandle);
             return 0; // eat the message
@@ -371,31 +361,6 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);
-}
-
-// Routine Description:
-// - Creates/retrieves a handle to the UI Automation provider COM interfaces
-// Arguments:
-// - <none>
-// Return Value:
-// - Pointer to UI Automation provider class/interfaces.
-IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
-{
-    if (nullptr == _pUiaProvider)
-    {
-        try
-        {
-            // TODO GitHub #3195: Remove WindowUiaProvider in WindowsTerminal
-            //Microsoft::WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            _pUiaProvider = nullptr;
-        }
-    }
-
-    return _pUiaProvider;
 }
 
 // Method Description:
@@ -528,7 +493,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     const auto oldIsInFullscreen = _fullscreen;
     _fullscreen = fullscreenEnabled;
 
-    HWND const hWnd = GetWindowHandle();
+    HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
     auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
@@ -583,7 +548,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
         }
 
         // get and back up the current monitor's size
-        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST);
+        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
         MONITORINFO currMonitorInfo;
         currMonitorInfo.cbSize = sizeof(currMonitorInfo);
         if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
@@ -603,7 +568,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 void IslandWindow::_ApplyWindowSize()
 {
     const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
-    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetWindowHandle(),
+    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetHandle(),
                                          HWND_TOP,
                                          newSize.left,
                                          newSize.top,

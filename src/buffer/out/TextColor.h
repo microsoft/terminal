@@ -77,6 +77,7 @@ public:
     friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
 
+    bool CanBeBrightened() const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
@@ -98,6 +99,8 @@ public:
         return _index;
     }
 
+    COLORREF GetRGB() const noexcept;
+
 private:
     ColorType _meta : 2;
     union
@@ -106,8 +109,6 @@ private:
     };
     BYTE _green;
     BYTE _blue;
-
-    COLORREF _GetRGB() const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -149,7 +150,7 @@ namespace WEX
                 }
                 else if (color.IsRgb())
                 {
-                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color._GetRGB());
+                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color.GetRGB());
                 }
                 else
                 {

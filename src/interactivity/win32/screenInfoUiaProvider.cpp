@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\types\WindowUiaProviderBase.hpp"
+#include "windowUiaProvider.hpp"
 #include "screenInfoUiaProvider.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -13,7 +13,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::WRL;
 
 HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                                      _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent)
+                                                      _In_ WindowUiaProvider* const pUiaParent)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pUiaParent);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);

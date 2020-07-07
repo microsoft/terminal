@@ -10,6 +10,7 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="BaseTests.cpp" />
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
     <ClCompile Include="PointTests.cpp" />

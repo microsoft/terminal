@@ -55,8 +55,8 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
-    const std::map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
-    std::map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
+    const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
+    std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
 
     // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.
@@ -76,6 +76,8 @@ public:
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
     GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
+    GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
     GETSET_PROPERTY(LaunchPosition, InitialPosition);
     GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
@@ -93,7 +95,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
-    std::map<winrt::hstring, winrt::TerminalApp::Command> _commands;
+    std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
 

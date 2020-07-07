@@ -2,15 +2,7 @@
 #include "ActionArgs.h"
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
-
-// We define everything necessary for the ActionAndArgs class in the header, but
-// we still need this file to compile the ActionAndArgs.g.cpp file, and we can't
-// just include that file in the header.
-
-static constexpr std::string_view ActionKey{ "action" };
-
-// This key is reserved to remove a keybinding, instead of mapping it to an action.
-static constexpr std::string_view UnboundKey{ "unbound" };
+#include <LibraryResources.h>
 
 static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view PasteTextKey{ "paste" };
@@ -36,8 +28,17 @@ static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
+static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-static constexpr std::string_view ToggleCommandPaletteKey{ "toggleCommandPalette" };
+static constexpr std::string_view SetTabColorKey{ "setTabColor" };
+static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
+static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+
+static constexpr std::string_view ActionKey{ "action" };
+
+// This key is reserved to remove a keybinding, instead of mapping it to an action.
+static constexpr std::string_view UnboundKey{ "unbound" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -49,7 +50,7 @@ namespace winrt::TerminalApp::implementation
     // the actual strings being pointed to. However, since both these strings and
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
-    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionNamesMap{
+    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
         { CopyTextKey, ShortcutAction::CopyText },
         { PasteTextKey, ShortcutAction::PasteText },
         { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
@@ -71,10 +72,14 @@ namespace winrt::TerminalApp::implementation
         { ResizePaneKey, ShortcutAction::ResizePane },
         { MoveFocusKey, ShortcutAction::MoveFocus },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
+        { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { SetTabColorKey, ShortcutAction::SetTabColor },
+        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
         { FindKey, ShortcutAction::Find },
+        { RenameTabKey, ShortcutAction::RenameTab },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
     };
 
@@ -101,6 +106,12 @@ namespace winrt::TerminalApp::implementation
 
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
+        { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
+
+        { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
+
         { ShortcutAction::Invalid, nullptr },
     };
 
@@ -115,8 +126,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = ActionAndArgs::ActionNamesMap.find(actionString);
-        return found != ActionAndArgs::ActionNamesMap.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
+        return found != ActionAndArgs::ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     // Method Description:
@@ -211,6 +222,57 @@ namespace winrt::TerminalApp::implementation
         {
             return nullptr;
         }
+    }
+
+    winrt::hstring ActionAndArgs::GenerateName() const
+    {
+        // Use a magic static to initialize this map, because we won't be able
+        // to load the resources at _init_, only at runtime.
+        static const auto GeneratedActionNames = []() {
+            return std::unordered_map<ShortcutAction, winrt::hstring>{
+                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
+                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
+                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
+                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
+                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
+                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
+                { ShortcutAction::CloseTab, RS_(L"CloseTabCommandKey") },
+                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
+                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
+                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
+                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
+                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
+                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
+                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::Invalid, L"" },
+                { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
+                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
+                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+            };
+        }();
+
+        if (_Args)
+        {
+            auto nameFromArgs = _Args.GenerateName();
+            if (!nameFromArgs.empty())
+            {
+                return nameFromArgs;
+            }
+        }
+
+        const auto found = GeneratedActionNames.find(_Action);
+        return found != GeneratedActionNames.end() ? found->second : L"";
     }
 
 }

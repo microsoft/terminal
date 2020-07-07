@@ -5,6 +5,7 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
+#include "base64.hpp"
 
 #include "ascii.hpp"
 
@@ -463,7 +464,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     size_t clearType = 0;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
-    std::vector<DispatchTypes::GraphicsOptions> graphicsOptions;
+    // We hold the vector in the class because client applications that do a lot of color work
+    // would spend a lot of time reallocating/resizing the vector.
+    _graphicsOptions.clear();
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
@@ -502,7 +505,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _GetEraseOperation(parameters, eraseType);
             break;
         case VTActionCodes::SGR_SetGraphicsRendition:
-            success = _GetGraphicsOptions(parameters, graphicsOptions);
+            success = _GetGraphicsOptions(parameters, _graphicsOptions);
             break;
         case VTActionCodes::DSR_DeviceStatusReport:
             success = _GetDeviceStatusOperation(parameters, deviceStatusType);
@@ -613,7 +616,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
                 break;
             case VTActionCodes::SGR_SetGraphicsRendition:
-                success = _dispatch->SetGraphicsRendition({ graphicsOptions.data(), graphicsOptions.size() });
+                success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
                 break;
             case VTActionCodes::DSR_DeviceStatusReport:
@@ -879,6 +882,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 {
     bool success = false;
     std::wstring title;
+    std::wstring setClipboardContent;
+    bool queryClipboard = false;
     size_t tableIndex = 0;
     DWORD color = 0;
 
@@ -896,6 +901,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
         success = _GetOscSetColor(string, color);
+        break;
+    case OscActionCodes::SetClipboard:
+        success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         break;
     case OscActionCodes::ResetCursorColor:
         // the console uses 0xffffffff as an "invalid color" value
@@ -932,6 +940,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            break;
+        case OscActionCodes::SetClipboard:
+            if (!queryClipboard)
+            {
+                success = _dispatch->SetClipboard(setClipboardContent);
+            }
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
             break;
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
@@ -1855,6 +1870,37 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
     }
 
     return success;
+}
+
+// Routine Description:
+// - Parse OscSetClipboard parameters with the format `Pc;Pd`. Currently the first parameter `Pc` is
+// ignored. The second parameter `Pd` should be a valid base64 string or character `?`.
+// Arguments:
+// - string - Osc String input.
+// - content - Content to set to clipboard.
+// - queryClipboard - Whether to get clipboard content and return it to terminal with base64 encoded.
+// Return Value:
+// - True if there was a valid base64 string or the passed parameter was `?`.
+bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view string,
+                                                   std::wstring& content,
+                                                   bool& queryClipboard) const noexcept
+{
+    const size_t pos = string.find(';');
+    if (pos != std::wstring_view::npos)
+    {
+        const std::wstring_view substr = string.substr(pos + 1);
+        if (substr == L"?")
+        {
+            queryClipboard = true;
+            return true;
+        }
+        else
+        {
+            return Base64::s_Decode(substr, content);
+        }
+    }
+
+    return false;
 }
 
 // Method Description:

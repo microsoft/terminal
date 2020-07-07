@@ -5,9 +5,11 @@
 #include "CommandPalette.h"
 
 #include "CommandPalette.g.cpp"
+#include <winrt/Microsoft.Terminal.Settings.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
@@ -27,36 +29,29 @@ namespace winrt::TerminalApp::implementation
             // will actually show it. This needs to be done at runtime, and only
             // if the shadow actually exists. ThemeShadow isn't supported below
             // version 18362.
-            CommandPaletteShadow().Receivers().Append(ShadowBackdrop());
+            CommandPaletteShadow().Receivers().Append(_shadowBackdrop());
             // "raise" the command palette up by 16 units, so it will cast a shadow.
-            Backdrop().Translation({ 0, 0, 16 });
+            _backdrop().Translation({ 0, 0, 16 });
         }
+
+        // Whatever is hosting us will enable us by setting our visibility to
+        // "Visible". When that happens, set focus to our search box.
+        RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (Visibility() == Visibility::Visible)
+            {
+                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().SelectedIndex(0);
+            }
+            else
+            {
+                // Raise an event to return control to the Terminal.
+                _close();
+            }
+        });
     }
 
     // Method Description:
-    // - Toggles the visibility of the command palette. This will auto-focus the
-    //   input box within the palette.
-    // - TODO GH#TODO: When we add support for commandline mode, accept a parameter here
-    //   for which mode we should enter in.
-    void CommandPalette::ToggleVisibility()
-    {
-        const bool isVisible = Visibility() == Visibility::Visible;
-        if (!isVisible)
-        {
-            // Become visible
-            Visibility(Visibility::Visible);
-            _SearchBox().Focus(FocusState::Programmatic);
-            _FilteredActionsView().SelectedIndex(0);
-        }
-        else
-        {
-            // Raise an event to return control to the Terminal.
-            _close();
-        }
-    }
-
-    // Method Description:
-    // - Moves the focus up or down the list of commands. If we're att the top,
+    // - Moves the focus up or down the list of commands. If we're at the top,
     //   we'll loop around to the bottom, and vice-versa.
     // Arguments:
     // - moveDown: if true, we're attempting to move to the next item in the
@@ -65,14 +60,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_selectNextItem(const bool moveDown)
     {
-        const auto selected = _FilteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_FilteredActionsView().Items().Size());
+        const auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
         const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
-        _FilteredActionsView().SelectedIndex(newIndex);
-        _FilteredActionsView().ScrollIntoView(_FilteredActionsView().SelectedItem());
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
     // Method Description:
@@ -104,7 +99,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Dispatch the action of the selected command.
 
-            if (const auto selectedItem = _FilteredActionsView().SelectedItem())
+            if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
                 if (const auto data = selectedItem.try_as<Command>())
                 {
@@ -118,7 +113,63 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action Mode: Dismiss the palette.
+            // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
+            if (_searchBox().Text().empty())
+            {
+                _close();
+            }
+            else
+            {
+                _searchBox().Text(L"");
+            }
+
+            e.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - This event is triggered when someone clicks anywhere in the bounds of
+    //   the window that's _not_ the command palette UI. When that happens,
+    //   we'll want to dismiss the palette.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
+                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _close();
+    }
+
+    // Method Description:
+    // - This event is only triggered when someone clicks in the space right
+    //   next to the text box in the command palette. We _don't_ want that click
+    //   to light dismiss the palette, so we'll mark it handled here.
+    // Arguments:
+    // - e: the PointerRoutedEventArgs that we want to mark as handled
+    // Return Value:
+    // - <none>
+    void CommandPalette::_backdropPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
+                                                 Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
+    }
+
+    // Method Description:
+    // - This event is called when the user clicks on an individual item from
+    //   the list. We'll get the item that was clicked and dispatch the command
+    //   that the user clicked on.
+    // Arguments:
+    // - e: an ItemClickEventArgs who's ClickedItem() will be the command that was clicked on.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
+                                          Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
+    {
+        if (auto command{ e.ClickedItem().try_as<TerminalApp::Command>() })
+        {
+            const auto actionAndArgs = command.Action();
+            _dispatch.DoAction(actionAndArgs);
             _close();
         }
     }
@@ -134,7 +185,9 @@ namespace winrt::TerminalApp::implementation
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
         _updateFilteredActions();
-        _FilteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(0);
+
+        _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
     Collections::IObservableVector<Command> CommandPalette::FilteredActions()
@@ -148,10 +201,35 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    {
+        std::wstring_view leftName{ lhs.Name() };
+        std::wstring_view rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
+    // This is a helper struct to aid in sorting Commands by a given weighting.
+    struct WeightedCommand
+    {
+        TerminalApp::Command command;
+        int weight;
+
+        bool operator<(const WeightedCommand& other) const
+        {
+            // If two commands have the same weight, then we'll sort them alphabetically.
+            if (weight == other.weight)
+            {
+                return !_compareCommandNames(command, other.command);
+            }
+            return weight < other.weight;
+        }
+    };
+
     // Method Description:
     // - Update our list of filtered actions to reflect the current contents of
     //   the input box. For more details on which commands will be displayed,
-    //   see `_filterMatchesName`.
+    //   see `_getWeight`.
     // Arguments:
     // - <none>
     // Return Value:
@@ -159,16 +237,31 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateFilteredActions()
     {
         _filteredActions.Clear();
-        auto searchText = _SearchBox().Text();
+        auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
         // If there's no filter text, then just add all the commands in order to the list.
+        // - TODO GH#6647:Possibly add the MRU commands first in order, followed
+        //   by the rest of the commands.
         if (addAll)
         {
+            // Add all the commands, but make sure they're sorted alphabetically.
+            std::vector<TerminalApp::Command> sortedCommands;
+            sortedCommands.reserve(_allActions.Size());
+
             for (auto action : _allActions)
+            {
+                sortedCommands.push_back(action);
+            }
+            std::sort(sortedCommands.begin(),
+                      sortedCommands.end(),
+                      _compareCommandNames);
+
+            for (auto action : sortedCommands)
             {
                 _filteredActions.Append(action);
             }
+
             return;
         }
 
@@ -177,41 +270,55 @@ namespace winrt::TerminalApp::implementation
         // - Matching the first character of a word, then the first char of a
         //   subsequent word seems better than just "the order they appear in
         //   the list".
-        // - TODO GH#TODO:"Recently used commands" ordering also seems valuable.
-
-        auto compare = [searchText](const Command& left, const Command& right) {
-            const int leftWeight = _getWeight(left.Name(), searchText);
-            const int rightWeight = _getWeight(right.Name(), searchText);
-            return leftWeight < rightWeight;
-        };
+        // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
+        //      * This could be done by weighting the recently used commands
+        //        higher the more recently they were used, then weighting all
+        //        the unused commands as 1
 
         // Use a priority queue to order commands so that "better" matches
         // appear first in the list. The ordering will be determined by the
         // match weight produced by _getWeight.
-        std::priority_queue<Command, std::vector<Command>, decltype(compare)> heap(compare);
+        std::priority_queue<WeightedCommand> heap;
         for (auto action : _allActions)
         {
-            if (CommandPalette::_filterMatchesName(searchText, action.Name()))
+            const auto weight = CommandPalette::_getWeight(searchText, action.Name());
+            if (weight > 0)
             {
-                heap.push(action);
+                WeightedCommand wc;
+                wc.command = action;
+                wc.weight = weight;
+                heap.push(wc);
             }
         }
 
+        // At this point, all the commands in heap are matches. We've also
+        // sorted commands with the same weight alphabetically.
         // Remove everything in-order from the queue, and add to the list of
         // filtered actions.
         while (!heap.empty())
         {
-            _filteredActions.Append(heap.top());
+            auto top = heap.top();
             heap.pop();
+            _filteredActions.Append(top.command);
         }
     }
 
     // Function Description:
-    // - Determine if a command with the given `name` should be shown if the
-    //   input box contains the string `searchText`. If all the characters of
-    //   search text appear in order in `name`, then this fuction will return
-    //   true. There can be any number of characters separating consecutive
-    //   characters in searchText.
+    // - Calculates a "weighting" by which should be used to order a command
+    //   name relative to other names, given a specific search string.
+    //   Currently, this is based off of two factors:
+    //   * The weight is incremented once for each matched character of the
+    //     search text.
+    //   * If a matching character from the search text was found at the start
+    //     of a word in the name, then we increment the weight again.
+    //     * For example, for a search string "sp", we want "Split Pane" to
+    //       appear in the list before "Close Pane"
+    //   * Consecutive matches will be weighted higher than matches with
+    //     characters in between the search characters.
+    // - This will return 0 if the command should not be shown. If all the
+    //   characters of search text appear in order in `name`, then this function
+    //   will return a positive number. There can be any number of characters
+    //   separating consecutive characters in searchText.
     //   * For example:
     //      "name": "New Tab"
     //      "name": "Close Tab"
@@ -234,77 +341,51 @@ namespace winrt::TerminalApp::implementation
     // - searchText: the string of text to search for in `name`
     // - name: the name to check
     // Return Value:
-    // - true if name contained all the characters of searchText
-    bool CommandPalette::_filterMatchesName(const winrt::hstring& searchText, const winrt::hstring& name)
-    {
-        std::wstring lowercaseSearchText{ searchText.c_str() };
-        std::wstring lowercaseName{ name.c_str() };
-        std::transform(lowercaseSearchText.begin(), lowercaseSearchText.end(), lowercaseSearchText.begin(), std::towlower);
-        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), std::towlower);
-
-        const wchar_t* namePtr = lowercaseName.c_str();
-        const wchar_t* endOfName = lowercaseName.c_str() + lowercaseName.size();
-        for (const auto& wch : lowercaseSearchText)
-        {
-            while (wch != *namePtr)
-            {
-                // increment the character to look at in the name string
-                namePtr++;
-                if (namePtr >= endOfName)
-                {
-                    // If we are at the end of the name string, we haven't found all the search chars
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    // Function Description:
-    // - Calculates a "weighting" by which should be used to order a command
-    //   name relative to other names, given a specific search string.
-    //   Currently, this is based off of two factors:
-    //   * The weight is incremented once for each matched character of the
-    //     search text.
-    //   * If a matching character from the search text was found at the start
-    //     of a word in the name, then we increment the weight again.
-    //     * For example, for a search string "sp", we want "Split Pane" to
-    //       appear in the list before "Close Pane"
-    // Arguments:
-    // - searchText: the string of text to search for in `name`
-    // - name: the name to check
-    // Return Value:
     // - the relative weight of this match
     int CommandPalette::_getWeight(const winrt::hstring& searchText,
                                    const winrt::hstring& name)
     {
-        std::wstring lowercaseSearchText{ searchText.c_str() };
-        std::wstring lowercaseName{ name.c_str() };
-        std::transform(lowercaseSearchText.begin(), lowercaseSearchText.end(), lowercaseSearchText.begin(), std::towlower);
-        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), std::towlower);
-
         int totalWeight = 0;
-        bool lastCharWasSpace = true;
-        const wchar_t* namePtr = lowercaseName.c_str();
-        const wchar_t* endOfName = lowercaseName.c_str() + lowercaseName.size();
-        for (const auto& wch : lowercaseSearchText)
+        bool lastWasSpace = true;
+
+        auto it = name.cbegin();
+
+        for (auto searchChar : searchText)
         {
-            while (wch != *namePtr)
+            searchChar = std::towlower(searchChar);
+            // Advance the iterator to the next character that we're looking
+            // for.
+
+            bool lastWasMatch = true;
+            while (true)
             {
-                // increment the character to look at in the name string
-                namePtr++;
-                if (namePtr >= endOfName)
+                // If we are at the end of the name string, we haven't found
+                // it.
+                if (it == name.cend())
                 {
-                    // If we are at the end of the name string, we haven't found all the search chars
-                    return totalWeight;
+                    return false;
                 }
-                lastCharWasSpace = *namePtr == L' ';
+
+                // found it
+                if (std::towlower(*it) == searchChar)
+                {
+                    break;
+                }
+
+                lastWasSpace = *it == L' ';
+                ++it;
+                lastWasMatch = false;
             }
 
-            // We found the char, increment weight
-            totalWeight++;
-            totalWeight += lastCharWasSpace ? 1 : 0;
+            // Advance the iterator by one character so that we don't
+            // end up on the same character in the next iteration.
+            ++it;
+
+            totalWeight += 1;
+            totalWeight += lastWasSpace ? 1 : 0;
+            totalWeight += (lastWasMatch) ? 1 : 0;
         }
+
         return totalWeight;
     }
 
@@ -325,14 +406,9 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);
-        // TODO: Do we want to clear the text box each time we close the dialog? Or leave it?
-        // I think if we decide to leave it, we should auto-select all the text
-        // in it, so a user can start typing right away, or continue with the
-        // current selection.
 
-        // _SearchBox().Text(L"");
-        _closeHandlers(*this, RoutedEventArgs{});
+        // Clear the text box each time we close the dialog. This is consistent with VsCode.
+        _searchBox().Text(L"");
     }
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(CommandPalette, Closed, _closeHandlers, TerminalApp::CommandPalette, winrt::Windows::UI::Xaml::RoutedEventArgs);
 }

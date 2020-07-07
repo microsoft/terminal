@@ -71,6 +71,7 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
         bool _IntermediateScsDispatch(const wchar_t wch,
                                       const std::basic_string_view<wchar_t> intermediates);
@@ -169,6 +170,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112
@@ -250,6 +252,10 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr size_t DefaultRepeatCount = 1;
         bool _GetRepeatCount(const std::basic_string_view<size_t> parameters,
                              size_t& repeatCount) const noexcept;
+
+        bool _GetOscSetClipboard(const std::wstring_view string,
+                                 std::wstring& content,
+                                 bool& queryClipboard) const noexcept;
 
         void _ClearLastChar() noexcept;
     };
