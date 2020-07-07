@@ -41,7 +41,7 @@ using namespace Microsoft::Console::Interactivity;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
                                                          fiFont,
                                                          gci.GetScreenBufferSize(),
-                                                         gci.GetDefaultAttributes(),
+                                                         TextAttribute{},
                                                          TextAttribute{ gci.GetPopupFillAttribute() },
                                                          gci.GetCursorSize(),
                                                          &gci.ScreenBuffers);
@@ -148,16 +148,18 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
     // While we haven't read enough cells yet and the iterator is still valid (hasn't reached end of buffer)
     while (amountRead < amountToRead && it)
     {
+        const auto legacyAttributes = it->TextAttr().GetLegacyAttributes();
+
         // If the first thing we read is trailing, pad with a space.
         // OR If the last thing we read is leading, pad with a space.
         if ((amountRead == 0 && it->DbcsAttr().IsTrailing()) ||
             (amountRead == (amountToRead - 1) && it->DbcsAttr().IsLeading()))
         {
-            retVal.push_back(it->TextAttr().GetLegacyAttributes());
+            retVal.push_back(legacyAttributes);
         }
         else
         {
-            retVal.push_back(it->TextAttr().GetLegacyAttributes() | it->DbcsAttr().GeneratePublicApiAttributeFormat());
+            retVal.push_back(legacyAttributes | it->DbcsAttr().GeneratePublicApiAttributeFormat());
         }
 
         amountRead++;
@@ -384,7 +386,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 
     // However, if the character is null and we were given a null attribute (represented as legacy 0),
     // then we'll just fill with spaces and whatever the buffer's default colors are.
-    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven.IsLegacy() && fillAttrsGiven.GetLegacyAttributes() == 0)
+    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven == TextAttribute{ 0 })
     {
         fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
     }

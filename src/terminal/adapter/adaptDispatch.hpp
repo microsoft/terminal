@@ -58,6 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
+        bool Vt52DeviceAttributes() override; // VT52 Identify
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
@@ -67,7 +68,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
         bool EnableCursorBlinking(const bool enable) override; // ATT610
+        bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
@@ -77,14 +80,19 @@ namespace Microsoft::Console::VirtualTerminal
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
-        bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
         bool UseAlternateScreenBuffer() override; // ASBSET
         bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // SCS
+        bool DesignateCodingSystem(const wchar_t codingSystem) override; // DOCS
+        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
+        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
+        bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
+        bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
+        bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
@@ -98,8 +106,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
+        bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
+
         bool SetColorTableEntry(const size_t tableIndex,
-                                const DWORD color) override; // OscColorTable
+                                const DWORD color) override; // OSCColorTable
         bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
 
@@ -119,6 +129,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            unsigned int CodePage = 0;
         };
         struct Offset
         {
@@ -155,12 +166,15 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
+        bool _ShouldPassThroughInputModeChange() const;
+
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer
@@ -178,6 +192,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
                                    TextAttribute& attr,
-                                   const bool isForeground);
+                                   const bool isForeground) noexcept;
     };
 }

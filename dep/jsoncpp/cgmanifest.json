@@ -1,0 +1,13 @@
+{"Registrations":[
+    {
+      "component": {
+       "type": "git",
+       "git": {
+         "repositoryUrl": "https://github.com/open-source-parsers/jsoncpp",
+         "commitHash": "6aba23f4a8628d599a9ef7fa4811c4ff6e4070e2"
+         }
+       }
+    }
+ ],
+ "Version": 1
+}

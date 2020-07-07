@@ -47,12 +47,18 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
-        winrt::fire_and_forget SetTabText(const winrt::hstring text);
 
         void Shutdown();
         void ClosePane();
 
+        void SetTabText(winrt::hstring title);
+        void ResetTabText();
+
         std::optional<winrt::Windows::UI::Color> GetTabColor();
+
+        void SetTabColor(const winrt::Windows::UI::Color& color);
+        void ResetTabColor();
+        void ActivateColorPicker();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -73,12 +79,14 @@ namespace winrt::TerminalApp::implementation
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
+        winrt::hstring _runtimeTabText{};
+        bool _inRename{ false };
+        winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
+
         void _MakeTabViewItem();
         void _Focus();
 
         void _CreateContextMenu();
-        void _SetTabColor(const winrt::Windows::UI::Color& color);
-        void _ResetTabColor();
         void _RefreshVisualState();
 
         void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
@@ -88,6 +96,10 @@ namespace winrt::TerminalApp::implementation
 
         int _GetLeafPaneCount() const noexcept;
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
+
+        void _UpdateTabHeader();
+        winrt::fire_and_forget _UpdateTitle();
+        void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

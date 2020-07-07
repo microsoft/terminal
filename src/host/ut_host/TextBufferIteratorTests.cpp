@@ -498,7 +498,7 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 
     const auto textExpected = (std::wstring_view)row.GetCharRow().GlyphAt(it._pos.X);
     const auto dbcsExpected = row.GetCharRow().DbcsAttrAt(it._pos.X);
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X).GetLegacyAttributes();
+    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
 
     const auto cellActual = *it;
     const auto textActual = cellActual.Chars();

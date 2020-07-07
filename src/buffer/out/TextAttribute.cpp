@@ -5,6 +5,36 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+BYTE TextAttribute::s_legacyDefaultForeground = 7;
+BYTE TextAttribute::s_legacyDefaultBackground = 0;
+
+// Routine Description:
+// - Sets the legacy attributes which map to and from the default colors.
+// Parameters:
+// - defaultAttributes: the attribute values to be used for default colors.
+// Return value:
+// - None
+void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
+{
+    s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
+    s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+}
+
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - None
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes() const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
+    const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
+    const bool brighten = IsBold() && _foreground.CanBeBrightened();
+    return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
+}
+
 bool TextAttribute::IsLegacy() const noexcept
 {
     return _foreground.IsLegacy() && _background.IsLegacy();
@@ -60,6 +90,26 @@ COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> color
     return _background.GetColor(colorTable, defaultColor, false);
 }
 
+TextColor TextAttribute::GetForeground() const noexcept
+{
+    return _foreground;
+}
+
+TextColor TextAttribute::GetBackground() const noexcept
+{
+    return _background;
+}
+
+void TextAttribute::SetForeground(const TextColor foreground) noexcept
+{
+    _foreground = foreground;
+}
+
+void TextAttribute::SetBackground(const TextColor background) noexcept
+{
+    _background = background;
+}
+
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
@@ -72,12 +122,22 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
 {
-    _foreground = TextColor(fgIndex);
+    _foreground = TextColor(fgIndex, false);
 }
 
 void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
 {
-    _background = TextColor(bgIndex);
+    _background = TextColor(bgIndex, false);
+}
+
+void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
+{
+    _foreground = TextColor(fgIndex, true);
+}
+
+void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
+{
+    _background = TextColor(bgIndex, true);
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
@@ -163,6 +223,11 @@ bool TextAttribute::IsUnderlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
 }
 
+bool TextAttribute::IsOverlined() const noexcept
+{
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+}
+
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -199,6 +264,11 @@ void TextAttribute::SetUnderline(bool isUnderlined) noexcept
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
 }
 
+void TextAttribute::SetOverline(bool isOverlined) noexcept
+{
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
+}
+
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO, isReversed);
@@ -224,21 +294,6 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
-}
-
-// Method Description:
-// - Returns true if this attribute indicates its foreground is the "default"
-//      foreground. Its _rgbForeground will contain the actual value of the
-//      default foreground. If the default colors are ever changed, this method
-//      should be used to identify attributes with the default fg value, and
-//      update them accordingly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff this attribute indicates it's the "default" foreground color.
-bool TextAttribute::ForegroundIsDefault() const noexcept
-{
-    return _foreground.IsDefault();
 }
 
 // Method Description:

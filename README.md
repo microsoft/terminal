@@ -11,7 +11,7 @@ This repository contains the source code for:
 
 Related repositories include:
 
-* [Windows Terminal Documentation](https://github.com/MicrosoftDocs/terminal)
+* [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal) ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
@@ -36,6 +36,14 @@ For users who are unable to install Terminal from the Microsoft Store, Terminal 
 > * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
 > * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
+#### Via Windows Package Manager CLI (aka winget)
+
+[winget](https://github.com/microsoft/winget-cli) users can download and install the latest Terminal release by installing the `Microsoft.WindowsTerminal` package:
+
+```powershell
+winget install --id=Microsoft.WindowsTerminal -e
+```
+
 #### Via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
@@ -53,6 +61,10 @@ choco upgrade microsoft-windows-terminal
 If you have any issues when installing/upgrading the package please go to the [Windows Terminal package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ---
+
+## Windows Terminal 2.0 Roadmap
+
+The plan for delivering Windows Terminal 2.0 [is described here](/doc/terminal-v2-roadmap.md) and will be updated as the project proceeds.
 
 ## Project Build Status
 
