@@ -1,7 +1,7 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
 created on: 2020-06-29
-last updated: 2020-06-29
+last updated: 2020-07-06
 issue id: #1564
 ---
 
@@ -21,11 +21,7 @@ The settings UI will be the default experience. We will provide users an option 
 
 ### Ability to disable displaying the settings UI
 
-Some users don't want a UI for the settings. A new global setting should be added to disable the settings UI and open the raw JSON file. Here is a setting proposal:
-
-```json
-"settingsUI": true
-```
+Some users don't want a UI for the settings. We can update the `openSettings` key binding with a `settingsUI` option.
 
 If people still like the UI but want to access the JSON file, we can provide an "Open the JSON file" button at the bottom of the navigation menu.
 
