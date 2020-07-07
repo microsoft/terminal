@@ -112,20 +112,15 @@ namespace winrt::TerminalApp::implementation
     {
         auto result = winrt::make_self<Command>();
 
-        // bool parseActionLater = false;
-
         if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
         {
             auto s = iterateOnJson.asString();
             if (s == IterateOnProfilesValue)
             {
                 result->_IterateOn = ExpandCommandType::Profiles;
-                // parseActionLater = true;
             }
         }
 
-        // if (!parseActionLater)
-        // {
         // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
         // the binding quite right. Additionally, do we want it to be an image,
         // or a FontIcon? I've had difficulty binding either/or.
@@ -146,6 +141,11 @@ namespace winrt::TerminalApp::implementation
                 return nullptr;
             }
 
+            // If an iterable command doesn't have a name set, we'll still just
+            // try and generate a fake name for the command give the string we
+            // currently have. It'll probably generate something like "New tab,
+            // profile: ${profile.name}". This string will only be temporarily
+            // used internally, so there's no problem.
             result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
         }
         else
@@ -154,17 +154,12 @@ namespace winrt::TerminalApp::implementation
             // should also be used for unbinding.
             return nullptr;
         }
-        // }
-        // else
-        // {
-        // // Just use the current string as the name for now.
-        // result->_setName(_nameFromJson(json));
-        result->_originalJson = json;
-        // }
 
-        // TODO: an iterable command might not have a name set at all, and might
-        // be relying on the command to be expanded, then have the name auto
-        // generated. Make sure that those types of commands will still work.
+        // Stash the original json value in this object. If the command is
+        // iterable, we'll need to re-parse it later, once we know what all the
+        // values we can iterate on are.
+        result->_originalJson = json;
+
         if (result->_Name.empty())
         {
             return nullptr;
@@ -289,7 +284,6 @@ namespace winrt::TerminalApp::implementation
                 //   then re-attempt to parse the action and args.
                 //
                 auto newCmd = winrt::make_self<Command>();
-                // newCmd->_setIconPath(expandable->_IconPath);
                 newCmd->_setKeyChordText(expandable->_KeyChordText);
                 newCmd->_setName(_replaceKeyword(expandable->_Name,
                                                  ProfileName,
@@ -312,6 +306,8 @@ namespace winrt::TerminalApp::implementation
                     // If we encounter a re-parsing error, just stop processing the rest of the commands.
                     break;
                 }
+
+                // TODO: We should probably just pass this back though FromJson
 
                 // auto actionAndArgs = _getActionAndArgsFromJson(newJsonValue, warnings);
 
