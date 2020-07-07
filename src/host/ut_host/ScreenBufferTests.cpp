@@ -2115,7 +2115,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         std::unique_ptr<WriteData> waiter;
         std::wstring seq = L"\x1b[5;6H";
         size_t seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
 
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), mainCursor.GetPosition());
         // recall: vt coordinates are (row, column), 1-indexed
@@ -2130,14 +2130,14 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 
         seq = L"\x1b[48;2;255;0;255m";
         seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
 
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
 
         seq = L"X";
         seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
 
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), mainCursor.GetPosition());
         VERIFY_ARE_EQUAL(COORD({ 6, 4 }), altCursor.GetPosition());
