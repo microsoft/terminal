@@ -305,22 +305,18 @@ namespace winrt::TerminalApp::implementation
                 // * for the action, we'll take the original json, replace any
                 //   instances of "${profile.name}" with the profile's name,
                 //   then re-attempt to parse the action and args.
-                //
-                auto newCmd = winrt::make_self<Command>();
-                newCmd->_setKeyChordText(expandable->_KeyChordText);
-                newCmd->_setName(_replaceKeyword(expandable->_Name,
-                                                 ProfileName,
-                                                 p.GetName()));
 
                 // Replace all the keywords in the original json, and try and parse that
+                // - First, get a string for the original Json::Value
                 auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
 
-                // Escape the profile name for JSON appropriately
+                // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(p.GetName());
                 auto newJsonString = winrt::to_string(_replaceKeyword(oldJsonString,
                                                                       ProfileName,
                                                                       escapedProfileName));
 
+                // - Now, re-parse the modified value.
                 Json::Value newJsonValue;
                 const auto actualDataStart = newJsonString.data();
                 const auto actualDataEnd = newJsonString.data() + newJsonString.size();
@@ -335,39 +331,9 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                // TODO: We should probably just pass this back though FromJson
-
-                // auto actionAndArgs = _getActionAndArgsFromJson(newJsonValue, warnings);
-
-                if (const auto actionJson{ newJsonValue[JsonKey(ActionKey)] })
+                // Pass the new json back though FromJson, to get the new expanded value.
+                if (auto newCmd{ Command::FromJson(newJsonValue, warnings) })
                 {
-                    auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
-
-                    if (actionAndArgs)
-                    {
-                        newCmd->_setAction(*actionAndArgs);
-                    }
-                    else
-                    {
-                        // Something like
-                        //      { name: "foo", action: "unbound" }
-                        // will _remove_ the "foo" command, by returning null here.
-                        continue;
-                    }
-
-                    newCmd->_setName(_nameFromJsonOrAction(newJsonValue, actionAndArgs));
-                }
-                else
-                {
-                    // { name: "foo", action: null } will land in this case, which
-                    // should also be used for unbinding.
-                    continue;
-                }
-
-                // if (actionAndArgs && !newCmd->_Name.empty())
-                if (!newCmd->_Name.empty())
-                {
-                    // newCmd->_setAction(*actionAndArgs);
                     newCommands.push_back(*newCmd);
                 }
             }
