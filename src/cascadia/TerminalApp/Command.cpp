@@ -121,53 +121,53 @@ namespace winrt::TerminalApp::implementation
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
                                               std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
-                                              const bool postExpansion)
+                                              const bool /*postExpansion*/)
     {
         auto result = winrt::make_self<Command>();
 
         bool iterable = false;
         bool nested = false;
-        if (!postExpansion)
+        // if (!postExpansion)
+        // {
+        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
         {
-            if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
+            auto s = iterateOnJson.asString();
+            if (s == IterateOnProfilesValue)
             {
-                auto s = iterateOnJson.asString();
-                if (s == IterateOnProfilesValue)
-                {
-                    result->_IterateOn = ExpandCommandType::Profiles;
-                    iterable = true;
-                }
+                result->_IterateOn = ExpandCommandType::Profiles;
+                iterable = true;
             }
         }
+        // }
 
-        // For iterable commands, we'll make another pass at parsing them once
-        // the json is patched. So ignore parsing sub-commands for now. Commands
-        // will only be marked iterable on the first pass.
-        if (!iterable)
+        // // For iterable commands, we'll make another pass at parsing them once
+        // // the json is patched. So ignore parsing sub-commands for now. Commands
+        // // will only be marked iterable on the first pass.
+        // if (!iterable)
+        // {
+        if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
-            if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
+            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
+            // It's possible that the nested commands have some warnings
+            warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
+
+            // Add all the commands we've parsed to the observable vector we
+            // have, so we can access them in XAML.
+            for (auto& nameAndCommand : result->_subcommands)
             {
-                auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
-                // It's possible that the nested commands have some warnings
-                warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
-
-                // Add all the commands we've parsed to the observable vector we
-                // have, so we can access them in XAML.
-                for (auto& nameAndCommand : result->_subcommands)
-                {
-                    auto command = nameAndCommand.second;
-                    result->_nestedCommandsView.Append(command);
-                }
-                nested = true;
+                auto command = nameAndCommand.second;
+                result->_nestedCommandsView.Append(command);
             }
-
-            // TODO: else if (hasKey(CommandKey) )
-            // {
-            //     // { name: "foo", commands: null } will land in this case, which
-            //     // should also be used for unbinding.
-            //     return nullptr;
-            // }
+            nested = true;
         }
+
+        // TODO: else if (hasKey(CommandKey) )
+        // {
+        //     // { name: "foo", commands: null } will land in this case, which
+        //     // should also be used for unbinding.
+        //     return nullptr;
+        // }
+        // }
 
         // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
         // the binding quite right. Additionally, do we want it to be an image,
@@ -342,7 +342,42 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
-        if (expandable->_IterateOn == ExpandCommandType::None)
+        // ////////////////////////////////////////////////////////////////////////
+        // if (!expandable->_subcommands.empty())
+        // {
+        //     // Blatantly copied from CascadiaSettings::_ExpandCommands
+
+        //     std::vector<winrt::hstring> commandsToRemove;
+        //     std::vector<winrt::TerminalApp::Command> commandsToAdd;
+        //     // First, collect up all the commands that need replacing.
+        //     for (auto nameAndCmd : expandable->_subcommands)
+        //     {
+        //         winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
+        //         cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
+
+        //         auto newCommands = winrt::TerminalApp::implementation::Command::ExpandCommand(cmd, profiles, warnings);
+        //         if (newCommands.size() > 0)
+        //         {
+        //             commandsToRemove.push_back(nameAndCmd.first);
+        //             commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
+        //         }
+        //     }
+
+        //     // Second, remove all the commands that need to be removed.
+        //     for (auto& name : commandsToRemove)
+        //     {
+        //         expandable->_subcommands.erase(name);
+        //     }
+
+        //     // Finally, add all the new commands.
+        //     for (auto& cmd : commandsToAdd)
+        //     {
+        //         expandable->_subcommands.insert_or_assign(cmd.Name(), cmd);
+        //     }
+        // }
+        // ////////////////////////////////////////////////////////////////////////
+
+        if (expandable->_subcommands.empty() && expandable->_IterateOn == ExpandCommandType::None)
         {
             return newCommands;
         }
