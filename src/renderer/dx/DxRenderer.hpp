@@ -157,6 +157,7 @@ namespace Microsoft::Console::Render
         bool _firstFrame;
         bool _invalidateFullRows;
         til::bitmap _invalidMap;
+        til::size _invalidFactor;
         til::point _invalidScroll;
 
         bool _presentReady;
