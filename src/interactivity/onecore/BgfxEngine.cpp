@@ -194,13 +194,11 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return HRESULT_FROM_NT(Status);
 }
 
-[[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
-                                                       COLORREF const /*colorBackground*/,
-                                                       const WORD legacyColorAttribute,
-                                                       const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const gsl::not_null<IRenderData*> /*pData*/,
                                                        bool const /*isSettingDefaultBrushes*/) noexcept
 {
-    _currentLegacyColorAttribute = legacyColorAttribute;
+    _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
     return S_OK;
 }

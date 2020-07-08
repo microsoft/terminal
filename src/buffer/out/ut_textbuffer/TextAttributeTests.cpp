@@ -21,6 +21,7 @@ class TextAttributeTests
     TEST_METHOD(TestRoundtripExhaustive);
     TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestReverseDefaultColors);
+    TEST_METHOD(TestRoundtripDefaultColors);
 
     static const int COLOR_TABLE_SIZE = 16;
     COLORREF _colorTable[COLOR_TABLE_SIZE];
@@ -117,13 +118,10 @@ void TextAttributeTests::TestRoundtripExhaustive()
 
         auto attr = TextAttribute(wLegacy);
 
-        bool isLegacy = attr.IsLegacy();
-        bool areEqual = (wLegacy == attr.GetLegacyAttributes());
-        if (!(isLegacy && areEqual))
+        if (wLegacy != attr.GetLegacyAttributes())
         {
             Log::Comment(NoThrowString().Format(
                 L"Failed on wLegacy=0x%x", wLegacy));
-            VERIFY_IS_TRUE(attr.IsLegacy());
             VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
         }
     }
@@ -204,4 +202,45 @@ void TextAttributeTests::TestReverseDefaultColors()
 
     VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
     VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+}
+
+void TextAttributeTests::TestRoundtripDefaultColors()
+{
+    // Set the legacy default colors to yellow on blue.
+    const BYTE fgLegacyDefault = FOREGROUND_RED;
+    const BYTE bgLegacyDefault = BACKGROUND_BLUE;
+    TextAttribute::SetLegacyDefaultAttributes(fgLegacyDefault | bgLegacyDefault);
+
+    WORD legacyAttribute;
+    TextAttribute textAttribute;
+
+    Log::Comment(L"Foreground legacy default index should map to default text color.");
+    legacyAttribute = fgLegacyDefault | BACKGROUND_GREEN;
+    textAttribute.SetDefaultForeground();
+    textAttribute.SetIndexedBackground256(BACKGROUND_GREEN >> 4);
+    VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
+
+    Log::Comment(L"Default foreground text color should map back to legacy default index.");
+    VERIFY_ARE_EQUAL(legacyAttribute, textAttribute.GetLegacyAttributes());
+
+    Log::Comment(L"Background legacy default index should map to default text color.");
+    legacyAttribute = FOREGROUND_GREEN | bgLegacyDefault;
+    textAttribute.SetIndexedForeground256(FOREGROUND_GREEN);
+    textAttribute.SetDefaultBackground();
+    VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
+
+    Log::Comment(L"Default background text color should map back to legacy default index.");
+    VERIFY_ARE_EQUAL(legacyAttribute, textAttribute.GetLegacyAttributes());
+
+    Log::Comment(L"Foreground and background legacy defaults should map to default text colors.");
+    legacyAttribute = fgLegacyDefault | bgLegacyDefault;
+    textAttribute.SetDefaultForeground();
+    textAttribute.SetDefaultBackground();
+    VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
+
+    Log::Comment(L"Default foreground and background text colors should map back to legacy defaults.");
+    VERIFY_ARE_EQUAL(legacyAttribute, textAttribute.GetLegacyAttributes());
+
+    // Reset the legacy default colors to white on black.
+    TextAttribute::SetLegacyDefaultAttributes(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }

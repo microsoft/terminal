@@ -297,6 +297,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+    void TermControl::ToggleRetroEffect()
+    {
+        auto lock = _terminal->LockForWriting();
+        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+    }
 
     // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
@@ -2343,7 +2348,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Account for the size of any padding
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         width += padding.Left + padding.Right;
         height += padding.Top + padding.Bottom;
 
@@ -2363,7 +2368,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto fontSize = _actualFont.GetSize();
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
@@ -2495,7 +2500,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
-        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
 
         // This point is the location of the cursor within the actual grid of characters, in DIPs
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;

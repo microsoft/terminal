@@ -10,14 +10,10 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
-                         const IDefaultColorProvider& colorProvider,
                          const Viewport initialViewport,
-                         const std::basic_string_view<COLORREF> colorTable,
                          const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
-    _colorTable(colorTable),
+    VtEngine(std::move(hPipe), initialViewport),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
     _nextCursorIsVisible(true)
@@ -135,62 +131,35 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 }
 
 // Routine Description:
-// - Write a VT sequence to either start or stop underlining text.
-// Arguments:
-// - legacyColorAttribute: A console attributes bit field containing information
-//      about the underlining state of the text.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
-{
-    bool textUnderlined = WI_IsFlagSet(legacyColorAttribute, COMMON_LVB_UNDERSCORE);
-    if (textUnderlined != _usingUnderLine)
-    {
-        if (textUnderlined)
-        {
-            RETURN_IF_FAILED(_BeginUnderline());
-        }
-        else
-        {
-            RETURN_IF_FAILED(_EndUnderline());
-        }
-        _usingUnderLine = textUnderlined;
-    }
-    return S_OK;
-}
-
-// Routine Description:
 // - Write a VT sequence to change the current colors of text. Only writes
 //      16-color attributes.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
+// - textAttributes - Text attributes to use for the colors and character rendition
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                        const COLORREF colorBackground,
-                                                        const WORD legacyColorAttribute,
-                                                        const ExtendedAttributes extendedAttrs,
+[[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                        const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
-    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
-    //      flag is there. If the state of that flag is different then our
-    //      current state, change the underlining state.
-    // We have to do this here, instead of in PaintBufferGridLines, because
-    //      we'll have already painted the text by the time PaintBufferGridLines
-    //      is called.
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
-                                                  colorBackground,
-                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
-                                                  _colorTable);
+    RETURN_IF_FAILED(VtEngine::_16ColorUpdateDrawingBrushes(textAttributes));
+
+    // And the only supported meta attributes are reverse video and underline
+    if (textAttributes.IsReverseVideo() != _lastTextAttributes.IsReverseVideo())
+    {
+        RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
+        _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
+    }
+    if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
+    {
+        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -479,7 +448,7 @@ try
     // important information to send to the connected Terminal.
     if (_newBottomLine)
     {
-        _newBottomLineBG = _LastBG;
+        _newBottomLineBG = _lastTextAttributes.GetBackground();
     }
 
     return S_OK;

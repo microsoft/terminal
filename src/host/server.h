@@ -29,8 +29,6 @@ Revision History:
 
 #include "..\host\RenderData.hpp"
 
-#include "..\inc\IDefaultColorProvider.hpp"
-
 // clang-format off
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -75,8 +73,7 @@ class CommandHistory;
 
 class CONSOLE_INFORMATION :
     public Settings,
-    public Microsoft::Console::IIoProvider,
-    public Microsoft::Console::IDefaultColorProvider
+    public Microsoft::Console::IIoProvider
 {
 public:
     CONSOLE_INFORMATION();

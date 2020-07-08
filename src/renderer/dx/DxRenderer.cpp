@@ -785,6 +785,11 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
+bool DxEngine::GetRetroTerminalEffects() const noexcept
+{
+    return _retroTerminalEffects;
+}
+
 void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
 try
 {
@@ -1606,18 +1611,14 @@ CATCH_RETURN()
 // Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
-// - colorForeground - Foreground brush color
-// - colorBackground - Background brush color
-// - legacyColorAttribute - <unused>
-// - extendedAttrs - <unused>
+// - textAttributes - Text attributes to use for the brush color
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
-                                                     COLORREF const colorBackground,
-                                                     const WORD /*legacyColorAttribute*/,
-                                                     const ExtendedAttributes /*extendedAttrs*/,
-                                                     bool const isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                     const gsl::not_null<IRenderData*> pData,
+                                                     const bool isSettingDefaultBrushes) noexcept
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background's opacity is 1.0f, that's
@@ -1629,6 +1630,9 @@ CATCH_RETURN()
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
     const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
+    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
+    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
