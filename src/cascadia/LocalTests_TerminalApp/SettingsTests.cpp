@@ -2943,19 +2943,97 @@ namespace TerminalAppLocalTests
         //
         // <Command Palette>
         // └─ New Pane...
-        //    ├─ Profile 1...
-        //    |  ├─ Split Automatically
-        //    |  ├─ Split Vertically
-        //    |  └─ Split Horizontally
-        //    ├─ Profile 2...
-        //    |  ├─ Split Automatically
-        //    |  ├─ Split Vertically
-        //    |  └─ Split Horizontally
-        //    └─ Profile 3...
-        //       ├─ Split Automatically
-        //       ├─ Split Vertically
-        //       └─ Split Horizontally
-        Log::Result(WEX::Logging::TestResults::Skipped);
+        //    ├─ profile0...
+        //    |  ├─ Split automatically
+        //    |  ├─ Split vertically
+        //    |  └─ Split horizontally
+        //    ├─ profile1...
+        //    |  ├─ Split automatically
+        //    |  ├─ Split vertically
+        //    |  └─ Split horizontally
+        //    └─ profile2...
+        //       ├─ Split automatically
+        //       ├─ Split vertically
+        //       └─ Split horizontally
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "New Pane...",
+                    "commands": [
+                        {
+                            "iterateOn": "profiles",
+                            "name": "${profile.name}...",
+                            "commands": [
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "automatic" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        auto rootCommandProj = commands.at(L"New Pane...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ name + L"..." };
+            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+        }
     }
     void SettingsTests::TestIterableInNestedCommand()
     {

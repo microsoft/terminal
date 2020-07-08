@@ -23,6 +23,13 @@ Author(s):
 #include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class CommandTests;
+};
+
 namespace winrt::TerminalApp::implementation
 {
     enum class ExpandCommandType : uint32_t
@@ -58,6 +65,9 @@ namespace winrt::TerminalApp::implementation
         Json::Value _originalJson;
         std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
+
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::CommandTests;
     };
 }
 

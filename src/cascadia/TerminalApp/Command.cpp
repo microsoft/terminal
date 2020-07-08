@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
     Command::Command()
     {
         _nestedCommandsView = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
+        _setAction(nullptr);
     }
 
     Collections::IObservableVector<winrt::TerminalApp::Command> Command::NestedCommands()
