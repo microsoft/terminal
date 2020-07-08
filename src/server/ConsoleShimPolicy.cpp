@@ -88,7 +88,7 @@ bool ConsoleShimPolicy::IsPowershellExe() const noexcept
 // - <none>
 // Return Value:
 // - True as laid out above.
-bool ConsoleShimPolicy::ApplicationMishandlesVTColors() const noexcept
+bool ConsoleShimPolicy::IsVtColorQuirkRequired() const noexcept
 {
     // Right now, the only client we're shimming is powershell.
     return IsPowershellExe();

@@ -25,7 +25,7 @@ public:
 
     bool IsCmdExe() const noexcept;
     bool IsPowershellExe() const noexcept;
-    bool ApplicationMishandlesVTColors() const noexcept;
+    bool IsVtColorQuirkRequired() const noexcept;
 
 private:
     ConsoleShimPolicy(const bool isCmd,

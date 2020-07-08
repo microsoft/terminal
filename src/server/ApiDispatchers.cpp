@@ -408,7 +408,7 @@
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
-    const auto requiresVtQuirk{ m->GetProcessHandle()->GetShimPolicy().ApplicationMishandlesVTColors() };
+    const auto requiresVtQuirk{ m->GetProcessHandle()->GetShimPolicy().IsVtColorQuirkRequired() };
 
     // We have to hold onto the HR from the call and return it.
     // We can't return some other error after the actual API call.
