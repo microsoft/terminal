@@ -1237,7 +1237,7 @@ static IConsoleOutputObject* obj = nullptr;
 static std::condition_variable condvar;
 static std::mutex bufflock;
 static std::queue<std::string> buff;
-void threadMethod()
+static void ioWriteConsoleMethod()
 {
     size_t read = 0;
     std::unique_ptr<IWaitRoutine> wait;
@@ -1264,7 +1264,7 @@ void threadMethod()
     }
 }
 
-static std::thread th(threadMethod);
+static std::thread th(ioWriteConsoleMethod);
 
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
