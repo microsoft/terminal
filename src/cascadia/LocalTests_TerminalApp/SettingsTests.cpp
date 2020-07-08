@@ -3000,9 +3000,6 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settingsJson);
         CascadiaSettings settings{};
         settings._ParseJsonString(settingsJson, false);
-
-        DebugBreak();
-
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
