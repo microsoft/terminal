@@ -30,6 +30,9 @@ namespace winrt::TerminalApp::implementation
         void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
                              Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _commandsToFilter();
+        void _updateUIForStackChange();
+
         void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _backdropPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 

@@ -6,8 +6,9 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
-
 #include "resource.h"
+
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;

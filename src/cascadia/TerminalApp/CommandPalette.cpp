@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
             if (Visibility() == Visibility::Visible)
             {
                 _searchBox().Focus(FocusState::Programmatic);
+                _updateFilteredActions();
                 _filteredActionsView().SelectedIndex(0);
 
                 TraceLoggingWrite(
@@ -173,6 +174,21 @@ namespace winrt::TerminalApp::implementation
         _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
     }
 
+    void CommandPalette::_updateUIForStackChange()
+    {
+        _searchBox().Text(L"");
+    }
+
+    Collections::IVector<Command> CommandPalette::_commandsToFilter()
+    {
+        if (_nestedActionStack.Size() > 0)
+        {
+            return _nestedActionStack.GetAt(_nestedActionStack.Size() - 1).NestedCommands();
+        }
+
+        return _allActions;
+    }
+
     // Method Description:
     // - Helper method for retrieving the action from a command the user
     //   selected, and dispatching that command. Also fires a tracelogging event
@@ -186,16 +202,24 @@ namespace winrt::TerminalApp::implementation
     {
         if (command)
         {
-            const auto actionAndArgs = command.Action();
-            _dispatch.DoAction(actionAndArgs);
-            _close();
+            if (command.NestedCommands().Size() > 0)
+            {
+                _nestedActionStack.Append(command);
+                _updateUIForStackChange();
+            }
+            else
+            {
+                const auto actionAndArgs = command.Action();
+                _dispatch.DoAction(actionAndArgs);
+                _close();
 
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "CommandPaletteDispatchedAction",
-                TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CommandPaletteDispatchedAction",
+                    TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            }
         }
     }
 
@@ -285,6 +309,7 @@ namespace winrt::TerminalApp::implementation
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
+        auto commandsToFilter = _commandsToFilter();
         // If there's no filter text, then just add all the commands in order to the list.
         // - TODO GH#6647:Possibly add the MRU commands first in order, followed
         //   by the rest of the commands.
@@ -292,9 +317,9 @@ namespace winrt::TerminalApp::implementation
         {
             // Add all the commands, but make sure they're sorted alphabetically.
             std::vector<TerminalApp::Command> sortedCommands;
-            sortedCommands.reserve(_allActions.Size());
+            sortedCommands.reserve(commandsToFilter.Size());
 
-            for (auto action : _allActions)
+            for (auto action : commandsToFilter)
             {
                 sortedCommands.push_back(action);
             }
@@ -324,7 +349,7 @@ namespace winrt::TerminalApp::implementation
         // appear first in the list. The ordering will be determined by the
         // match weight produced by _getWeight.
         std::priority_queue<WeightedCommand> heap;
-        for (auto action : _allActions)
+        for (auto action : commandsToFilter)
         {
             const auto weight = CommandPalette::_getWeight(searchText, action.Name());
             if (weight > 0)
@@ -454,6 +479,8 @@ namespace winrt::TerminalApp::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
+
+        _nestedActionStack.Clear();
     }
 
 }
