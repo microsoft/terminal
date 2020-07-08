@@ -305,9 +305,6 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableCommandPaletteMode()
     {
-        // Make sure we're not in TabSwitcherMode
-        _tabSwitcherMode = false;
-
         _allActions = _allCommandPaletteActions;
         _updateFilteredActions();
     }
@@ -325,8 +322,11 @@ namespace winrt::TerminalApp::implementation
     static bool _compareTabIndex(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
     {
         std::wstring_view leftIndex{ lhs.KeyChordText() };
+        std::wstring leftIdx { leftIndex.substr(leftIndex.find_first_of(':') + 1) };
         std::wstring_view rightIndex{ rhs.KeyChordText() };
-        return leftIndex.compare(rightIndex) > 0;
+        std::wstring rightIdx{ rightIndex.substr(rightIndex.find_first_of(':') + 1) };
+
+        return stoi(leftIdx) > stoi(rightIdx);
     }
 
     // This is a helper struct to aid in sorting Commands by a given weighting.
@@ -548,6 +548,8 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
+        _tabSwitcherMode = false;
+
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
     }
@@ -575,10 +577,11 @@ namespace winrt::TerminalApp::implementation
                 case CollectionChange::ItemRemoved: {
                     _allTabActions.RemoveAt(idx);
                     UpdateTabIndices(idx);
-                    _updateFilteredActions();
                     break;
                 }
             }
+
+            _updateFilteredActions();
         }
     }
 
@@ -592,7 +595,7 @@ namespace winrt::TerminalApp::implementation
 
                 command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
 
-                command.KeyChordText(L"index : " + to_hstring(i));
+                command.KeyChordText(L"Index:" + to_hstring(i));
             }
         }
     }
@@ -608,10 +611,10 @@ namespace winrt::TerminalApp::implementation
 
         auto command = winrt::make_self<implementation::Command>();
         command->Action(*focusTabAction);
-        command->KeyChordText(L"Index : " + to_hstring(idx));
+        command->KeyChordText(L"Index:" + to_hstring(idx));
         command->Name(tab.Title());
 
-        // Listen for changes to this particular Tab's title so we can update the corresponding Command name.
+        // Listen for changes to the Tab so we can update this Command's attributes accordingly.
         auto weakThis{ get_weak() };
         auto weakCommand{ command->get_weak() };
         tab.PropertyChanged([weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
@@ -633,13 +636,6 @@ namespace winrt::TerminalApp::implementation
         else
         {
             _allTabActions.SetAt(idx, *command);
-        }
-
-        // We don't need to update the filtered actions if the
-        // command palette's actions aren't tab switcher actions.
-        if (_tabSwitcherMode)
-        {
-            _updateFilteredActions();
         }
     }
 
