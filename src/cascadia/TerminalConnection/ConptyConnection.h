@@ -66,6 +66,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::array<char, 4096> _buffer;
 
         DWORD _OutputThread();
+
+        public:
+        void _DoOutputThreadWork(std::wstring& str);
     };
 }
 
