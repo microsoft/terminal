@@ -204,6 +204,9 @@ namespace Microsoft::Console::Render
 
         bool _WillWriteSingleChar() const;
 
+        // buffer space for these two functions to build their lines
+        // so they don't have to alloc/free in a tight loop
+        std::wstring _bufferLine;
         [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;
