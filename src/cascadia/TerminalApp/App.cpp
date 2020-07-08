@@ -26,6 +26,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         Initialize();
+
+        // Disable XAML's automatic backplating of text when in High Contrast
+        // mode: we want full control of and responsibility for the foreground
+        // and background colors that we draw in XAML.
         HighContrastAdjustment(::winrt::Windows::UI::Xaml::ApplicationHighContrastAdjustment::None);
     }
 
