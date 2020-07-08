@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 

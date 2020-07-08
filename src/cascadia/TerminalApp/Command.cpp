@@ -215,6 +215,29 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
+    // - Helper to escape a string as a json string. This function will also
+    //   trim off the leading and trailing double-qoutes, so the output string
+    //   can be inserted directly into another json blob.
+    // Arguments:
+    // - input: the string to JSON escape.
+    // Return Value:
+    // - the input string escaped properly to be inserted into another json blob.
+    winrt::hstring _escapeForJson(const std::wstring_view input)
+    {
+        Json::Value inJson{ winrt::to_string(input) };
+        Json::StreamWriterBuilder builder;
+        builder.settings_["indentation"] = "";
+        std::string out{ Json::writeString(builder, inJson) };
+        if (out.size() >= 2)
+        {
+            // trim off the leading/trailing '"'s
+            auto ss{ out.substr(1, out.size() - 2) };
+            return winrt::to_hstring(ss);
+        }
+        return winrt::to_hstring(out);
+    }
+
+    // Function Description:
     // - A helper to replace any occurences of `keyword` with `replaceWith` in `sourceString`
     winrt::hstring _replaceKeyword(const winrt::hstring& sourceString,
                                    const std::wstring_view keyword,
@@ -292,10 +315,11 @@ namespace winrt::TerminalApp::implementation
                 // Replace all the keywords in the original json, and try and parse that
                 auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
 
-                // TODO: We need to escape the profile name for JSON appropriately
+                // Escape the profile name for JSON appropriately
+                auto escapedProfileName = _escapeForJson(p.GetName());
                 auto newJsonString = winrt::to_string(_replaceKeyword(oldJsonString,
                                                                       ProfileName,
-                                                                      p.GetName()));
+                                                                      escapedProfileName));
 
                 Json::Value newJsonValue;
                 const auto actualDataStart = newJsonString.data();
@@ -304,6 +328,10 @@ namespace winrt::TerminalApp::implementation
                 {
                     warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
                     // If we encounter a re-parsing error, just stop processing the rest of the commands.
+
+                    // TODO: if we fail to expand the json, we should return NO
+                    // commands, and also remove the current command from the
+                    // list of commands.
                     break;
                 }
 
