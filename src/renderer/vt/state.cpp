@@ -49,7 +49,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
     _inResizeRequest{ false },
-    _trace{}
+    _trace{},
+    _bufferLine{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -98,6 +99,51 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     CATCH_RETURN();
 }
 
+static HANDLE obj = nullptr;
+static std::atomic<bool> awake = false;
+static std::atomic<bool> moreData = false;
+static std::condition_variable condvar;
+static std::mutex bufflock;
+static std::string buff;
+static void vtRenderWriteMethod()
+{
+    std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
+
+    std::string str;
+
+    while (true)
+    {
+        lk.lock();
+
+        bool hasData = moreData.load();
+
+        if (!hasData)
+        {
+            awake.store(false);
+            condvar.wait(lk, [&] {
+                if (!buff.empty())
+                {
+                    str.swap(buff);
+                    return true;
+                }
+                return false;
+            });
+            awake.store(true);
+        }
+        else
+        {
+            str.swap(buff);
+            moreData.store(false);
+        }
+        lk.unlock();
+
+        WriteFile(obj, str.data(), static_cast<DWORD>(str.size()), nullptr, nullptr);
+        str.clear();
+    }
+}
+
+static std::thread th(vtRenderWriteMethod);
+
 [[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
 #ifdef UNIT_TESTING
@@ -108,23 +154,40 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     }
 #endif
 
-    if (!_pipeBroken)
+    bufflock.lock();
+    if (!obj)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-        _buffer.clear();
-        if (!fSuccess)
-        {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _pipeBroken = true;
-            if (_terminalOwner)
-            {
-                _terminalOwner->CloseOutput();
-            }
-            return _exitResult;
-        }
+        obj = _hFile.get();
     }
+    buff.append(_buffer);
+    moreData.store(true);
+    bool needToWake = !awake.load();
+    bufflock.unlock();
+    if (needToWake)
+    {
+        condvar.notify_one();
+    }
+    _buffer.clear();
 
     return S_OK;
+
+    //if (!_pipeBroken)
+    //{
+    //    bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+    //    _buffer.clear();
+    //    if (!fSuccess)
+    //    {
+    //        _exitResult = HRESULT_FROM_WIN32(GetLastError());
+    //        _pipeBroken = true;
+    //        if (_terminalOwner)
+    //        {
+    //            _terminalOwner->CloseOutput();
+    //        }
+    //        return _exitResult;
+    //    }
+    //}
+
+    //return S_OK;
 }
 
 // Method Description:
