@@ -142,7 +142,7 @@ static void vtRenderWriteMethod()
     }
 }
 
-static std::thread th(vtRenderWriteMethod);
+//static std::thread th(vtRenderWriteMethod);
 
 [[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
@@ -154,7 +154,7 @@ static std::thread th(vtRenderWriteMethod);
     }
 #endif
 
-    bufflock.lock();
+    /*bufflock.lock();
     if (!obj)
     {
         obj = _hFile.get();
@@ -169,25 +169,25 @@ static std::thread th(vtRenderWriteMethod);
     }
     _buffer.clear();
 
+    return S_OK;*/
+
+    if (!_pipeBroken)
+    {
+        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _buffer.clear();
+        if (!fSuccess)
+        {
+            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            _pipeBroken = true;
+            if (_terminalOwner)
+            {
+                _terminalOwner->CloseOutput();
+            }
+            return _exitResult;
+        }
+    }
+
     return S_OK;
-
-    //if (!_pipeBroken)
-    //{
-    //    bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-    //    _buffer.clear();
-    //    if (!fSuccess)
-    //    {
-    //        _exitResult = HRESULT_FROM_WIN32(GetLastError());
-    //        _pipeBroken = true;
-    //        if (_terminalOwner)
-    //        {
-    //            _terminalOwner->CloseOutput();
-    //        }
-    //        return _exitResult;
-    //    }
-    //}
-
-    //return S_OK;
 }
 
 // Method Description:

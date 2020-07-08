@@ -410,7 +410,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    static std::thread th(terminalOutputHandlerMethod);
+    //static std::thread th(terminalOutputHandlerMethod);
 
     void ConptyConnection::_DoOutputThreadWork(std::wstring& str)
     {
@@ -479,16 +479,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // Pass the output to our registered event handlers
-            bufflock.lock();
+            /*bufflock.lock();
             if (!obj)
             {
                 obj = this;
             }
             buff.emplace(_u16Str);
             bufflock.unlock();
-            condvar.notify_one();
+            condvar.notify_one();*/
                         
-            //_TerminalOutputHandlers(_u16Str);
+            _TerminalOutputHandlers(_u16Str);
         }
 
         return 0;
