@@ -8,7 +8,7 @@
 
 // For _vcprintf
 #include <conio.h>
-#include <stdarg.h>
+#include <cstdarg>
 
 #pragma hdrstop
 
@@ -26,14 +26,10 @@ const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 // Return Value:
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
-                   const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
     RenderEngineBase(),
     _hFile(std::move(pipe)),
-    _colorProvider(colorProvider),
-    _LastFG(INVALID_COLOR),
-    _LastBG(INVALID_COLOR),
-    _lastWasBold(false),
+    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _invalidMap(initialViewport.Dimensions()),
     _lastText({ 0 }),
@@ -491,4 +487,37 @@ void VtEngine::EndResizeRequest()
 void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
+}
+
+// Method Description:
+// - Manually emit a "Erase Scrollback" sequence to the connected terminal. We
+//   need to do this in certain cases that we've identified where we believe the
+//   client wanted the entire terminal buffer cleared, not just the viewport.
+//   For more information, see GH#3126.
+// - This is unimplemented in the win-telnet, xterm-ascii renderers - inbox
+//   telnet.exe doesn't know how to handle a ^[[3J. This _is_ implemented in the
+//   Xterm256Engine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT VtEngine::ManuallyClearScrollback() noexcept
+{
+    return S_OK;
+}
+
+// Method Description:
+// - Send a sequence to the connected terminal to request win32-input-mode from
+//   them. This will enable the connected terminal to send us full INPUT_RECORDs
+//   as input. If the terminal doesn't understand this sequence, it'll just
+//   ignore it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestWin32Input() noexcept
+{
+    RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
 }

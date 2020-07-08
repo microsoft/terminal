@@ -1350,6 +1350,23 @@ class RectangleTests
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
 
+    TEST_METHOD(CastToWindowsFoundationRect)
+    {
+        Log::Comment(L"0.) Typical situation.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            winrt::Windows::Foundation::Rect val = rc;
+            VERIFY_ARE_EQUAL(5.f, val.X);
+            VERIFY_ARE_EQUAL(10.f, val.Y);
+            VERIFY_ARE_EQUAL(10.f, val.Width);
+            VERIFY_ARE_EQUAL(10.f, val.Height);
+        }
+
+        // All ptrdiff_ts fit into a float, so there's no exception tests.
+        // The only other exceptions come from things that don't fit into width() or height()
+        // and those have explicit tests elsewhere in this file.
+    }
+
 #pragma region iterator
     TEST_METHOD(Begin)
     {

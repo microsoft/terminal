@@ -1,4 +1,0 @@
-http
-td
-www
-ecma

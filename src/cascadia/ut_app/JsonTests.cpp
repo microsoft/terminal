@@ -27,8 +27,6 @@ namespace TerminalAppUnitTests
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(ProfileGeneratesGuid);
-        TEST_METHOD(DiffProfile);
-        TEST_METHOD(DiffProfileWithNull);
 
         TEST_METHOD(TestWrongValueType);
 
@@ -170,59 +168,6 @@ namespace TerminalAppUnitTests
 
         VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
         VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
-    }
-
-    void JsonTests::DiffProfile()
-    {
-        Profile profile0;
-        Profile profile1;
-
-        Log::Comment(NoThrowString().Format(
-            L"Both these profiles are the same, their diff should have _no_ values"));
-
-        auto diff = profile1.DiffToJson(profile0);
-
-        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
-
-        VERIFY_ARE_EQUAL(0u, diff.getMemberNames().size());
-
-        profile1._name = L"profile1";
-        diff = profile1.DiffToJson(profile0);
-        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
-        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
-    }
-
-    void JsonTests::DiffProfileWithNull()
-    {
-        Profile profile0;
-        Profile profile1;
-
-        profile0._icon = L"foo";
-
-        Log::Comment(NoThrowString().Format(
-            L"Case 1: Base object has an optional that the derived does not - diff will have null for that value"));
-        auto diff = profile1.DiffToJson(profile0);
-
-        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
-
-        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
-        VERIFY_IS_TRUE(diff.isMember("icon"));
-        VERIFY_IS_TRUE(diff["icon"].isNull());
-
-        Log::Comment(NoThrowString().Format(
-            L"Case 2: Add an optional to the derived object that's not present in the root."));
-
-        profile0._icon = std::nullopt;
-        profile1._icon = L"bar";
-
-        diff = profile1.DiffToJson(profile0);
-
-        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
-
-        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
-        VERIFY_IS_TRUE(diff.isMember("icon"));
-        VERIFY_IS_TRUE(diff["icon"].isString());
-        VERIFY_IS_TRUE("bar" == diff["icon"].asString());
     }
 
     void JsonTests::TestWrongValueType()

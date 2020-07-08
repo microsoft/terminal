@@ -18,16 +18,9 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
-                                     const WORD Attribute,
-                                     const bool fForeground,
-                                     const bool fBackground,
-                                     const bool fMeta);
-
-void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo, const bool fForeground, const bool fBackground);
-
 [[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL);
@@ -49,30 +42,16 @@ void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
 
-void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                              const int iXtermTableEntry,
-                                              const bool fIsForeground);
-void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                            const COLORREF rgbColor,
-                                            const bool fIsForeground);
-
-void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded);
-
-ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo);
-void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo, const ExtendedAttributes attrs);
-
-[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
+[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType);
 void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor);
 
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo,
-                                                                    WORD& attributes);
-
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSuppressResizeRepaint();
@@ -84,7 +63,8 @@ void DoSrvPrivateInsertLines(const size_t count);
 
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept;
+[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept;
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept;
 
 [[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept;
 

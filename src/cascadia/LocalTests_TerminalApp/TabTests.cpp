@@ -17,6 +17,7 @@ using namespace winrt::TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 namespace TerminalAppLocalTests
 {

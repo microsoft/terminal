@@ -81,16 +81,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const ptrdiff_t _end;
             til::rectangle _run;
 
+            // Update _run to contain the next rectangle of consecutively set bits within this bitmap.
+            // _calculateArea may be called repeatedly to yield all those rectangles.
             void _calculateArea()
             {
-                // Backup the position as the next one.
-                _nextPos = _pos;
+                // The following logic first finds the next set bit in this bitmap and the next unset bit past that.
+                // The area in between those positions are thus all set bits and will end up being the next _run.
 
-                // Seek forward until we find an on bit.
-                while (_nextPos < _end && !_values[_nextPos])
-                {
-                    ++_nextPos;
-                }
+                // dynamic_bitset allows you to quickly find the next set bit using find_next(prev),
+                // where "prev" is the position _past_ which should be searched (i.e. excluding position "prev").
+                // If _pos is still 0, we thus need to use the counterpart find_first().
+                const auto nextPos = _pos == 0 ? _values.find_first() : _values.find_next(_pos - 1);
+                // If no next set bit can be found, npos is returned, which is SIZE_T_MAX.
+                // saturated_cast can ensure that this will be converted to PTRDIFF_T_MAX (which is greater than _end).
+                _nextPos = base::saturated_cast<ptrdiff_t>(nextPos);
 
                 // If we haven't reached the end yet...
                 if (_nextPos < _end)
@@ -118,8 +122,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else
                 {
-                    // If we reached the end, set the pos because the run is empty.
-                    _pos = _nextPos;
+                    // If we reached the end _nextPos may be >= _end (potentially even PTRDIFF_T_MAX).
+                    // ---> Mark the end of the iterator by updating the state with _end.
+                    _pos = _end;
+                    _nextPos = _end;
                     _run = til::rectangle{};
                 }
             }
@@ -135,7 +141,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz{},
             _rc{},
             _bits{},
-            _dirty{},
             _runs{}
         {
         }
@@ -149,7 +154,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(_sz.area()),
-            _dirty(fill ? sz : til::rectangle{}),
             _runs{}
         {
             if (fill)
@@ -162,7 +166,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _sz == other._sz &&
                    _rc == other._rc &&
-                   _dirty == other._dirty && // dirty is before bits because it's a rough estimate of bits and a faster comparison.
                    _bits == other._bits;
             // _runs excluded because it's a cache of generated state.
         }
@@ -187,15 +190,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // If we don't have cached runs, rebuild.
             if (!_runs.has_value())
             {
-                // If there's only one square dirty, quick save it off and be done.
-                if (one())
-                {
-                    _runs.emplace({ _dirty });
-                }
-                else
-                {
-                    _runs.emplace(begin(), end());
-                }
+                _runs.emplace(begin(), end());
             }
 
             // Return a reference to the runs.
@@ -205,6 +200,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // optional fill the uncovered area with bits.
         void translate(const til::point delta, bool fill = false)
         {
+            if (delta.x() == 0)
+            {
+                // fast path by using bit shifting
+                translate_y(delta.y(), fill);
+                return;
+            }
+
             // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
             til::bitmap other{ _sz };
 
@@ -274,8 +276,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _runs.reset(); // reset cached runs on any non-const method
 
             _bits.set(_rc.index_of(pt));
-
-            _dirty |= til::rectangle{ pt };
         }
 
         void set(const til::rectangle rc)
@@ -287,22 +287,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
             }
-
-            _dirty |= rc;
         }
 
         void set_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.set();
-            _dirty = _rc;
         }
 
         void reset_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.reset();
-            _dirty = {};
         }
 
         // True if we resized. False if it was the same size as before.
@@ -358,9 +354,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        bool one() const
+        constexpr bool one() const noexcept
         {
-            return _dirty.size() == til::size{ 1, 1 };
+            return _bits.count() == 1;
         }
 
         constexpr bool any() const noexcept
@@ -370,12 +366,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool none() const noexcept
         {
-            return _dirty.empty();
+            return _bits.none();
         }
 
         constexpr bool all() const noexcept
         {
-            return _dirty == _rc;
+            return _bits.all();
         }
 
         constexpr til::size size() const noexcept
@@ -399,7 +395,61 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-        til::rectangle _dirty;
+        void translate_y(ptrdiff_t delta_y, bool fill)
+        {
+            if (delta_y == 0)
+            {
+                return;
+            }
+
+            const auto bitShift = delta_y * _sz.width();
+
+#pragma warning(push)
+            // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
+#pragma warning(disable : 26472)
+            const auto newBits = static_cast<size_t>(std::abs(bitShift));
+#pragma warning(pop)
+            const bool isLeftShift = bitShift > 0;
+
+            if (newBits >= _bits.size())
+            {
+                if (fill)
+                {
+                    set_all();
+                }
+                else
+                {
+                    reset_all();
+                }
+                return;
+            }
+
+            if (isLeftShift)
+            {
+                // This operator doesn't modify the size of `_bits`: the
+                // new bits are set to 0.
+                _bits <<= newBits;
+            }
+            else
+            {
+                _bits >>= newBits;
+            }
+
+            if (fill)
+            {
+                if (isLeftShift)
+                {
+                    _bits.set(0, newBits, true);
+                }
+                else
+                {
+                    _bits.set(_bits.size() - newBits, newBits, true);
+                }
+            }
+
+            _runs.reset(); // reset cached runs on any non-const method
+        }
+
         til::size _sz;
         til::rectangle _rc;
         dynamic_bitset<> _bits;

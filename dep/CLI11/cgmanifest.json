@@ -1,0 +1,13 @@
+{"Registrations":[
+    {
+      "component": {
+       "type": "git",
+       "git": {
+         "repositoryUrl": "https://github.com/CLIUtils/CLI11",
+         "commitHash": "dd0d8e4fe729e5b1110232c7a5c9566dad884686"
+         }
+       }
+    }
+ ],
+ "Version": 1
+}

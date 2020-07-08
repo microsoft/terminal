@@ -53,8 +53,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to point from floating-point args;
+        // a math type is required. If you _don't_ provide one, you're going to
+        // get a compile-time error about "cannot convert from initializer-list to til::point"
+        template<typename TilMath, typename TOther>
+        constexpr point(TilMath, const TOther& x, const TOther& y, std::enable_if_t<std::is_floating_point_v<TOther>, int> /*sentinel*/ = 0) :
+            point(TilMath::template cast<ptrdiff_t>(x), TilMath::template cast<ptrdiff_t>(y))
+        {
+        }
+
         // This template will convert to size from anything that has a X and a Y field that are floating-point;
-        // a math type is required.
+        // a math type is required. If you _don't_ provide one, you're going to
+        // get a compile-time error about "cannot convert from initializer-list to til::point"
         template<typename TilMath, typename TOther>
         constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             point(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
@@ -62,7 +72,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // This template will convert to size from anything that has a x and a y field that are floating-point;
-        // a math type is required.
+        // a math type is required. If you _don't_ provide one, you're going to
+        // get a compile-time error about "cannot convert from initializer-list to til::point"
         template<typename TilMath, typename TOther>
         constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().x)> && std::is_floating_point_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
             point(TilMath::template cast<ptrdiff_t>(other.x), TilMath::template cast<ptrdiff_t>(other.y))

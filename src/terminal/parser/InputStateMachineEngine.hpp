@@ -73,6 +73,7 @@ namespace Microsoft::Console::VirtualTerminal
         CSI_F4 = L'S',
         DTTERM_WindowManipulation = L't',
         CursorBackTab = L'Z',
+        Win32KeyboardInput = L'_'
     };
 
     enum CsiMouseButtonCodes : unsigned short
@@ -116,14 +117,12 @@ namespace Microsoft::Console::VirtualTerminal
 
     enum class Ss3ActionCodes : wchar_t
     {
-        // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
-        //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
-        // ArrowUp = L'A',
-        // ArrowDown = L'B',
-        // ArrowRight = L'C',
-        // ArrowLeft = L'D',
-        // Home = L'H',
-        // End = L'F',
+        ArrowUp = L'A',
+        ArrowDown = L'B',
+        ArrowRight = L'C',
+        ArrowLeft = L'D',
+        Home = L'H',
+        End = L'F',
         SS3_F1 = L'P',
         SS3_F2 = L'Q',
         SS3_F3 = L'R',
@@ -149,6 +148,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionEscDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates) override;
 
+        bool ActionVt52EscDispatch(const wchar_t wch,
+                                   const std::basic_string_view<wchar_t> intermediates,
+                                   const std::basic_string_view<size_t> parameters) noexcept override;
+
         bool ActionCsiDispatch(const wchar_t wch,
                                const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
@@ -164,6 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionSs3Dispatch(const wchar_t wch,
                                const std::basic_string_view<size_t> parameters) override;
 
+        bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
@@ -210,6 +214,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
                                         unsigned int& function) const noexcept;
+
+        bool _GenerateWin32Key(const std::basic_string_view<size_t> parameters, KeyEvent& key);
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;

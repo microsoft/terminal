@@ -12,7 +12,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DFE_SB
+C_DEFINES               = $(C_DEFINES) -DFE_SB -D__INSIDE_WINDOWS
 
 # -------------------------------------
 # Compiler Settings

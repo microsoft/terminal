@@ -27,6 +27,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         GETSET_PROPERTY(Windows::Foundation::Size, FontSize);
 
         GETSET_PROPERTY(winrt::hstring, FontFace);
+
+        GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>
@@ -82,6 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _currentTextBlockHeight;
         winrt::Windows::Foundation::Rect _currentControlBounds;
         winrt::Windows::Foundation::Rect _currentTextBounds;
+        winrt::Windows::Foundation::Rect _currentWindowBounds;
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
