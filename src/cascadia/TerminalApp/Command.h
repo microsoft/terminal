@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::BitmapIconSource, Icon, _PropertyChangedHandlers);
     };
 }
 

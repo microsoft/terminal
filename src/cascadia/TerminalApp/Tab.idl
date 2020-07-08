@@ -7,5 +7,6 @@ namespace TerminalApp
     {
         String Title { get; };
         String IconPath { get; };
+        Microsoft.UI.Xaml.Controls.BitmapIconSource Icon { get; };
     }
 }
