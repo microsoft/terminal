@@ -1,7 +1,7 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
 created on: 2020-06-29
-last updated: 2020-07-06
+last updated: 2020-07-08
 issue id: #1564
 ---
 
@@ -24,15 +24,6 @@ The settings UI will be the default experience. We will provide users an option 
 Some users don't want a UI for the settings. We can update the `openSettings` key binding with a `settingsUI` option.
 
 If people still like the UI but want to access the JSON file, we can provide an "Open the JSON file" button at the bottom of the navigation menu.
-
-### Top-level navigation
-
-The settings UI should have top-level navigation that aligns with the overall structure of the settings.json file. The following are the proposed navigation items:
-
-- Globals
-- Profiles
-- Color schemes
-- Key bindings
 
 ### Launch methods
 
@@ -60,15 +51,49 @@ A future option could be adding a TerminalControl inside the settings UI to prev
 
 ## UI/UX Design
 
-The purpose of the below image is to depict the navigation menu. The layout of the content in the page will be discussed in a future design review.
+### Top-level navigation
 
-![Settings UI navigation](./navigation.png)
+#### Proposal 1 - Align with JSON
+
+The settings UI could have top-level navigation that aligns with the overall structure of the settings.json file. The following are the proposed navigation items:
+
+- Globals
+- Profiles
+- Color schemes
+- Bindings
+
+For Bindings, it would have key bindings, mouse bindings, and command palette inside it. I would like to discuss a better name aside from Bindings. I'm afraid having command palette under Bindings would be confusing.
+
+![Settings UI navigation 1](./navigation.png)
+
+#### Proposal 2 - More descriptive navigation
+
+Alternatively, we could break up the navigation menu into more digestible sections. This aligns more closely to other terminals. The following are the proposed navigation items:
+
+- General
+- Appearance
+    - Global
+    - Color schemes
+    - Themes
+- Tabs
+- Profiles
+    - Defaults
+    - Enumerate profiles
+    - Add new
+- Keyboard
+- Mouse*
+- Command Palette
+- Marketplace*
+
+\* Mouse and marketplace will be added once they're implemented.
+
+![Settings UI navigation 2](./navigation-2.png)
 
 ## Capabilities
 
 ### Accessibility
 
-This will have to undergo full accessibility testing because it is a new UI element. All items inside the settings UI should be accessible by a screen reader and the keyboard.
+This will have to undergo full accessibility testing because it is a new UI element. All items inside the settings UI should be accessible by a screen reader and the keyboard. Additionally, all of the settings UI will have to be localized.
 
 ### Security
 
