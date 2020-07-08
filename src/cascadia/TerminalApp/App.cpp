@@ -26,6 +26,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         Initialize();
+        HighContrastAdjustment(::winrt::Windows::UI::Xaml::ApplicationHighContrastAdjustment::None);
     }
 
     AppLogic App::Logic()
