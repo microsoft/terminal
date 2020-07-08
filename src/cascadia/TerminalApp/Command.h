@@ -33,9 +33,11 @@ namespace winrt::TerminalApp::implementation
 
     struct Command : CommandT<Command>
     {
-        Command() = default;
+        Command();
 
-        static winrt::com_ptr<Command> FromJson(const Json::Value& json, std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+        static winrt::com_ptr<Command> FromJson(const Json::Value& json,
+                                                std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
+                                                const bool postExpansion = false);
 
         static std::vector<winrt::TerminalApp::Command> ExpandCommand(winrt::com_ptr<Command> expandable,
                                                                       const std::vector<::TerminalApp::Profile>& profiles,
@@ -43,6 +45,8 @@ namespace winrt::TerminalApp::implementation
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
+
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> NestedCommands();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
@@ -52,6 +56,8 @@ namespace winrt::TerminalApp::implementation
 
     private:
         Json::Value _originalJson;
+        std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
     };
 }
 

@@ -105,6 +105,9 @@ namespace winrt::TerminalApp::implementation
                 // unset by default, so we don't need to worry about clearing it
                 // if there isn't a key associated with it.
                 auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+
+                // TODO: Make this recursive, because commands might have
+                // subcommands that also have keybindings
                 if (keyChord)
                 {
                     command.KeyChordText(KeyChordSerialization::ToString(keyChord));

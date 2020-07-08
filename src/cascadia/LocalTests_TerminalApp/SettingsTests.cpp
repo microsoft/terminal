@@ -85,6 +85,10 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestIterateCommands);
         TEST_METHOD(TestIterateAutogenNamedCommands);
         TEST_METHOD(TestIterateOnBadJson);
+        TEST_METHOD(TestNestedCommands);
+        TEST_METHOD(TestNestedInIterableCommand);
+        TEST_METHOD(TestIterableInNestedCommand);
+        TEST_METHOD(TestNestedCommandWithoutName);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -2925,6 +2929,52 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
         }
+    }
+
+    void SettingsTests::TestNestedCommands()
+    {
+        // This test
+        Log::Result(WEX::Logging::TestResults::Skipped);
+    }
+    void SettingsTests::TestNestedInIterableCommand()
+    {
+        // This test checks a iterable command that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ New Pane...
+        //    ├─ Profile 1...
+        //    |  ├─ Split Automatically
+        //    |  ├─ Split Vertically
+        //    |  └─ Split Horizontally
+        //    ├─ Profile 2...
+        //    |  ├─ Split Automatically
+        //    |  ├─ Split Vertically
+        //    |  └─ Split Horizontally
+        //    └─ Profile 3...
+        //       ├─ Split Automatically
+        //       ├─ Split Vertically
+        //       └─ Split Horizontally
+        Log::Result(WEX::Logging::TestResults::Skipped);
+    }
+    void SettingsTests::TestIterableInNestedCommand()
+    {
+        // This test checks a nested command that includes an iterable command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ New Tab With Profile...
+        //    ├─ Profile 1
+        //    ├─ Profile 2
+        //    └─ Profile 3
+        Log::Result(WEX::Logging::TestResults::Skipped);
+    }
+    void SettingsTests::TestNestedCommandWithoutName()
+    {
+        // This test tests a nested command without a name specified. This type
+        // of command should just be ignored, since we can't auto-generate names
+        // for nested commands, they _must_ have names specified.
+        Log::Result(WEX::Logging::TestResults::Skipped);
     }
 
 }

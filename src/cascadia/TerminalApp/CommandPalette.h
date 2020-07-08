@@ -22,6 +22,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allActions{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedActionStack{ nullptr };
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,

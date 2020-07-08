@@ -11,13 +11,14 @@
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
+using namespace winrt::Windows::Foundation;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconPathKey{ "iconPath" };
 static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
-
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
+static constexpr std::string_view CommandsKey{ "commands" };
 
 static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 
@@ -25,6 +26,16 @@ static constexpr std::wstring_view ProfileName{ L"${profile.name}" };
 
 namespace winrt::TerminalApp::implementation
 {
+    Command::Command()
+    {
+        _nestedCommandsView = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
+    }
+
+    Collections::IObservableVector<winrt::TerminalApp::Command> Command::NestedCommands()
+    {
+        return _nestedCommandsView;
+    }
+
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
     //   * If the "name" property is a string, return that value.
@@ -108,51 +119,95 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
+                                              const bool postExpansion)
     {
         auto result = winrt::make_self<Command>();
 
-        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
+        bool iterable = false;
+        bool nested = false;
+        if (!postExpansion)
         {
-            auto s = iterateOnJson.asString();
-            if (s == IterateOnProfilesValue)
+            if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
             {
-                result->_IterateOn = ExpandCommandType::Profiles;
+                auto s = iterateOnJson.asString();
+                if (s == IterateOnProfilesValue)
+                {
+                    result->_IterateOn = ExpandCommandType::Profiles;
+                    iterable = true;
+                }
             }
+        }
+
+        // For iterable commands, we'll make another pass at parsing them once
+        // the json is patched. So ignore parsing sub-commands for now. Commands
+        // will only be marked iterable on the first pass.
+        if (!iterable)
+        {
+            if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
+            {
+                auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
+                // It's possible that the nested commands have some warnings
+                warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
+
+                // Add all the commands we've parsed to the observable vector we
+                // have, so we can access them in XAML.
+                for (auto& nameAndCommand : result->_subcommands)
+                {
+                    auto command = nameAndCommand.second;
+                    result->_nestedCommandsView.Append(command);
+                }
+                nested = true;
+            }
+
+            // TODO: else if (hasKey(CommandKey) )
+            // {
+            //     // { name: "foo", commands: null } will land in this case, which
+            //     // should also be used for unbinding.
+            //     return nullptr;
+            // }
         }
 
         // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
         // the binding quite right. Additionally, do we want it to be an image,
         // or a FontIcon? I've had difficulty binding either/or.
 
-        if (const auto actionJson{ json[JsonKey(ActionKey)] })
+        // If we're a nested command, we can ignore the current command.
+        if (!nested)
         {
-            auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
-
-            if (actionAndArgs)
+            if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
-                result->_setAction(*actionAndArgs);
+                auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
+
+                if (actionAndArgs)
+                {
+                    result->_setAction(*actionAndArgs);
+                }
+                else
+                {
+                    // Something like
+                    //      { name: "foo", action: "unbound" }
+                    // will _remove_ the "foo" command, by returning null here.
+                    return nullptr;
+                }
+
+                // If an iterable command doesn't have a name set, we'll still just
+                // try and generate a fake name for the command give the string we
+                // currently have. It'll probably generate something like "New tab,
+                // profile: ${profile.name}". This string will only be temporarily
+                // used internally, so there's no problem.
+                result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
             }
             else
             {
-                // Something like
-                //      { name: "foo", action: "unbound" }
-                // will _remove_ the "foo" command, by returning null here.
+                // { name: "foo", action: null } will land in this case, which
+                // should also be used for unbinding.
                 return nullptr;
             }
-
-            // If an iterable command doesn't have a name set, we'll still just
-            // try and generate a fake name for the command give the string we
-            // currently have. It'll probably generate something like "New tab,
-            // profile: ${profile.name}". This string will only be temporarily
-            // used internally, so there's no problem.
-            result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
         }
         else
         {
-            // { name: "foo", action: null } will land in this case, which
-            // should also be used for unbinding.
-            return nullptr;
+            result->_setName(_nameFromJson(json));
         }
 
         // Stash the original json value in this object. If the command is
@@ -332,7 +387,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Pass the new json back though FromJson, to get the new expanded value.
-                if (auto newCmd{ Command::FromJson(newJsonValue, warnings) })
+                if (auto newCmd{ Command::FromJson(newJsonValue, warnings, true) })
                 {
                     newCommands.push_back(*newCmd);
                 }
