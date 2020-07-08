@@ -505,6 +505,9 @@
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
     <value>Reset font size</value>
   </data>
+  <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
+    <value>Toggle retro terminal effect</value>
+  </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>

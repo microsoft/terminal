@@ -41,6 +41,10 @@ namespace winrt::TerminalApp::implementation
 
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
+
+        void _dispatchCommand(const TerminalApp::Command& command);
+
+        void _dismissPalette();
     };
 }
 
