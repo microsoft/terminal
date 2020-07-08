@@ -63,8 +63,8 @@ private:
     bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
     void _UpdateNextPosition();
 
-    void _IncrementCoord(COORD& coord) const;
-    void _DecrementCoord(COORD& coord) const;
+    void _IncrementCoord(COORD& coord) const noexcept;
+    void _DecrementCoord(COORD& coord) const noexcept;
 
     static COORD s_GetInitialAnchor(Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
 
