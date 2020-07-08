@@ -501,6 +501,9 @@
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
     <value>Reset font size</value>
   </data>
+  <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
+    <value>Toggle retro terminal effect</value>
+  </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
@@ -529,13 +532,13 @@
   </data>
   <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Medium Sea Green</value>
-  </data>  
+  </data>
   <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dark Orange</value>
   </data>
   <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Medium Violet Red</value>
-  </data>  
+  </data>
   <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dodger Blue</value>
   </data>
