@@ -167,7 +167,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
 
-                        <Grid HorizontalAlignment="Stretch">
+                        <Grid HorizontalAlignment="Stretch" >
 
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="16"/>
@@ -178,8 +178,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!-- TODO GH#6644: Add Icon to command palette entries, in column 0 -->
 
                             <TextBlock Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind Name, Mode=OneWay}" />
+                                       HorizontalAlignment="Left"
+                                       Text="{x:Bind Name, Mode=OneWay}" />
 
                             <!-- The block for the key chord is only visible
                             when there's actual text set as the label. See
