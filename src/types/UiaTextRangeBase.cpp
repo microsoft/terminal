@@ -227,8 +227,17 @@ try
     // get the values of our endpoint
     const auto mine = GetEndpoint(endpoint);
 
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     // compare them
-    *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other, true);
+    *pRetVal = bufferSize.CompareInBounds(mine, other, true);
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
@@ -388,7 +397,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
-        const auto viewportOrigin = viewport.Origin();
+        const til::point viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
@@ -426,7 +435,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
             for (const auto& rect : textRects)
             {
-                _getBoundingRect(rect, coords);
+                til::rectangle r{ rect };
+                r -= viewportOrigin;
+                _getBoundingRect(r, coords);
             }
         }
 
@@ -652,6 +663,17 @@ try
         return E_INVALIDARG;
     }
 
+    // TODO GH#5406: create a different UIA parent object for each TextBuffer
+    //   This is a temporary solution to comparing two UTRs from different TextBuffers
+    //   Ensure both endpoints fit in the current buffer.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto mine = GetEndpoint(endpoint);
+    const auto other = range->GetEndpoint(targetEndpoint);
+    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
+    {
+        return E_FAIL;
+    }
+
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
     UiaTracing::TextRange::MoveEndpointByRange(endpoint, *range, targetEndpoint, *this);
@@ -759,6 +781,8 @@ try
     FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
     FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
+    Unlock.reset();
+
     _ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
@@ -768,9 +792,6 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
-
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
 
     // we don't have any children

@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.TerminalControl
     {
         String FontFace { get; set; };
         Windows.Foundation.Size FontSize { get; set; };
+        Windows.UI.Text.FontWeight FontWeight { get; set; };
     }
 
     [default_interface]

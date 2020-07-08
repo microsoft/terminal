@@ -4,6 +4,7 @@ Ballmer
 bhoj
 Bhojwani
 dgnuff
+carlos
 dhowett
 Diviness
 dsafa
@@ -41,6 +42,7 @@ oldnewthing
 osgwiki
 paulcam
 pauldotknopf
+PGP
 Pham
 Rincewind
 rprichard
@@ -54,6 +56,8 @@ Wirt
 Wojciech
 zadjii
 Zamor
+Zamora
+zamora
 Zoey
 zorio
 Zverovich

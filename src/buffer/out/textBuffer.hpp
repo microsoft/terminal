@@ -158,8 +158,7 @@ public:
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
                                const std::wstring_view fontFaceName,
-                               const COLORREF backgroundColor,
-                               const std::string& htmlTitle);
+                               const COLORREF backgroundColor);
 
     static std::string GenRTF(const TextAndColor& rows,
                               const int fontHeightPoints,

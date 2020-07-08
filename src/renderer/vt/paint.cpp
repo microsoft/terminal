@@ -156,7 +156,7 @@ using namespace Microsoft::Console::Types;
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     _trace.TracePaintCursor(options.coordCursor);
 
@@ -185,80 +185,66 @@ using namespace Microsoft::Console::Types;
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
+// - textAttributes: Text attributes to use for the colors.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                         const COLORREF colorBackground,
-                                                         const bool isBold,
-                                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                         const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept
 {
-    const bool fgChanged = colorForeground != _LastFG;
-    const bool bgChanged = colorBackground != _LastBG;
-    const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
-    const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+    const auto fg = textAttributes.GetForeground();
+    const auto bg = textAttributes.GetBackground();
+    auto lastFg = _lastTextAttributes.GetForeground();
+    auto lastBg = _lastTextAttributes.GetBackground();
 
     // If both the FG and BG should be the defaults, emit a SGR reset.
-    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
+    if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
     {
-        // SGR Reset will also clear out the boldness of the text.
+        // SGR Reset will clear all attributes.
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _LastFG = colorForeground;
-        _LastBG = colorBackground;
-        _lastWasBold = false;
-
-        // I'm not sure this is possible currently, but if the text is bold, but
-        //      default colors, make sure we bold it.
-        if (isBold)
-        {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
-        }
+        _lastTextAttributes = {};
+        lastFg = {};
+        lastBg = {};
     }
-    else
+
+    if (fg != lastFg)
     {
-        if (_lastWasBold != isBold)
+        if (fg.IsDefault())
         {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
         }
+        else if (fg.IsIndex16())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(fg.GetIndex(), true));
+        }
+        else if (fg.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition256Color(fg.GetIndex(), true));
+        }
+        else if (fg.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(fg.GetRGB(), true));
+        }
+        _lastTextAttributes.SetForeground(fg);
+    }
 
-        WORD wFoundColor = 0;
-        if (fgChanged)
+    if (bg != lastBg)
+    {
+        if (bg.IsDefault())
         {
-            if (fgIsDefault)
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
-            }
-            else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
-            {
-                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
-            }
-            else
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
-            }
-            _LastFG = colorForeground;
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
         }
-
-        if (bgChanged)
+        else if (bg.IsIndex16())
         {
-            if (bgIsDefault)
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
-            }
-            else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
-            {
-                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
-            }
-            else
-            {
-                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
-            }
-            _LastBG = colorBackground;
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(bg.GetIndex(), false));
         }
+        else if (bg.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition256Color(bg.GetIndex(), false));
+        }
+        else if (bg.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(bg.GetRGB(), false));
+        }
+        _lastTextAttributes.SetBackground(bg);
     }
 
     return S_OK;
@@ -266,65 +252,62 @@ using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. It will try to
-//      find the colors in the color table that are nearest to the input colors,
-//       and write those indices to the pipe.
+//      find ANSI colors that are nearest to the input colors, and write those
+//      indices to the pipe.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
-// - ColorTable: An array of colors to find the closest match to.
-// - cColorTable: size of the color table.
+// - textAttributes: Text attributes to use for the colors.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                                             const COLORREF colorBackground,
-                                                             const bool isBold,
-                                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                                             const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept
 {
-    const bool fgChanged = colorForeground != _LastFG;
-    const bool bgChanged = colorBackground != _LastBG;
-    const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
-    const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+    const auto fg = textAttributes.GetForeground();
+    const auto bg = textAttributes.GetBackground();
+    auto lastFg = _lastTextAttributes.GetForeground();
+    auto lastBg = _lastTextAttributes.GetBackground();
 
-    // If both the FG and BG should be the defaults, emit a SGR reset.
-    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
+    // If either FG or BG have changed to default, emit a SGR reset.
+    // We can't reset FG and BG to default individually.
+    if ((fg.IsDefault() && !lastFg.IsDefault()) || (bg.IsDefault() && !lastBg.IsDefault()))
     {
-        // SGR Reset will also clear out the boldness of the text.
+        // SGR Reset will clear all attributes.
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _LastFG = colorForeground;
-        _LastBG = colorBackground;
-        _lastWasBold = false;
-        // I'm not sure this is possible currently, but if the text is bold, but
-        //      default colors, make sure we bold it.
-        if (isBold)
-        {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
-        }
+        _lastTextAttributes = {};
+        lastFg = {};
+        lastBg = {};
     }
-    else
+
+    // We use the legacy color calculations to generate an approximation of the
+    // colors in the 16-color table.
+    auto fgIndex = fg.GetLegacyIndex(0);
+    auto bgIndex = bg.GetLegacyIndex(0);
+
+    // If the bold attribute is set, and the foreground can be brightened, then do so.
+    const bool brighten = textAttributes.IsBold() && fg.CanBeBrightened();
+    fgIndex |= (brighten ? FOREGROUND_INTENSITY : 0);
+
+    // To actually render bright colors, though, we need to use SGR bold.
+    const auto needBold = fgIndex > 7;
+    if (needBold != _lastTextAttributes.IsBold())
     {
-        if (_lastWasBold != isBold)
-        {
-            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
-            _lastWasBold = isBold;
-        }
+        RETURN_IF_FAILED(_SetBold(needBold));
+        _lastTextAttributes.SetBold(needBold);
+    }
 
-        if (fgChanged)
-        {
-            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
+    // After which we drop the high bits, since only colors 0 to 7 are supported.
 
-            _LastFG = colorForeground;
-        }
+    fgIndex &= 7;
+    bgIndex &= 7;
 
-        if (bgChanged)
-        {
-            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
+    if (!fg.IsDefault() && (lastFg.IsDefault() || fgIndex != lastFg.GetIndex()))
+    {
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(fgIndex, true));
+        _lastTextAttributes.SetIndexedForeground(fgIndex);
+    }
 
-            _LastBG = colorBackground;
-        }
+    if (!bg.IsDefault() && (lastBg.IsDefault() || bgIndex != lastBg.GetIndex()))
+    {
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(bgIndex, false));
+        _lastTextAttributes.SetIndexedBackground(bgIndex);
     }
 
     return S_OK;
@@ -445,6 +428,12 @@ using namespace Microsoft::Console::Types;
                               (!_clearedAllThisFrame);
     const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
+    // GH#5502 - If the background color of the "new bottom line" is different
+    // than when we emitted the line, we can't optimize out the spaces from it.
+    // We'll still need to emit those spaces, so that the connected terminal
+    // will have the same background color on those blank cells.
+    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _lastTextAttributes.GetBackground()) : true;
+
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
     //
@@ -459,7 +448,7 @@ using namespace Microsoft::Console::Types;
     // on the same line.
     const bool removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine));
+                                               (_newBottomLine && printingBottomLine && bgMatched));
     const size_t cchActual = removeSpaces ?
                                  (cchLine - numSpaces) :
                                  cchLine;
@@ -475,6 +464,13 @@ using namespace Microsoft::Console::Types;
         // accidentally erasing the last character from the previous line, as
         // the cursor is still waiting on that character for the next character
         // to follow it.
+        //
+        // GH#5839 - If we've emitted a wrapped row, because the cursor is
+        // sitting just past the last cell of the previous row, if we execute a
+        // EraseCharacter or EraseLine here, then the row won't actually get
+        // cleared here. This logic is important to make sure that the cursor is
+        // in the right position before we do that.
+
         _wrappedRow = std::nullopt;
         _trace.TraceClearWrapped();
     }
@@ -563,8 +559,9 @@ using namespace Microsoft::Console::Types;
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
-        else if (numSpaces > 0)
+        else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
+            // TODO GH#5430 - Determine why and when we would do this.
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
@@ -577,6 +574,7 @@ using namespace Microsoft::Console::Types;
     if (printingBottomLine)
     {
         _newBottomLine = false;
+        _newBottomLineBG = std::nullopt;
     }
 
     return S_OK;

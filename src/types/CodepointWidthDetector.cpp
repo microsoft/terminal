@@ -19,9 +19,39 @@ namespace
         return range.upperBound < searchTerm;
     }
 
-    static constexpr std::array<UnicodeRange, 285> s_wideAndAmbiguousTable{
+    static constexpr std::array<UnicodeRange, 294> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
+        //
+        // GH #900 - Supplemented with emoji codepoints from https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
+        // Emojis in 0x2010 - 0x2B59 used to be marked as Ambiguous in GetQuickCharWidth() in order to
+        // force a font lookup, but since we default all Ambiguous width to Narrow, those emojis always
+        // came out looking squished/tiny. They've been moved into this table and marked as Wide.
+        //
+        // === UCD Definitions ===
+        // EA - EastAsianWidth
+        // Emoji - Emoji
+        // EPres - Emoji Presentation
+        // =======================
+        //
+        // This table has been partially regenerated from the Unicode Character Database as of 13.0, with
+        // the following rules:
+        // Codepoints whose EA is "W", "F" are Wide
+        // Codepoints whose EA is "A" are Ambiguous
+        // Codepoints where Emoji=Y and EPres=Y are Emoji, therefore Wide
+        // -
+        // Codepoints where Emoji=Y but EPres=*N* are only Emoji when followed
+        // by U+FE0F variation selector 15.
+        //
+        // There are a couple of codepoints that Microsoft specifically gave an emoji representation
+        // even if it's not specified as an emoji in the standard. I'll list the ones I'm aware of in this comment in case
+        // we decide to add them in the future:
+        // 0x261A-0x261C, 0x261E-0x261F
+        // 0x2661,
+        // 0x2662,
+        // 0x2664,
+        // 0x2666 0x2710,
+        // 0x270E 0x2765 0x1f000 - 0x1f02b except 0x1f004 0x1f594
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
@@ -146,11 +176,11 @@ namespace
         UnicodeRange{ 0x22a5, 0x22a5, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x22bf, 0x22bf, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2312, 0x2312, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x231a, 0x231b, CodepointWidth::Wide },
+        UnicodeRange{ 0x231a, 0x231b, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2329, 0x232a, CodepointWidth::Wide },
-        UnicodeRange{ 0x23e9, 0x23ec, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f0, 0x23f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x23f3, 0x23f3, CodepointWidth::Wide },
+        UnicodeRange{ 0x23e9, 0x23ec, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x23f0, 0x23f0, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x23f3, 0x23f3, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2460, 0x24e9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x24eb, 0x254b, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2550, 0x2573, CodepointWidth::Ambiguous },
@@ -167,61 +197,61 @@ namespace
         UnicodeRange{ 0x25ce, 0x25d1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25e2, 0x25e5, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x25ef, 0x25ef, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x25fd, 0x25fe, CodepointWidth::Wide },
+        UnicodeRange{ 0x25fd, 0x25fe, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2605, 0x2606, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2609, 0x2609, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x260e, 0x260f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide },
+        UnicodeRange{ 0x2614, 0x2615, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x261c, 0x261c, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x261e, 0x261e, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2640, 0x2640, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2642, 0x2642, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide },
+        UnicodeRange{ 0x2648, 0x2653, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2660, 0x2661, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2663, 0x2665, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2667, 0x266a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266c, 0x266d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x266f, 0x266f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x267f, 0x267f, CodepointWidth::Wide },
-        UnicodeRange{ 0x2693, 0x2693, CodepointWidth::Wide },
+        UnicodeRange{ 0x267f, 0x267f, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2693, 0x2693, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x269e, 0x269f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26a1, 0x26a1, CodepointWidth::Wide },
-        UnicodeRange{ 0x26aa, 0x26ab, CodepointWidth::Wide },
-        UnicodeRange{ 0x26bd, 0x26be, CodepointWidth::Wide },
+        UnicodeRange{ 0x26a1, 0x26a1, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x26aa, 0x26ab, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x26bd, 0x26be, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26bf, 0x26bf, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26c4, 0x26c5, CodepointWidth::Wide },
+        UnicodeRange{ 0x26c4, 0x26c5, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26c6, 0x26cd, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26ce, 0x26ce, CodepointWidth::Wide },
+        UnicodeRange{ 0x26ce, 0x26ce, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26cf, 0x26d3, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26d4, 0x26d4, CodepointWidth::Wide },
+        UnicodeRange{ 0x26d4, 0x26d4, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26d5, 0x26e1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26e3, 0x26e3, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x26e8, 0x26e9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26ea, 0x26ea, CodepointWidth::Wide },
+        UnicodeRange{ 0x26ea, 0x26ea, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26eb, 0x26f1, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f2, 0x26f3, CodepointWidth::Wide },
+        UnicodeRange{ 0x26f2, 0x26f3, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26f4, 0x26f4, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26f5, 0x26f5, CodepointWidth::Wide },
+        UnicodeRange{ 0x26f5, 0x26f5, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26f6, 0x26f9, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26fa, 0x26fa, CodepointWidth::Wide },
+        UnicodeRange{ 0x26fa, 0x26fa, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26fb, 0x26fc, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x26fd, 0x26fd, CodepointWidth::Wide },
+        UnicodeRange{ 0x26fd, 0x26fd, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x26fe, 0x26ff, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide },
-        UnicodeRange{ 0x270a, 0x270b, CodepointWidth::Wide },
-        UnicodeRange{ 0x2728, 0x2728, CodepointWidth::Wide },
+        UnicodeRange{ 0x2705, 0x2705, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x270a, 0x270b, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2728, 0x2728, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x273d, 0x273d, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x274c, 0x274c, CodepointWidth::Wide },
-        UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide },
-        UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide },
-        UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide },
+        UnicodeRange{ 0x274c, 0x274c, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x274e, 0x274e, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2753, 0x2755, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2757, 0x2757, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2776, 0x277f, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide },
-        UnicodeRange{ 0x27b0, 0x27b0, CodepointWidth::Wide },
-        UnicodeRange{ 0x27bf, 0x27bf, CodepointWidth::Wide },
-        UnicodeRange{ 0x2b1b, 0x2b1c, CodepointWidth::Wide },
-        UnicodeRange{ 0x2b50, 0x2b50, CodepointWidth::Wide },
-        UnicodeRange{ 0x2b55, 0x2b55, CodepointWidth::Wide },
+        UnicodeRange{ 0x2795, 0x2797, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x27b0, 0x27b0, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x27bf, 0x27bf, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2b1b, 0x2b1c, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2b50, 0x2b50, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x2b55, 0x2b55, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x2b56, 0x2b59, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2e80, 0x2e99, CodepointWidth::Wide },
         UnicodeRange{ 0x2e9b, 0x2ef3, CodepointWidth::Wide },
@@ -258,50 +288,59 @@ namespace
         UnicodeRange{ 0x18800, 0x18af2, CodepointWidth::Wide },
         UnicodeRange{ 0x1b000, 0x1b11e, CodepointWidth::Wide },
         UnicodeRange{ 0x1b170, 0x1b2fb, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f004, 0x1f004, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f0cf, 0x1f0cf, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f004, 0x1f004, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f0cf, 0x1f0cf, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x1f100, 0x1f10a, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f110, 0x1f12d, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f130, 0x1f169, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1f170, 0x1f18d, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f18e, 0x1f18e, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f18e, 0x1f18e, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x1f18f, 0x1f190, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x1f191, 0x1f19a, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f191, 0x1f19a, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x1f19b, 0x1f1ac, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x1f1e6, 0x1f1ff, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x1f200, 0x1f202, CodepointWidth::Wide },
         UnicodeRange{ 0x1f210, 0x1f23b, CodepointWidth::Wide },
         UnicodeRange{ 0x1f240, 0x1f248, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f250, 0x1f251, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f250, 0x1f251, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x1f260, 0x1f265, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f300, 0x1f320, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f32d, 0x1f335, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f337, 0x1f37c, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f37e, 0x1f393, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3a0, 0x1f3ca, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3cf, 0x1f3d3, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3e0, 0x1f3f0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f4, 0x1f3f4, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f3f8, 0x1f43e, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f440, 0x1f440, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f442, 0x1f4fc, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f4ff, 0x1f53d, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f54b, 0x1f54e, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f550, 0x1f567, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f57a, 0x1f57a, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f595, 0x1f596, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5a4, 0x1f5a4, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f5fb, 0x1f64f, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f680, 0x1f6c5, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6cc, 0x1f6cc, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6d0, 0x1f6d2, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6eb, 0x1f6ec, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f6f4, 0x1f6f8, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f910, 0x1f93e, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f940, 0x1f94c, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f950, 0x1f96b, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f980, 0x1f997, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f9c0, 0x1f9c0, CodepointWidth::Wide },
-        UnicodeRange{ 0x1f9d0, 0x1f9e6, CodepointWidth::Wide },
+        UnicodeRange{ 0x1f300, 0x1f320, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f32d, 0x1f335, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f337, 0x1f37c, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f37e, 0x1f393, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f3a0, 0x1f3ca, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f3cf, 0x1f3d3, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f3e0, 0x1f3f0, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f3f4, 0x1f3f4, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f3f8, 0x1f43e, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f440, 0x1f440, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f442, 0x1f4fc, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f4ff, 0x1f53d, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f54b, 0x1f54e, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f550, 0x1f567, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f57a, 0x1f57a, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f595, 0x1f596, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f5a4, 0x1f5a4, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f5fb, 0x1f64f, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f680, 0x1f6c5, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f6cc, 0x1f6cc, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f6d0, 0x1f6d2, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f6d5, 0x1f6d7, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f6eb, 0x1f6ec, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f6f4, 0x1f6fc, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f7e0, 0x1f7eb, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f90c, 0x1f93a, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f93c, 0x1f945, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f947, 0x1f978, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f97a, 0x1f9cb, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1f9cd, 0x1f9ff, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fa70, 0x1fa74, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fa78, 0x1fa7a, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fa80, 0x1fa86, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fa90, 0x1faa8, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fab0, 0x1fab6, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fac0, 0x1fac2, CodepointWidth::Wide }, // Emoji=Y EPres=Y
+        UnicodeRange{ 0x1fad0, 0x1fad6, CodepointWidth::Wide }, // Emoji=Y EPres=Y
         UnicodeRange{ 0x20000, 0x2fffd, CodepointWidth::Wide },
         UnicodeRange{ 0x30000, 0x3fffd, CodepointWidth::Wide },
         UnicodeRange{ 0xe0100, 0xe01ef, CodepointWidth::Ambiguous },

@@ -110,7 +110,7 @@ class AttrRowTests
         {
             TextAttributeRun* pRun = &pChain->_list[iChain];
 
-            pRun->SetAttributesFromLegacy(iChain); // Just use the chain position as the value
+            pRun->SetAttributes(TextAttribute{ gsl::narrow_cast<WORD>(iChain) }); // Just use the chain position as the value
             pRun->SetLength(sChainSegLength);
         }
 
@@ -269,11 +269,11 @@ class AttrRowTests
         ATTR_ROW originalRow{ static_cast<UINT>(_sDefaultLength), _DefaultAttr };
         originalRow._list.resize(3);
         originalRow._cchRowWidth = 10;
-        originalRow._list[0].SetAttributesFromLegacy('R');
+        originalRow._list[0].SetAttributes(TextAttribute{ 'R' });
         originalRow._list[0].SetLength(3);
-        originalRow._list[1].SetAttributesFromLegacy('B');
+        originalRow._list[1].SetAttributes(TextAttribute{ 'B' });
         originalRow._list[1].SetLength(5);
-        originalRow._list[2].SetAttributesFromLegacy('G');
+        originalRow._list[2].SetAttributes(TextAttribute{ 'G' });
         originalRow._list[2].SetLength(2);
         LogChain(L"Original: ", originalRow._list);
 
@@ -286,11 +286,11 @@ class AttrRowTests
 
         std::vector<TextAttributeRun> insertRow;
         insertRow.resize(cInsertRow);
-        insertRow[0].SetAttributesFromLegacy(ch1);
+        insertRow[0].SetAttributes(TextAttribute{ ch1 });
         insertRow[0].SetLength(uiChar1Length);
         if (fUseStr2)
         {
-            insertRow[1].SetAttributesFromLegacy(ch2);
+            insertRow[1].SetAttributes(TextAttribute{ ch2 });
             insertRow[1].SetLength(uiChar2Length);
         }
 

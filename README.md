@@ -2,7 +2,8 @@
 
 This repository contains the source code for:
 
-* [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
+* [Windows Terminal](https://aka.ms/terminal)
+* [Windows Terminal Preview](https://aka.ms/terminal-preview)
 * The Windows console host (`conhost.exe`)
 * Components shared between the two projects
 * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
@@ -10,6 +11,7 @@ This repository contains the source code for:
 
 Related repositories include:
 
+* [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal) ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
@@ -19,7 +21,7 @@ Related repositories include:
 
 ### Microsoft Store [Recommended]
 
-Install the [Windows Terminal from the Microsoft Store][store-install-link]. This allows you to always be on the latest version when we release new builds with automatic upgrades. 
+Install the [Windows Terminal from the Microsoft Store][store-install-link]. This allows you to always be on the latest version when we release new builds with automatic upgrades.
 
 This is our preferred method.
 
@@ -33,6 +35,14 @@ For users who are unable to install Terminal from the Microsoft Store, Terminal 
 >
 > * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
 > * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
+
+#### Via Windows Package Manager CLI (aka winget)
+
+[winget](https://github.com/microsoft/winget-cli) users can download and install the latest Terminal release by installing the `Microsoft.WindowsTerminal` package:
+
+```powershell
+winget install --id=Microsoft.WindowsTerminal -e
+```
 
 #### Via Chocolatey (unofficial)
 
@@ -52,18 +62,16 @@ If you have any issues when installing/upgrading the package please go to the [W
 
 ---
 
+## Windows Terminal 2.0 Roadmap
+
+The plan for delivering Windows Terminal 2.0 [is described here](/doc/terminal-v2-roadmap.md) and will be updated as the project proceeds.
+
 ## Project Build Status
 
 Project|Build Status
 ---|---
 Terminal|[![Build Status](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)](https://dev.azure.com/ms/Terminal/_build?definitionId=136)
 ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
-
----
-
-## Windows Terminal v1.0 Roadmap
-
-The plan for delivering Windows Terminal v1.0 [is described here](/doc/terminal-v1-roadmap.md), and will be updated as the project proceeds.
 
 ---
 
@@ -131,7 +139,7 @@ Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 
 ## Documentation
 
-All project documentation is located in the `./doc` folder. If you would like to contribute to the documentation, please submit a pull request.
+All project documentation is located at aka.ms/terminal-docs. If you would like to contribute to the documentation, please submit a pull request on the [Windows Terminal Documentation repo](https://github.com/MicrosoftDocs/terminal).
 
 ---
 
@@ -226,4 +234,4 @@ For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [open
 [conduct-code]: https://opensource.microsoft.com/codeofconduct/
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
-[store-install-link]: https://aka.ms/windowsterminal
+[store-install-link]: https://aka.ms/terminal

@@ -50,6 +50,9 @@
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\IConsoleWindow.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

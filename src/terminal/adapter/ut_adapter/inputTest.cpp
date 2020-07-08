@@ -482,7 +482,7 @@ void InputTest::TerminalInputModifierKeyTests()
             // Alt+Key generates [0x1b, Ctrl+key] into the stream
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            if (AltPressed(uiKeystate) && ControlPressed(uiKeystate) && ch >= 0x40 && ch < 0x7F)
+            if (AltPressed(uiKeystate) && ControlPressed(uiKeystate) && ch > 0x40 && ch <= 0x5A)
             {
                 s_expectedInput.clear();
                 s_expectedInput.push_back(L'\x1b');
@@ -491,7 +491,7 @@ void InputTest::TerminalInputModifierKeyTests()
             }
 
             // Alt+Key generates [0x1b, key] into the stream
-            if (AltPressed(uiKeystate) && ch != 0)
+            if (AltPressed(uiKeystate) && !ControlPressed(uiKeystate) && ch != 0)
             {
                 s_expectedInput.clear();
                 s_expectedInput.push_back(L'\x1b');

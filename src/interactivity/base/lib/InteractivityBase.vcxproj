@@ -31,6 +31,7 @@
     <ClInclude Include="..\..\inc\IAccessibilityNotifier.hpp" />
     <ClInclude Include="..\..\inc\IConsoleControl.hpp" />
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp" />
+    <ClInclude Include="..\..\inc\IConsoleWindow.hpp" />
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp" />
     <ClInclude Include="..\..\inc\IInputServices.hpp" />
     <ClInclude Include="..\..\inc\IInteractivityFactory.hpp" />

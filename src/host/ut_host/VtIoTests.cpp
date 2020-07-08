@@ -8,11 +8,13 @@
 
 #include "..\..\renderer\vt\Xterm256Engine.hpp"
 #include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\vt\WinTelnetEngine.hpp"
-#include "..\..\renderer\dx\DxRenderer.hpp"
 #include "..\..\renderer\base\Renderer.hpp"
 #include "..\Settings.hpp"
 #include "..\VtIo.hpp"
+
+#ifndef __INSIDE_WINDOWS
+#include "..\..\renderer\dx\DxRenderer.hpp"
+#endif
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -35,23 +37,12 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
 
     TEST_METHOD(RendererDtorAndThread);
+
+#ifndef __INSIDE_WINDOWS
     TEST_METHOD(RendererDtorAndThreadAndDx);
+#endif
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
-};
-
-class VtIoTestColorProvider : public Microsoft::Console::IDefaultColorProvider
-{
-public:
-    virtual ~VtIoTestColorProvider() = default;
-    COLORREF GetDefaultForeground() const
-    {
-        return RGB(0xff, 0xff, 0xff);
-    }
-    COLORREF GetDefaultBackground() const
-    {
-        return RGB(0, 0, 0);
-    }
 };
 
 using namespace Microsoft::Console;
@@ -76,9 +67,6 @@ void VtIoTests::ModeParsingTest()
 
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"win-telnet", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::WIN_TELNET);
 
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-ascii", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_ASCII);
@@ -108,10 +96,6 @@ void VtIoTests::DtorTestJustEngine()
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
 
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-    VtIoTestColorProvider p;
-
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
     for (int i = 0; i < 25; ++i)
@@ -121,30 +105,23 @@ void VtIoTests::DtorTestJustEngine()
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
-        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
+        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport());
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete pRenderer256;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, false);
+        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), SetUpViewport(), false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXterm;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, true);
+        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), SetUpViewport(), true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
-        Log::Comment(NoThrowString().Format(L"Deleted."));
-
-        hOutputFile.reset(INVALID_HANDLE_VALUE);
-
-        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
-        Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
-        delete pRenderEngineWinTelnet;
         Log::Comment(NoThrowString().Format(L"Deleted."));
     }
 }
@@ -156,10 +133,6 @@ void VtIoTests::DtorTestDeleteVtio()
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
-
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
@@ -175,10 +148,7 @@ void VtIoTests::DtorTestDeleteVtio()
         VtIo* vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                  p,
-                                                                  SetUpViewport(),
-                                                                  colorTable,
-                                                                  colorTableSize);
+                                                                  SetUpViewport());
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -187,10 +157,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                               p,
                                                                SetUpViewport(),
-                                                               colorTable,
-                                                               colorTableSize,
                                                                false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete vtio;
@@ -200,24 +167,9 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                               p,
                                                                SetUpViewport(),
-                                                               colorTable,
-                                                               colorTableSize,
                                                                true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
-        delete vtio;
-        Log::Comment(NoThrowString().Format(L"Deleted."));
-
-        hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        vtio = new VtIo();
-        Log::Comment(NoThrowString().Format(L"Made VtIo"));
-        vtio->_pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                   p,
-                                                                   SetUpViewport(),
-                                                                   colorTable,
-                                                                   colorTableSize);
-        Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
     }
@@ -230,10 +182,6 @@ void VtIoTests::DtorTestStackAlloc()
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
-
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
@@ -248,20 +196,14 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                     p,
-                                                                     SetUpViewport(),
-                                                                     colorTable,
-                                                                     colorTableSize);
+                                                                     SetUpViewport());
         }
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                                  p,
                                                                   SetUpViewport(),
-                                                                  colorTable,
-                                                                  colorTableSize,
                                                                   false);
         }
 
@@ -269,21 +211,8 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                                  p,
                                                                   SetUpViewport(),
-                                                                  colorTable,
-                                                                  colorTableSize,
                                                                   true);
-        }
-
-        hOutputFile.reset(INVALID_HANDLE_VALUE);
-        {
-            VtIo vtio;
-            vtio._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                      p,
-                                                                      SetUpViewport(),
-                                                                      colorTable,
-                                                                      colorTableSize);
         }
     }
 }
@@ -295,10 +224,6 @@ void VtIoTests::DtorTestStackAllocMany()
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
         L"that are only defined in UNIT_TESTING"));
-
-    const WORD colorTableSize = 16;
-    COLORREF colorTable[colorTableSize];
-    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
@@ -312,36 +237,19 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio1;
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                      p,
-                                                                      SetUpViewport(),
-                                                                      colorTable,
-                                                                      colorTableSize);
+                                                                      SetUpViewport());
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio2;
             vtio2._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                                   p,
                                                                    SetUpViewport(),
-                                                                   colorTable,
-                                                                   colorTableSize,
                                                                    false);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio3;
             vtio3._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                                   p,
                                                                    SetUpViewport(),
-                                                                   colorTable,
-                                                                   colorTableSize,
                                                                    true);
-
-            hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio4;
-            vtio4._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                       p,
-                                                                       SetUpViewport(),
-                                                                       colorTable,
-                                                                       colorTableSize);
         }
     }
 }
@@ -370,6 +278,7 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
+#ifndef __INSIDE_WINDOWS
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
@@ -396,6 +305,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         pRenderer.reset();
     }
 }
+#endif
 
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 {

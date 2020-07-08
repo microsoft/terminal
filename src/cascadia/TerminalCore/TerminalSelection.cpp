@@ -138,14 +138,38 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
 void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> newExpansionMode)
 {
+    if (!_selection.has_value())
+    {
+        // capture a log for spurious endpoint sets without an active selection
+        LOG_HR(E_ILLEGAL_STATE_CHANGE);
+        return;
+    }
+
     const auto textBufferPos = _ConvertToBufferCell(viewportPos);
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
-    const auto anchors = _PivotSelection(textBufferPos);
-    std::tie(_selection->start, _selection->end) = _ExpandSelectionAnchors(anchors);
+    bool targetStart = false;
+    const auto anchors = _PivotSelection(textBufferPos, targetStart);
+    const auto expandedAnchors = _ExpandSelectionAnchors(anchors);
+
+    if (newExpansionMode.has_value())
+    {
+        // shift-click operations only expand the target side
+        auto& anchorToExpand = targetStart ? _selection->start : _selection->end;
+        anchorToExpand = targetStart ? expandedAnchors.first : expandedAnchors.second;
+
+        // the other anchor should then become the pivot (we don't expand it)
+        auto& anchorToPivot = targetStart ? _selection->end : _selection->start;
+        anchorToPivot = _selection->pivot;
+    }
+    else
+    {
+        // expand both anchors
+        std::tie(_selection->start, _selection->end) = expandedAnchors;
+    }
 }
 
 // Method Description:
@@ -153,11 +177,12 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - This ensures start < end when compared
 // Arguments:
 // - targetPos: the (x,y) coordinate we are moving to on the text buffer
+// - targetStart: if true, target will be the new start. Otherwise, target will be the new end.
 // Return Value:
 // - the new start/end for a selection
-std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos) const
+std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
 {
-    if (_buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    if (targetStart = _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start

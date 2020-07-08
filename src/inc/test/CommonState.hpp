@@ -100,7 +100,7 @@ public:
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
                                                            *m_pFontInfo,
                                                            coordScreenBufferSize,
-                                                           gci.GetDefaultAttributes(),
+                                                           TextAttribute{},
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
@@ -124,7 +124,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData()
+    void PrepareCookedReadData(const std::string_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -135,7 +135,7 @@ public:
                                               0,
                                               nullptr,
                                               L"",
-                                              {});
+                                              initialData);
         gci.SetCookedReadData(readData);
     }
 
@@ -157,7 +157,7 @@ public:
 
         UINT uiCursorSize = 12;
 
-        auto initialAttributes = useDefaultAttributes ? gci.GetDefaultAttributes() :
+        auto initialAttributes = useDefaultAttributes ? TextAttribute{} :
                                                         TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY };
 
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);

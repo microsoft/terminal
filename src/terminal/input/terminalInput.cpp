@@ -68,6 +68,15 @@ static constexpr std::array<TermKeyMap, 6> s_cursorKeysApplicationMapping{
     TermKeyMap{ VK_END, L"\x1bOF" },
 };
 
+static constexpr std::array<TermKeyMap, 6> s_cursorKeysVt52Mapping{
+    TermKeyMap{ VK_UP, L"\033A" },
+    TermKeyMap{ VK_DOWN, L"\033B" },
+    TermKeyMap{ VK_RIGHT, L"\033C" },
+    TermKeyMap{ VK_LEFT, L"\033D" },
+    TermKeyMap{ VK_HOME, L"\033H" },
+    TermKeyMap{ VK_END, L"\033F" },
+};
+
 static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
     TermKeyMap{ VK_BACK, L"\x7f" },
@@ -150,6 +159,29 @@ static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
     // TermKeyMap{ VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
+static constexpr std::array<TermKeyMap, 20> s_keypadVt52Mapping{
+    TermKeyMap{ VK_TAB, L"\x09" },
+    TermKeyMap{ VK_BACK, L"\x7f" },
+    TermKeyMap{ VK_PAUSE, L"\x1a" },
+    TermKeyMap{ VK_ESCAPE, L"\x1b" },
+    TermKeyMap{ VK_INSERT, L"\x1b[2~" },
+    TermKeyMap{ VK_DELETE, L"\x1b[3~" },
+    TermKeyMap{ VK_PRIOR, L"\x1b[5~" },
+    TermKeyMap{ VK_NEXT, L"\x1b[6~" },
+    TermKeyMap{ VK_F1, L"\x1bP" },
+    TermKeyMap{ VK_F2, L"\x1bQ" },
+    TermKeyMap{ VK_F3, L"\x1bR" },
+    TermKeyMap{ VK_F4, L"\x1bS" },
+    TermKeyMap{ VK_F5, L"\x1b[15~" },
+    TermKeyMap{ VK_F6, L"\x1b[17~" },
+    TermKeyMap{ VK_F7, L"\x1b[18~" },
+    TermKeyMap{ VK_F8, L"\x1b[19~" },
+    TermKeyMap{ VK_F9, L"\x1b[20~" },
+    TermKeyMap{ VK_F10, L"\x1b[21~" },
+    TermKeyMap{ VK_F11, L"\x1b[23~" },
+    TermKeyMap{ VK_F12, L"\x1b[24~" },
+};
+
 // Sequences to send when a modifier is pressed with any of these keys
 // Basically, the 'm' will be replaced with a character indicating which
 //      modifier keys are pressed.
@@ -220,6 +252,11 @@ const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
 const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
 const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
+void TerminalInput::ChangeAnsiMode(const bool ansiMode) noexcept
+{
+    _ansiMode = ansiMode;
+}
+
 void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
 {
     _keypadApplicationMode = applicationMode;
@@ -230,30 +267,54 @@ void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
     _cursorApplicationMode = applicationMode;
 }
 
+void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
+{
+    _win32InputMode = win32InputMode;
+}
+void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _forceDisableWin32InputMode = win32InputMode;
+}
+
 static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+                                                               const bool ansiMode,
                                                                const bool cursorApplicationMode,
                                                                const bool keypadApplicationMode) noexcept
 {
-    if (keyEvent.IsCursorKey())
+    if (ansiMode)
     {
-        if (cursorApplicationMode)
+        if (keyEvent.IsCursorKey())
         {
-            return { s_cursorKeysApplicationMapping.data(), s_cursorKeysApplicationMapping.size() };
+            if (cursorApplicationMode)
+            {
+                return { s_cursorKeysApplicationMapping.data(), s_cursorKeysApplicationMapping.size() };
+            }
+            else
+            {
+                return { s_cursorKeysNormalMapping.data(), s_cursorKeysNormalMapping.size() };
+            }
         }
         else
         {
-            return { s_cursorKeysNormalMapping.data(), s_cursorKeysNormalMapping.size() };
+            if (keypadApplicationMode)
+            {
+                return { s_keypadApplicationMapping.data(), s_keypadApplicationMapping.size() };
+            }
+            else
+            {
+                return { s_keypadNumericMapping.data(), s_keypadNumericMapping.size() };
+            }
         }
     }
     else
     {
-        if (keypadApplicationMode)
+        if (keyEvent.IsCursorKey())
         {
-            return { s_keypadApplicationMapping.data(), s_keypadApplicationMapping.size() };
+            return { s_cursorKeysVt52Mapping.data(), s_cursorKeysVt52Mapping.size() };
         }
         else
         {
-            return { s_keypadNumericMapping.data(), s_keypadNumericMapping.size() };
+            return { s_keypadVt52Mapping.data(), s_keypadVt52Mapping.size() };
         }
     }
 }
@@ -468,6 +529,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
+    // GH#4999 - If we're in win32-input mode, skip straight to doing that.
+    // Since this mode handles all types of key events, do nothing else.
+    // Only do this if win32-input-mode support isn't manually disabled.
+    if (_win32InputMode && !_forceDisableWin32InputMode)
+    {
+        const auto seq = _GenerateWin32KeySequence(keyEvent);
+        _SendInputSequence(seq);
+        return true;
+    }
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
@@ -498,16 +569,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         if (ch == UNICODE_NULL)
         {
             // For Alt+Ctrl+Key messages GetCharData() returns 0.
+            // The values of the ASCII characters and virtual key codes
+            // of <Space>, A-Z (as used below) are numerically identical.
             // -> Get the char from the virtual key.
-            ch = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            ch = keyEvent.GetVirtualKeyCode();
         }
-        if (ch == UNICODE_SPACE)
-        {
-            // Ctrl+@ and Ctrl+Space are supposed to send null bytes.
-            // -> Change Ctrl+Space to Ctrl+@ for compatibility reasons.
-            ch = 0x40;
-        }
-        if (ch >= 0x40 && ch < 0x7F)
+        // Alt+Ctrl acts as a substitute for AltGr on Windows.
+        // For instance using a German keyboard both AltGr+< and Alt+Ctrl+< produce a | (pipe) character.
+        // The below condition primitively ensures that we allow all common Alt+Ctrl combinations
+        // while preserving most of the functionality of Alt+Ctrl as a substitute for AltGr.
+        if (ch == UNICODE_SPACE || (ch > 0x40 && ch <= 0x5A))
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
@@ -530,7 +601,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
     // This section is similar to the Alt modifier section above,
     // but handles cases without Ctrl modifiers.
-    if (keyEvent.IsAltPressed() && keyEvent.GetCharData() != 0)
+    if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
     {
         _SendEscapedInputSequence(keyEvent.GetCharData());
         return true;
@@ -544,7 +615,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // -> Send a "null input sequence" in that case.
     // We don't need to handle other kinds of Ctrl combinations,
     // as we rely on the caller to pretranslate those to characters for us.
-    if (keyEvent.IsCtrlPressed())
+    if (!keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
     {
         const auto ch = keyEvent.GetCharData();
         const auto vkey = keyEvent.GetVirtualKeyCode();
@@ -560,7 +631,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     // Check any other key mappings (like those for the F1-F12 keys).
-    const auto mapping = _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode);
+    const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {
         return true;
@@ -666,4 +737,32 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
             LOG_HR(wil::ResultFromCaughtException());
         }
     }
+}
+
+// Method Description:
+// - Synthesize a win32-input-mode sequence for the given keyevent.
+// Arguments:
+// - key: the KeyEvent to serialize.
+// Return Value:
+// - the formatted string representation of this key
+std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
+{
+    // Sequences are formatted as follows:
+    //
+    // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
+    //
+    //      Vk: the value of wVirtualKeyCode - any number. If omitted, defaults to '0'.
+    //      Sc: the value of wVirtualScanCode - any number. If omitted, defaults to '0'.
+    //      Uc: the decimal value of UnicodeChar - for example, NUL is "0", LF is
+    //          "10", the character 'A' is "65". If omitted, defaults to '0'.
+    //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
+    //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
+    //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
+    return fmt::format(L"\x1b[{};{};{};{};{};{}_",
+                       key.GetVirtualKeyCode(),
+                       key.GetVirtualScanCode(),
+                       static_cast<int>(key.GetCharData()),
+                       key.IsKeyDown() ? 1 : 0,
+                       key.GetActiveModifierKeys(),
+                       key.GetRepeatCount());
 }
