@@ -788,9 +788,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
     SHORT rowsPushedOffTopOfBuffer = 0;
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (proposedCursorPosition.Y >= bufferSize.Height())
     {
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
@@ -804,7 +804,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // Move the viewport down if the cursor moved below the viewport.
     bool updatedViewport = false;
-    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
+    const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+    if (scrollAmount > 0)
     {
         const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
@@ -817,6 +818,13 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (updatedViewport)
     {
+        // scroll if...
+        //   - no selection is active
+        //   - viewport is already at the bottom
+        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+
+        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
+
         _NotifyScrollEvent();
     }
 
