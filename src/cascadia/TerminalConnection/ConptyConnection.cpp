@@ -468,7 +468,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 obj = this;
             }
             channelpair.first.emplace(_u16Str);
-                        
+
             //_TerminalOutputHandlers(_u16Str);
         }
 

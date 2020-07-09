@@ -132,7 +132,7 @@ static std::thread th(vtRenderWriteMethod);
 
     return S_OK;
 
-   /* if (!_pipeBroken)
+    /* if (!_pipeBroken)
     {
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
