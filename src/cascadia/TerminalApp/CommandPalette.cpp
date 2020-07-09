@@ -174,6 +174,15 @@ namespace winrt::TerminalApp::implementation
         _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
     }
 
+    // Method Description:
+    // - This is called when the user selects a command with subcommands. It
+    //   will update our UI to now display the list of subcommands instead, and
+    //   clear the search text so the user can search from the new list of
+    //   commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void CommandPalette::_updateUIForStackChange()
     {
         if (_searchBox().Text().empty())
@@ -183,9 +192,19 @@ namespace winrt::TerminalApp::implementation
             _filterTextChanged(nullptr, nullptr);
         }
 
+        // Changing the value of the search box will trigger _filterTextChanged,
+        // which will cause us to refresh the list of filterable commands.
         _searchBox().Text(L"");
     }
 
+    // Method Description:
+    // - Retrieve the list of commands that we should currently be filtering.
+    //   * If the user has command with subcommands, this will return that command's subcommands.
+    //   * Otherwise, just return the list of all the top-level commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A list of Commands to filter.
     Collections::IVector<Command> CommandPalette::_commandsToFilter()
     {
         if (_nestedActionStack.Size() > 0)
@@ -211,6 +230,9 @@ namespace winrt::TerminalApp::implementation
         {
             if (command.NestedCommands().Size() > 0)
             {
+                // If this Command had subcommands, then don't dispatch the
+                // action. Instead, display a new list of commands for the user
+                // to pick from.
                 _nestedActionStack.Append(command);
                 _updateUIForStackChange();
             }
