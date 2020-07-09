@@ -83,7 +83,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestCommandsAndKeybindings);
 
         TEST_METHOD(TestIterateCommands);
-        TEST_METHOD(TestIterateAutogenNamedCommands);
+        TEST_METHOD(TestIterateOnGeneratedNamedCommands);
         TEST_METHOD(TestIterateOnBadJson);
         TEST_METHOD(TestNestedCommands);
         TEST_METHOD(TestNestedInNestedCommand);
@@ -2698,7 +2698,7 @@ namespace TerminalAppLocalTests
         }
     }
 
-    void SettingsTests::TestIterateAutogenNamedCommands()
+    void SettingsTests::TestIterateOnGeneratedNamedCommands()
     {
         // For this test, put an iterable command without a given `name` to
         // replace. When we expand it, it should still work.
@@ -3699,7 +3699,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestUnbindNestedCommand()
     {
-        // TODO: description
+        // Test that layering a command with `"commands": null` set will unbind a command that already exists.
 
         const std::string settingsJson{ R"(
         {
@@ -3781,7 +3781,8 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestRebindNestedCommand()
     {
-        // TODO: description
+        // Test that layering a command with an action set on top of a command
+        // with nested commands replaces the nested commands with an action.
 
         const std::string settingsJson{ R"(
         {
@@ -3851,6 +3852,17 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());
 
+        {
+            winrt::hstring commandName{ L"parent" };
+            auto commandProj = commands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(2u, commandImpl->_subcommands.size());
+        }
+
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
         settings._ParseJsonString(settings1Json, false);
         settings.LayerJson(settings._userSettings);
@@ -3858,6 +3870,23 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());
+
+        {
+            winrt::hstring commandName{ L"parent" };
+            auto commandProj = commands.at(commandName);
+
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+        }
     }
 
 }

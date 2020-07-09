@@ -255,7 +255,7 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // - Helper to escape a string as a json string. This function will also
-    //   trim off the leading and trailing double-qoutes, so the output string
+    //   trim off the leading and trailing double-quotes, so the output string
     //   can be inserted directly into another json blob.
     // Arguments:
     // - input: the string to JSON escape.
@@ -298,7 +298,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Iterate over all the provided comamnds, and recursively expand any
+    // - Iterate over all the provided commands, and recursively expand any
     //   commands with `iterateOn` set. If we successfully generated expanded
     //   commands for them, then we'll remove the original command, and add all
     //   the newly generated commands.
