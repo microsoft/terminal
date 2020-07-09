@@ -13,6 +13,6 @@ namespace TerminalApp
         ActionAndArgs Action;
         String KeyChordText;
 
-        Windows.UI.Xaml.Controls.BitmapIconSource Icon { get; };
+        String IconString;
     }
 }

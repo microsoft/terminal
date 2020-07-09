@@ -84,12 +84,6 @@ namespace Microsoft::TerminalApp::details
     {
         using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
     };
-
-    template<>
-    struct BitmapIconSource<winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource>
-    {
-        using type = winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource;
-    };
 }
 
 // Method Description:

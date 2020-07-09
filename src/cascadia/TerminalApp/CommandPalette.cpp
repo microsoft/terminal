@@ -613,6 +613,7 @@ namespace winrt::TerminalApp::implementation
         command->Action(*focusTabAction);
         command->KeyChordText(L"Index:" + to_hstring(idx));
         command->Name(tab.Title());
+        command->IconString(tab.IconPath());
 
         // Listen for changes to the Tab so we can update this Command's attributes accordingly.
         auto weakThis{ get_weak() };
@@ -624,7 +625,17 @@ namespace winrt::TerminalApp::implementation
             {
                 if (args.PropertyName() == L"Title")
                 {
-                    command->Name(tab.Title());
+                    if (command->Name() != tab.Title())
+                    {
+                        command->Name(tab.Title());
+                    }
+                }
+                if (args.PropertyName() == L"IconPath")
+                {
+                    if (command->IconString() != tab.IconPath())
+                    {
+                        command->IconString(tab.IconPath());
+                    }
                 }
             }
         });

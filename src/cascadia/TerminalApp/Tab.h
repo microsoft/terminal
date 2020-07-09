@@ -68,7 +68,6 @@ namespace winrt::TerminalApp::implementation
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource, Icon, _PropertyChangedHandlers);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
