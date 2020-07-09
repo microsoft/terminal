@@ -1360,7 +1360,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return _terminal->SendMouseEvent(_GetTerminalPosition(point),
                                              WM_MOUSEWHEEL,
                                              _GetPressedModifierKeys(),
-                                             ::base::saturated_cast<short>(delta));
+                                             ::base::saturated_cast<short>(delta),
+                                             {});
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();

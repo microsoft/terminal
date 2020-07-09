@@ -144,7 +144,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;
 
-        static unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
+        static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
     };
 }
