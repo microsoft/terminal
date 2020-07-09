@@ -89,6 +89,7 @@ public:
 
     bool IsLegacy() const noexcept;
     bool IsBold() const noexcept;
+    bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
     bool IsInvisible() const noexcept;
@@ -98,6 +99,7 @@ public:
     bool IsReverseVideo() const noexcept;
 
     void SetBold(bool isBold) noexcept;
+    void SetFaint(bool isFaint) noexcept;
     void SetItalics(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
