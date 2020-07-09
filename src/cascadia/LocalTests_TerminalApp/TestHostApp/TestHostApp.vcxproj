@@ -6,6 +6,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
+    <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
@@ -121,7 +122,7 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 

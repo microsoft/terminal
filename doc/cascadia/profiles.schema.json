@@ -56,9 +56,12 @@
         "switchToTab",
         "toggleBorderless",
         "toggleFullscreen",
+        "toggleRetroEffect",
         "find",
         "setTabColor",
         "openTabColorPicker",
+        "renameTab",
+        "commandPalette",
         "unbound"
       ],
       "type": "string"

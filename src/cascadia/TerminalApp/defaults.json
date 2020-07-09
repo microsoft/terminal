@@ -271,17 +271,19 @@
             "brightWhite": "#EEEEEC"
         }
     ],
-    "keybindings":
+    "bindings":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
         { "command": "toggleFullscreen", "keys": "alt+enter" },
         { "command": "toggleFullscreen", "keys": "f11" },
-        { "command": "toggleBorderless" },
+        { "command": "toggleFocusMode" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "toggleRetroEffect" },
+        { "command": "openTabColorPicker" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
