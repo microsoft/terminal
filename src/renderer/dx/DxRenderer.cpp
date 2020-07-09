@@ -775,15 +775,7 @@ try
 {
     _sizeTarget = Pixels;
 
-    auto mapSize = _sizeTarget / _glyphCell;
-    if (_invalidateFullRows)
-    {
-        _invalidFactor = til::size{ mapSize.width(), 1 };
-        mapSize = til::size{ 1, mapSize.height() };
-    }
-
-    _invalidMap.resize(mapSize, true);
-
+    _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
 CATCH_RETURN();
@@ -1169,8 +1161,7 @@ try
             if (_invalidScroll != til::point{ 0, 0 })
             {
                 // Copy `til::rectangles` into RECT map.
-                const auto dirtyArea = GetDirtyArea();
-                _presentDirty.assign(dirtyArea.begin(), dirtyArea.end());
+                _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
@@ -1402,7 +1393,7 @@ try
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
         _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-        for (const auto rect : GetDirtyArea())
+        for (const auto rect : _invalidMap.runs())
         {
             // Use aliased.
             // For graphics reasons, it'll look better because it will ensure that
@@ -1799,20 +1790,7 @@ float DxEngine::GetScaling() const noexcept
 // - Rectangle describing dirty area in characters.
 [[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
-    if (_invalidateFullRows)
-    {
-        std::vector<til::rectangle> dirty;
-        for (const auto& row : _invalidMap)
-        {
-            dirty.push_back(row.scale_up(_invalidFactor));
-        }
-
-        return dirty;
-    }
-    else
-    {
-        return _invalidMap.runs();
-    }
+    return _invalidMap.runs();
 }
 
 // Routine Description:
