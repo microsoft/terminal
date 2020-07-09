@@ -16,6 +16,7 @@
 #include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
+using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
@@ -997,7 +998,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
         return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     }
 
@@ -1322,10 +1323,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto point = args.GetCurrentPoint(*this);
+        const auto props = point.Properties();
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
         auto result = _DoMouseWheel(point.Position(),
                                     ControlKeyStates{ args.KeyModifiers() },
                                     point.Properties().MouseWheelDelta(),
-                                    point.Properties().IsLeftButtonPressed());
+                                    state);
         if (result)
         {
             args.Handled(true);
@@ -1348,7 +1351,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
                                     const ControlKeyStates modifiers,
                                     const int32_t delta,
-                                    const bool isLeftButtonPressed)
+                                    const TerminalInput::MouseButtonState state)
     {
         if (_CanSendVTMouseInput())
         {
@@ -1377,7 +1380,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            _MouseScrollHandler(delta, point, isLeftButtonPressed);
+            _MouseScrollHandler(delta, point, state.isLeftButtonDown);
         }
         return false;
     }
@@ -1392,10 +1395,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   relative to the origin of the control
     // - delta: the mouse wheel delta that triggered this event.
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const int32_t delta)
+                                   const int32_t delta,
+                                   const bool leftButtonDown,
+                                   const bool midButtonDown,
+                                   const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        return _DoMouseWheel(location, modifiers, delta, false);
+        TerminalInput::MouseButtonState state{ leftButtonDown, midButtonDown, rightButtonDown };
+        return _DoMouseWheel(location, modifiers, delta, state);
     }
 
     // Method Description:
