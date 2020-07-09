@@ -342,6 +342,41 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
+        ////////////////////////////////////////////////////////////////////////
+        if (!expandable->_subcommands.empty())
+        {
+            // Blatantly copied from CascadiaSettings::_ExpandCommands
+
+            std::vector<winrt::hstring> commandsToRemove;
+            std::vector<winrt::TerminalApp::Command> commandsToAdd;
+            // First, collect up all the commands that need replacing.
+            for (auto nameAndCmd : expandable->_subcommands)
+            {
+                winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
+                cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
+
+                auto newCommands = winrt::TerminalApp::implementation::Command::ExpandCommand(cmd, profiles, warnings);
+                if (newCommands.size() > 0)
+                {
+                    commandsToRemove.push_back(nameAndCmd.first);
+                    commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
+                }
+            }
+
+            // Second, remove all the commands that need to be removed.
+            for (auto& name : commandsToRemove)
+            {
+                expandable->_subcommands.erase(name);
+            }
+
+            // Finally, add all the new commands.
+            for (auto& cmd : commandsToAdd)
+            {
+                expandable->_subcommands.insert_or_assign(cmd.Name(), cmd);
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////
+
         if (expandable->_IterateOn == ExpandCommandType::None)
         {
             return newCommands;
