@@ -264,7 +264,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
     // No border when maximized, or when the titlebar is invisible (by being in
-    // fulscreen or focus mode).
+    // fullscreen or focus mode).
     if (_isMaximized || (!_IsTitlebarVisible()))
     {
         return 0;
