@@ -121,13 +121,13 @@ namespace winrt::TerminalApp::implementation
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
                                               std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
-                                              const bool postExpansion)
+                                              const bool /*postExpansion*/)
     {
         auto result = winrt::make_self<Command>();
 
-        bool iterable = false;
+        // bool iterable = false;
         bool nested = false;
-        if (!postExpansion)
+        // if (!postExpansion)
         {
             if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
             {
@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
                 if (s == IterateOnProfilesValue)
                 {
                     result->_IterateOn = ExpandCommandType::Profiles;
-                    iterable = true;
+                    // iterable = true;
                 }
             }
         }
@@ -143,7 +143,7 @@ namespace winrt::TerminalApp::implementation
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
         // will only be marked iterable on the first pass.
-        if (!iterable)
+        // if (!iterable)
         {
             if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
             {
