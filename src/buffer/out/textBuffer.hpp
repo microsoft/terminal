@@ -152,7 +152,7 @@ public:
     const TextAndColor GetText(const bool lineSelection,
                                const bool trimTrailingWhitespace,
                                const std::vector<SMALL_RECT>& textRects,
-                               std::function<std::pair<COLORREF, COLORREF>(TextAttribute&)> GetAttributeColors = nullptr) const;
+                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,

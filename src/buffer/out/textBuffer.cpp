@@ -1467,7 +1467,7 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
                                                    const std::vector<SMALL_RECT>& selectionRects,
-                                                   std::function<std::pair<COLORREF, COLORREF>(TextAttribute&)> GetAttributeColors) const
+                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const
 {
     TextAndColor data;
     const bool copyTextColor = GetAttributeColors != nullptr;
@@ -1515,7 +1515,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
                 if (copyTextColor)
                 {
-                    auto cellData = cell.TextAttr();
+                    const auto cellData = cell.TextAttr();
                     const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
                     for (const wchar_t wch : cell.Chars())
                     {
