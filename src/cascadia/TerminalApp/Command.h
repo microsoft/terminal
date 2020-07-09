@@ -46,9 +46,9 @@ namespace winrt::TerminalApp::implementation
                                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
                                                 const bool postExpansion = false);
 
-        static std::vector<winrt::TerminalApp::Command> ExpandCommand(winrt::com_ptr<Command> expandable,
-                                                                      const std::vector<::TerminalApp::Profile>& profiles,
-                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+        static void ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+                                   const std::vector<::TerminalApp::Profile>& profiles,
+                                   std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
@@ -65,6 +65,10 @@ namespace winrt::TerminalApp::implementation
         Json::Value _originalJson;
         std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
+
+        static std::vector<winrt::TerminalApp::Command> _expandCommand(winrt::com_ptr<Command> expandable,
+                                                                       const std::vector<::TerminalApp::Profile>& profiles,
+                                                                       std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;

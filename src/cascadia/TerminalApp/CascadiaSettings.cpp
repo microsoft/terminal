@@ -731,39 +731,9 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - <none>
 void CascadiaSettings::_ExpandCommands()
 {
-    std::vector<winrt::hstring> commandsToRemove;
-    std::vector<winrt::TerminalApp::Command> commandsToAdd;
-
-    // Any commands that return a non-empty vector from ExpandCommand should be
-    // replaced with all the commands that ExpandCommand returned. Since we
-    // can't modify the map while we're iterating over it, we'll do this in a
-    // couple steps.
-
-    // First, collect up all the commands that need replacing.
-    for (auto nameAndCmd : _globals.GetCommands())
-    {
-        winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
-        cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
-
-        auto newCommands = winrt::TerminalApp::implementation::Command::ExpandCommand(cmd, _profiles, _warnings);
-        if (newCommands.size() > 0)
-        {
-            commandsToRemove.push_back(nameAndCmd.first);
-            commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
-        }
-    }
-
-    // Second, remove all the commands that need to be removed.
-    for (auto& name : commandsToRemove)
-    {
-        _globals.GetCommands().erase(name);
-    }
-
-    // Finally, add all the new commands.
-    for (auto& cmd : commandsToAdd)
-    {
-        _globals.GetCommands().insert_or_assign(cmd.Name(), cmd);
-    }
+    winrt::TerminalApp::implementation::Command::ExpandCommands(_globals.GetCommands(),
+                                                                _profiles,
+                                                                _warnings);
 }
 
 // Method Description:
