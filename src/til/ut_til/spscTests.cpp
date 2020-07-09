@@ -164,7 +164,7 @@ void spscTests::IntegrationTest()
         }
         for (int i = 0; i < 3; ++i)
         {
-            tx.move_n(buffer.data(), buffer.size());
+            tx.push(buffer.begin(), buffer.end());
         }
     });
 
