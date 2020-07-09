@@ -18,7 +18,7 @@ namespace Microsoft::Console::Utils
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
-    int Sign(T val)
+    constexpr int Sign(T val) noexcept
     {
         return (T{ 0 } < val) - (val < T{ 0 });
     }
