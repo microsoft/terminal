@@ -99,11 +99,21 @@ namespace TerminalAppLocalTests
         }
 
     private:
-        void _logCommandNames(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands)
+        void _logCommandNames(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
         {
+            Log::Comment(L"Commands:");
             for (auto& nameAndCommand : commands)
             {
-                Log::Comment(fmt::format(L"{}", nameAndCommand.first).c_str());
+                Log::Comment(fmt::format(L"{0:>{1}}* {2}->{3}",
+                                         L"",
+                                         indentation,
+                                         nameAndCommand.first,
+                                         nameAndCommand.second.Name())
+                                 .c_str());
+
+                winrt::com_ptr<implementation::Command> cmdImpl;
+                cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.second));
+                _logCommandNames(cmdImpl->_subcommands, indentation + 2);
             }
         }
     };
@@ -2623,6 +2633,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, commands.size());
@@ -2752,6 +2763,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, commands.size());
@@ -2883,6 +2895,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, commands.size());
@@ -3004,6 +3017,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());
@@ -3111,6 +3125,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());
@@ -3248,6 +3263,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
 
@@ -3398,6 +3414,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());
@@ -3509,6 +3526,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
+        _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.size());

@@ -43,8 +43,7 @@ namespace winrt::TerminalApp::implementation
         Command();
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
-                                                std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
-                                                const bool postExpansion = false);
+                                                std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static void ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                    const std::vector<::TerminalApp::Profile>& profiles,
@@ -69,6 +68,7 @@ namespace winrt::TerminalApp::implementation
         static std::vector<winrt::TerminalApp::Command> _expandCommand(winrt::com_ptr<Command> expandable,
                                                                        const std::vector<::TerminalApp::Profile>& profiles,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+        void _createView();
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;

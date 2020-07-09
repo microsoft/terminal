@@ -176,6 +176,13 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::_updateUIForStackChange()
     {
+        if (_searchBox().Text().empty())
+        {
+            // Manually call _filterTextChanged, because setting the text to the
+            // empty string won't update it for us (as it won't actually change value.)
+            _filterTextChanged(nullptr, nullptr);
+        }
+
         _searchBox().Text(L"");
     }
 

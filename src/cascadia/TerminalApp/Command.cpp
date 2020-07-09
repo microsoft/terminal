@@ -120,60 +120,44 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings,
-                                              const bool /*postExpansion*/)
+                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         auto result = winrt::make_self<Command>();
 
-        // bool iterable = false;
         bool nested = false;
-        // if (!postExpansion)
+        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
         {
-            if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
+            auto s = iterateOnJson.asString();
+            if (s == IterateOnProfilesValue)
             {
-                auto s = iterateOnJson.asString();
-                if (s == IterateOnProfilesValue)
-                {
-                    result->_IterateOn = ExpandCommandType::Profiles;
-                    // iterable = true;
-                }
+                result->_IterateOn = ExpandCommandType::Profiles;
             }
         }
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
         // will only be marked iterable on the first pass.
-        // if (!iterable)
+        if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
-            if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
-            {
-                auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
-                // It's possible that the nested commands have some warnings
-                warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
+            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
+            // It's possible that the nested commands have some warnings
+            warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
 
-                // Add all the commands we've parsed to the observable vector we
-                // have, so we can access them in XAML.
-                for (auto& nameAndCommand : result->_subcommands)
-                {
-                    auto command = nameAndCommand.second;
-                    result->_nestedCommandsView.Append(command);
-                }
-                nested = true;
-            }
-
-            // TODO: else if (hasKey(CommandKey) )
-            // {
-            //     // { name: "foo", commands: null } will land in this case, which
-            //     // should also be used for unbinding.
-            //     return nullptr;
-            // }
+            nested = true;
         }
+
+        // TODO: else if (hasKey(CommandKey) )
+        // {
+        //     // { name: "foo", commands: null } will land in this case, which
+        //     // should also be used for unbinding.
+        //     return nullptr;
+        // }
 
         // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
         // the binding quite right. Additionally, do we want it to be an image,
         // or a FontIcon? I've had difficulty binding either/or.
 
-        // If we're a nested command, we can ignore the current command.
+        // If we're a nested command, we can ignore the current action.
         if (!nested)
         {
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
@@ -334,6 +318,7 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::hstring> commandsToRemove;
         std::vector<winrt::TerminalApp::Command> commandsToAdd;
+
         // First, collect up all the commands that need replacing.
         for (auto nameAndCmd : commands)
         {
@@ -358,6 +343,30 @@ namespace winrt::TerminalApp::implementation
         for (auto& cmd : commandsToAdd)
         {
             commands.insert_or_assign(cmd.Name(), cmd);
+        }
+    }
+
+    // Method Description:
+    // - Initialize our ObservableVector of NestedCommands, recursively. This
+    //   will build the vector of nested Commands that XAML can access.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Command::_createView()
+    {
+        _nestedCommandsView.Clear();
+
+        // Add all the commands we've parsed to the observable vector we
+        // have, so we can access them in XAML.
+        for (auto& nameAndCommand : _subcommands)
+        {
+            auto command = nameAndCommand.second;
+            _nestedCommandsView.Append(command);
+
+            winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
+            cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(command));
+            cmd->_createView();
         }
     }
 
@@ -392,6 +401,8 @@ namespace winrt::TerminalApp::implementation
         if (!expandable->_subcommands.empty())
         {
             ExpandCommands(expandable->_subcommands, profiles, warnings);
+
+            expandable->_createView();
         }
 
         if (expandable->_IterateOn == ExpandCommandType::None)
@@ -440,7 +451,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Pass the new json back though FromJson, to get the new expanded value.
-                if (auto newCmd{ Command::FromJson(newJsonValue, warnings, true) })
+                if (auto newCmd{ Command::FromJson(newJsonValue, warnings) })
                 {
                     newCommands.push_back(*newCmd);
                 }
