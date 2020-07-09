@@ -383,34 +383,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-
+    static auto channelpair = til::spsc::channel<std::wstring>(1024);
     static ConptyConnection* obj = nullptr;
-    static std::condition_variable condvar;
-    static std::mutex bufflock;
-    static std::queue<std::wstring> buff;
     static void terminalOutputHandlerMethod()
     {
-        std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
-        std::wstring str;
         while (true)
         {
-            lk.lock();
-            condvar.wait(lk, [&] {
-                if (!buff.empty())
-                {
-                    str = buff.front();
-                    buff.pop();
-                    return true;
-                }
-                return false;
-            });
-            lk.unlock();
-
+            auto str = channelpair.second.pop().value();
             obj->_DoOutputThreadWork(str);
         }
     }
 
-    //static std::thread th(terminalOutputHandlerMethod);
+    static std::thread th(terminalOutputHandlerMethod);
 
     void ConptyConnection::_DoOutputThreadWork(std::wstring& str)
     {
@@ -479,16 +463,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // Pass the output to our registered event handlers
-            /*bufflock.lock();
             if (!obj)
             {
                 obj = this;
             }
-            buff.emplace(_u16Str);
-            bufflock.unlock();
-            condvar.notify_one();*/
+            channelpair.first.emplace(_u16Str);
                         
-            _TerminalOutputHandlers(_u16Str);
+            //_TerminalOutputHandlers(_u16Str);
         }
 
         return 0;

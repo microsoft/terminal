@@ -1233,34 +1233,30 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     CATCH_RETURN();
 }
 
+static auto channelpair = til::spsc::channel<std::string>(1024);
 static IConsoleOutputObject* obj = nullptr;
-static std::condition_variable condvar;
-static std::mutex bufflock;
-static std::queue<std::string> buff;
 static void ioWriteConsoleMethod()
 {
     size_t read = 0;
     std::unique_ptr<IWaitRoutine> wait;
 
-    std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
+    /*std::string str;
 
-    std::string str;
+    str.resize(1024);*/
 
     while (true)
     {
-        lk.lock();
-        condvar.wait(lk, [&] {
-            if (!buff.empty())
-            {
-                str = buff.front();
-                buff.pop();
-                return true;
-            }
-            return false;
-        });
-        lk.unlock();
+        /*auto ch = channelpair.second.pop().value();
         
+        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, std::string_view{ &ch, 1 } , read, wait));*/
+
+        auto str = channelpair.second.pop().value();
+
         LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));
+
+        /*channelpair.second.pop_n(str.data(), str.size());
+
+        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));*/
     }
 }
 
@@ -1276,14 +1272,12 @@ try
     read = buffer.size();
     waiter.reset();
 
-    bufflock.lock();
     if (!obj)
     {
         obj = &context;
     }
-    buff.emplace(buffer);
-    bufflock.unlock();
-    condvar.notify_one();
+
+    channelpair.first.emplace(buffer);
 
     return S_OK;
 }
