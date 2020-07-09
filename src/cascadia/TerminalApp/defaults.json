@@ -271,7 +271,7 @@
             "brightWhite": "#EEEEEC"
         }
     ],
-    "keybindings":
+    "bindings":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
@@ -281,6 +281,8 @@
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "toggleRetroEffect" },
+        { "command": "openTabColorPicker" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

@@ -25,6 +25,7 @@
   <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='false'">
     <MinimalCoreWin>true</MinimalCoreWin>
     <AppContainerApplication>true</AppContainerApplication>
+    <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
   </PropertyGroup>
 

@@ -52,15 +52,32 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noexcept
 {
-    return 0xff000000 | attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    COLORREF fgColor{};
+    if (_screenReversed)
+    {
+        fgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    }
+    else
+    {
+        fgColor = attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    }
+    return 0xff000000 | fgColor;
 }
 
 const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    COLORREF bgColor{};
+    if (_screenReversed)
+    {
+        bgColor = attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    }
+    else
+    {
+        bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    }
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
-    if (!attr.BackgroundIsDefault() || attr.IsReverseVideo())
+    if (!attr.BackgroundIsDefault() || (attr.IsReverseVideo() ^ _screenReversed))
     {
         return 0xff000000 | bgColor;
     }
@@ -213,10 +230,9 @@ void Terminal::UnlockConsole() noexcept
 
 // Method Description:
 // - Returns whether the screen is inverted;
-//   This state is not currently known to Terminal.
 // Return Value:
 // - false.
 bool Terminal::IsScreenReversed() const noexcept
 {
-    return false;
+    return _screenReversed;
 }
