@@ -2309,9 +2309,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto rows = ::base::saturated_cast<int>(initialSizeInChars.Height);
 
         // Initialize our font information.
-        // const auto fontFace = settings.FontFace();
-        // const short fontHeight = gsl::narrow_cast<short>(fontSize);
-        // const auto fontWeight = settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.

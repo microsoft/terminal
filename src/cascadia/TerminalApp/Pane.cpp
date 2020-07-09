@@ -958,8 +958,8 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
     {
         if (target.get() == this)
         {
-            //If this pane is a leaf, and it's the pane we're looking for, use
-            //the available space to calculate which direction to split in.
+            // If this pane is a leaf, and it's the pane we're looking for, use
+            // the available space to calculate which direction to split in.
             const Size minSize = _GetMinSize();
 
             if (splitType == SplitState::None)
@@ -967,7 +967,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { false };
             }
 
-            if (splitType == SplitState::Vertical)
+            else if (splitType == SplitState::Vertical)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
                 const auto newWidth = widthMinusSeparator * Half;
@@ -975,7 +975,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { newWidth > minSize.Width };
             }
 
-            if (splitType == SplitState::Horizontal)
+            else if (splitType == SplitState::Horizontal)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
                 const auto newHeight = heightMinusSeparator * Half;
