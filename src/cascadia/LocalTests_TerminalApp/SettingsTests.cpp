@@ -88,14 +88,23 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestNestedCommands);
         TEST_METHOD(TestNestedInNestedCommand);
         TEST_METHOD(TestNestedInIterableCommand);
-        TEST_METHOD(TestMixedNestedAndIterableCommand);
         TEST_METHOD(TestIterableInNestedCommand);
+        TEST_METHOD(TestMixedNestedAndIterableCommand);
         TEST_METHOD(TestNestedCommandWithoutName);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
             return true;
+        }
+
+    private:
+        void _logCommandNames(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands)
+        {
+            for (auto& nameAndCommand : commands)
+            {
+                Log::Comment(fmt::format(L"{}", nameAndCommand.first).c_str());
+            }
         }
     };
 
@@ -3133,6 +3142,17 @@ namespace TerminalAppLocalTests
             auto childActionAndArgs = childProj.Action();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
 
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
+            const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@first.com", realArgs.TerminalArgs().Commandline());
+
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
 
@@ -3144,6 +3164,17 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(childProj);
             auto childActionAndArgs = childProj.Action();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
+            const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@second.com", realArgs.TerminalArgs().Commandline());
 
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
@@ -3159,17 +3190,17 @@ namespace TerminalAppLocalTests
         //
         // <Command Palette>
         //  ├─ profile0...
-        //  |  ├─ Split automatically
-        //  |  ├─ Split vertically
-        //  |  └─ Split horizontally
+        //  |  ├─ Split pane, profile: profile0
+        //  |  ├─ Split pane, direction: vertical, profile: profile0
+        //  |  └─ Split pane, direction: horizontal, profile: profile0
         //  ├─ profile1...
-        //  |  ├─ Split automatically
-        //  |  ├─ Split vertically
-        //  |  └─ Split horizontally
+        //  |  ├─Split pane, profile: profile1
+        //  |  ├─Split pane, direction: vertical, profile: profile1
+        //  |  └─Split pane, direction: horizontal, profile: profile1
         //  └─ profile2...
-        //     ├─ Split automatically
-        //     ├─ Split vertically
-        //     └─ Split horizontally
+        //     ├─ Split pane, profile: profile2
+        //     ├─ Split pane, direction: vertical, profile: profile2
+        //     └─ Split pane, direction: horizontal, profile: profile2
 
         const std::string settingsJson{ R"(
         {
@@ -3234,9 +3265,178 @@ namespace TerminalAppLocalTests
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+            _logCommandNames(commandImpl->_subcommands);
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
         }
     }
 
+    void SettingsTests::TestIterableInNestedCommand()
+    {
+        // This test checks a nested command that includes an iterable command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ New Tab With Profile...
+        //    ├─ Profile 1
+        //    ├─ Profile 2
+        //    └─ Profile 3
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "New Tab With Profile...",
+                    "commands": [
+                        {
+                            "iterateOn": "profiles",
+                            "command": { "action": "newTab", "profile": "${profile.name}" }
+                        }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        auto rootCommandProj = commands.at(L"New Tab With Profile...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
+            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+        }
+    }
     void SettingsTests::TestMixedNestedAndIterableCommand()
     {
         // This test checks a nested commands that includes an iterable command
@@ -3335,19 +3535,81 @@ namespace TerminalAppLocalTests
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+
+            _logCommandNames(commandImpl->_subcommands);
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+            }
         }
-    }
-    void SettingsTests::TestIterableInNestedCommand()
-    {
-        // This test checks a nested command that includes an iterable command.
-        // The commands should look like:
-        //
-        // <Command Palette>
-        // └─ New Tab With Profile...
-        //    ├─ Profile 1
-        //    ├─ Profile 2
-        //    └─ Profile 3
-        Log::Result(WEX::Logging::TestResults::Skipped);
     }
     void SettingsTests::TestNestedCommandWithoutName()
     {
