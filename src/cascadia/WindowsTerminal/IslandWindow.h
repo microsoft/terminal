@@ -32,7 +32,7 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void ToggleBorderless();
+    void ToggleFocusMode();
     void ToggleFullscreen();
 
 #pragma endregion

@@ -239,10 +239,10 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleToggleBorderless(const IInspectable& /*sender*/,
-                                               const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
+                                              const TerminalApp::ActionEventArgs& args)
     {
-        ToggleBorderless();
+        ToggleFocusMode();
         args.Handled(true);
     }
 

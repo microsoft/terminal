@@ -442,12 +442,12 @@ void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::Ele
 }
 
 // Method Description:
-// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// - Toggles our focus mode state. See _SetIsBorderless for more details.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleBorderless()
+void IslandWindow::ToggleFocusMode()
 {
     _SetIsBorderless(!_borderless);
 }
@@ -508,14 +508,18 @@ LONG IslandWindow::_getCurrentWindowStyle() const
         WI_SetFlag(windowStyle, WS_POPUP);
         return windowStyle;
     }
-    else if (_borderless && !_fullscreen)
+    else if (_borderless)
     {
         // When moving to borderless, remove WS_OVERLAPPEDWINDOW, which
         // specifies styles for non-fullscreen windows (e.g. caption bar). We'll
         // have no frame, no caption buttons, no shadow, nothing.
 
         WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-        WI_ClearFlag(windowStyle, WS_POPUP);
+        // WI_ClearFlag(windowStyle, WS_POPUP);
+
+        // WI_SetFlag(windowStyle, WS_POPUP); // By itself, does seemingly nothing.
+
+        WI_SetAllFlags(windowStyle, WS_CAPTION | WS_SYSMENU);
 
         return windowStyle;
     }
@@ -530,13 +534,13 @@ LONG IslandWindow::_getCurrentWindowStyle() const
 }
 
 // Method Description:
-// - Enable or disable borderless mode. When entering borderless mode, we'll
+// - Enable or disable focus mode. When entering focus mode, we'll
 //   need to manually hide the entire titlebar.
-// - When we're entering borderless we need to do some additional modification
+// - When we're entering focus we need to do some additional modification
 //   of our window styles. However, the NonClientIslandWindow very explicitly
 //   _doesn't_ need to do these steps.
 // Arguments:
-// - borderlessEnabled: If true, we're entering borderless mode. If false, we're leaving.
+// - borderlessEnabled: If true, we're entering focus mode. If false, we're leaving.
 // Return Value:
 // - <none>
 void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)

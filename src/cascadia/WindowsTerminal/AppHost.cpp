@@ -157,7 +157,7 @@ void AppHost::Initialize()
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
-    _logic.ToggleBorderless({ this, &AppHost::_ToggleBorderless });
+    _logic.ToggleFocusMode({ this, &AppHost::_ToggleFocusMode });
 
     _logic.Create();
 
@@ -353,10 +353,10 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleBorderless(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleBorderlessEventArgs&)
+void AppHost::_ToggleFocusMode(const winrt::Windows::Foundation::IInspectable&,
+                               const winrt::TerminalApp::ToggleFocusModeEventArgs&)
 {
-    _window->ToggleBorderless();
+    _window->ToggleFocusMode();
 }
 
 void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
