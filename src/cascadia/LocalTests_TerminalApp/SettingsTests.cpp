@@ -86,7 +86,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestIterateAutogenNamedCommands);
         TEST_METHOD(TestIterateOnBadJson);
         TEST_METHOD(TestNestedCommands);
+        TEST_METHOD(TestNestedInNestedCommand);
         TEST_METHOD(TestNestedInIterableCommand);
+        TEST_METHOD(TestMixedNestedAndIterableCommand);
         TEST_METHOD(TestIterableInNestedCommand);
         TEST_METHOD(TestNestedCommandWithoutName);
 
@@ -2933,12 +2935,312 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestNestedCommands()
     {
-        // This test
-        Log::Result(WEX::Logging::TestResults::Skipped);
+        // This test TODODODOD
+
+        // This test checks a iterable command that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ Connect to ssh...
+        //    ├─ first.com
+        //    └─ second.com
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "Connect to ssh...",
+                    "commands": [
+                        {
+                            "name": "first.com",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "second.com",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        auto rootCommandProj = commands.at(L"Connect to ssh...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(2u, rootCommandImpl->_subcommands.size());
+
+        {
+            winrt::hstring commandName{ L"first.com" };
+            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+        }
+        {
+            winrt::hstring commandName{ L"second.com" };
+            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+        }
     }
+
+    void SettingsTests::TestNestedInNestedCommand()
+    {
+        // This test TODODODOD
+
+        // This test checks a iterable command that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ Connect to ssh...
+        //    ├─ first.com
+        //    └─ second.com
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "grandparent",
+                    "commands": [
+                        {
+                            "name": "parent",
+                            "commands": [
+                                {
+                                    "name": "child1",
+                                    "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                                },
+                                {
+                                    "name": "child2",
+                                    "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                                }
+                            ]
+                        },
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        auto grandparentCommandProj = commands.at(L"grandparent");
+        VERIFY_IS_NOT_NULL(grandparentCommandProj);
+        auto grandparentActionAndArgs = grandparentCommandProj.Action();
+        VERIFY_IS_NULL(grandparentActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> grandparentCommandImpl;
+        grandparentCommandImpl.copy_from(winrt::get_self<implementation::Command>(grandparentCommandProj));
+
+        VERIFY_ARE_EQUAL(1u, grandparentCommandImpl->_subcommands.size());
+
+        winrt::hstring parentName{ L"parent" };
+        auto parentProj = grandparentCommandImpl->_subcommands.at(parentName);
+        VERIFY_IS_NOT_NULL(parentProj);
+        auto parentActionAndArgs = parentProj.Action();
+        VERIFY_IS_NULL(parentActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> parentImpl;
+        parentImpl.copy_from(winrt::get_self<implementation::Command>(parentProj));
+
+        VERIFY_ARE_EQUAL(2u, parentImpl->_subcommands.size());
+        {
+            winrt::hstring childName{ L"child1" };
+            auto childProj = parentImpl->_subcommands.at(childName);
+            VERIFY_IS_NOT_NULL(childProj);
+            auto childActionAndArgs = childProj.Action();
+            VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+            winrt::com_ptr<implementation::Command> childImpl;
+            childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
+
+            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.size());
+        }
+        {
+            winrt::hstring childName{ L"child2" };
+            auto childProj = parentImpl->_subcommands.at(childName);
+            VERIFY_IS_NOT_NULL(childProj);
+            auto childActionAndArgs = childProj.Action();
+            VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+            winrt::com_ptr<implementation::Command> childImpl;
+            childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
+
+            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.size());
+        }
+    }
+
     void SettingsTests::TestNestedInIterableCommand()
     {
         // This test checks a iterable command that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        //  ├─ profile0...
+        //  |  ├─ Split automatically
+        //  |  ├─ Split vertically
+        //  |  └─ Split horizontally
+        //  ├─ profile1...
+        //  |  ├─ Split automatically
+        //  |  ├─ Split vertically
+        //  |  └─ Split horizontally
+        //  └─ profile2...
+        //     ├─ Split automatically
+        //     ├─ Split vertically
+        //     └─ Split horizontally
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "iterateOn": "profiles",
+                    "name": "${profile.name}...",
+                    "commands": [
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "automatic" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, commands.size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ name + L"..." };
+            auto commandProj = commands.at(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+        }
+    }
+
+    void SettingsTests::TestMixedNestedAndIterableCommand()
+    {
+        // This test checks a nested commands that includes an iterable command
+        // that includes a nested command.
         // The commands should look like:
         //
         // <Command Palette>
