@@ -80,6 +80,37 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    // Function Description:
+    // - Recursively check our commands to see if there's a keybinding for
+    //   exactly their action. If there is, label that command with the text
+    //   corresponding to that key chord.
+    // - Will recurse into nested commands as well.
+    // Arguments:
+    // - settings: The settings who's keybindings we should use to look up the key chords from
+    // - commands: The list fo commands to label.
+    // Return Value:
+    // - <none>
+    static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                        Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
+    {
+        for (auto command : commands)
+        {
+            // If there's a keybinding that's bound to exactly this command,
+            // then get the string for that keychord and display it as a
+            // part of the command in the UI. Each Command's KeyChordText is
+            // unset by default, so we don't need to worry about clearing it
+            // if there isn't a key associated with it.
+            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+
+            if (keyChord)
+            {
+                command.KeyChordText(KeyChordSerialization::ToString(keyChord));
+            }
+
+            _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+        }
+    }
+
     winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
                                                      bool needRefreshUI)
     {
@@ -97,23 +128,11 @@ namespace winrt::TerminalApp::implementation
             auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
             for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
             {
-                auto command = nameAndCommand.second;
-
-                // If there's a keybinding that's bound to exactly this command,
-                // then get the string for that keychord and display it as a
-                // part of the command in the UI. Each Command's KeyChordText is
-                // unset by default, so we don't need to worry about clearing it
-                // if there isn't a key associated with it.
-                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
-
-                // TODO: Make this recursive, because commands might have
-                // subcommands that also have keybindings
-                if (keyChord)
-                {
-                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
-                }
-                commandsCollection.Append(command);
+                commandsCollection.Append(nameAndCommand.second);
             }
+
+            _recursiveUpdateCommandKeybindingLabels(_settings, commandsCollection);
+
             CommandPalette().SetActions(commandsCollection);
         }
     }

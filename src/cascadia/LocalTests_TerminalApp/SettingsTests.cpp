@@ -91,6 +91,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestIterableInNestedCommand);
         TEST_METHOD(TestMixedNestedAndIterableCommand);
         TEST_METHOD(TestNestedCommandWithoutName);
+        TEST_METHOD(TestUnbindNestedCommand);
+        TEST_METHOD(TestRebindNestedCommand);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -101,7 +103,10 @@ namespace TerminalAppLocalTests
     private:
         void _logCommandNames(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
         {
-            Log::Comment(L"Commands:");
+            if (indentation == 1)
+            {
+                Log::Comment(commands.empty() ? L"Commands:\n  <none>" : L"Commands:");
+            }
             for (auto& nameAndCommand : commands)
             {
                 Log::Comment(fmt::format(L"{0:>{1}}* {2}->{3}",
@@ -2957,9 +2962,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestNestedCommands()
     {
-        // This test TODODODOD
-
-        // This test checks a iterable command that includes a nested command.
+        // This test checks a nested command.
         // The commands should look like:
         //
         // <Command Palette>
@@ -3060,15 +3063,14 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestNestedInNestedCommand()
     {
-        // This test TODODODOD
-
-        // This test checks a iterable command that includes a nested command.
+        // This test checks a nested command that includes nested commands.
         // The commands should look like:
         //
         // <Command Palette>
-        // └─ Connect to ssh...
-        //    ├─ first.com
-        //    └─ second.com
+        // └─ grandparent
+        //    └─ parent
+        //       ├─ child1
+        //       └─ child2
 
         const std::string settingsJson{ R"(
         {
@@ -3629,12 +3631,233 @@ namespace TerminalAppLocalTests
             }
         }
     }
+
     void SettingsTests::TestNestedCommandWithoutName()
     {
         // This test tests a nested command without a name specified. This type
         // of command should just be ignored, since we can't auto-generate names
         // for nested commands, they _must_ have names specified.
-        Log::Result(WEX::Logging::TestResults::Skipped);
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        // Because the "parent" command didn't have a name, it couldn't be
+        // placed into the list of commands. It and it's children are just
+        // ignored.
+        VERIFY_ARE_EQUAL(0u, commands.size());
+    }
+
+    void SettingsTests::TestUnbindNestedCommand()
+    {
+        // TODO: description
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "parent",
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "bindings": [
+                {
+                    "name": "parent",
+                    "commands": null
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        VerifyParseSucceeded(settings1Json);
+
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        Log::Comment(L"Layer second bit of json, to unbind the original command.");
+
+        settings._ParseJsonString(settings1Json, false);
+        settings.LayerJson(settings._userSettings);
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(0u, commands.size());
+    }
+
+    void SettingsTests::TestRebindNestedCommand()
+    {
+        // TODO: description
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "parent",
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "bindings": [
+                {
+                    "name": "parent",
+                    "command": "newTab"
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        VerifyParseSucceeded(settings1Json);
+
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
+
+        Log::Comment(L"Layer second bit of json, to unbind the original command.");
+        settings._ParseJsonString(settings1Json, false);
+        settings.LayerJson(settings._userSettings);
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.size());
     }
 
 }

@@ -145,13 +145,12 @@ namespace winrt::TerminalApp::implementation
 
             nested = true;
         }
-
-        // TODO: else if (hasKey(CommandKey) )
-        // {
-        //     // { name: "foo", commands: null } will land in this case, which
-        //     // should also be used for unbinding.
-        //     return nullptr;
-        // }
+        else if (json.isMember(JsonKey(CommandsKey)))
+        {
+            // { "name": "foo", "commands": null } will land in this case, which
+            // should also be used for unbinding.
+            return nullptr;
+        }
 
         // TODO GH#6644: iconPath not implemented quite yet. Can't seem to get
         // the binding quite right. Additionally, do we want it to be an image,
@@ -443,10 +442,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
                     // If we encounter a re-parsing error, just stop processing the rest of the commands.
-
-                    // TODO: if we fail to expand the json, we should return NO
-                    // commands, and also remove the current command from the
-                    // list of commands.
                     break;
                 }
 
