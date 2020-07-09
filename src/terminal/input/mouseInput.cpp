@@ -322,7 +322,8 @@ bool TerminalInput::HandleMouse(const COORD position,
             // If we're accumulating button presses of the same type, *and* those presses are
             // on the wheel, accumulate delta until we hit the amount required to dispatch one
             // "line" worth of scroll.
-            return true;
+            // Mark the event as "handled" if we would have otherwise emitted a scroll event.
+            return IsTrackingMouseInput() || _ShouldSendAlternateScroll(button, delta);
         }
 
         // We're ready to send this event through, but first we need to clear the accumulated;
