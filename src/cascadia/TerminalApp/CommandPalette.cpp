@@ -24,8 +24,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
+        _currentMode = CommandPaletteMode::ActionMode;
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
-        _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
         if (CommandPaletteShadow())
@@ -92,7 +93,7 @@ namespace winrt::TerminalApp::implementation
         // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
         // they're not considered input key presses. While they don't raise KeyDown events,
         // they do raise PreviewKeyDown events.
-        if (_tabSwitcherMode && key == VirtualKey::Tab)
+        if (_currentMode == CommandPaletteMode::TabSwitcherMode && key == VirtualKey::Tab)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
@@ -165,7 +166,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto key = e.OriginalKey();
 
-        if (_tabSwitcherMode)
+        if (_currentMode == CommandPaletteMode::TabSwitcherMode)
         {
             if (_anchorKey && key == _anchorKey.value())
             {
@@ -228,6 +229,27 @@ namespace winrt::TerminalApp::implementation
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
         _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
+    }
+
+    // Method Description:
+    // - Retrieve the list of commands that we should currently be filtering.
+    //   * If the user has command with subcommands, this will return that command's subcommands.
+    //   * Otherwise, just return the list of all the top-level commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A list of Commands to filter.
+    Collections::IVector<TerminalApp::Command> CommandPalette::_commandsToFilter()
+    {
+        switch (_currentMode)
+        {
+            case CommandPaletteMode::ActionMode:
+                return _allCommands;
+            case CommandPaletteMode::TabSwitcherMode:
+                return _allTabActions;
+            default:
+                return _allCommands;
+        }
     }
 
     // Method Description:
@@ -297,15 +319,15 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetCommandPaletteActions(Collections::IVector<TerminalApp::Command> const& actions)
+    void CommandPalette::SetCommands(Collections::IVector<TerminalApp::Command> const& actions)
     {
-        _allCommandPaletteActions = actions;
+        _allCommands = actions;
         _updateFilteredActions();
     }
 
     void CommandPalette::EnableCommandPaletteMode()
     {
-        _allActions = _allCommandPaletteActions;
+        _currentMode = CommandPaletteMode::ActionMode;
         _updateFilteredActions();
     }
 
@@ -365,15 +387,18 @@ namespace winrt::TerminalApp::implementation
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
+        auto commandsToFilter = _commandsToFilter();
+
         // If there's no filter text, then just add all the commands in order to the list.
         // - TODO GH#6647:Possibly add the MRU commands first in order, followed
         //   by the rest of the commands.
         if (addAll)
         {
-            // If TabSwitcherMode, just add all as is.
-            if (_tabSwitcherMode)
+            // If TabSwitcherMode, just add all as is. We don't want
+            // them to be sorted alphabetically.
+            if (_currentMode == CommandPaletteMode::TabSwitcherMode)
             {
-                for (auto action : _allActions)
+                for (auto action : commandsToFilter)
                 {
                     _filteredActions.Append(action);
                 }
@@ -383,9 +408,9 @@ namespace winrt::TerminalApp::implementation
 
             // Add all the commands, but make sure they're sorted alphabetically.
             std::vector<TerminalApp::Command> sortedCommands;
-            sortedCommands.reserve(_allActions.Size());
+            sortedCommands.reserve(commandsToFilter.Size());
 
-            for (auto action : _allActions)
+            for (auto action : commandsToFilter)
             {
                 sortedCommands.push_back(action);
             }
@@ -415,7 +440,7 @@ namespace winrt::TerminalApp::implementation
         // appear first in the list. The ordering will be determined by the
         // match weight produced by _getWeight.
         std::priority_queue<WeightedCommand> heap;
-        for (auto action : _allActions)
+        for (auto action : commandsToFilter)
         {
             const auto weight = CommandPalette::_getWeight(searchText, action.Name());
             if (weight > 0)
@@ -426,7 +451,7 @@ namespace winrt::TerminalApp::implementation
 
                 // If we're in Tab Switcher mode, we want to fall back to Index
                 // order, not Command Name alphabetical order.
-                wc.orderByTabIndex = _tabSwitcherMode;
+                wc.orderByTabIndex = _currentMode == CommandPaletteMode::TabSwitcherMode;
 
                 heap.push(wc);
             }
@@ -548,7 +573,8 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        _tabSwitcherMode = false;
+        // Reset back to action mode upon close.
+        _currentMode = CommandPaletteMode::ActionMode;
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
@@ -652,9 +678,8 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey)
     {
+        _currentMode = CommandPaletteMode::TabSwitcherMode;
         _anchorKey = anchorKey;
-        _tabSwitcherMode = true;
-        _allActions = _allTabActions;
         _updateFilteredActions();
     }
 }

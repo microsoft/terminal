@@ -81,6 +81,7 @@ namespace winrt::TerminalApp::implementation
                     command.KeyChordText(KeyChordSerialization::ToString(keyChord));
                 }
 
+                // TODO: Finalize where to set the default icon and what it should be
                 // If there isn't an icon set, provide a default icon.
                 if (!command.IconSource())
                 {
@@ -93,7 +94,7 @@ namespace winrt::TerminalApp::implementation
 
                 commandsCollection.Append(command);
             }
-            CommandPalette().SetCommandPaletteActions(commandsCollection);
+            CommandPalette().SetCommands(commandsCollection);
         }
     }
 

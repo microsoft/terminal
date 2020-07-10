@@ -11,7 +11,7 @@ namespace TerminalApp
 
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
-        void SetCommandPaletteActions(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);
         void EnableCommandPaletteMode();
 
         void SetDispatch(ShortcutActionDispatch dispatch);

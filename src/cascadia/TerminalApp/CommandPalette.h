@@ -20,12 +20,12 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
 
-        void SetCommandPaletteActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
+        void SetCommands(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
         void EnableCommandPaletteMode();
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
-        // TabSwitcherMode Specific
+        // Tab Switcher 
         void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
@@ -33,10 +33,11 @@ namespace winrt::TerminalApp::implementation
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allActions{ nullptr };
 
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommandPaletteActions{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommands{ nullptr };
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _commandsToFilter();
 
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
@@ -58,9 +59,10 @@ namespace winrt::TerminalApp::implementation
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 
-        // TabSwitcher
+        CommandPaletteMode _currentMode;
+
+        // Tab Switcher
         std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
-        bool _tabSwitcherMode{ false };
         void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
         void UpdateTabIndices(const uint32_t startIdx);
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
