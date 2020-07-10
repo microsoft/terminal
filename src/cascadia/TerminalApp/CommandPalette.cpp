@@ -341,12 +341,13 @@ namespace winrt::TerminalApp::implementation
 
     // This is a helper to sort entries when in Tab Switcher mode.
     // This compares the KeyChordText, which is used to indicate the Tab index on the Tab View.
+    // TODO: I don't really like this comparison.....
     static bool _compareTabIndex(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
     {
         std::wstring_view leftIndex{ lhs.KeyChordText() };
-        std::wstring leftIdx { leftIndex.substr(leftIndex.find_first_of(':') + 1) };
+        std::wstring leftIdx { leftIndex.substr(leftIndex.find_last_of(' ') + 1) };
         std::wstring_view rightIndex{ rhs.KeyChordText() };
-        std::wstring rightIdx{ rightIndex.substr(rightIndex.find_first_of(':') + 1) };
+        std::wstring rightIdx{ rightIndex.substr(rightIndex.find_last_of(' ') + 1) };
 
         return stoi(leftIdx) > stoi(rightIdx);
     }
@@ -663,7 +664,7 @@ namespace winrt::TerminalApp::implementation
 
         auto command = winrt::make_self<implementation::Command>();
         command->Action(*focusTabAction);
-        command->KeyChordText(L"Index:" + to_hstring(idx));
+        command->KeyChordText(L"Index : " + to_hstring(idx));
         command->Name(tab.Title());
         command->IconSource(tab.IconSource());
 

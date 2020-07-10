@@ -22,8 +22,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
             <local:CommandKeyChordVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
 
-            <local:CommandIconStringConverter x:Key="CommandIconStringConverter"/>
-
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">

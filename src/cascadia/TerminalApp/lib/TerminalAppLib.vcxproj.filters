@@ -139,7 +139,6 @@
     </Midl>
     <Midl Include="../IDirectKeyListener.idl" />
     <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
-    <Midl Include="../CommandIconStringConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages.config" />
