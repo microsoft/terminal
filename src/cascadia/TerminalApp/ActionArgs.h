@@ -536,7 +536,7 @@ namespace winrt::TerminalApp::implementation
     struct ExecuteCommandlineArgs : public ExecuteCommandlineArgsT<ExecuteCommandlineArgs>
     {
         ExecuteCommandlineArgs() = default;
-        GETSET_PROPERTY(winrt::hstring, Commandline, false);
+        GETSET_PROPERTY(winrt::hstring, Commandline, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
 

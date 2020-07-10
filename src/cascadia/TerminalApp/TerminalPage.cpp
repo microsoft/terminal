@@ -2183,11 +2183,10 @@ namespace winrt::TerminalApp::implementation
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
     std::deque<winrt::TerminalApp::ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args)
     {
-        if (!args)
+        if (!args || args.Commandline().empty())
         {
             return {};
         }
-
         // Convert the commandline into an array of args with
         // CommandLineToArgvW, similar to how the app typically does when
         // called from the commandline.
