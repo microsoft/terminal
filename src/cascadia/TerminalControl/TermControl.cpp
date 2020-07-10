@@ -1136,7 +1136,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled, nullptr);
                 }
             }
         }
@@ -1296,7 +1296,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Right clicks and middle clicks should not need to do anything when released.
             if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                CopySelectionToClipboard();
+                CopySelectionToClipboard(false, nullptr);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
