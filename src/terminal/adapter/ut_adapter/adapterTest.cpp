@@ -1688,6 +1688,42 @@ public:
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceAttributes());
     }
 
+    TEST_METHOD(SecondaryDeviceAttributesTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify normal response.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->SecondaryDeviceAttributes());
+
+        PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
+        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+
+        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+
+        VERIFY_IS_FALSE(_pDispatch.get()->SecondaryDeviceAttributes());
+    }
+
+    TEST_METHOD(TertiaryDeviceAttributesTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify normal response.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->TertiaryDeviceAttributes());
+
+        PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
+        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+
+        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+
+        VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
+    }
+
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");

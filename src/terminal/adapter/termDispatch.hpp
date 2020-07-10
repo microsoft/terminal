@@ -88,6 +88,8 @@ public:
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
+    bool SecondaryDeviceAttributes() noexcept override { return false; } // DA2
+    bool TertiaryDeviceAttributes() noexcept override { return false; } // DA3
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
     bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
