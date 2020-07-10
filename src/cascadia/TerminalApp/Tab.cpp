@@ -219,8 +219,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            IconPath(_lastIconPath);
-
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
             _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));

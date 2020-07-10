@@ -580,6 +580,15 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(L"");
     }
 
+    // Method Description:
+    // - Listens for changes to TerminalPage's _tabs vector. Updates our vector of
+    //   tab switching commands accordingly.
+    // Arguments:
+    // - s: The vector being listened to.
+    // - e: The vector changed args that tells us whether a change, insert, or removal was performed
+    //      on the listened-to vector.
+    // Return Value:
+    // - <none>
     void CommandPalette::OnTabsChanged(const IInspectable& s, const IVectorChangedEventArgs& e)
     {
         if (auto tabList = s.try_as<IObservableVector<TerminalApp::Tab>>())
@@ -611,6 +620,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - In the case where a tab is removed or reordered, the given indices of
+    //   the tab switch commands following the removed/reordered tab will get out of sync by 1
+    //   (e.g. if tab 1 is removed, tabs 2,3,4,... need to become tabs 1,2,3,...)
+    //   This function just loops through the tabs following startIdx and adjusts their given indices.
+    // Arguments:
+    // - startIdx: The index to start the update loop at.
+    // Return Value:
+    // - <none>
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
         if (startIdx != _allTabActions.Size() - 1)
@@ -626,6 +644,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Create a tab switching command based on the given tab object and insert/update the command
+    //   at the given index. The command will call a SwitchToTab action on the given idx.
+    // Arguments:
+    // - idx: The index to insert or update the tab switch command.
+    // - tab: The tab object to refer to when creating the tab switch command.
+    // Return Value:
+    // - <none>
     void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::Tab& tab)
     {
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
