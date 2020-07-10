@@ -822,7 +822,13 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 // - <none>
 void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 {
-    IslandWindow::_SetIsBorderless(borderlessEnabled);
+    _borderless = borderlessEnabled;
+
+    // Explicitly _don't_ call IslandWindow::_SetIsBorderless. That version will
+    // change the window styles appropriately for the window with the default
+    // titlebar, but for the tabs-in-titlebar mode, we can just get rid of the
+    // title bar entirely.
+
     if (_titlebar)
     {
         _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
@@ -833,6 +839,17 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
     _ResizeDragBarWindow();
+
+    // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
+    // recalculate the non/client areas
+    const til::rectangle windowPos{ GetWindowRect() };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 windowPos.left<int>(),
+                 windowPos.top<int>(),
+                 windowPos.width<int>(),
+                 windowPos.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // Method Description:
