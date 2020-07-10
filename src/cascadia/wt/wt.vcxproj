@@ -20,6 +20,10 @@
     </ClCompile>
   </ItemGroup>
 
+  <ItemGroup>
+    <ResourceCompile Include="wt.rc" />
+  </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
 
   <ItemDefinitionGroup>

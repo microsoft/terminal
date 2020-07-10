@@ -11,11 +11,19 @@
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR pCmdLine, int)
 {
     std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+
+    // Cache our name (wt, wtd)
+    std::wstring ourFilename{ module.filename() };
+
+    // Swap wt[d].exe for WindowsTerminal.exe
     module.replace_filename(L"WindowsTerminal.exe");
 
-    // Synthesize a commandline
-    std::wstring cmdline{ L"wt.exe " };
-    cmdline += pCmdLine;
+    // Append the rest of the commandline to the saved name
+    std::wstring cmdline;
+    if (FAILED(wil::str_printf_nothrow(cmdline, L"%s %s", ourFilename.c_str(), pCmdLine)))
+    {
+        return 1;
+    }
 
     // Get our startup info so it can be forwarded
     STARTUPINFOW si{};
@@ -24,5 +32,5 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR pCmdLine, int)
 
     // Go!
     wil::unique_process_information pi;
-    return CreateProcessW(module.c_str(), cmdline.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi);
+    return !CreateProcessW(module.c_str(), cmdline.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi);
 }
