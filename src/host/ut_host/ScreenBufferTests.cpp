@@ -5948,16 +5948,6 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     // Otherwise they could be polluted from a previous test.
     mainBuffer.SetAttributes(defaultAttribute);
 
-    TextAttribute vtRedOnBlueAttribute{};
-    vtRedOnBlueAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(1)), false });
-    vtRedOnBlueAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(4)), false });
-
-    TextAttribute vtWhiteOnBlackAttribute{};
-    vtWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
-    vtWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
-
-    const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
-
     const auto verifyLastAttribute = [&](const TextAttribute& expected) {
         const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
@@ -5968,27 +5958,91 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 
     std::unique_ptr<WriteData> waiter;
 
-    std::wstring seq = L"\x1b[31;44m";
-    size_t seqCb = 2 * seq.size();
-    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+    std::wstring seq{};
+    size_t seqCb{ 0 };
 
-    VERIFY_ARE_EQUAL(vtRedOnBlueAttribute, mainBuffer.GetAttributes());
+    /* Write red on blue, verify that it comes through */
+    {
+        TextAttribute vtRedOnBlueAttribute{};
+        vtRedOnBlueAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(1)), false });
+        vtRedOnBlueAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(4)), false });
 
-    seq = L"X";
-    seqCb = 2 * seq.size();
-    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+        seq = L"\x1b[31;44m";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
 
-    verifyLastAttribute(vtRedOnBlueAttribute);
+        VERIFY_ARE_EQUAL(vtRedOnBlueAttribute, mainBuffer.GetAttributes());
 
-    seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
-    seqCb = 2 * seq.size();
-    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+        seq = L"X";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
 
-    VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
+        verifyLastAttribute(vtRedOnBlueAttribute);
+    }
 
-    seq = L"X";
-    seqCb = 2 * seq.size();
-    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+    /* Write white on black, verify that it acts as expected for the quirk mode */
+    {
+        TextAttribute vtWhiteOnBlackAttribute{};
+        vtWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
+        vtWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
 
-    verifyLastAttribute(quirkExpectedAttribute);
+        const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
+
+        seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
+
+        seq = L"X";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        verifyLastAttribute(quirkExpectedAttribute);
+    }
+
+    /* Write bright white on black, verify that it acts as expected for the quirk mode */
+    {
+        TextAttribute vtBrightWhiteOnBlackAttribute{};
+        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
+        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+        vtBrightWhiteOnBlackAttribute.SetBold(true);
+
+        TextAttribute vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
+        vtBrightWhiteOnDefaultAttribute.SetDefaultBackground();
+
+        const TextAttribute quirkExpectedAttribute{ useQuirk ? vtBrightWhiteOnDefaultAttribute : vtBrightWhiteOnBlackAttribute };
+
+        seq = L"\x1b[1;37;40m"; // the quirk should suppress black only, turning it into "default background"
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
+
+        seq = L"X";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        verifyLastAttribute(quirkExpectedAttribute);
+    }
+
+    /* Write a 256-color white on a 256-color black, make sure the quirk does not suppress it */
+    {
+        TextAttribute vtWhiteOnBlack256Attribute{};
+        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), true });
+        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), true });
+
+        // reset (disable bold from the last test) before setting both colors
+        seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        VERIFY_ARE_EQUAL(vtWhiteOnBlack256Attribute, mainBuffer.GetAttributes());
+
+        seq = L"X";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+        verifyLastAttribute(vtWhiteOnBlack256Attribute);
+    }
 }
