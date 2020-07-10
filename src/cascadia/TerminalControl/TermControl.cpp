@@ -34,6 +34,8 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
+DEFINE_ENUM_FLAG_OPERATORS(CopyFormat);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -2125,12 +2127,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             textData += text;
         }
 
+        bool useGlobal = formats == nullptr;
+        std::optional<bool> overrideHTML = std::nullopt;
+        std::optional<bool> overrideRTF = std::nullopt;
+        if (!useGlobal)
+        {
+            overrideHTML = WI_IsFlagSet(formats.Value(), CopyFormat::HTML);
+            overrideRTF = WI_IsFlagSet(formats.Value(), CopyFormat::RTF);
+        }
+
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        // TODO CARLOS
-        const auto htmlData = formats == nullptr /*|| WI_IsFlagSet(formats.Value(), CopyFormat::HTML)*/ ?
+        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
@@ -2138,8 +2148,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                   "";
 
         // convert to RTF format
-        // TODO CARLOS
-        const auto rtfData = formats == nullptr /*|| WI_IsFlagSet(formats.Value(), CopyFormat::RTF)*/ ?
+        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),

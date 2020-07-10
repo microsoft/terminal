@@ -9,7 +9,6 @@
 #include "JsonUtils.h"
 #include "JsonUtilsNew.h"
 #include "TerminalSettingsSerializationHelper.h"
-#include <sstream>
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;

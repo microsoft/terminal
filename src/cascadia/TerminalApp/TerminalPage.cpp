@@ -1560,19 +1560,18 @@ namespace winrt::TerminalApp::implementation
         //   if and only if it is not set
         // Since 'Formats' cannot be represented as an optional in the EventArgs,
         //   a sentinel value of 0 represents that "Formats" was not set.
-        auto copyFormats = copiedData.Formats() == nullptr ?
+        bool useGlobal = copiedData.Formats() == nullptr;
+        auto copyFormats = useGlobal ?
                                _settings->GlobalSettings().CopyFormatting() :
                                copiedData.Formats().Value();
 
-        // TODO CARLOS
-        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::Plain)*/)
+        if (WI_IsFlagSet(copyFormats, CopyFormat::Plain))
         {
             // copy text to dataPack
             dataPack.SetText(copiedData.Text());
         }
 
-        // TODO CARLOS
-        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::HTML)*/)
+        if (WI_IsFlagSet(copyFormats, CopyFormat::HTML))
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1582,8 +1581,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO CARLOS
-        if (true/*WI_IsFlagSet(copyFormats, CopyFormat::RTF)*/)
+        if (WI_IsFlagSet(copyFormats, CopyFormat::RTF))
         {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();

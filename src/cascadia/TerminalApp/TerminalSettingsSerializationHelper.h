@@ -4,7 +4,7 @@
 #pragma once
 
 #include "JsonUtilsNew.h"
-#include "../TerminalSettings/terminalsettings.h"
+#include <winrt/Microsoft.Terminal.Settings.h>
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Settings::CopyFormat);
 
@@ -24,11 +24,11 @@ JSON_FLAG_MAPPER(winrt::Microsoft::Terminal::Settings::CopyFormat)
         {
             return json.asBool() ? AllSet : winrt::Microsoft::Terminal::Settings::CopyFormat::Plain;
         }
-        return FlagMapper::FromJson(json);
+        return BaseFlagMapper::FromJson(json);
     }
 
     bool CanConvert(const Json::Value& json)
     {
-        return FlagMapper::CanConvert(json) || json.isBool();
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
     }
 };
