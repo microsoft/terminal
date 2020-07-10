@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include <winrt/ScratchWinRTServer.h>
+#include "ScratchClass.h"
 using namespace winrt;
 using namespace Windows::Foundation;
 
@@ -60,6 +61,24 @@ struct ScratchStringableFactory : implements<ScratchStringableFactory, IClassFac
         return S_OK;
     }
 };
+struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
+{
+    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
+    {
+        *result = nullptr;
+        if (outer)
+        {
+            return CLASS_E_NOAGGREGATION;
+        }
+        printf("Created ScratchClass\n");
+        return make<ScratchWinRTServer::implementation::ScratchClass>().as(iid, result);
+    }
+
+    HRESULT __stdcall LockServer(BOOL) noexcept final
+    {
+        return S_OK;
+    }
+};
 
 // DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
 static constexpr GUID MyStringable_clsid{
@@ -72,6 +91,13 @@ static constexpr GUID MyStringable_clsid{
 // EAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
 static constexpr GUID ScratchStringable_clsid{
     0xeaa16d7f,
+    0xef66,
+    0x4fc9,
+    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
+};
+// FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
+static constexpr GUID ScratchClass_clsid{
+    0xfaa16d7f,
     0xef66,
     0x4fc9,
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
@@ -95,9 +121,18 @@ int main()
                                         make<ScratchStringableFactory>().get(),
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
-                                        &registrationMyStringable));
+                                        &registrationScratchStringable));
 
     printf("%d\n", registrationScratchStringable);
+
+    DWORD registrationScratchClass{};
+    check_hresult(CoRegisterClassObject(ScratchClass_clsid,
+                                        make<ScratchClassFactory>().get(),
+                                        CLSCTX_LOCAL_SERVER,
+                                        REGCLS_MULTIPLEUSE,
+                                        &registrationScratchClass));
+
+    printf("%d\n", registrationScratchClass);
     puts("Press Enter me when you're done serving.");
     getchar();
 }

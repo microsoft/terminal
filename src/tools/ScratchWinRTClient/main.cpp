@@ -20,6 +20,14 @@ static constexpr GUID ScratchStringable_clsid{
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
 };
 
+// FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
+static constexpr GUID ScratchClass_clsid{
+    0xfaa16d7f,
+    0xef66,
+    0x4fc9,
+    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
+};
+
 void actualApp()
 {
     {
@@ -116,6 +124,23 @@ void closeApp()
     }
 }
 
+void scratchApp()
+{
+    printf("scratchApp\n");
+    {
+        printf("Trying to directly create a ScratchClass...\n");
+        auto server = create_instance<winrt::ScratchWinRTServer::ScratchClass>(ScratchClass_clsid, CLSCTX_LOCAL_SERVER);
+        if (server)
+        {
+            printf("%ls\n", server.DoTheThing().c_str());
+        }
+        else
+        {
+            printf("Could not get the ScratchClass directly\n");
+        }
+    }
+}
+
 int main()
 {
     init_apartment();
@@ -132,6 +157,15 @@ int main()
     try
     {
         closeApp();
+    }
+    catch (hresult_error const& e)
+    {
+        printf("Error: %ls\n", e.message().c_str());
+    }
+    printf("------------------\n");
+    try
+    {
+        scratchApp();
     }
     catch (hresult_error const& e)
     {
