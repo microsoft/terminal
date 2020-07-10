@@ -519,11 +519,7 @@ LONG IslandWindow::_getCurrentWindowStyle() const
         // buttons.
 
         WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
-        // WI_ClearFlag(windowStyle, WS_POPUP);
-
-        // WI_SetFlag(windowStyle, WS_POPUP); // By itself, does seemingly nothing.
-
-        WI_SetAllFlags(windowStyle, WS_CAPTION | WS_SYSMENU);
+        WI_ClearFlag(windowStyle, WS_POPUP);
 
         WI_SetFlag(windowStyle, WS_BORDER);
         WI_SetFlag(windowStyle, WS_SIZEBOX);
