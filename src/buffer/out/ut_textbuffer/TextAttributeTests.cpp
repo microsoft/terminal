@@ -138,21 +138,17 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     //      values when reverse video is not set
     VERIFY_IS_FALSE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(red, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(red, green), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 
     // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
     attr.SetReverseVideo(true);
 
-    VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(green, red), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 }
 
 void TextAttributeTests::TestReverseDefaultColors()
@@ -166,42 +162,34 @@ void TextAttributeTests::TestReverseDefaultColors()
     //      values when reverse video is not set
     VERIFY_IS_FALSE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 
     // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
     attr.SetReverseVideo(true);
     VERIFY_IS_TRUE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, _defaultFg), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 
     attr.SetForeground(red);
     VERIFY_IS_TRUE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, red), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 
     attr.Invert();
     VERIFY_IS_FALSE(attr.IsReverseVideo());
     attr.SetDefaultForeground();
     attr.SetBackground(green);
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
-
-    VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, green), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 }
 
 void TextAttributeTests::TestRoundtripDefaultColors()

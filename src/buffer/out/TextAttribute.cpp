@@ -81,54 +81,27 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
-// Arguments:
-// - None
-// Return Value:
-// - color that should be displayed as the foreground color
-COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
-{
-    return IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
-}
-
 // Routine Description:
-// - Calculates rgb background color based off of current color table and active modification attributes
+// - Calculates rgb colors based off of current color table and active modification attributes.
 // Arguments:
-// - None
+// - colorTable: the current color table rgb values.
+// - defaultFgColor: the default foreground color rgb value.
+// - defaultBgColor: the default background color rgb value.
+// - reverseScreenMode: true if the screen mode is reversed.
 // Return Value:
-// - color that should be displayed as the background color
-COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
+// - the foreground and background colors that should be displayed.
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+                                                                const COLORREF defaultFgColor,
+                                                                const COLORREF defaultBgColor,
+                                                                const bool reverseScreenMode) const noexcept
 {
-    return IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
-}
-
-// Routine Description:
-// - gets rgb foreground color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the foreground color
-COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
-{
-    return _foreground.GetColor(colorTable, defaultColor, IsBold());
-}
-
-// Routine Description:
-// - gets rgb background color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the background color
-COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
-{
-    return _background.GetColor(colorTable, defaultColor, false);
+    auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
+    auto bg = _background.GetColor(colorTable, defaultBgColor);
+    if (IsReverseVideo() ^ reverseScreenMode)
+    {
+        std::swap(fg, bg);
+    }
+    return { fg, bg };
 }
 
 TextColor TextAttribute::GetForeground() const noexcept

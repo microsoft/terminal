@@ -1362,8 +1362,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
                 const auto& attr = attrs[x];
                 VERIFY_ARE_EQUAL(false, attr.IsLegacy());
                 VERIFY_ARE_EQUAL(defaultAttrs, attr);
-                VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attr));
-                VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attr));
+                VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attr));
             }
         }
     }
@@ -2270,19 +2269,12 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     VERIFY_ARE_EQUAL(expectedTwo, attrE);
     VERIFY_ARE_EQUAL(expectedSix, attrF);
 
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrA));
-    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrB));
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrC));
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrD));
-    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrE));
-    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrF));
-
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrB));
-    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrC));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrD));
-    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrE));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrF));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrA));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), gci.LookupAttributeColors(attrB));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, darkBlue), gci.LookupAttributeColors(attrC));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrD));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), gci.LookupAttributeColors(attrE));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, magenta), gci.LookupAttributeColors(attrF));
 }
 
 void ScreenBufferTests::SetDefaultsTogether()
@@ -2354,13 +2346,9 @@ void ScreenBufferTests::SetDefaultsTogether()
     VERIFY_ARE_EQUAL(expectedTwo, attrB);
     VERIFY_ARE_EQUAL(expectedDefaults, attrC);
 
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrA));
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrB));
-    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrC));
-
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(color250, gci.LookupBackgroundColor(attrB));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrA));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, color250), gci.LookupAttributeColors(attrB));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrC));
 }
 
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
@@ -2424,9 +2412,9 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(expectedReversed, attrB);
     VERIFY_ARE_EQUAL(expectedDefaults, attrC);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrB));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).first);
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrC).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrs()
@@ -2477,8 +2465,8 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     VERIFY_ARE_EQUAL(expectedDefaults, attrA);
     VERIFY_ARE_EQUAL(expectedDefaults, attrB);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
@@ -2554,8 +2542,8 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     VERIFY_ARE_EQUAL(expectedDefaults, attrA);
     VERIFY_ARE_EQUAL(expectedDefaults, attrB);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
@@ -2665,7 +2653,7 @@ void ScreenBufferTests::SetGlobalColorTable()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
@@ -2691,7 +2679,7 @@ void ScreenBufferTests::SetGlobalColorTable()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
@@ -2708,8 +2696,8 @@ void ScreenBufferTests::SetGlobalColorTable()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrA));
-        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Switch back to the main buffer"));
@@ -2731,8 +2719,8 @@ void ScreenBufferTests::SetGlobalColorTable()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrA));
-        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
     }
 }
 
@@ -2771,7 +2759,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
@@ -2797,7 +2785,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
@@ -2816,7 +2804,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const auto attrB = attrs[1];
         // TODO MSFT:20105972 - attrA and attrB should both be the same color now
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
     }
 }
 
@@ -3195,11 +3183,9 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
-        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), gci.LookupAttributeColors(attrA));
 
-        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
-        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrB));
     }
 
     Log::Comment(NoThrowString().Format(L"Emulate scrolling up with the mouse"));
@@ -3230,14 +3216,11 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
         LOG_ATTR(attrC);
-        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
-        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), gci.LookupAttributeColors(attrA));
 
-        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
-        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrB));
 
-        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrC));
-        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrC));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrC));
     }
 }
 
@@ -4601,20 +4584,17 @@ void ScreenBufferTests::SetScreenMode()
 
     Log::Comment(L"By default the screen mode is normal.");
     VERIFY_IS_FALSE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
-    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), gci.LookupAttributeColors(testAttr));
 
     Log::Comment(L"When DECSCNM is set, background and foreground colors are switched.");
     stateMachine.ProcessString(L"\x1B[?5h");
     VERIFY_IS_TRUE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupForegroundColor(testAttr));
-    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupBackgroundColor(testAttr));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbBackground, rgbForeground), gci.LookupAttributeColors(testAttr));
 
     Log::Comment(L"When DECSCNM is reset, the colors are normal again.");
     stateMachine.ProcessString(L"\x1B[?5l");
     VERIFY_IS_FALSE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
-    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), gci.LookupAttributeColors(testAttr));
 }
 
 void ScreenBufferTests::SetOriginMode()

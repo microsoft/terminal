@@ -862,43 +862,18 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 }
 
 // Method Description:
-// - Get the foreground color of a particular text attribute, using our color
-//      table, and our configured default attributes.
+// - Get the colors of a particular text attribute, using our color table,
+//      and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
-// - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> Settings::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-}
-
-// Method Description:
-// - Get the background color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the background color of.
-// Return Value:
-// - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
+    return attr.CalculateRgbColors(Get256ColorTable(),
+                                   CalculateDefaultForeground(),
+                                   CalculateDefaultBackground(),
+                                   _fScreenReversed);
 }
 
 bool Settings::GetCopyColor() const noexcept
