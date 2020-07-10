@@ -169,7 +169,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
 
-                        <Grid HorizontalAlignment="Stretch" ColumnSpacing="5" >
+                        <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
 
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="16"/>
@@ -180,9 +180,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!-- TODO GH#6644: Add Icon to command palette entries, in column 0 -->
                             <IconSourceElement
                                 Grid.Column="0"
-                                IconSource="{x:Bind IconString,
-                                                    Mode=OneWay,
-                                                    Converter={StaticResource CommandIconStringConverter}}"/>
+                                IconSource="{x:Bind IconSource, Mode=OneWay }"/>
 
                             <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"

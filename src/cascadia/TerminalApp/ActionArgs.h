@@ -561,9 +561,9 @@ namespace winrt::TerminalApp::implementation
     struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
     {
         ToggleTabSwitcherArgs() = default;
-        GETSET_PROPERTY(Windows::System::VirtualKey, Key, Windows::System::VirtualKey::None);
+        GETSET_PROPERTY(Windows::System::VirtualKey, AnchorKey, Windows::System::VirtualKey::None);
 
-        static constexpr std::string_view AnchorKey{ "anchor" };
+        static constexpr std::string_view AnchorJsonKey{ "anchor" };
 
     public:
         hstring GenerateName() const;
@@ -573,7 +573,7 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<ToggleTabSwitcherArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_Key == _Key;
+                return otherAsUs->_AnchorKey == _AnchorKey;
             }
             return false;
         };
@@ -581,9 +581,9 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ToggleTabSwitcherArgs>();
-            if (auto targetString{ json[JsonKey(AnchorKey)] })
+            if (auto targetString{ json[JsonKey(AnchorJsonKey)] })
             {
-                args->_Key = ParseAnchorKey(targetString.asString());
+                args->_AnchorKey = ParseAnchorKey(targetString.asString());
             }
             return { *args, {} };
         }

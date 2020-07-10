@@ -8,6 +8,12 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    enum class CommandPaletteMode
+    {
+        ActionMode = 0,
+        TabSwitcherMode
+    };
+
     struct CommandPalette : CommandPaletteT<CommandPalette>
     {
         CommandPalette();

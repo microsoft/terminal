@@ -20,9 +20,9 @@ namespace winrt::TerminalApp::implementation
         if (!icon)
         {
             winrt::Windows::UI::Xaml::Controls::FontIconSource icon;
-            icon.Glyph(L"\xE974");
+            icon.Glyph(L"\xE970");
             icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe MDL2 Assets" });
-            icon.FontSize(8);
+            icon.FontSize(10);
 
             return icon;
         }

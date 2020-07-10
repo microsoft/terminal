@@ -263,10 +263,10 @@ namespace winrt::TerminalApp::implementation
     {
         std::wstringstream ss;
         ss << std::wstring_view(RS_(L"ToggleTabSwitcherCommandKey"));
-        if (_Key != Windows::System::VirtualKey::None)
+        if (_AnchorKey != Windows::System::VirtualKey::None)
         {
             ss << " Anchor: ";
-            switch (_Key)
+            switch (_AnchorKey)
             {
             case Windows::System::VirtualKey::Shift:
                 ss << "Shift";

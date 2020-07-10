@@ -327,7 +327,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
         {
-            auto anchorKey = realArgs.Key();
+            auto anchorKey = realArgs.AnchorKey();
             CommandPalette().EnableTabSwitcherMode(anchorKey);
             CommandPalette().Visibility(Visibility::Visible);
         }
