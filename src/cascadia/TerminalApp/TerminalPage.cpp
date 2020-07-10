@@ -554,6 +554,13 @@ namespace winrt::TerminalApp::implementation
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
                                         newTerminalArgs.Profile().empty());
+
+        // Lookup the name of the color scheme used by this profile.
+        const auto* scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
+        // that as the empty string.
+        const auto schemeName = scheme ? scheme->GetName() : L"\0";
+
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
@@ -565,6 +572,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
             TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }

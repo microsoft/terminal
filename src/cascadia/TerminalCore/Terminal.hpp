@@ -99,6 +99,7 @@ public:
     bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
     bool SetCursorKeysMode(const bool applicationMode) noexcept override;
     bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetScreenMode(const bool reverseMode) noexcept override;
     bool EnableVT200MouseMode(const bool enabled) noexcept override;
     bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
     bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
@@ -208,6 +209,7 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    bool _screenReversed;
 
     bool _snapOnInput;
     bool _altGrAliasing;

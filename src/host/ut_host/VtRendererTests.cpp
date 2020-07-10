@@ -746,7 +746,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
 void VtRendererTest::Xterm256TestAttributesAcrossReset()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 3, 4, 5, 7, 8, 9}")
+        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 3, 4, 5, 7, 8, 9, 53}")
     END_TEST_METHOD_PROPERTIES()
 
     int renditionAttribute;
@@ -781,6 +781,10 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
         textAttributes.SetUnderline(true);
+        break;
+    case GraphicsOptions::Overline:
+        Log::Comment(L"----Set Overline Attribute----");
+        textAttributes.SetOverline(true);
         break;
     case GraphicsOptions::BlinkOrXterm256Index:
         Log::Comment(L"----Set Blink Attribute----");

@@ -223,6 +223,11 @@ bool TextAttribute::IsUnderlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
 }
 
+bool TextAttribute::IsOverlined() const noexcept
+{
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+}
+
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -257,6 +262,11 @@ void TextAttribute::SetUnderline(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+}
+
+void TextAttribute::SetOverline(bool isOverlined) noexcept
+{
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept

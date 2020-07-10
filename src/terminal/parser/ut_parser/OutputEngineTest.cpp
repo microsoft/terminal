@@ -1602,6 +1602,9 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L';');
         mach.ProcessCharacter(L'4');
         mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L';');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'3');
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
@@ -1610,7 +1613,8 @@ class StateMachineExternalTest final
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
-        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
+        rgExpected[5] = DispatchTypes::GraphicsOptions::Overline;
+        VerifyDispatchTypes({ rgExpected, 6 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1822,7 +1826,7 @@ class StateMachineExternalTest final
 
         Log::Comment(L"Test 2: A couple of sequences all in one string");
 
-        mach.ProcessString(L"\x1b[1;4;7;30;45m\x1b[2J");
+        mach.ProcessString(L"\x1b[1;4;7;30;45;53m\x1b[2J");
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
@@ -1831,8 +1835,9 @@ class StateMachineExternalTest final
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
+        rgExpected[5] = DispatchTypes::GraphicsOptions::Overline;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
-        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 6 }, *pDispatch);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();

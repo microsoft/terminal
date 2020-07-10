@@ -22,6 +22,7 @@
 #include "Utils.h"
 #include "JsonUtils.h"
 #include "JsonUtilsNew.h"
+#include "TerminalSettingsSerializationHelper.h"
 #include "TerminalWarnings.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -128,7 +129,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SingleLine = singleLine.asBool();
             }
-            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
+            ::TerminalApp::JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
             return { *args, {} };
         }
     };

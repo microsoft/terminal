@@ -551,7 +551,7 @@ void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
     _schemeName = std::move(schemeName);
 }
 
-std::optional<std::wstring>& Profile::GetSchemeName() noexcept
+const std::optional<std::wstring>& Profile::GetSchemeName() const noexcept
 {
     return _schemeName;
 }

@@ -19,6 +19,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             adds it conditionally -->
             <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
 
+            <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
+            <local:CommandKeyChordVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">
@@ -176,8 +179,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        HorizontalAlignment="Left"
                                        Text="{x:Bind Name, Mode=OneWay}" />
 
+                            <!-- The block for the key chord is only visible
+                            when there's actual text set as the label. See
+                            CommandKeyChordVisibilityConverter for details. -->
                             <Border
                                 Grid.Column="2"
+                                Visibility="{x:Bind KeyChordText,
+                                             Mode=OneWay,
+                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
                                 BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                 Background="{ThemeResource SystemControlForegroundBaseLowBrush}"
                                 BorderThickness="1"
