@@ -115,6 +115,11 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
+      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets')" />

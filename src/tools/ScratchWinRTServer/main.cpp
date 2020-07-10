@@ -1,13 +1,24 @@
 ﻿#include "pch.h"
-
+#include <winrt/ScratchWinRTServer.h>
 using namespace winrt;
 using namespace Windows::Foundation;
 
+struct ScratchStringable : implements<ScratchStringable, IStringable, winrt::ScratchWinRTServer::IScratchInterface>
+{
+    hstring ToString()
+    {
+        return L"Hello from server, ScratchStringable";
+    }
+    hstring DoTheThing()
+    {
+        return L"Zhu Li! Do the thing!";
+    }
+};
 struct Stringable : implements<Stringable, IStringable>
 {
     hstring ToString()
     {
-        return L"Hello from server";
+        return L"Hello from server, Stringable";
     }
 };
 
@@ -25,7 +36,11 @@ struct Factory : implements<Factory, IClassFactory>
             return CLASS_E_NOAGGREGATION;
         }
 
-        return make<Stringable>().as(iid, result);
+        // return make<Stringable>().as(iid, result);
+        return make<ScratchStringable>().as(iid, result);
+        // auto f = winrt::make_self<winrt::ScratchWinRTServer::ScratchClass>();
+        // return f.as(iid, result);
+        //return make<winrt::ScratchWinRTServer::ScratchClass>().as(iid, result);
     }
 
     HRESULT __stdcall LockServer(BOOL) noexcept final

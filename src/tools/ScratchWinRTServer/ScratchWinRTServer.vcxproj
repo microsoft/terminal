@@ -101,8 +101,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ScratchClass.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ScratchClass.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -115,6 +117,14 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <Midl Include="IScratchInterface.idl" />
+    <Midl Include="ScratchClass.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="ScratchWinRTServer.manifest" />
+  </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets')" />

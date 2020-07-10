@@ -1,0 +1,11 @@
+
+
+namespace ScratchWinRTServer
+{
+    // [default_interface]
+    interface IScratchInterface
+    {
+        String DoTheThing();
+    };
+
+}

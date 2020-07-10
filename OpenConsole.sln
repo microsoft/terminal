@@ -87,8 +87,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Feature", "src\h
 	ProjectSection(ProjectDependencies) = postProject
 		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
 		{FC802440-AD6A-4919-8F2C-7701F2B38D79} = {FC802440-AD6A-4919-8F2C-7701F2B38D79}
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
 		{58A03BB2-DF5A-4B66-91A0-7EF3BA01269A} = {58A03BB2-DF5A-4B66-91A0-7EF3BA01269A}
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.UnitTests", "src\terminal\parser\ut_parser\Parser.UnitTests.vcxproj", "{12144E07-FE63-4D33-9231-748B8D8C3792}"
@@ -317,6 +317,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScratchWinRTServer", "src\tools\ScratchWinRTServer\ScratchWinRTServer.vcxproj", "{D46D9547-F085-4645-B8F7-E8CD21559AB4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScratchWinRTClient", "src\tools\ScratchWinRTClient\ScratchWinRTClient.vcxproj", "{06382349-D62A-4C7D-A7D3-9CA817EAE092}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D46D9547-F085-4645-B8F7-E8CD21559AB4} = {D46D9547-F085-4645-B8F7-E8CD21559AB4}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
