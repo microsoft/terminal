@@ -8,9 +8,9 @@
 
 void TerminalApp::JsonUtils::GetOptionalColor(const Json::Value& json,
                                               std::string_view key,
-                                              std::optional<uint32_t>& target)
+                                              std::optional<til::color>& target)
 {
-    const auto conversionFn = [](const Json::Value& value) -> uint32_t {
+    const auto conversionFn = [](const Json::Value& value) -> til::color {
         return ::Microsoft::Console::Utils::ColorFromHexString(value.asString());
     };
     GetOptionalValue(json,

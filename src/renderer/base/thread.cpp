@@ -26,6 +26,7 @@ RenderThread::~RenderThread()
     if (_hThread)
     {
         _fKeepRunning = false; // stop loop after final run
+        EnablePainting(); // if we want to get the last frame out, we need to make sure it's enabled
         SignalObjectAndWait(_hEvent, _hThread, INFINITE, FALSE); // signal final paint and wait for thread to finish.
 
         CloseHandle(_hThread);
@@ -200,6 +201,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
         ResetEvent(_hPaintCompletedEvent);
 
+        _pRenderer->WaitUntilCanRender();
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
         SetEvent(_hPaintCompletedEvent);
@@ -229,6 +231,11 @@ void RenderThread::NotifyPaint()
 void RenderThread::EnablePainting()
 {
     SetEvent(_hPaintEnabledEvent);
+}
+
+void RenderThread::DisablePainting()
+{
+    ResetEvent(_hPaintEnabledEvent);
 }
 
 void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)

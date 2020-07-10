@@ -11,7 +11,7 @@
 #include "handle.h"
 #include "../buffer/out/CharRow.hpp"
 
-#include <math.h>
+#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -356,11 +356,14 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *psrWindow = _viewport.ToInclusive();
 
-    *pwAttributes = gci.GenerateLegacyAttributes(GetAttributes());
-    *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
+    *pwAttributes = GetAttributes().GetLegacyAttributes();
+    *pwPopupAttributes = _PopupAttributes.GetLegacyAttributes();
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
-    memmove(lpColorTable, gci.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
+    for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
+    {
+        lpColorTable[i] = gci.GetColorTableEntry(i);
+    }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();
 }
@@ -569,8 +572,6 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -583,7 +584,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
             {
                 const auto cellData = GetCellDataAt({ sStartX, sStartY });
                 const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
-                                                  gci.GenerateLegacyAttributes(cellData->TextAttr()));
+                                                  cellData->TextAttr().GetLegacyAttributes());
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
@@ -1229,6 +1230,20 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     _viewport = newViewport;
     UpdateBottom();
     Tracing::s_TraceWindowViewport(_viewport);
+
+    // In Conpty mode, call TriggerScroll here without params. By not providing
+    // params, the renderer will make sure to update the VtEngine with the
+    // updated viewport size. If we don't do this, the engine can get into a
+    // torn state on this frame.
+    //
+    // Without this statement, the engine won't be told about the new view size
+    // till the start of the next frame. If any other text gets output before
+    // that frame starts, there's a very real chance that it'll cause errors as
+    // the engine tries to invalidate those regions.
+    if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
+    {
+        ServiceLocator::LocateGlobals().pRender->TriggerScroll();
+    }
 }
 
 // Routine Description:
@@ -1402,6 +1417,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
+
+    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
+    newTextBuffer->GetCursor().StartDeferDrawing();
+    _textBuffer->GetCursor().StartDeferDrawing();
+    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
 
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
@@ -1663,7 +1684,26 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
         return STATUS_INVALID_PARAMETER;
     }
 
+    // In GH#5291, we experimented with manually breaking the line on all cursor
+    // movements here. As we print lines into the buffer, we mark lines as
+    // wrapped when we print the last cell of the row, not the first cell of the
+    // subsequent row (the row the first line wrapped onto).
+    //
+    // Logically, we thought that manually breaking lines when we move the
+    // cursor was a good idea. We however, did not have the time to fully
+    // validate that this was the correct answer, and a simpler solution for the
+    // bug on hand was found. Furthermore, we thought it would be a more
+    // comprehensive solution to only mark lines as wrapped when we print the
+    // first cell of the second row, which would require some WriteCharsLegacy
+    // work.
+
     cursor.SetPosition(Position);
+
+    // If the cursor has moved below the virtual bottom, the bottom should be updated.
+    if (Position.Y > _virtualBottom)
+    {
+        _virtualBottom = Position.Y;
+    }
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
@@ -1818,7 +1858,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          existingFont,
                                                          WindowSize,
                                                          initAttributes,
-                                                         *GetPopupAttributes(),
+                                                         GetPopupAttributes(),
                                                          Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
@@ -1975,9 +2015,9 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
+TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 {
-    return &_PopupAttributes;
+    return _PopupAttributes;
 }
 
 // Routine Description:
@@ -2029,7 +2069,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const TextAttribute oldPrimaryAttributes = GetAttributes();
-    const TextAttribute oldPopupAttributes = *GetPopupAttributes();
+    const TextAttribute oldPopupAttributes = GetPopupAttributes();
 
     // Quick return if we don't need to do anything.
     if (oldPrimaryAttributes == attributes && oldPopupAttributes == popupAttributes)
@@ -2039,12 +2079,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
 
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-
-    auto& commandLine = CommandLine::Instance();
-    if (commandLine.HasPopup())
-    {
-        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
-    }
 
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just

@@ -59,8 +59,8 @@ const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noe
 {
     const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
     // We only care about alpha for the default BG (which enables acrylic)
-    // If the bg isn't the default bg color, then make it fully opaque.
-    if (!attr.BackgroundIsDefault())
+    // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
+    if (!attr.BackgroundIsDefault() || attr.IsReverseVideo())
     {
         return 0xff000000 | bgColor;
     }
@@ -105,9 +105,11 @@ COLORREF Terminal::GetCursorColor() const noexcept
     return _buffer->GetCursor().GetColor();
 }
 
-bool Terminal::IsCursorDoubleWidth() const noexcept
+bool Terminal::IsCursorDoubleWidth() const
 {
-    return false;
+    const auto position = _buffer->GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
+    return IsGlyphFullWidth(*it);
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
@@ -165,7 +167,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 
     if (notifyScrollChange)
     {
-        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _buffer->GetRenderTarget().TriggerScroll();
         _NotifyScrollEvent();
     }
 
@@ -179,7 +181,11 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 const std::wstring Terminal::GetConsoleTitle() const noexcept
 try
 {
-    return _title;
+    if (_title.has_value())
+    {
+        return _title.value();
+    }
+    return _startingTitle;
 }
 catch (...)
 {

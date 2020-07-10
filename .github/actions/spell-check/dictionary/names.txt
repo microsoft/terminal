@@ -3,8 +3,10 @@ austdi
 Ballmer
 bhoj
 Bhojwani
+carlos
 dhowett
 Diviness
+dsafa
 duhowett
 ethanschoonover
 Firefox
@@ -38,6 +40,7 @@ oldnewthing
 osgwiki
 paulcam
 pauldotknopf
+PGP
 Pham
 Rincewind
 rprichard
@@ -51,5 +54,8 @@ Wirt
 Wojciech
 zadjii
 Zamor
+Zamora
+zamora
 Zoey
 zorio
+Zverovich

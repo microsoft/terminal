@@ -77,6 +77,10 @@ static bool _messageIsF7Keypress(const MSG& message)
 {
     return (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN) && message.wParam == VK_F7;
 }
+static bool _messageIsAltKeyup(const MSG& message)
+{
+    return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == VK_MENU;
+}
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
@@ -87,6 +91,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         TraceLoggingDescription("Event emitted immediately on startup"),
         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+    // If Terminal is spawned by a shortcut that requests that it run in a new process group
+    // while attached to a console session, that request is nonsense. That request will, however,
+    // cause WT to start with Ctrl-C disabled. This wouldn't matter, because it's a Windows-subsystem
+    // application. Unfortunately, that state is heritable. In short, if you start WT using cmd in
+    // a weird way, ^C stops working _inside_ the terminal. Mad.
+    SetConsoleCtrlHandler(NULL, FALSE);
 
     // Block the user from starting if they launched the incorrect architecture version of the project.
     // This should only be applicable to developer versions. The package installation process
@@ -130,9 +141,22 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         // been handled we can discard the message before we even translate it.
         if (_messageIsF7Keypress(message))
         {
-            if (host.OnF7Pressed())
+            if (host.OnDirectKeyEvent(VK_F7, true))
             {
                 // The application consumed the F7. Don't let Xaml get it.
+                continue;
+            }
+        }
+
+        // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
+        // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
+        // here, and plumb it through.
+        if (_messageIsAltKeyup(message))
+        {
+            // Let's pass <Alt> to the application
+            if (host.OnDirectKeyEvent(VK_MENU, false))
+            {
+                // The application consumed the Alt. Don't let Xaml get it.
                 continue;
             }
         }

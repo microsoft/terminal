@@ -7,15 +7,15 @@
 #include <wil\resource.h>
 #include <wil\wistd_functional.h>
 #include <wil\wistd_memory.h>
-#include <stdlib.h> /* srand, rand */
-#include <time.h> /* time */
+#include <cstdlib> /* srand, rand */
+#include <ctime> /* time */
 
 #include <deque>
 #include <memory>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <assert.h>
+#include <cassert>
 
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////

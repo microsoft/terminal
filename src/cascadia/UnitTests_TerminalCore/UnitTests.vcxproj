@@ -20,6 +20,7 @@
     <ClCompile Include="TerminalApiTest.cpp" />
     <ClCompile Include="ConptyRoundtripTests.cpp" />
     <ClCompile Include="TerminalBufferTests.cpp" />
+    <ClCompile Include="ScrollTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">

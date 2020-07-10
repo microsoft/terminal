@@ -13,6 +13,8 @@
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
+    <ClCompile Include="BaseTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />

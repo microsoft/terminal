@@ -10,16 +10,10 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
-                         const IDefaultColorProvider& colorProvider,
                          const Viewport initialViewport,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const WORD cColorTable,
                          const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
-    _ColorTable(ColorTable),
-    _cColorTable(cColorTable),
+    VtEngine(std::move(hPipe), initialViewport),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
     _nextCursorIsVisible(true)
@@ -137,63 +131,35 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 }
 
 // Routine Description:
-// - Write a VT sequence to either start or stop underlining text.
-// Arguments:
-// - legacyColorAttribute: A console attributes bit field containing information
-//      about the underlining state of the text.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
-{
-    bool textUnderlined = WI_IsFlagSet(legacyColorAttribute, COMMON_LVB_UNDERSCORE);
-    if (textUnderlined != _usingUnderLine)
-    {
-        if (textUnderlined)
-        {
-            RETURN_IF_FAILED(_BeginUnderline());
-        }
-        else
-        {
-            RETURN_IF_FAILED(_EndUnderline());
-        }
-        _usingUnderLine = textUnderlined;
-    }
-    return S_OK;
-}
-
-// Routine Description:
 // - Write a VT sequence to change the current colors of text. Only writes
 //      16-color attributes.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
+// - textAttributes - Text attributes to use for the colors and character rendition
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                        const COLORREF colorBackground,
-                                                        const WORD legacyColorAttribute,
-                                                        const ExtendedAttributes extendedAttrs,
+[[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                        const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
-    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
-    //      flag is there. If the state of that flag is different then our
-    //      current state, change the underlining state.
-    // We have to do this here, instead of in PaintBufferGridLines, because
-    //      we'll have already painted the text by the time PaintBufferGridLines
-    //      is called.
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
-                                                  colorBackground,
-                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
-                                                  _ColorTable,
-                                                  _cColorTable);
+    RETURN_IF_FAILED(VtEngine::_16ColorUpdateDrawingBrushes(textAttributes));
+
+    // And the only supported meta attributes are reverse video and underline
+    if (textAttributes.IsReverseVideo() != _lastTextAttributes.IsReverseVideo())
+    {
+        RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
+        _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
+    }
+    if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
+    {
+        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -202,7 +168,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT XtermEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // PaintCursor is only called when the cursor is in fact visible in a single
     // frame. When this is called, mark _nextCursorIsVisible as true. At the end
@@ -234,10 +200,17 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
     //     the last cell anyways
+    //      - GH#5691 - If we're painting the frame because we circled the
+    //        buffer, then the cursor might still be in the position it was
+    //        before the text was written to the buffer to cause the buffer to
+    //        circle. In that case, then we DON'T want to paint the cursor here
+    //        either, because it'll cause us to manually break this line. That's
+    //        okay though, the frame will be painted again, after the circling
+    //        is complete.
     //   * _delayedEolWrap && _wrappedRow.has_value(): We think we've deferred
     //     the wrap of a line.
     // If they're all true, DON'T manually paint the cursor this frame.
-    if (!(cursorIsInDeferredWrap && _delayedEolWrap && _wrappedRow.has_value()))
+    if (!((cursorIsInDeferredWrap || _circled) && _delayedEolWrap && _wrappedRow.has_value()))
     {
         return VtEngine::PaintCursor(options);
     }
@@ -351,7 +324,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
-
     _delayedEolWrap = false;
 
     return hr;
@@ -468,6 +440,16 @@ try
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
     const bool allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
+
+    // GH#5502 - keep track of the BG color we had when we emitted this new
+    // bottom line. If the color changes by the time we get to printing that
+    // line, we'll need to make sure that we don't do any optimizations like
+    // _removing spaces_, because the background color of the spaces will be
+    // important information to send to the connected Terminal.
+    if (_newBottomLine)
+    {
+        _newBottomLineBG = _lastTextAttributes.GetBackground();
+    }
 
     return S_OK;
 }

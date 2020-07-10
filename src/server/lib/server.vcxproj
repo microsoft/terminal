@@ -16,6 +16,7 @@
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
     <ClCompile Include="..\ConDrvDeviceComm.cpp" />
+    <ClCompile Include="..\ConsoleShimPolicy.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\IoDispatchers.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="..\ApiMessage.h" />
     <ClInclude Include="..\ApiMessageState.h" />
     <ClInclude Include="..\ApiSorter.h" />
+    <ClInclude Include="..\ConsoleShimPolicy.h" />
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />

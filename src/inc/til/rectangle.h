@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include "point.h"
-#include "size.h"
-#include "some.h"
-
 #ifdef UNIT_TESTING
 class RectangleTests;
 #endif
@@ -176,6 +172,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename TOther>
         constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().top)> && std::is_integral_v<decltype(std::declval<TOther>().left)> && std::is_integral_v<decltype(std::declval<TOther>().bottom)> && std::is_integral_v<decltype(std::declval<TOther>().right)>, int> /*sentinel*/ = 0) :
             rectangle(til::point{ static_cast<ptrdiff_t>(other.left), static_cast<ptrdiff_t>(other.top) }, til::point{ static_cast<ptrdiff_t>(other.right), static_cast<ptrdiff_t>(other.bottom) })
+        {
+        }
+
+        // This template will convert to rectangle from anything that has a Left, Top, Right, and Bottom field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().Left)> && std::is_floating_point_v<decltype(std::declval<TOther>().Top)> && std::is_floating_point_v<decltype(std::declval<TOther>().Right)> && std::is_floating_point_v<decltype(std::declval<TOther>().Bottom)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ TilMath::template cast<ptrdiff_t>(other.Left), TilMath::template cast<ptrdiff_t>(other.Top) }, til::point{ TilMath::template cast<ptrdiff_t>(other.Right), TilMath::template cast<ptrdiff_t>(other.Bottom) })
+        {
+        }
+
+        // This template will convert to rectangle from anything that has a left, top, right, and bottom field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().left)> && std::is_floating_point_v<decltype(std::declval<TOther>().top)> && std::is_floating_point_v<decltype(std::declval<TOther>().right)> && std::is_floating_point_v<decltype(std::declval<TOther>().bottom)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ TilMath::template cast<ptrdiff_t>(other.left), TilMath::template cast<ptrdiff_t>(other.top) }, til::point{ TilMath::template cast<ptrdiff_t>(other.right), TilMath::template cast<ptrdiff_t>(other.bottom) })
         {
         }
 
@@ -636,6 +648,38 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
+        // scale_up will scale the entire rectangle up by the size factor
+        // This includes moving the origin.
+        rectangle scale_up(const size& size) const
+        {
+            const auto topLeft = _topLeft * size;
+            const auto bottomRight = _bottomRight * size;
+            return til::rectangle{ topLeft, bottomRight };
+        }
+
+        // scale_down will scale the entire rectangle down by the size factor,
+        // but rounds the bottom-right corner out.
+        // This includes moving the origin.
+        rectangle scale_down(const size& size) const
+        {
+            auto topLeft = _topLeft;
+            auto bottomRight = _bottomRight;
+            topLeft = topLeft / size;
+
+            // Move bottom right point into a size
+            // Use size specialization of divide_ceil to round up against the size given.
+            // Add leading addition to point to convert it back into a point.
+            bottomRight = til::point{} + til::size{ right(), bottom() }.divide_ceil(size);
+
+            return til::rectangle{ topLeft, bottomRight };
+        }
+
+        template<typename TilMath>
+        rectangle scale(TilMath, const float scale) const
+        {
+            return til::rectangle{ _topLeft.scale(TilMath{}, scale), _bottomRight.scale(TilMath{}, scale) };
+        }
+
 #pragma endregion
 
         constexpr ptrdiff_t top() const noexcept
@@ -816,6 +860,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr operator D2D1_RECT_F() const noexcept
         {
             return D2D1_RECT_F{ gsl::narrow_cast<FLOAT>(left()), gsl::narrow_cast<FLOAT>(top()), gsl::narrow_cast<FLOAT>(right()), gsl::narrow_cast<FLOAT>(bottom()) };
+        }
+#endif
+
+#ifdef WINRT_Windows_Foundation_H
+        operator winrt::Windows::Foundation::Rect() const
+        {
+            winrt::Windows::Foundation::Rect ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Y));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret.Width));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret.Height));
+            return ret;
         }
 #endif
 

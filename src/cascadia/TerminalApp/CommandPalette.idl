@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "../Command.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.Grid
+    {
+        CommandPalette();
+
+        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+
+        void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
+    }
+}

@@ -9,6 +9,7 @@
 
     // Selection
     "copyOnSelect": false,
+    "copyFormatting": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -19,6 +20,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
+    "startOnUserLogin":  false,
     "theme": "system",
     "rowsToScroll": "system",
     "snapToGridOnResize": true,
@@ -28,36 +30,38 @@
         {
             "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
             "name": "Windows PowerShell",
-            "commandline": "powershell.exe",
+            "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
-            "colorScheme": "Campbell Powershell",
+            "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
             "closeOnExit": "graceful",
             "cursorShape": "bar",
-            "fontFace": "Cascadia Code",
+            "fontFace": "Cascadia Mono",
             "fontSize": 12,
             "hidden": false,
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         },
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
             "name": "Command Prompt",
-            "commandline": "cmd.exe",
+            "commandline": "%SystemRoot%\\System32\\cmd.exe",
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
             "closeOnExit": "graceful",
             "cursorShape": "bar",
-            "fontFace": "Cascadia Code",
+            "fontFace": "Cascadia Mono",
             "fontSize": 12,
             "hidden": false,
             "historySize": 9001,
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
+            "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
             "useAcrylic": false
         }
@@ -221,9 +225,53 @@
             "brightPurple": "#6C71C4",
             "brightCyan": "#93A1A1",
             "brightWhite": "#FDF6E3"
+        },
+        {
+            "name": "Tango Dark",
+            "foreground": "#D3D7CF",
+            "background": "#000000",
+            "cursorColor": "#FFFFFF",
+            "black": "#000000",
+            "red": "#CC0000",
+            "green": "#4E9A06",
+            "yellow": "#C4A000",
+            "blue": "#3465A4",
+            "purple": "#75507B",
+            "cyan": "#06989A",
+            "white": "#D3D7CF",
+            "brightBlack": "#555753",
+            "brightRed": "#EF2929",
+            "brightGreen": "#8AE234",
+            "brightYellow": "#FCE94F",
+            "brightBlue": "#729FCF",
+            "brightPurple": "#AD7FA8",
+            "brightCyan": "#34E2E2",
+            "brightWhite": "#EEEEEC"
+        },
+        {
+            "name": "Tango Light",
+            "foreground": "#555753",
+            "background": "#FFFFFF",
+            "cursorColor": "#000000",
+            "black": "#000000",
+            "red": "#CC0000",
+            "green": "#4E9A06",
+            "yellow": "#C4A000",
+            "blue": "#3465A4",
+            "purple": "#75507B",
+            "cyan": "#06989A",
+            "white": "#D3D7CF",
+            "brightBlack": "#555753",
+            "brightRed": "#EF2929",
+            "brightGreen": "#8AE234",
+            "brightYellow": "#FCE94F",
+            "brightBlue": "#729FCF",
+            "brightPurple": "#AD7FA8",
+            "brightCyan": "#34E2E2",
+            "brightWhite": "#EEEEEC"
         }
     ],
-    "keybindings":
+    "bindings":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
@@ -231,7 +279,10 @@
         { "command": "toggleFullscreen", "keys": "f11" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "toggleRetroEffect" },
+        { "command": "openTabColorPicker" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "../ShortcutActionDispatch.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass Command : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Command();
+
+        String Name;
+        ActionAndArgs Action;
+        String KeyChordText;
+    }
+}

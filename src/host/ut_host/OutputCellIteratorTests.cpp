@@ -102,8 +102,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        TextAttribute attr;
-        attr.SetFromLegacy(FOREGROUND_RED | BACKGROUND_BLUE);
+        const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
         const size_t limit = 5;
 
@@ -128,8 +127,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        TextAttribute attr;
-        attr.SetFromLegacy(FOREGROUND_RED | BACKGROUND_BLUE);
+        const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
         OutputCellIterator it(attr);
 
@@ -154,8 +152,7 @@ class OutputCellIteratorTests
 
         const wchar_t wch = L'Q';
 
-        TextAttribute attr;
-        attr.SetFromLegacy(FOREGROUND_RED | BACKGROUND_BLUE);
+        const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
         const size_t limit = 5;
 
@@ -182,8 +179,7 @@ class OutputCellIteratorTests
 
         const wchar_t wch = L'Q';
 
-        TextAttribute attr;
-        attr.SetFromLegacy(FOREGROUND_RED | BACKGROUND_BLUE);
+        const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
         OutputCellIterator it(wch, attr);
 
@@ -314,8 +310,7 @@ class OutputCellIteratorTests
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
         const std::wstring testText(L"The quick brown fox jumps over the lazy dog.");
-        TextAttribute color;
-        color.SetFromLegacy(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        const TextAttribute color(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         OutputCellIterator it(testText, color);
 
@@ -339,8 +334,7 @@ class OutputCellIteratorTests
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
         const std::wstring testText(L"\x30a2\x30a3\x30a4\x30a5\x30a6");
-        TextAttribute color;
-        color.SetFromLegacy(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        const TextAttribute color(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         OutputCellIterator it(testText, color);
 
@@ -381,7 +375,7 @@ class OutputCellIteratorTests
         {
             auto expected = OutputCellView({},
                                            {},
-                                           { color },
+                                           TextAttribute{ color },
                                            TextAttributeBehavior::StoredOnly);
 
             VERIFY_IS_TRUE(it);
@@ -415,7 +409,7 @@ class OutputCellIteratorTests
         {
             auto expected = OutputCellView({ &ci.Char.UnicodeChar, 1 },
                                            {},
-                                           { ci.Attributes },
+                                           TextAttribute{ ci.Attributes },
                                            TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
@@ -435,7 +429,7 @@ class OutputCellIteratorTests
         for (auto i = 0; i < 5; i++)
         {
             const std::wstring pair(L"\xd834\xdd1e");
-            OutputCell cell(pair, {}, gsl::narrow<WORD>(i));
+            OutputCell cell(pair, {}, TextAttribute{ gsl::narrow<WORD>(i) });
             cells.push_back(cell);
         }
 

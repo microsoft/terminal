@@ -38,7 +38,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -84,7 +84,13 @@
 
 // Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
 // Variable-size compressed-storage header-only bit flag storage library.
+#pragma warning(push)
+#pragma warning(disable:4702) // unreachable code
 #include <dynamic_bitset.hpp>
+#pragma warning(pop)
+
+// {fmt}, a C++20-compatible formatting library
+#include <fmt/format.h>
 
 // SAL
 #include <sal.h>

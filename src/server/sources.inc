@@ -39,6 +39,7 @@ SOURCES= \
     ..\ApiSorter.cpp \
     ..\ConDrvDeviceComm.cpp \
     ..\DeviceHandle.cpp \
+    ..\ConsoleShimPolicy.cpp \
     ..\Entrypoints.cpp \
     ..\IoDispatchers.cpp \
     ..\IoSorter.cpp \
