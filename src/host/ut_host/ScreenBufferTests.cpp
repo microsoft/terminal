@@ -212,6 +212,8 @@ class ScreenBufferTests
     TEST_METHOD(TestCursorIsOn);
 
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
+
+    TEST_METHOD(TestWriteConsoleVTQuirkMode);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -5921,4 +5923,72 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"But after MoveToBottom, the viewport should align with the new virtual bottom");
     si.MoveToBottom();
     VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:useQuirk", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES()
+
+    bool useQuirk;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"useQuirk", useQuirk), L"whether to enable the quirk");
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& cursor = mainBuffer.GetTextBuffer().GetCursor();
+    // Make sure we're in VT mode
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const TextAttribute defaultAttribute{};
+    // Make sure we're using the default attributes at the start of the test,
+    // Otherwise they could be polluted from a previous test.
+    mainBuffer.SetAttributes(defaultAttribute);
+
+    TextAttribute vtRedOnBlueAttribute{};
+    vtRedOnBlueAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(1)), false });
+    vtRedOnBlueAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(4)), false });
+
+    TextAttribute vtWhiteOnBlackAttribute{};
+    vtWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
+    vtWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+
+    const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
+
+    const auto verifyLastAttribute = [&](const TextAttribute& expected) {
+        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        auto iter{ attrRow->begin() };
+        iter += cursor.GetPosition().X - 1;
+        VERIFY_ARE_EQUAL(expected, *iter);
+    };
+
+    std::unique_ptr<WriteData> waiter;
+
+    std::wstring seq = L"\x1b[31;44m";
+    size_t seqCb = 2 * seq.size();
+    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+    VERIFY_ARE_EQUAL(vtRedOnBlueAttribute, mainBuffer.GetAttributes());
+
+    seq = L"X";
+    seqCb = 2 * seq.size();
+    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+    verifyLastAttribute(vtRedOnBlueAttribute);
+
+    seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
+    seqCb = 2 * seq.size();
+    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+    VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
+
+    seq = L"X";
+    seqCb = 2 * seq.size();
+    VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
+
+    verifyLastAttribute(quirkExpectedAttribute);
 }
