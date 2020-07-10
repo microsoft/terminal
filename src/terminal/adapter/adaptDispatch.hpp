@@ -80,7 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
-        bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
         bool UseAlternateScreenBuffer() override; // ASBSET
         bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
@@ -106,8 +106,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
+        bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
+
         bool SetColorTableEntry(const size_t tableIndex,
-                                const DWORD color) override; // OscColorTable
+                                const DWORD color) override; // OSCColorTable
         bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
 

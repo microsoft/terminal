@@ -110,7 +110,7 @@ public:
 
     const SHORT GetFirstRowIndex() const noexcept;
 
-    const Microsoft::Console::Types::Viewport GetSize() const;
+    const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
@@ -177,6 +177,8 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
+    void _UpdateSize();
+    Microsoft::Console::Types::Viewport _size;
     std::deque<ROW> _storage;
     Cursor _cursor;
 
@@ -193,7 +195,7 @@ private:
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const;
+    COORD _GetPreviousFromCursor() const noexcept;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

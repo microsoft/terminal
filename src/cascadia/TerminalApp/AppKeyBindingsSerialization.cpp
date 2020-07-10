@@ -64,7 +64,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 
     // Iterate over all the possible actions in the names list, and see if
     // it has a binding.
-    for (auto& actionName : ActionAndArgs::ActionNamesMap)
+    for (auto& actionName : ActionAndArgs::ActionKeyNamesMap)
     {
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
@@ -85,7 +85,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 // - Deserialize an AppKeyBindings from the key mappings that are in the array
 //   `json`. The json array should contain an array of objects with both a
 //   `command` string and a `keys` array, where `command` is one of the names
-//   listed in `ActionAndArgs::ActionNamesMap`, and `keys` is an array of
+//   listed in `ActionAndArgs::ActionKeyNamesMap`, and `keys` is an array of
 //   keypresses. Currently, the array should contain a single string, which can
 //   be deserialized into a KeyChord.
 // - Applies the deserialized keybindings to the provided `bindings` object. If

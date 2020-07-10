@@ -31,6 +31,9 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 // The updates are throttled to limit power usage.
 constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 
+// The minimum delay between updating the TSF input control.
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -93,6 +96,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTerminalCursorPositionChanged = std::bind(&TermControl::_TerminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
+        auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
+        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -124,31 +130,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         });
 
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->TSFInputControl().TryRedrawCanvas();
+                }
+            },
+            TsfRedrawInterval,
+            Dispatcher());
+
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
-                    control->Dispatcher()
-                        .RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                            if (auto control2{ weakThis.get() })
-                            {
-                                control2->_isInternalScrollBarUpdate = true;
+                    control->_isInternalScrollBarUpdate = true;
 
-                                auto scrollBar = control2->ScrollBar();
-                                if (update.newValue.has_value())
-                                {
-                                    scrollBar.Value(update.newValue.value());
-                                }
-                                scrollBar.Maximum(update.newMaximum);
-                                scrollBar.Minimum(update.newMinimum);
-                                scrollBar.ViewportSize(update.newViewportSize);
+                    auto scrollBar = control->ScrollBar();
+                    if (update.newValue.has_value())
+                    {
+                        scrollBar.Value(update.newValue.value());
+                    }
+                    scrollBar.Maximum(update.newMaximum);
+                    scrollBar.Minimum(update.newMinimum);
+                    scrollBar.ViewportSize(update.newViewportSize);
 
-                                control2->_isInternalScrollBarUpdate = false;
-                            }
-                        });
+                    control->_isInternalScrollBarUpdate = false;
                 }
             },
-            ScrollBarUpdateInterval);
+            ScrollBarUpdateInterval,
+            Dispatcher());
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -250,13 +261,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update our control settings
             _ApplyUISettings();
 
-            // Update DxEngine's SelectionBackground
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
             auto lock = _terminal->LockForWriting();
+
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+            _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+            switch (_settings.AntialiasingMode())
+            {
+            case TextAntialiasingMode::Cleartype:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+                break;
+            case TextAntialiasingMode::Aliased:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+                break;
+            case TextAntialiasingMode::Grayscale:
+            default:
+                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+                break;
+            }
 
             // Refresh our font with the renderer
             const auto actualFontOldSize = _actualFont.GetSize();
@@ -267,6 +296,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _RefreshSizeUnderLock();
             }
         }
+    }
+    void TermControl::ToggleRetroEffect()
+    {
+        auto lock = _terminal->LockForWriting();
+        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
     }
 
     // Method Description:
@@ -611,13 +645,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // TODO:GH#3927 - Make it possible to hot-reload these settings. Right
-            // here, the setting will only be used when the Terminal is initialized.
             dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-            // TODO:GH#3927 - hot-reload this one too
             // Update DxEngine's AntialiasingMode
             switch (_settings.AntialiasingMode())
             {
@@ -799,7 +830,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-        bool handled = false;
 
         // Alt-Numpad# input will send us a character once the user releases
         // Alt, so we should be ignoring the individual keydowns. The character
@@ -822,34 +852,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown)
+        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, modifiers))
         {
-            auto bindings = _settings.KeyBindings();
-            if (bindings)
-            {
-                handled = bindings.TryKeyChord({
-                    modifiers.IsCtrlPressed(),
-                    modifiers.IsAltPressed(),
-                    modifiers.IsShiftPressed(),
-                    vkey,
-                });
-            }
+            e.Handled(true);
+            return;
         }
 
-        if (!handled)
+        if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
-            handled = _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+            e.Handled(true);
+            return;
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
         // the terminal, and we don't want to be able to escape focus of the
         // control with tab.
-        if (e.OriginalKey() == VirtualKey::Tab)
+        e.Handled(e.OriginalKey() == VirtualKey::Tab);
+    }
+
+    // Method Description:
+    // - Attempt to handle this key combination as a key binding
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - modifiers: The ControlKeyStates representing the modifier key states.
+    bool TermControl::_TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
+    {
+        auto bindings = _settings.KeyBindings();
+        if (!bindings)
         {
-            handled = true;
+            return false;
         }
 
-        e.Handled(handled);
+        return bindings.TryKeyChord({
+            modifiers.IsCtrlPressed(),
+            modifiers.IsAltPressed(),
+            modifiers.IsShiftPressed(),
+            vkey,
+        });
     }
 
     // Method Description:
@@ -1047,35 +1086,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const unsigned int MAX_CLICK_COUNT = 3;
                 const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                if (multiClickMapper == 3)
+                ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+                if (multiClickMapper == 1)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
-                    _selectionNeedsToBeCopied = true;
+                    mode = ::Terminal::SelectionExpansionMode::Cell;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    mode = ::Terminal::SelectionExpansionMode::Word;
+                }
+                else if (multiClickMapper == 3)
+                {
+                    mode = ::Terminal::SelectionExpansionMode::Line;
+                }
+
+                // Update the selection appropriately
+                if (shiftEnabled && _terminal->IsSelectionActive())
+                {
+                    // Shift+Click: only set expand on the "end" selection point
+                    _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                {
+                    // Single Click: reset the selection and begin a new one
+                    _terminal->ClearSelection();
+                    _singleClickTouchdownPos = cursorPosition;
+                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
                 else
                 {
-                    if (shiftEnabled && _terminal->IsSelectionActive())
-                    {
-                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
-                        _selectionNeedsToBeCopied = true;
-                    }
-                    else
-                    {
-                        // A single click down resets the selection and begins a new one.
-                        _terminal->ClearSelection();
-                        _singleClickTouchdownPos = cursorPosition;
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                    }
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
+                    // Multi-Click Selection: expand both "start" and "end" selection points
+                    _terminal->MultiClickSelection(terminalPosition, mode);
+                    _selectionNeedsToBeCopied = true;
                 }
 
+                _lastMouseClickTimestamp = point.Timestamp();
+                _lastMouseClickPos = cursorPosition;
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
@@ -1986,6 +2033,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangedHandlers(winrt::hstring{ wstr });
     }
 
+    void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
+    {
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
+                                                                   winrt::hstring(L""),
+                                                                   winrt::hstring(L""));
+        _clipboardCopyHandlers(*this, *copyArgs);
+    }
+
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
@@ -2024,42 +2079,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   to be where the current cursor position is.
     // Arguments:
     // - N/A
-    winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
+    void TermControl::_TerminalCursorPositionChanged()
     {
-        bool expectedFalse{ false };
-        if (!_coroutineDispatchStateUpdateInProgress.compare_exchange_weak(expectedFalse, true))
-        {
-            // somebody's already in here.
-            return;
-        }
-
-        if (_closing.load())
-        {
-            return;
-        }
-
-        auto dispatcher{ Dispatcher() }; // cache a strong ref to this in case TermControl dies
-        auto weakThis{ get_weak() };
-
-        // Muffle 2: Muffle Harder
-        // If we're the lucky coroutine who gets through, we'll still wait 100ms to clog
-        // the atomic above so we don't service the cursor update too fast. If we get through
-        // and finish processing the update quickly but similar requests are still beating
-        // down the door above in the atomic, we may still update the cursor way more than
-        // is visible to anyone's eye, which is a waste of effort.
-        static constexpr auto CursorUpdateQuiesceTime{ std::chrono::milliseconds(100) };
-        co_await winrt::resume_after(CursorUpdateQuiesceTime);
-
-        co_await winrt::resume_foreground(dispatcher);
-
-        if (auto control{ weakThis.get() })
-        {
-            if (!_closing.load())
-            {
-                TSFInputControl().TryRedrawCanvas();
-            }
-            _coroutineDispatchStateUpdateInProgress.store(false);
-        }
+        _tsfTryRedrawCanvas->Run();
     }
 
     hstring TermControl::Title()
@@ -2326,7 +2348,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Account for the size of any padding
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         width += padding.Left + padding.Right;
         height += padding.Top + padding.Bottom;
 
@@ -2346,7 +2368,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto fontSize = _actualFont.GetSize();
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
@@ -2478,7 +2500,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
-        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
 
         // This point is the location of the cursor within the actual grid of characters, in DIPs
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;

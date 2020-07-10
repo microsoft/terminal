@@ -6,10 +6,10 @@
 // System headers
 #include <windows.h>
 
-// Standard library C-style
-#include <wchar.h>
-#include <stdlib.h>
-#include <stdio.h>
+// Standard C++ library
+#include <cwchar>
+#include <cstdlib>
+#include <cstdio>
 
 #include <string>
 using namespace std;
