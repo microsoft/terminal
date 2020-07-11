@@ -22,7 +22,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="spscTests.cpp" />
+    <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>
