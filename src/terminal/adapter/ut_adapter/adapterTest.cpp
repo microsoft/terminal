@@ -1261,7 +1261,7 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 22, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1290,6 +1290,12 @@ public:
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetBold(true);
             break;
+        case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
+            Log::Comment(L"Testing graphics 'Faint'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetFaint(true);
+            break;
         case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
@@ -1304,6 +1310,13 @@ public:
             Log::Comment(L"Testing graphics 'Negative'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
+            break;
+        case DispatchTypes::GraphicsOptions::NotBoldOrFaint:
+            Log::Comment(L"Testing graphics 'No Bold or Faint'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetBold(true);
+            _testGetSet->_attribute.SetFaint(true);
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
