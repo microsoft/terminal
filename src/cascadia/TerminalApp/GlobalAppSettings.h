@@ -70,7 +70,6 @@ public:
     GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
     GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
     GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-    GETSET_PROPERTY(int, RowsToScroll); // default value set in constructor
     GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
