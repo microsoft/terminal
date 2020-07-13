@@ -41,10 +41,28 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept
 {
-    if (textAttributes.IsBold() != _lastTextAttributes.IsBold())
+    // Turning off Bold and Faint must be handled at the same time,
+    // since there is only one sequence that resets both of them.
+    const auto boldTurnedOff = !textAttributes.IsBold() && _lastTextAttributes.IsBold();
+    const auto faintTurnedOff = !textAttributes.IsFaint() && _lastTextAttributes.IsFaint();
+    if (boldTurnedOff || faintTurnedOff)
     {
-        RETURN_IF_FAILED(_SetBold(textAttributes.IsBold()));
-        _lastTextAttributes.SetBold(textAttributes.IsBold());
+        RETURN_IF_FAILED(_SetBold(false));
+        _lastTextAttributes.SetBold(false);
+        _lastTextAttributes.SetFaint(false);
+    }
+
+    // Once we've handled the cases where they need to be turned off,
+    // we can then check if either should be turned back on again.
+    if (textAttributes.IsBold() && !_lastTextAttributes.IsBold())
+    {
+        RETURN_IF_FAILED(_SetBold(true));
+        _lastTextAttributes.SetBold(true);
+    }
+    if (textAttributes.IsFaint() && !_lastTextAttributes.IsFaint())
+    {
+        RETURN_IF_FAILED(_SetFaint(true));
+        _lastTextAttributes.SetFaint(true);
     }
 
     if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())

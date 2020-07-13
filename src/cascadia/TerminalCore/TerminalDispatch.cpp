@@ -253,6 +253,18 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
     return true;
 }
 
+// Routine Description:
+// - DECSCNM - Sets the screen mode to either normal or reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::SetScreenMode(const bool reverseMode) noexcept
+{
+    return _terminalApi.SetScreenMode(reverseMode);
+}
+
 // Method Description:
 // - win32-input-mode: Enable sending full input records encoded as a string of
 //   characters to the client application.
@@ -390,6 +402,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
+    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        success = SetScreenMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
@@ -493,8 +508,8 @@ bool TerminalDispatch::HardReset() noexcept
     success = EraseInDisplay(DispatchTypes::EraseType::All) && success;
     success = EraseInDisplay(DispatchTypes::EraseType::Scrollback) && success;
 
-    // // Set the DECSCNM screen mode back to normal.
-    // success = SetScreenMode(false) && success;
+    // Set the DECSCNM screen mode back to normal.
+    success = SetScreenMode(false) && success;
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;

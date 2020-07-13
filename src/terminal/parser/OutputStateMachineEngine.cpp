@@ -701,6 +701,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case L'?':
             success = _IntermediateQuestionMarkDispatch(wch, parameters);
             break;
+        case L'>':
+        case L'=':
+            success = _IntermediateGreaterThanOrEqualDispatch(wch, value, parameters);
+            break;
         case L'!':
             success = _IntermediateExclamationDispatch(wch);
             break;
@@ -770,6 +774,43 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
             break;
         }
     }
+    return success;
+}
+
+// Routine Description:
+// - Handles actions that have postfix params on an intermediate '>' or '='.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediate - The intermediate character.
+// - parameters - Set of numeric parameters collected while parsing the sequence.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                                       const wchar_t intermediate,
+                                                                       const std::basic_string_view<size_t> parameters)
+{
+    bool success = false;
+
+    switch (wch)
+    {
+    case VTActionCodes::DA_DeviceAttributes:
+        if (_VerifyDeviceAttributesParams(parameters))
+        {
+            switch (intermediate)
+            {
+            case L'>':
+                success = _dispatch->SecondaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+                break;
+            case L'=':
+                success = _dispatch->TertiaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+                break;
+            }
+        }
+        break;
+    }
+
     return success;
 }
 

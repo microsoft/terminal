@@ -54,10 +54,14 @@
         "scrollUpPage",
         "splitPane",
         "switchToTab",
+        "toggleFocusMode",
         "toggleFullscreen",
+        "toggleRetroEffect",
         "find",
         "setTabColor",
         "openTabColorPicker",
+        "renameTab",
+        "commandPalette",
         "unbound"
       ],
       "type": "string"
