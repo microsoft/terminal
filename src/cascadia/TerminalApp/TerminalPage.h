@@ -49,6 +49,7 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
+        void ToggleFocusMode();
         void ToggleFullscreen();
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
@@ -60,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFocusMode, _toggleFocusModeHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
@@ -83,6 +85,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
 
+        bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
 
         bool _rearranging;
@@ -206,6 +209,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleRetroEffect(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleFocusMode(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
