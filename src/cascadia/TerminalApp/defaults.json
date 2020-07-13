@@ -277,6 +277,7 @@
         { "command": "closeWindow", "keys": "alt+f4" },
         { "command": "toggleFullscreen", "keys": "alt+enter" },
         { "command": "toggleFullscreen", "keys": "f11" },
+        { "command": "toggleFocusMode" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },

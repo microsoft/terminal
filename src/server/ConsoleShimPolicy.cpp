@@ -80,3 +80,16 @@ bool ConsoleShimPolicy::IsPowershellExe() const noexcept
 {
     return _isPowershell;
 }
+
+// Method Description:
+// - Returns true if the connected client application is known to
+//   attempt VT color promotion of legacy colors. See GH#6807 for more.
+// Arguments:
+// - <none>
+// Return Value:
+// - True as laid out above.
+bool ConsoleShimPolicy::IsVtColorQuirkRequired() const noexcept
+{
+    // Right now, the only client we're shimming is powershell.
+    return IsPowershellExe();
+}

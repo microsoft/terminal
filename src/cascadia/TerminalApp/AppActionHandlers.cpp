@@ -239,6 +239,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
+                                              const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleFocusMode();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {
