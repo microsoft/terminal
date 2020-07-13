@@ -1419,7 +1419,8 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::wstring_view text,
+                                                std::basic_string_view<UINT16> clusterMap,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1430,7 +1431,7 @@ try
 
     // Create the text layout
     RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+    RETURN_IF_FAILED(_customLayout->AppendClusters(text, clusterMap));
 
     // Layout then render the text
     RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
@@ -1818,10 +1819,12 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pResult);
 
-    const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+    //const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+
+    UINT16 col = 0;
 
     RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters({ &cluster, 1 }));
+    RETURN_IF_FAILED(_customLayout->AppendClusters(glyph, { &col, 1 }));
 
     UINT32 columns = 0;
     RETURN_IF_FAILED(_customLayout->GetColumns(&columns));

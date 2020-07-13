@@ -78,25 +78,27 @@ CATCH_RETURN()
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // Return Value:
 // - S_OK or suitable memory management issue.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(std::wstring_view text,
+                                                                         std::basic_string_view<UINT16> clusterMap)
 try
 {
-    _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());
+    _text.append(text);
+    _textClusterColumns.insert(_textClusterColumns.end(), clusterMap.cbegin(), clusterMap.cend());
 
-    for (const auto& cluster : clusters)
-    {
-        const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
-        const auto text = cluster.GetText();
+    //for (const auto& cluster : clusters)
+    //{
+    //    const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
+    //    const auto text = cluster.GetText();
 
-        // Push back the number of columns for this bit of text.
-        _textClusterColumns.push_back(cols);
+    //    // Push back the number of columns for this bit of text.
+    //    _textClusterColumns.push_back(cols);
 
-        // If there is more than one text character here, push 0s for the rest of the columns
-        // of the text run.
-        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(text.size(), 1u), gsl::narrow_cast<UINT16>(0u));
+    //    // If there is more than one text character here, push 0s for the rest of the columns
+    //    // of the text run.
+    //    _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(text.size(), 1u), gsl::narrow_cast<UINT16>(0u));
 
-        _text += text;
-    }
+    //    _text += text;
+    //}
 
     return S_OK;
 }

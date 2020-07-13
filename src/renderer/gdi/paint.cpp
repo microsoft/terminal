@@ -284,14 +284,15 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::wstring_view text,
+                                                 std::basic_string_view<UINT16> clusterMap,
                                                  const COORD coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
 {
     try
     {
-        const auto cchLine = clusters.size();
+        const auto cchLine = text.size();
 
         // Exit early if there are no lines to draw.
         RETURN_HR_IF(S_OK, 0 == cchLine);
@@ -316,12 +317,13 @@ using namespace Microsoft::Console::Render;
         // Convert data from clusters into the text array and the widths array.
         for (size_t i = 0; i < cchLine; i++)
         {
-            const auto& cluster = clusters.at(i);
+            //const auto& cluster = clusters.at(i);
 
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
-            pwsPoly[i] = cluster.GetTextAsSingle();
-            rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
+            pwsPoly[i] = text[i];
+            //cluster.GetTextAsSingle();
+            rgdxPoly[i] = gsl::narrow<int>(clusterMap[i]) * coordFontSize.X;
             cchCharWidths += rgdxPoly[i];
         }
 
@@ -365,7 +367,7 @@ using namespace Microsoft::Console::Render;
         }
 
         pPolyTextLine->lpstr = pwsPoly.release();
-        pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
+        pPolyTextLine->n = gsl::narrow<UINT>(text.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
