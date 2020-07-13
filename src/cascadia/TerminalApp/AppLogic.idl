@@ -60,7 +60,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleBorderlessEventArgs> ToggleBorderless;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFocusModeEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<Object, AlwaysOnTopChangedEventArgs> AlwaysOnTopChanged;
     }

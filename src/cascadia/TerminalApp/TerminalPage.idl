@@ -4,7 +4,7 @@
 namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
-    delegate void ToggleBorderlessEventArgs();
+    delegate void ToggleFocusModeEventArgs();
     delegate void ToggleFullscreenEventArgs();
     delegate void AlwaysOnTopChangedEventArgs();
 
@@ -31,7 +31,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleBorderlessEventArgs> ToggleBorderless;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFocusModeEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<Object, AlwaysOnTopChangedEventArgs> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;

@@ -879,13 +879,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 const size_t cchLine,
                                                 const COORD coordTarget)
 {
-    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
-
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
-
-    // Draw the lines
-    LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    // Return early if there are no lines to paint.
+    if (lines != IRenderEngine::GridLines::None)
+    {
+        // Get the current foreground color to render the lines.
+        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        // Draw the lines
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    }
 }
 
 // Routine Description:

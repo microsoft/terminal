@@ -263,9 +263,10 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
+    // No border when maximized, or when the titlebar is invisible (by being in
+    // fullscreen or focus mode).
     if (_isMaximized || (!_IsTitlebarVisible()))
     {
-        // no border when maximized
         return 0;
     }
 
@@ -843,8 +844,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
     SetWindowPos(GetHandle(),
-                 // _borderless ? HWND_TOPMOST : HWND_NOTOPMOST,
-                 0,
+                 HWND_TOP,
                  windowPos.left<int>(),
                  windowPos.top<int>(),
                  windowPos.width<int>(),
@@ -876,15 +876,13 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
 // Method Description:
 // - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode, this will return false.
+//   borderless mode (aka "focus mode"), this will return false.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
-    // updated to include that mode.
     return !(_fullscreen || _borderless);
 }
 

@@ -32,7 +32,7 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void ToggleBorderless();
+    void ToggleFocusMode();
     void ToggleFullscreen();
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
@@ -73,7 +73,7 @@ protected:
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
 
-    LONG _getCurrentWindowStyle() const;
+    LONG _getDesiredWindowStyle() const;
 
 private:
     // This minimum width allows for width the tabs fit

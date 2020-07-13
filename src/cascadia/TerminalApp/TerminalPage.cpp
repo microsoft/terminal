@@ -554,6 +554,13 @@ namespace winrt::TerminalApp::implementation
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
                                         newTerminalArgs.Profile().empty());
+
+        // Lookup the name of the color scheme used by this profile.
+        const auto* scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
+        // that as the empty string.
+        const auto schemeName = scheme ? scheme->GetName() : L"\0";
+
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
@@ -565,6 +572,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
             TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -842,7 +850,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleRetroEffect({ this, &TerminalPage::_HandleToggleRetroEffect });
-        _actionDispatch->ToggleBorderless({ this, &TerminalPage::_HandleToggleBorderless });
+        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
@@ -905,7 +913,7 @@ namespace winrt::TerminalApp::implementation
         // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (!_isFullscreen && !_isBorderless) &&
+        const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
                                (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
                                 _settings->GlobalSettings().AlwaysShowTabs());
@@ -1968,15 +1976,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Toggles borderless mode. Hides the tab row, and raises our
-    //   ToggleBorderless event.
+    //   ToggleFocusMode event.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::ToggleBorderless()
+    void TerminalPage::ToggleFocusMode()
     {
-        _isBorderless = !_isBorderless;
-        _toggleBorderlessHandlers(*this, nullptr);
+        _isInFocusMode = !_isInFocusMode;
+        _toggleFocusModeHandlers(*this, nullptr);
         _UpdateTabView();
     }
 
@@ -2214,7 +2222,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleBorderless, _toggleBorderlessHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleBorderlessEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFocusMode, _toggleFocusModeHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::AlwaysOnTopChangedEventArgs);
 }

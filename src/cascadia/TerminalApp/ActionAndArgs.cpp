@@ -29,7 +29,7 @@ static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
-static constexpr std::string_view ToggleBorderlessKey{ "toggleBorderless" };
+static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
         { MoveFocusKey, ShortcutAction::MoveFocus },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
         { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
-        { ToggleBorderlessKey, ShortcutAction::ToggleBorderless },
+        { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { SplitPaneKey, ShortcutAction::SplitPane },
@@ -255,7 +255,8 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
                 { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
                 { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
-                { ShortcutAction::ToggleBorderless, RS_(L"ToggleBorderlessCommandKey") },
+                { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
+                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },

@@ -105,7 +105,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
         FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
-        FORWARDED_TYPED_EVENT(ToggleBorderless, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleBorderlessEventArgs, _root, ToggleBorderless);
+        FORWARDED_TYPED_EVENT(ToggleFocusMode, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs, _root, ToggleFocusMode);
         FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::AlwaysOnTopChangedEventArgs, _root, AlwaysOnTopChanged);
     };

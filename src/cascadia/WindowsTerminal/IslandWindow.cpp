@@ -443,6 +443,17 @@ void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::Ele
 }
 
 // Method Description:
+// - Toggles our focus mode state. See _SetIsBorderless for more details.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::ToggleFocusMode()
+{
+    _SetIsBorderless(!_borderless);
+}
+
+// Method Description:
 // - Toggles our fullscreen state. See _SetIsFullscreen for more details.
 // Arguments:
 // - <none>
@@ -517,7 +528,7 @@ void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLo
 // - <none>
 // Return Value:
 // - a LONG with the appropriate flags set for our current window mode, to be used with GWL_STYLE
-LONG IslandWindow::_getCurrentWindowStyle() const
+LONG IslandWindow::_getDesiredWindowStyle() const
 {
     auto windowStyle = GetWindowLongW(GetHandle(), GWL_STYLE);
 
@@ -538,7 +549,7 @@ LONG IslandWindow::_getCurrentWindowStyle() const
         WI_SetFlag(windowStyle, WS_POPUP);
         return windowStyle;
     }
-    else if (_borderless && !_fullscreen)
+    else if (_borderless)
     {
         // When moving to borderless, remove WS_OVERLAPPEDWINDOW, which
         // specifies styles for non-fullscreen windows (e.g. caption bar), and
@@ -566,13 +577,13 @@ LONG IslandWindow::_getCurrentWindowStyle() const
 }
 
 // Method Description:
-// - Enable or disable borderless mode. When entering borderless mode, we'll
+// - Enable or disable focus mode. When entering focus mode, we'll
 //   need to manually hide the entire titlebar.
-// - When we're entering borderless we need to do some additional modification
+// - When we're entering focus we need to do some additional modification
 //   of our window styles. However, the NonClientIslandWindow very explicitly
 //   _doesn't_ need to do these steps.
 // Arguments:
-// - borderlessEnabled: If true, we're entering borderless mode. If false, we're leaving.
+// - borderlessEnabled: If true, we're entering focus mode. If false, we're leaving.
 // Return Value:
 // - <none>
 void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
@@ -582,7 +593,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
-    auto windowStyle = _getCurrentWindowStyle();
+    auto windowStyle = _getDesiredWindowStyle();
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
@@ -625,7 +636,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
-    auto windowStyle = _getCurrentWindowStyle();
+    auto windowStyle = _getDesiredWindowStyle();
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate

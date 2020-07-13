@@ -47,6 +47,7 @@ public:
 
     bool SetCursorKeysMode(const bool applicationMode) noexcept override; // DECCKM
     bool SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
+    bool SetScreenMode(const bool reverseMode) noexcept override; // DECSCNM
 
     bool SoftReset() noexcept override; // DECSTR
     bool HardReset() noexcept override; // RIS

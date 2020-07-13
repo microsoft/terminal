@@ -70,6 +70,7 @@ public:
     static std::filesystem::path GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
+    const ColorScheme* GetColorSchemeForProfile(const GUID profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
