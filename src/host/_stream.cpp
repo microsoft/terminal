@@ -1238,38 +1238,38 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     CATCH_RETURN();
 }
 
-static IConsoleOutputObject* obj = nullptr;
-static std::condition_variable condvar;
-static std::mutex bufflock;
-static std::queue<std::string> buff;
-static void ioWriteConsoleMethod()
-{
-    size_t read = 0;
-    std::unique_ptr<IWaitRoutine> wait;
-
-    std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
-
-    std::string str;
-
-    while (true)
-    {
-        lk.lock();
-        condvar.wait(lk, [&] {
-            if (!buff.empty())
-            {
-                str = buff.front();
-                buff.pop();
-                return true;
-            }
-            return false;
-        });
-        lk.unlock();
-        
-        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));
-    }
-}
-
-static std::thread th(ioWriteConsoleMethod);
+//static IConsoleOutputObject* obj = nullptr;
+//static std::condition_variable condvar;
+//static std::mutex bufflock;
+//static std::queue<std::string> buff;
+//static void ioWriteConsoleMethod()
+//{
+//    size_t read = 0;
+//    std::unique_ptr<IWaitRoutine> wait;
+//
+//    std::unique_lock<std::mutex> lk(bufflock, std::defer_lock);
+//
+//    std::string str;
+//
+//    while (true)
+//    {
+//        lk.lock();
+//        condvar.wait(lk, [&] {
+//            if (!buff.empty())
+//            {
+//                str = buff.front();
+//                buff.pop();
+//                return true;
+//            }
+//            return false;
+//        });
+//        lk.unlock();
+//        
+//        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));
+//    }
+//}
+//
+//static std::thread th(ioWriteConsoleMethod);
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
@@ -1277,7 +1277,7 @@ static std::thread th(ioWriteConsoleMethod);
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 try
 {
-    read = buffer.size();
+    /*read = buffer.size();
     waiter.reset();
 
     bufflock.lock();
@@ -1289,7 +1289,8 @@ try
     bufflock.unlock();
     condvar.notify_one();
 
-    return S_OK;
+    return S_OK;*/
+    return WriteConsoleAImplForReals(context, buffer, read, waiter);
 }
 CATCH_RETURN()
 
