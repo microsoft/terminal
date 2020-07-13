@@ -54,7 +54,7 @@
         "scrollUpPage",
         "splitPane",
         "switchToTab",
-        "toggleBorderless",
+        "toggleFocusMode",
         "toggleFullscreen",
         "toggleRetroEffect",
         "find",

@@ -876,7 +876,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
 // Method Description:
 // - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   focus mode, this will return false.
+//   borderless mode (aka "focus mode"), this will return false.
 // Arguments:
 // - <none>
 // Return Value:

@@ -71,7 +71,7 @@ protected:
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
 
-    LONG _getCurrentWindowStyle() const;
+    LONG _getDesiredWindowStyle() const;
 
 private:
     // This minimum width allows for width the tabs fit

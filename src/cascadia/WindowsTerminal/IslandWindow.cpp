@@ -489,7 +489,7 @@ void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLo
 // - <none>
 // Return Value:
 // - a LONG with the appropriate flags set for our current window mode, to be used with GWL_STYLE
-LONG IslandWindow::_getCurrentWindowStyle() const
+LONG IslandWindow::_getDesiredWindowStyle() const
 {
     auto windowStyle = GetWindowLongW(GetHandle(), GWL_STYLE);
 
@@ -554,7 +554,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
-    auto windowStyle = _getCurrentWindowStyle();
+    auto windowStyle = _getDesiredWindowStyle();
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
@@ -597,7 +597,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     HWND const hWnd = GetHandle();
 
     // First, modify regular window styles as appropriate
-    auto windowStyle = _getCurrentWindowStyle();
+    auto windowStyle = _getDesiredWindowStyle();
     _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
