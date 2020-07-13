@@ -391,11 +391,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         while (true)
         {
-            auto [count, ok] = channelpair.second.pop_n(til::spsc::block_initially, buf.data(), buf.size());
+            // OK. So this is going to go all the way down to a winrt::hstring.
+            // "But!", you say, "isn't a `std::wstring_view` like we're creating for the passing
+            // (to avoid a copy) not guaranteed to be null terminated?"
+            // Well, yes, you're right. However, the `winrt::hstring(std::wstring_view)` constuctor
+            // doesn't seem to care about that. It has the full intent of just taking the data pointer
+            // and embedding it inside itself as the hstring reference (instead of copying).
+            // That's a good thing. Except that hstrings have to be null terminated.
+            // So it contains a beautiful check for str[size] != 0 to ensure that the view you gave it
+            // was null terminated and it just flat out `std::terminate`s you if it's not. (You know
+            // instead of doing something like copying it or throwing or documenting any of these facts
+            // in either the header, the constructor, or on MSDN.)
+
+            auto [count, ok] = channelpair.second.pop_n(til::spsc::block_initially, buf.data(), buf.size() - 1);
             if (!ok)
             {
                 break;
             }
+
+            // Make sure the end of it is null or risk the wrath of `winrt::hstring` when we hit the
+            // WinRT event callback on the way out of this module (see above).
+            buf[count] = '\0';
+
             obj->_DoOutputThreadWork(std::wstring_view{ buf.data(), count });
         }
     }

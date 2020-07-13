@@ -155,8 +155,6 @@ static std::thread th(vtRenderWriteMethod);
             return _exitResult;
         }
     }*/
-
-    return S_OK;
 }
 
 // Method Description:
