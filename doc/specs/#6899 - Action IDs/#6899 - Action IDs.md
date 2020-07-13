@@ -55,7 +55,15 @@ doesn't _need_ to define any actions in `actions` - they could solely define
 actions in the bindings.
 
 **TODO**: When parsing a binding with both an `id` and a `command`, should we
-use the action from the ID or the command? Both seem reasonable.
+use the action from the ID or the command? Both seem reasonable. e.g:
+
+```json
+"bindings":[
+    { "command": { "action": "newTab", "profile": "foo" }, "id": "MyAction" }
+]
+```
+Should we use the `MyAction` command, or the manually specified one?
+
 
 Keybindings will still be stored as a `keys->Action` mapping, so the user will
 still be able to override default keybindings exactly the same as before.
@@ -130,8 +138,9 @@ provided, enabling the user to re-use their existing definitions. If the user
 re-defined the `Terminal.IncreaseFontSize` action to mean something else, then
 the action in the new tab menu will also be automatically updated.
 
-Furthermore, when additional menus are added, these could also leverage a
-similar syntax to the above to allow re-use of the `id` parameter.
+Furthermore, when additional menus are added (such as the tab context menu, or
+the `TermControl` context menu), these could also leverage a similar syntax to
+the above to allow re-use of the `id` parameter.
 
 ## UI/UX Design
 
