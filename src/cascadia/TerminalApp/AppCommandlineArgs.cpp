@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
