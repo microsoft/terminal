@@ -383,20 +383,26 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    static auto channelpair = til::spsc::channel<std::wstring>(1024);
+    static auto channelpair = til::spsc::channel<wchar_t>(16 * 1024);
     static ConptyConnection* obj = nullptr;
     static void terminalOutputHandlerMethod()
     {
+        std::vector<wchar_t> buf(16 * 1024, L'\0');
+
         while (true)
         {
-            auto str = channelpair.second.pop().value();
-            obj->_DoOutputThreadWork(str);
+            auto [count, ok] = channelpair.second.pop_n(til::spsc::block_initially, buf.data(), buf.size());
+            if (!ok)
+            {
+                break;
+            }
+            obj->_DoOutputThreadWork(std::wstring_view{ buf.data(), count });
         }
     }
 
     static std::thread th(terminalOutputHandlerMethod);
 
-    void ConptyConnection::_DoOutputThreadWork(std::wstring& str)
+    void ConptyConnection::_DoOutputThreadWork(std::wstring_view str)
     {
         _TerminalOutputHandlers(str);
     }
@@ -467,7 +473,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 obj = this;
             }
-            channelpair.first.emplace(_u16Str);
+            channelpair.first.push_n(_u16Str.data(), _u16Str.size());
 
             //_TerminalOutputHandlers(_u16Str);
         }

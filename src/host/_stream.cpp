@@ -1238,30 +1238,24 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     CATCH_RETURN();
 }
 
-static auto channelpair = til::spsc::channel<std::string>(1024);
+static auto channelpair = til::spsc::channel<char>(16* 1024);
 static IConsoleOutputObject* obj = nullptr;
 static void ioWriteConsoleMethod()
 {
     size_t read = 0;
     std::unique_ptr<IWaitRoutine> wait;
 
-    /*std::string str;
-
-    str.resize(1024);*/
+    std::vector<char> buf(16 * 1024, '\0');
 
     while (true)
     {
-        /*auto ch = channelpair.second.pop().value();
-        
-        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, std::string_view{ &ch, 1 } , read, wait));*/
+        auto [count, ok] = channelpair.second.pop_n(til::spsc::block_initially, buf.data(), buf.size());
+        if (!ok)
+        {
+            break;
+        }
 
-        auto str = channelpair.second.pop().value();
-
-        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));
-
-        /*channelpair.second.pop_n(str.data(), str.size());
-
-        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, str, read, wait));*/
+        LOG_IF_FAILED(WriteConsoleAImplForReals(*obj, std::string_view{ buf.data(), count }, read, wait));
     }
 }
 
@@ -1281,7 +1275,7 @@ try
         obj = &context;
     }
 
-    channelpair.first.emplace(buffer);
+    channelpair.first.push_n(buffer.data(), buffer.size());
 
     return S_OK;
 }

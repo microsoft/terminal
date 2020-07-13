@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD _OutputThread();
 
     public:
-        void _DoOutputThreadWork(std::wstring& str);
+        void _DoOutputThreadWork(std::wstring_view str);
     };
 }
 

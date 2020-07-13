@@ -99,15 +99,23 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     CATCH_RETURN();
 }
 
-static auto channelpair = til::spsc::channel<std::string>(1024);
+static auto channelpair = til::spsc::channel<char>(16* 1024);
 static HANDLE obj = nullptr;
 
 static void vtRenderWriteMethod()
 {
+    std::vector<char> buf(16 * 1024, '\0');
+
     while (true)
     {
-        auto str = channelpair.second.pop().value();
-        WriteFile(obj, str.data(), static_cast<DWORD>(str.size()), nullptr, nullptr);
+        auto [count, ok] = channelpair.second.pop_n(til::spsc::block_initially, buf.data(), buf.size());
+
+        if (!ok)
+        {
+            break;
+        }
+
+        WriteFile(obj, buf.data(), static_cast<DWORD>(count), nullptr, nullptr);
     }
 }
 
@@ -127,7 +135,7 @@ static std::thread th(vtRenderWriteMethod);
     {
         obj = _hFile.get();
     }
-    channelpair.first.emplace(_buffer);
+    channelpair.first.push_n(_buffer.data(), _buffer.size());
     _buffer.clear();
 
     return S_OK;
