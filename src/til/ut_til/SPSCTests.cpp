@@ -44,9 +44,9 @@ void drop(T&& val)
     auto _ = std::move(val);
 }
 
-class spscTests
+class SPSCTests
 {
-    BEGIN_TEST_CLASS(spscTests)
+    BEGIN_TEST_CLASS(SPSCTests)
         TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
     END_TEST_CLASS()
 
@@ -56,7 +56,7 @@ class spscTests
     TEST_METHOD(IntegrationTest);
 };
 
-void spscTests::DropEmptyTest()
+void SPSCTests::DropEmptyTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
     int counter = 0;
@@ -92,7 +92,7 @@ void spscTests::DropEmptyTest()
     VERIFY_ARE_EQUAL(counter, 8);
 }
 
-void spscTests::DropSameRevolutionTest()
+void SPSCTests::DropSameRevolutionTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
     int counter = 0;
@@ -116,7 +116,7 @@ void spscTests::DropSameRevolutionTest()
     VERIFY_ARE_EQUAL(counter, 5);
 }
 
-void spscTests::DropDifferentRevolutionTest()
+void SPSCTests::DropDifferentRevolutionTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
     int counter = 0;
@@ -150,7 +150,7 @@ void spscTests::DropDifferentRevolutionTest()
     VERIFY_ARE_EQUAL(counter, 8);
 }
 
-void spscTests::IntegrationTest()
+void SPSCTests::IntegrationTest()
 {
     auto [tx, rx] = til::spsc::channel<int>(7);
 
@@ -180,14 +180,14 @@ void spscTests::IntegrationTest()
     }
     for (int i = 33; i < 37; ++i)
     {
-        VERIFY_ARE_EQUAL(i, rx.pop());
+        auto actual = rx.pop();
+        VERIFY_ARE_EQUAL(i, actual);
     }
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 33; ++i)
     {
-        for (int j = 0; j < 11; ++j)
-        {
-            VERIFY_ARE_EQUAL(j, rx.pop());
-        }
+        auto expected = i % 11;
+        auto actual = rx.pop();
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     t.join();

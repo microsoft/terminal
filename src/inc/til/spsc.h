@@ -5,16 +5,13 @@
 
 // til::spsc::details::arc requires std::atomic<size_type>::wait() and ::notify_one() and at the time of writing no
 // STL supports these. Since both Windows and Linux offer a Futex implementation we can easily implement this though.
-// On other platforms we fall back to using a std::condition_variable. We prefer our own Windows/Linux implementations
-// over a potential C++20 one, due to our implementation already being "optimal" on those platforms.
-// For instance the atomic "size_type" is 32 Bit, which happens to be the exact size Linux futex
-// supports, allowing us to leverage that futex without any indirections like hash tables.
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+// On other platforms we fall back to using a std::condition_variable.
+#if __cpp_lib_atomic_wait >= 201907
+#define _TIL_SPSC_DETAIL_POSITION_IMPL_NATIVE 1
+#elif defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
 #define _TIL_SPSC_DETAIL_POSITION_IMPL_WIN 1
 #elif __linux__
 #define _TIL_SPSC_DETAIL_POSITION_IMPL_LINUX 1
-#elif __cpp_lib_atomic_wait >= 201907
-#define _TIL_SPSC_DETAIL_POSITION_IMPL_NATIVE 1
 #else
 #define _TIL_SPSC_DETAIL_POSITION_IMPL_FALLBACK 1
 #endif
@@ -29,20 +26,20 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
         static constexpr size_type revolution_flag = 1u << (std::numeric_limits<size_type>::digits - 2u); // 0b01000....
         static constexpr size_type drop_flag = 1u << (std::numeric_limits<size_type>::digits - 1u); // 0b10000....
 
-        struct nonblocking_policy
+        struct block_initially_policy
         {
-            using _wait_policy = int;
-            static constexpr bool _blocking = false;
+            using _spsc_policy = int;
+            static constexpr bool _block_forever = false;
         };
 
-        struct blocking_policy
+        struct block_forever_policy
         {
-            using _wait_policy = int;
-            static constexpr bool _blocking = true;
+            using _spsc_policy = int;
+            static constexpr bool _block_forever = true;
         };
 
-        template<class WaitPolicy>
-        using enable_if_wait_policy_t = typename std::remove_reference_t<WaitPolicy>::_wait_policy;
+        template<typename WaitPolicy>
+        using enable_if_wait_policy_t = typename std::remove_reference_t<WaitPolicy>::_spsc_policy;
 
 #if _TIL_SPSC_DETAIL_POSITION_IMPL_NATIVE
         using atomic_size_type = std::atomic<size_type>;
@@ -64,7 +61,7 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
                 _value.store(desired, order);
             }
 
-            void wait(size_type old, [[maybe_unused]] std::memory_order order) const noexcept
+            void wait(size_type old, [[maybe_unused]] std::memory_order order) noexcept
             {
 #if _TIL_SPSC_DETAIL_POSITION_IMPL_WIN
                 WaitOnAddress(const_cast<std::atomic<size_type>*>(&_value), &old, sizeof(_value), INFINITE);
@@ -137,13 +134,17 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
 
         struct acquisition
         {
-            size_type begin = 0;
-            size_type end = 0;
-            size_type next = 0;
+            size_type begin;
+            size_type end;
+            size_type next;
+            bool alive;
 
-            constexpr explicit operator bool() const noexcept
+            constexpr acquisition(size_type begin, size_type end, size_type next, bool alive) :
+                begin(begin),
+                end(end),
+                next(next),
+                alive(alive)
             {
-                return end != 0;
             }
         };
 
@@ -218,26 +219,24 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
                 drop(_consumer);
             }
 
-            template<typename WaitPolicy>
-            acquisition producer_acquire(WaitPolicy&& policy, size_type slots) const noexcept
+            acquisition producer_acquire(size_type slots, bool blocking) noexcept
             {
-                return acquire(std::forward<WaitPolicy>(policy), _producer, _consumer, revolution_flag, slots);
+                return acquire(_producer, _consumer, revolution_flag, slots, blocking);
             }
 
             void producer_release(acquisition acquisition) noexcept
             {
-                release(_producer, _consumer, revolution_flag, acquisition);
+                release(_producer, acquisition);
             }
 
-            template<typename WaitPolicy>
-            acquisition consumer_acquire(WaitPolicy&& policy, size_type slots) const noexcept
+            acquisition consumer_acquire(size_type slots, bool blocking) noexcept
             {
-                return acquire(std::forward<WaitPolicy>(policy), _consumer, _producer, 0, slots);
+                return acquire(_consumer, _producer, 0, slots, blocking);
             }
 
             void consumer_release(acquisition acquisition) noexcept
             {
-                release(_consumer, _producer, 0, acquisition);
+                release(_consumer, acquisition);
             }
 
             T* data() const noexcept
@@ -250,7 +249,7 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             {
                 // Signal the other side we're dropped. See acquire() for the handling of the drop_flag.
                 // We don't need to use release ordering like release() does as each call to
-                // any of the sender/receiver methods already results in a call to release().
+                // any of the producer/consumer methods already results in a call to release().
                 // Another release ordered write can't possibly synchronize any more data anyways at this point.
                 const auto myPos = mine.load(std::memory_order_relaxed);
                 mine.store(myPos | drop_flag, std::memory_order_relaxed);
@@ -260,36 +259,37 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
                 // the flag to true and get false, causing us to return early.
                 // Only the second time we'll get true.
                 // --> The contents are only deleted when both sides have been dropped.
-                if (_eitherSideDropped.exchange(true))
+                if (_eitherSideDropped.exchange(true, std::memory_order_relaxed))
                 {
                     delete this;
                 }
             }
 
             // NOTE: waitMask MUST be either 0 (consumer) or revolution_flag (producer).
-            template<typename WaitPolicy>
-            acquisition acquire(WaitPolicy&&, const atomic_size_type& mine, const atomic_size_type& theirs, size_type waitMask, size_type slots) const noexcept
+            acquisition acquire(atomic_size_type& mine, atomic_size_type& theirs, size_type waitMask, size_type slots, bool blocking) noexcept
             {
                 size_type myPos = mine.load(std::memory_order_relaxed);
                 size_type theirPos;
 
-                if constexpr (std::remove_reference_t<WaitPolicy>::_blocking)
+                while (true)
                 {
-                    while (true)
-                    {
-                        // This acquire read synchronizes with the release write in release().
-                        theirPos = theirs.load(std::memory_order_acquire);
-                        if ((myPos ^ theirPos) != waitMask)
-                        {
-                            break;
-                        }
-
-                        theirs.wait(theirPos, std::memory_order_relaxed);
-                    }
-                }
-                else
-                {
+                    // This acquire read synchronizes with the release write in release().
                     theirPos = theirs.load(std::memory_order_acquire);
+                    if ((myPos ^ theirPos) != waitMask)
+                    {
+                        break;
+                    }
+                    if (!blocking)
+                    {
+                        return {
+                            0,
+                            0,
+                            0,
+                            true,
+                        };
+                    }
+
+                    theirs.wait(theirPos, std::memory_order_relaxed);
                 }
 
                 // If the other side's position contains a drop flag, as a X -> we need to...
@@ -300,9 +300,12 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
                 //   and the other side's position is the drop flag.
                 if ((theirPos & drop_flag) != 0 && (waitMask != 0 || (myPos ^ theirPos) == drop_flag))
                 {
-                    // An empty acquire struct is equal to false,
-                    // which signals that the other side has been dropped.
-                    return {};
+                    return {
+                        0,
+                        0,
+                        0,
+                        false,
+                    };
                 }
 
                 auto begin = myPos & position_mask;
@@ -329,21 +332,15 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
                     begin,
                     end,
                     next,
+                    true,
                 };
             }
 
-            void release(atomic_size_type& mine, const atomic_size_type& theirs, size_type waitMask, acquisition acquisition) noexcept
+            void release(atomic_size_type& mine, acquisition acquisition) noexcept
             {
-                const auto myPos = acquisition.next;
-                const auto theirPos = theirs.load(std::memory_order_relaxed);
-
                 // This release write synchronizes with the acquire read in acquire().
                 mine.store(acquisition.next, std::memory_order_release);
-
-                if ((myPos ^ theirPos) == waitMask)
-                {
-                    mine.notify_one();
-                }
+                mine.notify_one();
             }
 
             T* const _data;
@@ -364,49 +361,43 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
         }
     }
 
-    inline constexpr details::nonblocking_policy nonblocking{};
-    inline constexpr details::blocking_policy blocking{};
+    inline constexpr details::block_initially_policy block_initially{};
+    inline constexpr details::block_forever_policy block_forever{};
 
     template<typename T>
-    struct sender
+    struct producer
     {
-        explicit sender(details::arc<T>* arc) noexcept :
+        explicit producer(details::arc<T>* arc) noexcept :
             _arc(arc) {}
 
-        sender<T>(const sender<T>&) = delete;
-        sender<T>& operator=(const sender<T>&) = delete;
+        producer<T>(const producer<T>&) = delete;
+        producer<T>& operator=(const producer<T>&) = delete;
 
-        sender(sender<T>&& other) noexcept
+        producer(producer<T>&& other) noexcept
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
         }
 
-        sender<T>& operator=(sender<T>&& other) noexcept
+        producer<T>& operator=(producer<T>&& other) noexcept
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
         }
 
-        ~sender()
+        ~producer()
         {
             drop();
-        }
-
-        template<typename... Args>
-        bool emplace(Args&&... args) const
-        {
-            return emplace(blocking, std::forward<Args>(args)...);
         }
 
         // emplace constructs an item in-place at the end of the queue.
         // It returns true, if the item was successfully placed within the queue.
-        // The return value will be false, if the receiver is gone.
-        template<typename WaitPolicy, typename... Args, details::enable_if_wait_policy_t<WaitPolicy> = 0>
-        bool emplace(WaitPolicy&& policy, Args&&... args) const
+        // The return value will be false, if the consumer is gone.
+        template<typename... Args>
+        bool emplace(Args&&... args) const
         {
-            auto acquisition = _arc->producer_acquire(std::forward<WaitPolicy>(policy), 1);
-            if (!acquisition)
+            auto acquisition = _arc->producer_acquire(1, true);
+            if (!acquisition.end)
             {
                 return false;
             }
@@ -422,12 +413,12 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
         template<typename InputIt>
         std::pair<size_t, bool> push(InputIt first, InputIt last) const
         {
-            return push_n(blocking, first, std::distance(first, last));
+            return push_n(block_forever, first, std::distance(first, last));
         }
 
         // move_n moves count items from the input iterator in into the queue.
         // The resulting iterator is returned as the first pair field.
-        // The second pair field will be false if the receiver is gone.
+        // The second pair field will be false if the consumer is gone.
         template<typename WaitPolicy, typename InputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
         std::pair<size_t, bool> push(WaitPolicy&& policy, InputIt first, InputIt last) const
         {
@@ -437,39 +428,46 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
         template<typename InputIt>
         std::pair<size_t, bool> push_n(InputIt first, size_t count) const
         {
-            return push_n(blocking, first, count);
+            return push_n(block_forever, first, count);
         }
 
         // move_n moves count items from the input iterator in into the queue.
         // The resulting iterator is returned as the first pair field.
-        // The second pair field will be false if the receiver is gone.
+        // The second pair field will be false if the consumer is gone.
         template<typename WaitPolicy, typename InputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
-        std::pair<size_t, bool> push_n(WaitPolicy&& policy, InputIt first, size_t count) const
+        std::pair<size_t, bool> push_n(WaitPolicy&&, InputIt first, size_t count) const
         {
             details::validate_size(count);
 
+            const auto data = _arc->data();
             auto remaining = static_cast<size_type>(count);
-            auto data = _arc->data();
+            auto blocking = true;
+            auto ok = true;
 
             while (remaining != 0)
             {
-                auto acquisition = _arc->producer_acquire(std::forward<WaitPolicy>(policy), remaining);
-                if (!acquisition)
+                auto acquisition = _arc->producer_acquire(remaining, blocking);
+                if (!acquisition.end)
                 {
-                    return { count - remaining, false };
+                    ok = acquisition.alive;
+                    break;
                 }
 
-                auto begin = data + acquisition.begin;
-                auto got = acquisition.end - acquisition.begin;
-
+                const auto begin = data + acquisition.begin;
+                const auto got = acquisition.end - acquisition.begin;
                 std::uninitialized_copy_n(first, got, begin);
                 first += got;
                 remaining -= got;
 
                 _arc->producer_release(acquisition);
+
+                if constexpr (!std::remove_reference_t<WaitPolicy>::_block_forever)
+                {
+                    blocking = false;
+                }
             }
 
-            return { count, true };
+            return { count - remaining, ok };
         }
 
     private:
@@ -485,44 +483,38 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     template<typename T>
-    struct receiver
+    struct consumer
     {
-        explicit receiver(details::arc<T>* arc) noexcept :
+        explicit consumer(details::arc<T>* arc) noexcept :
             _arc(arc) {}
 
-        receiver<T>(const receiver<T>&) = delete;
-        receiver<T>& operator=(const receiver<T>&) = delete;
+        consumer<T>(const consumer<T>&) = delete;
+        consumer<T>& operator=(const consumer<T>&) = delete;
 
-        receiver(receiver<T>&& other) noexcept
+        consumer(consumer<T>&& other) noexcept
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
         }
 
-        receiver<T>& operator=(receiver<T>&& other) noexcept
+        consumer<T>& operator=(consumer<T>&& other) noexcept
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
         }
 
-        ~receiver()
+        ~consumer()
         {
             drop();
-        }
-
-        std::optional<T> pop() const
-        {
-            return pop(blocking);
         }
 
         // pop returns the next item in the queue, or std::nullopt
-        // if no items are available and the sender is gone.
+        // if no items are available and the producer is gone.
         // The call blocks until either of these events occur.
-        template<typename WaitPolicy, details::enable_if_wait_policy_t<WaitPolicy> = 0>
-        std::optional<T> pop(WaitPolicy&& policy) const
+        std::optional<T> pop() const
         {
-            auto acquisition = _arc->consumer_acquire(std::forward<WaitPolicy>(policy), 1);
-            if (!acquisition)
+            auto acquisition = _arc->consumer_acquire(1, true);
+            if (!acquisition.end)
             {
                 return std::nullopt;
             }
@@ -530,50 +522,57 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             auto data = _arc->data();
             auto begin = data + acquisition.begin;
 
-            auto record = std::move(*begin);
+            auto item = std::move(*begin);
             std::destroy_at(begin);
 
             _arc->consumer_release(acquisition);
-            return record;
+            return item;
         }
 
         template<typename OutputIt>
         std::pair<size_t, bool> pop_n(OutputIt first, size_t count) const
         {
-            return pop_n(blocking, first, count);
+            return pop_n(block_forever, first, count);
         }
 
         // pop_n writes up to count items into the given output iterator out.
         // The resulting iterator is returned as the first pair field.
-        // The second pair field will be false if no items are available and the sender is gone.
+        // The second pair field will be false if no items are available and the producer is gone.
         template<typename WaitPolicy, typename OutputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
-        std::pair<size_t, bool> pop_n(WaitPolicy&& policy, OutputIt first, size_t count) const
+        std::pair<size_t, bool> pop_n(WaitPolicy&&, OutputIt first, size_t count) const
         {
             details::validate_size(count);
 
+            const auto data = _arc->data();
             auto remaining = static_cast<size_type>(count);
-            auto data = _arc->data();
+            auto blocking = true;
+            auto ok = true;
 
             while (remaining != 0)
             {
-                auto acquisition = _arc->consumer_acquire(std::forward<WaitPolicy>(policy), remaining);
-                if (!acquisition)
+                auto acquisition = _arc->consumer_acquire(remaining, blocking);
+                if (!acquisition.end)
                 {
-                    return { count - remaining, false };
+                    ok = acquisition.alive;
+                    break;
                 }
 
                 auto beg = data + acquisition.begin;
                 auto end = data + acquisition.end;
                 auto got = acquisition.end - acquisition.begin;
-
                 first = std::move(beg, end, first);
                 std::destroy(beg, end);
                 remaining -= got;
 
                 _arc->consumer_release(acquisition);
+
+                if constexpr (!std::remove_reference_t<WaitPolicy>::_block_forever)
+                {
+                    blocking = false;
+                }
             }
 
-            return { count, true };
+            return { count - remaining, ok };
         }
 
     private:
@@ -591,7 +590,7 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
     // channel returns a bounded, lock-free, single-producer, single-consumer
     // FIFO queue ("channel") with the given maximum capacity.
     template<typename T>
-    std::pair<sender<T>, receiver<T>> channel(uint32_t capacity)
+    std::pair<producer<T>, consumer<T>> channel(uint32_t capacity)
     {
         if (capacity == 0)
         {
