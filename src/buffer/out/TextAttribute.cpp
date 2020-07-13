@@ -97,6 +97,10 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic
 {
     auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
+    if (IsFaint())
+    {
+        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
+    }
     if (IsReverseVideo() ^ reverseScreenMode)
     {
         std::swap(fg, bg);
@@ -211,6 +215,11 @@ bool TextAttribute::IsBold() const noexcept
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
 }
 
+bool TextAttribute::IsFaint() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Faint);
+}
+
 bool TextAttribute::IsItalic() const noexcept
 {
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Italics);
@@ -250,6 +259,11 @@ bool TextAttribute::IsReverseVideo() const noexcept
 void TextAttribute::SetBold(bool isBold) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+}
+
+void TextAttribute::SetFaint(bool isFaint) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
 }
 
 void TextAttribute::SetItalics(bool isItalic) noexcept

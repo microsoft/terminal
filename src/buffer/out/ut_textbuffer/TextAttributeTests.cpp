@@ -130,6 +130,7 @@ void TextAttributeTests::TestRoundtripExhaustive()
 void TextAttributeTests::TestTextAttributeColorGetters()
 {
     const COLORREF red = RGB(255, 0, 0);
+    const COLORREF faintRed = RGB(127, 0, 0);
     const COLORREF green = RGB(0, 255, 0);
     TextAttribute attr(red, green);
     auto view = _GetTableView();
@@ -149,6 +150,25 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
     VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
     VERIFY_ARE_EQUAL(std::make_pair(green, red), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
+
+    // reset the reverse video
+    attr.SetReverseVideo(false);
+
+    // with faint set, the calculated foreground value should be fainter
+    //      while the background and getters stay the same
+    attr.SetFaint(true);
+
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(faintRed, green), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
+
+    // with reverse video set, calculated foreground/background values should be
+    //      switched, and the background fainter, while getters stay the same
+    attr.SetReverseVideo(true);
+
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(green, faintRed), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 }
 
 void TextAttributeTests::TestReverseDefaultColors()
