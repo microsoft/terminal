@@ -91,7 +91,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return E_INVALIDARG;
     }
 
-    const OutputCellIterator it(attrs, true);
+    const OutputCellIterator it(attrs);
     const auto done = screenInfo.Write(it, target);
 
     used = done.GetCellDistance(it);

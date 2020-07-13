@@ -369,7 +369,7 @@ class OutputCellIteratorTests
         const std::vector<WORD> colors{ FOREGROUND_GREEN, FOREGROUND_RED | BACKGROUND_BLUE, FOREGROUND_BLUE | FOREGROUND_INTENSITY, BACKGROUND_GREEN };
         const std::basic_string_view<WORD> view{ colors.data(), colors.size() };
 
-        OutputCellIterator it(view, false);
+        OutputCellIterator it(view);
 
         for (const auto& color : colors)
         {
