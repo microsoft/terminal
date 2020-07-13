@@ -8,7 +8,7 @@
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY
 
 # -------------------------------------
 # CRT Configuration
