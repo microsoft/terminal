@@ -577,7 +577,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             gci.SetColorTableEntry(i, data.ColorTable[i]);
         }
 
-        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
+        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -881,7 +881,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                       (target.Y == -currentBufferDimensions.Y);
             const bool noClipProvided = clip == std::nullopt;
             const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
-                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+                                     (fillAttribute == buffer.GetAttributes().GetLegacyAttributes());
 
             if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
             {
@@ -922,6 +922,25 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+    // Do nothing if no change.
+    if (gci.OutputCP != codepage)
+    {
+        // Set new code page
+        gci.OutputCP = codepage;
+
+        SetConsoleCPInfo(TRUE);
+    }
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
@@ -932,23 +951,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.OutputCP != codepage)
-        {
-            // Set new code page
-            gci.OutputCP = codepage;
-
-            SetConsoleCPInfo(TRUE);
-        }
-
-        return S_OK;
+        return DoSrvSetConsoleOutputCodePage(codepage);
     }
     CATCH_RETURN();
 }
@@ -1223,6 +1228,19 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Function Description:
+// - A private API call which enables/disables sending full input records
+//   encoded as a string of characters to the client application.
+// Parameters:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return value:
+// - <none>
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
 }
 
 // Routine Description:

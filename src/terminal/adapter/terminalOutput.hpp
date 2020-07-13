@@ -23,15 +23,26 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-        TerminalOutput() = default;
+        TerminalOutput() noexcept;
 
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
-        bool DesignateCharset(const wchar_t wchNewCharset) noexcept;
+        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
+        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
+        bool LockingShift(const size_t gsetNumber);
+        bool LockingShiftRight(const size_t gsetNumber);
+        bool SingleShift(const size_t gsetNumber);
         bool NeedToTranslate() const noexcept;
+        void EnableGrTranslation(boolean enabled);
 
     private:
-        wchar_t _currentCharset = DispatchTypes::VTCharacterSets::USASCII;
+        bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
 
-        const std::wstring_view _GetTranslationTable() const noexcept;
+        std::array<std::wstring_view, 4> _gsetTranslationTables;
+        size_t _glSetNumber = 0;
+        size_t _grSetNumber = 2;
+        std::wstring_view _glTranslationTable;
+        std::wstring_view _grTranslationTable;
+        mutable std::wstring_view _ssTranslationTable;
+        boolean _grTranslationEnabled = false;
     };
 }

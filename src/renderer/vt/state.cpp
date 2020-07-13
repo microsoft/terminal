@@ -8,7 +8,7 @@
 
 // For _vcprintf
 #include <conio.h>
-#include <stdarg.h>
+#include <cstdarg>
 
 #pragma hdrstop
 
@@ -26,14 +26,10 @@ const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 // Return Value:
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
-                   const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
     RenderEngineBase(),
     _hFile(std::move(pipe)),
-    _colorProvider(colorProvider),
-    _LastFG(INVALID_COLOR),
-    _LastBG(INVALID_COLOR),
-    _lastWasBold(false),
+    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _invalidMap(initialViewport.Dimensions()),
     _lastText({ 0 }),
@@ -53,7 +49,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
     _inResizeRequest{ false },
-    _trace{}
+    _trace{},
+    _bufferLine{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -507,5 +504,21 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 // - S_OK if we wrote the sequences successfully, otherwise an appropriate HRESULT
 [[nodiscard]] HRESULT VtEngine::ManuallyClearScrollback() noexcept
 {
+    return S_OK;
+}
+
+// Method Description:
+// - Send a sequence to the connected terminal to request win32-input-mode from
+//   them. This will enable the connected terminal to send us full INPUT_RECORDs
+//   as input. If the terminal doesn't understand this sequence, it'll just
+//   ignore it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestWin32Input() noexcept
+{
+    RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_Flush());
     return S_OK;
 }

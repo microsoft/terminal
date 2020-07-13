@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "ScreenInfoUiaProviderBase.h"
-#include "WindowUiaProviderBase.hpp"
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
@@ -369,7 +368,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ Suppo
 
 #pragma endregion
 
-const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const
+const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
 {
     return _getTextBuffer().GetSize().Dimensions();
 }

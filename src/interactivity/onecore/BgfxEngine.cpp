@@ -179,7 +179,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT BgfxEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
@@ -194,13 +194,11 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return HRESULT_FROM_NT(Status);
 }
 
-[[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
-                                                       COLORREF const /*colorBackground*/,
-                                                       const WORD legacyColorAttribute,
-                                                       const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const gsl::not_null<IRenderData*> /*pData*/,
                                                        bool const /*isSettingDefaultBrushes*/) noexcept
 {
-    _currentLegacyColorAttribute = legacyColorAttribute;
+    _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
     return S_OK;
 }

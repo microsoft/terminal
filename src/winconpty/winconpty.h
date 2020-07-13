@@ -23,6 +23,7 @@ typedef struct _PseudoConsole
 // The other flag (PSEUDOCONSOLE_INHERIT_CURSOR) is actually defined in consoleapi.h in the OS repo
 // #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
 #define PSEUDOCONSOLE_RESIZE_QUIRK (0x2)
+#define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,

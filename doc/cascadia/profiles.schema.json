@@ -55,7 +55,12 @@
         "splitPane",
         "switchToTab",
         "toggleFullscreen",
+        "toggleRetroEffect",
         "find",
+        "setTabColor",
+        "openTabColorPicker",
+        "renameTab",
+        "commandPalette",
         "unbound"
       ],
       "type": "string"
@@ -231,6 +236,48 @@
         }
       ]
     },
+    "OpenSettingsAction": {
+      "description": "Arguments corresponding to a Open Settings Action",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "pattern": "openSettings"
+            },
+            "target": {
+              "type": "string",
+              "default": "settingsFile",
+              "description": "The settings file to open.",
+              "enum": [
+                "settingsFile",
+                "defaultsFile",
+                "allFiles"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SetTabColorAction": {
+      "description": "Arguments corresponding to a Set Tab Color Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setTabColor" },
+            "color": {
+              "$ref": "#/definitions/Color",
+              "default": null,
+              "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -245,6 +292,8 @@
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
+              { "$ref": "#/definitions/OpenSettingsAction" },
+              { "$ref": "#/definitions/SetTabColorAction" },
               { "type": "null" }
             ]
         },
@@ -287,6 +336,16 @@
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
+          "type": "boolean"
+        },
+        "largePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
+          "type": "boolean"
+        },
+        "multiLinePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
         "defaultProfile": {
@@ -376,8 +435,9 @@
         },
         "tabWidthMode": {
           "default": "equal",
-          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title",
+          "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title\n -\"compact\" sizes each tab to the length of its title when focused, and shrinks to the size of only the icon when the tab is unfocused.",
           "enum": [
+            "compact",
             "equal",
             "titleLength"
           ],
@@ -613,6 +673,11 @@
         "snapOnInput": {
           "default": true,
           "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
+          "type": "boolean"
+        },
+        "altGrAliasing": {
+          "default": true,
+          "description": "By default Windows treats Ctrl+Alt as an alias for AltGr. When altGrAliasing is set to false, this behavior will be disabled.",
           "type": "boolean"
         },
         "source": {

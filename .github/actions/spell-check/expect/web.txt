@@ -4,5 +4,12 @@ www
 ecma
 rapidtables
 WCAG
+freedesktop
+ycombinator
+robertelder
+kovidgoyal
+leonerd
+fixterms
+uk
 winui
 appshellintegration

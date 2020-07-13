@@ -11,6 +11,7 @@
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
@@ -231,13 +232,13 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        _root->ShowDialog({ this, &AppLogic::_ShowDialog });
+        _root->DialogPresenter(*this);
 
         // In UWP mode, we cannot handle taking over the title bar for tabs,
         // so this setting is overridden to false no matter what the preference is.
         if (_isUwp)
         {
-            _settings->GlobalSettings().SetShowTabsInTitlebar(false);
+            _settings->GlobalSettings().ShowTabsInTitlebar(false);
         }
 
         _root->SetSettings(_settings, false);
@@ -255,14 +256,14 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
-        _ApplyTheme(_settings->GlobalSettings().GetTheme());
+        _ApplyTheme(_settings->GlobalSettings().Theme());
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
             TraceLoggingDescription("Event emitted when the application is started"),
-            TraceLoggingBool(_settings->GlobalSettings().GetShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingBool(_settings->GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -277,9 +278,10 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // sender: unused
-    // dialog: the dialog object that is going to show up
-    fire_and_forget AppLogic::_ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
+    // - dialog: the dialog object that is going to show up
+    // Return value:
+    // - an IAsyncOperation with the dialog result
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> AppLogic::ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -287,7 +289,7 @@ namespace winrt::TerminalApp::implementation
         if (!lock)
         {
             // Another dialog is visible.
-            return;
+            co_return ContentDialogResult::None;
         }
 
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
@@ -308,7 +310,7 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings->GlobalSettings().GetTheme() };
+            auto theme{ _settings->GlobalSettings().Theme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
@@ -321,7 +323,7 @@ namespace winrt::TerminalApp::implementation
         auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
-        co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        co_return co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
@@ -333,7 +335,7 @@ namespace winrt::TerminalApp::implementation
     //   as the title and first content of the dialog, then also displays a
     //   message for whatever exception was found while validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
+    //   when this is called, nothing happens. See ShowDialog for details
     // Arguments:
     // - titleKey: The key to use to lookup the title text from our resources.
     // - contentKey: The key to use to lookup the content text from our resources.
@@ -378,7 +380,7 @@ namespace winrt::TerminalApp::implementation
         dialog.CloseButtonText(buttonText);
         dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
-        _ShowDialog(nullptr, dialog);
+        ShowDialog(dialog);
     }
 
     // Method Description:
@@ -386,7 +388,7 @@ namespace winrt::TerminalApp::implementation
     //   settings. Displays messages for whatever warnings were found while
     //   validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
+    //   when this is called, nothing happens. See ShowDialog for details
     void AppLogic::_ShowLoadWarningsDialog()
     {
         auto title = RS_(L"SettingsValidateErrorTitle");
@@ -437,7 +439,7 @@ namespace winrt::TerminalApp::implementation
         dialog.CloseButtonText(buttonText);
         dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
-        _ShowDialog(nullptr, dialog);
+        ShowDialog(dialog);
     }
 
     // Method Description:
@@ -490,7 +492,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().ShowTabsInTitlebar())
         {
             // If we're showing the tabs in the titlebar, we need to use a
             // TitlebarControl here to calculate how much space to reserve.
@@ -504,7 +506,7 @@ namespace winrt::TerminalApp::implementation
             titlebar.Measure({ SHRT_MAX, SHRT_MAX });
             proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
         }
-        else if (_settings->GlobalSettings().GetAlwaysShowTabs())
+        else if (_settings->GlobalSettings().AlwaysShowTabs())
         {
             // Otherwise, let's use a TabRowControl to calculate how much extra
             // space we'll need.
@@ -542,7 +544,7 @@ namespace winrt::TerminalApp::implementation
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
-        const auto valueFromSettings = _settings->GlobalSettings().GetLaunchMode();
+        const auto valueFromSettings = _settings->GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
@@ -567,18 +569,11 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
-
-        auto initialX = _settings->GlobalSettings().GetInitialX();
-        auto initialY = _settings->GlobalSettings().GetInitialY();
-        if (initialX.has_value())
-        {
-            point.X = gsl::narrow_cast<float>(initialX.value());
-        }
-        if (initialY.has_value())
-        {
-            point.Y = gsl::narrow_cast<float>(initialY.value());
-        }
+        const auto initialPosition{ _settings->GlobalSettings().InitialPosition() };
+        winrt::Windows::Foundation::Point point{
+            /* X */ gsl::narrow_cast<float>(initialPosition.x.value_or(defaultInitialX)),
+            /* Y */ gsl::narrow_cast<float>(initialPosition.y.value_or(defaultInitialY))
+        };
 
         return point;
     }
@@ -591,7 +586,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetTheme();
+        return _settings->GlobalSettings().Theme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -602,7 +597,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetShowTabsInTitlebar();
+        return _settings->GlobalSettings().ShowTabsInTitlebar();
     }
 
     // Method Description:
@@ -772,11 +767,20 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(_root->Dispatcher());
 
         // Refresh the UI theme
-        _ApplyTheme(_settings->GlobalSettings().GetTheme());
+        _ApplyTheme(_settings->GlobalSettings().Theme());
     }
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    try
     {
+        // First, make sure we're running in a packaged context. This method
+        // won't work, and will crash mysteriously if we're running unpackaged.
+        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        if (package == nullptr)
+        {
+            return;
+        }
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
@@ -812,6 +816,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+    CATCH_LOG();
+
     // Method Description:
     // - Reloads the settings from the profile.json.
     void AppLogic::_ReloadSettings()
@@ -902,20 +908,21 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Implements the F7 handler (per GH#638)
+    // - Implements the Alt handler (per GH#6421)
     // Return value:
-    // - whether F7 was handled
-    bool AppLogic::OnF7Pressed()
+    // - whether the key was handled
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
         if (_root)
         {
-            // Manually bubble the OnF7Pressed event up through the focus tree.
+            // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
+                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (f7Listener.OnF7Pressed())
+                    if (keyListener.OnDirectKeyEvent(vkey, down))
                     {
                         return true;
                     }

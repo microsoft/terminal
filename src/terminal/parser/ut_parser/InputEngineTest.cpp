@@ -7,6 +7,7 @@
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
+#include "ascii.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/convert.hpp"
@@ -102,7 +103,18 @@ public:
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
     {
         auto records = IInputEvent::ToInputRecords(inEvents);
-        VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
+
+        // This callback doesn't work super well for the Ctrl+C iteration of the
+        // C0Test. For ^C, we always send a keydown and a key up event, however,
+        // both calls to WriteCtrlKey happen in one single call to
+        // ProcessString, and the test doesn't have a chance to load each key
+        // into this callback individually. Instead, we'll just skip these
+        // checks for the second call to WriteInput for this test.
+        if (_expectSendCtrlC && vExpectedInput.size() == 0)
+        {
+            return;
+        }
+        VERIFY_ARE_EQUAL(1u, vExpectedInput.size());
 
         bool foundEqual = false;
         INPUT_RECORD irExpected = vExpectedInput.back();
@@ -263,6 +275,12 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(SGRMouseTest_Movement);
     TEST_METHOD(SGRMouseTest_Scroll);
     TEST_METHOD(CtrlAltZCtrlAltXTest);
+    TEST_METHOD(TestSs3Entry);
+    TEST_METHOD(TestSs3Immediate);
+    TEST_METHOD(TestSs3Param);
+
+    TEST_METHOD(TestWin32InputParsing);
+    TEST_METHOD(TestWin32InputOptionals);
 
     friend class TestInteractDispatch;
 };
@@ -306,7 +324,8 @@ public:
     TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
                          _In_ TestState* testState);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WriteCtrlC() override;
+
+    virtual bool WriteCtrlKey(const KeyEvent& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                     const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
     virtual bool WriteString(const std::wstring_view string) override;
@@ -334,14 +353,11 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
     return true;
 }
 
-bool TestInteractDispatch::WriteCtrlC()
+bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
     VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
-    KeyEvent keyDown = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    KeyEvent keyUp = KeyEvent(false, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-    inputEvents.push_back(std::make_unique<KeyEvent>(keyDown));
-    inputEvents.push_back(std::make_unique<KeyEvent>(keyUp));
+    inputEvents.push_back(std::make_unique<KeyEvent>(event));
     return WriteInput(inputEvents);
 }
 
@@ -1309,4 +1325,239 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
     }
 
     VerifyExpectedInputDrained();
+}
+
+void InputEngineTest::TestSs3Entry()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    StateMachine mach(std::move(engine));
+
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L'm');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+}
+
+void InputEngineTest::TestSs3Immediate()
+{
+    // Intermediates aren't supported by Ss3 - they just get dispatched
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    StateMachine mach(std::move(engine));
+
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L'$');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L'#');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L'%');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L'?');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+}
+
+void InputEngineTest::TestSs3Param()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    StateMachine mach(std::move(engine));
+
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    mach.ProcessCharacter(AsciiChars::ESC);
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+    mach.ProcessCharacter(L'O');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
+    mach.ProcessCharacter(L';');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L'3');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L'2');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L'4');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L';');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L';');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L'8');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
+    mach.ProcessCharacter(L'J');
+    VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+}
+
+void InputEngineTest::TestWin32InputParsing()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(0, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
+        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
+        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
+        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3, 4 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
+        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3, 1 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
+        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3, 4, 5 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
+        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6 };
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
+        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
+        VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
+        VERIFY_ARE_EQUAL(6, key.GetRepeatCount());
+    }
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6, 7 };
+        VERIFY_IS_FALSE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+    }
+}
+
+void InputEngineTest::TestWin32InputOptionals()
+{
+    // Send a bunch of possible sets of parameters, to see if they all parse correctly.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:provideVirtualKeyCode", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:provideVirtualScanCode", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:provideCharData", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:provideKeyDown", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:provideActiveModifierKeys", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:provideRepeatCount", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:numParams", L"{0, 1, 2, 3, 4, 5, 6}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(bool, provideVirtualKeyCode, L"If true, pass the VirtualKeyCode param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(bool, provideVirtualScanCode, L"If true, pass the VirtualScanCode param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(bool, provideCharData, L"If true, pass the CharData param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(bool, provideKeyDown, L"If true, pass the KeyDown param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(bool, provideActiveModifierKeys, L"If true, pass the ActiveModifierKeys param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(bool, provideRepeatCount, L"If true, pass the RepeatCount param in the list of params. Otherwise, leave it as the default param value (0)");
+    INIT_TEST_PROPERTY(int, numParams, L"Control how many of the params we send");
+
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+
+    {
+        KeyEvent key{};
+        std::vector<size_t> params{
+            ::base::saturated_cast<size_t>(provideVirtualKeyCode ? 1 : 0),
+            ::base::saturated_cast<size_t>(provideVirtualScanCode ? 2 : 0),
+            ::base::saturated_cast<size_t>(provideCharData ? 3 : 0),
+            ::base::saturated_cast<size_t>(provideKeyDown ? 4 : 0),
+            ::base::saturated_cast<size_t>(provideActiveModifierKeys ? 5 : 0),
+            ::base::saturated_cast<size_t>(provideRepeatCount ? 6 : 0)
+        };
+
+        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), static_cast<size_t>(numParams) }, key));
+        VERIFY_ARE_EQUAL((provideVirtualKeyCode && numParams > 0) ? 1 : 0,
+                         key.GetVirtualKeyCode());
+        VERIFY_ARE_EQUAL((provideVirtualScanCode && numParams > 1) ? 2 : 0,
+                         key.GetVirtualScanCode());
+        VERIFY_ARE_EQUAL((provideCharData && numParams > 2) ? L'\x03' : L'\0',
+                         key.GetCharData());
+        VERIFY_ARE_EQUAL((provideKeyDown && numParams > 3) ? true : false,
+                         key.IsKeyDown());
+        VERIFY_ARE_EQUAL((provideActiveModifierKeys && numParams > 4) ? 5u : 0u,
+                         key.GetActiveModifierKeys());
+        if (numParams == 6)
+        {
+            VERIFY_ARE_EQUAL((provideRepeatCount) ? 6 : 0,
+                             key.GetRepeatCount());
+        }
+        else
+        {
+            VERIFY_ARE_EQUAL((provideRepeatCount && numParams > 5) ? 6 : 1,
+                             key.GetRepeatCount());
+        }
+    }
 }

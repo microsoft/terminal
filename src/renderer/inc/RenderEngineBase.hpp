@@ -38,6 +38,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring& newTitle) noexcept override;
 
+        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+
+        void WaitUntilCanRender() noexcept override;
+
     protected:
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept = 0;
 

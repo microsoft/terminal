@@ -53,6 +53,7 @@ public:
     virtual bool SetColumns(const size_t columns) = 0; // DECCOLM
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
+    virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
@@ -93,9 +94,16 @@ public:
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
+    virtual bool SecondaryDeviceAttributes() = 0; // DA2
+    virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
-    virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // SCS
+    virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
+    virtual bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
+    virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
+    virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
@@ -103,6 +111,8 @@ public:
 
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
+
+    virtual bool SetClipboard(std::wstring_view content) = 0; // OSCSetClipboard
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,

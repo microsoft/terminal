@@ -11,7 +11,7 @@
 #include "handle.h"
 #include "../buffer/out/CharRow.hpp"
 
-#include <math.h>
+#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -58,7 +58,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _virtualBottom{ 0 },
     _renderTarget{ *this },
     _currentFont{ fontInfo },
-    _desiredFont{ fontInfo }
+    _desiredFont{ fontInfo },
+    _ignoreLegacyEquivalentVTAttributes{ false }
 {
     // Check if VT mode is enabled. Note that this can be true w/o calling
     // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
@@ -356,8 +357,8 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *psrWindow = _viewport.ToInclusive();
 
-    *pwAttributes = gci.GenerateLegacyAttributes(GetAttributes());
-    *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
+    *pwAttributes = GetAttributes().GetLegacyAttributes();
+    *pwPopupAttributes = _PopupAttributes.GetLegacyAttributes();
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
@@ -572,8 +573,6 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -586,7 +585,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
             {
                 const auto cellData = GetCellDataAt({ sStartX, sStartY });
                 const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
-                                                  gci.GenerateLegacyAttributes(cellData->TextAttr()));
+                                                  cellData->TextAttr().GetLegacyAttributes());
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
@@ -1860,7 +1859,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          existingFont,
                                                          WindowSize,
                                                          initAttributes,
-                                                         *GetPopupAttributes(),
+                                                         GetPopupAttributes(),
                                                          Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
@@ -2017,9 +2016,9 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
+TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 {
-    return &_PopupAttributes;
+    return _PopupAttributes;
 }
 
 // Routine Description:
@@ -2031,6 +2030,13 @@ const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
+    if (_ignoreLegacyEquivalentVTAttributes)
+    {
+        // See the comment on StripErroneousVT16VersionsOfLegacyDefaults for more info.
+        _textBuffer->SetCurrentAttributes(TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(attributes));
+        return;
+    }
+
     _textBuffer->SetCurrentAttributes(attributes);
 
     // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
@@ -2071,7 +2077,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const TextAttribute oldPrimaryAttributes = GetAttributes();
-    const TextAttribute oldPopupAttributes = *GetPopupAttributes();
+    const TextAttribute oldPopupAttributes = GetPopupAttributes();
 
     // Quick return if we don't need to do anything.
     if (oldPrimaryAttributes == attributes && oldPopupAttributes == popupAttributes)
@@ -2081,12 +2087,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
 
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-
-    auto& commandLine = CommandLine::Instance();
-    if (commandLine.HasPopup())
-    {
-        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
-    }
 
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just
@@ -2682,4 +2682,18 @@ Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
                                                   buffer.RightInclusive(),
                                                   marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
     return margin;
+}
+
+// Routine Description:
+// - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = true;
+}
+
+// Routine Description:
+// - Disengages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = false;
 }

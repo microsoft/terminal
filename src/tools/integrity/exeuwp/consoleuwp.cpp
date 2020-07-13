@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include <windows.h>
-#include <Stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <appmodel.h>
 #include <strsafe.h>
 

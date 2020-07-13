@@ -146,11 +146,9 @@ void ConsoleImeInfo::ClearAllAreas()
 
     const COORD windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
-    CHAR_INFO fill;
-    fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
+    const TextAttribute fill = gci.GetActiveOutputBuffer().GetAttributes();
 
-    CHAR_INFO popupFill;
-    popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
+    const TextAttribute popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
 
     const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 
@@ -258,6 +256,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
+            auto rightHalfAttr = drawingAttr;
 
             // Don't draw lines in the middle of full width glyphs.
             // If we need a right vertical, don't apply it to the left side of the character
@@ -271,12 +270,16 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
             dbcsAttr.SetTrailing();
 
             // If we need a left vertical, don't apply it to the right side of the character
-            if (drawingAttr.IsLeftVerticalDisplayed())
+            if (rightHalfAttr.IsLeftVerticalDisplayed())
             {
-                drawingAttr.SetLeftVerticalDisplayed(false);
+                rightHalfAttr.SetLeftVerticalDisplayed(false);
             }
+            cells.emplace_back(glyph, dbcsAttr, rightHalfAttr);
         }
-        cells.emplace_back(glyph, dbcsAttr, drawingAttr);
+        else
+        {
+            cells.emplace_back(glyph, dbcsAttr, drawingAttr);
+        }
     }
 
     return cells;
