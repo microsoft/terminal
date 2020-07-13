@@ -1490,10 +1490,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
+        // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
+        // but the "smooth scrolling" mode results in non-int values
         const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
-        // With one of the precision mouses, one click is always a multiple of 120,
-        // but the "smooth scrolling" mode results in non-int values
+        // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
+        // at a time" setting. If we ignore it, we will scroll a truly absurd number
+        // of rows.
         const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? GetViewHeight() : _rowsToScroll };
         double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
@@ -1706,6 +1709,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
         {
+            LOG_LAST_ERROR();
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
             _rowsToScroll = 3;
         }
     }
