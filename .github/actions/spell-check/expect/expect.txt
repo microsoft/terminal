@@ -594,6 +594,7 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
 dialogbox
 diffing
