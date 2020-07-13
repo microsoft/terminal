@@ -208,10 +208,14 @@ And assuming the user has bound:
     context of the current tab or control in the json. Think for example about
     "Close tab" or "Close other tabs" - currently, those work by _knowing_ which
     tab the "action" is specifed for, not by actually using a `closeTab` action.
-    In the future, they might need to be implemented as something like
-    - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
-    - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
-    - Close Tabs to the Right: `{ "action": "closeTabs", "after": "${selectedTab.index}" }`
+    * In the future, they might need to be implemented as something like
+      - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
+      - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
+      - Close Tabs to the Right: `{ "action": "closeTabs", "after":
+        "${selectedTab.index}" }`
+    * We could alternatively just imply that when those actions are specified in
+      the tab context menu, they're implicitly defined as being for the current
+      tab. That might be simpler.
 
 
 <!-- Footnotes -->
