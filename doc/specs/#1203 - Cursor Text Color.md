@@ -29,7 +29,7 @@ will always be visible.
 
 ### Note
 
-This spec is being writtin a bit retroactively. [#6337] was merged before this
+This spec is being written a bit retroactively. [#6337] was merged before this
 spec was approved, which added support for a two-phased attempt at rendering the
 cursor in DX during the rendering of each run of text. This spec now mostly
 reflects new settings, and how they should appear to the user.
@@ -167,4 +167,3 @@ Feature Request: Show character under cursor when cursorShape is set to filledBo
 [#1203]: https://github.com/microsoft/terminal/issues/1203
 [#3580]: https://github.com/microsoft/terminal/issues/3580
 [#6337]: https://github.com/microsoft/terminal/pull/6337
-
