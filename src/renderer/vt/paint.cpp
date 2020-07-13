@@ -3,6 +3,9 @@
 
 #include "precomp.h"
 
+#include <algorithm>
+#include <numeric>
+
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/convert.hpp"
@@ -125,12 +128,13 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::wstring_view text,
+                                                std::basic_string_view<UINT16> clusterMap,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 {
-    return VtEngine::_PaintAsciiBufferLine(clusters, coord);
+    return VtEngine::_PaintAsciiBufferLine(text, clusterMap, coord);
 }
 
 // Method Description:
@@ -342,27 +346,28 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::wstring_view text,
+                                                      std::basic_string_view<UINT16> clusterMap,
                                                       const COORD coord) noexcept
 {
     try
     {
         RETURN_IF_FAILED(_MoveCursor(coord));
 
-        _bufferLine.clear();
-        _bufferLine.reserve(clusters.size());
+        /*_bufferLine.clear();*/
+        //_bufferLine.reserve(clusters.size());
 
-        short totalWidth = 0;
+        /*short totalWidth = 0;
         for (const auto& cluster : clusters)
         {
             _bufferLine.append(cluster.GetText());
             RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
-        }
+        }*/
 
-        RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(text));
 
         // Update our internal tracker of the cursor's position
-        _lastText.X += totalWidth;
+        _lastText.X += (SHORT)std::accumulate(clusterMap.begin(), clusterMap.end(), 0);
 
         return S_OK;
     }
@@ -377,7 +382,8 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::wstring_view text,
+                                                     std::basic_string_view<UINT16> clusterMap,
                                                      const COORD coord,
                                                      const bool lineWrapped) noexcept
 {
@@ -386,21 +392,21 @@ using namespace Microsoft::Console::Types;
         return S_OK;
     }
 
-    _bufferLine.clear();
-    _bufferLine.reserve(clusters.size());
-    short totalWidth = 0;
-    for (const auto& cluster : clusters)
+    /*_bufferLine.clear();
+    _bufferLine.reserve(clusters.size());*/
+    short totalWidth = (SHORT)std::accumulate(clusterMap.begin(), clusterMap.end(), 0);
+    /*for (const auto& cluster : clusters)
     {
         _bufferLine.append(cluster.GetText());
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
-    }
-    const size_t cchLine = _bufferLine.size();
+    }*/
+    const size_t cchLine = text.size();
 
     bool foundNonspace = false;
     size_t lastNonSpace = 0;
     for (size_t i = 0; i < cchLine; i++)
     {
-        if (_bufferLine.at(i) != L'\x20')
+        if (text.at(i) != L'\x20')
         {
             lastNonSpace = i;
             foundNonspace = true;
@@ -494,7 +500,7 @@ using namespace Microsoft::Console::Types;
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     // Write the actual text string
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ text.data(), cchActual }));
 
     // GH#4415, GH#5181
     // If the renderer told us that this was a wrapped line, then mark

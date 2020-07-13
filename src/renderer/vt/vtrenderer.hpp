@@ -63,7 +63,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(std::wstring_view text,
+                                                      std::basic_string_view<UINT16> clusterMap,
                                                       const COORD coord,
                                                       const bool trimLeft,
                                                       const bool lineWrapped) noexcept override;
@@ -226,12 +227,14 @@ namespace Microsoft::Console::Render
 
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
-        std::wstring _bufferLine;
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+        //std::wstring _bufferLine;
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::wstring_view text,
+                                                   std::basic_string_view<UINT16> clusterMap,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::wstring_view text,
+                                                    std::basic_string_view<UINT16> clusterMap,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
