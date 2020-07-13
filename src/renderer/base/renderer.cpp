@@ -654,7 +654,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
                 // Retrieve the cell information iterator limited to just this line we want to redraw.
-                auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+                auto& r = buffer.GetRowByOffset(bufferLine.Origin().Y);
+                //auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
                 // Calculate if two things are true:
                 // 1. this row wrapped
@@ -664,7 +665,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                                          (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
                 // Ask the helper to paint through this specific line.
-                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
+                _PaintBufferOutputHelper(pEngine, r, bufferLine.RightExclusive(), screenLine.Origin(), lineWrapped);
             }
         }
     }
@@ -675,6 +676,179 @@ static bool _IsAllSpaces(const std::wstring_view v)
     // first non-space char is not found (is npos)
     return v.find_first_not_of(L" ") == decltype(v)::npos;
 }
+
+void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+                                        const ROW& r,
+                                        const SHORT limitRight,
+                                        const COORD target,
+                                        const bool lineWrapped)
+{
+    /*auto globalInvert{ _pData->IsScreenReversed() };*/
+
+    SHORT pos = target.X;
+
+    // If we have valid data, let's figure out how to draw it.
+    if (pos < limitRight)
+    {
+        // TODO: MSFT: 20961091 -  This is a perf issue. Instead of rebuilding this and allocing memory to hold the reinterpretation,
+        // we should have an iterator/view adapter for the rendering.
+        // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
+        // Retrieve the iterator for one line of information.
+        size_t cols = 0;
+
+        // Retrieve the first color.
+
+        size_t colorApplies = 0;
+        const auto& charRow = r.GetCharRow();
+        const auto& attrRow = r.GetAttrRow();
+        auto colorIdx = attrRow.FindAttrIndex(pos, &colorApplies);
+        auto color = attrRow.GetAttrByIndex(colorIdx);
+
+        // And hold the point where we should start drawing.
+        auto screenPoint = target;
+
+        // This outer loop will continue until we reach the end of the text we are trying to draw.
+        while (pos < limitRight)
+        {
+            // Hold onto the current run color right here for the length of the outer loop.
+            // We'll be changing the persistent one as we run through the inner loops to detect
+            // when a run changes, but we will still need to know this color at the bottom
+            // when we go to draw gridlines for the length of the run.
+            const auto currentRunColor = color;
+
+            // Update the drawing brushes with our color.
+            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+
+            // Advance the point by however many columns we've just outputted and reset the accumulator.
+            screenPoint.X += gsl::narrow<SHORT>(cols);
+            cols = 0;
+
+            // Hold onto the start of this run iterator and the target location where we started
+            // in case we need to do some special work to paint the line drawing characters.
+            const auto currentRunItStart = pos;
+            const auto currentRunTargetStart = screenPoint;
+
+            // Ensure that our cluster vector is clear.
+            _clusterBuffer.clear();
+
+            // Reset our flag to know when we're in the special circumstance
+            // of attempting to draw only the right-half of a two-column character
+            // as the first item in our run.
+            bool trimLeft = false;
+
+            // Run contains wide character (>1 columns)
+            bool containsWideCharacter = false;
+
+            // This inner loop will accumulate clusters until the color changes.
+            // When the color changes, it will save the new color off and break.
+            do
+            {
+                if (colorApplies <= 0)
+                {
+                    colorIdx = attrRow.FindAttrIndex(pos, &colorApplies);
+                    color = attrRow.GetAttrByIndex(colorIdx);
+                    break;
+
+                    //auto newAttr{ it->TextAttr() };
+                    //// foreground doesn't matter for runs of spaces (!)
+                    //// if we trick it . . . we call Paint far fewer times for cmatrix
+                    //if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    //{
+                    //    color = newAttr;
+                    //    break; // vend this run
+                    //}
+                }
+
+                // Walk through the text data and turn it into rendering clusters.
+                // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+                size_t columnCount = 0;
+
+                const auto dbcsAttr = charRow.DbcsAttrAt(pos);
+                const auto chars = (std::wstring_view)charRow.GlyphAt(pos);
+
+                // If we're on the first cluster to be added and it's marked as "trailing"
+                // (a.k.a. the right half of a two column character), then we need some special handling.
+                if (_clusterBuffer.empty() && dbcsAttr.IsTrailing())
+                {
+                    // If we have room to move to the left to start drawing...
+                    if (screenPoint.X > 0)
+                    {
+                        // Move left to the one so the whole character can be struck correctly.
+                        --screenPoint.X;
+                        // And tell the next function to trim off the left half of it.
+                        trimLeft = true;
+                        // And add one to the number of columns we expect it to take as we insert it.
+                        columnCount = 2;
+                        //columnCount = it->Columns() + 1;
+                        _clusterBuffer.emplace_back(chars, columnCount);
+                    }
+                    else
+                    {
+                        // If we didn't have room, move to the right one and just skip this one.
+                        screenPoint.X++;
+                        continue;
+                    }
+                }
+                // Otherwise if it's not a special case, just insert it as is.
+                else
+                {
+                    columnCount = dbcsAttr.IsLeading() ? 2 : 1;
+                    _clusterBuffer.emplace_back(chars, columnCount);
+                }
+
+                if (columnCount > 1)
+                {
+                    containsWideCharacter = true;
+                }
+
+                // Advance the cluster and column counts.
+                const auto delta = (SHORT)(columnCount > 0 ? columnCount : 1); // prevent infinite loop for no visible columns
+                pos += delta;
+                colorApplies -= delta;
+                cols += columnCount;
+
+            } while (pos < limitRight);
+
+            // Do the painting.
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, lineWrapped));
+
+            // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+            // We're only allowed to draw the grid lines under certain circumstances.
+            if (_pData->IsGridLineDrawingAllowed())
+            {
+                // See GH: 803
+                // If we found a wide character while we looped above, it's possible we skipped over the right half
+                // attribute that could have contained different line information than the left half.
+                if (containsWideCharacter)
+                {
+                    // Start from the original position in this run.
+                    auto lineIt = currentRunItStart;
+                    // Start from the original target in this run.
+                    auto lineTarget = currentRunTargetStart;
+
+                    // We need to go through the iterators again to ensure we get the lines associated with each
+                    // exact column. The code above will condense two-column characters into one, but it is possible
+                    // (like with the IME) that the line drawing characters will vary from the left to right half
+                    // of a wider character.
+                    // We could theoretically pre-pass for this in the loop above to be more efficient about walking
+                    // the iterator, but I fear it would make the code even more confusing than it already is.
+                    // Do that in the future if some WPR trace points you to this spot as super bad.
+                    for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                    {
+                        auto lines = attrRow.GetAttrByColumn(lineIt);
+                        _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
+                    }
+                }
+                else
+                {
+                    // If nothing exciting is going on, draw the lines in bulk.
+                    _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                }
+            }
+        }
+    }
+}
+
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,

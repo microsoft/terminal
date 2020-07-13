@@ -36,6 +36,8 @@ public:
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
 
+    TextAttribute GetAttrByIndex(const size_t index) const;
+
     size_t GetNumberOfRuns() const noexcept;
 
     size_t FindAttrIndex(const size_t index,

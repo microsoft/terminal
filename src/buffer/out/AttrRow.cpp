@@ -108,7 +108,12 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
 {
     THROW_HR_IF(E_INVALIDARG, column >= _cchRowWidth);
     const auto runPos = FindAttrIndex(column, pApplies);
-    return _list.at(runPos).GetAttributes();
+    return GetAttrByIndex(runPos);
+}
+
+TextAttribute ATTR_ROW::GetAttrByIndex(const size_t index) const
+{
+    return _list.at(index).GetAttributes();
 }
 
 // Routine Description:

@@ -99,6 +99,12 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+                                      const ROW& r,
+                                      const SHORT limitRight,
+                                      const COORD target,
+                                      const bool lineWrapped);
+
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                       TextBufferCellIterator it,
                                       const COORD target,
                                       const bool lineWrapped);
