@@ -112,26 +112,16 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 // - This is an iterator over legacy colors only. The text is not modified.
 // Arguments:
 // - legacyAttrs - One legacy color item per cell
-// - unused - useless bool to change function signature for legacyAttrs constructor because the C++ compiler in
-//             razzle cannot distinguish between a std::wstring_view and a std::basic_string_view<WORD>
-// NOTE: This one internally casts to wchar_t because Razzle sees WORD and wchar_t as the same type
-//       despite that Visual Studio build can tell the difference.
-#pragma warning(push)
-#pragma warning(suppress : 26490)
-// Suppresses reinterpret_cast. We're only doing this because Windows doesn't understand the type difference between wchar_t and DWORD.
-// It is not worth trying to separate that out further or risking performance over this particular warning here.
-// TODO GH 2673 - Investigate real wchar_t flag in Windows and resolve this audit issue
-OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs, const bool /*unused*/) noexcept :
+OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs) noexcept :
     _mode(Mode::LegacyAttr),
     _currentView(s_GenerateViewLegacyAttr(legacyAttrs.at(0))),
-    _run(std::wstring_view(reinterpret_cast<const wchar_t*>(legacyAttrs.data()), legacyAttrs.size())),
+    _run(legacyAttrs),
     _attr(InvalidTextAttribute),
     _distance(0),
     _pos(0),
     _fillLimit(0)
 {
 }
-#pragma warning(pop)
 
 // Routine Description:
 // - This is an iterator over legacy cell data. We will use the unicode text and the legacy color attribute.
@@ -198,7 +188,7 @@ OutputCellIterator::operator bool() const noexcept
         }
         case Mode::LegacyAttr:
         {
-            return _pos < std::get<std::wstring_view>(_run).length();
+            return _pos < std::get<std::basic_string_view<WORD>>(_run).length();
         }
         default:
             FAIL_FAST_HR(E_NOTIMPL);
@@ -295,7 +285,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateViewLegacyAttr(std::get<std::wstring_view>(_run).at(_pos));
+            _currentView = s_GenerateViewLegacyAttr(std::get<std::basic_string_view<WORD>>(_run).at(_pos));
         }
         break;
     }
