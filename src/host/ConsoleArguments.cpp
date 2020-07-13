@@ -596,6 +596,11 @@ HANDLE ConsoleArguments::GetVtOutHandle() const
     return _vtOutHandle;
 }
 
+std::wstring ConsoleArguments::GetOriginalCommandLine() const
+{
+    return _commandline;
+}
+
 std::wstring ConsoleArguments::GetClientCommandline() const
 {
     return _clientCommandline;

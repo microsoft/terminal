@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
@@ -636,6 +637,22 @@ const std::string& AppCommandlineArgs::GetExitMessage()
 bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 {
     return _shouldExitEarly;
+}
+
+bool AppCommandlineArgs::HasStartupHandles() const noexcept
+{
+    return _ptySigHandle != 0;
+}
+
+winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection AppCommandlineArgs::GetStartupConnection()
+{
+    uint64_t ptySigHandle = (uint64_t)_ptySigHandle;
+    uint64_t ptyOutHandle = (uint64_t)GetStdHandle(STD_OUTPUT_HANDLE);
+    uint64_t ptyInHandle = (uint64_t)GetStdHandle(STD_INPUT_HANDLE);
+    ptySigHandle;
+    ptyOutHandle;
+    ptyInHandle;
+    return winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection(ptySigHandle, ptyInHandle, ptyOutHandle);
 }
 
 // Method Description:

@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface]
     runtimeclass ConptyConnection : ITerminalConnection
     {
+        ConptyConnection(UInt64 hSig, UInt64 hIn, UInt64 hOut);
         ConptyConnection(String cmdline, String startingDirectory, String startingTitle, IMapView<String,String> environment, UInt32 rows, UInt32 columns, Guid guid);
         Guid Guid { get; };
     };

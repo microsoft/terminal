@@ -43,6 +43,7 @@ public:
     bool HasSignalHandle() const;
     HANDLE GetSignalHandle() const;
 
+    std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
     bool GetForceV1() const;

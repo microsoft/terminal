@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
@@ -244,15 +245,24 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.Size() == 0)
+            if (_startupConnection)
             {
-                _OpenNewTab(nullptr);
+                _OpenNewTab(nullptr, _startupConnection);
 
                 _CompleteInitialization();
             }
             else
             {
-                _ProcessStartupActions(_startupActions, true);
+                if (_startupActions.Size() == 0)
+                {
+                    _OpenNewTab(nullptr);
+
+                    _CompleteInitialization();
+                }
+                else
+                {
+                    _ProcessStartupActions(_startupActions, true);
+                }
             }
         }
     }
@@ -578,12 +588,12 @@ namespace winrt::TerminalApp::implementation
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
     {
         const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
-        _CreateNewTabFromSettings(profileGuid, settings);
+        _CreateNewTabFromSettings(profileGuid, settings, existingConnection);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -624,13 +634,19 @@ namespace winrt::TerminalApp::implementation
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
     // Arguments:
+    // - profileGuid: ID to use to lookup profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
+    // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
+        auto connection = existingConnection;
 
-        // Create a connection based on the values in our settings object.
-        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        if (!connection)
+        {
+            // Create a connection based on the values in our settings object.
+            connection = _CreateConnectionFromSettings(profileGuid, settings);
+        }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings->GlobalSettings().DebugFeaturesEnabled())
@@ -1957,6 +1973,11 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+    }
+
+    void TerminalPage::SetStartupConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection conn)
+    {
+        _startupConnection = conn;
     }
 
     // Method Description:

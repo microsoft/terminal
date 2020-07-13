@@ -2,7 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
+
 #include <winrt/Microsoft.Terminal.Settings.h>
+
 #include "ColorScheme.h"
 #include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"

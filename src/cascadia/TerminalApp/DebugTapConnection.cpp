@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "DebugTapConnection.h"
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;

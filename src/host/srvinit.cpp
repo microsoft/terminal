@@ -297,6 +297,30 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     return S_OK;
 }
 
+// Function Description:
+// - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
+//   module is building with Windows.
+// Return Value:
+// - A pointer to permanent storage containing the path to the console host.
+static wchar_t* _ConsoleHostPath()
+{
+    // Use the magic of magic statics to only calculate this once.
+    static wil::unique_process_heap_string consoleHostPath = []() {
+#ifdef __INSIDE_WINDOWS
+        wil::unique_process_heap_string systemDirectory;
+        wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
+        return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+#else
+        // Use the STL only if we're not building in Windows.
+        std::filesystem::path modulePath{ "D:\\src\\terminal\\src\\cascadia\\CascadiaPackage\\bin\\x64\\Debug\\AppX\\wtd.exe"};
+        //modulePath.replace_filename(L"OpenConsole.exe");
+        auto modulePathAsString{ modulePath.wstring() };
+        return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
+#endif // __INSIDE_WINDOWS
+    }();
+    return consoleHostPath.get();
+}
+
 HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                 const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
                                 HANDLE driverInputEvent,
@@ -308,6 +332,12 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
 
+    wil::unique_handle inPipeTheirSide;
+    wil::unique_handle inPipeOurSide;
+
+    wil::unique_handle outPipeTheirSide;
+    wil::unique_handle outPipeOurSide;
+
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(sa);
     // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
@@ -317,7 +347,88 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-   return ConsoleCreateIoThread(Server, args, driverInputEvent, connectMessage);
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
+    // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
+    const wchar_t* pwszFormat = L"\"%s\" --pty %d";
+    // This is plenty of space to hold the formatted string
+    wchar_t cmd[MAX_PATH]{};
+    swprintf_s(cmd,
+               MAX_PATH,
+               pwszFormat,
+               _ConsoleHostPath(),
+               signalPipeTheirSide.get());
+
+    STARTUPINFOEXW siEx{ 0 };
+    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+    siEx.StartupInfo.hStdInput = inPipeTheirSide.get();
+    siEx.StartupInfo.hStdOutput = outPipeTheirSide.get();
+    siEx.StartupInfo.hStdError = outPipeTheirSide.get();
+    siEx.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    // Only pass the handles we actually want the conhost to know about to it:
+    const size_t INHERITED_HANDLES_COUNT = 3;
+    HANDLE inheritedHandles[INHERITED_HANDLES_COUNT];
+    inheritedHandles[0] = inPipeTheirSide.get();
+    inheritedHandles[1] = outPipeTheirSide.get();
+    inheritedHandles[2] = signalPipeTheirSide.get();
+
+    // Get the size of the attribute list. We need one attribute, the handle list.
+    SIZE_T listSize = 0;
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &listSize);
+
+    // I have to use a HeapAlloc here because kernelbase can't link new[] or delete[]
+    PPROC_THREAD_ATTRIBUTE_LIST attrList = static_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
+    RETURN_IF_NULL_ALLOC(attrList);
+    auto attrListDelete = wil::scope_exit([&]() noexcept {
+        HeapFree(GetProcessHeap(), 0, attrList);
+    });
+
+    siEx.lpAttributeList = attrList;
+    RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &listSize));
+    // Set cleanup data for ProcThreadAttributeList when successful.
+    auto cleanupProcThreadAttribute = wil::scope_exit([&]() noexcept {
+        DeleteProcThreadAttributeList(siEx.lpAttributeList);
+    });
+    RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
+                                                         0,
+                                                         PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                                         inheritedHandles,
+                                                         (INHERITED_HANDLES_COUNT * sizeof(HANDLE)),
+                                                         nullptr,
+                                                         nullptr));
+    wil::unique_process_information pi;
+    // Call create process
+    RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
+                                                cmd,
+                                                nullptr,
+                                                nullptr,
+                                                TRUE,
+                                                EXTENDED_STARTUPINFO_PRESENT,
+                                                nullptr,
+                                                nullptr,
+                                                &siEx.StartupInfo,
+                                                pi.addressof()));
+
+    inPipeTheirSide.release();
+    outPipeTheirSide.release();
+    signalPipeTheirSide.release();
+
+    
+    auto originalCommandLine = args->GetOriginalCommandLine();
+
+    auto str2 = fmt::format(L" --headless --signal {:#x}", (int64_t)signalPipeOurSide.release());
+
+    originalCommandLine = originalCommandLine.append(str2);
+
+    ConsoleArguments args2(originalCommandLine, inPipeOurSide.release(), outPipeOurSide.release());
+    RETURN_IF_FAILED(args2.ParseCommandline());
+
+    return ConsoleCreateIoThread(Server, &args2, driverInputEvent, connectMessage);
 }
 
 [[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)

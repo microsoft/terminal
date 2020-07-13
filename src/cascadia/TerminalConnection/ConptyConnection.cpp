@@ -190,6 +190,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
+    ConptyConnection::ConptyConnection(const uint64_t hSig,
+                                       const uint64_t hIn,
+                                       const uint64_t hOut) :
+        _initialRows{ 25 },
+        _initialCols{ 80},
+        _commandline{ L"" },
+        _startingDirectory{ L""},
+        _startingTitle{ L"" },
+        _environment{ nullptr},
+        _guid{},
+        _u8State{},
+        _u16Str{},
+        _buffer{},
+        _inPipe{ (HANDLE)hIn },
+        _outPipe{(HANDLE)hOut}
+    {
+        hSig; // TODO: this needs to be packed into the hpcon
+        if (_guid == guid{})
+        {
+            _guid = Utils::CreateGuid();
+        }
+    }
+
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
@@ -222,9 +245,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
-        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
-        THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
-        THROW_IF_FAILED(_LaunchAttachedClient());
+        if (!_inPipe)
+        {
+            const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
+            THROW_IF_FAILED(_LaunchAttachedClient());
+        }
 
         _startTime = std::chrono::high_resolution_clock::now();
 

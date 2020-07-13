@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-// pch.h
+// lib/pch.h
 // Header for platform projection include files
 //
 

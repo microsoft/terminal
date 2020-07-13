@@ -56,6 +56,7 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
+        void SetStartupConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection conn);
         void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
         static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
@@ -107,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
         winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
 
@@ -117,8 +119,8 @@ namespace winrt::TerminalApp::implementation
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+        void _OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);

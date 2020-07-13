@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "AppLogic.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
@@ -978,7 +979,15 @@ namespace winrt::TerminalApp::implementation
         if (result == 0)
         {
             _appArgs.ValidateStartupCommands();
-            _root->SetStartupActions(_appArgs.GetStartupActions());
+            if (_appArgs.HasStartupHandles())
+            {
+                auto conn = _appArgs.GetStartupConnection();
+                _root->SetStartupConnection(conn);
+            }
+            else
+            {
+                _root->SetStartupActions(_appArgs.GetStartupActions());
+            }
         }
 
         return result;

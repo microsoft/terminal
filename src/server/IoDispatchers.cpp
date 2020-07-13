@@ -158,8 +158,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
     Globals& Globals = ServiceLocator::LocateGlobals();
-    if (!Globals.handoffTarget)
-    /*if (!ConsoleConnectionDeservesVisibleWindow(&Cac))*/
+    if (!Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
         
 

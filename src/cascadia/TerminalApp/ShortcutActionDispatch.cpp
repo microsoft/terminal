@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "lib/pch.h"
 #include "ShortcutActionDispatch.h"
 
 #include "ShortcutActionDispatch.g.cpp"

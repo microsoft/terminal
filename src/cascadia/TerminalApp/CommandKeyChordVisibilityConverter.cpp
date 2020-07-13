@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "lib/pch.h"
 #include "CommandKeyChordVisibilityConverter.h"
 #include "CommandKeyChordVisibilityConverter.g.cpp"
 
