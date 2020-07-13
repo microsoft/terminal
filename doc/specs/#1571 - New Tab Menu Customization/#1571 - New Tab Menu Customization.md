@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-6-02
+last updated: 2020-07-13
 issue id: 1571
 ---
 
@@ -121,15 +121,33 @@ _(no change expected)_
 ## Potential Issues
 
 Currently, the `openTab` and `splitPane` keybindings will accept a `index`
-parameter to say "create a new tab/pane with the profile at index N in the new
-tab dropdown". With this change, the N'th entry in the menu won't always be a
-profile. It might be a folder with more options, or it might be an action (that
-might not be opening a new tab/pane at all).
+parameter to say either:
+* "Create a new tab/pane with the N'th profile"
+* "Create a new tab/pane with the profile at index N in the new
+tab dropdown".
 
-Given all the above scenarios, I'm proposing the following behavior:
+These two were previously synonymous, as the N'th profile was always the N'th in
+the dropdown. However, with this change, we'll be changing the meaning of that
+argument to mean explicitly the first option - "Open a tab/pane with the N'th
+profile".
 
-For a `newTab` or `splitPane` action with an `"index":N` parameter, if the Nth
-top-level entry in the new tab menu is a:
+A previous version of this spec considered changing the meaning of that
+parameter to mean "open the entry at index N", the second option. However, in
+[Command Palette, Addendum 1], we found that naming that command would become
+unnecessarily complex.
+
+To cover that above scenario, we could consider adding an `index` parameter to
+the `openNewTabDropdown` action. If specified, that would open either the N'th
+action in the dropdown (ignoring seperators), or open the dropdown with the n'th
+item selected.
+
+The N'th entry in the menu won't always be a profile: it might be a folder with
+more options, or it might be an action (that might not be opening a new tab/pane
+at all).
+
+Given all the above scenarios, `openNewTabDropdown` with an `"index":N`
+parameter will behave in the following ways. If the Nth top-level entry in the
+new tab menu is a:
 * `"type":"profile"`: perform the `newTab` or `splitPane` action with that profile.
 * `"type":"folder"`: Focus the first element in the sub menu, so the user could
   navigate it with the keyboard.
@@ -140,7 +158,7 @@ top-level entry in the new tab menu is a:
 So for example:
 
 ```
-New Tab Button
+New Tab Button ▽
 ├─ Folder 1
 │  └─ Profile A
 │  └─ Action B
@@ -152,16 +170,25 @@ New Tab Button
 └─ Profile F
 ```
 
-* <kbd>ctrl+shift+1</kbd> focuses "Profile A", but the user needs to press enter/space to creates a new tab/split
-* <kbd>ctrl+shift+2</kbd> focuses "Profile C", but the user needs to press enter/space to creates a new tab/split
+And assuming the user has bound:
+```json
+{
+  "bindings":
+  [
+    { "command": { "action": "openNewTabDropdown", "index": 0 }, "keys": "ctrl+shift+1" },
+    { "command": { "action": "openNewTabDropdown", "index": 1 }, "keys": "ctrl+shift+2" },
+    { "command": { "action": "openNewTabDropdown", "index": 2 }, "keys": "ctrl+shift+3" },
+    { "command": { "action": "openNewTabDropdown", "index": 3 }, "keys": "ctrl+shift+4" },
+  ]
+}
+```
+
+* <kbd>ctrl+shift+1</kbd> focuses "Profile A", but the user needs to press
+  enter/space to creates a new tab/split
+* <kbd>ctrl+shift+2</kbd> focuses "Profile C", but the user needs to press
+  enter/space to creates a new tab/split
 * <kbd>ctrl+shift+3</kbd> performs Action E
 * <kbd>ctrl+shift+4</kbd> Creates a new tab/split with Profile F
-
-> 👉 NOTE: A previous version of this spec considered leaving the `index`
-> parameter to work with  profiles _in the order specified in the user's
-> settings_, not the order they appear in this dropdown. Since a user might have
-> nested profiles in this dropdown, picking either a depth-first or
-> breadth-first ordering would be confusing.
 
 ## Future considerations
 
@@ -175,7 +202,18 @@ New Tab Button
   - A `ShortcutAction` for running a `command` from the command palette
   - A `{ "type": "command", "command": "<command name>" }` type of entry, that
     automatically uses the command's name and icon for the entry in the entry.
+* A similar structure could potemtially also be used for customizing the context
+  menu within a control, or the context menu for the tab.
+  - In both of those cases, it might be important to somehow refer to the
+    context of the current tab or control in the json. Think for example about
+    "Close tab" or "Close other tabs" - currently, those work by _knowing_ which
+    tab the "action" is specifed for, not by actually using a `closeTab` action.
+    In the future, they might need to be implemented as something like
+    - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
+    - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
+    - Close Tabs to the Right: `{ "action": "closeTabs", "after": "${selectedTab.index}" }`
 
 
 <!-- Footnotes -->
 [#2046]: https://github.com/microsoft/terminal/issues/2046
+[Command Palette, Addendum 1]: https://github.com/microsoft/terminal/blob/master/doc/specs/%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
