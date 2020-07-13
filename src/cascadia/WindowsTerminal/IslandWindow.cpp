@@ -459,17 +459,6 @@ void IslandWindow::ToggleFocusMode()
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleBorderless()
-{
-    _SetIsBorderless(!_borderless);
-}
-
-// Method Description:
-// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
 void IslandWindow::ToggleFullscreen()
 {
     _SetIsFullscreen(!_fullscreen);
