@@ -1121,6 +1121,16 @@ namespace winrt::TerminalApp::implementation
         return RS_(L"ApplicationVersionUnknown");
     }
 
+    bool AppLogic::FocusMode() const
+    {
+        return _root ? _root->FocusMode() : false;
+    }
+
+    bool AppLogic::Fullscreen() const
+    {
+        return _root ? _root->Fullscreen() : false;
+    }
+
     bool AppLogic::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;

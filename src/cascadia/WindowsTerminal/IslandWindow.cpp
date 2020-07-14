@@ -443,25 +443,37 @@ void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::Ele
 }
 
 // Method Description:
-// - Toggles our focus mode state. See _SetIsBorderless for more details.
+// - Updates our focus mode state. See _SetIsBorderless for more details.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleFocusMode()
+void IslandWindow::FocusModeChanged(const bool focusMode)
 {
-    _SetIsBorderless(!_borderless);
+    // Do nothing if the value was unchanged.
+    if (focusMode == _borderless)
+    {
+        return;
+    }
+
+    _SetIsBorderless(focusMode);
 }
 
 // Method Description:
-// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// - Updates our fullscreen state. See _SetIsFullscreen for more details.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleFullscreen()
+void IslandWindow::FullscreenChanged(const bool fullscreen)
 {
-    _SetIsFullscreen(!_fullscreen);
+    // Do nothing if the value was unchanged.
+    if (fullscreen == _fullscreen)
+    {
+        return;
+    }
+
+    _SetIsFullscreen(fullscreen);
 }
 
 // Method Description:
@@ -480,13 +492,12 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
     const auto hwnd = GetHandle();
     if (hwnd)
     {
-        const til::rectangle windowPos{ GetWindowRect() };
         SetWindowPos(hwnd,
                      _alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST,
-                     windowPos.left<int>(),
-                     windowPos.top<int>(),
-                     windowPos.width<int>(),
-                     windowPos.height<int>(),
+                     0, // the window dimensions are unused, because we're passing SWP_NOSIZE
+                     0,
+                     0,
+                     0,
                      SWP_NOMOVE | SWP_NOSIZE);
     }
 }

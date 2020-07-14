@@ -1918,7 +1918,7 @@ namespace winrt::TerminalApp::implementation
         // Reload the current value of alwaysOnTop from the settings file. This
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
-        _isAlwayOnTop = _settings->GlobalSettings().AlwaysOnTop();
+        _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
@@ -1976,7 +1976,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Toggles borderless mode. Hides the tab row, and raises our
-    //   ToggleFocusMode event.
+    //   FocusModeChanged event.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1984,13 +1984,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleFocusMode()
     {
         _isInFocusMode = !_isInFocusMode;
-        _toggleFocusModeHandlers(*this, nullptr);
         _UpdateTabView();
+        _focusModeChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
     // - Toggles fullscreen mode. Hides the tab row, and raises our
-    //   ToggleFullscreen event.
+    //   FullscreenChanged event.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1998,8 +1998,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleFullscreen()
     {
         _isFullscreen = !_isFullscreen;
-        _toggleFullscreenHandlers(*this, nullptr);
         _UpdateTabView();
+        _fullscreenChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2010,7 +2010,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleAlwaysOnTop()
     {
-        _isAlwayOnTop = !_isAlwayOnTop;
+        _isAlwaysOnTop = !_isAlwaysOnTop;
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
@@ -2202,6 +2202,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalPage::FocusMode() const
+    {
+        return _isInFocusMode;
+    }
+
+    bool TerminalPage::Fullscreen() const
+    {
+        return _isFullscreen;
+    }
     // Method Description:
     // - Returns true if we're currently in "Always on top" mode. When we're in
     //   always on top mode, the window should be on top of all other windows.
@@ -2213,7 +2222,7 @@ namespace winrt::TerminalApp::implementation
     // - true if we should be in "always on top" mode
     bool TerminalPage::AlwaysOnTop() const
     {
-        return _isAlwayOnTop;
+        return _isAlwaysOnTop;
     }
 
     // -------------------------------- WinRT Events ---------------------------------
@@ -2222,7 +2231,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFocusMode, _toggleFocusModeHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::AlwaysOnTopChangedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

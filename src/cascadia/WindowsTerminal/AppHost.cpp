@@ -157,8 +157,8 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
-    _logic.ToggleFocusMode({ this, &AppHost::_ToggleFocusMode });
+    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
+    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
 
     _logic.Create();
@@ -355,20 +355,20 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleFocusMode(const winrt::Windows::Foundation::IInspectable&,
-                               const winrt::TerminalApp::ToggleFocusModeEventArgs&)
+void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFocusMode();
+    _window->FocusModeChanged(_logic.FocusMode());
 }
 
-void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFullscreen();
+    _window->FullscreenChanged(_logic.Fullscreen());
 }
 
 void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
-                                  const winrt::TerminalApp::AlwaysOnTopChangedEventArgs&)
+                                  const winrt::Windows::Foundation::IInspectable&)
 {
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
