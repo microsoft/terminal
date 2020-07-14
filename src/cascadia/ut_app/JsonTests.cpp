@@ -102,7 +102,7 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(ARGB(0, 0xFF, 0xFF, 0xFF), scheme.GetCursorColor());
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
-        auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+        auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], COLOR_TABLE_SIZE);
         Utils::InitializeCampbellColorTable(campbellSpan);
         Utils::SetColorTableAlpha(campbellSpan, 0);
 
