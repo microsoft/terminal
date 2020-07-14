@@ -23,66 +23,13 @@
 #include "JsonUtils.h"
 #include "TerminalWarnings.h"
 
+#include "TerminalSettingsSerializationHelpers.h"
+
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
 //   class that implements IActionArgs
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
-
-// Possible Direction values
-// TODO:GH#2550/#3475 - move these to a centralized deserializing place
-JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
-{
-    static constexpr std::string_view LeftString{ "left" };
-    static constexpr std::string_view RightString{ "right" };
-    static constexpr std::string_view UpString{ "up" };
-    static constexpr std::string_view DownString{ "down" };
-
-    JSON_MAPPINGS(4) = {
-        pair_type{ LeftString, ::winrt::TerminalApp::Direction::Left },
-        pair_type{ RightString, ::winrt::TerminalApp::Direction::Right },
-        pair_type{ UpString, ::winrt::TerminalApp::Direction::Up },
-        pair_type{ DownString, ::winrt::TerminalApp::Direction::Down },
-    };
-};
-
-// Possible SplitState values
-// TODO:GH#2550/#3475 - move these to a centralized deserializing place
-JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
-{
-    static constexpr std::string_view VerticalKey{ "vertical" };
-    static constexpr std::string_view HorizontalKey{ "horizontal" };
-    static constexpr std::string_view AutomaticKey{ "auto" };
-
-    JSON_MAPPINGS(3) = {
-        pair_type{ VerticalKey, ::winrt::TerminalApp::SplitState::Vertical },
-        pair_type{ HorizontalKey, ::winrt::TerminalApp::SplitState::Horizontal },
-        pair_type{ AutomaticKey, ::winrt::TerminalApp::SplitState::Automatic },
-    };
-};
-
-// Possible SplitType values
-JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitType)
-{
-    static constexpr std::string_view DuplicateKey{ "duplicate" };
-    JSON_MAPPINGS(1) = {
-        pair_type{ DuplicateKey, ::winrt::TerminalApp::SplitType::Duplicate },
-    };
-};
-
-JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
-{
-    // Possible SettingsTarget values
-    static constexpr std::string_view SettingsFileString{ "settingsFile" };
-    static constexpr std::string_view DefaultsFileString{ "defaultsFile" };
-    static constexpr std::string_view AllFilesString{ "allFiles" };
-
-    JSON_MAPPINGS(3) = {
-        pair_type{ SettingsFileString, ::winrt::TerminalApp::SettingsTarget::SettingsFile },
-        pair_type{ DefaultsFileString, ::winrt::TerminalApp::SettingsTarget::DefaultsFile },
-        pair_type{ AllFilesString, ::winrt::TerminalApp::SettingsTarget::AllFiles },
-    };
-};
 
 namespace winrt::TerminalApp::implementation
 {

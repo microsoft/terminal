@@ -88,6 +88,9 @@
     <ClInclude Include="../GlobalAppSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h">
+      <Filter>settings</Filter>
+    </ClInclude>
     <ClInclude Include="../KeyChordSerialization.h">
       <Filter>settings</Filter>
     </ClInclude>

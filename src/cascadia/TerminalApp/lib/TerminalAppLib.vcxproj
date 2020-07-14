@@ -109,6 +109,7 @@
     <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../DefaultProfileUtils.h" />
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IDynamicProfileGenerator.h" />
     <ClInclude Include="../PowershellCoreProfileGenerator.h" />

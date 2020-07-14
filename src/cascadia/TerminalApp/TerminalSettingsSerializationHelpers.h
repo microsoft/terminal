@@ -243,3 +243,42 @@ struct JsonUtils::ConversionTrait<LaunchPosition>
         return json.isString();
     }
 };
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
+{
+    JSON_MAPPINGS(4) = {
+        pair_type{ "left", ::winrt::TerminalApp::Direction::Left },
+        pair_type{ "right", ::winrt::TerminalApp::Direction::Right },
+        pair_type{ "up", ::winrt::TerminalApp::Direction::Up },
+        pair_type{ "down", ::winrt::TerminalApp::Direction::Down },
+    };
+};
+
+// Possible SplitState values
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "vertical", ::winrt::TerminalApp::SplitState::Vertical },
+        pair_type{ "horizontal", ::winrt::TerminalApp::SplitState::Horizontal },
+        pair_type{ "auto", ::winrt::TerminalApp::SplitState::Automatic },
+    };
+};
+
+// Possible SplitType values
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitType)
+{
+    JSON_MAPPINGS(1) = {
+        pair_type{ "duplicate", ::winrt::TerminalApp::SplitType::Duplicate },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "settingsFile", ::winrt::TerminalApp::SettingsTarget::SettingsFile },
+        pair_type{ "defaultsFile", ::winrt::TerminalApp::SettingsTarget::DefaultsFile },
+        pair_type{ "allFiles", ::winrt::TerminalApp::SettingsTarget::AllFiles },
+    };
+};
+
