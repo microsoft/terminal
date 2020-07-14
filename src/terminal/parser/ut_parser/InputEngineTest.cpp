@@ -369,7 +369,7 @@ bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipul
     for (size_t i = 0; i < parameters.size(); i++)
     {
         unsigned short actual;
-        VERIFY_SUCCEEDED(SizeTToUShort(gsl::at(parameters, i), &actual));
+        VERIFY_SUCCEEDED(SizeTToUShort(til::at(parameters, i), &actual));
         VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
     }
     return true;

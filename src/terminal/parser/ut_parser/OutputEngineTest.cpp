@@ -1557,14 +1557,14 @@ class StateMachineExternalTest final
 
             if (i < expectedOptions.size())
             {
-                expectedOption = gsl::at(expectedOptions, i);
+                expectedOption = til::at(expectedOptions, i);
             }
 
-            optionsValid = expectedOption == gsl::at(dispatch._options, i);
+            optionsValid = expectedOption == til::at(dispatch._options, i);
 
             if (!optionsValid)
             {
-                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, gsl::at(dispatch._options, i)));
+                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, til::at(dispatch._options, i)));
                 break;
             }
         }

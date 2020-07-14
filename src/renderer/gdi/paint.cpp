@@ -316,7 +316,7 @@ using namespace Microsoft::Console::Render;
         // Convert data from clusters into the text array and the widths array.
         for (size_t i = 0; i < cchLine; i++)
         {
-            const auto& cluster = gsl::at(clusters, i);
+            const auto& cluster = til::at(clusters, i);
 
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.

@@ -403,9 +403,9 @@ bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
 
     // If we have more than one intermediate, the second intermediate forms part of
     // the charset identifier. Otherwise it's identified by just the final character.
-    const auto charset = intermediates.size() > 1 ? std::make_pair(gsl::at(intermediates, 1), wch) : std::make_pair(wch, L'\0');
+    const auto charset = intermediates.size() > 1 ? std::make_pair(til::at(intermediates, 1), wch) : std::make_pair(wch, L'\0');
 
-    switch (gsl::at(intermediates, 0))
+    switch (til::at(intermediates, 0))
     {
     case L'(':
         success = _dispatch->Designate94Charset(0, charset);
@@ -1628,7 +1628,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            auto& value = gsl::at(colorValues, component);
+            auto& value = til::at(colorValues, component);
             for (size_t i = 0; i < 3; i++)
             {
                 const wchar_t wch = *curr++;

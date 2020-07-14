@@ -250,7 +250,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     if (newAttrs.size() == 1)
     {
         // Get the new color attribute we're trying to apply
-        const TextAttribute NewAttr = gsl::at(newAttrs, 0).GetAttributes();
+        const TextAttribute NewAttr = til::at(newAttrs, 0).GetAttributes();
 
         // If the existing run was only 1 element...
         // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
