@@ -45,6 +45,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
 
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">
@@ -65,11 +76,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
 
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
+
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme) -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
+
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -187,16 +214,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 Visibility="{x:Bind KeyChordText,
                                              Mode=OneWay,
                                              Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                Background="{ThemeResource SystemControlForegroundBaseLowBrush}"
-                                BorderThickness="1"
-                                CornerRadius="1"
+                                Style="{ThemeResource KeyChordBorderStyle}"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
 
                                 <TextBlock
-                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                    Style="{ThemeResource KeyChordTextBlockStyle}"
                                     FontSize="12"
                                     Text="{x:Bind KeyChordText, Mode=OneWay}" />
                             </Border>
