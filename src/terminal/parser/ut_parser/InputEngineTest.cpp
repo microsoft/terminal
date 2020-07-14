@@ -327,7 +327,7 @@ public:
 
     virtual bool WriteCtrlKey(const KeyEvent& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+                                    const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
     virtual bool WriteString(const std::wstring_view string) override;
 
     virtual bool MoveCursor(const size_t row,
@@ -362,14 +362,14 @@ bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
 }
 
 bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                              const std::basic_string_view<size_t> parameters)
+                                              const gsl::span<const size_t> parameters)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
     for (size_t i = 0; i < parameters.size(); i++)
     {
         unsigned short actual;
-        VERIFY_SUCCEEDED(SizeTToUShort(parameters.at(i), &actual));
+        VERIFY_SUCCEEDED(SizeTToUShort(gsl::at(parameters, i), &actual));
         VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
     }
     return true;

@@ -303,7 +303,7 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                const std::basic_string_view<wchar_t> /*intermediates*/)
+                                                const gsl::span<const wchar_t> /*intermediates*/)
 {
     if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
     {
@@ -345,8 +345,8 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionVt52EscDispatch(const wchar_t /*wch*/,
-                                                    const std::basic_string_view<wchar_t> /*intermediates*/,
-                                                    const std::basic_string_view<size_t> /*parameters*/) noexcept
+                                                    const gsl::span<const wchar_t> /*intermediates*/,
+                                                    const gsl::span<const size_t> /*parameters*/) noexcept
 {
     // VT52 escape sequences are not used in the input state machine.
     return false;
@@ -363,8 +363,8 @@ bool InputStateMachineEngine::ActionVt52EscDispatch(const wchar_t /*wch*/,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                const std::basic_string_view<wchar_t> intermediates,
-                                                const std::basic_string_view<size_t> parameters)
+                                                const gsl::span<const wchar_t> intermediates,
+                                                const gsl::span<const size_t> parameters)
 {
     const auto actionCode = static_cast<CsiActionCodes>(wch);
 
@@ -389,13 +389,13 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     KeyEvent key;
 
     // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
+    const auto remainingArgs = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     bool success = false;
     // Handle intermediate characters, if any
     if (!intermediates.empty())
     {
-        switch (static_cast<CsiIntermediateCodes>(intermediates.at(0)))
+        switch (static_cast<CsiIntermediateCodes>(gsl::at(intermediates, 0)))
         {
         case CsiIntermediateCodes::MOUSE_SGR:
         {
@@ -522,7 +522,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
-                                                const std::basic_string_view<size_t> /*parameters*/)
+                                                const gsl::span<const size_t> /*parameters*/)
 {
     if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
     {
@@ -800,12 +800,12 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - actionCode - the actionCode for the sequence we're operating on.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const CsiActionCodes actionCode) noexcept
 {
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
     {
-        modifiers = _GetModifier(parameters.at(1));
+        modifiers = _GetModifier(gsl::at(parameters, 1));
     }
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
@@ -829,12 +829,12 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_stri
 // - parameters - the set of parameters to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept
 {
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
     {
-        modifiers = _GetModifier(parameters.at(1));
+        modifiers = _GetModifier(gsl::at(parameters, 1));
     }
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
@@ -858,7 +858,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
 // - parameters - the set of parameters to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const gsl::span<const size_t> parameters) noexcept
 {
     DWORD modifiers = 0;
     if (parameters.size() == 3)
@@ -922,7 +922,7 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // Return Value:
 // true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
-                                                         const std::basic_string_view<size_t> parameters,
+                                                         const gsl::span<const size_t> parameters,
                                                          DWORD& buttonState,
                                                          DWORD& eventFlags) noexcept
 {
@@ -1024,7 +1024,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
 // - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_t> parameters, short& vkey) const
+bool InputStateMachineEngine::_GetGenericVkey(const gsl::span<const size_t> parameters, short& vkey) const
 {
     vkey = 0;
     if (parameters.empty())
@@ -1200,7 +1200,7 @@ void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()>
 // - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                                          unsigned int& function) const noexcept
 {
     bool success = false;
@@ -1234,7 +1234,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 // - column - Receives the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
+bool InputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
                                              size_t& line,
                                              size_t& column) const noexcept
 {
@@ -1283,7 +1283,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
 // - column - Receives the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<size_t> parameters,
+bool InputStateMachineEngine::_GetSGRXYPosition(const gsl::span<const size_t> parameters,
                                                 size_t& line,
                                                 size_t& column) const noexcept
 {
@@ -1322,7 +1322,7 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
 // - key: receives the values of the deserialized KeyEvent.
 // Return Value:
 // - true if we successfully parsed the key event.
-bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<size_t> parameters,
+bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> parameters,
                                                 KeyEvent& key)
 {
     // Sequences are formatted as follows:
@@ -1347,22 +1347,22 @@ bool InputStateMachineEngine::_GenerateWin32Key(const std::basic_string_view<siz
     switch (parameters.size())
     {
     case 6:
-        key.SetRepeatCount(::base::saturated_cast<WORD>(parameters.at(5)));
+        key.SetRepeatCount(::base::saturated_cast<WORD>(gsl::at(parameters, 5)));
         [[fallthrough]];
     case 5:
-        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(parameters.at(4)));
+        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(gsl::at(parameters, 4)));
         [[fallthrough]];
     case 4:
-        key.SetKeyDown(static_cast<bool>(parameters.at(3)));
+        key.SetKeyDown(static_cast<bool>(gsl::at(parameters, 3)));
         [[fallthrough]];
     case 3:
-        key.SetCharData(static_cast<wchar_t>(parameters.at(2)));
+        key.SetCharData(static_cast<wchar_t>(gsl::at(parameters, 2)));
         [[fallthrough]];
     case 2:
-        key.SetVirtualScanCode(::base::saturated_cast<WORD>(parameters.at(1)));
+        key.SetVirtualScanCode(::base::saturated_cast<WORD>(gsl::at(parameters, 1)));
         [[fallthrough]];
     case 1:
-        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(parameters.at(0)));
+        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(gsl::at(parameters, 0)));
         break;
     }
 

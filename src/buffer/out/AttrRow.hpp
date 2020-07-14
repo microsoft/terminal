@@ -46,7 +46,7 @@ public:
 
     void Resize(const size_t newWidth);
 
-    [[nodiscard]] HRESULT InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
+    [[nodiscard]] HRESULT InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
                                          const size_t iStart,
                                          const size_t iEnd,
                                          const size_t cBufferWidth);
