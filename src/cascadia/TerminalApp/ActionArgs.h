@@ -405,7 +405,7 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SetTabColorArgs>();
-			if (const auto temp{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, ColorKey) })
+            if (const auto temp{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, ColorKey) })
             {
                 args->_TabColor = static_cast<uint32_t>(*temp);
             }

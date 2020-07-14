@@ -243,4 +243,3 @@ struct JsonUtils::ConversionTrait<LaunchPosition>
         return json.isString();
     }
 };
-
