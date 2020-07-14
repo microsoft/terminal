@@ -21,7 +21,6 @@ Abstract:
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include <winrt/TerminalApp.h>
 
-// Explicit specializations for JSON conversion
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::CursorStyle)
 {
     static constexpr std::array<pair_type, 5> mappings = {
@@ -78,12 +77,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::TextAntialiasingMode)
     };
 };
 
-// Method Description:
-// - Helper function for converting a user-specified closeOnExit value to its corresponding enum
-// Arguments:
-// - The value from the profiles.json file
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
+// Type Description:
+// - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
 {
     JSON_MAPPINGS(3) = {
@@ -194,18 +189,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
 //   (,): both x and y are set to default
 //   (abc, 100): if a value is not valid, we treat it as default
 //   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
-// Arguments:
-// - initialPosition: the initial position string from json
-//   initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
-// Return Value:
-// - None
 template<>
-struct JsonUtils::ConversionTrait<LaunchPosition>
+struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
 {
-    LaunchPosition FromJson(const Json::Value& json)
+    ::TerminalApp::LaunchPosition FromJson(const Json::Value& json)
     {
-        LaunchPosition ret;
+        ::TerminalApp::LaunchPosition ret;
         std::string initialPosition{ json.asString() };
         static constexpr char singleCharDelim = ',';
         std::stringstream tokenStream(initialPosition);
@@ -248,10 +237,10 @@ struct JsonUtils::ConversionTrait<LaunchPosition>
 JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
 {
     JSON_MAPPINGS(4) = {
-        pair_type{ "left", ::winrt::TerminalApp::Direction::Left },
-        pair_type{ "right", ::winrt::TerminalApp::Direction::Right },
-        pair_type{ "up", ::winrt::TerminalApp::Direction::Up },
-        pair_type{ "down", ::winrt::TerminalApp::Direction::Down },
+        pair_type{ "left", TargetType::Left },
+        pair_type{ "right", TargetType::Right },
+        pair_type{ "up", TargetType::Up },
+        pair_type{ "down", TargetType::Down },
     };
 };
 
@@ -259,9 +248,9 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
 {
     JSON_MAPPINGS(3) = {
-        pair_type{ "vertical", ::winrt::TerminalApp::SplitState::Vertical },
-        pair_type{ "horizontal", ::winrt::TerminalApp::SplitState::Horizontal },
-        pair_type{ "auto", ::winrt::TerminalApp::SplitState::Automatic },
+        pair_type{ "vertical", TargetType::Vertical },
+        pair_type{ "horizontal", TargetType::Horizontal },
+        pair_type{ "auto", TargetType::Automatic },
     };
 };
 
@@ -269,15 +258,15 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitType)
 {
     JSON_MAPPINGS(1) = {
-        pair_type{ "duplicate", ::winrt::TerminalApp::SplitType::Duplicate },
+        pair_type{ "duplicate", TargetType::Duplicate },
     };
 };
 
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
 {
     JSON_MAPPINGS(3) = {
-        pair_type{ "settingsFile", ::winrt::TerminalApp::SettingsTarget::SettingsFile },
-        pair_type{ "defaultsFile", ::winrt::TerminalApp::SettingsTarget::DefaultsFile },
-        pair_type{ "allFiles", ::winrt::TerminalApp::SettingsTarget::AllFiles },
+        pair_type{ "settingsFile", TargetType::SettingsFile },
+        pair_type{ "defaultsFile", TargetType::DefaultsFile },
+        pair_type{ "allFiles", TargetType::AllFiles },
     };
 };
