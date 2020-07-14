@@ -214,9 +214,10 @@ void Renderer::TriggerRedraw(const Viewport& region)
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        for (auto pEngine : _rgpEngines)
+        {
             LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
-        });
+        }
 
         _NotifyPaintFrame();
     }
