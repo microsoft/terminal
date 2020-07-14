@@ -281,4 +281,3 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
         pair_type{ "allFiles", ::winrt::TerminalApp::SettingsTarget::AllFiles },
     };
 };
-
