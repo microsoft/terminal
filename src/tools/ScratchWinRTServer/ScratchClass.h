@@ -5,11 +5,16 @@ namespace winrt::ScratchWinRTServer::implementation
 {
     struct ScratchClass : public ScratchClassT<ScratchClass>
     {
-        ScratchClass() = default;
+        ScratchClass();
         hstring DoTheThing()
         {
             return L"Hello there";
         }
+
+        Windows::UI::Xaml::Controls::Button MyButton();
+
+    private:
+        Windows::UI::Xaml::Controls::Button _MyButton;
     };
 }
 

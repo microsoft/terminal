@@ -6,5 +6,6 @@ namespace ScratchWinRTServer
     {
         ScratchClass();
         String DoTheThing();
+        Windows.UI.Xaml.Controls.Button MyButton { get; };
     };
 }
