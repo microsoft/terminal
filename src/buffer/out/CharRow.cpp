@@ -233,7 +233,9 @@ void CharRow::ClearGlyph(const size_t column)
 // - Note: will throw exception if column is out of bounds
 const CharRow::reference CharRow::GlyphAt(const size_t column) const
 {
+#ifdef DBG
     THROW_HR_IF(E_INVALIDARG, column >= _data.size());
+#endif
     return { const_cast<CharRow&>(*this), column };
 }
 
@@ -246,7 +248,9 @@ const CharRow::reference CharRow::GlyphAt(const size_t column) const
 // - Note: will throw exception if column is out of bounds
 CharRow::reference CharRow::GlyphAt(const size_t column)
 {
+#ifdef DBG
     THROW_HR_IF(E_INVALIDARG, column >= _data.size());
+#endif
     return { *this, column };
 }
 
