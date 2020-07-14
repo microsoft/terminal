@@ -850,6 +850,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleRetroEffect({ this, &TerminalPage::_HandleToggleRetroEffect });
+        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
@@ -911,7 +912,7 @@ namespace winrt::TerminalApp::implementation
         // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (!_isFullscreen) &&
+        const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
                                (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
                                 _settings->GlobalSettings().AlwaysShowTabs());
@@ -1967,6 +1968,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Toggles borderless mode. Hides the tab row, and raises our
+    //   ToggleFocusMode event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleFocusMode()
+    {
+        _toggleFocusModeHandlers(*this, nullptr);
+
+        _isInFocusMode = !_isInFocusMode;
+
+        _UpdateTabView();
+    }
+
+    // Method Description:
     // - Toggles fullscreen mode. Hides the tab row, and raises our
     //   ToggleFullscreen event.
     // Arguments:
@@ -2176,5 +2193,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFocusMode, _toggleFocusModeHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 }

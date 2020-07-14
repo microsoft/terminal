@@ -345,6 +345,17 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the faintness of the following text.
+// Arguments:
+// - isFaint: If true, we'll make the text faint. Otherwise we'll remove the faintness.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetFaint(const bool isFaint) noexcept
+{
+    return _Write(isFaint ? "\x1b[2m" : "\x1b[22m");
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the underline of the following text.
 // Arguments:
 // - isUnderlined: If true, we'll underline the text. Otherwise we'll remove the underline.

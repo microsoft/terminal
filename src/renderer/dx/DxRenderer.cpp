@@ -1631,8 +1631,7 @@ CATCH_RETURN()
     const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
     const bool forceOpaqueBG = usingCleartype && !usingTransparency;
 
-    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
-    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
+    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);

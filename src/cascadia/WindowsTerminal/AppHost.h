@@ -33,6 +33,8 @@ private:
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
+    void _ToggleFocusMode(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::TerminalApp::ToggleFocusModeEventArgs& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);

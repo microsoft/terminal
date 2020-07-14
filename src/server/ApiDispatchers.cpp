@@ -408,6 +408,8 @@
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
+    const auto requiresVtQuirk{ m->GetProcessHandle()->GetShimPolicy().IsVtColorQuirkRequired() };
+
     // We have to hold onto the HR from the call and return it.
     // We can't return some other error after the actual API call.
     // This is because the write console function is allowed to write part of the string and then return an error.
@@ -418,7 +420,7 @@
         const std::wstring_view buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, waiter);
+        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
 
         // We must set the reply length in bytes. Convert back from characters.
         LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
@@ -428,7 +430,7 @@
         const std::string_view buffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, waiter);
+        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
 
         // Reply length is already in bytes (chars), don't need to convert.
         cbRead = cchInputRead;

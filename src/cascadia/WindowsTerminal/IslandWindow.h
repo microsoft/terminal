@@ -32,6 +32,7 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
+    void ToggleFocusMode();
     void ToggleFullscreen();
 
 #pragma endregion
@@ -60,13 +61,17 @@ protected:
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
+    bool _borderless{ false };
     bool _fullscreen{ false };
     RECT _fullscreenWindowSize;
     RECT _nonFullscreenWindowSize;
 
+    virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
+
+    LONG _getDesiredWindowStyle() const;
 
 private:
     // This minimum width allows for width the tabs fit

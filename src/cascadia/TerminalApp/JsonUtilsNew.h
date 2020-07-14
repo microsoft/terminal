@@ -20,9 +20,15 @@ Author(s):
 
 namespace winrt
 {
-    // If we don't use winrt, nobody will include the ConversionTrait for winrt::guid.
-    // If nobody includes it, this forward declaration will suffice.
+    // If we don't use winrt, nobody will include the ConversionTraits for winrt stuff.
+    // If nobody includes it, these forward declarations will suffice.
     struct guid;
+    struct hstring;
+    namespace Windows::Foundation
+    {
+        template<typename T>
+        struct IReference;
+    }
 }
 
 namespace TerminalApp::JsonUtils
@@ -45,12 +51,21 @@ namespace TerminalApp::JsonUtils
         struct DeduceOptional
         {
             using Type = typename std::decay<T>::type;
+            static constexpr bool IsOptional = false;
         };
 
         template<typename TOpt>
         struct DeduceOptional<std::optional<TOpt>>
         {
             using Type = typename std::decay<TOpt>::type;
+            static constexpr bool IsOptional = true;
+        };
+
+        template<typename TOpt>
+        struct DeduceOptional<::winrt::Windows::Foundation::IReference<TOpt>>
+        {
+            using Type = typename std::decay<TOpt>::type;
+            static constexpr bool IsOptional = true;
         };
     }
 
@@ -105,7 +120,9 @@ namespace TerminalApp::JsonUtils
     template<typename T>
     struct ConversionTrait
     {
-        // FromJson, CanConvert are not defined so as to cause a compile error (which forces a specialization)
+        // Forward-declare these so the linker can pick up specializations from elsewhere!
+        T FromJson(const Json::Value&);
+        bool CanConvert(const Json::Value& json);
     };
 
     template<>
@@ -135,6 +152,18 @@ namespace TerminalApp::JsonUtils
             return json.isString();
         }
     };
+
+#ifdef WINRT_BASE_H
+    template<>
+    struct ConversionTrait<winrt::hstring> : public ConversionTrait<std::wstring>
+    {
+        // Leverage the wstring converter's validation
+        winrt::hstring FromJson(const Json::Value& json)
+        {
+            return winrt::hstring{ til::u8u16(Detail::GetStringView(json)) };
+        }
+    };
+#endif
 
     template<>
     struct ConversionTrait<bool>
@@ -248,13 +277,14 @@ namespace TerminalApp::JsonUtils
             }
 
             const auto string{ Detail::GetStringView(json) };
-            return (string.length() == 7 || string.length() == 3) && string.front() == '#';
+            return (string.length() == 7 || string.length() == 4) && string.front() == '#';
         }
     };
 
     template<typename T, typename TBase>
     struct EnumMapper
     {
+        using BaseEnumMapper = EnumMapper<T, TBase>;
         using pair_type = std::pair<std::string_view, T>;
         T FromJson(const Json::Value& json)
         {
@@ -284,6 +314,13 @@ namespace TerminalApp::JsonUtils
     template<typename T, typename TBase>
     struct FlagMapper : public EnumMapper<T, TBase>
     {
+    private:
+        // Hide BaseEnumMapper so FlagMapper's consumers cannot see
+        // it.
+        using BaseEnumMapper = EnumMapper<T, TBase>::BaseEnumMapper;
+
+    public:
+        using BaseFlagMapper = FlagMapper<T, TBase>;
         static constexpr T AllSet{ static_cast<T>(~0u) };
         static constexpr T AllClear{ static_cast<T>(0u) };
 
@@ -291,7 +328,7 @@ namespace TerminalApp::JsonUtils
         {
             if (json.isString())
             {
-                return EnumMapper::FromJson(json);
+                return BaseEnumMapper::FromJson(json);
             }
             else if (json.isArray())
             {
@@ -299,7 +336,7 @@ namespace TerminalApp::JsonUtils
                 T value{};
                 for (const auto& element : json)
                 {
-                    const auto newFlag{ EnumMapper::FromJson(element) };
+                    const auto newFlag{ BaseEnumMapper::FromJson(element) };
                     if (++seen > 1 &&
                         ((newFlag == AllClear && value != AllClear) ||
                          (value == AllClear && newFlag != AllClear)))
@@ -318,7 +355,7 @@ namespace TerminalApp::JsonUtils
 
         bool CanConvert(const Json::Value& json)
         {
-            return EnumMapper::CanConvert(json) || json.isArray();
+            return BaseEnumMapper::CanConvert(json) || json.isArray();
         }
     };
 
@@ -334,6 +371,18 @@ namespace TerminalApp::JsonUtils
     template<typename T, typename Converter>
     bool GetValue(const Json::Value& json, T& target, Converter&& conv)
     {
+        if constexpr (Detail::DeduceOptional<T>::IsOptional)
+        {
+            // FOR OPTION TYPES
+            // - If the json object is set to `null`, then
+            //   we'll instead set the target back to the empty optional.
+            if (json.isNull())
+            {
+                target = T{}; // zero-construct an empty optional
+                return true;
+            }
+        }
+
         if (json)
         {
             if (!conv.CanConvert(json))
@@ -342,36 +391,6 @@ namespace TerminalApp::JsonUtils
             }
 
             target = conv.FromJson(json);
-            return true;
-        }
-        return false;
-    }
-
-    // Method Description:
-    // - Overload on GetValue that will populate a std::optional with a value converted from json
-    //    - If the json value doesn't exist we'll leave the target object unmodified.
-    //    - If the json object is set to `null`, then
-    //      we'll instead set the target back to nullopt.
-    // Arguments:
-    // - json: the json object to convert
-    // - target: the value to populate with the converted result
-    // Return Value:
-    // - a boolean indicating whether the optional was changed
-    //
-    // GetValue, type-deduced for optional, manual converter
-    template<typename TOpt, typename Converter>
-    bool GetValue(const Json::Value& json, std::optional<TOpt>& target, Converter&& conv)
-    {
-        if (json.isNull())
-        {
-            target = std::nullopt;
-            return true; // null is valid for optionals
-        }
-
-        std::decay_t<TOpt> local{};
-        if (GetValue(json, local, std::forward<Converter>(conv)))
-        {
-            target = std::move(local);
             return true;
         }
         return false;

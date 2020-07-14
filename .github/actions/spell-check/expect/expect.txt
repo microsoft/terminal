@@ -594,6 +594,7 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
 dialogbox
 diffing
@@ -2133,6 +2134,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+SIZEBOX
 sizeof
 SIZESCROLL
 SKIPFONT

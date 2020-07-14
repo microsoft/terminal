@@ -386,7 +386,7 @@ class ApiRoutinesTests
             const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
-            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, waiter);
+            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, false, waiter);
 
             VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
             if (!fInduceWait)
@@ -442,7 +442,7 @@ class ApiRoutinesTests
 
         size_t cchRead = 0;
         std::unique_ptr<IWaitRoutine> waiter;
-        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, waiter);
+        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, false, waiter);
 
         VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
         if (!fInduceWait)
