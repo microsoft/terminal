@@ -81,7 +81,7 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
     const size_t offsetIndex = (_firstRow + index) % totalRows;
-    return _storage.at(offsetIndex);
+    return _storage[offsetIndex];
 }
 
 // Routine Description:
@@ -97,7 +97,7 @@ ROW& TextBuffer::GetRowByOffset(const size_t index)
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
     const size_t offsetIndex = (_firstRow + index) % totalRows;
-    return _storage.at(offsetIndex);
+    return _storage[offsetIndex];
 }
 
 // Routine Description:
