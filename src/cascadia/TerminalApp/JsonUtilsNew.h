@@ -285,6 +285,7 @@ namespace TerminalApp::JsonUtils
     struct EnumMapper
     {
         using BaseEnumMapper = EnumMapper<T, TBase>;
+        using ValueType = T;
         using pair_type = std::pair<std::string_view, T>;
         T FromJson(const Json::Value& json)
         {

@@ -7,11 +7,11 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
@@ -43,53 +43,11 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
-// Launch mode values
-static constexpr std::string_view DefaultLaunchModeValue{ "default" };
-static constexpr std::string_view MaximizedLaunchModeValue{ "maximized" };
-static constexpr std::string_view FullscreenLaunchModeValue{ "fullscreen" };
-
-// Tab Width Mode values
-static constexpr std::string_view EqualTabWidthModeValue{ "equal" };
-static constexpr std::string_view TitleLengthTabWidthModeValue{ "titleLength" };
-static constexpr std::string_view TitleLengthCompactModeValue{ "compact" };
-
-// Theme values
-static constexpr std::string_view LightThemeValue{ "light" };
-static constexpr std::string_view DarkThemeValue{ "dark" };
-static constexpr std::string_view SystemThemeValue{ "system" };
-
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
 #else
 static constexpr bool debugFeaturesDefault{ false };
 #endif
-
-JSON_ENUM_MAPPER(ElementTheme)
-{
-    JSON_MAPPINGS(3) = {
-        pair_type{ SystemThemeValue, ElementTheme::Default },
-        pair_type{ LightThemeValue, ElementTheme::Light },
-        pair_type{ DarkThemeValue, ElementTheme::Dark },
-    };
-};
-
-JSON_ENUM_MAPPER(LaunchMode)
-{
-    JSON_MAPPINGS(3) = {
-        pair_type{ DefaultLaunchModeValue, LaunchMode::DefaultMode },
-        pair_type{ MaximizedLaunchModeValue, LaunchMode::MaximizedMode },
-        pair_type{ FullscreenLaunchModeValue, LaunchMode::FullscreenMode },
-    };
-};
-
-JSON_ENUM_MAPPER(TabViewWidthMode)
-{
-    JSON_MAPPINGS(3) = {
-        pair_type{ EqualTabWidthModeValue, TabViewWidthMode::Equal },
-        pair_type{ TitleLengthTabWidthModeValue, TabViewWidthMode::SizeToContent },
-        pair_type{ TitleLengthCompactModeValue, TabViewWidthMode::Compact },
-    };
-};
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
@@ -244,65 +202,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     parseBindings(LegacyKeybindingsKey);
     parseBindings(BindingsKey);
 }
-
-// Method Description:
-// - Helper function for converting the initial position string into
-//   2 coordinate values. We allow users to only provide one coordinate,
-//   thus, we use comma as the separator:
-//   (100, 100): standard input string
-//   (, 100), (100, ): if a value is missing, we set this value as a default
-//   (,): both x and y are set to default
-//   (abc, 100): if a value is not valid, we treat it as default
-//   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
-// Arguments:
-// - initialPosition: the initial position string from json
-//   initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
-// Return Value:
-// - None
-template<>
-struct JsonUtils::ConversionTrait<LaunchPosition>
-{
-    LaunchPosition FromJson(const Json::Value& json)
-    {
-        LaunchPosition ret;
-        std::string initialPosition{ json.asString() };
-        static constexpr char singleCharDelim = ',';
-        std::stringstream tokenStream(initialPosition);
-        std::string token;
-        uint8_t initialPosIndex = 0;
-
-        // Get initial position values till we run out of delimiter separated values in the stream
-        // or we hit max number of allowable values (= 2)
-        // Non-numeral values or empty string will be caught as exception and we do not assign them
-        for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
-        {
-            try
-            {
-                int32_t position = std::stoi(token);
-                if (initialPosIndex == 0)
-                {
-                    ret.x.emplace(position);
-                }
-
-                if (initialPosIndex == 1)
-                {
-                    ret.y.emplace(position);
-                }
-            }
-            catch (...)
-            {
-                // Do nothing
-            }
-        }
-        return ret;
-    }
-
-    bool CanConvert(const Json::Value& json)
-    {
-        return json.isString();
-    }
-};
 
 // Method Description:
 // - Adds the given colorscheme to our map of schemes, using its name as the key.

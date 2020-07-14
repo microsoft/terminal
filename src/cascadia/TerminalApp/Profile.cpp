@@ -9,6 +9,7 @@
 #include <DefaultSettings.h>
 
 #include "LegacyProfileGeneratorNamespaces.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -51,8 +52,6 @@ static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImag
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
-
-#include "ProfileConversionTraits.cpp"
 
 Profile::Profile() :
     Profile(std::nullopt)

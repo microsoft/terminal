@@ -17,6 +17,7 @@ Author(s):
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
 #include "Command.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -28,12 +29,6 @@ namespace TerminalAppLocalTests
 namespace TerminalApp
 {
     class GlobalAppSettings;
-
-    struct LaunchPosition
-    {
-        std::optional<int> x;
-        std::optional<int> y;
-    };
 };
 
 class TerminalApp::GlobalAppSettings final

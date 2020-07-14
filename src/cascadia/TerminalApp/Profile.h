@@ -15,6 +15,7 @@ Author(s):
 --*/
 #pragma once
 #include "ColorScheme.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -35,14 +36,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 namespace TerminalApp
 {
     class Profile;
-
-    enum class CloseOnExitMode
-    {
-        Never = 0,
-        Graceful,
-        Always
-    };
-};
+}
 
 class TerminalApp::Profile final
 {
