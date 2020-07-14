@@ -159,42 +159,33 @@ OutputCellIterator::OutputCellIterator(const std::basic_string_view<OutputCell> 
 // - True if the views on dereference are valid. False if it shouldn't be dereferenced.
 OutputCellIterator::operator bool() const noexcept
 {
-    try
+    switch (_mode)
     {
-        switch (_mode)
-        {
-        case Mode::Loose:
-        case Mode::LooseTextOnly:
-        {
-            // In lieu of using start and end, this custom iterator type simply becomes bool false
-            // when we run out of items to iterate over.
-            return _pos < std::get<std::wstring_view>(_run).length();
-        }
-        case Mode::Fill:
-        {
-            if (_fillLimit > 0)
-            {
-                return _pos < _fillLimit;
-            }
-            return true;
-        }
-        case Mode::Cell:
-        {
-            return _pos < std::get<std::basic_string_view<OutputCell>>(_run).length();
-        }
-        case Mode::CharInfo:
-        {
-            return _pos < std::get<std::basic_string_view<CHAR_INFO>>(_run).length();
-        }
-        case Mode::LegacyAttr:
-        {
-            return _pos < std::get<std::basic_string_view<WORD>>(_run).length();
-        }
-        default:
-            FAIL_FAST_HR(E_NOTIMPL);
-        }
+    case Mode::Loose:
+    case Mode::LooseTextOnly: {
+        // In lieu of using start and end, this custom iterator type simply becomes bool false
+        // when we run out of items to iterate over.
+        return _pos < std::get<std::wstring_view>(_run).length();
     }
-    CATCH_FAIL_FAST();
+    case Mode::Fill: {
+        if (_fillLimit > 0)
+        {
+            return _pos < _fillLimit;
+        }
+        return true;
+    }
+    case Mode::Cell: {
+        return _pos < std::get<std::basic_string_view<OutputCell>>(_run).length();
+    }
+    case Mode::CharInfo: {
+        return _pos < std::get<std::basic_string_view<CHAR_INFO>>(_run).length();
+    }
+    case Mode::LegacyAttr: {
+        return _pos < std::get<std::wstring_view>(_run).length();
+    }
+    default:
+        FAIL_FAST_HR(E_NOTIMPL);
+    }
 }
 
 // Routine Description:
@@ -208,8 +199,7 @@ OutputCellIterator& OutputCellIterator::operator++()
 
     switch (_mode)
     {
-    case Mode::Loose:
-    {
+    case Mode::Loose: {
         if (!_TryMoveTrailing())
         {
             // When walking through a text sequence, we need to move forward by the number of wchar_ts consumed in the previous view
@@ -222,8 +212,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         }
         break;
     }
-    case Mode::LooseTextOnly:
-    {
+    case Mode::LooseTextOnly: {
         if (!_TryMoveTrailing())
         {
             // When walking through a text sequence, we need to move forward by the number of wchar_ts consumed in the previous view
@@ -236,8 +225,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         }
         break;
     }
-    case Mode::Fill:
-    {
+    case Mode::Fill: {
         if (!_TryMoveTrailing())
         {
             if (_currentView.DbcsAttr().IsTrailing())
@@ -259,8 +247,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         }
         break;
     }
-    case Mode::Cell:
-    {
+    case Mode::Cell: {
         // Walk forward by one because cells are assumed to be in the form they needed to be
         _pos++;
         if (operator bool())
@@ -269,8 +256,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         }
         break;
     }
-    case Mode::CharInfo:
-    {
+    case Mode::CharInfo: {
         // Walk forward by one because charinfos are just the legacy version of cells and prealigned to columns
         _pos++;
         if (operator bool())
@@ -279,8 +265,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         }
         break;
     }
-    case Mode::LegacyAttr:
-    {
+    case Mode::LegacyAttr: {
         // Walk forward by one because color attributes apply cell by cell (no complex text information)
         _pos++;
         if (operator bool())
