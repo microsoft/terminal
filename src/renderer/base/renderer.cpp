@@ -30,7 +30,7 @@ Renderer::Renderer(IRenderData* pData,
     _pThread{ std::move(thread) },
     _destructing{ false },
     _clusterBuffer{},
-    _viewport{Viewport::Empty()}
+    _viewport{ Viewport::Empty() }
 {
     for (size_t i = 0; i < cEngines; i++)
     {
