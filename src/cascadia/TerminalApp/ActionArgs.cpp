@@ -261,26 +261,17 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
     {
-        std::wstringstream ss;
-        ss << std::wstring_view(RS_(L"ToggleTabSwitcherCommandKey"));
+        // If there's an anchor key set, don't generate a name so that
+        // it won't show up in the command palette. Only an unanchored
+        // tab switcher should be able to be toggled from the palette.
         if (_AnchorKey != Windows::System::VirtualKey::None)
         {
-            ss << " Anchor: ";
-            switch (_AnchorKey)
-            {
-            case Windows::System::VirtualKey::Shift:
-                ss << "Shift";
-                break;
-            case Windows::System::VirtualKey::Menu:
-                ss << "Alt";
-                break;
-            case Windows::System::VirtualKey::Control:
-                ss << "Ctrl";
-                break;
-            }
+            return L"";
         }
-        
-        return winrt::hstring{ ss.str() };
+        else
+        {
+            return RS_(L"ToggleTabSwitcherCommandKey");
+        }
     }
 
 }
