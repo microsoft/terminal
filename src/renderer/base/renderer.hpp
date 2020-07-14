@@ -99,9 +99,15 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
-                                      TextBufferCellIterator it,
+                                      const ROW& r,
+                                      const SHORT limitRight,
                                       const COORD target,
                                       const bool lineWrapped);
+
+        //void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+        //                              TextBufferCellIterator it,
+        //                              const COORD target,
+        //                              const bool lineWrapped);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
@@ -120,10 +126,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
-        SMALL_RECT _srViewportPrevious;
+        Microsoft::Console::Types::Viewport _viewport;
 
         static constexpr float _shrinkThreshold = 0.8f;
-        std::vector<Cluster> _clusterBuffer;
+        std::wstring _text;
+        std::vector<UINT16> _clusterMap;
+        //std::vector<Cluster> _clusterBuffer;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);

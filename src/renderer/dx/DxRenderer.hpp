@@ -86,7 +86,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(std::wstring_view text,
+                                              std::basic_string_view<UINT16> clusterMap,
                                               COORD const coord,
                                               bool const fTrimLeft,
                                               const bool lineWrapped) noexcept override;

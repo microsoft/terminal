@@ -71,7 +71,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(std::wstring_view text,
+                                                      std::basic_string_view<UINT16> clusterMap,
                                                       const COORD coord,
                                                       const bool fTrimLeft,
                                                       const bool lineWrapped) noexcept = 0;

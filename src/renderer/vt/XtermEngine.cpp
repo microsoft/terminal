@@ -498,14 +498,15 @@ CATCH_RETURN();
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::wstring_view text,
+                                                   std::basic_string_view<UINT16> clusterMap,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
-               VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
+               VtEngine::_PaintAsciiBufferLine(text, clusterMap, coord) :
+               VtEngine::_PaintUtf8BufferLine(text, clusterMap, coord, lineWrapped);
 }
 
 // Method Description:

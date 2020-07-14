@@ -1278,6 +1278,7 @@ try
     channelpair.first.push_n(buffer.data(), buffer.size());
 
     return S_OK;
+    //return WriteConsoleAImplForReals(context, buffer, read, waiter);
 }
 CATCH_RETURN()
 

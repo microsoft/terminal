@@ -29,10 +29,10 @@ Renderer::Renderer(IRenderData* pData,
     _pData(pData),
     _pThread{ std::move(thread) },
     _destructing{ false },
-    _clusterBuffer{}
+    _text{},
+    _clusterMap{},
+    _viewport{Viewport::Empty()}
 {
-    _srViewportPrevious = { 0 };
-
     for (size_t i = 0; i < cEngines; i++)
     {
         IRenderEngine* engine = rgpEngines[i];
@@ -208,15 +208,16 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _pData->GetViewport();
+    Viewport view = _viewport;
     SMALL_RECT srUpdateRegion = region.ToExclusive();
 
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        for (auto pEngine : _rgpEngines)
+        {
             LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
-        });
+        }
 
         _NotifyPaintFrame();
     }
@@ -357,7 +358,7 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _srViewportPrevious;
+    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
     SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
 
     COORD coordDelta;
@@ -369,13 +370,13 @@ bool Renderer::_CheckViewportAndScroll()
         LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
     }
 
-    _srViewportPrevious = srNewViewport;
+    _viewport = Viewport::FromInclusive(srNewViewport);
 
     // If we're keeping some buffers between calls, let them know about the viewport size
     // so they can prepare the buffers for changes to either preallocate memory at once
     // (instead of growing naturally) or shrink down to reduce usage as appropriate.
     const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
-    til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
+    til::manage_vector(_clusterMap, lineLength, _shrinkThreshold);
 
     if (coordDelta.X != 0 || coordDelta.Y != 0)
     {
@@ -654,7 +655,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
                 // Retrieve the cell information iterator limited to just this line we want to redraw.
-                auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+                auto& r = buffer.GetRowByOffset(bufferLine.Origin().Y);
+                //auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
                 // Calculate if two things are true:
                 // 1. this row wrapped
@@ -664,27 +666,30 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                                          (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
                 // Ask the helper to paint through this specific line.
-                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
+                _PaintBufferOutputHelper(pEngine, r, bufferLine.RightExclusive(), screenLine.Origin(), lineWrapped);
             }
         }
     }
 }
 
-static bool _IsAllSpaces(const std::wstring_view v)
-{
-    // first non-space char is not found (is npos)
-    return v.find_first_not_of(L" ") == decltype(v)::npos;
-}
+//static bool _IsAllSpaces(const std::wstring_view v)
+//{
+//    // first non-space char is not found (is npos)
+//    return v.find_first_not_of(L" ") == decltype(v)::npos;
+//}
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
-                                        TextBufferCellIterator it,
+                                        const ROW& r,
+                                        const SHORT limitRight,
                                         const COORD target,
                                         const bool lineWrapped)
 {
-    auto globalInvert{ _pData->IsScreenReversed() };
+    /*auto globalInvert{ _pData->IsScreenReversed() };*/
+
+    SHORT pos = target.X;
 
     // If we have valid data, let's figure out how to draw it.
-    if (it)
+    if (pos < limitRight)
     {
         // TODO: MSFT: 20961091 -  This is a perf issue. Instead of rebuilding this and allocing memory to hold the reinterpretation,
         // we should have an iterator/view adapter for the rendering.
@@ -693,13 +698,18 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         size_t cols = 0;
 
         // Retrieve the first color.
-        auto color = it->TextAttr();
+
+        size_t colorApplies = 0;
+        const auto& charRow = r.GetCharRow();
+        const auto& attrRow = r.GetAttrRow();
+        auto colorIdx = attrRow.FindAttrIndex(pos, &colorApplies);
+        auto color = attrRow.GetAttrByIndex(colorIdx);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
 
         // This outer loop will continue until we reach the end of the text we are trying to draw.
-        while (it)
+        while (pos < limitRight)
         {
             // Hold onto the current run color right here for the length of the outer loop.
             // We'll be changing the persistent one as we run through the inner loops to detect
@@ -716,11 +726,12 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
             // Hold onto the start of this run iterator and the target location where we started
             // in case we need to do some special work to paint the line drawing characters.
-            const auto currentRunItStart = it;
+            const auto currentRunItStart = pos;
             const auto currentRunTargetStart = screenPoint;
 
             // Ensure that our cluster vector is clear.
-            _clusterBuffer.clear();
+            _text.clear();
+            _clusterMap.clear();
 
             // Reset our flag to know when we're in the special circumstance
             // of attempting to draw only the right-half of a two-column character
@@ -734,25 +745,32 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // When the color changes, it will save the new color off and break.
             do
             {
-                if (color != it->TextAttr())
+                if (colorApplies <= 0)
                 {
-                    auto newAttr{ it->TextAttr() };
-                    // foreground doesn't matter for runs of spaces (!)
-                    // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
-                    {
-                        color = newAttr;
-                        break; // vend this run
-                    }
+                    colorIdx = attrRow.FindAttrIndex(pos, &colorApplies);
+                    color = attrRow.GetAttrByIndex(colorIdx);
+                    break;
+
+                    //auto newAttr{ it->TextAttr() };
+                    //// foreground doesn't matter for runs of spaces (!)
+                    //// if we trick it . . . we call Paint far fewer times for cmatrix
+                    //if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    //{
+                    //    color = newAttr;
+                    //    break; // vend this run
+                    //}
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
                 // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
                 size_t columnCount = 0;
 
+                const auto dbcsAttr = charRow.DbcsAttrAt(pos);
+                const auto chars = (std::wstring_view)charRow.GlyphAt(pos);
+
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
-                if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
+                if (_text.empty() && dbcsAttr.IsTrailing())
                 {
                     // If we have room to move to the left to start drawing...
                     if (screenPoint.X > 0)
@@ -762,8 +780,12 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         // And tell the next function to trim off the left half of it.
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
-                        columnCount = it->Columns() + 1;
-                        _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                        columnCount = 2;
+                        //columnCount = it->Columns() + 1;
+                        _text.append(chars);
+                        _clusterMap.push_back(2);
+                        _clusterMap.push_back(0);
+                        //_clusterBuffer.emplace_back(chars, columnCount);
                     }
                     else
                     {
@@ -775,8 +797,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // Otherwise if it's not a special case, just insert it as is.
                 else
                 {
-                    columnCount = it->Columns();
-                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                    columnCount = dbcsAttr.IsLeading() ? 2 : 1;
+                    _text.append(chars);
+                    _clusterMap.push_back((UINT16)columnCount);
+                    if (columnCount > 1)
+                    {
+                        _clusterMap.push_back(0);
+                    }
+                    //_clusterBuffer.emplace_back(chars, columnCount);
                 }
 
                 if (columnCount > 1)
@@ -785,13 +813,15 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Advance the cluster and column counts.
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                const auto delta = (SHORT)(columnCount > 0 ? columnCount : 1); // prevent infinite loop for no visible columns
+                pos += delta;
+                colorApplies -= delta;
                 cols += columnCount;
 
-            } while (it);
+            } while (pos < limitRight);
 
             // Do the painting.
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, lineWrapped));
+            THROW_IF_FAILED(pEngine->PaintBufferLine(_text, { _clusterMap.data(), _clusterMap.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             // We're only allowed to draw the grid lines under certain circumstances.
@@ -816,7 +846,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     // Do that in the future if some WPR trace points you to this spot as super bad.
                     for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                     {
-                        auto lines = lineIt->TextAttr();
+                        auto lines = attrRow.GetAttrByColumn(lineIt);
                         _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
                     }
                 }
@@ -1013,7 +1043,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
                     auto it = overlay.buffer.GetCellLineDataAt(source);
 
-                    _PaintBufferOutputHelper(&engine, it, target, false);
+                    //_PaintBufferOutputHelper(&engine, it, target, false);
                 }
             }
         }
