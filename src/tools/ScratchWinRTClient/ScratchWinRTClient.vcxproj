@@ -119,7 +119,22 @@
     <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
       <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
     </ProjectReference>
+
+<!--     <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
+      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
+    </ProjectReference> -->
+    <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <!-- <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories> -->
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.200609.3\build\native\Microsoft.Windows.CppWinRT.targets')" />

@@ -1,8 +1,9 @@
 ﻿#include "pch.h"
 #include <winrt/ScratchWinRTServer.h>
 #include "ScratchClass.h"
+#include "HostClass.h"
 using namespace winrt;
-using namespace Windows::Foundation;
+using namespace winrt::Windows::Foundation;
 
 struct ScratchStringable : implements<ScratchStringable, IStringable, IClosable, winrt::ScratchWinRTServer::IScratchInterface>
 {
@@ -103,8 +104,39 @@ static constexpr GUID ScratchClass_clsid{
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    printf("args:[");
+    if (argc > 0)
+    {
+        for (int i = 0; i < argc; i++)
+        {
+            printf("%s,", argv[i]);
+        }
+    }
+    printf("]\n");
+
+    winrt::guid guidFromCmdline{};
+
+    if (argc > 1)
+    {
+        std::string guidString{ argv[1] };
+        auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
+        if (canConvert)
+        {
+            std::wstring wideGuidStr{ til::u8u16(guidString) };
+            printf("Found GUID:%ls\n", wideGuidStr.c_str());
+            GUID result{};
+            THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
+            guidFromCmdline = result;
+        }
+    }
+    if (guidFromCmdline == winrt::guid{})
+    {
+        printf("did not recieve GUID, early returning.");
+        return -1;
+    }
+
     init_apartment();
 
     DWORD registrationMyStringable{};

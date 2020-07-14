@@ -2,7 +2,7 @@
 
 #include <winrt/ScratchWinRTServer.h>
 using namespace winrt;
-using namespace Windows::Foundation;
+using namespace winrt::Windows::Foundation;
 
 // DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
 static constexpr GUID MyStringable_clsid{
@@ -28,141 +28,37 @@ static constexpr GUID ScratchClass_clsid{
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
 };
 
-void actualApp()
-{
-    {
-        printf("Trying to directly create a IStringable...\n");
-        auto server = create_instance<IStringable>(MyStringable_clsid, CLSCTX_LOCAL_SERVER);
-        if (server)
-        {
-            printf("%ls\n", server.ToString().c_str());
-            if (auto asScratch = server.try_as<ScratchWinRTServer::IScratchInterface>())
-            {
-                printf("Found scratch interface\n");
-                printf("%ls\n", asScratch.DoTheThing().c_str());
-            }
-            else
-            {
-                printf("Could not get the IScratchInterface from the IStringable\n");
-            }
-        }
-        else
-        {
-            printf("Could not get the IStringable directly\n");
-        }
-    }
-    {
-        printf("Trying to directly create a IScratchInterface...\n");
-        auto server = create_instance<winrt::ScratchWinRTServer::IScratchInterface>(MyStringable_clsid, CLSCTX_LOCAL_SERVER);
-        if (server)
-        {
-            printf("Found scratch interface\n");
-            printf("%ls\n", server.DoTheThing().c_str());
-        }
-        else
-        {
-            printf("Could not get the IScratchInterface directly\n");
-        }
-    }
-}
-
-void closeApp()
-{
-    printf("closeApp\n");
-    {
-        printf("Trying to directly create a IStringable...\n");
-        auto server = create_instance<IStringable>(ScratchStringable_clsid, CLSCTX_LOCAL_SERVER);
-        if (server)
-        {
-            printf("%ls\n", server.ToString().c_str());
-            if (auto asScratch = server.try_as<winrt::ScratchWinRTServer::IScratchInterface>())
-            {
-                printf("Found scratch interface\n");
-                printf("%ls\n", asScratch.DoTheThing().c_str());
-            }
-            else
-            {
-                printf("Could not get the IScratchInterface from the IStringable\n");
-            }
-
-            if (auto asClosable = server.try_as<IClosable>())
-            {
-                asClosable.Close();
-                printf("Closed!!!!!!\n");
-            }
-            else
-            {
-                printf("Could not get the IClosable from the IStringable\n");
-            }
-        }
-        else
-        {
-            printf("Could not get the IStringable directly\n");
-        }
-    }
-    {
-        printf("Trying to directly create a IClosable...\n");
-        auto server = create_instance<IClosable>(ScratchStringable_clsid, CLSCTX_LOCAL_SERVER);
-        if (server)
-        {
-            server.Close();
-            printf("Closed?\n");
-            if (auto asScratch = server.try_as<ScratchWinRTServer::IScratchInterface>())
-            {
-                printf("Found scratch interface\n");
-                printf("%ls\n", asScratch.DoTheThing().c_str());
-            }
-            else
-            {
-                printf("Could not get the IScratchInterface from the IClosable\n");
-            }
-        }
-        else
-        {
-            printf("Could not get the IClosable directly\n");
-        }
-    }
-}
-
 void scratchApp()
 {
     printf("scratchApp\n");
-    {
-        printf("Trying to directly create a ScratchClass...\n");
-        auto server = create_instance<winrt::ScratchWinRTServer::ScratchClass>(ScratchClass_clsid, CLSCTX_LOCAL_SERVER);
-        if (server)
-        {
-            printf("%ls\n", server.DoTheThing().c_str());
-        }
-        else
-        {
-            printf("Could not get the ScratchClass directly\n");
-        }
-    }
+    // {
+    //     printf("Trying to directly create a ScratchClass...\n");
+    //     auto server = create_instance<winrt::ScratchWinRTServer::ScratchClass>(ScratchClass_clsid, CLSCTX_LOCAL_SERVER);
+    //     if (server)
+    //     {
+    //         printf("%ls\n", server.DoTheThing().c_str());
+    //     }
+    //     else
+    //     {
+    //         printf("Could not get the ScratchClass directly\n");
+    //     }
+    // }
+
+    // 1. Generate a GUID.
+    // 2. Spawn a Server.exe, with the guid on the commandline
+    // 3. Make an instance of that GUID, as a HostClass
+    // 4. Call HostClass::DoTheThing, and get the count with HostClass::DoCount [1]
+    // 5. Make another instance of HostClass, and get the count with HostClass::DoCount. It should be the same. [1, 1]
+    // 6. On the second HostClass, call DoTheThing. Verify that both instances have the same DoCount. [2. 2]
+    // 7. Create a second Server.exe, and create a Third HostClass, using that GUID.
+    // 8. Call DoTheThing on the third, and verify the counts of all three instances. [2, 2, 1]
+    // 9. QUESTION: Does releasing the first instance leave the first object alive, since the second instance still points at it?
 }
 
 int main()
 {
     init_apartment();
-    try
-    {
-        actualApp();
-    }
-    catch (hresult_error const& e)
-    {
-        printf("Error: %ls\n", e.message().c_str());
-    }
 
-    printf("------------------\n");
-    try
-    {
-        closeApp();
-    }
-    catch (hresult_error const& e)
-    {
-        printf("Error: %ls\n", e.message().c_str());
-    }
-    printf("------------------\n");
     try
     {
         scratchApp();

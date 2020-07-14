@@ -102,9 +102,11 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ScratchClass.h" />
+    <ClInclude Include="HostClass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ScratchClass.cpp" />
+    <ClCompile Include="HostClass.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -120,10 +122,28 @@
   <ItemGroup>
     <Midl Include="IScratchInterface.idl" />
     <Midl Include="ScratchClass.idl" />
+    <Midl Include="HostClass.idl" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="ScratchWinRTServer.manifest" />
   </ItemGroup>
+
+
+  <ItemGroup>
+<!--     <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
+      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
+    </ProjectReference> -->
+    <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj" />
+  </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <!-- <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories> -->
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+    </ClCompile>
+  </ItemDefinitionGroup>
+
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
