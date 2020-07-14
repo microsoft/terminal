@@ -67,10 +67,7 @@ class CommandLineTests
     {
         const auto span = cookedReadData.SpanWholeBuffer();
         VERIFY_ARE_EQUAL(cookedReadData._bytesRead, wstr.size() * sizeof(wchar_t));
-        for (size_t i = 0; i < wstr.size(); ++i)
-        {
-            VERIFY_ARE_EQUAL(span.at(i), wstr.at(i));
-        }
+        VERIFY_ARE_EQUAL(wstr, (std::wstring_view{ span.data(), cookedReadData._bytesRead / sizeof(wchar_t) }));
     }
 
     void InitCookedReadData(COOKED_READ_DATA& cookedReadData,
