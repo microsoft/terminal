@@ -731,6 +731,32 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - DA2 - Reports the terminal type, firmware version, and hardware options.
+//   For now we're following the XTerm practice of using 0 to represent a VT100
+//   terminal, the version is hardcoded as 10 (1.0), and the hardware option
+//   is set to 1 (indicating a PC Keyboard).
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SecondaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1b[>0;10;1c");
+}
+
+// Routine Description:
+// - DA3 - Reports the terminal unit identification code. Terminal emulators
+//   typically return a hardcoded value, the most common being all zeros.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TertiaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1bP!|00000000\x1b\\");
+}
+
+// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.

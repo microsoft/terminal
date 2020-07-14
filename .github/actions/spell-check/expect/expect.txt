@@ -594,6 +594,7 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
 dialogbox
 diffing
@@ -1529,6 +1530,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+NOTOPMOST
 NOTNULL
 NOTRACK
 NOTSUPPORTED
@@ -2133,6 +2135,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+SIZEBOX
 sizeof
 SIZESCROLL
 SKIPFONT

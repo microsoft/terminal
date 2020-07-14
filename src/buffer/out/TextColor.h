@@ -90,7 +90,7 @@ public:
 
     COLORREF GetColor(std::basic_string_view<COLORREF> colorTable,
                       const COLORREF defaultColor,
-                      const bool brighten) const noexcept;
+                      const bool brighten = false) const noexcept;
 
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 

@@ -79,7 +79,8 @@ private:
     void _OnMaximizeChange() noexcept;
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
-    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    void _SetIsBorderless(const bool borderlessEnabled) override;
+    void _SetIsFullscreen(const bool fullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
