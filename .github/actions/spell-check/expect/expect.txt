@@ -1083,6 +1083,8 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
+imagemagick
+inkscape
 inl
 INLINEPREFIX
 Inlines
@@ -2265,6 +2267,7 @@ targetentrypoint
 TARGETLIBS
 TARGETNAME
 targetnametoken
+targetsize
 targetver
 taskbar
 tbar
