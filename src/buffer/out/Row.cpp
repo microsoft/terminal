@@ -244,11 +244,14 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
         }
 
         // Now commit the final color into the attr row
-        const TextAttributeRun run{ colorUses, currentColor };
-        LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
-                                              colorStarts,
-                                              currentIndex - 1,
-                                              _charRow.size()));
+        if (colorUses)
+        {
+            const TextAttributeRun run{ colorUses, currentColor };
+            LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
+                                                  colorStarts,
+                                                  currentIndex - 1,
+                                                  _charRow.size()));
+        }
     }
 
     return it;
