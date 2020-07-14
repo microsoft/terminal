@@ -1461,18 +1461,16 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // - includeCRLF - inject CRLF pairs to the end of each line
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
 // - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
-// - GetForegroundColor - function used to map TextAttribute to RGB COLORREF for foreground color. If null, only extract the text.
-// - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for background color. If null, only extract the text.
+// - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
 // Return Value:
 // - The text, background color, and foreground color data of the selected region of the text buffer.
 const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
                                                    const std::vector<SMALL_RECT>& selectionRects,
-                                                   std::function<COLORREF(TextAttribute&)> GetForegroundColor,
-                                                   std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const
+                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const
 {
     TextAndColor data;
-    const bool copyTextColor = GetForegroundColor && GetBackgroundColor;
+    const bool copyTextColor = GetAttributeColors != nullptr;
 
     // preallocate our vectors to reduce reallocs
     size_t const rows = selectionRects.size();
@@ -1517,9 +1515,8 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
                 if (copyTextColor)
                 {
-                    auto cellData = cell.TextAttr();
-                    COLORREF const CellFgAttr = GetForegroundColor(cellData);
-                    COLORREF const CellBkAttr = GetBackgroundColor(cellData);
+                    const auto cellData = cell.TextAttr();
+                    const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
                     for (const wchar_t wch : cell.Chars())
                     {
                         selectionFgAttr.push_back(CellFgAttr);

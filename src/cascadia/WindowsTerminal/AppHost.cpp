@@ -157,6 +157,7 @@ void AppHost::Initialize()
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
+    _logic.ToggleFocusMode({ this, &AppHost::_ToggleFocusMode });
 
     _logic.Create();
 
@@ -350,6 +351,12 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
     _window->OnApplicationThemeChanged(arg);
+}
+
+void AppHost::_ToggleFocusMode(const winrt::Windows::Foundation::IInspectable&,
+                               const winrt::TerminalApp::ToggleFocusModeEventArgs&)
+{
+    _window->ToggleFocusMode();
 }
 
 void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,

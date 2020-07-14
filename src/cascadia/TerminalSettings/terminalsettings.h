@@ -39,11 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t GetColorTableEntry(int32_t index) const noexcept;
         void SetColorTableEntry(int32_t index, uint32_t value);
 
-        // the RowsToScroll getter needs to be implemented manually, so it can
-        // default to SPI_GETWHEELSCROLLLINES
-        int32_t RowsToScroll() noexcept;
-        void RowsToScroll(int32_t value) noexcept;
-
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
@@ -104,7 +99,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
-        int32_t _rowsToScroll{ 0 };
     };
 }
 

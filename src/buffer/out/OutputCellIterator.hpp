@@ -39,7 +39,7 @@ public:
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const std::wstring_view utf16Text);
     OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
-    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes, const bool unused) noexcept;
+    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes) noexcept;
     OutputCellIterator(const std::basic_string_view<CHAR_INFO> charInfos) noexcept;
     OutputCellIterator(const std::basic_string_view<OutputCell> cells);
     ~OutputCellIterator() = default;
@@ -90,6 +90,7 @@ private:
 
     std::variant<
         std::wstring_view,
+        std::basic_string_view<WORD>,
         std::basic_string_view<CHAR_INFO>,
         std::basic_string_view<OutputCell>,
         std::monostate>

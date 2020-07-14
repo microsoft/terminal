@@ -159,6 +159,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleRetroEffectHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleFocusMode:
+        {
+            _ToggleFocusModeHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);

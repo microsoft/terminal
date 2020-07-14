@@ -77,6 +77,9 @@ namespace Microsoft::Console::VirtualTerminal
                                       const std::basic_string_view<wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const std::basic_string_view<size_t> parameters);
+        bool _IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                     const wchar_t intermediate,
+                                                     const std::basic_string_view<size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         const std::basic_string_view<size_t> parameters);

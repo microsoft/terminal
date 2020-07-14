@@ -50,38 +50,20 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
     return TextAttribute{};
 }
 
-const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noexcept
+std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    COLORREF fgColor{};
-    if (_screenReversed)
-    {
-        fgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
-    }
-    else
-    {
-        fgColor = attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
-    }
-    return 0xff000000 | fgColor;
-}
-
-const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    COLORREF bgColor{};
-    if (_screenReversed)
-    {
-        bgColor = attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
-    }
-    else
-    {
-        bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
-    }
+    auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
+                                          _defaultFg,
+                                          _defaultBg,
+                                          _screenReversed);
+    colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
     if (!attr.BackgroundIsDefault() || (attr.IsReverseVideo() ^ _screenReversed))
     {
-        return 0xff000000 | bgColor;
+        colors.second |= 0xff000000;
     }
-    return bgColor;
+    return colors;
 }
 
 COORD Terminal::GetCursorPosition() const noexcept

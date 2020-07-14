@@ -380,6 +380,10 @@
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close window</value>
   </data>
+  <data name="ToggleFocusModeCommandKey" xml:space="preserve">
+    <value>Toggle focus mode</value>
+    <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
+  </data>
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
   </data>

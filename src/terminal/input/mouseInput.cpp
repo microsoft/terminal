@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include <windows.h>
 #include "terminalInput.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -61,6 +62,17 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEMOVE;
+}
+
+// Routine Description:
+// - Determines if the input windows message code describes a mouse wheel event
+// Parameters:
+// - buttonCode - the message to decode.
+// Return value:
+// - true iff buttonCode is a wheel event to translate
+static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
+{
+    return buttonCode == WM_MOUSEWHEEL || buttonCode == WM_MOUSEHWHEEL;
 }
 
 // Routine Description:
@@ -293,6 +305,32 @@ bool TerminalInput::HandleMouse(const COORD position,
                                 const short modifierKeyState,
                                 const short delta)
 {
+    if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
+    {
+        // This works for wheel and non-wheel events and transitioning between wheel/non-wheel.
+        // Non-wheel events have a delta of 0, which will fail to match the sign on
+        // a real wheel event or the accumulated delta. Wheel events will be either + or -
+        // and we only want to accumulate them if they match in sign.
+        _mouseInputState.accumulatedDelta = 0;
+    }
+
+    if (_isWheelMsg(button))
+    {
+        _mouseInputState.accumulatedDelta += delta;
+        if (std::abs(_mouseInputState.accumulatedDelta) < WHEEL_DELTA)
+        {
+            // If we're accumulating button presses of the same type, *and* those presses are
+            // on the wheel, accumulate delta until we hit the amount required to dispatch one
+            // "line" worth of scroll.
+            // Mark the event as "handled" if we would have otherwise emitted a scroll event.
+            return IsTrackingMouseInput() || _ShouldSendAlternateScroll(button, delta);
+        }
+
+        // We're ready to send this event through, but first we need to clear the accumulated;
+        // delta. Otherwise, we'll dispatch every subsequent sub-delta event as its own event.
+        _mouseInputState.accumulatedDelta = 0;
+    }
+
     bool success = false;
     if (_ShouldSendAlternateScroll(button, delta))
     {
