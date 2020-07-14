@@ -6,6 +6,10 @@ namespace ScratchWinRTServer
     {
         ScratchClass();
         String DoTheThing();
-        Windows.UI.Xaml.Controls.Button MyButton { get; };
+
+        // Adding a Windows.UI.Xaml element will crash the server when the
+        // server tries to instantiate the element without a XAML host.
+        //
+        // Windows.UI.Xaml.Controls.Button MyButton { get; };
     };
 }

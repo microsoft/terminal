@@ -133,18 +133,6 @@ void scratchApp()
         if (server)
         {
             printf("%ls\n", server.DoTheThing().c_str());
-
-            auto btn = server.MyButton();
-            auto content = btn.Content();
-            auto label = winrt::unbox_value_or<winrt::hstring>(content, L"");
-            if (!label.empty())
-            {
-                printf("Got the button's label\"%ls\"\n", label.c_str());
-            }
-            else
-            {
-                printf("Could not get the button label\n");
-            }
         }
         else
         {

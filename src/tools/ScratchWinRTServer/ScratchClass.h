@@ -10,11 +10,6 @@ namespace winrt::ScratchWinRTServer::implementation
         {
             return L"Hello there";
         }
-
-        Windows::UI::Xaml::Controls::Button MyButton();
-
-    private:
-        Windows::UI::Xaml::Controls::Button _MyButton;
     };
 }
 
