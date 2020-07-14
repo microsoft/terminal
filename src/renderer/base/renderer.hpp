@@ -120,7 +120,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
-        SMALL_RECT _srViewportPrevious;
+        Microsoft::Console::Types::Viewport _viewport;
 
         static constexpr float _shrinkThreshold = 0.8f;
         std::vector<Cluster> _clusterBuffer;
