@@ -101,8 +101,6 @@ public:
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-    static winrt::Windows::UI::Text::FontWeight _ParseFontWeight(const Json::Value& json);
-
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
     std::optional<GUID> _guid{ std::nullopt };
