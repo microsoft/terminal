@@ -22,7 +22,6 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
-static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
@@ -73,7 +72,6 @@ GlobalAppSettings::GlobalAppSettings() :
     _defaultProfile{},
     _InitialRows{ DEFAULT_ROWS },
     _InitialCols{ DEFAULT_COLS },
-    _RowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
@@ -127,7 +125,6 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_InitialRows);
     settings.InitialCols(_InitialCols);
-    settings.RowsToScroll(_RowsToScroll);
 
     settings.WordDelimiters(_WordDelimiters);
     settings.CopyOnSelect(_CopyOnSelect);
@@ -163,19 +160,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetInt(json, InitialRowsKey, _InitialRows);
 
     JsonUtils::GetInt(json, InitialColsKey, _InitialCols);
-
-    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
-    {
-        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
-        if (rowsToScroll.isInt())
-        {
-            _RowsToScroll = rowsToScroll.asInt();
-        }
-        else
-        {
-            _RowsToScroll = 0;
-        }
-    }
 
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {

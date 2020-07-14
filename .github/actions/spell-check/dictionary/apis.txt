@@ -8,8 +8,8 @@ EXPCMDSTATE
 fullkbd
 href
 IAsync
-IBox
 IBind
+IBox
 IClass
 IComparable
 ICustom
@@ -28,6 +28,7 @@ NOAGGREGATION
 NOREDIRECTIONBITMAP
 oaidl
 ocidl
+PAGESCROLL
 RETURNCMD
 rfind
 roundf

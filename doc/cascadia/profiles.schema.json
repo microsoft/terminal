@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
@@ -397,10 +397,11 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
           "maximum": 999,
           "minimum": 0,
-          "type": [ "integer", "string" ]
+          "type": [ "integer", "string" ],
+          "deprecated": true
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
