@@ -81,6 +81,39 @@ struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
     }
 };
 
+winrt::com_ptr<ScratchWinRTServer::implementation::HostClass> g_hostClassSingleton{ nullptr };
+
+struct HostClassFactory : implements<HostClassFactory, IClassFactory>
+{
+    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
+    {
+        *result = nullptr;
+        if (outer)
+        {
+            return CLASS_E_NOAGGREGATION;
+        }
+
+        if (g_hostClassSingleton)
+        {
+            printf("Found existing HostClass\n");
+            return g_hostClassSingleton.as(iid, result);
+        }
+        else
+        {
+            printf("Create new HostClass\n");
+            // auto f = make_self<ScratchWinRTServer::implementation::HostClass>();
+            // g_hostClassSingleton{ f };
+            g_hostClassSingleton = make_self<ScratchWinRTServer::implementation::HostClass>();
+            return g_hostClassSingleton.as(iid, result);
+        }
+    }
+
+    HRESULT __stdcall LockServer(BOOL) noexcept final
+    {
+        return S_OK;
+    }
+};
+
 // DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
 static constexpr GUID MyStringable_clsid{
     0xdaa16d7f,
@@ -139,32 +172,41 @@ int main(int argc, char** argv)
 
     init_apartment();
 
-    DWORD registrationMyStringable{};
-    check_hresult(CoRegisterClassObject(MyStringable_clsid,
-                                        make<MyStringableFactory>().get(),
+    // DWORD registrationMyStringable{};
+    // check_hresult(CoRegisterClassObject(MyStringable_clsid,
+    //                                     make<MyStringableFactory>().get(),
+    //                                     CLSCTX_LOCAL_SERVER,
+    //                                     REGCLS_MULTIPLEUSE,
+    //                                     &registrationMyStringable));
+
+    // printf("%d\n", registrationMyStringable);
+
+    // DWORD registrationScratchStringable{};
+    // check_hresult(CoRegisterClassObject(ScratchStringable_clsid,
+    //                                     make<ScratchStringableFactory>().get(),
+    //                                     CLSCTX_LOCAL_SERVER,
+    //                                     REGCLS_MULTIPLEUSE,
+    //                                     &registrationScratchStringable));
+
+    // printf("%d\n", registrationScratchStringable);
+
+    // DWORD registrationScratchClass{};
+    // check_hresult(CoRegisterClassObject(ScratchClass_clsid,
+    //                                     make<ScratchClassFactory>().get(),
+    //                                     CLSCTX_LOCAL_SERVER,
+    //                                     REGCLS_MULTIPLEUSE,
+    //                                     &registrationScratchClass));
+
+    // printf("%d\n", registrationScratchClass);
+
+    DWORD registrationHostClass{};
+    check_hresult(CoRegisterClassObject(guidFromCmdline,
+                                        make<HostClassFactory>().get(),
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
-                                        &registrationMyStringable));
+                                        &registrationHostClass));
+    printf("%d\n", registrationHostClass);
 
-    printf("%d\n", registrationMyStringable);
-
-    DWORD registrationScratchStringable{};
-    check_hresult(CoRegisterClassObject(ScratchStringable_clsid,
-                                        make<ScratchStringableFactory>().get(),
-                                        CLSCTX_LOCAL_SERVER,
-                                        REGCLS_MULTIPLEUSE,
-                                        &registrationScratchStringable));
-
-    printf("%d\n", registrationScratchStringable);
-
-    DWORD registrationScratchClass{};
-    check_hresult(CoRegisterClassObject(ScratchClass_clsid,
-                                        make<ScratchClassFactory>().get(),
-                                        CLSCTX_LOCAL_SERVER,
-                                        REGCLS_MULTIPLEUSE,
-                                        &registrationScratchClass));
-
-    printf("%d\n", registrationScratchClass);
     puts("Press Enter me when you're done serving.");
     getchar();
 }
