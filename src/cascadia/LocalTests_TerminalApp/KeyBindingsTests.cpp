@@ -44,6 +44,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestStringOverload);
 
+        TEST_METHOD(TestSetTabColorArgs);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -397,6 +399,63 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+        }
+    }
+
+    void KeyBindingsTests::TestSetTabColorArgs()
+    {
+        const std::string bindings0String{ R"([
+            { "keys": ["ctrl+c"], "command": { "action": "setTabColor", "color": null } },
+            { "keys": ["ctrl+d"], "command": { "action": "setTabColor", "color": "#123456" } },
+            { "keys": ["ctrl+e"], "command": { "action": "setTabColor", "color": "thisStringObviouslyWontWork" } },
+            { "keys": ["ctrl+f"], "command": "setTabColor" },
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
+        VERIFY_IS_NOT_NULL(appKeyBindings);
+        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        appKeyBindings->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(4u, appKeyBindings->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.TabColor());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TabColor());
+            // Remember that COLORREFs are actually BBGGRR order, while the string is in #RRGGBB order
+            VERIFY_ARE_EQUAL(static_cast<uint32_t>(til::color(0x563412)), realArgs.TabColor().Value());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.TabColor());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.TabColor());
         }
     }
 

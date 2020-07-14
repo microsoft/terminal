@@ -127,8 +127,12 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             case BoldBright:
                 attr.SetBold(true);
                 break;
-            case UnBold:
+            case RGBColorOrFaint:
+                attr.SetFaint(true);
+                break;
+            case NotBoldOrFaint:
                 attr.SetBold(false);
+                attr.SetFaint(false);
                 break;
             case Italics:
                 attr.SetItalics(true);
@@ -165,6 +169,12 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
                 break;
             case NoUnderline:
                 attr.SetUnderline(false);
+                break;
+            case Overline:
+                attr.SetOverline(true);
+                break;
+            case NoOverline:
+                attr.SetOverline(false);
                 break;
             case ForegroundBlack:
                 attr.SetIndexedForeground(DARK_BLACK);

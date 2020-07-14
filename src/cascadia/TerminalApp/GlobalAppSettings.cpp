@@ -7,7 +7,6 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include <sstream>
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -17,12 +16,12 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
-static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view BindingsKey{ "bindings" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
-static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
@@ -31,6 +30,8 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
+static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
+static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
@@ -71,7 +72,6 @@ GlobalAppSettings::GlobalAppSettings() :
     _defaultProfile{},
     _InitialRows{ DEFAULT_ROWS },
     _InitialCols{ DEFAULT_COLS },
-    _RowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
@@ -125,7 +125,6 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_InitialRows);
     settings.InitialCols(_InitialCols);
-    settings.RowsToScroll(_RowsToScroll);
 
     settings.WordDelimiters(_WordDelimiters);
     settings.CopyOnSelect(_CopyOnSelect);
@@ -162,19 +161,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetInt(json, InitialColsKey, _InitialCols);
 
-    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
-    {
-        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
-        if (rowsToScroll.isInt())
-        {
-            _RowsToScroll = rowsToScroll.asInt();
-        }
-        else
-        {
-            _RowsToScroll = 0;
-        }
-    }
-
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
         _ParseInitialPosition(initialPosition.asString(), _InitialPosition);
@@ -189,6 +175,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
 
     JsonUtils::GetBool(json, CopyFormattingKey, _CopyFormatting);
+
+    JsonUtils::GetBool(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
+
+    JsonUtils::GetBool(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
@@ -205,18 +195,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _TabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
     }
 
-    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
-    {
-        auto warnings = _keybindings->LayerJson(keybindings);
-        // It's possible that the user provided keybindings have some warnings
-        // in them - problems that we should alert the user to, but we can
-        // recover from. Most of these warnings cannot be detected later in the
-        // Validate settings phase, so we'll collect them now. If there were any
-        // warnings generated from parsing these keybindings, add them to our
-        // list of warnings.
-        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    }
-
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
@@ -228,6 +206,31 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
+
+    // This is a helper lambda to get the keybindings and commands out of both
+    // and array of objects. We'll use this twice, once on the legacy
+    // `keybindings` key, and again on the newer `bindings` key.
+    auto parseBindings = [this, &json](auto jsonKey) {
+        if (auto bindings{ json[JsonKey(jsonKey)] })
+        {
+            auto warnings = _keybindings->LayerJson(bindings);
+            // It's possible that the user provided keybindings have some warnings
+            // in them - problems that we should alert the user to, but we can
+            // recover from. Most of these warnings cannot be detected later in the
+            // Validate settings phase, so we'll collect them now. If there were any
+            // warnings generated from parsing these keybindings, add them to our
+            // list of warnings.
+            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+
+            // Now parse the array again, but this time as a list of commands.
+            warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
+            // It's possible that the user provided commands have some warnings
+            // in them, similar to the keybindings.
+            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+        }
+    };
+    parseBindings(LegacyKeybindingsKey);
+    parseBindings(BindingsKey);
 }
 
 // Method Description:
@@ -364,4 +367,9 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
 {
     return _keybindingsWarnings;
+}
+
+const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
 }

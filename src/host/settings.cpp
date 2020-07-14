@@ -349,6 +349,10 @@ void Settings::Validate()
         }
     }
 
+    // At this point the default fill attributes are fully initialized
+    // so we can pass on the final colors to the TextAttribute class.
+    TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
+
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
     FAIL_FAST_IF(!(_dwScreenBufferSize.X > 0));
@@ -757,19 +761,6 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
     return _colorTable.at(index);
 }
 
-// Routine Description:
-// - Generates a legacy attribute from the given TextAttributes.
-//     This needs to be a method on the Settings because the generated index
-//     is dependent upon the default fill attributes.
-// Parameters:
-// - attributes - The TextAttributes to generate a legacy attribute for.
-// Return value:
-// - A WORD representing the legacy attributes that most closely represent the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
-{
-    return attributes.GetLegacyAttributes(_wFillAttribute);
-}
-
 COLORREF Settings::GetCursorColor() const noexcept
 {
     return _CursorColor;
@@ -818,20 +809,6 @@ COLORREF Settings::GetDefaultBackgroundColor() const noexcept
 void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept
 {
     _DefaultBackground = defaultBackground;
-}
-
-TextAttribute Settings::GetDefaultAttributes() const noexcept
-{
-    auto attrs = TextAttribute{ _wFillAttribute };
-    if (_DefaultForeground != INVALID_COLOR)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (_DefaultBackground != INVALID_COLOR)
-    {
-        attrs.SetDefaultBackground();
-    }
-    return attrs;
 }
 
 bool Settings::IsTerminalScrolling() const noexcept
@@ -885,43 +862,18 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 }
 
 // Method Description:
-// - Get the foreground color of a particular text attribute, using our color
-//      table, and our configured default attributes.
+// - Get the colors of a particular text attribute, using our color table,
+//      and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
-// - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> Settings::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-}
-
-// Method Description:
-// - Get the background color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the background color of.
-// Return Value:
-// - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
+    return attr.CalculateRgbColors(Get256ColorTable(),
+                                   CalculateDefaultForeground(),
+                                   CalculateDefaultBackground(),
+                                   _fScreenReversed);
 }
 
 bool Settings::GetCopyColor() const noexcept

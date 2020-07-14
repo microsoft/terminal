@@ -19,16 +19,9 @@ enum class ExtendedAttributes : BYTE
     // TODO:GH#2916 add support for these to the parser as well.
     Underlined = 0x20, // _technically_ different from LVB_UNDERSCORE, see TODO:GH#2915
     DoublyUnderlined = 0x40, // Included for completeness, but not currently supported.
-    Faint = 0x80, // Included for completeness, but not currently supported.
+    Faint = 0x80,
 };
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
-
-WORD FindNearestTableIndex(const COLORREF Color,
-                           const std::basic_string_view<COLORREF> ColorTable);
-
-bool FindTableIndex(const COLORREF Color,
-                    const std::basic_string_view<COLORREF> ColorTable,
-                    _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(const size_t index) noexcept;
 WORD Xterm256ToWindowsIndex(const size_t index) noexcept;

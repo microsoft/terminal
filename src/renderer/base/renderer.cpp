@@ -879,13 +879,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 const size_t cchLine,
                                                 const COORD coordTarget)
 {
-    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
-
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
-
-    // Draw the lines
-    LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    // Return early if there are no lines to paint.
+    if (lines != IRenderEngine::GridLines::None)
+    {
+        // Get the current foreground color to render the lines.
+        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        // Draw the lines
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    }
 }
 
 // Routine Description:
@@ -1088,16 +1091,9 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 [[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
 {
-    const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
-    const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
-    const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
-    const auto extendedAttrs = textAttributes.GetExtendedAttributes();
-
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, extendedAttrs, isSettingDefaultBrushes));
-
-    return S_OK;
+    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, isSettingDefaultBrushes);
 }
 
 // Routine Description:
