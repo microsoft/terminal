@@ -139,8 +139,8 @@ The settings model makes all of these features easy to disable, if the user wish
 
 ## Future considerations
 
-### Graphene Clusters
-When graphene cluster support is inevitably added to the Text Buffer, moving by "cell" is expected to move by "character" or "cluster". This is similar to how wide glyphs are handled today. Either all of it is selected, or none of it.
+### Grapheme Clusters
+When grapheme cluster support is inevitably added to the Text Buffer, moving by "cell" is expected to move by "character" or "cluster". This is similar to how wide glyphs are handled today. Either all of it is selected, or none of it.
 
 ### Word Selection Wrap
 At the time of writing this spec, expanding or moving by word is interrupted by the beginning or end of the line, regardless of the wrap flag being set. In the future, selection and the accessibility models will respect the wrap flag on the text buffer.

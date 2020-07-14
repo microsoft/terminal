@@ -78,15 +78,8 @@ public:
     // These methods are defined in TerminalApi.cpp
     bool PrintString(std::wstring_view stringView) noexcept override;
     bool ExecuteChar(wchar_t wch) noexcept override;
-    bool SetTextToDefaults(bool foreground, bool background) noexcept override;
-    bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
-    bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;
-    bool SetTextForegroundIndex256(BYTE colorIndex) noexcept override;
-    bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept override;
-    bool SetTextRgbColor(COLORREF color, bool foreground) noexcept override;
-    bool BoldText(bool boldOn) noexcept override;
-    bool UnderlineText(bool underlineOn) noexcept override;
-    bool ReverseText(bool reversed) noexcept override;
+    TextAttribute GetTextAttributes() const noexcept override;
+    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
     bool SetCursorVisibility(const bool visible) noexcept override;
@@ -106,6 +99,7 @@ public:
     bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
     bool SetCursorKeysMode(const bool applicationMode) noexcept override;
     bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetScreenMode(const bool reverseMode) noexcept override;
     bool EnableVT200MouseMode(const bool enabled) noexcept override;
     bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
     bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
@@ -114,6 +108,8 @@ public:
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
+
+    bool CopyToClipboard(std::wstring_view content) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -143,8 +139,7 @@ public:
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
-    const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
-    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -172,6 +167,7 @@ public:
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
+    void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
@@ -198,6 +194,7 @@ public:
 private:
     std::function<void(std::wstring&)> _pfnWriteInput;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
+    std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
@@ -211,6 +208,7 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    bool _screenReversed;
 
     bool _snapOnInput;
     bool _altGrAliasing;
@@ -292,7 +290,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
+    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion

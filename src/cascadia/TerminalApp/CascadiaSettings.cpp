@@ -718,3 +718,30 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 
     return finalSettings;
 }
+
+// Method Description:
+// - Lookup the color scheme for a given profile. If the profile doesn't exist,
+//   or the scheme name listed in the profile doesn't correspond to a scheme,
+//   this will return `nullptr`.
+// Arguments:
+// - profileGuid: the GUID of the profile to find the scheme for.
+// Return Value:
+// - a non-owning pointer to the scheme.
+const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
+{
+    auto* profile = FindProfile(profileGuid);
+    if (!profile)
+    {
+        return nullptr;
+    }
+    auto schemeName = profile->GetSchemeName().has_value() ? profile->GetSchemeName().value() : L"\0";
+    auto scheme = _globals.GetColorSchemes().find(schemeName);
+    if (scheme != _globals.GetColorSchemes().end())
+    {
+        return &scheme->second;
+    }
+    else
+    {
+        return nullptr;
+    }
+}

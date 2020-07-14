@@ -594,6 +594,8 @@ public:
         _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
         _deviceStatusReport{ false },
         _deviceAttributes{ false },
+        _secondaryDeviceAttributes{ false },
+        _tertiaryDeviceAttributes{ false },
         _vt52DeviceAttributes{ false },
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
@@ -766,6 +768,20 @@ public:
     bool DeviceAttributes() noexcept override
     {
         _deviceAttributes = true;
+
+        return true;
+    }
+
+    bool SecondaryDeviceAttributes() noexcept override
+    {
+        _secondaryDeviceAttributes = true;
+
+        return true;
+    }
+
+    bool TertiaryDeviceAttributes() noexcept override
+    {
+        _tertiaryDeviceAttributes = true;
 
         return true;
     }
@@ -944,6 +960,12 @@ public:
         return true;
     }
 
+    bool SetClipboard(std::wstring_view content) noexcept override
+    {
+        _copyContent = { content.begin(), content.end() };
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -970,6 +992,8 @@ public:
     DispatchTypes::AnsiStatusType _statusReportType;
     bool _deviceStatusReport;
     bool _deviceAttributes;
+    bool _secondaryDeviceAttributes;
+    bool _tertiaryDeviceAttributes;
     bool _vt52DeviceAttributes;
     bool _isAltBuffer;
     bool _cursorKeysMode;
@@ -988,6 +1012,7 @@ public:
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
     bool _win32InputMode;
+    std::wstring _copyContent;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
@@ -1595,6 +1620,9 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L';');
         mach.ProcessCharacter(L'4');
         mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L';');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'3');
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
@@ -1603,7 +1631,8 @@ class StateMachineExternalTest final
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
-        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
+        rgExpected[5] = DispatchTypes::GraphicsOptions::Overline;
+        VerifyDispatchTypes({ rgExpected, 6 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1793,6 +1822,86 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestSecondaryDeviceAttributes)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Test 1: Check default case, no params.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_TRUE(pDispatch->_secondaryDeviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 2: Check default case, 0 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'0');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_TRUE(pDispatch->_secondaryDeviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check fail case, 1 (or any other) param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_FALSE(pDispatch->_secondaryDeviceAttributes);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestTertiaryDeviceAttributes)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Test 1: Check default case, no params.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'=');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_TRUE(pDispatch->_tertiaryDeviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 2: Check default case, 0 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'=');
+        mach.ProcessCharacter(L'0');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_TRUE(pDispatch->_tertiaryDeviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check fail case, 1 (or any other) param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'=');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'c');
+
+        VERIFY_IS_FALSE(pDispatch->_tertiaryDeviceAttributes);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestStrings)
     {
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -1815,7 +1924,7 @@ class StateMachineExternalTest final
 
         Log::Comment(L"Test 2: A couple of sequences all in one string");
 
-        mach.ProcessString(L"\x1b[1;4;7;30;45m\x1b[2J");
+        mach.ProcessString(L"\x1b[1;4;7;30;45;53m\x1b[2J");
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
@@ -1824,8 +1933,9 @@ class StateMachineExternalTest final
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
+        rgExpected[5] = DispatchTypes::GraphicsOptions::Overline;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
-        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 6 }, *pDispatch);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
@@ -2079,5 +2189,73 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
+    }
+
+    TEST_METHOD(TestSetClipboard)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // Passing an empty `Pc` param and a base64-encoded simple text `Pd` param works.
+        mach.ProcessString(L"\x1b]52;;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing an empty `Pc` param and a base64-encoded multi-lines text `Pd` works.
+        mach.ProcessString(L"\x1b]52;;Zm9vDQpiYXI=\x07");
+        VERIFY_ARE_EQUAL(L"foo\r\nbar", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing a non-empty `Pc` param (`s0` is ignored) and a valid `Pd` param works.
+        mach.ProcessString(L"\x1b]52;s0;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing only base64 `Pd` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a non-base64 `Pd` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;foo\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a valid `Pc;Pd` with one more extra param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;;Zm9v\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character won't change the content.
+        mach.ProcessString(L"\x1b]52;;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character with missing `Pc` param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        pDispatch->_copyContent = L"UNCHANGED";
+        // Passing a query character with one more extra param is illegal, won't change the content.
+        mach.ProcessString(L"\x1b]52;;;?\x07");
+        VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
     }
 };

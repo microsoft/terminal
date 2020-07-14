@@ -62,6 +62,12 @@ try
     _isEntireTextSimple = false;
     _textClusterColumns.clear();
     _text.clear();
+    _glyphScaleCorrections.clear();
+    _glyphClusters.clear();
+    _glyphIndices.clear();
+    _glyphDesignUnitAdvances.clear();
+    _glyphAdvances.clear();
+    _glyphOffsets.clear();
     return S_OK;
 }
 CATCH_RETURN()
@@ -212,8 +218,6 @@ CATCH_RETURN()
         // This result will be subdivided by the analysis processes.
         _runs.resize(1);
         auto& initialRun = _runs.front();
-        initialRun.nextRunIndex = 0;
-        initialRun.textStart = 0;
         initialRun.textLength = textLength;
         initialRun.bidiLevel = (_readingDirection == DWRITE_READING_DIRECTION_RIGHT_TO_LEFT);
 
@@ -353,7 +357,6 @@ CATCH_RETURN()
             // With simple text, there's only one run. The actual glyph count is the same as textLength.
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
-            _glyphOffsets.resize(textLength);
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
@@ -367,6 +370,10 @@ CATCH_RETURN()
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
             }
+
+            // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
+            // Fill the clusters sequentially from 0 to N-1.
+            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
@@ -590,6 +597,10 @@ CATCH_RETURN()
             //  1     1    .8 1  1
         }
 
+        // Dump the glyph scale corrections now that we're done with them.
+        _glyphScaleCorrections.clear();
+
+        // Order the runs.
         _OrderRuns();
     }
     CATCH_RETURN();

@@ -202,6 +202,7 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
+cassert
 catid
 carlos
 zamora
@@ -270,12 +271,14 @@ clipbrd
 CLIPCHILDREN
 CLIPSIBLINGS
 cliutils
+clocale
 closetest
 cloudconsole
 cls
 CLSCTX
 clsid
 CLUSTERMAP
+cmath
 cmatrix
 cmder
 CMDEXT
@@ -418,12 +421,16 @@ Csr
 csrmsg
 CSRSS
 csrutil
+cstdarg
+cstddef
 cstdio
+cstdlib
 cstr
 cstring
 cstyle
 CSwitch
 CText
+ctime
 ctl
 ctlseqs
 Ctlv
@@ -589,6 +596,7 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
 dialogbox
 diffing
@@ -1142,6 +1150,7 @@ IUI
 IUia
 IUnknown
 ivalid
+IValue
 IVector
 IWait
 iwch
@@ -1254,6 +1263,7 @@ Loremipsumdolorsitamet
 lowercased
 loword
 lparam
+lparen
 LPBYTE
 LPCCH
 lpch
@@ -1613,6 +1623,7 @@ OSCCT
 OSCFG
 OSCRCC
 OSCSCC
+OSCSCB
 OSCWT
 OSDEPENDSROOT
 osfhandle
@@ -1978,6 +1989,7 @@ roadmap
 robomac
 roundtrip
 ROWSTOSCROLL
+rparen
 RRF
 RRRGGGBB
 rtcore
@@ -2124,6 +2136,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+SIZEBOX
 sizeof
 SIZESCROLL
 SKIPFONT

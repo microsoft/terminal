@@ -21,7 +21,6 @@
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "theme": "system",
-    "rowsToScroll": "system",
     "snapToGridOnResize": true,
 
     "profiles":
