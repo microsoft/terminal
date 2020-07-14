@@ -50,21 +50,20 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
     return TextAttribute{};
 }
 
-const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noexcept
+std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    return 0xff000000 | attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
-}
-
-const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
+    auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
+                                          _defaultFg,
+                                          _defaultBg,
+                                          _screenReversed);
+    colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
-    if (!attr.BackgroundIsDefault() || attr.IsReverseVideo())
+    if (!attr.BackgroundIsDefault() || (attr.IsReverseVideo() ^ _screenReversed))
     {
-        return 0xff000000 | bgColor;
+        colors.second |= 0xff000000;
     }
-    return bgColor;
+    return colors;
 }
 
 COORD Terminal::GetCursorPosition() const noexcept
@@ -213,10 +212,9 @@ void Terminal::UnlockConsole() noexcept
 
 // Method Description:
 // - Returns whether the screen is inverted;
-//   This state is not currently known to Terminal.
 // Return Value:
 // - false.
 bool Terminal::IsScreenReversed() const noexcept
 {
-    return false;
+    return _screenReversed;
 }

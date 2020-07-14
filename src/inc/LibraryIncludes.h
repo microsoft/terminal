@@ -38,7 +38,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -64,6 +64,7 @@
 #ifndef BLOCK_GSL
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
+#include <gsl/span_ext>
 #endif
 
 // CppCoreCheck

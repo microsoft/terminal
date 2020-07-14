@@ -94,6 +94,8 @@ public:
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
+    virtual bool SecondaryDeviceAttributes() = 0; // DA2
+    virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
     virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
@@ -109,6 +111,8 @@ public:
 
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
+
+    virtual bool SetClipboard(std::wstring_view content) = 0; // OSCSetClipboard
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,

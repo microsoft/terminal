@@ -77,6 +77,9 @@ namespace Microsoft::Console::VirtualTerminal
                                       const std::basic_string_view<wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const std::basic_string_view<size_t> parameters);
+        bool _IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                     const wchar_t intermediate,
+                                                     const std::basic_string_view<size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         const std::basic_string_view<size_t> parameters);
@@ -170,6 +173,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112
@@ -251,6 +255,10 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr size_t DefaultRepeatCount = 1;
         bool _GetRepeatCount(const std::basic_string_view<size_t> parameters,
                              size_t& repeatCount) const noexcept;
+
+        bool _GetOscSetClipboard(const std::wstring_view string,
+                                 std::wstring& content,
+                                 bool& queryClipboard) const noexcept;
 
         void _ClearLastChar() noexcept;
     };

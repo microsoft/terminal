@@ -731,6 +731,32 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - DA2 - Reports the terminal type, firmware version, and hardware options.
+//   For now we're following the XTerm practice of using 0 to represent a VT100
+//   terminal, the version is hardcoded as 10 (1.0), and the hardware option
+//   is set to 1 (indicating a PC Keyboard).
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SecondaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1b[>0;10;1c");
+}
+
+// Routine Description:
+// - DA3 - Reports the terminal unit identification code. Terminal emulators
+//   typically return a hardcoded value, the most common being all zeros.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TertiaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1bP!|00000000\x1b\\");
+}
+
+// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
@@ -1205,6 +1231,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetScreenMode(const bool reverseMode)
 {
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
     return _pConApi->PrivateSetScreenMode(reverseMode);
 }
 
@@ -1763,56 +1795,30 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    const bool isPty = _pConApi->IsConsolePty();
-
     bool success = CursorVisibility(true); // Cursor enabled.
-    if (success)
+    success = SetOriginMode(false) && success; // Absolute cursor addressing.
+    success = SetAutoWrapMode(true) && success; // Wrap at end of line.
+    success = SetCursorKeysMode(false) && success; // Normal characters.
+    success = SetKeypadMode(false) && success; // Numeric characters.
+
+    // Top margin = 1; bottom margin = page length.
+    success = _DoSetTopBottomScrollingMargins(0, 0) && success;
+
+    _termOutput = {}; // Reset all character set designations.
+    if (_initialCodePage.has_value())
     {
-        success = SetOriginMode(false); // Absolute cursor addressing.
+        // Restore initial code page if previously changed by a DOCS sequence.
+        success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
-    if (success)
-    {
-        success = SetAutoWrapMode(true); // Wrap at end of line.
-    }
-    if (success)
-    {
-        success = SetCursorKeysMode(false); // Normal characters.
-    }
-    // SetCursorKeysMode will return false if we're in conpty mode, as to
-    // trigger a passthrough. If that's the case, just power through here.
-    if (success || isPty)
-    {
-        success = SetKeypadMode(false); // Numeric characters.
-    }
-    // SetKeypadMode will return false if we're in conpty mode, as to trigger a
-    // passthrough. If that's the case, just power through here.
-    if (success || isPty)
-    {
-        // Top margin = 1; bottom margin = page length.
-        success = _DoSetTopBottomScrollingMargins(0, 0);
-    }
-    if (success)
-    {
-        _termOutput = {}; // Reset all character set designations.
-        if (_initialCodePage.has_value())
-        {
-            // Restore initial code page if previously changed by a DOCS sequence.
-            success = _pConApi->SetConsoleOutputCP(_initialCodePage.value());
-        }
-    }
-    if (success)
-    {
-        const auto opt = DispatchTypes::GraphicsOptions::Off;
-        success = SetGraphicsRendition({ &opt, 1 }); // Normal rendition.
-    }
-    if (success)
-    {
-        // Reset the saved cursor state.
-        // Note that XTerm only resets the main buffer state, but that
-        // seems likely to be a bug. Most other terminals reset both.
-        _savedCursorState.at(0) = {}; // Main buffer
-        _savedCursorState.at(1) = {}; // Alt buffer
-    }
+
+    const auto opt = DispatchTypes::GraphicsOptions::Off;
+    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+
+    // Reset the saved cursor state.
+    // Note that XTerm only resets the main buffer state, but that
+    // seems likely to be a bug. Most other terminals reset both.
+    _savedCursorState.at(0) = {}; // Main buffer
+    _savedCursorState.at(1) = {}; // Alt buffer
 
     return success;
 }
@@ -1851,34 +1857,19 @@ bool AdaptDispatch::HardReset()
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
-    if (success)
-    {
-        success = SoftReset();
-    }
+    success = SoftReset() && success;
 
     // Clears the screen - Needs to be done in two operations.
-    if (success)
-    {
-        success = EraseInDisplay(DispatchTypes::EraseType::All);
-    }
-    if (success)
-    {
-        success = _EraseScrollback();
-    }
+    success = EraseInDisplay(DispatchTypes::EraseType::All) && success;
+    success = EraseInDisplay(DispatchTypes::EraseType::Scrollback) && success;
 
     // Set the DECSCNM screen mode back to normal.
-    if (success)
-    {
-        success = SetScreenMode(false);
-    }
+    success = SetScreenMode(false) && success;
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    if (success)
-    {
-        success = CursorPosition(1, 1);
-    }
+    success = CursorPosition(1, 1) && success;
 
-    // delete all current tab stops and reapply
+    // Delete all current tab stops and reapply
     _ResetTabStops();
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
@@ -2223,6 +2214,17 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
     }
 
     return _pConApi->SetCursorColor(cursorColor);
+}
+
+// Routine Description:
+// - OSC Copy to Clipboard
+// Arguments:
+// - content - The content to copy to clipboard. Must be null terminated.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
+{
+    return false;
 }
 
 // Method Description:

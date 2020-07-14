@@ -5,6 +5,7 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
+#include "base64.hpp"
 
 #include "ascii.hpp"
 
@@ -700,6 +701,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case L'?':
             success = _IntermediateQuestionMarkDispatch(wch, parameters);
             break;
+        case L'>':
+        case L'=':
+            success = _IntermediateGreaterThanOrEqualDispatch(wch, value, parameters);
+            break;
         case L'!':
             success = _IntermediateExclamationDispatch(wch);
             break;
@@ -769,6 +774,43 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
             break;
         }
     }
+    return success;
+}
+
+// Routine Description:
+// - Handles actions that have postfix params on an intermediate '>' or '='.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediate - The intermediate character.
+// - parameters - Set of numeric parameters collected while parsing the sequence.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                                       const wchar_t intermediate,
+                                                                       const std::basic_string_view<size_t> parameters)
+{
+    bool success = false;
+
+    switch (wch)
+    {
+    case VTActionCodes::DA_DeviceAttributes:
+        if (_VerifyDeviceAttributesParams(parameters))
+        {
+            switch (intermediate)
+            {
+            case L'>':
+                success = _dispatch->SecondaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+                break;
+            case L'=':
+                success = _dispatch->TertiaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+                break;
+            }
+        }
+        break;
+    }
+
     return success;
 }
 
@@ -881,6 +923,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 {
     bool success = false;
     std::wstring title;
+    std::wstring setClipboardContent;
+    bool queryClipboard = false;
     size_t tableIndex = 0;
     DWORD color = 0;
 
@@ -898,6 +942,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
         success = _GetOscSetColor(string, color);
+        break;
+    case OscActionCodes::SetClipboard:
+        success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         break;
     case OscActionCodes::ResetCursorColor:
         // the console uses 0xffffffff as an "invalid color" value
@@ -934,6 +981,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            break;
+        case OscActionCodes::SetClipboard:
+            if (!queryClipboard)
+            {
+                success = _dispatch->SetClipboard(setClipboardContent);
+            }
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
             break;
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
@@ -1857,6 +1911,37 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
     }
 
     return success;
+}
+
+// Routine Description:
+// - Parse OscSetClipboard parameters with the format `Pc;Pd`. Currently the first parameter `Pc` is
+// ignored. The second parameter `Pd` should be a valid base64 string or character `?`.
+// Arguments:
+// - string - Osc String input.
+// - content - Content to set to clipboard.
+// - queryClipboard - Whether to get clipboard content and return it to terminal with base64 encoded.
+// Return Value:
+// - True if there was a valid base64 string or the passed parameter was `?`.
+bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view string,
+                                                   std::wstring& content,
+                                                   bool& queryClipboard) const noexcept
+{
+    const size_t pos = string.find(';');
+    if (pos != std::wstring_view::npos)
+    {
+        const std::wstring_view substr = string.substr(pos + 1);
+        if (substr == L"?")
+        {
+            queryClipboard = true;
+            return true;
+        }
+        else
+        {
+            return Base64::s_Decode(substr, content);
+        }
+    }
+
+    return false;
 }
 
 // Method Description:

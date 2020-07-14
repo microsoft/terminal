@@ -42,8 +42,8 @@ public:
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS), true },
-        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4), true },
+        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
+        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
@@ -59,14 +59,14 @@ public:
     {
     }
 
-    WORD GetLegacyAttributes(const WORD defaultAttributes = 0x07) const noexcept;
+    static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
+    static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
+    WORD GetLegacyAttributes() const noexcept;
 
-    COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const noexcept;
-    COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const noexcept;
+    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+                                                     const COLORREF defaultFgColor,
+                                                     const COLORREF defaultBgColor,
+                                                     const bool reverseScreenMode = false) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -89,23 +89,31 @@ public:
 
     bool IsLegacy() const noexcept;
     bool IsBold() const noexcept;
+    bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
     bool IsInvisible() const noexcept;
     bool IsCrossedOut() const noexcept;
     bool IsUnderlined() const noexcept;
+    bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
     void SetBold(bool isBold) noexcept;
+    void SetFaint(bool isFaint) noexcept;
     void SetItalics(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderline(bool isUnderlined) noexcept;
+    void SetOverline(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
 
+    TextColor GetForeground() const noexcept;
+    TextColor GetBackground() const noexcept;
+    void SetForeground(const TextColor foreground) noexcept;
+    void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
@@ -146,10 +154,13 @@ public:
     }
 
 private:
-    COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const noexcept;
-    COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const noexcept;
+    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
+    {
+        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
+    }
+
+    static BYTE s_legacyDefaultForeground;
+    static BYTE s_legacyDefaultBackground;
 
     WORD _wAttrLegacy;
     TextColor _foreground;

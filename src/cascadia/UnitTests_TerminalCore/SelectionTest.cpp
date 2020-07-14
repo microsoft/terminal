@@ -672,5 +672,174 @@ namespace TerminalCoreUnitTests
             selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 11, 99, 11 }));
         }
+
+        TEST_METHOD(ShiftClick)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (4,10)
+            const std::wstring_view text = L"doubleClickMe dragThroughHere";
+            term.SetCursorPosition(4, 10);
+            term.Write(text);
+
+            // Step 1: Create a selection on "doubleClickMe"
+            {
+                // Simulate double click at (x,y) = (5,10)
+                term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansionMode::Word);
+
+                // Validate selection area: "doubleClickMe" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 16, 10 }));
+            }
+
+            // Step 2: Shift+Click to "dragThroughHere"
+            {
+                // Simulate Shift+Click at (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^
+                //       start            finish
+                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+
+                // Validate selection area: "doubleClickMe drag" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 21, 10 }));
+            }
+
+            // Step 3: Shift+Double-Click at "dragThroughHere"
+            {
+                // Simulate Shift+DoubleClick at (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^          ^
+                //       start            click      finish
+                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
+
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+
+            // Step 4: Shift+Triple-Click at "dragThroughHere"
+            {
+                // Simulate Shift+TripleClick at (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere     |
+                //         ^                ^                ^
+                //       start            click            finish (boundary)
+                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Line);
+
+                // Validate selection area: "doubleClickMe dragThroughHere..." selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+            }
+
+            // Step 5: Shift+Double-Click at "dragThroughHere"
+            {
+                // Simulate Shift+DoubleClick at (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^          ^
+                //       start            click      finish
+                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
+
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+
+            // Step 6: Drag past "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (35,10)
+                // Since we were preceded by a double-click, we're in "word" expansion mode
+                //
+                // buffer: doubleClickMe dragThroughHere     |
+                //         ^                                 ^
+                //       start                             finish (boundary)
+                term.SetSelectionEnd({ 35, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere..." selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+            }
+
+            // Step 6: Drag back to "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (21,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                ^          ^
+                //       start             drag      finish
+                term.SetSelectionEnd({ 21, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+
+            // Step 7: Drag within "dragThroughHere"
+            {
+                // Simulate drag to (x,y) = (25,10)
+                //
+                // buffer: doubleClickMe dragThroughHere
+                //         ^                    ^      ^
+                //       start                 drag  finish
+                term.SetSelectionEnd({ 25, 10 });
+
+                // Validate selection area: "doubleClickMe dragThroughHere" still selected
+                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            }
+        }
+
+        TEST_METHOD(Pivot)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Step 1: Create a selection
+            {
+                // (10,10) to (20, 10)
+                term.SelectNewRegion({ 10, 10 }, { 20, 10 });
+
+                // Validate selection area
+                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+            }
+
+            // Step 2: Drag to (5,10)
+            {
+                term.SetSelectionEnd({ 5, 10 });
+
+                // Validate selection area
+                // NOTE: Pivot should be (10, 10)
+                ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
+            }
+
+            // Step 3: Drag back to (20,10)
+            {
+                term.SetSelectionEnd({ 20, 10 });
+
+                // Validate selection area
+                // NOTE: Pivot should still be (10, 10)
+                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+            }
+
+            // Step 4: Shift+Click at (5,10)
+            {
+                term.SetSelectionEnd({ 5, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+
+                // Validate selection area
+                // NOTE: Pivot should still be (10, 10)
+                ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
+            }
+
+            // Step 5: Shift+Click back at (20,10)
+            {
+                term.SetSelectionEnd({ 20, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+
+                // Validate selection area
+                // NOTE: Pivot should still be (10, 10)
+                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+            }
+        }
     };
 }

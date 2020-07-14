@@ -88,6 +88,8 @@ public:
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
+    bool SecondaryDeviceAttributes() noexcept override { return false; } // DA2
+    bool TertiaryDeviceAttributes() noexcept override { return false; } // DA3
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
     bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
@@ -103,6 +105,8 @@ public:
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) noexcept override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) noexcept override { return false; } // OSCSetCursorColor, OSCResetCursorColor
+
+    bool SetClipboard(std::wstring_view /*content*/) noexcept override { return false; } // OscSetClipboard
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,

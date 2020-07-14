@@ -5,6 +5,12 @@ namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
     delegate void ToggleFullscreenEventArgs();
+    delegate void ToggleFocusModeEventArgs();
+
+    interface IDialogPresenter
+    {
+        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+    };
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
@@ -14,11 +20,16 @@ namespace TerminalApp
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };
 
+        // We cannot use the default XAML APIs because we want to make sure
+        // that there's only one application-global dialog visible at a time,
+        // and because of GH#5224.
+        IDialogPresenter DialogPresenter;
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFocusModeEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
     }
 }

@@ -109,6 +109,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool inAlternateBuffer{ false };
             COORD lastPos{ -1, -1 };
             unsigned int lastButton{ 0 };
+            int accumulatedDelta{ 0 };
         };
 
         MouseInputState _mouseInputState;

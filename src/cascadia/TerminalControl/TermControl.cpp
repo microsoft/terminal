@@ -96,6 +96,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTerminalCursorPositionChanged = std::bind(&TermControl::_TerminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
+        auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
+        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -294,6 +297,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+    void TermControl::ToggleRetroEffect()
+    {
+        auto lock = _terminal->LockForWriting();
+        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+    }
 
     // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
@@ -353,8 +361,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        // set number of rows to scroll at a time
-        _rowsToScroll = _settings.RowsToScroll();
+        _UpdateSystemParameterSettings();
     }
 
     // Method Description:
@@ -1078,35 +1085,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const unsigned int MAX_CLICK_COUNT = 3;
                 const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                if (multiClickMapper == 3)
+                ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+                if (multiClickMapper == 1)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
-                    _selectionNeedsToBeCopied = true;
+                    mode = ::Terminal::SelectionExpansionMode::Cell;
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    mode = ::Terminal::SelectionExpansionMode::Word;
+                }
+                else if (multiClickMapper == 3)
+                {
+                    mode = ::Terminal::SelectionExpansionMode::Line;
+                }
+
+                // Update the selection appropriately
+                if (shiftEnabled && _terminal->IsSelectionActive())
+                {
+                    // Shift+Click: only set expand on the "end" selection point
+                    _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                {
+                    // Single Click: reset the selection and begin a new one
+                    _terminal->ClearSelection();
+                    _singleClickTouchdownPos = cursorPosition;
+                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
                 else
                 {
-                    if (shiftEnabled && _terminal->IsSelectionActive())
-                    {
-                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
-                        _selectionNeedsToBeCopied = true;
-                    }
-                    else
-                    {
-                        // A single click down resets the selection and begins a new one.
-                        _terminal->ClearSelection();
-                        _singleClickTouchdownPos = cursorPosition;
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                    }
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
+                    // Multi-Click Selection: expand both "start" and "end" selection points
+                    _terminal->MultiClickSelection(terminalPosition, mode);
+                    _selectionNeedsToBeCopied = true;
                 }
 
+                _lastMouseClickTimestamp = point.Timestamp();
+                _lastMouseClickPos = cursorPosition;
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
@@ -1475,12 +1490,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
+        // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
+        // but the "smooth scrolling" mode results in non-int values
         const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
-        // With one of the precision mouses, one click is always a multiple of 120,
-        // but the "smooth scrolling" mode results in non-int values
-
-        double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
+        // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
+        // at a time" setting. If we ignore it, we will scroll a truly absurd number
+        // of rows.
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? GetViewHeight() : _rowsToScroll };
+        double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         //      for us.
@@ -1681,7 +1699,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
-        _rowsToScroll = _settings.RowsToScroll();
+
+        _UpdateSystemParameterSettings();
+    }
+
+    // Method Description
+    // - Updates internal params based on system parameters
+    void TermControl::_UpdateSystemParameterSettings() noexcept
+    {
+        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
+        {
+            LOG_LAST_ERROR();
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
+            _rowsToScroll = 3;
+        }
     }
 
     // Method Description:
@@ -2017,6 +2049,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangedHandlers(winrt::hstring{ wstr });
     }
 
+    void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
+    {
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
+                                                                   winrt::hstring(L""),
+                                                                   winrt::hstring(L""));
+        _clipboardCopyHandlers(*this, *copyArgs);
+    }
+
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
@@ -2324,7 +2364,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Account for the size of any padding
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         width += padding.Left + padding.Right;
         height += padding.Top + padding.Bottom;
 
@@ -2344,7 +2384,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto fontSize = _actualFont.GetSize();
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
@@ -2476,7 +2516,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
-        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
 
         // This point is the location of the cursor within the actual grid of characters, in DIPs
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;

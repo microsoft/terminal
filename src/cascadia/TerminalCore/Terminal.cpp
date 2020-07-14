@@ -41,6 +41,7 @@ Terminal::Terminal() :
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
+    _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
@@ -788,9 +789,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
     SHORT rowsPushedOffTopOfBuffer = 0;
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (proposedCursorPosition.Y >= bufferSize.Height())
     {
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
@@ -804,7 +805,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // Move the viewport down if the cursor moved below the viewport.
     bool updatedViewport = false;
-    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
+    const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+    if (scrollAmount > 0)
     {
         const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
@@ -817,6 +819,13 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (updatedViewport)
     {
+        // scroll if...
+        //   - no selection is active
+        //   - viewport is already at the bottom
+        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+
+        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
+
         _NotifyScrollEvent();
     }
 
@@ -891,6 +900,11 @@ void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_vie
     _pfnTitleChanged.swap(pfn);
 }
 
+void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+{
+    _pfnCopyToClipboard.swap(pfn);
+}
+
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);
@@ -913,7 +927,7 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
 void Terminal::_InitializeColorTable()
 try
 {
-    const gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
     Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme

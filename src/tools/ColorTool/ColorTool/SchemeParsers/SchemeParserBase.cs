@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,17 +13,13 @@ namespace ColorTool.SchemeParsers
 
         public abstract string Name { get; }
 
-        public abstract bool CanParse(string schemeName);
-
         public abstract ColorScheme ParseScheme(string schemeName, bool reportErrors = false);
 
         // Common elements and helpers
-        protected abstract string FileExtension { get; }
+        public abstract string FileExtension { get; }
 
-        protected string ExtractSchemeName(string schemeFileName)
-        {
-            return schemeFileName.Substring(0, schemeFileName.Length - FileExtension.Length);
-        }
+        protected string ExtractSchemeName(string schemeFileName) =>
+            Path.ChangeExtension(schemeFileName, null);
     }
 }
 

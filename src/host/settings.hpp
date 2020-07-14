@@ -179,8 +179,6 @@ public:
     COLORREF GetDefaultBackgroundColor() const noexcept;
     void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
 
-    TextAttribute GetDefaultAttributes() const noexcept;
-
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
@@ -189,8 +187,7 @@ public:
 
     COLORREF CalculateDefaultForeground() const noexcept;
     COLORREF CalculateDefaultBackground() const noexcept;
-    COLORREF LookupForegroundColor(const TextAttribute& attr) const noexcept;
-    COLORREF LookupBackgroundColor(const TextAttribute& attr) const noexcept;
+    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
 
 private:
     DWORD _dwHotKey;
@@ -252,7 +249,4 @@ private:
     COLORREF _DefaultBackground;
     bool _TerminalScrolling;
     friend class RegistrySerialization;
-
-public:
-    WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
 };
