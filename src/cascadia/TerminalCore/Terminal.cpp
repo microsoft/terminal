@@ -927,7 +927,7 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
 void Terminal::_InitializeColorTable()
 try
 {
-    const gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
     Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
