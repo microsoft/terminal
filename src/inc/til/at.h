@@ -13,10 +13,12 @@ namespace til
         {
         };
 
+#ifdef GSL_SPAN_H
         template<class ElementType, std::size_t Extent>
         struct is_span_oracle<gsl::span<ElementType, Extent>> : std::true_type
         {
         };
+#endif
 
         template<class T>
         struct is_span : public is_span_oracle<std::remove_cv_t<T>>
@@ -40,6 +42,7 @@ namespace til
         return cont[i];
     }
 
+#ifdef GSL_SPAN_H
     // This is an overload of til::at for span that access its backing buffer directly (UNCHECKED)
     template<typename ElementType, size_t Extent>
     constexpr auto at(gsl::span<ElementType, Extent> span, const std::ptrdiff_t i) -> decltype(span[span.size()])
@@ -49,4 +52,5 @@ namespace til
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
         return span.data()[i];
     }
+#endif
 }
