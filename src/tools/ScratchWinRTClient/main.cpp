@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include "HostManager.h"
 #include <winrt/ScratchWinRTServer.h>
 #include "../../types/inc/utils.hpp"
 
@@ -30,9 +31,26 @@ static constexpr GUID ScratchClass_clsid{
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
 };
 
-void createExistingObjectApp(const winrt::guid& g)
+void createExistingObjectApp(int /*argc*/, char** argv)
 {
-    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(g, CLSCTX_LOCAL_SERVER);
+    winrt::guid guidFromCmdline{};
+    std::string guidString{ argv[1] };
+    auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
+    if (canConvert)
+    {
+        std::wstring wideGuidStr{ til::u8u16(guidString) };
+        printf("\x1b[90mSERVER: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
+        GUID result{};
+        THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
+        guidFromCmdline = result;
+    }
+    if (guidFromCmdline == winrt::guid{})
+    {
+        printf("client did not recieve GUID, early returning.");
+        return; // -1;
+    }
+
+    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline, CLSCTX_LOCAL_SERVER);
 
     if (!host)
     {
@@ -151,7 +169,94 @@ void scratchApp()
            thirdHost.DoCount());
 }
 
-int main(int argc, char** argv)
+static void printHosts(const ScratchWinRTClient::HostManager& manager)
+{
+    int index = 0;
+    for (const auto& h : manager.Hosts())
+    {
+        auto guidStr{ Utils::GuidToString(h.Id()) };
+        printf("Host[%d]: DoCount=%d %ls\n", index, h.DoCount(), guidStr.c_str());
+        index++;
+    }
+    if (index == 0)
+    {
+        printf("<No hosts>\n");
+    }
+}
+
+void managerApp()
+{
+    ScratchWinRTClient::HostManager manager;
+    printHosts(manager);
+
+    printf("Create host 0:\n");
+    auto host0 = manager.CreateHost();
+    printHosts(manager);
+
+    printf("Create host 1:\n");
+    auto host1 = manager.CreateHost();
+    host1.DoTheThing();
+    printHosts(manager);
+
+    printf("Create host 2:\n");
+    auto host2 = manager.CreateHost();
+    host2.DoTheThing();
+    host2.DoTheThing();
+    printHosts(manager);
+
+    printf("Create host 3:\n");
+    auto host3 = manager.CreateHost();
+    host3.DoTheThing();
+    host3.DoTheThing();
+    host3.DoTheThing();
+    printHosts(manager);
+
+    printf("increment host 0:\n");
+    host0.DoTheThing();
+    host0.DoTheThing();
+    host0.DoTheThing();
+    host0.DoTheThing();
+    printHosts(manager);
+
+    bool exitRequested = false;
+    while (!exitRequested)
+    {
+        printf("-----------------------------\n");
+        printf("input a command (l, i, c, q): ");
+        const auto ch = getchar();
+        printf("\n");
+        if (ch == 'l')
+        {
+            printHosts(manager);
+        }
+        else if (ch == 'i')
+        {
+            printf("input a host to increment: ");
+            const auto ch2 = getchar();
+            if (ch2 >= '0' && ch2 <= '9')
+            {
+                uint32_t index = ((int)(ch2)) - ((int)('0'));
+                if (index < manager.Hosts().Size())
+                {
+                    manager.Hosts().GetAt(index).DoTheThing();
+                    printHosts(manager);
+                }
+            }
+        }
+        else if (ch == 'c')
+        {
+            printf("Creating a new host\n");
+            manager.CreateHost();
+            printHosts(manager);
+        }
+        else if (ch == 'q')
+        {
+            exitRequested = true;
+        }
+    }
+}
+
+int main(int /*argc*/, char** /*argv*/)
 {
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
@@ -161,41 +266,33 @@ int main(int argc, char** argv)
 
     init_apartment();
 
+    // try
+    // {
+    //     // If a GUID was passed on the commandline, then try to instead make an instance of that class.
+    //     if (argc > 1)
+    //     {
+    //         createExistingObjectApp(argc, argv);
+    //     }
+    //     else
+    //     {
+    //         scratchApp();
+    //     }
+    // }
+    // catch (hresult_error const& e)
+    // {
+    //     printf("Error: %ls\n", e.message().c_str());
+    // }
+
     try
     {
-        // If a GUID was passed on the commandline, then try to instead make an instance of that class.
-        if (argc > 1)
-        {
-            winrt::guid guidFromCmdline{};
-            std::string guidString{ argv[1] };
-            auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
-            if (canConvert)
-            {
-                std::wstring wideGuidStr{ til::u8u16(guidString) };
-                printf("\x1b[90mSERVER: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
-                GUID result{};
-                THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
-                guidFromCmdline = result;
-            }
-            if (guidFromCmdline == winrt::guid{})
-            {
-                printf("client did not recieve GUID, early returning.");
-                return -1;
-            }
-
-            createExistingObjectApp(guidFromCmdline);
-        }
-        else
-        {
-            scratchApp();
-        }
+        managerApp();
     }
     catch (hresult_error const& e)
     {
         printf("Error: %ls\n", e.message().c_str());
     }
 
-    printf("Press Enter me when you're done.");
-    getchar();
+    // printf("Press Enter me when you're done.");
+    // getchar();
     printf("Exiting client");
 }

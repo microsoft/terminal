@@ -5,13 +5,15 @@ namespace winrt::ScratchWinRTServer::implementation
 {
     struct HostClass : public HostClassT<HostClass>
     {
-        HostClass();
+        HostClass(const winrt::guid& g);
         void DoTheThing();
 
         int DoCount();
+        winrt::guid Id();
 
     private:
         int _DoCount{ 0 };
+        winrt::guid _id;
     };
 }
 

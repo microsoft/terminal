@@ -4,7 +4,8 @@
 #include "HostClass.g.cpp"
 namespace winrt::ScratchWinRTServer::implementation
 {
-    HostClass::HostClass()
+    HostClass::HostClass(const winrt::guid& g) :
+        _id{ g }
     {
     }
     int HostClass::DoCount()
@@ -15,5 +16,9 @@ namespace winrt::ScratchWinRTServer::implementation
     void HostClass::DoTheThing()
     {
         _DoCount++;
+    }
+    winrt::guid HostClass::Id()
+    {
+        return _id;
     }
 }

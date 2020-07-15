@@ -1,0 +1,12 @@
+
+
+namespace ScratchWinRTClient
+{
+    [default_interface] runtimeclass HostManager // : IScratchInterface
+    {
+        HostManager();
+
+        Windows.Foundation.Collections.IObservableVector<ScratchWinRTServer.HostClass> Hosts { get; };
+        ScratchWinRTServer.HostClass CreateHost();
+    };
+}

@@ -4,9 +4,10 @@ namespace ScratchWinRTServer
 {
     [default_interface] runtimeclass HostClass // : IScratchInterface
     {
-        HostClass();
+        HostClass(Guid g);
         void DoTheThing();
         Int32 DoCount { get; };
+        Guid Id { get; };
 
         // Adding a Windows.UI.Xaml element will crash the server when the
         // server tries to instantiate the element without a XAML host.

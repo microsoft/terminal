@@ -85,6 +85,9 @@ winrt::com_ptr<ScratchWinRTServer::implementation::HostClass> g_hostClassSinglet
 
 struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 {
+    HostClassFactory(winrt::guid g) :
+        _guid{ g } {};
+
     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
     {
         *result = nullptr;
@@ -103,7 +106,7 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
             printf("\x1b[90mSERVER: Create new HostClass\x1b[m\n");
             // auto f = make_self<ScratchWinRTServer::implementation::HostClass>();
             // g_hostClassSingleton{ f };
-            g_hostClassSingleton = make_self<ScratchWinRTServer::implementation::HostClass>();
+            g_hostClassSingleton = make_self<ScratchWinRTServer::implementation::HostClass>(_guid);
             return g_hostClassSingleton.as(iid, result);
         }
     }
@@ -112,6 +115,9 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
     {
         return S_OK;
     }
+
+private:
+    winrt::guid _guid;
 };
 
 // DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
@@ -207,7 +213,7 @@ int main(int argc, char** argv)
 
     DWORD registrationHostClass{};
     check_hresult(CoRegisterClassObject(guidFromCmdline,
-                                        make<HostClassFactory>().get(),
+                                        make<HostClassFactory>(guidFromCmdline).get(),
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
