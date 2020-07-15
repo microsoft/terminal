@@ -237,10 +237,10 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
 JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
 {
     JSON_MAPPINGS(4) = {
-        pair_type{ "left", TargetType::Left },
-        pair_type{ "right", TargetType::Right },
-        pair_type{ "up", TargetType::Up },
-        pair_type{ "down", TargetType::Down },
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "down", ValueType::Down },
     };
 };
 
@@ -248,9 +248,9 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
 {
     JSON_MAPPINGS(3) = {
-        pair_type{ "vertical", TargetType::Vertical },
-        pair_type{ "horizontal", TargetType::Horizontal },
-        pair_type{ "auto", TargetType::Automatic },
+        pair_type{ "vertical", ValueType::Vertical },
+        pair_type{ "horizontal", ValueType::Horizontal },
+        pair_type{ "auto", ValueType::Automatic },
     };
 };
 
@@ -258,15 +258,15 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitType)
 {
     JSON_MAPPINGS(1) = {
-        pair_type{ "duplicate", TargetType::Duplicate },
+        pair_type{ "duplicate", ValueType::Duplicate },
     };
 };
 
 JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
 {
     JSON_MAPPINGS(3) = {
-        pair_type{ "settingsFile", TargetType::SettingsFile },
-        pair_type{ "defaultsFile", TargetType::DefaultsFile },
-        pair_type{ "allFiles", TargetType::AllFiles },
+        pair_type{ "settingsFile", ValueType::SettingsFile },
+        pair_type{ "defaultsFile", ValueType::DefaultsFile },
+        pair_type{ "allFiles", ValueType::AllFiles },
     };
 };
