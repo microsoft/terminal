@@ -6,6 +6,7 @@
     "initialCols": 120,
     "initialRows": 30,
     "launchMode": "default",
+    "alwaysOnTop": false,
 
     // Selection
     "copyOnSelect": false,
@@ -277,6 +278,7 @@
         { "command": "toggleFullscreen", "keys": "alt+enter" },
         { "command": "toggleFullscreen", "keys": "f11" },
         { "command": "toggleFocusMode" },
+        { "command": "toggleAlwaysOnTop" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },

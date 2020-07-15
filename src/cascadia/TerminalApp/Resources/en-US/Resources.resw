@@ -399,6 +399,9 @@
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
   </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>Toggle always on top mode</value>
+  </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
   </data>
