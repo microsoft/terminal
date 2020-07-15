@@ -114,7 +114,7 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 // - legacyAttrs - One legacy color item per cell
 OutputCellIterator::OutputCellIterator(const gsl::span<const WORD> legacyAttrs) noexcept :
     _mode(Mode::LegacyAttr),
-    _currentView(s_GenerateViewLegacyAttr(gsl::at(legacyAttrs, 0))),
+    _currentView(s_GenerateViewLegacyAttr(til::at(legacyAttrs, 0))),
     _run(legacyAttrs),
     _attr(InvalidTextAttribute),
     _distance(0),
@@ -129,7 +129,7 @@ OutputCellIterator::OutputCellIterator(const gsl::span<const WORD> legacyAttrs) 
 // - charInfos - Multiple cell with unicode text and legacy color data.
 OutputCellIterator::OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept :
     _mode(Mode::CharInfo),
-    _currentView(s_GenerateView(gsl::at(charInfos, 0))),
+    _currentView(s_GenerateView(til::at(charInfos, 0))),
     _run(charInfos),
     _attr(InvalidTextAttribute),
     _distance(0),
@@ -144,7 +144,7 @@ OutputCellIterator::OutputCellIterator(const gsl::span<const CHAR_INFO> charInfo
 // - cells - Multiple cells in a run
 OutputCellIterator::OutputCellIterator(const gsl::span<const OutputCell> cells) :
     _mode(Mode::Cell),
-    _currentView(s_GenerateView(gsl::at(cells, 0))),
+    _currentView(s_GenerateView(til::at(cells, 0))),
     _run(cells),
     _attr(InvalidTextAttribute),
     _distance(0),
@@ -265,7 +265,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateView(gsl::at(std::get<gsl::span<const OutputCell>>(_run), _pos));
+            _currentView = s_GenerateView(til::at(std::get<gsl::span<const OutputCell>>(_run), _pos));
         }
         break;
     }
@@ -275,7 +275,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateView(gsl::at(std::get<gsl::span<const CHAR_INFO>>(_run), _pos));
+            _currentView = s_GenerateView(til::at(std::get<gsl::span<const CHAR_INFO>>(_run), _pos));
         }
         break;
     }
@@ -285,7 +285,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateViewLegacyAttr(gsl::at(std::get<gsl::span<const WORD>>(_run), _pos));
+            _currentView = s_GenerateViewLegacyAttr(til::at(std::get<gsl::span<const WORD>>(_run), _pos));
         }
         break;
     }

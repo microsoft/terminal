@@ -395,7 +395,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     // Handle intermediate characters, if any
     if (!intermediates.empty())
     {
-        switch (static_cast<CsiIntermediateCodes>(gsl::at(intermediates, 0)))
+        switch (static_cast<CsiIntermediateCodes>(til::at(intermediates, 0)))
         {
         case CsiIntermediateCodes::MOUSE_SGR:
         {
@@ -805,7 +805,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const gsl::span<const
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
     {
-        modifiers = _GetModifier(gsl::at(parameters, 1));
+        modifiers = _GetModifier(til::at(parameters, 1));
     }
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
@@ -834,7 +834,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const gsl::span<cons
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
     {
-        modifiers = _GetModifier(gsl::at(parameters, 1));
+        modifiers = _GetModifier(til::at(parameters, 1));
     }
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
@@ -1347,22 +1347,22 @@ bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> pa
     switch (parameters.size())
     {
     case 6:
-        key.SetRepeatCount(::base::saturated_cast<WORD>(gsl::at(parameters, 5)));
+        key.SetRepeatCount(::base::saturated_cast<WORD>(til::at(parameters, 5)));
         [[fallthrough]];
     case 5:
-        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(gsl::at(parameters, 4)));
+        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(til::at(parameters, 4)));
         [[fallthrough]];
     case 4:
-        key.SetKeyDown(static_cast<bool>(gsl::at(parameters, 3)));
+        key.SetKeyDown(static_cast<bool>(til::at(parameters, 3)));
         [[fallthrough]];
     case 3:
-        key.SetCharData(static_cast<wchar_t>(gsl::at(parameters, 2)));
+        key.SetCharData(static_cast<wchar_t>(til::at(parameters, 2)));
         [[fallthrough]];
     case 2:
-        key.SetVirtualScanCode(::base::saturated_cast<WORD>(gsl::at(parameters, 1)));
+        key.SetVirtualScanCode(::base::saturated_cast<WORD>(til::at(parameters, 1)));
         [[fallthrough]];
     case 1:
-        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(gsl::at(parameters, 0)));
+        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(til::at(parameters, 0)));
         break;
     }
 

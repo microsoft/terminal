@@ -158,9 +158,9 @@ COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
             // If we find a match, return instead the bright version of this color
             for (size_t i = 0; i < 8; i++)
             {
-                if (gsl::at(colorTable, i) == defaultColor)
+                if (til::at(colorTable, i) == defaultColor)
                 {
-                    return gsl::at(colorTable, i + 8);
+                    return til::at(colorTable, i + 8);
                 }
             }
         }
@@ -173,11 +173,11 @@ COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
     }
     else if (IsIndex16() && brighten)
     {
-        return gsl::at(colorTable, _index | 8);
+        return til::at(colorTable, _index | 8);
     }
     else
     {
-        return gsl::at(colorTable, _index);
+        return til::at(colorTable, _index);
     }
 }
 

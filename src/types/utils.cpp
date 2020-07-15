@@ -425,10 +425,10 @@ void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> tab
 void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    std::swap(gsl::at(table, 1), gsl::at(table, 4));
-    std::swap(gsl::at(table, 3), gsl::at(table, 6));
-    std::swap(gsl::at(table, 9), gsl::at(table, 12));
-    std::swap(gsl::at(table, 11), gsl::at(table, 14));
+    std::swap(til::at(table, 1), til::at(table, 4));
+    std::swap(til::at(table, 3), til::at(table, 6));
+    std::swap(til::at(table, 9), til::at(table, 12));
+    std::swap(til::at(table, 11), til::at(table, 14));
 }
 
 // Function Description:
