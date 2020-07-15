@@ -26,7 +26,7 @@ Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
                    std::unique_ptr<IRenderThread> thread) :
-    _pData(pData),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _destructing{ false },
     _clusterBuffer{},
