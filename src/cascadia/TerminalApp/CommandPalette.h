@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
         void _selectNextItem(const bool moveDown);
 
         void _updateFilteredActions();
+        void _collectFilteredActions(Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> &actions);
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 

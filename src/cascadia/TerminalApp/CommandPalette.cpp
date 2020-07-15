@@ -271,16 +271,15 @@ namespace winrt::TerminalApp::implementation
     };
 
     // Method Description:
-    // - Update our list of filtered actions to reflect the current contents of
+    // - Produce a list of filtered actions to reflect the current contents of
     //   the input box. For more details on which commands will be displayed,
     //   see `_getWeight`.
     // Arguments:
-    // - <none>
+    // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    void CommandPalette::_updateFilteredActions()
+    void CommandPalette::_collectFilteredActions(Windows::Foundation::Collections::IObservableVector<TerminalApp::Command>& actions)
     {
-        _filteredActions.Clear();
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
@@ -303,7 +302,7 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                _filteredActions.Append(action);
+                actions.Append(action);
             }
 
             return;
@@ -343,7 +342,56 @@ namespace winrt::TerminalApp::implementation
         {
             auto top = heap.top();
             heap.pop();
-            _filteredActions.Append(top.command);
+            actions.Append(top.command);
+        }
+    }
+
+    // Method Description:
+    // - Update our list of filtered actions to reflect the current contents of
+    //   the input box. For more details on which commands will be displayed,
+    //   see `_getWeight`.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateFilteredActions()
+    {
+        auto actions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
+
+        _collectFilteredActions(actions);
+
+        // Make _filteredActions look identical to actions, using only Insert and Remove.
+        // This allows WinUI to nicely animate the ListView as it changes.
+        for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.Size(); i++)
+        {
+            for (uint32_t j = i; j < _filteredActions.Size(); j++)
+            {
+                if (_filteredActions.GetAt(j) == actions.GetAt(i))
+                {
+                    for (uint32_t k = i; k < j; k++)
+                    {
+                        _filteredActions.RemoveAt(i);
+                    }
+                    break;
+                }
+            }
+
+            if (_filteredActions.GetAt(i) != actions.GetAt(i))
+            {
+                _filteredActions.InsertAt(i, actions.GetAt(i));
+            }
+        }
+
+        // Remove any extra trailing items from the destination
+        while (_filteredActions.Size() > actions.Size())
+        {
+            _filteredActions.RemoveAtEnd();
+        }
+
+        // Add any extra trailing items from the source
+        while (_filteredActions.Size() < actions.Size())
+        {
+            _filteredActions.Append(actions.GetAt(_filteredActions.Size()));
         }
     }
 
