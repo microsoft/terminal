@@ -1083,6 +1083,8 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
+imagemagick
+inkscape
 inl
 INLINEPREFIX
 Inlines
@@ -1530,6 +1532,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+NOTOPMOST
 NOTNULL
 NOTRACK
 NOTSUPPORTED
@@ -2265,6 +2268,7 @@ targetentrypoint
 TARGETLIBS
 TARGETNAME
 targetnametoken
+targetsize
 targetver
 taskbar
 tbar
