@@ -47,11 +47,11 @@ enum class DelimiterClass
 class CharRow final
 {
 public:
-    using glyph_type = typename wchar_t;
-    using value_type = typename CharRowCell;
+    using glyph_type = wchar_t;
+    using value_type = CharRowCell;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
-    using reference = typename CharRowCellReference;
+    using reference = CharRowCellReference;
 
     CharRow(size_t rowWidth, ROW* const pParent);
 

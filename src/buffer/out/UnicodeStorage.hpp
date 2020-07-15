@@ -44,8 +44,8 @@ namespace std
 class UnicodeStorage final
 {
 public:
-    using key_type = typename COORD;
-    using mapped_type = typename std::vector<wchar_t>;
+    using key_type = COORD;
+    using mapped_type = std::vector<wchar_t>;
 
     UnicodeStorage() noexcept;
 

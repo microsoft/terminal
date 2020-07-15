@@ -26,7 +26,7 @@ Revision History:
 class ATTR_ROW final
 {
 public:
-    using const_iterator = typename AttrRowIterator;
+    using const_iterator = AttrRowIterator;
 
     ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
 

@@ -14,11 +14,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         class _bitmap_const_iterator
         {
         public:
-            using iterator_category = typename std::input_iterator_tag;
-            using value_type = typename const til::rectangle;
-            using difference_type = typename ptrdiff_t;
-            using pointer = typename const til::rectangle*;
-            using reference = typename const til::rectangle&;
+            using iterator_category = std::input_iterator_tag;
+            using value_type = const til::rectangle;
+            using difference_type = ptrdiff_t;
+            using pointer = const til::rectangle*;
+            using reference = const til::rectangle&;
 
             _bitmap_const_iterator(const dynamic_bitset<>& values, til::rectangle rc, ptrdiff_t pos) :
                 _values(values),
