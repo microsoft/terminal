@@ -326,7 +326,7 @@ std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::ws
 {
     const auto charData = Utf16Parser::Parse(wstr);
     std::vector<std::vector<wchar_t>> cells;
-    for (const auto chars : charData)
+    for (const auto& chars : charData)
     {
         if (IsGlyphFullWidth(std::wstring_view{ chars.data(), chars.size() }))
         {
