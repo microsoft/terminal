@@ -106,7 +106,6 @@ namespace winrt::TerminalApp::implementation
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
-        _commandPalette = this->CommandPalette();
         _rearranging = false;
 
         // GH#2455 - Make sure to try/catch calls to Application::Current,

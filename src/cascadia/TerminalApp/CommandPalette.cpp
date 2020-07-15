@@ -265,9 +265,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (command)
         {
+            // Close before we dispatch so that actions that open the command
+            // palette like the Tab Switcher will be able to have the last laugh.
+            _close();
+
             const auto actionAndArgs = command.Action();
             _dispatch.DoAction(actionAndArgs);
-            _close();
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
