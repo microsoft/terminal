@@ -3,6 +3,9 @@
 #define WIN32_LEAN_AND_MEAN
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
+#include <wil/cppwinrt.h>
+#undef max
+#undef min
 #include "LibraryIncludes.h"
 
 #include <Unknwn.h>

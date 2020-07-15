@@ -2,7 +2,7 @@
 
 namespace ScratchWinRTServer
 {
-    [default_interface] runtimeclass HostClass // : IScratchInterface
+    [default_interface] runtimeclass HostClass : IUnknown // : IScratchInterface
     {
         HostClass(Guid g);
         void DoTheThing();

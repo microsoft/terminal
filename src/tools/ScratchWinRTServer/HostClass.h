@@ -1,9 +1,11 @@
 #pragma once
 
 #include "HostClass.g.h"
+#include "IMyComInterface.h"
+
 namespace winrt::ScratchWinRTServer::implementation
 {
-    struct HostClass : public HostClassT<HostClass>
+    struct HostClass : HostClassT<HostClass, IMyComInterface>
     {
         HostClass(const winrt::guid& g);
         ~HostClass();
@@ -11,6 +13,8 @@ namespace winrt::ScratchWinRTServer::implementation
 
         int DoCount();
         winrt::guid Id();
+
+        HRESULT __stdcall Call() override;
 
     private:
         int _DoCount{ 0 };

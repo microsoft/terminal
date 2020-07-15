@@ -3,6 +3,7 @@
 #include "HostManager.h"
 #include <winrt/ScratchWinRTServer.h>
 #include "../../types/inc/utils.hpp"
+#include "../ScratchWinRTServer/IMyComInterface.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
@@ -213,48 +214,89 @@ void managerApp()
     printHosts(manager);
 
     printf("increment host 0:\n");
-    host0.DoTheThing();
-    host0.DoTheThing();
-    host0.DoTheThing();
-    host0.DoTheThing();
-    printHosts(manager);
 
-    bool exitRequested = false;
-    while (!exitRequested)
+    struct Foo : winrt::implements<Foo, IMyComInterface>
     {
-        printf("-----------------------------\n");
-        printf("input a command (l, i, c, q): ");
-        const auto ch = _getch();
-        printf("\n");
-        if (ch == 'l')
+        HRESULT __stdcall Call() noexcept override
         {
-            printHosts(manager);
+            return S_OK;
         }
-        else if (ch == 'i')
+    };
+    auto f = winrt::make<Foo>();
+    try
+    {
+        auto b = f.as<IMyComInterface>();
+        winrt::check_hresult(b->Call());
+    }
+    catch (hresult_error const& e)
+    {
+        printf("Error just doing the Foo thing: %ls\n", e.message().c_str());
+    }
+
+    try
+    {
+        // winrt::com_ptr<IMyComInterface> f;
+        //f.copy_from(host0);
+        // auto unk = winrt::get_unknown(host0);
+        // DebugBreak();
+
+        // This obviously doesn't work, because winrt::Server::HostClass doesn't
+        // implement IMyComInterface. The implementation does!
+        auto mci = host0.as<IMyComInterface>();
+        if (mci)
         {
-            printf("input a host to increment: ");
-            const auto ch2 = _getch();
-            if (ch2 >= '0' && ch2 <= '9')
-            {
-                uint32_t index = ((int)(ch2)) - ((int)('0'));
-                if (index < manager.Hosts().Size())
-                {
-                    manager.Hosts().GetAt(index).DoTheThing();
-                    printHosts(manager);
-                }
-            }
-        }
-        else if (ch == 'c')
-        {
-            printf("Creating a new host\n");
-            manager.CreateHost();
-            printHosts(manager);
-        }
-        else if (ch == 'q')
-        {
-            exitRequested = true;
+            mci->Call();
         }
     }
+    catch (hresult_error const& e)
+    {
+        printf("Error converting to the IMyComInterface: %ls\n", e.message().c_str());
+    }
+
+    // host0.DoTheThing();
+    // host0.DoTheThing();
+    // host0.DoTheThing();
+    // host0.DoTheThing();
+    printHosts(manager);
+
+    return;
+
+    // bool exitRequested = false;
+    // while (!exitRequested)
+    // {
+    //     printf("-----------------------------\n");
+    //     printf("input a command (l, i, c, q): ");
+    //     const auto ch = _getch();
+    //     printf("\n");
+    //     if (ch == 'l')
+    //     {
+    //         printHosts(manager);
+    //     }
+    //     else if (ch == 'i')
+    //     {
+    //         printf("input a host to increment: ");
+    //         const auto ch2 = _getch();
+    //         if (ch2 >= '0' && ch2 <= '9')
+    //         {
+    //             uint32_t index = ((int)(ch2)) - ((int)('0'));
+    //             if (index < manager.Hosts().Size())
+    //             {
+    //                 manager.Hosts().GetAt(index).DoTheThing();
+    //                 printHosts(manager);
+    //             }
+    //         }
+    //     }
+    //     else if (ch == 'c')
+    //     {
+    //         printf("Creating a new host\n");
+    //         manager.CreateHost();
+    //         printHosts(manager);
+    //     }
+    //     else if (ch == 'q')
+    //     {
+    //         exitRequested = true;
+    //     }
+    // }
 }
 
 int main(int /*argc*/, char** /*argv*/)

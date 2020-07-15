@@ -123,6 +123,7 @@
     <Midl Include="IScratchInterface.idl" />
     <Midl Include="ScratchClass.idl" />
     <Midl Include="HostClass.idl" />
+    <!-- <Midl Include="IMyComInterface.idl" /> -->
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="ScratchWinRTServer.manifest" />

@@ -33,4 +33,10 @@ namespace winrt::ScratchWinRTServer::implementation
     {
         return _id;
     }
+
+    HRESULT __stdcall HostClass::Call()
+    {
+        _DoCount += 4;
+        return S_OK;
+    }
 }
