@@ -1419,7 +1419,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1631,8 +1631,7 @@ CATCH_RETURN()
     const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
     const bool forceOpaqueBG = usingCleartype && !usingTransparency;
 
-    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
-    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
+    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);

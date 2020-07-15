@@ -11,6 +11,8 @@
     <ConfigurationType>Application</ConfigurationType>
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
     <ApplicationType>Windows Store</ApplicationType>
+    <WindowsStoreApp>true</WindowsStoreApp>
+    <WindowsAppContainer>false</WindowsAppContainer>
     <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
     <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>

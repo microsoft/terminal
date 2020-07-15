@@ -27,7 +27,7 @@ namespace Microsoft::Console::Render
                          size_t const width,
                          IBoxDrawingEffect* const boxEffect);
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset() noexcept;
 

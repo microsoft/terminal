@@ -58,7 +58,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _virtualBottom{ 0 },
     _renderTarget{ *this },
     _currentFont{ fontInfo },
-    _desiredFont{ fontInfo }
+    _desiredFont{ fontInfo },
+    _ignoreLegacyEquivalentVTAttributes{ false }
 {
     // Check if VT mode is enabled. Note that this can be true w/o calling
     // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
@@ -2029,6 +2030,13 @@ TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
+    if (_ignoreLegacyEquivalentVTAttributes)
+    {
+        // See the comment on StripErroneousVT16VersionsOfLegacyDefaults for more info.
+        _textBuffer->SetCurrentAttributes(TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(attributes));
+        return;
+    }
+
     _textBuffer->SetCurrentAttributes(attributes);
 
     // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
@@ -2674,4 +2682,18 @@ Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
                                                   buffer.RightInclusive(),
                                                   marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
     return margin;
+}
+
+// Routine Description:
+// - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = true;
+}
+
+// Routine Description:
+// - Disengages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = false;
 }
