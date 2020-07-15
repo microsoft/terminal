@@ -48,7 +48,7 @@ namespace winrt::ScratchWinRTClient::implementation
         // Ooof this is dumb, but we need a sleep here to make the server starts.
         // That's _sub par_. Maybe we could use the host's stdout to have them emit
         // a byte when they're set up?
-        Sleep(50);
+        Sleep(100);
     }
 
     ScratchWinRTServer::HostClass HostManager::CreateHost()

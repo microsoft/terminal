@@ -81,7 +81,10 @@ struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
     }
 };
 
-winrt::com_ptr<ScratchWinRTServer::implementation::HostClass> g_hostClassSingleton{ nullptr };
+std::mutex m;
+std::condition_variable cv;
+bool dtored = false;
+winrt::weak_ref<ScratchWinRTServer::implementation::HostClass> g_weak{ nullptr };
 
 struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 {
@@ -96,18 +99,17 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
             return CLASS_E_NOAGGREGATION;
         }
 
-        if (g_hostClassSingleton)
+        if (!g_weak)
         {
-            printf("\x1b[90mSERVER: Found existing HostClass\x1b[m\n");
-            return g_hostClassSingleton.as(iid, result);
+            auto strong = make_self<ScratchWinRTServer::implementation::HostClass>(_guid);
+
+            g_weak = (*strong).get_weak();
+            return strong.as(iid, result);
         }
         else
         {
-            printf("\x1b[90mSERVER: Create new HostClass\x1b[m\n");
-            // auto f = make_self<ScratchWinRTServer::implementation::HostClass>();
-            // g_hostClassSingleton{ f };
-            g_hostClassSingleton = make_self<ScratchWinRTServer::implementation::HostClass>(_guid);
-            return g_hostClassSingleton.as(iid, result);
+            auto strong = g_weak.get();
+            return strong.as(iid, result);
         }
     }
 
@@ -184,33 +186,6 @@ int main(int argc, char** argv)
 
     init_apartment();
 
-    // DWORD registrationMyStringable{};
-    // check_hresult(CoRegisterClassObject(MyStringable_clsid,
-    //                                     make<MyStringableFactory>().get(),
-    //                                     CLSCTX_LOCAL_SERVER,
-    //                                     REGCLS_MULTIPLEUSE,
-    //                                     &registrationMyStringable));
-
-    // printf("%d\n", registrationMyStringable);
-
-    // DWORD registrationScratchStringable{};
-    // check_hresult(CoRegisterClassObject(ScratchStringable_clsid,
-    //                                     make<ScratchStringableFactory>().get(),
-    //                                     CLSCTX_LOCAL_SERVER,
-    //                                     REGCLS_MULTIPLEUSE,
-    //                                     &registrationScratchStringable));
-
-    // printf("%d\n", registrationScratchStringable);
-
-    // DWORD registrationScratchClass{};
-    // check_hresult(CoRegisterClassObject(ScratchClass_clsid,
-    //                                     make<ScratchClassFactory>().get(),
-    //                                     CLSCTX_LOCAL_SERVER,
-    //                                     REGCLS_MULTIPLEUSE,
-    //                                     &registrationScratchClass));
-
-    // printf("%d\n", registrationScratchClass);
-
     DWORD registrationHostClass{};
     check_hresult(CoRegisterClassObject(guidFromCmdline,
                                         make<HostClassFactory>(guidFromCmdline).get(),
@@ -219,7 +194,10 @@ int main(int argc, char** argv)
                                         &registrationHostClass));
     printf("%d\n", registrationHostClass);
 
-    printf("\x1b[90mSERVER: Press Enter me when you're done serving.\x1b[m");
-    getchar();
-    printf("\x1b[90mSERVER: exiting %s\x1b[m", argv[1]);
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [] { return dtored; });
+
+    // printf("\x1b[90mSERVER: Press Enter me when you're done serving.\x1b[m");
+    // getchar();
+    printf("\x1b[90mSERVER: exiting %s\n\x1b[m", argv[1]);
 }

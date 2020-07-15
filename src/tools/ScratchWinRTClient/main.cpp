@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include <conio.h>
 #include "HostManager.h"
 #include <winrt/ScratchWinRTServer.h>
 #include "../../types/inc/utils.hpp"
@@ -91,7 +92,7 @@ void createHostClassProcess(const winrt::guid& g)
     // Ooof this is dumb, but we need a sleep here to make the server starts.
     // That's _sub par_. Maybe we could use the host's stdout to have them emit
     // a byte when they're set up?
-    Sleep(50);
+    Sleep(100);
 }
 
 void scratchApp()
@@ -223,7 +224,7 @@ void managerApp()
     {
         printf("-----------------------------\n");
         printf("input a command (l, i, c, q): ");
-        const auto ch = getchar();
+        const auto ch = _getch();
         printf("\n");
         if (ch == 'l')
         {
@@ -232,7 +233,7 @@ void managerApp()
         else if (ch == 'i')
         {
             printf("input a host to increment: ");
-            const auto ch2 = getchar();
+            const auto ch2 = _getch();
             if (ch2 >= '0' && ch2 <= '9')
             {
                 uint32_t index = ((int)(ch2)) - ((int)('0'));

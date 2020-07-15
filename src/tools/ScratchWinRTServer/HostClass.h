@@ -6,6 +6,7 @@ namespace winrt::ScratchWinRTServer::implementation
     struct HostClass : public HostClassT<HostClass>
     {
         HostClass(const winrt::guid& g);
+        ~HostClass();
         void DoTheThing();
 
         int DoCount();
