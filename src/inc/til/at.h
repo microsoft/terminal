@@ -44,6 +44,7 @@ namespace til
     template<typename ElementType, size_t Extent>
     constexpr auto at(gsl::span<ElementType, Extent> span, const std::ptrdiff_t i) -> decltype(span[span.size()])
     {
+#pragma warning(suppress : 26481) // Suppress bounds.1 check for doing pointer arithmetic
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
         return span.data()[i];
