@@ -71,7 +71,7 @@ struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
         {
             return CLASS_E_NOAGGREGATION;
         }
-        printf("Created ScratchClass\n");
+        printf("\x1b[90mSERVER: Created ScratchClass\x1b[m\n");
         return make<ScratchWinRTServer::implementation::ScratchClass>().as(iid, result);
     }
 
@@ -95,12 +95,12 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 
         if (g_hostClassSingleton)
         {
-            printf("Found existing HostClass\n");
+            printf("\x1b[90mSERVER: Found existing HostClass\x1b[m\n");
             return g_hostClassSingleton.as(iid, result);
         }
         else
         {
-            printf("Create new HostClass\n");
+            printf("\x1b[90mSERVER: Create new HostClass\x1b[m\n");
             // auto f = make_self<ScratchWinRTServer::implementation::HostClass>();
             // g_hostClassSingleton{ f };
             g_hostClassSingleton = make_self<ScratchWinRTServer::implementation::HostClass>();
@@ -139,7 +139,13 @@ static constexpr GUID ScratchClass_clsid{
 
 int main(int argc, char** argv)
 {
-    printf("args:[");
+    auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+
+    printf("\x1b[90mSERVER: args:[");
     if (argc > 0)
     {
         for (int i = 0; i < argc; i++)
@@ -147,7 +153,7 @@ int main(int argc, char** argv)
             printf("%s,", argv[i]);
         }
     }
-    printf("]\n");
+    printf("]\x1b[m\n");
 
     winrt::guid guidFromCmdline{};
 
@@ -158,7 +164,7 @@ int main(int argc, char** argv)
         if (canConvert)
         {
             std::wstring wideGuidStr{ til::u8u16(guidString) };
-            printf("Found GUID:%ls\n", wideGuidStr.c_str());
+            printf("\x1b[90mSERVER: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
             GUID result{};
             THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
             guidFromCmdline = result;
@@ -207,6 +213,7 @@ int main(int argc, char** argv)
                                         &registrationHostClass));
     printf("%d\n", registrationHostClass);
 
-    puts("Press Enter me when you're done serving.");
+    printf("\x1b[90mSERVER: Press Enter me when you're done serving.\x1b[m");
     getchar();
+    printf("\x1b[90mSERVER: exiting %s\x1b[m", argv[1]);
 }
