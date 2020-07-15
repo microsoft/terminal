@@ -5,87 +5,89 @@
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
 
-struct ScratchStringable : implements<ScratchStringable, IStringable, IClosable, winrt::ScratchWinRTServer::IScratchInterface>
-{
-    hstring ToString()
-    {
-        return L"Hello from server, ScratchStringable";
-    }
-    hstring DoTheThing()
-    {
-        return L"Zhu Li! Do the thing!";
-    }
-    void Close() { printf("Closed ScratchStringable\n"); }
-};
-struct MyStringable : implements<MyStringable, IStringable>
-{
-    hstring ToString()
-    {
-        return L"Hello from server, MyStringable";
-    }
-};
+// struct ScratchStringable : implements<ScratchStringable, IStringable, IClosable, winrt::ScratchWinRTServer::IScratchInterface>
+// {
+//     hstring ToString()
+//     {
+//         return L"Hello from server, ScratchStringable";
+//     }
+//     hstring DoTheThing()
+//     {
+//         return L"Zhu Li! Do the thing!";
+//     }
+//     void Close() { printf("Closed ScratchStringable\n"); }
+// };
+// struct MyStringable : implements<MyStringable, IStringable>
+// {
+//     hstring ToString()
+//     {
+//         return L"Hello from server, MyStringable";
+//     }
+// };
 
-struct MyStringableFactory : implements<MyStringableFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("Created MyStringable\n");
-        return make<MyStringable>().as(iid, result);
-    }
+// struct MyStringableFactory : implements<MyStringableFactory, IClassFactory>
+// {
+//     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
+//     {
+//         *result = nullptr;
+//         if (outer)
+//         {
+//             return CLASS_E_NOAGGREGATION;
+//         }
+//         printf("Created MyStringable\n");
+//         return make<MyStringable>().as(iid, result);
+//     }
 
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
+//     HRESULT __stdcall LockServer(BOOL) noexcept final
+//     {
+//         return S_OK;
+//     }
+// };
 
-struct ScratchStringableFactory : implements<ScratchStringableFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("Created ScratchStringable\n");
-        return make<ScratchStringable>().as(iid, result);
-    }
+// struct ScratchStringableFactory : implements<ScratchStringableFactory, IClassFactory>
+// {
+//     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
+//     {
+//         *result = nullptr;
+//         if (outer)
+//         {
+//             return CLASS_E_NOAGGREGATION;
+//         }
+//         printf("Created ScratchStringable\n");
+//         return make<ScratchStringable>().as(iid, result);
+//     }
 
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
-struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("\x1b[90mSERVER: Created ScratchClass\x1b[m\n");
-        return make<ScratchWinRTServer::implementation::ScratchClass>().as(iid, result);
-    }
+//     HRESULT __stdcall LockServer(BOOL) noexcept final
+//     {
+//         return S_OK;
+//     }
+// };
+// struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
+// {
+//     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
+//     {
+//         *result = nullptr;
+//         if (outer)
+//         {
+//             return CLASS_E_NOAGGREGATION;
+//         }
+//         printf("\x1b[90mSERVER: Created ScratchClass\x1b[m\n");
+//         return make<ScratchWinRTServer::implementation::ScratchClass>().as(iid, result);
+//     }
 
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
+//     HRESULT __stdcall LockServer(BOOL) noexcept final
+//     {
+//         return S_OK;
+//     }
+// };
 
 std::mutex m;
 std::condition_variable cv;
 bool dtored = false;
-winrt::weak_ref<ScratchWinRTServer::implementation::HostClass> g_weak{ nullptr };
-
+// winrt::weak_ref<ScratchWinRTServer::implementation::HostClass> g_weak{ nullptr };
+// winrt::weak_ref<HostClass> g_weak{ nullptr };
+winrt::com_ptr<HostClass> g_strong{ nullptr };
+// winrt::com_ref<HostClass> g_weak2{ nullptr };
 struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 {
     HostClassFactory(winrt::guid g) :
@@ -99,18 +101,24 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
             return CLASS_E_NOAGGREGATION;
         }
 
-        if (!g_weak)
-        {
-            auto strong = make_self<ScratchWinRTServer::implementation::HostClass>(_guid);
+        // if (!g_weak)
+        // {
+        //     // auto strong = make_self<ScratchWinRTServer::implementation::HostClass>(_guid);
+        //     auto strong = make_self<HostClass>(_guid);
 
-            g_weak = (*strong).get_weak();
-            return strong.as(iid, result);
-        }
-        else
+        //     g_weak = (*strong).get_weak();
+        //     return strong.as(iid, result);
+        // }
+        // else
+        // {
+        //     auto strong = g_weak.get();
+        //     return strong.as(iid, result);
+        // }
+        if (!g_strong)
         {
-            auto strong = g_weak.get();
-            return strong.as(iid, result);
+            g_strong = winrt::make_self<HostClass>(_guid);
         }
+        return g_strong.as(iid, result);
     }
 
     HRESULT __stdcall LockServer(BOOL) noexcept final
@@ -122,28 +130,28 @@ private:
     winrt::guid _guid;
 };
 
-// DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID MyStringable_clsid{
-    0xdaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
+// // DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
+// static constexpr GUID MyStringable_clsid{
+//     0xdaa16d7f,
+//     0xef66,
+//     0x4fc9,
+//     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
+// };
 
-// EAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchStringable_clsid{
-    0xeaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-// FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchClass_clsid{
-    0xfaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
+// // EAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
+// static constexpr GUID ScratchStringable_clsid{
+//     0xeaa16d7f,
+//     0xef66,
+//     0x4fc9,
+//     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
+// };
+// // FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
+// static constexpr GUID ScratchClass_clsid{
+//     0xfaa16d7f,
+//     0xef66,
+//     0x4fc9,
+//     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
+// };
 
 int main(int argc, char** argv)
 {
