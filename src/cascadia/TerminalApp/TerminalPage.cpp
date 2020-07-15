@@ -203,7 +203,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _tabs.VectorChanged({ &_commandPalette, &CommandPalette::OnTabsChanged });
+        _tabs.VectorChanged([weakThis{ get_weak() }](auto&& s, auto&& e) {
+            if (auto page{ weakThis.get() })
+            {
+                page->CommandPalette().OnTabsChanged(s, e);
+            }
+        });
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the

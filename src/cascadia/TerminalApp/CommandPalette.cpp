@@ -9,6 +9,7 @@
 
 #include "CommandPalette.g.cpp"
 #include <winrt/Microsoft.Terminal.Settings.h>
+#include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -327,8 +328,26 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableCommandPaletteMode()
     {
-        _currentMode = CommandPaletteMode::ActionMode;
+        _switchToMode(CommandPaletteMode::ActionMode);
         _updateFilteredActions();
+    }
+
+    void CommandPalette::_switchToMode(CommandPaletteMode mode)
+    {
+        _currentMode = mode;
+        switch (_currentMode)
+        {
+            case CommandPaletteMode::ActionMode:
+                _searchBox().PlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                break;
+            case CommandPaletteMode::TabSwitcherMode:
+                _searchBox().PlaceholderText(RS_(L"TabSwitcher_SearchBoxText"));
+                // TODO: Hide TextBox if anchor key is set.
+                break;
+            default:
+                _searchBox().PlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                break;
+        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -705,7 +724,7 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey)
     {
-        _currentMode = CommandPaletteMode::TabSwitcherMode;
+        _switchToMode(CommandPaletteMode::TabSwitcherMode);
         _anchorKey = anchorKey;
         _updateFilteredActions();
     }

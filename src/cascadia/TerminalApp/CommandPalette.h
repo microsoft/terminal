@@ -60,6 +60,7 @@ namespace winrt::TerminalApp::implementation
         void _close();
 
         CommandPaletteMode _currentMode;
+        void _switchToMode(CommandPaletteMode mode);
 
         // Tab Switcher
         std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
