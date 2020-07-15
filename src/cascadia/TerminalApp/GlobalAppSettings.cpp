@@ -178,7 +178,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
-    JsonUtils::GetBool(json, AlwaysOnTopKey, _AlwaysOnTop);
+    JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
