@@ -30,6 +30,21 @@ static constexpr GUID ScratchClass_clsid{
     { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
 };
 
+void createExistingObjectApp(const winrt::guid& g)
+{
+    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(g, CLSCTX_LOCAL_SERVER);
+
+    if (!host)
+    {
+        printf("Could not get the existing HostClass\n");
+        return;
+    }
+
+    // The DoCount could be anything, depending on which of the hosts we're creating.
+    printf("DoCount: %d (Expected: ?)\n",
+           host.DoCount());
+}
+
 void createHostClassProcess(const winrt::guid& g)
 {
     auto guidStr{ Utils::GuidToString(g) };
@@ -64,18 +79,6 @@ void createHostClassProcess(const winrt::guid& g)
 void scratchApp()
 {
     printf("scratchApp\n");
-    // {
-    //     printf("Trying to directly create a ScratchClass...\n");
-    //     auto server = create_instance<winrt::ScratchWinRTServer::ScratchClass>(ScratchClass_clsid, CLSCTX_LOCAL_SERVER);
-    //     if (server)
-    //     {
-    //         printf("%ls\n", server.DoTheThing().c_str());
-    //     }
-    //     else
-    //     {
-    //         printf("Could not get the ScratchClass directly\n");
-    //     }
-    // }
 
     // 1. Generate a GUID.
     // 2. Spawn a Server.exe, with the guid on the commandline
@@ -148,7 +151,7 @@ void scratchApp()
            thirdHost.DoCount());
 }
 
-int main()
+int main(int argc, char** argv)
 {
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
@@ -160,7 +163,32 @@ int main()
 
     try
     {
-        scratchApp();
+        // If a GUID was passed on the commandline, then try to instead make an instance of that class.
+        if (argc > 1)
+        {
+            winrt::guid guidFromCmdline{};
+            std::string guidString{ argv[1] };
+            auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
+            if (canConvert)
+            {
+                std::wstring wideGuidStr{ til::u8u16(guidString) };
+                printf("\x1b[90mSERVER: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
+                GUID result{};
+                THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
+                guidFromCmdline = result;
+            }
+            if (guidFromCmdline == winrt::guid{})
+            {
+                printf("client did not recieve GUID, early returning.");
+                return -1;
+            }
+
+            createExistingObjectApp(guidFromCmdline);
+        }
+        else
+        {
+            scratchApp();
+        }
     }
     catch (hresult_error const& e)
     {
