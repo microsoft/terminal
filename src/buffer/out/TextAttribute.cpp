@@ -5,18 +5,74 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+BYTE TextAttribute::s_legacyDefaultForeground = 7;
+BYTE TextAttribute::s_legacyDefaultBackground = 0;
+
 // Routine Description:
-// - Returns a WORD with legacy-style attributes for this textattribute.
+// - Sets the legacy attributes which map to and from the default colors.
 // Parameters:
 // - defaultAttributes: the attribute values to be used for default colors.
 // Return value:
-// - a WORD with legacy-style attributes for this textattribute.
-WORD TextAttribute::GetLegacyAttributes(const WORD defaultAttributes) const noexcept
+// - None
+void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(defaultAttributes & FG_ATTRS);
-    const BYTE bgIndex = _background.GetLegacyIndex((defaultAttributes & BG_ATTRS) >> 4);
+    s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
+    s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+}
+
+// Routine Description:
+// Pursuant to GH#6807
+// This routine replaces VT colors from the 16-color set with the "default"
+// flag. It is intended to be used as part of the "VT Quirk" in
+// WriteConsole[AW].
+//
+// There is going to be a very long tail of applications that will
+// explicitly request VT SGR 40/37 when what they really want is to
+// SetConsoleTextAttribute() with a black background/white foreground.
+// Instead of making those applications look bad (and therefore making us
+// look bad, because we're releasing this as an update to something that
+// "looks good" already), we're introducing this compatibility hack. Before
+// the color reckoning in GH#6698 + GH#6506, *every* color was subject to
+// being spontaneously and erroneously turned into the default color. Now,
+// only the 16-color palette value that matches the active console
+// background color will be destroyed when the quirk is enabled.
+//
+// This is not intended to be a long-term solution. This comment will be
+// discovered in forty years(*) time and people will laugh at our hubris.
+//
+// *it doesn't matter when you're reading this, it will always be 40 years
+// from now.
+TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept
+{
+    const auto fg{ attribute.GetForeground() };
+    const auto bg{ attribute.GetBackground() };
+    auto copy{ attribute };
+    if (fg.IsIndex16() &&
+        attribute.IsBold() == WI_IsFlagSet(s_legacyDefaultForeground, FOREGROUND_INTENSITY) &&
+        fg.GetIndex() == (s_legacyDefaultForeground & ~FOREGROUND_INTENSITY))
+    {
+        // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
+        copy.SetDefaultForeground();
+    }
+    if (bg.IsIndex16() && bg.GetIndex() == s_legacyDefaultBackground)
+    {
+        copy.SetDefaultBackground();
+    }
+    return copy;
+}
+
+// Routine Description:
+// - Returns a WORD with legacy-style attributes for this textattribute.
+// Parameters:
+// - None
+// Return value:
+// - a WORD with legacy-style attributes for this textattribute.
+WORD TextAttribute::GetLegacyAttributes() const noexcept
+{
+    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = _foreground.IsIndex16() && IsBold();
+    const bool brighten = IsBold() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 
@@ -25,54 +81,55 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
+// Routine Description:
+// - Calculates rgb colors based off of current color table and active modification attributes.
 // Arguments:
-// - None
+// - colorTable: the current color table rgb values.
+// - defaultFgColor: the default foreground color rgb value.
+// - defaultBgColor: the default background color rgb value.
+// - reverseScreenMode: true if the screen mode is reversed.
 // Return Value:
-// - color that should be displayed as the foreground color
-COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
+// - the foreground and background colors that should be displayed.
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+                                                                const COLORREF defaultFgColor,
+                                                                const COLORREF defaultBgColor,
+                                                                const bool reverseScreenMode) const noexcept
 {
-    return IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
+    auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
+    auto bg = _background.GetColor(colorTable, defaultBgColor);
+    if (IsFaint())
+    {
+        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
+    }
+    if (IsReverseVideo() ^ reverseScreenMode)
+    {
+        std::swap(fg, bg);
+    }
+    if (IsInvisible())
+    {
+        fg = bg;
+    }
+    return { fg, bg };
 }
 
-// Routine Description:
-// - Calculates rgb background color based off of current color table and active modification attributes
-// Arguments:
-// - None
-// Return Value:
-// - color that should be displayed as the background color
-COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const noexcept
+TextColor TextAttribute::GetForeground() const noexcept
 {
-    return IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
+    return _foreground;
 }
 
-// Routine Description:
-// - gets rgb foreground color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the foreground color
-COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
+TextColor TextAttribute::GetBackground() const noexcept
 {
-    return _foreground.GetColor(colorTable, defaultColor, IsBold());
+    return _background;
 }
 
-// Routine Description:
-// - gets rgb background color, possibly based off of current color table. Does not take active modification
-// attributes into account
-// Arguments:
-// - None
-// Return Value:
-// - color that is stored as the background color
-COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const noexcept
+void TextAttribute::SetForeground(const TextColor foreground) noexcept
 {
-    return _background.GetColor(colorTable, defaultColor, false);
+    _foreground = foreground;
+}
+
+void TextAttribute::SetBackground(const TextColor background) noexcept
+{
+    _background = background;
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
@@ -162,6 +219,11 @@ bool TextAttribute::IsBold() const noexcept
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
 }
 
+bool TextAttribute::IsFaint() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Faint);
+}
+
 bool TextAttribute::IsItalic() const noexcept
 {
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Italics);
@@ -188,6 +250,11 @@ bool TextAttribute::IsUnderlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
 }
 
+bool TextAttribute::IsOverlined() const noexcept
+{
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+}
+
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -196,6 +263,11 @@ bool TextAttribute::IsReverseVideo() const noexcept
 void TextAttribute::SetBold(bool isBold) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+}
+
+void TextAttribute::SetFaint(bool isFaint) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
 }
 
 void TextAttribute::SetItalics(bool isItalic) noexcept
@@ -222,6 +294,11 @@ void TextAttribute::SetUnderline(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+}
+
+void TextAttribute::SetOverline(bool isOverlined) noexcept
+{
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept
