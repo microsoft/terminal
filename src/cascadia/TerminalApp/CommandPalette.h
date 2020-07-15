@@ -29,6 +29,10 @@ namespace winrt::TerminalApp::implementation
         void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, SearchBoxText, _PropertyChangedHandlers);
+
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 

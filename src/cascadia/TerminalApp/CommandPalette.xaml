@@ -126,7 +126,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <TextBox
             Grid.Row="0"
-            x:Uid="CommandPalette_SearchBox"
             x:Name="_searchBox"
             Margin="8"
             IsSpellCheckEnabled="False"
@@ -134,16 +133,17 @@ the MIT License. See LICENSE in the project root for license information. -->
             PreviewKeyDown="_previewKeyDownHandler"
             KeyDown="_keyDownHandler"
             PreviewKeyUp="_keyUpHandler"
+            PlaceholderText="{x:Bind SearchBoxText, Mode=OneWay}"
             Text="">
         </TextBox>
 
         <TextBlock
             Padding="16"
             x:Name="_noMatchesText"
-            x:Uid="CommandPalette_NoMatchesText"
             FontStyle="Italic"
             Visibility="Collapsed"
-            Grid.Row="1">
+            Grid.Row="1"
+            Text="{x:Bind NoMatchesText, Mode=OneWay}">
         </TextBlock>
 
         <ListView

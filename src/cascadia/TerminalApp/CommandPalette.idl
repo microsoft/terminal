@@ -9,6 +9,9 @@ namespace TerminalApp
     {
         CommandPalette();
 
+        String NoMatchesText { get; };
+        String SearchBoxText { get; };
+
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);

@@ -25,7 +25,6 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        _currentMode = CommandPaletteMode::ActionMode;
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
@@ -338,14 +337,17 @@ namespace winrt::TerminalApp::implementation
         switch (_currentMode)
         {
             case CommandPaletteMode::ActionMode:
-                _searchBox().PlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
                 break;
             case CommandPaletteMode::TabSwitcherMode:
-                _searchBox().PlaceholderText(RS_(L"TabSwitcher_SearchBoxText"));
+                SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+                NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
                 // TODO: Hide TextBox if anchor key is set.
                 break;
             default:
-                _searchBox().PlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
                 break;
         }
     }
