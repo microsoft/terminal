@@ -726,12 +726,12 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-std::basic_string_view<COLORREF> Settings::Get16ColorTable() const
+gsl::span<const COLORREF> Settings::Get16ColorTable() const
 {
-    return Get256ColorTable().substr(0, 16);
+    return Get256ColorTable().subspan(0, 16);
 }
 
-std::basic_string_view<COLORREF> Settings::Get256ColorTable() const
+gsl::span<const COLORREF> Settings::Get256ColorTable() const
 {
     return { _colorTable.data(), _colorTable.size() };
 }

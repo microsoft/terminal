@@ -1078,7 +1078,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable)
+bool AdaptDispatch::_SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable)
 {
     // because the user might chain together params we don't support with params we DO support, execute all
     // params in the sequence, and only return failure if we failed at least one of them
@@ -1096,7 +1096,7 @@ bool AdaptDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchT
 // - params - array of params to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
 {
     return _SetResetPrivateModes(params, true);
 }
@@ -1107,7 +1107,7 @@ bool AdaptDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::
 // - params - array of params to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
 {
     return _SetResetPrivateModes(params, false);
 }
@@ -2308,7 +2308,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                       const std::basic_string_view<size_t> parameters)
+                                       const gsl::span<const size_t> parameters)
 {
     bool success = false;
     // Other Window Manipulation functions:

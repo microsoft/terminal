@@ -472,7 +472,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          const gsl::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -516,7 +516,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          const gsl::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -1042,7 +1042,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
 
             // Convert to a CHAR_INFO view to fit into the iterator
-            const auto charInfos = std::basic_string_view<CHAR_INFO>(subspan.data(), subspan.size());
+            const auto charInfos = gsl::span<const CHAR_INFO>(subspan.data(), subspan.size());
 
             // Make the iterator and write to the target position.
             OutputCellIterator it(charInfos);
