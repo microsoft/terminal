@@ -96,7 +96,6 @@ public:
     bool IsCrossedOut() const noexcept;
     bool IsUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
-    bool IsDoublyUnderlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
     void SetBold(bool isBold) noexcept;
@@ -107,7 +106,6 @@ public:
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderlined(bool isUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
-    void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;

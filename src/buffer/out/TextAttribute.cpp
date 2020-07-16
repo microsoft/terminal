@@ -255,11 +255,6 @@ bool TextAttribute::IsOverlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
 }
 
-bool TextAttribute::IsDoublyUnderlined() const noexcept
-{
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
-}
-
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -304,11 +299,6 @@ void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
-}
-
-void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
-{
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept

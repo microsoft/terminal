@@ -155,9 +155,6 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             case CrossedOut:
                 attr.SetCrossedOut(true);
                 break;
-            case DoublyUnderlined:
-                attr.SetDoublyUnderlined(true);
-                break;
             case NotCrossedOut:
                 attr.SetCrossedOut(false);
                 break;
