@@ -141,7 +141,8 @@ void SPSCTests::DropDifferentRevolutionTest()
 
     // At this point we emplace()d 8 items and pop()ed 3 in a channel with a capacity of 5.
     // Both producer and consumer positions will be 3 and only differ in their revolution flag.
-    // This ensures that the arc<T> destructor works even if
+    // This ensures that the arc<T> destructor works even if the
+    // two positions within the circular buffer are identical (modulo the capacity).
 
     drop(tx);
     VERIFY_ARE_EQUAL(counter, 3);
