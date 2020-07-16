@@ -16,7 +16,9 @@
 #define _TIL_SPSC_DETAIL_POSITION_IMPL_FALLBACK 1
 #endif
 
-namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
+// til: Terminal Implementation Library. Also: "Today I Learned".
+// spsc: Single Producer Single Consumer. A SPSC queue/channel sends data from exactly one sender to one receiver.
+namespace til::spsc
 {
     using size_type = uint32_t;
 
@@ -44,6 +46,8 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
 #if _TIL_SPSC_DETAIL_POSITION_IMPL_NATIVE
         using atomic_size_type = std::atomic<size_type>;
 #else
+        // atomic_size_type is a fallback if native std::atomic<size_type>::wait()
+        // and ::notify_one() methods are unavailable in the STL.
         struct atomic_size_type
         {
             size_type load(std::memory_order order) const noexcept
@@ -134,9 +138,18 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
 
         struct acquisition
         {
+            // The index range [begin, end) is the range of slots in the array returned by
+            // arc<T>::data() that may be written to / read from respectively.
+            // If a range has been successfully acquired "end > begin" is true. end thus can't be 0.
             size_type begin;
             size_type end;
+
+            // Upon release() of an acquisition, next is the value that's written to the consumer/producer position.
+            // It's basically the same as end, but with the revolution flag mixed in.
+            // If end is equal to capacity, next will be 0 (mixed with the next revolution flag).
             size_type next;
+
+            // If the other side of the queue hasn't been destroyed yet, alive will be true.
             bool alive;
 
             constexpr acquisition(size_type begin, size_type end, size_type next, bool alive) :
@@ -148,26 +161,51 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             }
         };
 
+        // The following assumes you know what ring/circular buffers are. You can read about them here:
+        //   https://en.wikipedia.org/wiki/Circular_buffer
+        //
+        // Furthermore the implementation solves a problem known as the producer-consumer problem:
+        //   https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem
+        //
         // arc follows the classic spsc design and manages a ring buffer with two positions: _producer and _consumer.
         // They contain the position the producer / consumer will next write to / read from respectively.
+        // As usual with ring buffers, these positions are modulo to the _capacity of the underlying buffer.
         // The producer's writable range is [_producer, _consumer) and the consumer's readable is [_consumer, _producer).
+        //
+        // After you wrote the numbers 0 to 6 into a queue of size 10, a typical state of the ring buffer might be:
+        //   [ 0 | 1 | 2 | 3 | 4 | 5 | 6 | _ | _ | _ | _ ]
+        //     ^                           ^             ^
+        // _consumer = 0            _producer = 7    _capacity = 10
+        //
+        // As you can see the readable range currently is [_consumer, _producer) = [0, 7).
+        // The remaining writable range on the other hand is [_producer, _consumer) = [7, 0).
+        // Wait, what? [7, 0)? How does that work? As all positions are modulo _capacity, 0 mod 10 is the same as 10 mod 10.
+        // If we only want to read forward in the buffer [7, 0) is thus the same as [7, 10).
+        //
+        // If we read 3 items from the queue the contents will be:
+        //   [ _ | _ | _ | 3 | 4 | 5 | 6 | _ | _ | _ | _ ]
+        //                 ^               ^
+        //          _consumer = 3      _producer = 7
+        //
+        // Now the writable range is still [_producer, _consumer), but it wraps around the end of the ring buffer.
+        // In this case arc will split the range in two and return each separately in acquire().
+        // The first returned range will be [_producer, _capacity) and the second [0, _consumer).
+        // The same logic applies if the readable range wraps around the end of the ring buffer.
+        //
         // As these are symmetric, the logic for acquiring and releasing ranges is the same for both sides.
-        // The producer will acquire() and release() ranges with its own position as "mine" and the consumer's position as "theirs".
-        // The arguments are correspondingly flipped for the consumer.
+        // The producer will acquire() and release() ranges with its own position as "mine" and the consumer's
+        // position as "theirs". These arguments are correspondingly flipped for the consumer.
         //
-        // While the producer is logically always ahead of the consumer, due to the underlying
-        // buffer being a ring buffer, the producer's position might be smaller than the consumer's
-        // position, if both are calculated modulo the buffer's capacity, as we're doing here.
-        // As such the logic range [_producer, _consumer) might actually be the two ranges
-        //   [_producer, _capacity) & [0, _consumer)
-        // if _producer > _consumer, modulo _capacity, since the range wraps around the end of the ring buffer.
+        // As part of the producer-consumer problem, the producer cannot write more values ahead of the
+        // consumer than the buffer's capacity. Since both positions are modulo to the capacity we can only
+        // determine positional differences smaller than the capacity. Due to that both producer and
+        // consumer store a "revolution_flag" as the second highest bit within their positions.
+        // This bit is flipped each time the producer/consumer wrap around the end of the ring buffer.
+        // If the positions are identical, except for their "revolution_flag" value, the producer thus must
+        // be capacity-many positions ahead of the consumer and must wait until items have been consumed.
         //
-        // The producer cannot write more values ahead of the consumer than the buffer's capacity.
         // Inversely the consumer must wait until the producer has written at least one value ahead.
-        // In order to implement the first requirement the positions will flip their "revolution_flag" bit each other
-        // revolution around the ring buffer. If the positions are identical, except for their "revolution_flag"
-        // value it signals to the producer that it's ahead by one "revolution", or capacity-many values.
-        // The second requirement can similarly be detected if the two positions are identical including this bit.
+        // This can be detected by checking whether the positions are identical including the revolution_flag.
         template<typename T>
         struct arc
         {
@@ -294,7 +332,7 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
 
                 // If the other side's position contains a drop flag, as a X -> we need to...
                 // * producer -> stop immediately
-                //   Only the producer's waitMask is != 0.
+                //   FYI: isProducer == (waitMask != 0).
                 // * consumer -> finish consuming all values and then stop
                 //   We're finished if the only difference between our
                 //   and the other side's position is the drop flag.
@@ -361,7 +399,10 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
         }
     }
 
+    // Block until at least one item has been written into the sender / read from the receiver.
     inline constexpr details::block_initially_policy block_initially{};
+
+    // Block until all items have been written into the sender / read from the receiver.
     inline constexpr details::block_forever_policy block_forever{};
 
     template<typename T>
@@ -416,8 +457,8 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             return push_n(block_forever, first, std::distance(first, last));
         }
 
-        // move_n moves count items from the input iterator in into the queue.
-        // The resulting iterator is returned as the first pair field.
+        // push writes the items between first and last into the queue.
+        // The amount of successfully written items is returned as the first pair field.
         // The second pair field will be false if the consumer is gone.
         template<typename WaitPolicy, typename InputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
         std::pair<size_t, bool> push(WaitPolicy&& policy, InputIt first, InputIt last) const
@@ -431,8 +472,8 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             return push_n(block_forever, first, count);
         }
 
-        // move_n moves count items from the input iterator in into the queue.
-        // The resulting iterator is returned as the first pair field.
+        // push_n writes count items from first into the queue.
+        // The amount of successfully written items is returned as the first pair field.
         // The second pair field will be false if the consumer is gone.
         template<typename WaitPolicy, typename InputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
         std::pair<size_t, bool> push_n(WaitPolicy&&, InputIt first, size_t count) const
@@ -508,9 +549,7 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             drop();
         }
 
-        // pop returns the next item in the queue, or std::nullopt
-        // if no items are available and the producer is gone.
-        // The call blocks until either of these events occur.
+        // pop returns the next item in the queue, or std::nullopt if the producer is gone.
         std::optional<T> pop() const
         {
             auto acquisition = _arc->consumer_acquire(1, true);
@@ -535,9 +574,9 @@ namespace til::spsc // Terminal Implementation Library. Also: "Today I Learned"
             return pop_n(block_forever, first, count);
         }
 
-        // pop_n writes up to count items into the given output iterator out.
-        // The resulting iterator is returned as the first pair field.
-        // The second pair field will be false if no items are available and the producer is gone.
+        // pop_n reads up to count items into first.
+        // The amount of successfully read items is returned as the first pair field.
+        // The second pair field will be false if the consumer is gone.
         template<typename WaitPolicy, typename OutputIt, details::enable_if_wait_policy_t<WaitPolicy> = 0>
         std::pair<size_t, bool> pop_n(WaitPolicy&&, OutputIt first, size_t count) const
         {
