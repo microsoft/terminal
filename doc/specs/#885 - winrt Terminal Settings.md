@@ -2,7 +2,7 @@
 author: Carlos Zamora @carlos-zamora
 created on: 2020-07-10
 last updated: 2020-07-10
-issue id: /#885
+issue id: [#885](https://github.com/microsoft/terminal/issues/885)
 ---
 
 # Spec Title
