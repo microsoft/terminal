@@ -29,7 +29,15 @@ This is our preferred method.
 
 #### Via GitHub
 
-For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
+For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases/latest).
+
+Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from the **Assets** section. 
+
+Run the following command in order to install the `.msixbundle` file you've just downloaded:
+
+```powershell
+Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
+```
 
 > ⚠ Note: If you install Terminal manually:
 >
