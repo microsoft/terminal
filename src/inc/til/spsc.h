@@ -65,7 +65,7 @@ namespace til::spsc
                 _value.store(desired, order);
             }
 
-            void wait(size_type old, [[maybe_unused]] std::memory_order order) noexcept
+            void wait(size_type old, [[maybe_unused]] std::memory_order order) const noexcept
             {
 #if _TIL_SPSC_DETAIL_POSITION_IMPL_WIN
                 WaitOnAddress(const_cast<std::atomic<size_type>*>(&_value), &old, sizeof(_value), INFINITE);
