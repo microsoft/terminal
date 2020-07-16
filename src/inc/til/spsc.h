@@ -68,6 +68,7 @@ namespace til::spsc
             void wait(size_type old, [[maybe_unused]] std::memory_order order) const noexcept
             {
 #if _TIL_SPSC_DETAIL_POSITION_IMPL_WIN
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile
                 WaitOnAddress(const_cast<std::atomic<size_type>*>(&_value), &old, sizeof(_value), INFINITE);
 #elif _TIL_SPSC_DETAIL_POSITION_IMPL_LINUX
                 futex(FUTEX_WAIT_PRIVATE, old);
