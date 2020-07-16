@@ -225,7 +225,7 @@ namespace WEX
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
                     attr.IsBold(),
                     attr._wAttrLegacy,
-                    static_cast<DWORD>(attr._extendedAttrs) );
+                    static_cast<DWORD>(attr._extendedAttrs));
             }
         };
     }
