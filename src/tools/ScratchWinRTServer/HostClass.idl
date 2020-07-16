@@ -9,6 +9,9 @@ namespace ScratchWinRTServer
         Int32 DoCount { get; };
         Guid Id { get; };
 
+        void Attach(Windows.UI.Xaml.Controls.SwapChainPanel panel);
+        void BeginRendering();
+
         // Adding a Windows.UI.Xaml element will crash the server when the
         // server tries to instantiate the element without a XAML host.
         //
