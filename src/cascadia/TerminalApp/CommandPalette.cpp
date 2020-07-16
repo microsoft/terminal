@@ -278,8 +278,10 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    void CommandPalette::_collectFilteredActions(Windows::Foundation::Collections::IObservableVector<TerminalApp::Command>& actions)
+    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
     {
+        std::vector<winrt::TerminalApp::Command> actions;
+
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
@@ -302,10 +304,10 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                actions.Append(action);
+                actions.push_back(action);
             }
 
-            return;
+            return actions;
         }
 
         // Here, there was some filter text.
@@ -342,8 +344,10 @@ namespace winrt::TerminalApp::implementation
         {
             auto top = heap.top();
             heap.pop();
-            actions.Append(top.command);
+            actions.push_back(top.command);
         }
+
+        return actions;
     }
 
     // Method Description:
@@ -356,17 +360,15 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateFilteredActions()
     {
-        auto actions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
-
-        _collectFilteredActions(actions);
+        auto actions = _collectFilteredActions();
 
         // Make _filteredActions look identical to actions, using only Insert and Remove.
         // This allows WinUI to nicely animate the ListView as it changes.
-        for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.Size(); i++)
+        for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
         {
             for (uint32_t j = i; j < _filteredActions.Size(); j++)
             {
-                if (_filteredActions.GetAt(j) == actions.GetAt(i))
+                if (_filteredActions.GetAt(j) == actions[i])
                 {
                     for (uint32_t k = i; k < j; k++)
                     {
@@ -376,22 +378,22 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            if (_filteredActions.GetAt(i) != actions.GetAt(i))
+            if (_filteredActions.GetAt(i) != actions[i])
             {
-                _filteredActions.InsertAt(i, actions.GetAt(i));
+                _filteredActions.InsertAt(i, actions[i]);
             }
         }
 
         // Remove any extra trailing items from the destination
-        while (_filteredActions.Size() > actions.Size())
+        while (_filteredActions.Size() > actions.size())
         {
             _filteredActions.RemoveAtEnd();
         }
 
         // Add any extra trailing items from the source
-        while (_filteredActions.Size() < actions.Size())
+        while (_filteredActions.Size() < actions.size())
         {
-            _filteredActions.Append(actions.GetAt(_filteredActions.Size()));
+            _filteredActions.Append(actions[_filteredActions.Size()]);
         }
     }
 
