@@ -554,21 +554,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
         // We also don't lock for things that come back from the renderer.
-        auto chain = _renderEngine->GetSwapChain();
+        auto chainHandle = _renderEngine->GetSwapChainHandle();
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            _AttachDxgiSwapChainToXaml(chain.Get());
+            _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
 
-    void TermControl::_AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain)
+    void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
     {
-        auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-        nativePanel->SetSwapChain(swapChain);
+        auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative2>();
+        nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
     bool TermControl::_InitializeTerminal()
@@ -672,7 +672,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            _AttachDxgiSwapChainToXaml(_renderEngine->GetSwapChain().Get());
+            _AttachDxgiSwapChainToXaml(_renderEngine->GetSwapChainHandle());
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)

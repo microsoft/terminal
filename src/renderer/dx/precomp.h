@@ -21,6 +21,8 @@
 #include <typeinfo>
 #include <stdexcept>
 
+#include <dcomp.h>
+
 #include <dxgi.h>
 #include <dxgi1_2.h>
 #include <dxgi1_3.h>

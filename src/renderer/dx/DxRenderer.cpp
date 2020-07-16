@@ -83,6 +83,7 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+    _swapChainHandle{ INVALID_HANDLE_VALUE },
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _recreateDeviceRequested{ false },
@@ -455,8 +456,7 @@ try
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd:
-        {
+        case SwapChainMode::ForHwnd: {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -485,8 +485,11 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition:
-        {
+        case SwapChainMode::ForComposition: {
+            RETURN_IF_FAILED(DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle));
+
+            RETURN_IF_FAILED(_dxgiFactory2.As(&_dxgiFactoryMedia));
+
             // Use the given target size for compositions.
             _swapChainDesc.Width = _displaySizePixels.width<UINT>();
             _swapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -496,10 +499,11 @@ try
             // It's 100% required to use scaling mode stretch for composition. There is no other choice.
             _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
-            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                          &_swapChainDesc,
-                                                                          nullptr,
-                                                                          &_dxgiSwapChain));
+            RETURN_IF_FAILED(_dxgiFactoryMedia->CreateSwapChainForCompositionSurfaceHandle(_d3dDevice.Get(),
+                                                                                           _swapChainHandle.get(),
+                                                                                           &_swapChainDesc,
+                                                                                           nullptr,
+                                                                                           &_dxgiSwapChain));
             break;
         }
         default:
@@ -825,14 +829,14 @@ try
 }
 CATCH_LOG()
 
-Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
+HANDLE DxEngine::GetSwapChainHandle()
 {
-    if (_dxgiSwapChain.Get() == nullptr)
+    if (!_swapChainHandle)
     {
         THROW_IF_FAILED(_CreateDeviceResources(true));
     }
 
-    return _dxgiSwapChain;
+    return _swapChainHandle.get();
 }
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
@@ -989,15 +993,13 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         return _sizeTarget;
     }
     default:
@@ -2229,12 +2231,10 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
