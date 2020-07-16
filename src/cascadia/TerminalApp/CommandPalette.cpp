@@ -21,7 +21,8 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::TerminalApp::implementation
 {
-    CommandPalette::CommandPalette()
+    CommandPalette::CommandPalette() :
+        _switcherStartIdx{ 0 }
     {
         InitializeComponent();
 
@@ -47,7 +48,16 @@ namespace winrt::TerminalApp::implementation
             if (Visibility() == Visibility::Visible)
             {
                 _searchBox().Focus(FocusState::Programmatic);
-                _filteredActionsView().SelectedIndex(0);
+
+                if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+                {
+                    _filteredActionsView().SelectedIndex(_switcherStartIdx);
+                    _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+                }
+                else
+                {
+                    _filteredActionsView().SelectedIndex(0);
+                }
 
                 TraceLoggingWrite(
                     g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -696,8 +706,10 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
         auto weakCommand{ command->get_weak() };
         tab.PropertyChanged([weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+
             auto palette{ weakThis.get() };
             auto command{ weakCommand.get() };
+
             if (palette && command)
             {
                 if (args.PropertyName() == L"Title")
@@ -715,6 +727,7 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
+
         });
 
         if (inserted)
@@ -727,9 +740,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey)
+    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
     {
         _switchToMode(CommandPaletteMode::TabSwitcherMode);
+        _switcherStartIdx = startIdx;
         _anchorKey = anchorKey;
         _updateFilteredActions();
     }
