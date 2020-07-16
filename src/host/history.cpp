@@ -782,7 +782,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
     writtenOrNeeded = 0;
     if (historyBuffer.size() > 0)
     {
-        gsl::at(historyBuffer, 0) = UNICODE_NULL;
+        til::at(historyBuffer, 0) = UNICODE_NULL;
     }
 
     CommandHistory* const CommandHistory = CommandHistory::s_FindByExe(exeName);
@@ -859,7 +859,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
     {
         if (commandHistory.size() > 0)
         {
-            gsl::at(commandHistory, 0) = ANSI_NULL;
+            til::at(commandHistory, 0) = ANSI_NULL;
         }
 
         LockConsole();

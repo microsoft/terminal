@@ -184,7 +184,7 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                 const std::basic_string_view<wchar_t> intermediates)
+                                                 const gsl::span<const wchar_t> intermediates)
 {
     bool success = false;
 
@@ -317,8 +317,8 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
-                                                     const std::basic_string_view<wchar_t> intermediates,
-                                                     const std::basic_string_view<size_t> parameters)
+                                                     const gsl::span<const wchar_t> intermediates,
+                                                     const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
@@ -360,7 +360,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
         case Vt52ActionCodes::DirectCursorAddress:
             // VT52 cursor addresses are provided as ASCII characters, with
             // the lowest value being a space, representing an address of 1.
-            success = _dispatch->CursorPosition(parameters.at(0) - ' ' + 1, parameters.at(1) - ' ' + 1);
+            success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
             break;
         case Vt52ActionCodes::Identify:
             success = _dispatch->Vt52DeviceAttributes();
@@ -397,15 +397,15 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
-                                                        const std::basic_string_view<wchar_t> intermediates)
+                                                        const gsl::span<const wchar_t> intermediates)
 {
     bool success = false;
 
     // If we have more than one intermediate, the second intermediate forms part of
     // the charset identifier. Otherwise it's identified by just the final character.
-    const auto charset = intermediates.size() > 1 ? std::make_pair(intermediates.at(1), wch) : std::make_pair(wch, L'\0');
+    const auto charset = intermediates.size() > 1 ? std::make_pair(til::at(intermediates, 1), wch) : std::make_pair(wch, L'\0');
 
-    switch (intermediates.at(0))
+    switch (til::at(intermediates, 0))
     {
     case L'(':
         success = _dispatch->Designate94Charset(0, charset);
@@ -451,8 +451,8 @@ bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                 const std::basic_string_view<wchar_t> intermediates,
-                                                 std::basic_string_view<size_t> parameters)
+                                                 const gsl::span<const wchar_t> intermediates,
+                                                 gsl::span<const size_t> parameters)
 {
     bool success = false;
     size_t distance = 0;
@@ -470,7 +470,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingParams = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
+    const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     if (intermediates.empty())
     {
@@ -737,7 +737,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                                                 const std::basic_string_view<size_t> parameters)
+                                                                 const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
@@ -787,7 +787,7 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
                                                                        const wchar_t intermediate,
-                                                                       const std::basic_string_view<size_t> parameters)
+                                                                       const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
@@ -846,7 +846,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(const wchar_t wc
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchAction,
-                                                          const std::basic_string_view<size_t> parameters)
+                                                          const gsl::span<const size_t> parameters)
 {
     bool success = false;
     DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
@@ -1022,7 +1022,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
-                                                 const std::basic_string_view<size_t> /*parameters*/) noexcept
+                                                 const gsl::span<const size_t> /*parameters*/) noexcept
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
@@ -1036,7 +1036,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
 // - options - Space that will be filled with valid options from the GraphicsOptions enum
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetGraphicsOptions(const gsl::span<const size_t> parameters,
                                                    std::vector<DispatchTypes::GraphicsOptions>& options) const
 {
     bool success = false;
@@ -1072,7 +1072,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<
 // - eraseType - Receives the erase type parameter
 // Return Value:
 // - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetEraseOperation(const gsl::span<const size_t> parameters,
                                                   DispatchTypes::EraseType& eraseType) const noexcept
 {
     bool success = false; // If we have too many parameters or don't know what to do with the given value, return false.
@@ -1111,7 +1111,7 @@ bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<s
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetCursorDistance(const gsl::span<const size_t> parameters,
                                                   size_t& distance) const noexcept
 {
     bool success = false;
@@ -1145,7 +1145,7 @@ bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<s
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetScrollDistance(const gsl::span<const size_t> parameters,
                                                   size_t& distance) const noexcept
 {
     bool success = false;
@@ -1179,7 +1179,7 @@ bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<s
 // - consoleWidth - Receives the width
 // Return Value:
 // - True if we successfully pulled the width from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> parameters,
                                                 size_t& consoleWidth) const noexcept
 {
     bool success = false;
@@ -1214,7 +1214,7 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<siz
 // - column - Receives the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
                                               size_t& line,
                                               size_t& column) const noexcept
 {
@@ -1263,7 +1263,7 @@ bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_
 // - bottomMargin - Receives the bottom margin
 // Return Value:
 // - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTopBottomMargins(const gsl::span<const size_t> parameters,
                                                     size_t& topMargin,
                                                     size_t& bottomMargin) const noexcept
 {
@@ -1308,7 +1308,7 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view
 // - statusType - Receives the Status Type parameter
 // Return Value:
 // - True if we successfully found a device operation in the parameters stored. False otherwise.
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
                                                          DispatchTypes::AnsiStatusType& statusType) const noexcept
 {
     bool success = false;
@@ -1343,7 +1343,7 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
 // - privateModes - Space that will be filled with valid params from the PrivateModeParams enum
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_t> parameters,
                                                      std::vector<DispatchTypes::PrivateModeParams>& privateModes) const
 {
     bool success = false;
@@ -1364,7 +1364,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_vie
 // - parameters - The parameters to parse
 // Return Value:
 // - True if there were no parameters. False otherwise.
-bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const noexcept
+bool OutputStateMachineEngine::_VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept
 {
     return parameters.empty();
 }
@@ -1376,7 +1376,7 @@ bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_vi
 // - parameters - The parameters to parse
 // Return Value:
 // - True if the DA params were valid. False otherwise.
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const noexcept
+bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept
 {
     bool success = false;
 
@@ -1417,7 +1417,7 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTabDistance(const gsl::span<const size_t> parameters,
                                                size_t& distance) const noexcept
 {
     bool success = false;
@@ -1451,7 +1451,7 @@ bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size
 // - clearType - Receives the clear type
 // Return Value:
 // - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> parameters,
                                                 size_t& clearType) const noexcept
 {
     bool success = false;
@@ -1628,7 +1628,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            auto& value = colorValues.at(component);
+            auto& value = til::at(colorValues, component);
             for (size_t i = 0; i < 3; i++)
             {
                 const wchar_t wch = *curr++;
@@ -1803,7 +1803,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                                           unsigned int& function) const noexcept
 {
     bool success = false;
@@ -1837,7 +1837,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_strin
 // - cursorStyle - Receives the cursorStyle
 // Return Value:
 // - True if we successfully pulled the cursor style from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorStyle(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetCursorStyle(const gsl::span<const size_t> parameters,
                                                DispatchTypes::CursorStyle& cursorStyle) const noexcept
 {
     bool success = false;
@@ -1886,7 +1886,7 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
 // Return Value:
 // - True if we successfully pulled the repeat count from the parameters.
 //   False otherwise.
-bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetRepeatCount(gsl::span<const size_t> parameters,
                                                size_t& repeatCount) const noexcept
 {
     bool success = false;
