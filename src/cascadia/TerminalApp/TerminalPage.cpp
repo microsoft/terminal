@@ -46,7 +46,8 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() }
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _startupActions{ winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>() }
     {
         InitializeComponent();
     }
@@ -223,7 +224,7 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.empty())
+            if (_startupActions.Size() == 0)
             {
                 _OpenNewTab(nullptr);
 
@@ -231,23 +232,27 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions(true);
+                _ProcessStartupActions(_startupActions, true);
             }
         }
     }
 
     // Method Description:
-    // - Process all the startup actions in our list of startup actions. We'll
-    //   do this all at once here.
+    // - Process all the startup actions in the provided list of startup
+    //   actions. We'll do this all at once here.
     // Arguments:
+    // - actions: a winrt vector of actions to process. Note that this must NOT
+    //   be an IVector&, because we need the collection to be accessible on the
+    //   other side of the co_await.
     // - initial: if true, we're parsing these args during startup, and we
     //   should fire an Initialized event.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(const bool initial)
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions,
+                                                                const bool initial)
     {
         // If there are no actions left, do nothing.
-        if (_startupActions.empty())
+        if (actions.Size() == 0)
         {
             return;
         }
@@ -257,7 +262,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : _startupActions)
+            for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })
                 {
@@ -1942,9 +1947,13 @@ namespace winrt::TerminalApp::implementation
     // - actions: a list of Actions to process on startup.
     // Return Value:
     // - <none>
-    void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
+    void TerminalPage::SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions)
     {
-        _startupActions = actions;
+        // The fastest way to copy all the actions out of the std::vector and
+        // put them into a winrt::IVector is by making a copy, then moving the
+        // copy into the winrt vector ctor.
+        auto listCopy = actions;
+        _startupActions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(listCopy));
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
@@ -2213,7 +2222,7 @@ namespace winrt::TerminalApp::implementation
     // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
     // Return Value:
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
-    std::deque<winrt::TerminalApp::ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args)
+    std::vector<winrt::TerminalApp::ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args)
     {
         if (!args || args.Commandline().empty())
         {

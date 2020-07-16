@@ -599,7 +599,7 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
 // - <none>
 // Return Value:
 // - the deque of actions we've buffered as a result of parsing commands.
-std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
+std::vector<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 {
     return _startupActions;
 }
@@ -658,7 +658,8 @@ void AppCommandlineArgs::ValidateStartupCommands()
         auto newTerminalArgs = winrt::make_self<implementation::NewTerminalArgs>();
         args->TerminalArgs(*newTerminalArgs);
         newTabAction->Args(*args);
-        _startupActions.push_front(*newTabAction);
+        // push the arg onto the front
+        _startupActions.insert(_startupActions.begin(), 1, *newTabAction);
     }
 }
 

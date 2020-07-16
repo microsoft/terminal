@@ -56,8 +56,8 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
-        void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
-        static std::deque<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
+        void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
+        static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
@@ -107,8 +107,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
-        winrt::fire_and_forget _ProcessStartupActions(const bool initial);
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

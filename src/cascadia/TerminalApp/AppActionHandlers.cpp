@@ -11,6 +11,7 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -340,11 +341,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
         {
-            _startupActions = TerminalPage::ConvertExecuteCommandlineToActions(realArgs);
-            if (!_startupActions.empty())
+            auto actions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(
+                TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
+
+            if (_startupActions.Size() != 0)
             {
-                _ProcessStartupActions(false);
                 actionArgs.Handled(true);
+                _ProcessStartupActions(actions, false);
             }
         }
     }
