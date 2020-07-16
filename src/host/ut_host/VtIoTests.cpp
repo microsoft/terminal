@@ -284,12 +284,10 @@ public:
 
     void LockConsole() noexcept override
     {
-
     }
 
     void UnlockConsole() noexcept override
     {
-
     }
 
     const TextAttribute GetDefaultBrushColors() noexcept override
@@ -374,12 +372,10 @@ public:
 
     void ClearSelection() override
     {
-
     }
 
     void SelectNewRegion(const COORD /*coordStart*/, const COORD /*coordEnd*/) override
     {
-
     }
 
     const COORD GetSelectionAnchor() const noexcept
@@ -394,7 +390,6 @@ public:
 
     void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
     {
-
     }
 };
 
