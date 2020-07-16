@@ -47,15 +47,25 @@ namespace winrt::TerminalApp::implementation
 
             if (Visibility() == Visibility::Visible)
             {
-                _searchBox().Focus(FocusState::Programmatic);
 
                 if (_currentMode == CommandPaletteMode::TabSwitcherMode)
                 {
+                    if (_anchorKey != VirtualKey::None)
+                    {
+                        // Anchor mode won't have the SearchBox visible, so lets focus the control itself.
+                        Focus(FocusState::Keyboard);
+                    }
+                    else
+                    {
+                        _searchBox().Focus(FocusState::Programmatic);
+                    }
+                    
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
                 }
                 else
                 {
+                    _searchBox().Focus(FocusState::Programmatic);
                     _filteredActionsView().SelectedIndex(0);
                 }
 
@@ -354,10 +364,17 @@ namespace winrt::TerminalApp::implementation
                 NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
                 break;
             case CommandPaletteMode::TabSwitcherMode:
+            {
                 SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
                 NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-                // TODO: Hide TextBox if anchor key is set.
+
+                if (_anchorKey != VirtualKey::None)
+                {
+                    _searchBox().Visibility(Visibility::Collapsed);
+                }
+
                 break;
+            }
             default:
                 SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
                 NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
@@ -611,6 +628,9 @@ namespace winrt::TerminalApp::implementation
         // Reset back to action mode upon close.
         _currentMode = CommandPaletteMode::ActionMode;
 
+        // Reset visibility in case anchor mode tab switcher just finished.
+        _searchBox().Visibility(CommandPalette().Visibility());
+
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
     }
@@ -742,9 +762,9 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
     {
-        _switchToMode(CommandPaletteMode::TabSwitcherMode);
         _switcherStartIdx = startIdx;
         _anchorKey = anchorKey;
+        _switchToMode(CommandPaletteMode::TabSwitcherMode);
         _updateFilteredActions();
     }
 }
