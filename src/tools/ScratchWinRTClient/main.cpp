@@ -227,6 +227,7 @@ void managerApp()
     {
         auto b = f.as<IMyComInterface>();
         winrt::check_hresult(b->Call());
+        printf("The Foo works just _fine_\n");
     }
     catch (hresult_error const& e)
     {
@@ -242,11 +243,48 @@ void managerApp()
 
         // This obviously doesn't work, because winrt::Server::HostClass doesn't
         // implement IMyComInterface. The implementation does!
-        auto mci = host0.as<IMyComInterface>();
-        if (mci)
-        {
-            mci->Call();
-        }
+        // auto mci = host0.as<IMyComInterface>();
+        // if (mci)
+        // if (mci)
+        // {
+        //     mci->Call();
+        // }
+
+        // Again, this doesn't work because the compiler doesn't know that
+        // Server::impl::HostClass implements IMyComInterface
+        // winrt::com_ptr<IMyComInterface> c;
+        // c.copy_from(winrt::get_self<IMyComInterface>(host0));
+        // if (c)
+        // {
+        //     c->Call();
+        // }
+
+        // Unsurprisingly, none of the follwoing works either:
+        // auto pvoid = winrt::put_abi(host0);
+        // printf("Step 1\n");
+        // // winrt::com_ptr<::IUnknown> unk{};
+        // ::IUnknown* iunk = (::IUnknown*)*pvoid;
+        // printf("Step 2\n");
+        // winrt::com_ptr<::IUnknown> unk; // { &iunk };
+        // unk.copy_from(iunk);
+        // printf("Step 3\n");
+
+        // auto mci = unk.as<IMyComInterface>();
+        // if (mci)
+        // {
+        //     mci->Call();
+        //     printf("Step 4\n");
+        // }
+
+        // printf("Step 5\n");
+        // IMyComInterface* mciraw;
+        // unk->QueryInterface(__uuidof(IMyComInterface), (void**)&mciraw);
+        // if (mci)
+        // {
+        //     mci->Call();
+        //     printf("Step 6\n");
+        // }
+        // printf("Step 7\n");
     }
     catch (hresult_error const& e)
     {
