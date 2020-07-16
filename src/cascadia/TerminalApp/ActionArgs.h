@@ -560,6 +560,10 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Commandline = winrt::to_hstring(commandline.asString());
             }
+            if (args->_Commandline.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
             return { *args, {} };
         }
     };

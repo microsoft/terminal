@@ -226,10 +226,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
 
             // Now parse the array again, but this time as a list of commands.
-            warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
+            winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
             // It's possible that the user provided commands have some warnings
             // in them, similar to the keybindings.
-            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     };
     parseBindings(LegacyKeybindingsKey);
