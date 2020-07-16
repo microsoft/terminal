@@ -105,6 +105,10 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic
     {
         std::swap(fg, bg);
     }
+    if (IsInvisible())
+    {
+        fg = bg;
+    }
     return { fg, bg };
 }
 

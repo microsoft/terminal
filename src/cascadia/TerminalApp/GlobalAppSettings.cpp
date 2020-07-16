@@ -36,6 +36,7 @@ static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -206,6 +207,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
     JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
+
+    JsonUtils::GetBool(json, AlwaysOnTopKey, _AlwaysOnTop);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy

@@ -49,6 +49,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ToggleRetroEffect,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleFocusMode,      TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleFullscreen,     TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ToggleAlwaysOnTop,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleCommandPalette, TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SetTabColor,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenTabColorPicker,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);

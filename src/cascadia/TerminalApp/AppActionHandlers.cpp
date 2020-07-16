@@ -253,6 +253,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleAlwaysOnTop();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const TerminalApp::ActionEventArgs& args)
     {

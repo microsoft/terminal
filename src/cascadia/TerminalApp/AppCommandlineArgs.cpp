@@ -195,6 +195,7 @@ void AppCommandlineArgs::_buildParser()
 
 // Method Description:
 // - Adds the `new-tab` subcommand and related options to the commandline parser.
+// - Additionally adds the `nt` subcommand, which is just a shortened version of `new-tab`
 // Arguments:
 // - <none>
 // Return Value:
@@ -202,27 +203,35 @@ void AppCommandlineArgs::_buildParser()
 void AppCommandlineArgs::_buildNewTabParser()
 {
     _newTabCommand.subcommand = _app.add_subcommand("new-tab", RS_A(L"CmdNewTabDesc"));
-    _addNewTerminalArgs(_newTabCommand);
+    _newTabShort.subcommand = _app.add_subcommand("nt", RS_A(L"CmdNTDesc"));
 
-    // When ParseCommand is called, if this subcommand was provided, this
-    // callback function will be triggered on the same thread. We can be sure
-    // that `this` will still be safe - this function just lets us know this
-    // command was parsed.
-    _newTabCommand.subcommand->callback([&, this]() {
-        // Build the NewTab action from the values we've parsed on the commandline.
-        auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        newTabAction->Action(ShortcutAction::NewTab);
-        auto args = winrt::make_self<implementation::NewTabArgs>();
-        // _getNewTerminalArgs MUST be called before parsing any other options,
-        // as it might clear those options while finding the commandline
-        args->TerminalArgs(_getNewTerminalArgs(_newTabCommand));
-        newTabAction->Args(*args);
-        _startupActions.push_back(*newTabAction);
-    });
+    auto setupSubcommand = [this](auto& subcommand) {
+        _addNewTerminalArgs(subcommand);
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand.subcommand->callback([&, this]() {
+            // Build the NewTab action from the values we've parsed on the commandline.
+            auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
+            newTabAction->Action(ShortcutAction::NewTab);
+            auto args = winrt::make_self<implementation::NewTabArgs>();
+            // _getNewTerminalArgs MUST be called before parsing any other options,
+            // as it might clear those options while finding the commandline
+            args->TerminalArgs(_getNewTerminalArgs(subcommand));
+            newTabAction->Args(*args);
+            _startupActions.push_back(*newTabAction);
+        });
+    };
+
+    setupSubcommand(_newTabCommand);
+    setupSubcommand(_newTabShort);
 }
 
 // Method Description:
 // - Adds the `split-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `sp` subcommand, which is just a shortened version of `split-pane`
 // Arguments:
 // - <none>
 // Return Value:
@@ -230,49 +239,57 @@ void AppCommandlineArgs::_buildNewTabParser()
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
     _newPaneCommand.subcommand = _app.add_subcommand("split-pane", RS_A(L"CmdSplitPaneDesc"));
-    _addNewTerminalArgs(_newPaneCommand);
-    _horizontalOption = _newPaneCommand.subcommand->add_flag("-H,--horizontal",
-                                                             _splitHorizontal,
-                                                             RS_A(L"CmdSplitPaneHorizontalArgDesc"));
-    _verticalOption = _newPaneCommand.subcommand->add_flag("-V,--vertical",
-                                                           _splitVertical,
-                                                           RS_A(L"CmdSplitPaneVerticalArgDesc"));
-    _verticalOption->excludes(_horizontalOption);
+    _newPaneShort.subcommand = _app.add_subcommand("sp", RS_A(L"CmdSPDesc"));
 
-    // When ParseCommand is called, if this subcommand was provided, this
-    // callback function will be triggered on the same thread. We can be sure
-    // that `this` will still be safe - this function just lets us know this
-    // command was parsed.
-    _newPaneCommand.subcommand->callback([&, this]() {
-        // Build the SplitPane action from the values we've parsed on the commandline.
-        auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-        splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
-        auto args = winrt::make_self<implementation::SplitPaneArgs>();
-        // _getNewTerminalArgs MUST be called before parsing any other options,
-        // as it might clear those options while finding the commandline
-        args->TerminalArgs(_getNewTerminalArgs(_newPaneCommand));
-        args->SplitStyle(SplitState::Automatic);
-        // Make sure to use the `Option`s here to check if they were set -
-        // _getNewTerminalArgs might reset them while parsing a commandline
-        if ((*_horizontalOption || *_verticalOption))
-        {
-            if (_splitHorizontal)
-            {
-                args->SplitStyle(SplitState::Horizontal);
-            }
-            else if (_splitVertical)
-            {
-                args->SplitStyle(SplitState::Vertical);
-            }
-        }
+    auto setupSubcommand = [this](auto& subcommand) {
+        _addNewTerminalArgs(subcommand);
+        subcommand._horizontalOption = subcommand.subcommand->add_flag("-H,--horizontal",
+                                                                       _splitHorizontal,
+                                                                       RS_A(L"CmdSplitPaneHorizontalArgDesc"));
+        subcommand._verticalOption = subcommand.subcommand->add_flag("-V,--vertical",
+                                                                     _splitVertical,
+                                                                     RS_A(L"CmdSplitPaneVerticalArgDesc"));
+        subcommand._verticalOption->excludes(subcommand._horizontalOption);
 
-        splitPaneActionAndArgs->Args(*args);
-        _startupActions.push_back(*splitPaneActionAndArgs);
-    });
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand.subcommand->callback([&, this]() {
+            // Build the SplitPane action from the values we've parsed on the commandline.
+            auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+            splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
+            auto args = winrt::make_self<implementation::SplitPaneArgs>();
+            // _getNewTerminalArgs MUST be called before parsing any other options,
+            // as it might clear those options while finding the commandline
+            args->TerminalArgs(_getNewTerminalArgs(subcommand));
+            args->SplitStyle(SplitState::Automatic);
+            // Make sure to use the `Option`s here to check if they were set -
+            // _getNewTerminalArgs might reset them while parsing a commandline
+            if ((*subcommand._horizontalOption || *subcommand._verticalOption))
+            {
+                if (_splitHorizontal)
+                {
+                    args->SplitStyle(SplitState::Horizontal);
+                }
+                else if (_splitVertical)
+                {
+                    args->SplitStyle(SplitState::Vertical);
+                }
+            }
+
+            splitPaneActionAndArgs->Args(*args);
+            _startupActions.push_back(*splitPaneActionAndArgs);
+        });
+    };
+
+    setupSubcommand(_newPaneCommand);
+    setupSubcommand(_newPaneShort);
 }
 
 // Method Description:
-// - Adds the `new-tab` subcommand and related options to the commandline parser.
+// - Adds the `focus-tab` subcommand and related options to the commandline parser.
+// - Additionally adds the `ft` subcommand, which is just a shortened version of `focus-tab`
 // Arguments:
 // - <none>
 // Return Value:
@@ -280,39 +297,48 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 void AppCommandlineArgs::_buildFocusTabParser()
 {
     _focusTabCommand = _app.add_subcommand("focus-tab", RS_A(L"CmdFocusTabDesc"));
-    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, RS_A(L"CmdFocusTabTargetArgDesc"));
-    auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
-                                               _focusNextTab,
-                                               RS_A(L"CmdFocusTabNextArgDesc"));
-    auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
-                                               _focusPrevTab,
-                                               RS_A(L"CmdFocusTabPrevArgDesc"));
-    nextOpt->excludes(prevOpt);
-    indexOpt->excludes(prevOpt);
-    indexOpt->excludes(nextOpt);
+    _focusTabShort = _app.add_subcommand("ft", RS_A(L"CmdFTDesc"));
 
-    // When ParseCommand is called, if this subcommand was provided, this
-    // callback function will be triggered on the same thread. We can be sure
-    // that `this` will still be safe - this function just lets us know this
-    // command was parsed.
-    _focusTabCommand->callback([&, this]() {
-        // Build the action from the values we've parsed on the commandline.
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+    auto setupSubcommand = [this](auto* subcommand) {
+        auto* indexOpt = subcommand->add_option("-t,--target",
+                                                _focusTabIndex,
+                                                RS_A(L"CmdFocusTabTargetArgDesc"));
+        auto* nextOpt = subcommand->add_flag("-n,--next",
+                                             _focusNextTab,
+                                             RS_A(L"CmdFocusTabNextArgDesc"));
+        auto* prevOpt = subcommand->add_flag("-p,--previous",
+                                             _focusPrevTab,
+                                             RS_A(L"CmdFocusTabPrevArgDesc"));
+        nextOpt->excludes(prevOpt);
+        indexOpt->excludes(prevOpt);
+        indexOpt->excludes(nextOpt);
 
-        if (_focusTabIndex >= 0)
-        {
-            focusTabAction->Action(ShortcutAction::SwitchToTab);
-            auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-            args->TabIndex(_focusTabIndex);
-            focusTabAction->Args(*args);
-            _startupActions.push_back(*focusTabAction);
-        }
-        else if (_focusNextTab || _focusPrevTab)
-        {
-            focusTabAction->Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
-            _startupActions.push_back(*focusTabAction);
-        }
-    });
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+
+            if (_focusTabIndex >= 0)
+            {
+                focusTabAction->Action(ShortcutAction::SwitchToTab);
+                auto args = winrt::make_self<implementation::SwitchToTabArgs>();
+                args->TabIndex(_focusTabIndex);
+                focusTabAction->Args(*args);
+                _startupActions.push_back(*focusTabAction);
+            }
+            else if (_focusNextTab || _focusPrevTab)
+            {
+                focusTabAction->Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                _startupActions.push_back(*focusTabAction);
+            }
+        });
+    };
+
+    setupSubcommand(_focusTabCommand);
+    setupSubcommand(_focusTabShort);
 }
 
 // Method Description:
@@ -409,7 +435,10 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 bool AppCommandlineArgs::_noCommandsProvided()
 {
     return !(*_newTabCommand.subcommand ||
+             *_newTabShort.subcommand ||
              *_focusTabCommand ||
+             *_focusTabShort ||
+             *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
 

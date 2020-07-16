@@ -34,6 +34,7 @@ namespace TerminalApp
         ToggleRetroEffect,
         ToggleFocusMode,
         ToggleFullscreen,
+        ToggleAlwaysOnTop,
         OpenSettings,
         SetTabColor,
         OpenTabColorPicker,
@@ -79,6 +80,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleRetroEffect;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleAlwaysOnTop;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleCommandPalette;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;

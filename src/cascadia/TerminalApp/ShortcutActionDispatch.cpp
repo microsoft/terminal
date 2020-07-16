@@ -169,6 +169,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleAlwaysOnTop:
+        {
+            _ToggleAlwaysOnTopHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleCommandPalette:
         {
             _ToggleCommandPaletteHandlers(*this, *eventArgs);

@@ -31,6 +31,7 @@ static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
@@ -77,6 +78,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
+        { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
@@ -260,6 +262,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::Invalid, L"" },
                 { ShortcutAction::Find, RS_(L"FindCommandKey") },

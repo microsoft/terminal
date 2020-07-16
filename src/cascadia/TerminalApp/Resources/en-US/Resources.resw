@@ -231,6 +231,10 @@
   <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
     <value>Move focus to the next tab</value>
   </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>An alias for the "focus-tab" subcommand.</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
   <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
     <value>Move focus to the previous tab</value>
   </data>
@@ -240,11 +244,19 @@
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>Create a new tab</value>
   </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>An alias for the "new-tab" subcommand.</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Create a new split pane</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>An alias for the "split-pane" subcommand.</value>
+    <comment>{Locked="\"split-pane\""}</comment>
   </data>
   <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
     <value>Create the new pane as a horizontal split (think [-])</value>
@@ -386,6 +398,9 @@
   </data>
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
+  </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>Toggle always on top mode</value>
   </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
