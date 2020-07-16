@@ -1,11 +1,13 @@
 ACCEPTFILES
 ACCESSDENIED
+alignof
 bitfield
 bitfields
 CLASSNOTAVAILABLE
 EXPCMDFLAGS
 EXPCMDSTATE
 fullkbd
+futex
 href
 IAsync
 IBind
@@ -33,5 +35,10 @@ RETURNCMD
 rfind
 roundf
 RSHIFT
+rx
 SIZENS
+spsc
+STDCPP
+syscall
 tmp
+tx
