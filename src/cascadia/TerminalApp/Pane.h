@@ -104,6 +104,8 @@ private:
 
     Borders _borders{ Borders::None };
 
+    bool _zoomed{ false };
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();

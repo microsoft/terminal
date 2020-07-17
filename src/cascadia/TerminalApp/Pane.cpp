@@ -840,21 +840,28 @@ void Pane::_UpdateBorders()
     double top = 0, bottom = 0, left = 0, right = 0;
 
     Thickness newBorders{ 0 };
-    if (WI_IsFlagSet(_borders, Borders::Top))
+    if (_zoomed)
     {
-        top = PaneBorderSize;
+        top = bottom = right = left = PaneBorderSize;
     }
-    if (WI_IsFlagSet(_borders, Borders::Bottom))
+    else
     {
-        bottom = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Left))
-    {
-        left = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Right))
-    {
-        right = PaneBorderSize;
+        if (WI_IsFlagSet(_borders, Borders::Top))
+        {
+            top = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Bottom))
+        {
+            bottom = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Left))
+        {
+            left = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Right))
+        {
+            right = PaneBorderSize;
+        }
     }
     _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
@@ -1083,6 +1090,11 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
     // TODO: Can we just do nothing if we're a leaf? is that the equivalent of the above?
     if (_IsLeaf())
     {
+        _zoomed = (zoomedPane == shared_from_this());
+        if (_zoomed)
+        {
+            _UpdateBorders();
+        }
         return;
     }
 
@@ -1092,17 +1104,18 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
         // easy way: just re-add both:
         _root.Children().Clear();
     }
-    else
-    {
-        _firstChild->Zoom(zoomedPane);
-        _secondChild->Zoom(zoomedPane);
-    }
+    // else
+    // {
+    _firstChild->Zoom(zoomedPane);
+    _secondChild->Zoom(zoomedPane);
+    // }
 }
 
 void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
 {
     if (_IsLeaf())
     {
+        _zoomed = false;
         return;
     }
 
@@ -1114,11 +1127,11 @@ void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_secondChild->GetRootElement());
     }
-    else
-    {
-        _firstChild->UnZoom(zoomedPane);
-        _secondChild->UnZoom(zoomedPane);
-    }
+    // else
+    // {
+    _firstChild->UnZoom(zoomedPane);
+    _secondChild->UnZoom(zoomedPane);
+    // }
 }
 
 // Method Description:
