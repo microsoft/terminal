@@ -77,38 +77,46 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 
 
 
-### Mark Mode
-Mark Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `markMode` keybinding works:
+### Copy Mode
+Copy Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `copyMode` keybinding works:
 
-![Mark Mode Flowchart][images/MarkModeFlowchart.png]
+![Copy Mode Flowchart][images/CopyModeFlowchart.png]
 
-If a selection is not active, a "start" selection point is created at the cursor position. `moveSelectionPoint` calls then move "start".
+If a selection is not active, a "start" and "end" selection point is created at the cursor position. `moveSelectionPoint` calls then move "start" and "end" together as one position. This position will be denoted with a "y-beam".
 
-If a selection is active, `markMode` leaves the selection untouched, all subsequent `moveSelectionPoint` calls move "start".
+![Y-Beam Example][images/Y-Beam.png]
 
-Pressing `markMode` again, will then anchor "start". Subsequent `moveSelectionPoint` calls move the "end" selection point.
+If a selection is active, `copyMode` leaves the selection untouched, all subsequent `moveSelectionPoint` calls move "start". The y-beam is then cut vertically in half, where one half is drawn on the "start" endpoint, and the other half is drawn on the "end" endpoint. Since the user is moving "start", only the half-y-beam is drawn on the "start" endpoint.
 
-Pressing `markMode` essentially cycles between which selection point is targeted.
+![Separated Y-Beam Example][images/Half-Y-Beam.png]
+
+**NOTE:** Both half y-beams could have been presented as shown in the image below. This idea was omitted because then there is no indication for which half y-beam is currently focused.
+
+![Both Separated Y-Beams Example][images/Split-Y-Beam.png]
+
+Pressing `copyMode` again, will then anchor "start". Subsequent `moveSelectionPoint` calls move the "end" selection point. As before, the half-y-beam is only drawn on the "end" to denote that this is the endpoint that is being moved.
+
+Pressing `copyMode` essentially cycles between which selection point is targeted. The half-y-beam is drawn on the targeted endpoint.
 
 #### Block Selection
 A user can normally create a block selection by holding <kbd>alt</kbd> then creating a selection.
 
-If the user is in Mark Mode, and desires to make a block selection, they can use the `toggleBlockSelection` keybinding. `toggleBlockSelection` takes an existing selection, and transforms it into a block selection.
+If the user is in Copy Mode, and desires to make a block selection, they can use the `toggleBlockSelection` keybinding. `toggleBlockSelection` takes an existing selection, and transforms it into a block selection.
 
-All selections created in Mark Mode will have block selection disabled by default.
+All selections created in Copy Mode will have block selection disabled by default.
 
-#### Rendering during Mark Mode
+#### Rendering during Copy Mode
 Since we are just moving the selection points, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection point past the top/bottom of the viewport.
 
-In ConHost, output would be paused when a selection was present. This is a completely separate issue that is being tracked in (#2529)[https://github.com/microsoft/terminal/pull/2529].
+In ConHost, output would be paused when a selection was present. Windows Terminal does not pause the output when a selection is present, however, it does not scroll to the new output.
 
 #### Interaction with CopyOnSelect
 If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". Thus, the selection is copied when the `copy` keybinding is used or the selection is copied using the mouse.
 
 #### Interaction with Mouse Selection
-If a selection exists, the user is already in Mark Mode. The user should be modifying the "end" endpoint of the selection. The existing selection should not be cleared (contrary to prior behavior).
+If a selection exists, the user is basically already in Copy Mode. The user should be modifying the "end" endpoint of the selection when using the `moveSelectionPoint` keybindings. The existing selection should not be cleared (contrary to prior behavior). However, the half-y-beam will not be drawn. Once the user presses the `copyMode` or `moveSelectionPoint` keybinding, the half-y-beam is drawn on the targeted endpoint (which will then be "start").
 
-During Mark Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Mark Mode. The target endpoint being modified in Mark Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier in the flowchart).
+During Copy Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Copy Mode. The target endpoint being modified in Copy Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier in the flowchart).
 
 
 #### Exiting Mark Mode
