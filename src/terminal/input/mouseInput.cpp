@@ -104,7 +104,7 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
 // - state - the current state of which mouse buttons are pressed
 // Return value:
 // - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
-unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState state) noexcept
+constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState state) noexcept
 {
     // Will be treated as a release, or no button pressed.
     unsigned int button = WM_LBUTTONUP;

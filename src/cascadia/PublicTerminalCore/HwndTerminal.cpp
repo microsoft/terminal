@@ -553,7 +553,7 @@ try
         wheelDelta = HIWORD(wParam);
     }
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, {});
 }
 catch (...)
 {

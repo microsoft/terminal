@@ -44,10 +44,6 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
 
-        // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-        // "If the high-order bit is 1, the key is down; otherwise, it is up."
-        static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
-
         struct MouseButtonState
         {
             bool isLeftButtonDown;
@@ -149,7 +145,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;
 
-        static unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
+        static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
     };
 }

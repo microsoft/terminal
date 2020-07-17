@@ -23,11 +23,16 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.
 #define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
+
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 // ----------------------------
 // Helpers
@@ -123,12 +128,10 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        using namespace Microsoft::Console::VirtualTerminal;
-
-        TerminalInput::MouseButtonState state {
-            WI_IsFlagSet(GetKeyState(VK_LBUTTON), TerminalInput::KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_MBUTTON), TerminalInput::KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_RBUTTON), TerminalInput::KeyPressed)
+        TerminalInput::MouseButtonState state{
+            WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
         };
 
         fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta, state);
