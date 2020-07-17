@@ -18,6 +18,7 @@
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
 #include "ExecuteCommandlineArgs.g.h"
+#include "ToggleTabSwitcherArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
