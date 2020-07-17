@@ -15,6 +15,7 @@
     <ClCompile Include="OperatorTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="BaseTests.cpp" />
+    <ClCompile Include="SPSCTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
