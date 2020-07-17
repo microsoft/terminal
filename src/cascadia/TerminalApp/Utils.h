@@ -13,8 +13,6 @@ Author(s):
 --*/
 #pragma once
 
-std::wstring GetWstringFromJson(const Json::Value& json);
-
 // Method Description:
 // - Create a std::string from a string_view. We do this because we can't look
 //   up a key in a Json::Value with a string_view directly, so instead we'll use

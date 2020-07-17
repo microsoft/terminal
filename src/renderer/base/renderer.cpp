@@ -26,13 +26,12 @@ Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
                    std::unique_ptr<IRenderThread> thread) :
-    _pData(pData),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _destructing{ false },
-    _clusterBuffer{}
+    _clusterBuffer{},
+    _viewport{ pData->GetViewport() }
 {
-    _srViewportPrevious = { 0 };
-
     for (size_t i = 0; i < cEngines; i++)
     {
         IRenderEngine* engine = rgpEngines[i];
@@ -208,7 +207,7 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _pData->GetViewport();
+    Viewport view = _viewport;
     SMALL_RECT srUpdateRegion = region.ToExclusive();
 
     if (view.TrimToViewport(&srUpdateRegion))
@@ -357,7 +356,7 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _srViewportPrevious;
+    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
     SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
 
     COORD coordDelta;
@@ -369,7 +368,7 @@ bool Renderer::_CheckViewportAndScroll()
         LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
     }
 
-    _srViewportPrevious = srNewViewport;
+    _viewport = Viewport::FromInclusive(srNewViewport);
 
     // If we're keeping some buffers between calls, let them know about the viewport size
     // so they can prepare the buffers for changes to either preallocate memory at once

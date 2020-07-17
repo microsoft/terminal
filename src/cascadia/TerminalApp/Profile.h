@@ -15,6 +15,7 @@ Author(s):
 --*/
 #pragma once
 #include "ColorScheme.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -35,14 +36,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 namespace TerminalApp
 {
     class Profile;
-
-    enum class CloseOnExitMode
-    {
-        Never = 0,
-        Graceful,
-        Always
-    };
-};
+}
 
 class TerminalApp::Profile final
 {
@@ -107,23 +101,7 @@ public:
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-    static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
-    static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
-    static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
-    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
-    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
-
-    static winrt::Windows::UI::Text::FontWeight _ParseFontWeight(const Json::Value& json);
-
-    static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
-
-    static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
-
-    static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
-
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
-
-    static bool _ConvertJsonToBool(const Json::Value& json);
 
     std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
@@ -159,7 +137,7 @@ private:
     std::optional<winrt::Windows::UI::Xaml::Media::Stretch> _backgroundImageStretchMode;
     std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
-    std::optional<std::wstring> _scrollbarState;
+    std::optional<::winrt::Microsoft::Terminal::Settings::ScrollbarState> _scrollbarState;
     CloseOnExitMode _closeOnExitMode;
     std::wstring _padding;
 
