@@ -1,4 +1,5 @@
 ACLs
+altform
 backplating
 DACL
 DACLs
@@ -9,7 +10,9 @@ microsoftonline
 osgvsowi
 powerrename
 powershell
+pscustomobject
 SACLs
 tdbuildteamid
 vcruntime
 visualstudio
+wslpath

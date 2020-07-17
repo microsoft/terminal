@@ -55,7 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseCharacters(const size_t numChars) override; // ECH
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
-        bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
+        bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
@@ -66,8 +66,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECSET
-        bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
+        bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECSET
+        bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -116,7 +116,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+                                const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
 
     private:
         enum class ScrollDirection
@@ -159,7 +159,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable);
+        bool _SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable);
         bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
@@ -192,7 +192,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isDECCOLMAllowed;
 
-        size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+        size_t _SetRgbColorsHelper(const gsl::span<const DispatchTypes::GraphicsOptions> options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
     };
