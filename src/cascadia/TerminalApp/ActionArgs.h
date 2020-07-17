@@ -21,7 +21,6 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include "TerminalSettingsSerializationHelper.h"
 #include "TerminalWarnings.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
