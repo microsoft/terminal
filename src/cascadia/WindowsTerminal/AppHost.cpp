@@ -409,7 +409,6 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    
                     const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
                     const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
