@@ -44,10 +44,8 @@ namespace winrt::TerminalApp::implementation
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-
             if (Visibility() == Visibility::Visible)
             {
-
                 if (_currentMode == CommandPaletteMode::TabSwitcherMode)
                 {
                     if (_anchorKey != VirtualKey::None)
@@ -59,7 +57,7 @@ namespace winrt::TerminalApp::implementation
                     {
                         _searchBox().Focus(FocusState::Programmatic);
                     }
-                    
+
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
                 }
@@ -263,12 +261,12 @@ namespace winrt::TerminalApp::implementation
     {
         switch (_currentMode)
         {
-            case CommandPaletteMode::ActionMode:
-                return _allCommands;
-            case CommandPaletteMode::TabSwitcherMode:
-                return _allTabActions;
-            default:
-                return _allCommands;
+        case CommandPaletteMode::ActionMode:
+            return _allCommands;
+        case CommandPaletteMode::TabSwitcherMode:
+            return _allTabActions;
+        default:
+            return _allCommands;
         }
     }
 
@@ -359,26 +357,25 @@ namespace winrt::TerminalApp::implementation
         _currentMode = mode;
         switch (_currentMode)
         {
-            case CommandPaletteMode::ActionMode:
-                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-                break;
-            case CommandPaletteMode::TabSwitcherMode:
+        case CommandPaletteMode::ActionMode:
+            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            break;
+        case CommandPaletteMode::TabSwitcherMode: {
+            SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+            NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
+
+            if (_anchorKey != VirtualKey::None)
             {
-                SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
-                NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-
-                if (_anchorKey != VirtualKey::None)
-                {
-                    _searchBox().Visibility(Visibility::Collapsed);
-                }
-
-                break;
+                _searchBox().Visibility(Visibility::Collapsed);
             }
-            default:
-                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-                break;
+
+            break;
+        }
+        default:
+            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            break;
         }
     }
 
@@ -396,7 +393,7 @@ namespace winrt::TerminalApp::implementation
     static bool _compareTabIndex(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
     {
         std::wstring_view leftIndex{ lhs.KeyChordText() };
-        std::wstring leftIdx { leftIndex.substr(leftIndex.find_last_of(' ') + 1) };
+        std::wstring leftIdx{ leftIndex.substr(leftIndex.find_last_of(' ') + 1) };
         std::wstring_view rightIndex{ rhs.KeyChordText() };
         std::wstring rightIdx{ rightIndex.substr(rightIndex.find_last_of(' ') + 1) };
 
@@ -653,22 +650,22 @@ namespace winrt::TerminalApp::implementation
 
             switch (changedEvent)
             {
-                case CollectionChange::ItemChanged: {
-                    auto tab = tabList.GetAt(idx);
-                    GenerateCommandForTab(idx, false, tab);
-                    break;
-                }
-                case CollectionChange::ItemInserted: {
-                    auto tab = tabList.GetAt(idx);
-                    GenerateCommandForTab(idx, true, tab);
-                    UpdateTabIndices(idx);
-                    break;
-                }
-                case CollectionChange::ItemRemoved: {
-                    _allTabActions.RemoveAt(idx);
-                    UpdateTabIndices(idx);
-                    break;
-                }
+            case CollectionChange::ItemChanged: {
+                auto tab = tabList.GetAt(idx);
+                GenerateCommandForTab(idx, false, tab);
+                break;
+            }
+            case CollectionChange::ItemInserted: {
+                auto tab = tabList.GetAt(idx);
+                GenerateCommandForTab(idx, true, tab);
+                UpdateTabIndices(idx);
+                break;
+            }
+            case CollectionChange::ItemRemoved: {
+                _allTabActions.RemoveAt(idx);
+                UpdateTabIndices(idx);
+                break;
+            }
             }
 
             _updateFilteredActions();
@@ -726,7 +723,6 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
         auto weakCommand{ command->get_weak() };
         tab.PropertyChanged([weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-
             auto palette{ weakThis.get() };
             auto command{ weakCommand.get() };
 
@@ -747,7 +743,6 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
-
         });
 
         if (inserted)

@@ -533,7 +533,6 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
-    
     // Possible AnchorKey values
     static constexpr std::string_view ControlString{ "ctrl" };
     static constexpr std::string_view AltString{ "alt" };
