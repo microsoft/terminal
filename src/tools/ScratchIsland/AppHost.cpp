@@ -12,6 +12,7 @@
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
@@ -53,9 +54,14 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    _rootGrid = Grid();
+    _swapchainsGrid = Grid();
+    _swp0 = SwapChainPanel();
+    _swp1 = SwapChainPanel();
+    _swp2 = SwapChainPanel();
+    _swp3 = SwapChainPanel();
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    winrt::Windows::UI::Xaml::Controls::Grid rootGrid;
     {
         auto firstRowDef = Controls::RowDefinition();
         firstRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
@@ -63,10 +69,9 @@ void AppHost::Initialize()
         auto secondRowDef = Controls::RowDefinition();
         secondRowDef.Height(GridLengthHelper::FromValueAndType(9, GridUnitType::Star));
 
-        rootGrid.RowDefinitions().Append(firstRowDef);
-        rootGrid.RowDefinitions().Append(secondRowDef);
+        _rootGrid.RowDefinitions().Append(firstRowDef);
+        _rootGrid.RowDefinitions().Append(secondRowDef);
     }
-    winrt::Windows::UI::Xaml::Controls::Grid swapchainsGrid;
     {
         auto firstRowDef = Controls::RowDefinition();
         firstRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
@@ -74,8 +79,8 @@ void AppHost::Initialize()
         auto secondRowDef = Controls::RowDefinition();
         secondRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
 
-        swapchainsGrid.RowDefinitions().Append(firstRowDef);
-        swapchainsGrid.RowDefinitions().Append(secondRowDef);
+        _swapchainsGrid.RowDefinitions().Append(firstRowDef);
+        _swapchainsGrid.RowDefinitions().Append(secondRowDef);
 
         auto firstColDef = Controls::ColumnDefinition();
         firstColDef.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
@@ -83,30 +88,53 @@ void AppHost::Initialize()
         auto secondColDef = Controls::ColumnDefinition();
         secondColDef.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
 
-        swapchainsGrid.ColumnDefinitions().Append(firstColDef);
-        swapchainsGrid.ColumnDefinitions().Append(secondColDef);
+        _swapchainsGrid.ColumnDefinitions().Append(firstColDef);
+        _swapchainsGrid.ColumnDefinitions().Append(secondColDef);
     }
 
-    rootGrid.Children().Append(swapchainsGrid);
-    Controls::Grid::SetRow(swapchainsGrid, 1);
+    _rootGrid.Children().Append(_swapchainsGrid);
+    Controls::Grid::SetRow(_swapchainsGrid, 1);
 
-    // if (auto solidColor = rootGrid.Background().try_as<Media::SolidColorBrush>())
+    // if (auto solidColor = _rootGrid.Background().try_as<Media::SolidColorBrush>())
     {
         Media::SolidColorBrush solidColor{};
         til::color newBgColor{ 0xFFFF0000 };
         solidColor.Color(newBgColor);
-        rootGrid.Background(solidColor);
+        _rootGrid.Background(solidColor);
     }
-    // if (auto solidColor = swapchainsGrid.Background().try_as<Media::SolidColorBrush>())
+    // if (auto solidColor = _swapchainsGrid.Background().try_as<Media::SolidColorBrush>())
     {
         Media::SolidColorBrush solidColor{};
         til::color newBgColor{ 0xFF00FF00 };
         solidColor.Color(newBgColor);
-        swapchainsGrid.Background(solidColor);
+        _swapchainsGrid.Background(solidColor);
     }
 
+    winrt::Windows::UI::Xaml::Thickness newMargin = ThicknessHelper::FromUniformLength(4);
+    _swp0.Margin(newMargin);
+    _swp1.Margin(newMargin);
+    _swp2.Margin(newMargin);
+    _swp3.Margin(newMargin);
+
+    _rootGrid.Children().Append(_swp0);
+    _rootGrid.Children().Append(_swp1);
+    _rootGrid.Children().Append(_swp2);
+    _rootGrid.Children().Append(_swp3);
+
+    Controls::Grid::SetRow(_swp0, 0);
+    Controls::Grid::SetColumn(_swp0, 0);
+
+    Controls::Grid::SetRow(_swp1, 0);
+    Controls::Grid::SetColumn(_swp1, 1);
+
+    Controls::Grid::SetRow(_swp2, 1);
+    Controls::Grid::SetColumn(_swp2, 0);
+
+    Controls::Grid::SetRow(_swp3, 1);
+    Controls::Grid::SetColumn(_swp3, 1);
+
     // TODO: INITIALIZE THIS UI HERE
-    _window->SetContent(rootGrid);
+    _window->SetContent(_rootGrid);
 
     _window->OnAppInitialized();
 }

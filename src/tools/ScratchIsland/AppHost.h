@@ -21,4 +21,12 @@ private:
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
+
+    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Grid _swapchainsGrid{ nullptr };
+
+    winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp0{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp1{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp2{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp3{ nullptr };
 };
