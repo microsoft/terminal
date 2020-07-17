@@ -72,7 +72,7 @@ try
                 {
                     const auto bufferData = terminal->_terminal->RetrieveSelectedTextFromBuffer(false);
                     LOG_IF_FAILED(terminal->_CopyTextToSystemClipboard(bufferData, true));
-                    terminal->_terminal->ClearSelection();
+                    TerminalClearSelection(terminal);
                 }
                 CATCH_LOG();
             }
@@ -467,11 +467,21 @@ try
 }
 CATCH_RETURN();
 
+void HwndTerminal::_ClearSelection() noexcept
+try
+{
+    auto lock{ _terminal->LockForWriting() };
+    _terminal->ClearSelection();
+    _renderer->TriggerSelection();
+}
+CATCH_LOG();
+
 void _stdcall TerminalClearSelection(void* terminal)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->ClearSelection();
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_ClearSelection();
 }
+
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
@@ -482,9 +492,10 @@ bool _stdcall TerminalIsSelectionActive(void* terminal)
 // Returns the selected text in the terminal.
 const wchar_t* _stdcall TerminalGetSelection(void* terminal)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
     const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+    publicTerminal->_ClearSelection();
 
     // convert text: vector<string> --> string
     std::wstring selectedText;
@@ -494,8 +505,6 @@ const wchar_t* _stdcall TerminalGetSelection(void* terminal)
     }
 
     auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
-    TerminalClearSelection(terminal);
-
     return returnText.release();
 }
 
@@ -574,7 +583,7 @@ try
 {
     if (_terminal->IsSelectionActive())
     {
-        _terminal->ClearSelection();
+        _ClearSelection();
         if (ch == UNICODE_ESC)
         {
             // ESC should clear any selection before it triggers input.

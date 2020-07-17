@@ -112,6 +112,8 @@ private:
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
+    void _ClearSelection() noexcept;
+
     bool _CanSendVTMouseInput() const noexcept;
     bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
