@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
+        bool PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);

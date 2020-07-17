@@ -116,6 +116,11 @@ namespace TerminalApp
         String Title { get; };
     };
 
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        String Commandline;
+    };
+
     [default_interface] runtimeclass ToggleTabSwitcherArgs : IActionArgs
     {
         Windows.System.VirtualKey AnchorKey { get; };

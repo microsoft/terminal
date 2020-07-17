@@ -286,9 +286,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
     const short islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
+        static_cast<long>(ceil(initialSize.Width)), 1);
     const short islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.

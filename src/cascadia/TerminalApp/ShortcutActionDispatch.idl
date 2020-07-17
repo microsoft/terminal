@@ -35,10 +35,11 @@ namespace TerminalApp
         ToggleFocusMode,
         ToggleFullscreen,
         ToggleAlwaysOnTop,
+        OpenSettings,
         SetTabColor,
         OpenTabColorPicker,
-        OpenSettings,
         RenameTab,
+        ExecuteCommandline,
         ToggleCommandPalette,
         ToggleTabSwitcher
     };
@@ -85,6 +86,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ExecuteCommandline;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleTabSwitcher;
     }
 }
