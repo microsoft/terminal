@@ -93,7 +93,7 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-std::basic_string_view<Profile> CascadiaSettings::GetProfiles() const noexcept
+gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }

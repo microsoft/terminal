@@ -51,17 +51,18 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-                              L"Windows Terminal",
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              nullptr,
-                              nullptr,
-                              wc.hInstance,
-                              this));
+    WINRT_VERIFY(CreateWindowEx(_alwaysOnTop ? WS_EX_TOPMOST : 0,
+                                wc.lpszClassName,
+                                L"Windows Terminal",
+                                WS_OVERLAPPEDWINDOW,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                nullptr,
+                                nullptr,
+                                wc.hInstance,
+                                this));
 
     WINRT_ASSERT(_window);
 }
@@ -442,25 +443,63 @@ void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::Ele
 }
 
 // Method Description:
-// - Toggles our focus mode state. See _SetIsBorderless for more details.
+// - Updates our focus mode state. See _SetIsBorderless for more details.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleFocusMode()
+void IslandWindow::FocusModeChanged(const bool focusMode)
 {
-    _SetIsBorderless(!_borderless);
+    // Do nothing if the value was unchanged.
+    if (focusMode == _borderless)
+    {
+        return;
+    }
+
+    _SetIsBorderless(focusMode);
 }
 
 // Method Description:
-// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// - Updates our fullscreen state. See _SetIsFullscreen for more details.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::ToggleFullscreen()
+void IslandWindow::FullscreenChanged(const bool fullscreen)
 {
-    _SetIsFullscreen(!_fullscreen);
+    // Do nothing if the value was unchanged.
+    if (fullscreen == _fullscreen)
+    {
+        return;
+    }
+
+    _SetIsFullscreen(fullscreen);
+}
+
+// Method Description:
+// - Enter or exit the "always on top" state. Before the window is created, this
+//   value will later be used when we create the window to create the window on
+//   top of all others. After the window is created, it will either enter the
+//   group of topmost windows, or exit the group of topmost windows.
+// Arguments:
+// - alwaysOnTop: whether we should be entering or exiting always on top mode.
+// Return Value:
+// - <none>
+void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
+{
+    _alwaysOnTop = alwaysOnTop;
+
+    const auto hwnd = GetHandle();
+    if (hwnd)
+    {
+        SetWindowPos(hwnd,
+                     _alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST,
+                     0, // the window dimensions are unused, because we're passing SWP_NOSIZE
+                     0,
+                     0,
+                     0,
+                     SWP_NOMOVE | SWP_NOSIZE);
+    }
 }
 
 // From GdiEngine::s_SetWindowLongWHelper

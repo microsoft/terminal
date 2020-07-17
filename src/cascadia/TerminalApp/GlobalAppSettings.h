@@ -17,6 +17,7 @@ Author(s):
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
 #include "Command.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -28,12 +29,6 @@ namespace TerminalAppLocalTests
 namespace TerminalApp
 {
     class GlobalAppSettings;
-
-    struct LaunchPosition
-    {
-        std::optional<int> x;
-        std::optional<int> y;
-    };
 };
 
 class TerminalApp::GlobalAppSettings final
@@ -84,6 +79,7 @@ public:
     GETSET_PROPERTY(bool, ForceVTInput, false);
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
     GETSET_PROPERTY(bool, StartOnUserLogin, false);
+    GETSET_PROPERTY(bool, AlwaysOnTop, false);
 
 private:
     std::optional<std::wstring> _unparsedDefaultProfile;
@@ -94,15 +90,6 @@ private:
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
     std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
-
-    static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
-
-    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
-
-    static void _ParseInitialPosition(const std::string& initialPosition,
-                                      LaunchPosition& ret) noexcept;
-
-    static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;

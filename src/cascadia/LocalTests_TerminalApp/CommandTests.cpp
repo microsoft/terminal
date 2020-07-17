@@ -147,10 +147,8 @@ namespace TerminalAppLocalTests
             { "name": "command0", "command": { "action": "splitPane", "split": null } },
             { "name": "command1", "command": { "action": "splitPane", "split": "vertical" } },
             { "name": "command2", "command": { "action": "splitPane", "split": "horizontal" } },
-            { "name": "command3", "command": { "action": "splitPane", "split": "none" } },
             { "name": "command4", "command": { "action": "splitPane" } },
-            { "name": "command5", "command": { "action": "splitPane", "split": "auto" } },
-            { "name": "command6", "command": { "action": "splitPane", "split": "foo" } }
+            { "name": "command5", "command": { "action": "splitPane", "split": "auto" } }
         ])" };
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
@@ -159,7 +157,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, commands.size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(7u, commands.size());
+        VERIFY_ARE_EQUAL(5u, commands.size());
 
         {
             auto command = commands.at(L"command0");
@@ -192,16 +190,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"command3");
-            VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
-        }
-        {
             auto command = commands.at(L"command4");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
@@ -213,16 +201,6 @@ namespace TerminalAppLocalTests
         }
         {
             auto command = commands.at(L"command5");
-            VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
-        }
-        {
-            auto command = commands.at(L"command6");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());

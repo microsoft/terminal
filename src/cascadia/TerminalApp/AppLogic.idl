@@ -41,6 +41,10 @@ namespace TerminalApp
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };
 
+        Boolean FocusMode { get; };
+        Boolean Fullscreen { get; };
+        Boolean AlwaysOnTop { get; };
+
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -58,7 +62,8 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFocusModeEventArgs> ToggleFocusMode;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
     }
 }
