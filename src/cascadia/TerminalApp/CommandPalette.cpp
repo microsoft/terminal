@@ -417,7 +417,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (orderByTabIndex)
                 {
-                    return false;
+                    return _compareTabIndex(command, other.command);
                 }
                 return !_compareCommandNames(command, other.command);
             }
