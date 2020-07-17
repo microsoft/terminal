@@ -127,7 +127,7 @@ public:                                                                         
     };                                                                                 \
                                                                                        \
 private:                                                                               \
-    const type _##name {__VA_ARGS__};                                                  \
+    const type _##name{ __VA_ARGS__ };                                                 \
     void _set##name(const type& value)                                                 \
     {                                                                                  \
         const_cast<type&>(_##name) = value;                                            \
