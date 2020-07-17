@@ -184,7 +184,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                     const TextAttributeRun run{ colorUses, currentColor };
                     // Now commit the new color runs into the attr row.
                     LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
-                                                          index,
+                                                          colorStarts,
                                                           currentIndex - 1,
                                                           _charRow.size()));
                     currentColor = it->TextAttr();
