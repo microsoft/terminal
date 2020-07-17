@@ -2,6 +2,9 @@
 #include "ActionArgs.h"
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
+
+#include "JsonUtils.h"
+
 #include <LibraryResources.h>
 
 static constexpr std::string_view CopyTextKey{ "copy" };
@@ -44,6 +47,8 @@ static constexpr std::string_view UnboundKey{ "unbound" };
 
 namespace winrt::TerminalApp::implementation
 {
+    using namespace ::TerminalApp;
+
     // Specifically use a map here over an unordered_map. We want to be able to
     // iterate over these entries in-order when we're serializing the keybindings.
     // HERE BE DRAGONS:
@@ -183,11 +188,9 @@ namespace winrt::TerminalApp::implementation
         }
         else if (json.isObject())
         {
-            const auto actionVal = json[JsonKey(ActionKey)];
-            if (actionVal.isString())
+            if (const auto actionString{ JsonUtils::GetValueForKey<std::optional<std::string>>(json, ActionKey) })
             {
-                auto actionString = actionVal.asString();
-                action = GetActionFromString(actionString);
+                action = GetActionFromString(*actionString);
                 argsVal = json;
             }
         }
@@ -281,5 +284,4 @@ namespace winrt::TerminalApp::implementation
         const auto found = GeneratedActionNames.find(_Action);
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
-
 }
