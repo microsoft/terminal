@@ -361,7 +361,8 @@ namespace winrt::TerminalApp::implementation
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
             break;
-        case CommandPaletteMode::TabSwitcherMode: {
+        case CommandPaletteMode::TabSwitcherMode:
+        {
             SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
 
@@ -650,18 +651,21 @@ namespace winrt::TerminalApp::implementation
 
             switch (changedEvent)
             {
-            case CollectionChange::ItemChanged: {
+            case CollectionChange::ItemChanged:
+            {
                 auto tab = tabList.GetAt(idx);
                 GenerateCommandForTab(idx, false, tab);
                 break;
             }
-            case CollectionChange::ItemInserted: {
+            case CollectionChange::ItemInserted:
+            {
                 auto tab = tabList.GetAt(idx);
                 GenerateCommandForTab(idx, true, tab);
                 UpdateTabIndices(idx);
                 break;
             }
-            case CollectionChange::ItemRemoved: {
+            case CollectionChange::ItemRemoved:
+            {
                 _allTabActions.RemoveAt(idx);
                 UpdateTabIndices(idx);
                 break;
