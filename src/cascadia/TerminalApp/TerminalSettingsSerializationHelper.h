@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "JsonUtilsNew.h"
+#include "JsonUtils.h"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Settings::CopyFormat);
