@@ -837,6 +837,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
         _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
         _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
+        _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
@@ -1164,7 +1165,9 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _tabContent.Children().Clear();
             focusedTab->NavigateFocus(direction);
+            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 
@@ -1254,7 +1257,9 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _tabContent.Children().Clear();
             focusedTab->ClosePane();
+            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 
@@ -1384,7 +1389,9 @@ namespace winrt::TerminalApp::implementation
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
 
+            _tabContent.Children().Clear();
             focusedTab->SplitPane(realSplitType, realGuid, newControl);
+            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
         CATCH_LOG();
     }
@@ -1402,7 +1409,10 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+
+            _tabContent.Children().Clear();
             focusedTab->ResizePane(direction);
+            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 

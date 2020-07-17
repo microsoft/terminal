@@ -25,6 +25,7 @@ static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
@@ -79,6 +80,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
@@ -260,6 +262,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::Invalid, L"" },
                 { ShortcutAction::Find, RS_(L"FindCommandKey") },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },

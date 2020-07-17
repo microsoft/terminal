@@ -1076,6 +1076,51 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     return { _firstChild, _secondChild };
 }
 
+void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
+{
+    // Do nothing if we're the only pane in the tree.
+
+    // TODO: Can we just do nothing if we're a leaf? is that the equivalent of the above?
+    if (_IsLeaf())
+    {
+        return;
+    }
+
+    if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+    {
+        // When we're unzooming the pane, we'll need to re-add it to our UI tree where it originally belonged.
+        // easy way: just re-add both:
+        _root.Children().Clear();
+    }
+    else
+    {
+        _firstChild->Zoom(zoomedPane);
+        _secondChild->Zoom(zoomedPane);
+    }
+}
+
+void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
+{
+    if (_IsLeaf())
+    {
+        return;
+    }
+
+    if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+    {
+        // When we're unzooming the pane, we'll need to re-add it to our UI tree where it originally belonged.
+        // easy way: just re-add both:
+        _root.Children().Clear();
+        _root.Children().Append(_firstChild->GetRootElement());
+        _root.Children().Append(_secondChild->GetRootElement());
+    }
+    else
+    {
+        _firstChild->UnZoom(zoomedPane);
+        _secondChild->UnZoom(zoomedPane);
+    }
+}
+
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
 //   should fill. Since these children own their own separators (borders), this

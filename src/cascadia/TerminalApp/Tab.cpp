@@ -65,7 +65,14 @@ namespace winrt::TerminalApp::implementation
     // - The UIElement acting as root of the Tab's root pane.
     UIElement Tab::GetRootElement()
     {
-        return _rootPane->GetRootElement();
+        if (_zoomedPane)
+        {
+            return _zoomedPane->GetRootElement();
+        }
+        else
+        {
+            return _rootPane->GetRootElement();
+        }
     }
 
     // Method Description:
@@ -302,6 +309,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
+        // TODO: Can we do this safely? Probably not! Because the Page currently
+        // owns the content, not the tab!
+        _exitZoom();
+
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
         _AttachEventHandlersToControl(control);
@@ -348,6 +359,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     {
+        // TODO: Can we do this safely? Probably not! Because the Page currently
+        // owns the content, not the tab!
+        _exitZoom();
+
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->ResizePane(direction);
@@ -362,6 +377,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     {
+        // TODO: Can we do this safely? Probably not! Because the Page currently
+        // owns the content, not the tab!
+        _exitZoom();
+
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->NavigateFocus(direction);
@@ -384,6 +403,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ClosePane()
     {
+        // TODO: Can we do this safely? Probably not! Because the Page currently
+        // owns the content, not the tab!
+        _exitZoom();
+
         _activePane->Close();
     }
 
@@ -873,6 +896,29 @@ namespace winrt::TerminalApp::implementation
     SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+    }
+
+    void Tab::ToggleZoom()
+    {
+        if (_zoomedPane)
+        {
+            _exitZoom();
+        }
+        else
+        {
+            _enterZoom();
+        }
+    }
+
+    void Tab::_enterZoom()
+    {
+        _zoomedPane = _activePane;
+        _rootPane->Zoom(_zoomedPane);
+    }
+    void Tab::_exitZoom()
+    {
+        _rootPane->UnZoom(_zoomedPane);
+        _zoomedPane = nullptr;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

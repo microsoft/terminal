@@ -70,6 +70,9 @@ public:
 
     int GetLeafPaneCount() const noexcept;
 
+    void Zoom(std::shared_ptr<Pane> zoomedPane);
+    void UnZoom(std::shared_ptr<Pane> zoomedPane);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
