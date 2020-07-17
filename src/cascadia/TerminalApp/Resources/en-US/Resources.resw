@@ -543,6 +543,10 @@
   <data name="ResetTabNameCommandKey" xml:space="preserve">
     <value>Reset tab title</value>
   </data>
+  <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
+    <value>Run commandline "{0}" in this window</value>
+    <comment>{0} will be replaced with user-defined commandline</comment>
+  </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>
   </data>

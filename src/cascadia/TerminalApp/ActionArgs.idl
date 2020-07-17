@@ -115,4 +115,9 @@ namespace TerminalApp
     {
         String Title { get; };
     };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        String Commandline;
+    };
 }
