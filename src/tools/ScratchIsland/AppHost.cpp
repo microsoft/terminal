@@ -55,9 +55,58 @@ void AppHost::Initialize()
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    winrt::Windows::UI::Xaml::Controls::Grid g;
+    winrt::Windows::UI::Xaml::Controls::Grid rootGrid;
+    {
+        auto firstRowDef = Controls::RowDefinition();
+        firstRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+
+        auto secondRowDef = Controls::RowDefinition();
+        secondRowDef.Height(GridLengthHelper::FromValueAndType(9, GridUnitType::Star));
+
+        rootGrid.RowDefinitions().Append(firstRowDef);
+        rootGrid.RowDefinitions().Append(secondRowDef);
+    }
+    winrt::Windows::UI::Xaml::Controls::Grid swapchainsGrid;
+    {
+        auto firstRowDef = Controls::RowDefinition();
+        firstRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+
+        auto secondRowDef = Controls::RowDefinition();
+        secondRowDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+
+        swapchainsGrid.RowDefinitions().Append(firstRowDef);
+        swapchainsGrid.RowDefinitions().Append(secondRowDef);
+
+        auto firstColDef = Controls::ColumnDefinition();
+        firstColDef.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+
+        auto secondColDef = Controls::ColumnDefinition();
+        secondColDef.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+
+        swapchainsGrid.ColumnDefinitions().Append(firstColDef);
+        swapchainsGrid.ColumnDefinitions().Append(secondColDef);
+    }
+
+    rootGrid.Children().Append(swapchainsGrid);
+    Controls::Grid::SetRow(swapchainsGrid, 1);
+
+    // if (auto solidColor = rootGrid.Background().try_as<Media::SolidColorBrush>())
+    {
+        Media::SolidColorBrush solidColor{};
+        til::color newBgColor{ 0xFFFF0000 };
+        solidColor.Color(newBgColor);
+        rootGrid.Background(solidColor);
+    }
+    // if (auto solidColor = swapchainsGrid.Background().try_as<Media::SolidColorBrush>())
+    {
+        Media::SolidColorBrush solidColor{};
+        til::color newBgColor{ 0xFF00FF00 };
+        solidColor.Color(newBgColor);
+        swapchainsGrid.Background(solidColor);
+    }
+
     // TODO: INITIALIZE THIS UI HERE
-    _window->SetContent(g);
+    _window->SetContent(rootGrid);
 
     _window->OnAppInitialized();
 }
