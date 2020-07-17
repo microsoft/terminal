@@ -28,8 +28,6 @@ namespace TerminalAppUnitTests
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(ProfileGeneratesGuid);
 
-        TEST_METHOD(TestWrongValueType);
-
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -169,58 +167,4 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
         VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
     }
-
-    void JsonTests::TestWrongValueType()
-    {
-        // This json blob has a whole bunch of settings with the wrong value
-        // types - strings for int values, ints for strings, floats for ints,
-        // etc. When we encounter data that's the wrong data type, we should
-        // gracefully ignore it, as opposed to throwing an exception, causing us
-        // to fail to load the settings at all.
-
-        const std::string settings0String{ R"(
-        {
-            "defaultProfile" : "{00000000-1111-0000-0000-000000000000}",
-            "profiles": [
-                {
-                    "guid" : "{00000000-1111-0000-0000-000000000000}",
-                    "acrylicOpacity" : "0.5",
-                    "closeOnExit" : "true",
-                    "fontSize" : "10",
-                    "historySize" : 1234.5678,
-                    "padding" : 20,
-                    "snapOnInput" : "false",
-                    "icon" : 4,
-                    "backgroundImageOpacity": false,
-                    "useAcrylic" : 14
-                }
-            ]
-        })" };
-
-        const auto settings0Json = VerifyParseSucceeded(settings0String);
-
-        CascadiaSettings settings;
-
-        settings._ParseJsonString(settings0String, false);
-        // We should not throw an exception trying to parse the settings here.
-        settings.LayerJson(settings._userSettings);
-
-        VERIFY_ARE_EQUAL(1u, settings._profiles.size());
-        auto& profile = settings._profiles.at(0);
-        Profile defaults{};
-
-        VERIFY_ARE_EQUAL(defaults._acrylicTransparency, profile._acrylicTransparency);
-        VERIFY_ARE_EQUAL(defaults._closeOnExitMode, profile._closeOnExitMode);
-        VERIFY_ARE_EQUAL(defaults._fontSize, profile._fontSize);
-        VERIFY_ARE_EQUAL(defaults._historySize, profile._historySize);
-        // A 20 as an int can still be treated as a json string
-        VERIFY_ARE_EQUAL(L"20", profile._padding);
-        VERIFY_ARE_EQUAL(defaults._snapOnInput, profile._snapOnInput);
-        // 4 is a valid string value
-        VERIFY_ARE_EQUAL(L"4", profile._icon);
-        // false is not a valid optional<double>
-        VERIFY_IS_FALSE(profile._backgroundImageOpacity.has_value());
-        VERIFY_ARE_EQUAL(defaults._useAcrylic, profile._useAcrylic);
-    }
-
 }

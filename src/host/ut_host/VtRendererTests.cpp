@@ -686,7 +686,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     }
     if (italics)
     {
-        desiredAttrs.SetItalics(true);
+        desiredAttrs.SetItalic(true);
         onSequences.push_back("\x1b[3m");
         offSequences.push_back("\x1b[23m");
     }
@@ -788,15 +788,15 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
         break;
     case GraphicsOptions::Italics:
         Log::Comment(L"----Set Italics Attribute----");
-        textAttributes.SetItalics(true);
+        textAttributes.SetItalic(true);
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
-        textAttributes.SetUnderline(true);
+        textAttributes.SetUnderlined(true);
         break;
     case GraphicsOptions::Overline:
         Log::Comment(L"----Set Overline Attribute----");
-        textAttributes.SetOverline(true);
+        textAttributes.SetOverlined(true);
         break;
     case GraphicsOptions::BlinkOrXterm256Index:
         Log::Comment(L"----Set Blink Attribute----");
@@ -1289,7 +1289,7 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
-        textAttributes.SetUnderline(true);
+        textAttributes.SetUnderlined(true);
         break;
     case GraphicsOptions::Negative:
         Log::Comment(L"----Set Negative Attribute----");

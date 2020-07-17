@@ -1604,7 +1604,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 
         if (title.has_value() && title->size() > 0)
         {
-            gsl::at(*title, 0) = ANSI_NULL;
+            til::at(*title, 0) = ANSI_NULL;
         }
 
         // Get the appropriate title and length depending on the mode.
@@ -1667,7 +1667,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 
         if (title.size() > 0)
         {
-            gsl::at(title, 0) = ANSI_NULL;
+            til::at(title, 0) = ANSI_NULL;
         }
 
         // Figure out how big our temporary Unicode buffer must be to get the title.
@@ -1722,7 +1722,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
             // If we didn't copy anything back and there is space, null terminate the given buffer and return.
             if (title.size() > 0)
             {
-                gsl::at(title, 0) = ANSI_NULL;
+                til::at(title, 0) = ANSI_NULL;
                 written = 1;
             }
         }
