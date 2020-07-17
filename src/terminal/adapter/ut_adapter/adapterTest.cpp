@@ -81,7 +81,7 @@ public:
             VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
             VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
             VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
-            VERIFY_ARE_EQUAL(_expectedAttributes, sbiex.wAttributes);
+            VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
         }
         return _setConsoleScreenBufferInfoExResult;
     }
@@ -764,7 +764,6 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    WORD _expectedAttributes = 0;
     bool _privateSetCursorKeysModeResult = false;
     bool _privateSetKeypadModeResult = false;
     bool _cursorKeysApplicationMode = false;
@@ -1261,7 +1260,7 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 22, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 22, 24, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1311,6 +1310,12 @@ public:
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
             break;
+        case DispatchTypes::GraphicsOptions::Invisible:
+            Log::Comment(L"Testing graphics 'Invisible'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetInvisible(true);
+            break;
         case DispatchTypes::GraphicsOptions::NotBoldOrFaint:
             Log::Comment(L"Testing graphics 'No Bold or Faint'");
             _testGetSet->_attribute = TextAttribute{ 0 };
@@ -1331,6 +1336,12 @@ public:
         case DispatchTypes::GraphicsOptions::Positive:
             Log::Comment(L"Testing graphics 'Positive'");
             _testGetSet->_attribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
+        case DispatchTypes::GraphicsOptions::Visible:
+            Log::Comment(L"Testing graphics 'Visible'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetInvisible(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlack:

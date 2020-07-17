@@ -27,7 +27,7 @@ class TextAttributeTests
     COLORREF _colorTable[COLOR_TABLE_SIZE];
     COLORREF _defaultFg = RGB(1, 2, 3);
     COLORREF _defaultBg = RGB(4, 5, 6);
-    std::basic_string_view<COLORREF> _GetTableView();
+    gsl::span<const COLORREF> _GetTableView();
 };
 
 bool TextAttributeTests::ClassSetup()
@@ -51,9 +51,9 @@ bool TextAttributeTests::ClassSetup()
     return true;
 }
 
-std::basic_string_view<COLORREF> TextAttributeTests::_GetTableView()
+gsl::span<const COLORREF> TextAttributeTests::_GetTableView()
 {
-    return std::basic_string_view<COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
+    return gsl::span<const COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
 }
 
 void TextAttributeTests::TestRoundtripLegacy()
@@ -169,6 +169,26 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
     VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
     VERIFY_ARE_EQUAL(std::make_pair(green, faintRed), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
+
+    // reset the reverse video and faint attributes
+    attr.SetReverseVideo(false);
+    attr.SetFaint(false);
+
+    // with invisible set, the calculated foreground value should match the
+    //       background, while getters stay the same
+    attr.SetInvisible(true);
+
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(green, green), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
+
+    // with reverse video set, the calculated background value should match
+    //      the foreground, while getters stay the same
+    attr.SetReverseVideo(true);
+
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(view, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(red, red), attr.CalculateRgbColors(view, _defaultFg, _defaultBg));
 }
 
 void TextAttributeTests::TestReverseDefaultColors()

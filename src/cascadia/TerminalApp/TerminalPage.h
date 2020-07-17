@@ -51,6 +51,10 @@ namespace winrt::TerminalApp::implementation
 
         void ToggleFocusMode();
         void ToggleFullscreen();
+        void ToggleAlwaysOnTop();
+        bool FocusMode() const;
+        bool Fullscreen() const;
+        bool AlwaysOnTop() const;
 
         void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
 
@@ -61,8 +65,9 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFocusMode, _toggleFocusModeHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFocusModeEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -87,6 +92,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
+        bool _isAlwaysOnTop{ false };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
@@ -211,6 +217,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleRetroEffect(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFocusMode(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

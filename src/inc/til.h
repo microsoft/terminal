@@ -15,6 +15,7 @@
 #include "til/rectangle.h"
 #include "til/bitmap.h"
 #include "til/u8u16convert.h"
+#include "til/spsc.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {

@@ -31,13 +31,13 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionPassThroughString(const std::wstring_view string) = 0;
 
         virtual bool ActionEscDispatch(const wchar_t wch,
-                                       const std::basic_string_view<wchar_t> intermediates) = 0;
+                                       const gsl::span<const wchar_t> intermediates) = 0;
         virtual bool ActionVt52EscDispatch(const wchar_t wch,
-                                           const std::basic_string_view<wchar_t> intermediates,
-                                           const std::basic_string_view<size_t> parameters) = 0;
+                                           const gsl::span<const wchar_t> intermediates,
+                                           const gsl::span<const size_t> parameters) = 0;
         virtual bool ActionCsiDispatch(const wchar_t wch,
-                                       const std::basic_string_view<wchar_t> intermediates,
-                                       const std::basic_string_view<size_t> parameters) = 0;
+                                       const gsl::span<const wchar_t> intermediates,
+                                       const gsl::span<const size_t> parameters) = 0;
 
         virtual bool ActionClear() = 0;
 
@@ -48,7 +48,7 @@ namespace Microsoft::Console::VirtualTerminal
                                        const std::wstring_view string) = 0;
 
         virtual bool ActionSs3Dispatch(const wchar_t wch,
-                                       const std::basic_string_view<size_t> parameters) = 0;
+                                       const gsl::span<const size_t> parameters) = 0;
 
         virtual bool ParseControlSequenceAfterSs3() const = 0;
         virtual bool FlushAtEndOfString() const = 0;

@@ -32,8 +32,9 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void ToggleFocusMode();
-    void ToggleFullscreen();
+    void FocusModeChanged(const bool focusMode);
+    void FullscreenChanged(const bool fullscreen);
+    void SetAlwaysOnTop(const bool alwaysOnTop);
 
 #pragma endregion
 
@@ -63,6 +64,7 @@ protected:
 
     bool _borderless{ false };
     bool _fullscreen{ false };
+    bool _alwaysOnTop{ false };
     RECT _fullscreenWindowSize;
     RECT _nonFullscreenWindowSize;
 

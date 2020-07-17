@@ -748,10 +748,10 @@ public:
         return true;
     }
 
-    bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept override
+    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) noexcept override
     try
     {
-        _options.assign(options.cbegin(), options.cend());
+        _options.assign(options.begin(), options.end());
         _setGraphics = true;
         return true;
     }
@@ -841,7 +841,7 @@ public:
         return fSuccess;
     }
 
-    bool _SetResetPrivateModesHelper(const std::basic_string_view<DispatchTypes::PrivateModeParams> params,
+    bool _SetResetPrivateModesHelper(const gsl::span<const DispatchTypes::PrivateModeParams> params,
                                      const bool enable)
     {
         size_t cFailures = 0;
@@ -852,12 +852,12 @@ public:
         return cFailures == 0;
     }
 
-    bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept override
+    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept override
     {
         return _SetResetPrivateModesHelper(params, true);
     }
 
-    bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept override
+    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept override
     {
         return _SetResetPrivateModesHelper(params, false);
     }
@@ -1545,7 +1545,7 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
     }
 
-    void VerifyDispatchTypes(const std::basic_string_view<DispatchTypes::GraphicsOptions> expectedOptions,
+    void VerifyDispatchTypes(const gsl::span<const DispatchTypes::GraphicsOptions> expectedOptions,
                              const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(expectedOptions.size(), dispatch._options.size());
@@ -1557,14 +1557,14 @@ class StateMachineExternalTest final
 
             if (i < expectedOptions.size())
             {
-                expectedOption = expectedOptions.at(i);
+                expectedOption = til::at(expectedOptions, i);
             }
 
-            optionsValid = expectedOption == dispatch._options.at(i);
+            optionsValid = expectedOption == til::at(dispatch._options, i);
 
             if (!optionsValid)
             {
-                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, dispatch._options.at(i)));
+                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, til::at(dispatch._options, i)));
                 break;
             }
         }

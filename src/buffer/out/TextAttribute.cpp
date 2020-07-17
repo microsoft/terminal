@@ -90,7 +90,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - reverseScreenMode: true if the screen mode is reversed.
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode) const noexcept
@@ -104,6 +104,10 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic
     if (IsReverseVideo() ^ reverseScreenMode)
     {
         std::swap(fg, bg);
+    }
+    if (IsInvisible())
+    {
+        fg = bg;
     }
     return { fg, bg };
 }
@@ -266,7 +270,7 @@ void TextAttribute::SetFaint(bool isFaint) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
 }
 
-void TextAttribute::SetItalics(bool isItalic) noexcept
+void TextAttribute::SetItalic(bool isItalic) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Italics, isItalic);
 }
@@ -286,13 +290,13 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderline(bool isUnderlined) noexcept
+void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
 }
 
-void TextAttribute::SetOverline(bool isOverlined) noexcept
+void TextAttribute::SetOverlined(bool isOverlined) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
 }

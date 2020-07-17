@@ -782,7 +782,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
     writtenOrNeeded = 0;
     if (historyBuffer.size() > 0)
     {
-        historyBuffer.at(0) = UNICODE_NULL;
+        til::at(historyBuffer, 0) = UNICODE_NULL;
     }
 
     CommandHistory* const CommandHistory = CommandHistory::s_FindByExe(exeName);
@@ -812,7 +812,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
                 size_t cchNewTotal;
                 RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(historyBuffer.size()));
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > historyBuffer.size());
 
                 size_t cchRemaining;
                 RETURN_IF_FAILED(SizeTSub(historyBuffer.size(),
@@ -859,7 +859,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
     {
         if (commandHistory.size() > 0)
         {
-            commandHistory.at(0) = ANSI_NULL;
+            til::at(commandHistory, 0) = ANSI_NULL;
         }
 
         LockConsole();
@@ -889,7 +889,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
         // Copy safely to output buffer
         // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
         //   So instead, validate and use raw memory copy.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(commandHistory.size()));
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > commandHistory.size());
         memcpy_s(commandHistory.data(), commandHistory.size(), converted.data(), converted.size());
 
         // And return the size copied.
