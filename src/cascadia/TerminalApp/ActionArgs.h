@@ -563,7 +563,7 @@ namespace winrt::TerminalApp::implementation
         ToggleTabSwitcherArgs() = default;
         GETSET_PROPERTY(Windows::System::VirtualKey, AnchorKey, Windows::System::VirtualKey::None);
 
-        static constexpr std::string_view AnchorJsonKey{ "anchor" };
+        static constexpr std::string_view AnchorJsonKey{ "anchorKey" };
 
     public:
         hstring GenerateName() const;
