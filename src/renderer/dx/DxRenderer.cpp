@@ -886,7 +886,7 @@ try
 
     if (!_allInvalid)
     {
-        /*_InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });*/
+        _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
     }
 
     return S_OK;
