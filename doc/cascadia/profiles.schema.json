@@ -63,6 +63,7 @@
         "openTabColorPicker",
         "renameTab",
         "commandPalette",
+        "tabSwitcher",
         "unbound"
       ],
       "type": "string"
@@ -81,6 +82,14 @@
         "vertical",
         "horizontal",
         "auto"
+      ],
+      "type": "string"
+    },
+    "AnchorKey": {
+      "enum": [
+        "ctrl",
+        "alt",
+        "shift"
       ],
       "type": "string"
     },
@@ -280,6 +289,22 @@
         }
       ]
     },
+    "TabSwitcherAction": {
+      "description": "Arguments corresponding to a Tab Switcher Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "tabSwitcher" },
+            "color": {
+              "$ref": "#/definitions/AnchorKey",
+              "default": null,
+              "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -296,6 +321,7 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/TabSwitcherAction" },
               { "type": "null" }
             ]
         },
