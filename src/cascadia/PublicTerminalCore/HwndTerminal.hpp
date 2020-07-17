@@ -51,9 +51,10 @@ public:
     HwndTerminal(HwndTerminal&&) = default;
     HwndTerminal& operator=(const HwndTerminal&) = default;
     HwndTerminal& operator=(HwndTerminal&&) = default;
-    ~HwndTerminal() = default;
+    ~HwndTerminal();
 
     HRESULT Initialize();
+    void Teardown() noexcept;
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);

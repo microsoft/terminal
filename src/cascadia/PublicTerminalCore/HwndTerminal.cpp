@@ -81,6 +81,11 @@ try
                 terminal->_PasteTextFromClipboard();
             }
             return 0;
+        case WM_DESTROY:
+            // Release Terminal's hwnd so Teardown doesn't try to destroy it again
+            terminal->_hwnd.release();
+            terminal->Teardown();
+            return 0;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -148,6 +153,11 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     }
 }
 
+HwndTerminal::~HwndTerminal()
+{
+    Teardown();
+}
+
 HRESULT HwndTerminal::Initialize()
 {
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
@@ -190,6 +200,33 @@ HRESULT HwndTerminal::Initialize()
 
     return S_OK;
 }
+
+void HwndTerminal::Teardown() noexcept
+try
+{
+    // As a rule, detach resources from the Terminal before shutting them down.
+    // This ensures that teardown is reentrant.
+
+    // Shut down the renderer (and therefore the thread) before we implode
+    if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
+    {
+        if (auto localRenderer{ std::exchange(_renderer, nullptr) })
+        {
+            localRenderer->TriggerTeardown();
+            // renderer is destroyed
+        }
+        // renderEngine is destroyed
+    }
+
+    if (auto localHwnd{ _hwnd.release() })
+    {
+        // If we're being called through WM_DESTROY, we won't get here (hwnd is already released)
+        // If we're not, we may end up in Teardown _again_... but by the time we do, all other
+        // resources have been released and will not be released again.
+        DestroyWindow(localHwnd);
+    }
+}
+CATCH_LOG();
 
 void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> callback)
 {
