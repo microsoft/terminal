@@ -43,20 +43,29 @@ namespace winrt::ScratchWinRTServer::implementation
     void HostClass::Attach(const Windows::UI::Xaml::Controls::SwapChainPanel& panel)
     {
         _panel = panel;
+
+        // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
+        //
+        // winrt::Windows::UI::Xaml::Media::SolidColorBrush solidColor{};
+        // til::color newBgColor{ 0x8F000000 };
+        // solidColor.Color(newBgColor);
+        // _panel.Background(solidColor);
+        //
+        // ANYTHING WE DO TO THE SWAPCHAINPANEL on this thread is NOT the UI thread. It can't _possibly_ be.
     }
 
     void HostClass::BeginRendering()
     {
-        IDXGISwapChain1* swapChain; // = _getSwapchainFromMyRenderer();
+        // IDXGISwapChain1* swapChain; // = _getSwapchainFromMyRenderer();
 
-        // DANGER: I'm fairly certain that this needs to be called on the
-        // `SwapChainPanel`s UI thread. So we may be slightly out of luck here.
-        // Unless we can just
-        //   co_await winrt::resume_foreground(_panel.Dispatcher());
-        // But that's a thread in another process!
+        // // DANGER: I'm fairly certain that this needs to be called on the
+        // // `SwapChainPanel`s UI thread. So we may be slightly out of luck here.
+        // // Unless we can just
+        // //   co_await winrt::resume_foreground(_panel.Dispatcher());
+        // // But that's a thread in another process!
 
-        auto nativePanel = _panel.as<ISwapChainPanelNative>();
-        nativePanel->SetSwapChain(swapChain);
+        // auto nativePanel = _panel.as<ISwapChainPanelNative>();
+        // nativePanel->SetSwapChain(swapChain);
 
         // Holy crap look at:
         // ISwapChainPanelNative2::SetSwapChainHandle method

@@ -4,6 +4,8 @@
 #include "pch.h"
 
 #include "IslandWindow.h"
+#include <winrt/ScratchWinRTServer.h>
+#include "HostManager.h"
 
 class AppHost
 {
@@ -17,6 +19,7 @@ private:
     bool _useNonClientArea{ false };
 
     std::unique_ptr<IslandWindow> _window;
+    winrt::ScratchIsland::HostManager _manager;
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,

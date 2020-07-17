@@ -136,6 +136,9 @@ void AppHost::Initialize()
     // TODO: INITIALIZE THIS UI HERE
     _window->SetContent(_rootGrid);
 
+    auto host0 = _manager.CreateHost();
+    host0.Attach(_swp0);
+
     _window->OnAppInitialized();
 }
 

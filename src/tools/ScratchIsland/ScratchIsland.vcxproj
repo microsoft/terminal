@@ -54,6 +54,7 @@
     <ClInclude Include="AppHost.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
+    <ClInclude Include="HostManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -62,6 +63,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
+    <ClCompile Include="HostManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="HostManager.idl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ScratchIsland.rc" />
@@ -83,6 +88,9 @@
     <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" /> -->
 
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
+      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <!--
@@ -158,7 +166,7 @@
     <!-- **END VC LIBS HACK** -->
   </Target>
 
-  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+  <!-- <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" /> -->
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
 </Project>
 
