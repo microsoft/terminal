@@ -28,7 +28,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Invisible = 8,
         CrossedOut = 9,
         DoublyUnderlined = 21,
-        UnBold = 22,
+        NotBoldOrFaint = 22,
         NotItalics = 23,
         NoUnderline = 24,
         Steady = 25, // _not_ blink
@@ -55,6 +55,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundWhite = 47,
         BackgroundExtended = 48,
         BackgroundDefault = 49,
+        Overline = 53,
+        NoOverline = 55,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,

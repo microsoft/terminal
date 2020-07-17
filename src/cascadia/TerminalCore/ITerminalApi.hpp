@@ -46,6 +46,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EnableWin32InputMode(const bool win32InputMode) noexcept = 0;
         virtual bool SetCursorKeysMode(const bool applicationMode) noexcept = 0;
         virtual bool SetKeypadMode(const bool applicationMode) noexcept = 0;
+        virtual bool SetScreenMode(const bool reverseMode) noexcept = 0;
         virtual bool EnableVT200MouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableSGRExtendedMouseMode(const bool enabled) noexcept = 0;

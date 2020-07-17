@@ -471,6 +471,17 @@ bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
     return true;
 }
 
+bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+try
+{
+    _screenReversed = reverseMode;
+
+    // Repaint everything - the colors will have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
     _terminalInput->EnableDefaultTracking(enabled);

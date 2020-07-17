@@ -22,7 +22,6 @@ namespace Microsoft.Terminal.Settings
         Int32 HistorySize;
         Int32 InitialRows;
         Int32 InitialCols;
-        Int32 RowsToScroll;
 
         Boolean SnapOnInput;
         Boolean AltGrAliasing;

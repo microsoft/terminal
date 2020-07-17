@@ -466,15 +466,13 @@ namespace TerminalAppLocalTests
         {
             "alwaysShowTabs": true,
             "initialCols" : 120,
-            "initialRows" : 30,
-            "rowsToScroll" :  4
+            "initialRows" : 30
         })" };
         const std::string settings1String{ R"(
         {
             "showTabsInTitlebar": false,
             "initialCols" : 240,
-            "initialRows" : 60,
-            "rowsToScroll" : 8
+            "initialRows" : 60
         })" };
         const auto settings0Json = VerifyParseSucceeded(settings0String);
         const auto settings1Json = VerifyParseSucceeded(settings1String);
@@ -485,14 +483,12 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
         VERIFY_ARE_EQUAL(120, settings._globals._InitialCols);
         VERIFY_ARE_EQUAL(30, settings._globals._InitialRows);
-        VERIFY_ARE_EQUAL(4, settings._globals._RowsToScroll);
         VERIFY_ARE_EQUAL(true, settings._globals._ShowTabsInTitlebar);
 
         settings.LayerJson(settings1Json);
         VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
         VERIFY_ARE_EQUAL(240, settings._globals._InitialCols);
         VERIFY_ARE_EQUAL(60, settings._globals._InitialRows);
-        VERIFY_ARE_EQUAL(8, settings._globals._RowsToScroll);
         VERIFY_ARE_EQUAL(false, settings._globals._ShowTabsInTitlebar);
     }
 
@@ -1435,10 +1431,6 @@ namespace TerminalAppLocalTests
                 {
                     "name": "profile3",
                     "closeOnExit": null
-                },
-                {
-                    "name": "profile4",
-                    "closeOnExit": { "clearly": "not a string" }
                 }
             ]
         })" };
@@ -1453,7 +1445,6 @@ namespace TerminalAppLocalTests
 
         // Unknown modes parse as "Graceful"
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings._profiles[3].GetCloseOnExitMode());
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings._profiles[4].GetCloseOnExitMode());
     }
     void SettingsTests::TestCloseOnExitCompatibilityShim()
     {

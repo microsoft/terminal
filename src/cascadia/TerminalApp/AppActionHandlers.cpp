@@ -231,10 +231,32 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.ToggleRetroEffect();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
+                                              const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleFocusMode();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {
         ToggleFullscreen();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleAlwaysOnTop();
         args.Handled(true);
     }
 

@@ -56,6 +56,7 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        bool GetRetroTerminalEffects() const noexcept;
         void SetRetroTerminalEffects(bool enable) noexcept;
 
         void SetForceFullRepaintRendering(bool enable) noexcept;
@@ -85,7 +86,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               COORD const coord,
                                               bool const fTrimLeft,
                                               const bool lineWrapped) noexcept override;

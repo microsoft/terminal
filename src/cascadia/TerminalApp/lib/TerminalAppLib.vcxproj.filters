@@ -8,7 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp">
@@ -50,9 +49,6 @@
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
-    <ClCompile Include="../JsonUtils.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
@@ -90,6 +86,9 @@
       <Filter>settings</Filter>
     </ClInclude>
     <ClInclude Include="../GlobalAppSettings.h">
+      <Filter>settings</Filter>
+    </ClInclude>
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h">
       <Filter>settings</Filter>
     </ClInclude>
     <ClInclude Include="../KeyChordSerialization.h">

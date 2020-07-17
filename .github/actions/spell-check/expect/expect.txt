@@ -594,6 +594,7 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
 dialogbox
 diffing
@@ -1082,6 +1083,8 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
+imagemagick
+inkscape
 inl
 INLINEPREFIX
 Inlines
@@ -1147,6 +1150,7 @@ IUI
 IUia
 IUnknown
 ivalid
+IValue
 IVector
 IWait
 iwch
@@ -1259,6 +1263,7 @@ Loremipsumdolorsitamet
 lowercased
 loword
 lparam
+lparen
 LPBYTE
 LPCCH
 lpch
@@ -1527,6 +1532,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+NOTOPMOST
 NOTNULL
 NOTRACK
 NOTSUPPORTED
@@ -1984,6 +1990,7 @@ roadmap
 robomac
 roundtrip
 ROWSTOSCROLL
+rparen
 RRF
 RRRGGGBB
 rtcore
@@ -2130,6 +2137,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+SIZEBOX
 sizeof
 SIZESCROLL
 SKIPFONT
@@ -2260,6 +2268,7 @@ targetentrypoint
 TARGETLIBS
 TARGETNAME
 targetnametoken
+targetsize
 targetver
 taskbar
 tbar

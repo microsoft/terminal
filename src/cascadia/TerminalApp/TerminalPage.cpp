@@ -554,6 +554,13 @@ namespace winrt::TerminalApp::implementation
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
                                         newTerminalArgs.Profile().empty());
+
+        // Lookup the name of the color scheme used by this profile.
+        const auto* scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
+        // that as the empty string.
+        const auto schemeName = scheme ? scheme->GetName() : L"\0";
+
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
@@ -565,6 +572,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
             TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -841,7 +849,10 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
+        _actionDispatch->ToggleRetroEffect({ this, &TerminalPage::_HandleToggleRetroEffect });
+        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
@@ -902,7 +913,7 @@ namespace winrt::TerminalApp::implementation
         // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (!_isFullscreen) &&
+        const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
                                (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
                                 _settings->GlobalSettings().AlwaysShowTabs());
@@ -1903,6 +1914,12 @@ namespace winrt::TerminalApp::implementation
             _UpdateTabWidthMode();
             _CreateNewTabFlyout();
         }
+
+        // Reload the current value of alwaysOnTop from the settings file. This
+        // will let the user hot-reload this setting, but any runtime changes to
+        // the alwaysOnTop setting will be lost.
+        _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
+        _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1958,19 +1975,43 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Toggles borderless mode. Hides the tab row, and raises our
+    //   FocusModeChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleFocusMode()
+    {
+        _isInFocusMode = !_isInFocusMode;
+        _UpdateTabView();
+        _focusModeChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
     // - Toggles fullscreen mode. Hides the tab row, and raises our
-    //   ToggleFullscreen event.
+    //   FullscreenChanged event.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TerminalPage::ToggleFullscreen()
     {
-        _toggleFullscreenHandlers(*this, nullptr);
-
         _isFullscreen = !_isFullscreen;
-
         _UpdateTabView();
+        _fullscreenChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Toggles always on top mode. Raises our AlwaysOnTopChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleAlwaysOnTop()
+    {
+        _isAlwaysOnTop = !_isAlwaysOnTop;
+        _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2161,11 +2202,36 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalPage::FocusMode() const
+    {
+        return _isInFocusMode;
+    }
+
+    bool TerminalPage::Fullscreen() const
+    {
+        return _isFullscreen;
+    }
+    // Method Description:
+    // - Returns true if we're currently in "Always on top" mode. When we're in
+    //   always on top mode, the window should be on top of all other windows.
+    //   If multiple windows are all "always on top", they'll maintain their own
+    //   z-order, with all the windows on top of all other non-topmost windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if we should be in "always on top" mode
+    bool TerminalPage::AlwaysOnTop() const
+    {
+        return _isAlwaysOnTop;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

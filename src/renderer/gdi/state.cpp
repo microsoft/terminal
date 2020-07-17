@@ -188,8 +188,7 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
-    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
+    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     if (colorForeground != _lastFg)
     {

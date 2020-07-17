@@ -154,9 +154,24 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleRetroEffect:
+        {
+            _ToggleRetroEffectHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ToggleFocusMode:
+        {
+            _ToggleFocusModeHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ToggleAlwaysOnTop:
+        {
+            _ToggleAlwaysOnTopHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::ToggleCommandPalette:

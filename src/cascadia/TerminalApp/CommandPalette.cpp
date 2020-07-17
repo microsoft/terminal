@@ -41,11 +41,19 @@ namespace winrt::TerminalApp::implementation
             {
                 _searchBox().Focus(FocusState::Programmatic);
                 _filteredActionsView().SelectedIndex(0);
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CommandPaletteOpened",
+                    TraceLoggingDescription("Event emitted when the Command Palette is opened"),
+                    TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
             else
             {
                 // Raise an event to return control to the Terminal.
-                _close();
+                _dismissPalette();
             }
         });
     }
@@ -101,12 +109,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                if (const auto data = selectedItem.try_as<Command>())
-                {
-                    const auto actionAndArgs = data.Action();
-                    _dispatch.DoAction(actionAndArgs);
-                    _close();
-                }
+                _dispatchCommand(selectedItem.try_as<Command>());
             }
 
             e.Handled(true);
@@ -116,7 +119,7 @@ namespace winrt::TerminalApp::implementation
             // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
             if (_searchBox().Text().empty())
             {
-                _close();
+                _dismissPalette();
             }
             else
             {
@@ -138,7 +141,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
                                              Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _close();
+        _dismissPalette();
     }
 
     // Method Description:
@@ -166,12 +169,53 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        if (auto command{ e.ClickedItem().try_as<TerminalApp::Command>() })
+        _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
+    }
+
+    // Method Description:
+    // - Helper method for retrieving the action from a command the user
+    //   selected, and dispatching that command. Also fires a tracelogging event
+    //   indicating that the user successfully found the action they were
+    //   looking for.
+    // Arguments:
+    // - command: the Command to dispatch. This might be null.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_dispatchCommand(const TerminalApp::Command& command)
+    {
+        if (command)
         {
             const auto actionAndArgs = command.Action();
             _dispatch.DoAction(actionAndArgs);
             _close();
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CommandPaletteDispatchedAction",
+                TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
+    }
+
+    // Method Description:
+    // - Helper method for closing the command palette, when the user has _not_
+    //   selected an action. Also fires a tracelogging event indicating that the
+    //   user closed the palette without running a command.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_dismissPalette()
+    {
+        _close();
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "CommandPaletteDismissed",
+            TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
@@ -227,16 +271,17 @@ namespace winrt::TerminalApp::implementation
     };
 
     // Method Description:
-    // - Update our list of filtered actions to reflect the current contents of
+    // - Produce a list of filtered actions to reflect the current contents of
     //   the input box. For more details on which commands will be displayed,
     //   see `_getWeight`.
     // Arguments:
-    // - <none>
+    // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    void CommandPalette::_updateFilteredActions()
+    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
     {
-        _filteredActions.Clear();
+        std::vector<winrt::TerminalApp::Command> actions;
+
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
@@ -259,10 +304,10 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                _filteredActions.Append(action);
+                actions.push_back(action);
             }
 
-            return;
+            return actions;
         }
 
         // Here, there was some filter text.
@@ -299,7 +344,56 @@ namespace winrt::TerminalApp::implementation
         {
             auto top = heap.top();
             heap.pop();
-            _filteredActions.Append(top.command);
+            actions.push_back(top.command);
+        }
+
+        return actions;
+    }
+
+    // Method Description:
+    // - Update our list of filtered actions to reflect the current contents of
+    //   the input box. For more details on which commands will be displayed,
+    //   see `_getWeight`.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateFilteredActions()
+    {
+        auto actions = _collectFilteredActions();
+
+        // Make _filteredActions look identical to actions, using only Insert and Remove.
+        // This allows WinUI to nicely animate the ListView as it changes.
+        for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
+        {
+            for (uint32_t j = i; j < _filteredActions.Size(); j++)
+            {
+                if (_filteredActions.GetAt(j) == actions[i])
+                {
+                    for (uint32_t k = i; k < j; k++)
+                    {
+                        _filteredActions.RemoveAt(i);
+                    }
+                    break;
+                }
+            }
+
+            if (_filteredActions.GetAt(i) != actions[i])
+            {
+                _filteredActions.InsertAt(i, actions[i]);
+            }
+        }
+
+        // Remove any extra trailing items from the destination
+        while (_filteredActions.Size() > actions.size())
+        {
+            _filteredActions.RemoveAtEnd();
+        }
+
+        // Add any extra trailing items from the source
+        while (_filteredActions.Size() < actions.size())
+        {
+            _filteredActions.Append(actions[_filteredActions.Size()]);
         }
     }
 

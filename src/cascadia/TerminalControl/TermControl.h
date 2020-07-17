@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
+        void ToggleRetroEffect();
+
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState();
@@ -148,7 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        int _rowsToScroll;
+        unsigned int _rowsToScroll;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -183,6 +185,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _ApplyUISettings();
+        void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();

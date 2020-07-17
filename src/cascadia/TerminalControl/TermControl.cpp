@@ -297,6 +297,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+    void TermControl::ToggleRetroEffect()
+    {
+        auto lock = _terminal->LockForWriting();
+        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+    }
 
     // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
@@ -356,8 +361,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        // set number of rows to scroll at a time
-        _rowsToScroll = _settings.RowsToScroll();
+        _UpdateSystemParameterSettings();
     }
 
     // Method Description:
@@ -1486,12 +1490,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
+        // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
+        // but the "smooth scrolling" mode results in non-int values
         const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
-        // With one of the precision mouses, one click is always a multiple of 120,
-        // but the "smooth scrolling" mode results in non-int values
-
-        double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
+        // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
+        // at a time" setting. If we ignore it, we will scroll a truly absurd number
+        // of rows.
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? GetViewHeight() : _rowsToScroll };
+        double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         //      for us.
@@ -1692,7 +1699,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
-        _rowsToScroll = _settings.RowsToScroll();
+
+        _UpdateSystemParameterSettings();
+    }
+
+    // Method Description
+    // - Updates internal params based on system parameters
+    void TermControl::_UpdateSystemParameterSettings() noexcept
+    {
+        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
+        {
+            LOG_LAST_ERROR();
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
+            _rowsToScroll = 3;
+        }
     }
 
     // Method Description:
@@ -2343,7 +2364,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Account for the size of any padding
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         width += padding.Left + padding.Right;
         height += padding.Top + padding.Bottom;
 
@@ -2363,7 +2384,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto fontSize = _actualFont.GetSize();
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        const auto padding = SwapChainPanel().Margin();
+        const auto padding = GetPadding();
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
@@ -2495,7 +2516,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
-        const til::size marginsInDips{ til::math::rounding, SwapChainPanel().Margin().Left, SwapChainPanel().Margin().Top };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
 
         // This point is the location of the cursor within the actual grid of characters, in DIPs
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;

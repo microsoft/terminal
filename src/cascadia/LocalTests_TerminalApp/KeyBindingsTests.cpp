@@ -323,10 +323,8 @@ namespace TerminalAppLocalTests
             { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": null } },
             { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
             { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
-            { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "none" } },
             { "keys": ["ctrl+g"], "command": { "action": "splitPane" } },
-            { "keys": ["ctrl+h"], "command": { "action": "splitPane", "split": "auto" } },
-            { "keys": ["ctrl+i"], "command": { "action": "splitPane", "split": "foo" } }
+            { "keys": ["ctrl+h"], "command": { "action": "splitPane", "split": "auto" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -335,7 +333,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
         appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(7u, appKeyBindings->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(5u, appKeyBindings->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
@@ -365,15 +363,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
-        }
-        {
             KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
@@ -391,15 +380,6 @@ namespace TerminalAppLocalTests
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
-        }
     }
 
     void KeyBindingsTests::TestSetTabColorArgs()
@@ -407,7 +387,6 @@ namespace TerminalAppLocalTests
         const std::string bindings0String{ R"([
             { "keys": ["ctrl+c"], "command": { "action": "setTabColor", "color": null } },
             { "keys": ["ctrl+d"], "command": { "action": "setTabColor", "color": "#123456" } },
-            { "keys": ["ctrl+e"], "command": { "action": "setTabColor", "color": "thisStringObviouslyWontWork" } },
             { "keys": ["ctrl+f"], "command": "setTabColor" },
         ])" };
 
@@ -417,7 +396,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
         appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(4u, appKeyBindings->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(3u, appKeyBindings->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
@@ -438,15 +417,6 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs.TabColor());
             // Remember that COLORREFs are actually BBGGRR order, while the string is in #RRGGBB order
             VERIFY_ARE_EQUAL(static_cast<uint32_t>(til::color(0x563412)), realArgs.TabColor().Value());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NULL(realArgs.TabColor());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };

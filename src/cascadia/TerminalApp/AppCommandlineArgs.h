@@ -56,14 +56,20 @@ private:
         CLI::Option* titleOption;
     };
 
+    struct NewPaneSubcommand : public NewTerminalSubcommand
+    {
+        CLI::Option* _horizontalOption;
+        CLI::Option* _verticalOption;
+    };
+
     // --- Subcommands ---
     NewTerminalSubcommand _newTabCommand;
-    NewTerminalSubcommand _newPaneCommand;
+    NewTerminalSubcommand _newTabShort;
+    NewPaneSubcommand _newPaneCommand;
+    NewPaneSubcommand _newPaneShort;
     CLI::App* _focusTabCommand;
+    CLI::App* _focusTabShort;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
-
-    CLI::Option* _horizontalOption;
-    CLI::Option* _verticalOption;
 
     std::string _profileName;
     std::string _startingDirectory;

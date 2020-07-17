@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/JsonUtilsNew.h"
+#include "../TerminalApp/JsonUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;

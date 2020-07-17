@@ -93,7 +93,7 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-std::basic_string_view<Profile> CascadiaSettings::GetProfiles() const noexcept
+gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }
@@ -717,4 +717,31 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     replace(finalSettings, "%COMMAND_PROMPT_LOCALIZED_NAME%", RS_A(L"CommandPromptDisplayName"));
 
     return finalSettings;
+}
+
+// Method Description:
+// - Lookup the color scheme for a given profile. If the profile doesn't exist,
+//   or the scheme name listed in the profile doesn't correspond to a scheme,
+//   this will return `nullptr`.
+// Arguments:
+// - profileGuid: the GUID of the profile to find the scheme for.
+// Return Value:
+// - a non-owning pointer to the scheme.
+const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
+{
+    auto* profile = FindProfile(profileGuid);
+    if (!profile)
+    {
+        return nullptr;
+    }
+    auto schemeName = profile->GetSchemeName().has_value() ? profile->GetSchemeName().value() : L"\0";
+    auto scheme = _globals.GetColorSchemes().find(schemeName);
+    if (scheme != _globals.GetColorSchemes().end())
+    {
+        return &scheme->second;
+    }
+    else
+    {
+        return nullptr;
+    }
 }
