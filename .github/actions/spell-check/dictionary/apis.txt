@@ -21,6 +21,7 @@ IExplorer
 IMap
 IObject
 IStorage
+llabs
 LCID
 LSHIFT
 NCHITTEST
