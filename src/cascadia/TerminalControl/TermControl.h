@@ -17,6 +17,11 @@
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    struct MouseButtonState;
+}
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct CopyToClipboardEventArgs :

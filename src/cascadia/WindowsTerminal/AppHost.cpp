@@ -409,11 +409,12 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    const auto lBtnDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
-                    const auto mBtnDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
-                    const auto rBtnDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
+                    
+                    const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
+                    const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
+                    const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
 
-                    if (control.OnMouseWheel(offsetPoint, delta, lBtnDown, mBtnDown, rBtnDown))
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.
