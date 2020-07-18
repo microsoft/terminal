@@ -65,33 +65,78 @@ Adjacent to the introduction of `AppSettings`, `IControlSettings` and `ICoreSett
 
 ### Terminal Settings Model: Serialization and Deserialization
 
-Introducing these `Microsoft.Terminal.Settings` WinRT objects also allow the serialization and deserialization
+Introducing these `Microsoft.Terminal.Settings.Model` WinRT objects also allow the serialization and deserialization
  logic from TerminalApp to be moved to TerminalSettings. `JsonUtils` introduces several quick and easy methods
- for setting serialization. This will be moved into the `Microsoft.Terminal.Settings` namespace too.
+ for setting serialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
 
 Deserialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
  already includes `FromJson` and `CanConvert`. Deserialization would be handled by a `ToJson` function.
 
 
-### Terminal Settings Model: Consumption
+### Interacting with the Terminal Settings Model
 
-Separate projects can consume the Terminal Settings objects as needed.
+Separate projects can interact with `AppSettings` to extract data, subscribe to changes, and commit changes.
+This API will look something like this:
+```c++
+runtimeclass AppSettings
+{
+    AppSettings();
 
-TerminalApp would reference `AppSettings` for the following functionality...
+    // Load a settings file, and layer those changes on top of the existing AppSettings
+    void LayerSettings(String path);
+
+    // Create a copy of the existing AppSettings
+    AppSettings Clone();
+
+    // Deserialize the existing AppSettings into a settings file
+    void Export(String path);
+}
+```
+
+#### TerminalApp: Loading and Reloading Changes
+
+TerminalApp will construct and reference an `AppSettings settings` using a shared smart pointer as follows:
+- TerminalApp will have a global reference to "defaults.json" and "settings.json" filepaths as `constexpr`
+- construct an `AppSettings` using the default constructor
+- `settings.LayerSettings("defaults.json")`
+- `settings.LayerSettings("settings.json")`
+
+**NOTE:** This model allows us to layer even more settings files on top of the existing Terminal Settings
+ Model, if so desired. This could be helpful when importing additional settings files from an external location
+ such as a marketplace.
+
+When TerminalApp detects a change to "settings.json", it'll repeat the steps above. We could cache the result from
+ `settings.LayerSettings("defaults.json")` to improve performance.
+
+Additionally, TerminalApp would reference `settings` for the following functionality...
 - `Profiles` to populate the dropdown menu
 - `Keybindings` to detect active key bindings and which actions they run
 - `Commands` to populate the Command Palette
 - `Warnings` to show a serialization warning, if any
+
+#### TerminalControl: Acquiring and Applying the Settings
 
 At the time of writing this spec, TerminalApp constructs `TerminalControl.TerminalSettings` WinRT objects
  to expose `IControlSettings` and `ICoreSettings` to any hosted terminals. In moving `IControlSettings`
  and `ICoreSettings` down to the TerminalControl layer, TerminalApp can now have better control over
  how to expose relevant settings to a TerminalControl instance.
 
-`TerminalSettings` will be moved to TerminalApp and act as a bridge that queries `AppSettings`. Thus,
+`TerminalSettings` (which implements `IControlSettings` and `ICoreSettings`) will be moved to TerminalApp and act as a bridge that queries `AppSettings`. Thus,
  when TermControl requests `IControlSettings` data, `TerminalSettings` responds by extracting the
  relevant information from `AppSettings`. TerminalCore operates the same way with `ICoreSettings`.
 
+#### Settings UI: Modifying and Applying the Settings
+
+The Settings UI will also have a reference to the `AppSettings settings` using a shared smart pointer.
+
+<!--
+TODO CARLOS:
+    The "Interacting with the Terminal Settings Model" section is incomplete.
+    What's included here are some preliminary thoughts.
+
+    I will be fixing this section and adding more this coming Monday.
+    Pushing so I can work on this on the go. Have a fun weekend!
+-->
 
 ## UI/UX Design
 
