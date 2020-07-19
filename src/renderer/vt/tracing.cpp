@@ -18,14 +18,14 @@ RenderTracing::RenderTracing()
 {
 #ifndef UNIT_TESTING
     TraceLoggingRegister(g_hConsoleVtRendererTraceProvider);
-#endif UNIT_TESTING
+#endif
 }
 
 RenderTracing::~RenderTracing()
 {
 #ifndef UNIT_TESTING
     TraceLoggingUnregister(g_hConsoleVtRendererTraceProvider);
-#endif UNIT_TESTING
+#endif
 }
 
 // Function Description:
@@ -78,7 +78,7 @@ void RenderTracing::TraceString(const std::string_view& instr) const
     }
 #else
     UNREFERENCED_PARAMETER(instr);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceInvalidate(const til::rectangle invalidRect) const
@@ -95,7 +95,7 @@ void RenderTracing::TraceInvalidate(const til::rectangle invalidRect) const
     }
 #else
     UNREFERENCED_PARAMETER(invalidRect);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceInvalidateAll(const til::rectangle viewport) const
@@ -112,7 +112,7 @@ void RenderTracing::TraceInvalidateAll(const til::rectangle viewport) const
     }
 #else
     UNREFERENCED_PARAMETER(viewport);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceTriggerCircling(const bool newFrame) const
@@ -124,7 +124,7 @@ void RenderTracing::TraceTriggerCircling(const bool newFrame) const
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 #else
     UNREFERENCED_PARAMETER(newFrame);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceInvalidateScroll(const til::point scroll) const
@@ -191,7 +191,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
     UNREFERENCED_PARAMETER(scrollDelt);
     UNREFERENCED_PARAMETER(cursorMoved);
     UNREFERENCED_PARAMETER(wrappedRow);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceEndPaint() const
@@ -201,7 +201,7 @@ void RenderTracing::TraceEndPaint() const
                       "VtEngine_TraceEndPaint",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 #else
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceLastText(const til::point lastTextPos) const
@@ -218,7 +218,7 @@ void RenderTracing::TraceLastText(const til::point lastTextPos) const
     }
 #else
     UNREFERENCED_PARAMETER(lastTextPos);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceScrollFrame(const til::point scrollDeltaPos) const
@@ -235,7 +235,7 @@ void RenderTracing::TraceScrollFrame(const til::point scrollDeltaPos) const
     }
 #else
     UNREFERENCED_PARAMETER(scrollDeltaPos);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceMoveCursor(const til::point lastTextPos, const til::point cursor) const
@@ -258,7 +258,7 @@ void RenderTracing::TraceMoveCursor(const til::point lastTextPos, const til::poi
 #else
     UNREFERENCED_PARAMETER(lastTextPos);
     UNREFERENCED_PARAMETER(cursor);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceWrapped() const
@@ -273,7 +273,7 @@ void RenderTracing::TraceWrapped() const
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceSetWrapped(const short wrappedRow) const
@@ -288,7 +288,7 @@ void RenderTracing::TraceSetWrapped(const short wrappedRow) const
     }
 #else
     UNREFERENCED_PARAMETER(wrappedRow);
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TraceClearWrapped() const
@@ -303,7 +303,7 @@ void RenderTracing::TraceClearWrapped() const
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
-#endif UNIT_TESTING
+#endif
 }
 
 void RenderTracing::TracePaintCursor(const til::point coordCursor) const
@@ -320,5 +320,5 @@ void RenderTracing::TracePaintCursor(const til::point coordCursor) const
     }
 #else
     UNREFERENCED_PARAMETER(coordCursor);
-#endif UNIT_TESTING
+#endif
 }
