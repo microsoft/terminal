@@ -11,6 +11,12 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
+static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
+                           _In_ UINT wID,
+                           _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
+                           _In_ UINT cchBufferMax,
+                           _In_ WORD wLangId);
+
 short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
 {
     return rect.Right - rect.Left + 1;

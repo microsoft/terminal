@@ -42,7 +42,7 @@ namespace Microsoft::Console::Render
         // IDWriteTextAnalysisSource methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
                                                                   _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                  _Out_ UINT32* textLength) override;
+                                                                  _Out_ UINT32* textLength) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
                                                                       _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                       _Out_ UINT32* textLength) noexcept override;
@@ -57,17 +57,17 @@ namespace Microsoft::Console::Render
         // IDWriteTextAnalysisSink methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
                                                                   UINT32 textLength,
-                                                                  _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
+                                                                  _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
                                                                    UINT32 textLength,
-                                                                   _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
+                                                                   _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
                                                              UINT32 textLength,
                                                              UINT8 explicitLevel,
-                                                             UINT8 resolvedLevel) override;
+                                                             UINT8 resolvedLevel) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
                                                                       UINT32 textLength,
-                                                                      _In_ IDWriteNumberSubstitution* numberSubstitution) override;
+                                                                      _In_ IDWriteNumberSubstitution* numberSubstitution) noexcept override;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 

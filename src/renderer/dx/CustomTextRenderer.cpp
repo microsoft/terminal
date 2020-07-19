@@ -297,34 +297,29 @@ try
 
     switch (options.cursorType)
     {
-    case CursorType::Legacy:
-    {
+    case CursorType::Legacy: {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
         ulHeight = (glyphSize.height<ULONG>() * ulHeight) / 100;
         rect.top = rect.bottom - ulHeight;
         break;
     }
-    case CursorType::VerticalBar:
-    {
+    case CursorType::VerticalBar: {
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
-    case CursorType::Underscore:
-    {
+    case CursorType::Underscore: {
         rect.top = rect.bottom - 1;
         break;
     }
-    case CursorType::EmptyBox:
-    {
+    case CursorType::EmptyBox: {
         paintType = CursorPaintType::Outline;
         break;
     }
-    case CursorType::FullBox:
-    {
+    case CursorType::FullBox: {
         break;
     }
     default:
@@ -342,13 +337,11 @@ try
 
     switch (paintType)
     {
-    case CursorPaintType::Fill:
-    {
+    case CursorPaintType::Fill: {
         d2dContext->FillRectangle(rect, brush.Get());
         break;
     }
-    case CursorPaintType::Outline:
-    {
+    case CursorPaintType::Outline: {
         // DrawRectangle in straddles physical pixels in an attempt to draw a line
         // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
@@ -392,7 +385,8 @@ CATCH_RETURN()
     DWRITE_MEASURING_MODE measuringMode,
     const DWRITE_GLYPH_RUN* glyphRun,
     const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-    IUnknown* clientDrawingEffect)
+    IUnknown* clientDrawingEffect) noexcept
+try
 {
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
@@ -572,8 +566,7 @@ CATCH_RETURN()
                 case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
                 case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8: {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawColorBitmapGlyphRun(colorRun->glyphImageFormat,
                                                          currentBaselineOrigin,
@@ -582,8 +575,7 @@ CATCH_RETURN()
                 }
                 break;
 
-                case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-                {
+                case DWRITE_GLYPH_IMAGE_FORMATS_SVG: {
                     // This run is SVG glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,
@@ -655,6 +647,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 #pragma endregion
 
 [[nodiscard]] HRESULT CustomTextRenderer::EndClip(void* clientDrawingContext) noexcept

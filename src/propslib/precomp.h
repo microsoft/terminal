@@ -17,7 +17,6 @@ typedef NTSTATUS* PNTSTATUS;
 /*lint -restore */ // Resume checking for different typedefs.
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 
-#define INLINE_NTSTATUS_FROM_WIN32 1 // Must use inline NTSTATUS or it will call the wrapped function twice.
 #pragma warning(push)
 #pragma warning(disable : 4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.
 #include <ntstatus.h>

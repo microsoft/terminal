@@ -28,7 +28,6 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _fHaveDeferredCursorRedraw(false),
     _ulSize(ulSize),
     _cursorType(CursorType::Legacy),
-    _fUseColor(false),
     _color(s_InvertCursorColor)
 {
 }
