@@ -62,6 +62,9 @@ namespace winrt::TerminalApp::implementation
         void ActivateColorPicker();
 
         void ToggleZoom();
+        bool IsZoomed();
+        void EnterZoom();
+        void ExitZoom();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -104,9 +107,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabHeader();
         winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
-
-        void _enterZoom();
-        void _exitZoom();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

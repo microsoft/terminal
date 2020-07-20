@@ -843,6 +843,7 @@ void Pane::_UpdateBorders()
     Thickness newBorders{ 0 };
     if (_zoomed)
     {
+        // TODO: Make this 0, and use the magnifying glass as the zoomed icon
         top = bottom = right = left = PaneBorderSize;
     }
     else
@@ -1188,9 +1189,9 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
     if (_IsLeaf())
     {
         _zoomed = (zoomedPane == shared_from_this());
+        _UpdateBorders();
         if (_zoomed)
         {
-            _UpdateBorders();
         }
         return;
     }
@@ -1213,6 +1214,7 @@ void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
     if (_IsLeaf())
     {
         _zoomed = false;
+        _UpdateBorders();
         return;
     }
 

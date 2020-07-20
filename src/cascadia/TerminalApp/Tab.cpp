@@ -309,10 +309,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
-        // TODO: Can we do this safely? Probably not! Because the Page currently
-        // owns the content, not the tab!
-        _exitZoom();
-
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
         _AttachEventHandlersToControl(control);
@@ -359,10 +355,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     {
-        // TODO: Can we do this safely? Probably not! Because the Page currently
-        // owns the content, not the tab!
-        _exitZoom();
-
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->ResizePane(direction);
@@ -377,10 +369,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     {
-        // TODO: Can we do this safely? Probably not! Because the Page currently
-        // owns the content, not the tab!
-        _exitZoom();
-
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->NavigateFocus(direction);
@@ -403,10 +391,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ClosePane()
     {
-        // TODO: Can we do this safely? Probably not! Because the Page currently
-        // owns the content, not the tab!
-        _exitZoom();
-
         _activePane->Close();
     }
 
@@ -907,23 +891,36 @@ namespace winrt::TerminalApp::implementation
     {
         if (_zoomedPane)
         {
-            _exitZoom();
+            ExitZoom();
         }
         else
         {
-            _enterZoom();
+            EnterZoom();
         }
+        // if (_focused)
+        // {
+        //     auto lastFocusedControl = GetActiveTerminalControl();
+        //     if (lastFocusedControl)
+        //     {
+        //         lastFocusedControl.Focus(FocusState::Programmatic);
+        //     }
+        // }
     }
 
-    void Tab::_enterZoom()
+    void Tab::EnterZoom()
     {
         _zoomedPane = _activePane;
         _rootPane->Zoom(_zoomedPane);
     }
-    void Tab::_exitZoom()
+    void Tab::ExitZoom()
     {
         _rootPane->UnZoom(_zoomedPane);
         _zoomedPane = nullptr;
+    }
+
+    bool Tab::IsZoomed()
+    {
+        return _zoomedPane != nullptr;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

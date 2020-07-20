@@ -1168,6 +1168,17 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    void TerminalPage::_UnZoomIfNeeded()
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab && activeTab->IsZoomed())
+        {
+            _tabContent.Children().Clear();
+            activeTab->ExitZoom();
+            _tabContent.Children().Append(activeTab->GetRootElement());
+        }
+    }
+
     // Method Description:
     // - Attempt to move focus between panes, as to focus the child on
     //   the other side of the separator. See Pane::NavigateFocus for details.
@@ -1181,9 +1192,8 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            _tabContent.Children().Clear();
+            _UnZoomIfNeeded();
             focusedTab->NavigateFocus(direction);
-            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 
@@ -1273,9 +1283,8 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            _tabContent.Children().Clear();
+            _UnZoomIfNeeded();
             focusedTab->ClosePane();
-            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 
@@ -1406,9 +1415,9 @@ namespace winrt::TerminalApp::implementation
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
 
-            _tabContent.Children().Clear();
+            _UnZoomIfNeeded();
+
             focusedTab->SplitPane(realSplitType, realGuid, newControl);
-            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
         CATCH_LOG();
     }
@@ -1426,10 +1435,8 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-
-            _tabContent.Children().Clear();
+            _UnZoomIfNeeded();
             focusedTab->ResizePane(direction);
-            _tabContent.Children().Append(focusedTab->GetRootElement());
         }
     }
 

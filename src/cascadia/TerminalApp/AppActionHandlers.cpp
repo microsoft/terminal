@@ -118,10 +118,8 @@ namespace winrt::TerminalApp::implementation
 
             activeTab->ToggleZoom();
 
-            // // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
-            // _tabView.SelectedItem(activeTab->GetTabViewItem());
-
-            _tabContent.Children().Append(activeTab->GetRootElement());
+            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
+            _UpdatedSelectedTab(_tabView.SelectedIndex());
         }
         args.Handled(true);
     }
