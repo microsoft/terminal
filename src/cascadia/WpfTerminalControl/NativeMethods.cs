@@ -63,6 +63,16 @@ namespace Microsoft.Terminal.Wpf
             WM_CHAR = 0x0102,
 
             /// <summary>
+            /// The WM_SYSKEYDOWN message is posted to the window with the keyboard focus when a system key is pressed. A system key is F10 or Alt+Something.
+            /// </summary>
+            WM_SYSKEYDOWN = 0x0104,
+
+            /// <summary>
+            /// The WM_SYSKEYDOWN message is posted to the window with the keyboard focus when a system key is released. A system key is F10 or Alt+Something.
+            /// </summary>
+            WM_SYSKEYUP = 0x0105,
+
+            /// <summary>
             /// The WM_MOUSEMOVE message is posted to a window when the cursor moves. If the mouse is not captured, the message is posted to the window that contains the cursor. Otherwise, the message is posted to the window that has captured the mouse.
             /// </summary>
             WM_MOUSEMOVE = 0x200,
