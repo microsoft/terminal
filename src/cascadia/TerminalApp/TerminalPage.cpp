@@ -82,17 +82,6 @@ namespace winrt::TerminalApp::implementation
                     command.KeyChordText(KeyChordSerialization::ToString(keyChord));
                 }
 
-                // TODO: Finalize where to set the default icon and what it should be
-                // If there isn't an icon set, provide a default icon.
-                if (!command.IconSource())
-                {
-                    winrt::Windows::UI::Xaml::Controls::FontIconSource icon;
-                    icon.Glyph(L"\xE970");
-                    icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe MDL2 Assets" });
-                    icon.FontSize(10);
-                    command.IconSource(icon);
-                }
-
                 commandsCollection.Append(command);
             }
             CommandPalette().SetCommands(commandsCollection);

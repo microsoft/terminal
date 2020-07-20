@@ -252,6 +252,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Retrieve the list of commands that we should currently be filtering.
     //   * If the user has command with subcommands, this will return that command's subcommands.
+    //   * If we're in Tab Switcher mode, return the tab actions.
     //   * Otherwise, just return the list of all the top-level commands.
     // Arguments:
     // - <none>
