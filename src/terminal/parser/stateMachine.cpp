@@ -187,7 +187,7 @@ static constexpr bool _isCsiDelimiter(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isCsiParamValue(const wchar_t wch) noexcept
 {
-    return _isNumericParamValue(wch); 
+    return _isNumericParamValue(wch);
 }
 
 // Routine Description:
@@ -1515,8 +1515,7 @@ void StateMachine::_EventDcsIgnore(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch) || _isCsiInvalid(wch)
-        || _isIntermediate(wch) || _isDcsPassThroughValid(wch))
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch) || _isCsiInvalid(wch) || _isIntermediate(wch) || _isDcsPassThroughValid(wch))
     {
         _ActionIgnore();
     }
@@ -1687,13 +1686,12 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough
-        && _state != VTStates::DcsIntermediate && _state != VTStates::DcsIgnore)
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIntermediate && _state != VTStates::DcsIgnore)
     {
         // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
         //
-        // Same for DCS states.
+        // Same for some DCS states.
         _EnterEscape();
     }
     else
