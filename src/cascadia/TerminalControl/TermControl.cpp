@@ -2145,19 +2145,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             textData += text;
         }
 
-        // Copy can define which formats to copy
-        // if formats is nullptr, we should copy all data,
-        //   then let TermApp decide which formats to store in the clipboard (via global setting)
-        // otherwise, specifically copy the desired formats
-        bool useGlobal = formats == nullptr;
-        std::optional<bool> overrideHTML = std::nullopt;
-        std::optional<bool> overrideRTF = std::nullopt;
-        if (!useGlobal)
-        {
-            overrideHTML = WI_IsFlagSet(formats.Value(), CopyFormat::HTML);
-            overrideRTF = WI_IsFlagSet(formats.Value(), CopyFormat::RTF);
-        }
-
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
