@@ -51,9 +51,10 @@ public:
     HwndTerminal(HwndTerminal&&) = default;
     HwndTerminal& operator=(const HwndTerminal&) = default;
     HwndTerminal& operator=(HwndTerminal&&) = default;
-    ~HwndTerminal() = default;
+    ~HwndTerminal();
 
     HRESULT Initialize();
+    void Teardown() noexcept;
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
@@ -111,6 +112,8 @@ private:
     HRESULT _StartSelection(LPARAM lParam) noexcept;
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
+
+    void _ClearSelection() noexcept;
 
     bool _CanSendVTMouseInput() const noexcept;
     bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
