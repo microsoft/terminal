@@ -64,7 +64,9 @@ public:
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::TerminalApp::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
-
+    std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                             winrt::TerminalApp::SplitState splitType,
+                                             const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
 

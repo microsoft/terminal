@@ -2,6 +2,9 @@
 #include "ActionArgs.h"
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
+
+#include "JsonUtils.h"
+
 #include <LibraryResources.h>
 
 static constexpr std::string_view CopyTextKey{ "copy" };
@@ -36,6 +39,7 @@ static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -45,6 +49,8 @@ static constexpr std::string_view UnboundKey{ "unbound" };
 
 namespace winrt::TerminalApp::implementation
 {
+    using namespace ::TerminalApp;
+
     // Specifically use a map here over an unordered_map. We want to be able to
     // iterate over these entries in-order when we're serializing the keybindings.
     // HERE BE DRAGONS:
@@ -86,6 +92,7 @@ namespace winrt::TerminalApp::implementation
         { UnboundKey, ShortcutAction::Invalid },
         { FindKey, ShortcutAction::Find },
         { RenameTabKey, ShortcutAction::RenameTab },
+        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
     };
 
@@ -117,6 +124,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
         { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
+
+        { ShortcutAction::ExecuteCommandline, winrt::TerminalApp::implementation::ExecuteCommandlineArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -185,11 +194,9 @@ namespace winrt::TerminalApp::implementation
         }
         else if (json.isObject())
         {
-            const auto actionVal = json[JsonKey(ActionKey)];
-            if (actionVal.isString())
+            if (const auto actionString{ JsonUtils::GetValueForKey<std::optional<std::string>>(json, ActionKey) })
             {
-                auto actionString = actionVal.asString();
-                action = GetActionFromString(actionString);
+                action = GetActionFromString(*actionString);
                 argsVal = json;
             }
         }
@@ -268,6 +275,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
                 { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
             };
         }();
@@ -284,5 +292,4 @@ namespace winrt::TerminalApp::implementation
         const auto found = GeneratedActionNames.find(_Action);
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
-
 }

@@ -157,6 +157,7 @@ namespace Microsoft::Console::Render
         bool _invalidateFullRows;
         til::bitmap _invalidMap;
         til::point _invalidScroll;
+        bool _allInvalid;
 
         bool _presentReady;
         std::vector<RECT> _presentDirty;
@@ -271,6 +272,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] til::size _GetClientSize() const;
 
         void _InvalidateRectangle(const til::rectangle& rc);
+        bool _IsAllInvalid() const noexcept;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

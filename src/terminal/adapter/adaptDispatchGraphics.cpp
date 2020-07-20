@@ -135,10 +135,10 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
                 attr.SetFaint(false);
                 break;
             case Italics:
-                attr.SetItalics(true);
+                attr.SetItalic(true);
                 break;
             case NotItalics:
-                attr.SetItalics(false);
+                attr.SetItalic(false);
                 break;
             case BlinkOrXterm256Index:
                 attr.SetBlinking(true);
@@ -165,16 +165,16 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
                 attr.SetReverseVideo(false);
                 break;
             case Underline:
-                attr.SetUnderline(true);
+                attr.SetUnderlined(true);
                 break;
             case NoUnderline:
-                attr.SetUnderline(false);
+                attr.SetUnderlined(false);
                 break;
             case Overline:
-                attr.SetOverline(true);
+                attr.SetOverlined(true);
                 break;
             case NoOverline:
-                attr.SetOverline(false);
+                attr.SetOverlined(false);
                 break;
             case ForegroundBlack:
                 attr.SetIndexedForeground(DARK_BLACK);

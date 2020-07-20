@@ -68,6 +68,7 @@ DxEngine::DxEngine() :
     _invalidateFullRows{ true },
     _invalidMap{},
     _invalidScroll{},
+    _allInvalid{ false },
     _firstFrame{ true },
     _presentParams{ 0 },
     _presentReady{ false },
@@ -847,6 +848,11 @@ void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
     _invalidMap.set(invalidate);
 }
 
+bool DxEngine::_IsAllInvalid() const noexcept
+{
+    return std::llabs(_invalidScroll.y()) >= _invalidMap.size().height();
+}
+
 // Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
@@ -858,7 +864,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    }
 
     return S_OK;
 }
@@ -875,7 +884,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    }
 
     return S_OK;
 }
@@ -892,9 +904,12 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
 
-    // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
-    // to cells.
-    _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    if (!_allInvalid)
+    {
+        // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
+        // to cells.
+        _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    }
 
     return S_OK;
 }
@@ -908,9 +923,12 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    for (const auto& rect : rectangles)
+    if (!_allInvalid)
     {
-        RETURN_IF_FAILED(Invalidate(&rect));
+        for (const auto& rect : rectangles)
+        {
+            RETURN_IF_FAILED(Invalidate(&rect));
+        }
     }
     return S_OK;
 }
@@ -930,11 +948,15 @@ try
 
     const til::point deltaCells{ *pcoordDelta };
 
-    if (deltaCells != til::point{ 0, 0 })
+    if (!_allInvalid)
     {
-        // Shift the contents of the map and fill in revealed area.
-        _invalidMap.translate(deltaCells, true);
-        _invalidScroll += deltaCells;
+        if (deltaCells != til::point{ 0, 0 })
+        {
+            // Shift the contents of the map and fill in revealed area.
+            _invalidMap.translate(deltaCells, true);
+            _invalidScroll += deltaCells;
+            _allInvalid = _IsAllInvalid();
+        }
     }
 
     return S_OK;
@@ -951,6 +973,7 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+    _allInvalid = true;
 
     // Since everything is invalidated here, mark this as a "first frame", so
     // that we won't use incremental drawing on it. The caller of this intended
@@ -1209,6 +1232,7 @@ try
     }
 
     _invalidMap.reset_all();
+    _allInvalid = false;
 
     _invalidScroll = {};
 

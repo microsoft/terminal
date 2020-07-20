@@ -45,7 +45,8 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
-        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
+        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();

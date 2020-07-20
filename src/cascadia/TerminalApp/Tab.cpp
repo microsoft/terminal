@@ -898,6 +898,11 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
+    bool Tab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    {
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
+    }
+
     void Tab::ToggleZoom()
     {
         if (_zoomedPane)

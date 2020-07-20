@@ -7,11 +7,11 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
@@ -43,21 +43,6 @@ static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
-
-// Launch mode values
-static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
-static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
-static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
-
-// Tab Width Mode values
-static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
-static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
-static constexpr std::wstring_view TitleLengthCompactModeValue{ L"compact" };
-
-// Theme values
-static constexpr std::wstring_view LightThemeValue{ L"light" };
-static constexpr std::wstring_view DarkThemeValue{ L"dark" };
-static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -149,66 +134,51 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
-    {
-        _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
-    }
+    JsonUtils::GetValueForKey(json, DefaultProfileKey, _unparsedDefaultProfile);
 
-    JsonUtils::GetBool(json, AlwaysShowTabsKey, _AlwaysShowTabs);
+    JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
-    JsonUtils::GetBool(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
+    JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
 
-    JsonUtils::GetInt(json, InitialRowsKey, _InitialRows);
+    JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
 
-    JsonUtils::GetInt(json, InitialColsKey, _InitialCols);
+    JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
 
-    if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
-    {
-        _ParseInitialPosition(initialPosition.asString(), _InitialPosition);
-    }
+    JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
-    JsonUtils::GetBool(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
+    JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
-    JsonUtils::GetBool(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
+    JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
 
-    JsonUtils::GetWstring(json, WordDelimitersKey, _WordDelimiters);
+    JsonUtils::GetValueForKey(json, WordDelimitersKey, _WordDelimiters);
 
-    JsonUtils::GetBool(json, CopyOnSelectKey, _CopyOnSelect);
+    JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
 
-    JsonUtils::GetBool(json, CopyFormattingKey, _CopyFormatting);
+    JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
 
-    JsonUtils::GetBool(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
+    JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
 
-    JsonUtils::GetBool(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+    JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
-    if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
-    {
-        _LaunchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
-    }
+    JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
 
-    if (auto theme{ json[JsonKey(ThemeKey)] })
-    {
-        _Theme = _ParseTheme(GetWstringFromJson(theme));
-    }
+    JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
 
-    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
-    {
-        _TabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
-    }
+    JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
 
-    JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+    JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
-    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
+    // GetValueForKey will only override the current value if the key exists
+    JsonUtils::GetValueForKey(json, DebugFeaturesKey, _DebugFeaturesEnabled);
 
-    JsonUtils::GetBool(json, SoftwareRenderingKey, _SoftwareRendering);
-    JsonUtils::GetBool(json, ForceVTInputKey, _ForceVTInput);
+    JsonUtils::GetValueForKey(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
 
-    // GetBool will only override the current value if the key exists
-    JsonUtils::GetBool(json, DebugFeaturesKey, _DebugFeaturesEnabled);
+    JsonUtils::GetValueForKey(json, SoftwareRenderingKey, _SoftwareRendering);
+    JsonUtils::GetValueForKey(json, ForceVTInputKey, _ForceVTInput);
 
-    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
+    JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
-    JsonUtils::GetBool(json, AlwaysOnTopKey, _AlwaysOnTop);
+    JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
@@ -229,121 +199,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
             // It's possible that the user provided commands have some warnings
             // in them, similar to the keybindings.
-            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     };
     parseBindings(LegacyKeybindingsKey);
     parseBindings(BindingsKey);
-}
-
-// Method Description:
-// - Helper function for converting a user-specified cursor style corresponding
-//   CursorStyle enum value
-// Arguments:
-// - themeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
-{
-    if (themeString == LightThemeValue)
-    {
-        return ElementTheme::Light;
-    }
-    else if (themeString == DarkThemeValue)
-    {
-        return ElementTheme::Dark;
-    }
-    // default behavior for invalid data or SystemThemeValue
-    return ElementTheme::Default;
-}
-
-// Method Description:
-// - Helper function for converting the initial position string into
-//   2 coordinate values. We allow users to only provide one coordinate,
-//   thus, we use comma as the separator:
-//   (100, 100): standard input string
-//   (, 100), (100, ): if a value is missing, we set this value as a default
-//   (,): both x and y are set to default
-//   (abc, 100): if a value is not valid, we treat it as default
-//   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
-// Arguments:
-// - initialPosition: the initial position string from json
-//   ret: reference to a struct whose optionals will be populated
-// Return Value:
-// - None
-void GlobalAppSettings::_ParseInitialPosition(const std::string& initialPosition,
-                                              LaunchPosition& ret) noexcept
-{
-    static constexpr char singleCharDelim = ',';
-    std::stringstream tokenStream(initialPosition);
-    std::string token;
-    uint8_t initialPosIndex = 0;
-
-    // Get initial position values till we run out of delimiter separated values in the stream
-    // or we hit max number of allowable values (= 2)
-    // Non-numeral values or empty string will be caught as exception and we do not assign them
-    for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
-    {
-        try
-        {
-            int32_t position = std::stoi(token);
-            if (initialPosIndex == 0)
-            {
-                ret.x.emplace(position);
-            }
-
-            if (initialPosIndex == 1)
-            {
-                ret.y.emplace(position);
-            }
-        }
-        catch (...)
-        {
-            // Do nothing
-        }
-    }
-}
-
-// Method Description:
-// - Helper function for converting the user-specified launch mode
-//   to a LaunchMode enum value
-// Arguments:
-// - launchModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeString) noexcept
-{
-    if (launchModeString == MaximizedLaunchModeValue)
-    {
-        return LaunchMode::MaximizedMode;
-    }
-    else if (launchModeString == FullscreenLaunchModeValue)
-    {
-        return LaunchMode::FullscreenMode;
-    }
-
-    return LaunchMode::DefaultMode;
-}
-
-// Method Description:
-// - Helper function for converting the user-specified tab width
-//   to a TabViewWidthMode enum value
-// Arguments:
-// - tabWidthModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept
-{
-    if (tabWidthModeString == TitleLengthTabWidthModeValue)
-    {
-        return TabViewWidthMode::SizeToContent;
-    }
-    else if (tabWidthModeString == TitleLengthCompactModeValue)
-    {
-        return TabViewWidthMode::Compact;
-    }
-    // default behavior for invalid data or EqualTabWidthValue
-    return TabViewWidthMode::Equal;
 }
 
 // Method Description:
