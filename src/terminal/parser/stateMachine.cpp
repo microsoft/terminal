@@ -45,7 +45,7 @@ IStateMachineEngine& StateMachine::Engine() noexcept
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-static constexpr bool _isNumber(const wchar_t wch) noexcept
+static constexpr bool _isNumericParamValue(const wchar_t wch) noexcept
 {
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
@@ -143,6 +143,17 @@ static constexpr bool _isEscape(const wchar_t wch) noexcept
 }
 
 // Routine Description:
+// - Determines if a character is a delimiter between two parameters in a "control sequence".
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isParameterDelimiter(const wchar_t wch) noexcept
+{
+    return wch == L';'; // 0x3B
+}
+
+// Routine Description:
 // - Determines if a character is "control sequence" beginning indicator.
 //   This immediately follows an escape and signifies a varying length control sequence.
 // Arguments:
@@ -164,7 +175,7 @@ static constexpr bool _isCsiIndicator(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isCsiDelimiter(const wchar_t wch) noexcept
 {
-    return wch == L';'; // 0x3B
+    return _isParameterDelimiter(wch);
 }
 
 // Routine Description:
@@ -176,7 +187,7 @@ static constexpr bool _isCsiDelimiter(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isCsiParamValue(const wchar_t wch) noexcept
 {
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+    return _isNumericParamValue(wch); 
 }
 
 // Routine Description:
@@ -255,19 +266,6 @@ static constexpr bool _isOscDelimiter(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a valid parameter value for an OSC String,
-//     that is, the indicator of which OSC action to take.
-//   Parameters must be numerical digits.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isOscParamValue(const wchar_t wch) noexcept
-{
-    return _isNumber(wch); // 0x30 - 0x39
-}
-
-// Routine Description:
 // - Determines if a character should be initiate the end of an OSC sequence.
 // Arguments:
 // - wch - Character to check.
@@ -316,6 +314,17 @@ static constexpr bool _isDcsIndicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
+// - Determines if a character is a string terminator
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isStringTerminator(const wchar_t wch) noexcept
+{
+    return wch == AsciiChars::ST;
+}
+
+// Routine Description:
 // - Determines if a character should be initiate the end of a DCS sequence.
 // Arguments:
 // - wch - Character to check.
@@ -332,7 +341,7 @@ static constexpr bool _isDcsTerminationInitiator(const wchar_t wch) noexcept
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-static constexpr bool _isDcsValid(const wchar_t wch) noexcept
+static constexpr bool _isDcsPassThroughValid(const wchar_t wch) noexcept
 {
     return wch >= L'\x40' && wch <= L'\x7e';
 }
@@ -847,6 +856,21 @@ void StateMachine::_EnterDcsParam() noexcept
 }
 
 // Routine Description:
+// - Moves the state machine into the DcsIgnore state.
+//   This state is entered:
+//   1. When an invalid character is detected during a DCS sequence indicating we should ignore the whole sequence.
+//      (From DcsEntry, DcsParam, DcsPassThrough, or DcsIntermediate states.)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterDcsIgnore() noexcept
+{
+    _state = VTStates::DcsIgnore;
+    _trace.TraceStateChange(L"DcsIgnore");
+}
+
+// Routine Description:
 // - Moves the state machine into the DcsIntermediate state.
 //   This state is entered:
 //   1. When an intermediate character is seen immediately after entering a control sequence (from DcsEntry)
@@ -1231,7 +1255,7 @@ void StateMachine::_EventOscParam(const wchar_t wch) noexcept
     {
         _EnterGround();
     }
-    else if (_isOscParamValue(wch))
+    else if (_isNumericParamValue(wch))
     {
         _ActionOscParam(wch);
     }
@@ -1423,7 +1447,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 //   5. Pass through characters
 //   6. If we see a ESC, enter the DscTermination state.
 //  DCS sequences are structurally almost the same as CSI sequences, just with a
-//      extra data string. It's safe to reuse CSI's functions for
+//      extra data string. It's safe to reuse CSI functions for
 //      determining if a character is a parameter, delimiter, or invalid.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1440,7 +1464,11 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isCsiInvalid(wch))
+    {
+        _EnterDcsIgnore();
+    }
+    else if (_isNumericParamValue(wch) || _isCsiDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterDcsParam();
@@ -1450,7 +1478,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
         _ActionCollect(wch);
         _EnterDcsIntermediate();
     }
-    else if (_isDcsValid(wch))
+    else if (_isDcsPassThroughValid(wch))
     {
         _ActionDcsPassThrough(wch);
         _EnterDcsPassThrough();
@@ -1466,10 +1494,47 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 }
 
 // Routine Description:
-// - Processes a character event into an Action that occurs while in the DcsParam state.
+// - Processes a character event into an Action that occurs while in the DcsIgnore state.
 //   Events in this state will:
-//   1. Collect DCS parameter data
-//   2. Enter DscIntermediate if we see an intermediate
+//   1. Enter ground on a String terminator
+//   2. Ignore Delete characters
+//   3. If we see a ESC, enter the DscTermination state.
+//   4. Ignore everything else.
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventDcsIgnore(const wchar_t wch)
+{
+    _trace.TraceOnEvent(L"DcsIgnore");
+    if (_isStringTerminator(wch))
+    {
+        _EnterGround();
+    }
+    else if (_isDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch) || _isCsiInvalid(wch)
+        || _isIntermediate(wch) || _isDcsPassThroughValid(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isDcsTerminationInitiator(wch))
+    {
+        _EnterDcsTermination();
+    }
+    else
+    {
+        _ActionIgnore();
+    }
+}
+
+// Routine Description:
+// - Processes a character event into an Action that occurs while in the DcsIntermediate state.
+//   Events in this state will:
+//   1. Enter ground on a String terminator
+//   2. Collect intermediate data.
 //   3. Enter DscPassThrough if we see valid DSC characters
 //   4. If we see a ESC, enter the DscTermination state.
 //   5. Ignore everything else.
@@ -1477,19 +1542,18 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsParam(const wchar_t wch)
+void StateMachine::_EventDcsIntermediate(const wchar_t wch)
 {
-    _trace.TraceOnEvent(L"DcsParam");
-    if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    _trace.TraceOnEvent(L"DcsIntermediate");
+    if (_isStringTerminator(wch))
     {
-        _ActionParam(wch);
+        _EnterGround();
     }
-    else if (_isIntermediate(wch))
+    if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
-        _EnterDcsIntermediate();
     }
-    else if (_isDcsValid(wch))
+    else if (_isDcsPassThroughValid(wch))
     {
         _ActionDcsPassThrough(wch);
         _EnterDcsPassThrough();
@@ -1505,24 +1569,35 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 }
 
 // Routine Description:
-// - Processes a character event into an Action that occurs while in the DcsIntermediate state.
+// - Processes a character event into an Action that occurs while in the DcsParam state.
 //   Events in this state will:
-//   1. Collect intermediate data.
-//   2. Enter DscPassThrough if we see valid DSC characters
-//   3. If we see a ESC, enter the DscTermination state.
-//   4. Ignore everything else.
+//   1. Enter ground on a String terminator
+//   2. Collect DCS parameter data
+//   3. Enter DscIntermediate if we see an intermediate
+//   4. Enter DscPassThrough if we see valid DSC characters
+//   5. If we see a ESC, enter the DscTermination state.
+//   6. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsIntermediate(const wchar_t wch)
+void StateMachine::_EventDcsParam(const wchar_t wch)
 {
-    _trace.TraceOnEvent(L"DcsIntermediate");
-    if (_isIntermediate(wch))
+    _trace.TraceOnEvent(L"DcsParam");
+    if (_isStringTerminator(wch))
+    {
+        _EnterGround();
+    }
+    else if (_isNumericParamValue(wch) || _isCsiDelimiter(wch))
+    {
+        _ActionParam(wch);
+    }
+    else if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
+        _EnterDcsIntermediate();
     }
-    else if (_isDcsValid(wch))
+    else if (_isDcsPassThroughValid(wch))
     {
         _ActionDcsPassThrough(wch);
         _EnterDcsPassThrough();
@@ -1540,7 +1615,8 @@ void StateMachine::_EventDcsIntermediate(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the DcsPassThrough state.
 //   Events in this state will:
-//   1. Pass through if character is valid.
+//   1. Enter ground on a String terminator
+//   2. Pass through if character is valid.
 //   3. If we see a ESC, enter the DscTermination state.
 //   4. Ignore everything else.
 // Arguments:
@@ -1550,7 +1626,11 @@ void StateMachine::_EventDcsIntermediate(const wchar_t wch)
 void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"DcsPassThrough");
-    if (_isDcsValid(wch))
+    if (_isStringTerminator(wch))
+    {
+        _EnterGround();
+    }
+    if (_isDcsPassThroughValid(wch))
     {
         _ActionDcsPassThrough(wch);
     }
@@ -1567,16 +1647,24 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 // Routine Description:
 // - Handle the two-character termination of a DCS sequence.
 //   Events in this state will:
-//   1. Trigger the DCS action associated with the param on a DcsTerminator
+//   1. Enter ground on a '\'.
+//   2. Go back to DcsPassThrough on everything else. 
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsTermination()
+void StateMachine::_EventDcsTermination(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"DcsTermination");
 
-    _EnterGround();
+    if (wch == L'\\')
+    {
+        _EnterGround();
+    }
+    else
+    {
+        _EnterDcsPassThrough();
+    }
 }
 
 // Routine Description:
@@ -1601,10 +1689,13 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough)
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough
+        && _state != VTStates::DcsIntermediate && _state != VTStates::DcsIgnore)
     {
         // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
+        //
+        // Same for DCS states.
         _EnterEscape();
     }
     else
@@ -1640,14 +1731,16 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             return _EventVt52Param(wch);
         case VTStates::DcsEntry:
             return _EventDcsEntry(wch);
-        case VTStates::DcsParam:
-            return _EventDcsParam(wch);
+        case VTStates::DcsIgnore:
+            return _EventDcsIgnore(wch);
         case VTStates::DcsIntermediate:
             return _EventDcsIntermediate(wch);
+        case VTStates::DcsParam:
+            return _EventDcsParam(wch);
         case VTStates::DcsPassThrough:
             return _EventDcsPassThrough(wch);
         case VTStates::DcsTermination:
-            return _EventDcsTermination();
+            return _EventDcsTermination(wch);
         default:
             return;
         }
