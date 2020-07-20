@@ -90,14 +90,14 @@ runtimeclass AppSettings
     
     // Compares object to "source" and applies changes to
     // the settings file at "outPath"
-    void ApplyChanges(String outPath, AppSettings source);
+    void Save(String outPath);
 }
 ```
 
 #### TerminalApp: Loading and Reloading Changes
 
-TerminalApp will construct and reference an `AppSettings settings` using a shared smart pointer as follows:
-- TerminalApp will have a global reference to "defaults.json" and "settings.json" filepaths as `constexpr`
+TerminalApp will construct and reference an `AppSettings settings` as follows:
+- TerminalApp will have a global reference to "defaults.json" and "settings.json" filepaths
 - construct an `AppSettings` using the default constructor
 - `settings.LayerSettings("defaults.json")`
 - `settings.LayerSettings("settings.json")`
@@ -135,11 +135,9 @@ that is a clone of TerminalApp's `AppSettings`.
 settingsClone = settingsSource.Clone()
 ```
 
-As the user navigates the Settings UI, the relevant contents of `settingsSource` will be retrieved and presented.
-As the user makes changes to the Settings UI, XAML will hold on to the changes that are made.
-When the user saves/applies the changes in the XAML, `settingsClone` will be updated to reflect those changes,
-then `settingsClone.ApplyChanges("settings.json", settingsSource)` is called. This compares the changes between
-`settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
+As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
+ As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
+ When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
 
 As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
  Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
@@ -149,7 +147,7 @@ In the case that a user is simultaneously updating the settings file directly an
  `settingsSource` and `settingsClone` can be compared to ensure that the Settings UI, the TerminalApp,
  and the settings files are all in sync.
 
- **NOTE:** In the event that the user would want to export their current configuration, `ApplyChanges`
+ **NOTE:** In the event that the user would want to export their current configuration, `Save`
  can be used to export the changes to a new file.
 
 ## UI/UX Design
@@ -182,6 +180,13 @@ N/A
 
 After deserializing the settings, injecting the new json into settings.json
  should not remove the existing comments or formatting.
+
+The deserialization process takes place right after comparing the `settingsSource` and `settingsClone` objects.
+ For each setting found in the diff, we go to the relevant part of the JSON and see if the key is already there.
+ If it is, we update the value to be the one from `settingsClone`. Otherwise, we append the key/value pair
+ at the end of the section (much like we do with dynamic profiles in `profiles`).
+
+
 
 ## Future considerations
 
