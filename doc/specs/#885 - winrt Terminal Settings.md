@@ -87,9 +87,10 @@ runtimeclass AppSettings
 
     // Create a copy of the existing AppSettings
     AppSettings Clone();
-
-    // Deserialize the existing AppSettings into a settings file
-    void Export(String path);
+    
+    // Compares object to "source" and applies changes to
+    // the settings file at "outPath"
+    void ApplyChanges(String outPath, AppSettings source);
 }
 ```
 
@@ -127,16 +128,29 @@ At the time of writing this spec, TerminalApp constructs `TerminalControl.Termin
 
 #### Settings UI: Modifying and Applying the Settings
 
-The Settings UI will also have a reference to the `AppSettings settings` using a shared smart pointer.
+The Settings UI will also have a reference to the `AppSettings settings` from TerminalApp using a shared smart pointer
+as `settingsSource`. When the Settings UI is opened up, the Settings UI will also have its own `AppSettings settingsClone`
+that is a clone of TerminalApp's `AppSettings`.
+```c++
+settingsClone = settingsSource.Clone()
+```
 
-<!--
-TODO CARLOS:
-    The "Interacting with the Terminal Settings Model" section is incomplete.
-    What's included here are some preliminary thoughts.
+As the user navigates the Settings UI, the relevant contents of `settingsSource` will be retrieved and presented.
+As the user makes changes to the Settings UI, XAML will hold on to the changes that are made.
+When the user saves/applies the changes in the XAML, `settingsClone` will be updated to reflect those changes,
+then `settingsClone.ApplyChanges("settings.json", settingsSource)` is called. This compares the changes between
+`settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
 
-    I will be fixing this section and adding more this coming Monday.
-    Pushing so I can work on this on the go. Have a fun weekend!
--->
+As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
+ Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
+ something like this occurs, `settingsSource` will automatically be updated too.
+
+In the case that a user is simultaneously updating the settings file directly and the Settings UI,
+ `settingsSource` and `settingsClone` can be compared to ensure that the Settings UI, the TerminalApp,
+ and the settings files are all in sync.
+
+ **NOTE:** In the event that the user would want to export their current configuration, `ApplyChanges`
+ can be used to export the changes to a new file.
 
 ## UI/UX Design
 
