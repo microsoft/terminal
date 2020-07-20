@@ -2117,6 +2117,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
     bool TermControl::CopySelectionToClipboard(bool singleLine, Windows::Foundation::IReference<CopyFormat> formats)
     {
         if (_closing)
@@ -2143,6 +2145,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             textData += text;
         }
 
+        // Copy can define which formats to copy
+        // if formats is nullptr, we should copy all data,
+        //   then let TermApp decide which formats to store in the clipboard (via global setting)
+        // otherwise, specifically copy the desired formats
         bool useGlobal = formats == nullptr;
         std::optional<bool> overrideHTML = std::nullopt;
         std::optional<bool> overrideRTF = std::nullopt;
