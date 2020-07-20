@@ -286,6 +286,8 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         }
         else
         {
+            // TODO GH#6986: properly handle "end of buffer" as last character
+            // instead of last cell
             // expand to document
             _start = bufferSize.Origin();
             _end = bufferSize.EndExclusive();
