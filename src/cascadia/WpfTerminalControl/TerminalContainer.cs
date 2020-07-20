@@ -235,6 +235,7 @@ namespace Microsoft.Terminal.Wpf
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
                         break;
+                    case NativeMethods.WindowMessage.WM_SYSKEYDOWN: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         {
                             // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
@@ -246,6 +247,7 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
+                    case NativeMethods.WindowMessage.WM_SYSKEYUP: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYUP:
                         {
                             // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
@@ -261,6 +263,7 @@ namespace Microsoft.Terminal.Wpf
                             NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, (ushort)scanCode);
                             break;
                         }
+
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
                         if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE))
