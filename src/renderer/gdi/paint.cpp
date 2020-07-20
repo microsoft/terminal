@@ -284,7 +284,7 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                  const COORD coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
@@ -316,7 +316,7 @@ using namespace Microsoft::Console::Render;
         // Convert data from clusters into the text array and the widths array.
         for (size_t i = 0; i < cchLine; i++)
         {
-            const auto& cluster = clusters.at(i);
+            const auto& cluster = til::at(clusters, i);
 
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
@@ -442,9 +442,6 @@ using namespace Microsoft::Console::Render;
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 [[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
-    // Return early if there are no lines to paint.
-    RETURN_HR_IF(S_OK, GridLines::None == lines);
-
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
@@ -507,7 +504,7 @@ using namespace Microsoft::Console::Render;
 // - options - Parameters that affect the way that the cursor is drawn
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-[[nodiscard]] HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)

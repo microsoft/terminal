@@ -48,8 +48,7 @@ namespace Microsoft::Console::Render
 
         virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
-        virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;
-        virtual const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept = 0;
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
 
         virtual COORD GetCursorPosition() const noexcept = 0;
         virtual bool IsCursorVisible() const noexcept = 0;

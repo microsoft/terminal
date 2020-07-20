@@ -84,11 +84,6 @@ public:
     bool HasPopup() const noexcept;
     Popup& GetPopup();
 
-    void UpdatePopups(const TextAttribute& NewAttributes,
-                      const TextAttribute& NewPopupAttributes,
-                      const TextAttribute& OldAttributes,
-                      const TextAttribute& OldPopupAttributes);
-
     void EndCurrentPopup();
     void EndAllPopups();
 

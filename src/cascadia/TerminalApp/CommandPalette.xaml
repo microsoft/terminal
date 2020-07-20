@@ -1,0 +1,238 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Grid
+    x:Class="TerminalApp.CommandPalette"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
+    PointerPressed="_rootPointerPressed"
+    mc:Ignorable="d">
+
+    <Grid.Resources>
+        <ResourceDictionary>
+
+            <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit
+            adds it conditionally -->
+            <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
+
+            <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
+            <local:CommandKeyChordVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="#333333" />
+                    </Style>
+                    <!-- TextBox colors !-->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
+                    <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
+                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="#CCCCCC" />
+                    </Style>
+                    <!-- TextBox colors !-->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                        <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
+                    </Style>
+
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme) -->
+                    <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
+                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
+
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+
+    </Grid.Resources>
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="2*" />
+        <ColumnDefinition Width="6*" />
+        <ColumnDefinition Width="2*" />
+    </Grid.ColumnDefinitions>
+
+    <Grid.RowDefinitions>
+        <RowDefinition Height="8*"/>
+        <RowDefinition Height="2*"/>
+    </Grid.RowDefinitions>
+
+    <!-- Setting the row/col span of this shadow backdrop is a bit of a hack. In
+    order to receive pointer events, an element needs to be _not_ transparent.
+    However, we want to be able to eat all the clicks outside the immediate
+    bounds of the command palette, and we don't want a semi-transparent overlay
+    over all of the UI. Fortunately, if we make this _shadowBackdrop the size of
+    the entire page, then it can be mostly transparent, and cause the root grid
+    to receive clicks _anywhere_ in its bounds. -->
+
+    <Grid
+        x:Name="_shadowBackdrop"
+        Background="Transparent"
+        Grid.Column="0"
+        Grid.Row="0"
+        Grid.ColumnSpan="3"
+        Grid.RowSpan="2"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
+        </Grid>
+
+    <Grid
+        x:Name="_backdrop"
+        Style="{ThemeResource CommandPaletteBackground}"
+        CornerRadius="{ThemeResource ControlCornerRadius}"
+        PointerPressed="_backdropPointerPressed"
+        Margin="8"
+        Grid.Column="1"
+        Grid.Row="0"
+        Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Top">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBox
+            Grid.Row="0"
+            x:Uid="CommandPalette_SearchBox"
+            x:Name="_searchBox"
+            Margin="8"
+            IsSpellCheckEnabled="False"
+            TextChanged="_filterTextChanged"
+            KeyDown="_keyDownHandler"
+            Text="">
+        </TextBox>
+
+        <TextBlock
+            Padding="16"
+            x:Name="_noMatchesText"
+            x:Uid="CommandPalette_NoMatchesText"
+            FontStyle="Italic"
+            Visibility="Collapsed"
+            Grid.Row="1">
+        </TextBlock>
+
+        <ListView
+            Grid.Row="2"
+            x:Name="_filteredActionsView"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            SelectionMode="Single"
+            CanReorderItems="False"
+            AllowDrop="False"
+            IsItemClickEnabled="True"
+            ItemClick="_listItemClicked"
+            ItemsSource="{x:Bind FilteredActions}">
+
+            <ItemsControl.ItemTemplate >
+                <DataTemplate x:DataType="local:Command">
+
+                    <!-- This HorizontalContentAlignment="Stretch" is important
+                    to make sure it takes the entire width of the line -->
+                    <ListViewItem HorizontalContentAlignment="Stretch"
+                                  AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+
+                        <Grid HorizontalAlignment="Stretch"  >
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16"/>   <!-- icon -->
+                                <ColumnDefinition Width="Auto"/> <!-- command label -->
+                                <ColumnDefinition Width="*"/>    <!-- key chord -->
+                                <ColumnDefinition Width="16"/>   <!-- gutter for scrollbar -->
+                            </Grid.ColumnDefinitions>
+
+                            <!-- TODO GH#6644: Add Icon to command palette entries, in column 0 -->
+
+                            <TextBlock Grid.Column="1"
+                                       HorizontalAlignment="Left"
+                                       Text="{x:Bind Name, Mode=OneWay}" />
+
+                            <!-- The block for the key chord is only visible
+                            when there's actual text set as the label. See
+                            CommandKeyChordVisibilityConverter for details. -->
+                            <Border
+                                Grid.Column="2"
+                                Visibility="{x:Bind KeyChordText,
+                                             Mode=OneWay,
+                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                Style="{ThemeResource KeyChordBorderStyle}"
+                                Padding="2,0,2,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+
+                                <TextBlock
+                                    Style="{ThemeResource KeyChordTextBlockStyle}"
+                                    FontSize="12"
+                                    Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                            </Border>
+
+                        </Grid>
+                    </ListViewItem>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ListView>
+
+    </Grid>
+
+
+</Grid>

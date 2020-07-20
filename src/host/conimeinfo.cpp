@@ -57,15 +57,15 @@ void ConsoleImeInfo::RedrawCompMessage()
 // - attributes - Encoded attributes including the cursor position and the color index (to the array)
 // - colorArray - An array of colors to use for the text
 void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
-                                      const std::basic_string_view<BYTE> attributes,
-                                      const std::basic_string_view<WORD> colorArray)
+                                      const gsl::span<const BYTE> attributes,
+                                      const gsl::span<const WORD> colorArray)
 {
     ClearAllAreas();
 
     // Save copies of the composition message in case we need to redraw it as things scroll/resize
     _text = text;
-    _attributes = attributes;
-    _colorArray = colorArray;
+    _attributes.assign(attributes.begin(), attributes.end());
+    _colorArray.assign(colorArray.begin(), colorArray.end());
 
     _WriteUndeterminedChars(text, attributes, colorArray);
 }
@@ -146,11 +146,9 @@ void ConsoleImeInfo::ClearAllAreas()
 
     const COORD windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
-    CHAR_INFO fill;
-    fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
+    const TextAttribute fill = gci.GetActiveOutputBuffer().GetAttributes();
 
-    CHAR_INFO popupFill;
-    popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
+    const TextAttribute popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
 
     const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 
@@ -179,8 +177,8 @@ void ConsoleImeInfo::ClearAllAreas()
 // Return Value:
 // - TextAttribute object with color and cursor and line drawing data.
 TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
-                                                    const std::basic_string_view<BYTE> attributes,
-                                                    const std::basic_string_view<WORD> colorArray)
+                                                    const gsl::span<const BYTE> attributes,
+                                                    const gsl::span<const WORD> colorArray)
 {
     // Encoded attribute is the shorthand information passed from the IME
     // that contains a cursor position packed in along with which color in the
@@ -216,8 +214,8 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
 // Return Value:
 // - Vector of OutputCells where each one represents one cell of the output buffer.
 std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view text,
-                                                         const std::basic_string_view<BYTE> attributes,
-                                                         const std::basic_string_view<WORD> colorArray)
+                                                         const gsl::span<const BYTE> attributes,
+                                                         const gsl::span<const WORD> colorArray)
 {
     std::vector<OutputCell> cells;
 
@@ -258,6 +256,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
+            auto rightHalfAttr = drawingAttr;
 
             // Don't draw lines in the middle of full width glyphs.
             // If we need a right vertical, don't apply it to the left side of the character
@@ -271,12 +270,16 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
             dbcsAttr.SetTrailing();
 
             // If we need a left vertical, don't apply it to the right side of the character
-            if (drawingAttr.IsLeftVerticalDisplayed())
+            if (rightHalfAttr.IsLeftVerticalDisplayed())
             {
-                drawingAttr.SetLeftVerticalDisplayed(false);
+                rightHalfAttr.SetLeftVerticalDisplayed(false);
             }
+            cells.emplace_back(glyph, dbcsAttr, rightHalfAttr);
         }
-        cells.emplace_back(glyph, dbcsAttr, drawingAttr);
+        else
+        {
+            cells.emplace_back(glyph, dbcsAttr, drawingAttr);
+        }
     }
 
     return cells;
@@ -386,8 +389,8 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 //                each text character. This view must be the same size as the text view.
 // - colorArray - 8 colors to be used to format the text for display
 void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
-                                             const std::basic_string_view<BYTE> attributes,
-                                             const std::basic_string_view<WORD> colorArray)
+                                             const gsl::span<const BYTE> attributes,
+                                             const gsl::span<const WORD> colorArray)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();

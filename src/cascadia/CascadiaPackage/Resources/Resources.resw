@@ -121,18 +121,18 @@
     <value>Windows Terminal</value>
   </data>
   <data name="AppNameDev" xml:space="preserve">
-    <value>Windows Terminal (Dev Build)</value>
+    <value>Windows Terminal Dev</value>
   </data>
   <data name="AppNamePre" xml:space="preserve">
-    <value>Windows Terminal (Preview)</value>
+    <value>Windows Terminal Preview</value>
   </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>
   </data>
   <data name="AppShortNameDev" xml:space="preserve">
-    <value>Terminal (Dev)</value>
+    <value>Terminal Dev</value>
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
-    <value>Terminal (Preview)</value>
+    <value>Terminal Preview</value>
   </data>
 </root>

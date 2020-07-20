@@ -7,47 +7,42 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include <sstream>
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
-static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view BindingsKey{ "bindings" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
-static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
-static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
-static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
+static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
+static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
-static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
-static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
-static constexpr std::wstring_view FullscreenLaunchModeValue{ L"fullscreen" };
-static constexpr std::wstring_view LightThemeValue{ L"light" };
-static constexpr std::wstring_view DarkThemeValue{ L"dark" };
-static constexpr std::wstring_view SystemThemeValue{ L"system" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
+
+static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
-
-static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
+static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -61,24 +56,10 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes{},
     _unparsedDefaultProfile{ std::nullopt },
     _defaultProfile{},
-    _alwaysShowTabs{ true },
-    _confirmCloseAllTabs{ true },
-    _initialRows{ DEFAULT_ROWS },
-    _initialCols{ DEFAULT_COLS },
-    _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
-    _initialX{},
-    _initialY{},
-    _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ true },
-    _theme{ ElementTheme::Default },
-    _tabWidthMode{ TabViewWidthMode::Equal },
-    _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
-    _copyOnSelect{ false },
-    _copyFormatting{ false },
-    _launchMode{ LaunchMode::DefaultMode },
-    _forceFullRepaintRendering{ false },
-    _softwareRendering{ false },
-    _debugFeatures{ debugFeaturesDefault }
+    _InitialRows{ DEFAULT_ROWS },
+    _InitialCols{ DEFAULT_COLS },
+    _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
+    _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
 }
 
@@ -96,20 +77,20 @@ const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColor
     return _colorSchemes;
 }
 
-void GlobalAppSettings::SetDefaultProfile(const GUID defaultProfile) noexcept
+void GlobalAppSettings::DefaultProfile(const GUID defaultProfile) noexcept
 {
     _unparsedDefaultProfile.reset();
     _defaultProfile = defaultProfile;
 }
 
-GUID GlobalAppSettings::GetDefaultProfile() const
+GUID GlobalAppSettings::DefaultProfile() const
 {
     // If we have an unresolved default profile, we should likely explode.
     THROW_HR_IF(E_INVALIDARG, _unparsedDefaultProfile.has_value());
     return _defaultProfile;
 }
 
-std::wstring GlobalAppSettings::GetUnparsedDefaultProfile() const
+std::wstring GlobalAppSettings::UnparsedDefaultProfile() const
 {
     return _unparsedDefaultProfile.value();
 }
@@ -118,128 +99,6 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
     return *_keybindings;
 }
-
-bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
-{
-    return _alwaysShowTabs;
-}
-
-void GlobalAppSettings::SetAlwaysShowTabs(const bool showTabs) noexcept
-{
-    _alwaysShowTabs = showTabs;
-}
-
-bool GlobalAppSettings::GetShowTitleInTitlebar() const noexcept
-{
-    return _showTitleInTitlebar;
-}
-
-void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept
-{
-    _showTitleInTitlebar = showTitleInTitlebar;
-}
-
-ElementTheme GlobalAppSettings::GetTheme() const noexcept
-{
-    return _theme;
-}
-
-void GlobalAppSettings::SetTheme(const ElementTheme theme) noexcept
-{
-    _theme = theme;
-}
-
-TabViewWidthMode GlobalAppSettings::GetTabWidthMode() const noexcept
-{
-    return _tabWidthMode;
-}
-
-void GlobalAppSettings::SetTabWidthMode(const TabViewWidthMode tabWidthMode)
-{
-    _tabWidthMode = tabWidthMode;
-}
-
-std::wstring GlobalAppSettings::GetWordDelimiters() const noexcept
-{
-    return _wordDelimiters;
-}
-
-void GlobalAppSettings::SetWordDelimiters(const std::wstring wordDelimiters) noexcept
-{
-    _wordDelimiters = wordDelimiters;
-}
-
-bool GlobalAppSettings::GetCopyOnSelect() const noexcept
-{
-    return _copyOnSelect;
-}
-
-void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
-{
-    _copyOnSelect = copyOnSelect;
-}
-
-bool GlobalAppSettings::GetCopyFormatting() const noexcept
-{
-    return _copyFormatting;
-}
-
-LaunchMode GlobalAppSettings::GetLaunchMode() const noexcept
-{
-    return _launchMode;
-}
-
-void GlobalAppSettings::SetLaunchMode(const LaunchMode launchMode)
-{
-    _launchMode = launchMode;
-}
-bool GlobalAppSettings::GetConfirmCloseAllTabs() const noexcept
-{
-    return _confirmCloseAllTabs;
-}
-
-void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept
-{
-    _confirmCloseAllTabs = confirmCloseAllTabs;
-}
-
-bool GlobalAppSettings::GetForceFullRepaintRendering() noexcept
-{
-    return _forceFullRepaintRendering;
-}
-
-bool GlobalAppSettings::GetSoftwareRendering() noexcept
-{
-    return _softwareRendering;
-}
-
-bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
-{
-    return _debugFeatures;
-}
-
-#pragma region ExperimentalSettings
-bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
-{
-    return _showTabsInTitlebar;
-}
-
-void GlobalAppSettings::SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept
-{
-    _showTabsInTitlebar = showTabsInTitlebar;
-}
-
-std::optional<int32_t> GlobalAppSettings::GetInitialX() const noexcept
-{
-    return _initialX;
-}
-
-std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
-{
-    return _initialY;
-}
-
-#pragma endregion
 
 // Method Description:
 // - Applies appropriate settings from the globals into the given TerminalSettings.
@@ -250,14 +109,14 @@ std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
 void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexcept
 {
     settings.KeyBindings(GetKeybindings());
-    settings.InitialRows(_initialRows);
-    settings.InitialCols(_initialCols);
-    settings.RowsToScroll(_rowsToScroll);
+    settings.InitialRows(_InitialRows);
+    settings.InitialCols(_InitialCols);
 
-    settings.WordDelimiters(_wordDelimiters);
-    settings.CopyOnSelect(_copyOnSelect);
-    settings.ForceFullRepaintRendering(_forceFullRepaintRendering);
-    settings.SoftwareRendering(_softwareRendering);
+    settings.WordDelimiters(_WordDelimiters);
+    settings.CopyOnSelect(_CopyOnSelect);
+    settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
+    settings.SoftwareRendering(_SoftwareRendering);
+    settings.ForceVTInput(_ForceVTInput);
 }
 
 // Method Description:
@@ -275,277 +134,75 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
-    {
-        _unparsedDefaultProfile.emplace(GetWstringFromJson(defaultProfile));
-    }
+    JsonUtils::GetValueForKey(json, DefaultProfileKey, _unparsedDefaultProfile);
 
-    JsonUtils::GetBool(json, AlwaysShowTabsKey, _alwaysShowTabs);
+    JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
-    JsonUtils::GetBool(json, ConfirmCloseAllKey, _confirmCloseAllTabs);
+    JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
 
-    JsonUtils::GetInt(json, InitialRowsKey, _initialRows);
+    JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
 
-    JsonUtils::GetInt(json, InitialColsKey, _initialCols);
+    JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
 
-    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
-    {
-        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
-        if (rowsToScroll.isInt())
+    JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
+
+    JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
+
+    JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
+
+    JsonUtils::GetValueForKey(json, WordDelimitersKey, _WordDelimiters);
+
+    JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
+
+    JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
+
+    JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
+
+    JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+
+    JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
+
+    JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
+
+    JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
+
+    JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+
+    // GetValueForKey will only override the current value if the key exists
+    JsonUtils::GetValueForKey(json, DebugFeaturesKey, _DebugFeaturesEnabled);
+
+    JsonUtils::GetValueForKey(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
+
+    JsonUtils::GetValueForKey(json, SoftwareRenderingKey, _SoftwareRendering);
+    JsonUtils::GetValueForKey(json, ForceVTInputKey, _ForceVTInput);
+
+    JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
+
+    JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
+
+    // This is a helper lambda to get the keybindings and commands out of both
+    // and array of objects. We'll use this twice, once on the legacy
+    // `keybindings` key, and again on the newer `bindings` key.
+    auto parseBindings = [this, &json](auto jsonKey) {
+        if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            _rowsToScroll = rowsToScroll.asInt();
+            auto warnings = _keybindings->LayerJson(bindings);
+            // It's possible that the user provided keybindings have some warnings
+            // in them - problems that we should alert the user to, but we can
+            // recover from. Most of these warnings cannot be detected later in the
+            // Validate settings phase, so we'll collect them now. If there were any
+            // warnings generated from parsing these keybindings, add them to our
+            // list of warnings.
+            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
+
+            // Now parse the array again, but this time as a list of commands.
+            warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
+            // It's possible that the user provided commands have some warnings
+            // in them, similar to the keybindings.
         }
-        else
-        {
-            _rowsToScroll = 0;
-        }
-    }
-
-    if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
-    {
-        _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX, _initialY);
-    }
-
-    JsonUtils::GetBool(json, ShowTitleInTitlebarKey, _showTitleInTitlebar);
-
-    JsonUtils::GetBool(json, ShowTabsInTitlebarKey, _showTabsInTitlebar);
-
-    JsonUtils::GetWstring(json, WordDelimitersKey, _wordDelimiters);
-
-    JsonUtils::GetBool(json, CopyOnSelectKey, _copyOnSelect);
-
-    JsonUtils::GetBool(json, CopyFormattingKey, _copyFormatting);
-
-    if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
-    {
-        _launchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
-    }
-
-    if (auto theme{ json[JsonKey(ThemeKey)] })
-    {
-        _theme = _ParseTheme(GetWstringFromJson(theme));
-    }
-
-    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
-    {
-        _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
-    }
-
-    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
-    {
-        auto warnings = _keybindings->LayerJson(keybindings);
-        // It's possible that the user provided keybindings have some warnings
-        // in them - problems that we should alert the user to, but we can
-        // recover from. Most of these warnings cannot be detected later in the
-        // Validate settings phase, so we'll collect them now. If there were any
-        // warnings generated from parsing these keybindings, add them to our
-        // list of warnings.
-        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-    }
-
-    JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
-
-    JsonUtils::GetBool(json, ForceFullRepaintRenderingKey, _forceFullRepaintRendering);
-
-    JsonUtils::GetBool(json, SoftwareRenderingKey, _softwareRendering);
-
-    // GetBool will only override the current value if the key exists
-    JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
-
-    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
-}
-
-// Method Description:
-// - Helper function for converting a user-specified cursor style corresponding
-//   CursorStyle enum value
-// Arguments:
-// - themeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
-{
-    if (themeString == LightThemeValue)
-    {
-        return ElementTheme::Light;
-    }
-    else if (themeString == DarkThemeValue)
-    {
-        return ElementTheme::Dark;
-    }
-    // default behavior for invalid data or SystemThemeValue
-    return ElementTheme::Default;
-}
-
-// Method Description:
-// - Helper function for converting a CursorStyle to its corresponding string
-//   value.
-// Arguments:
-// - theme: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CursorStyle
-std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
-{
-    switch (theme)
-    {
-    case ElementTheme::Light:
-        return LightThemeValue;
-    case ElementTheme::Dark:
-        return DarkThemeValue;
-    default:
-        return SystemThemeValue;
-    }
-}
-
-// Method Description:
-// - Helper function for converting the initial position string into
-//   2 coordinate values. We allow users to only provide one coordinate,
-//   thus, we use comma as the separator:
-//   (100, 100): standard input string
-//   (, 100), (100, ): if a value is missing, we set this value as a default
-//   (,): both x and y are set to default
-//   (abc, 100): if a value is not valid, we treat it as default
-//   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
-// Arguments:
-// - initialPosition: the initial position string from json
-//   initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
-// Return Value:
-// - None
-void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPosition,
-                                              std::optional<int32_t>& initialX,
-                                              std::optional<int32_t>& initialY) noexcept
-{
-    const wchar_t singleCharDelim = L',';
-    std::wstringstream tokenStream(initialPosition);
-    std::wstring token;
-    uint8_t initialPosIndex = 0;
-
-    // Get initial position values till we run out of delimiter separated values in the stream
-    // or we hit max number of allowable values (= 2)
-    // Non-numeral values or empty string will be caught as exception and we do not assign them
-    for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
-    {
-        try
-        {
-            int32_t position = std::stoi(token);
-            if (initialPosIndex == 0)
-            {
-                initialX.emplace(position);
-            }
-
-            if (initialPosIndex == 1)
-            {
-                initialY.emplace(position);
-            }
-        }
-        catch (...)
-        {
-            // Do nothing
-        }
-    }
-}
-
-// Method Description:
-// - Helper function for converting X/Y initial positions to a string
-//   value.
-// Arguments:
-// - initialX: reference to the _initialX member
-//   initialY: reference to the _initialY member
-// Return Value:
-// - The concatenated string for the the current initialX and initialY
-std::string GlobalAppSettings::_SerializeInitialPosition(const std::optional<int32_t>& initialX,
-                                                         const std::optional<int32_t>& initialY) noexcept
-{
-    std::string serializedInitialPos = "";
-    if (initialX.has_value())
-    {
-        serializedInitialPos += std::to_string(initialX.value());
-    }
-
-    serializedInitialPos += ", ";
-
-    if (initialY.has_value())
-    {
-        serializedInitialPos += std::to_string(initialY.value());
-    }
-
-    return serializedInitialPos;
-}
-
-// Method Description:
-// - Helper function for converting the user-specified launch mode
-//   to a LaunchMode enum value
-// Arguments:
-// - launchModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeString) noexcept
-{
-    if (launchModeString == MaximizedLaunchModeValue)
-    {
-        return LaunchMode::MaximizedMode;
-    }
-    else if (launchModeString == FullscreenLaunchModeValue)
-    {
-        return LaunchMode::FullscreenMode;
-    }
-
-    return LaunchMode::DefaultMode;
-}
-
-// Method Description:
-// - Helper function for converting a LaunchMode to its corresponding string
-//   value.
-// Arguments:
-// - launchMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given LaunchMode
-std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launchMode) noexcept
-{
-    switch (launchMode)
-    {
-    case LaunchMode::MaximizedMode:
-        return MaximizedLaunchModeValue;
-    case LaunchMode::FullscreenMode:
-        return FullscreenLaunchModeValue;
-    default:
-        return DefaultLaunchModeValue;
-    }
-}
-
-// Method Description:
-// - Helper function for converting the user-specified tab width
-//   to a TabViewWidthMode enum value
-// Arguments:
-// - tabWidthModeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept
-{
-    if (tabWidthModeString == TitleLengthTabWidthModeValue)
-    {
-        return TabViewWidthMode::SizeToContent;
-    }
-    // default behavior for invalid data or EqualTabWidthValue
-    return TabViewWidthMode::Equal;
-}
-
-// Method Description:
-// - Helper function for converting a TabViewWidthMode to its corresponding string
-//   value.
-// Arguments:
-// - tabWidthMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given TabWidthMode
-std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMode tabWidthMode) noexcept
-{
-    switch (tabWidthMode)
-    {
-    case TabViewWidthMode::SizeToContent:
-        return TitleLengthTabWidthModeValue;
-    default:
-        return EqualTabWidthModeValue;
-    }
+    };
+    parseBindings(LegacyKeybindingsKey);
+    parseBindings(BindingsKey);
 }
 
 // Method Description:
@@ -572,4 +229,9 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
 {
     return _keybindingsWarnings;
+}
+
+const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
 }

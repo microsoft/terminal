@@ -5,8 +5,10 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
+#include "base64.hpp"
 
 #include "ascii.hpp"
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -70,8 +72,14 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
         // LF, FF, and VT are identical in function.
         _dispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
         break;
+    case AsciiChars::SI:
+        _dispatch->LockingShift(0);
+        break;
+    case AsciiChars::SO:
+        _dispatch->LockingShift(1);
+        break;
     default:
-        _dispatch->Execute(wch);
+        _dispatch->Print(wch);
         break;
     }
 
@@ -176,7 +184,7 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                 const std::basic_string_view<wchar_t> intermediates)
+                                                 const gsl::span<const wchar_t> intermediates)
 {
     bool success = false;
 
@@ -221,6 +229,34 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->HardReset();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
             break;
+        case VTActionCodes::SS2_SingleShift:
+            success = _dispatch->SingleShift(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS2);
+            break;
+        case VTActionCodes::SS3_SingleShift:
+            success = _dispatch->SingleShift(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS3);
+            break;
+        case VTActionCodes::LS2_LockingShift:
+            success = _dispatch->LockingShift(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
+            break;
+        case VTActionCodes::LS3_LockingShift:
+            success = _dispatch->LockingShift(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
+            break;
+        case VTActionCodes::LS1R_LockingShift:
+            success = _dispatch->LockingShiftRight(1);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS1R);
+            break;
+        case VTActionCodes::LS2R_LockingShift:
+            success = _dispatch->LockingShiftRight(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2R);
+            break;
+        case VTActionCodes::LS3R_LockingShift:
+            success = _dispatch->LockingShiftRight(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             success = false;
@@ -229,37 +265,13 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     }
     else if (intermediates.size() == 1)
     {
-        const auto value = til::at(intermediates, 0);
-        DesignateCharsetTypes designateType = DefaultDesignateCharsetType;
-        success = _GetDesignateType(value, designateType);
-        if (success)
+        switch (til::at(intermediates, 0))
         {
-            switch (designateType)
-            {
-            case DesignateCharsetTypes::G0:
-                success = _dispatch->DesignateCharset(wch);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
-                break;
-            case DesignateCharsetTypes::G1:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-                break;
-            case DesignateCharsetTypes::G2:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-                break;
-            case DesignateCharsetTypes::G3:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-                break;
-            default:
-                // If no functions to call, overall dispatch was a failure.
-                success = false;
-                break;
-            }
-        }
-        else if (value == L'#')
-        {
+        case L'%':
+            success = _dispatch->DesignateCodingSystem(wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
+            break;
+        case L'#':
             switch (wch)
             {
             case VTActionCodes::DECALN_ScreenAlignmentPattern:
@@ -271,7 +283,15 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                 success = false;
                 break;
             }
+            break;
+        default:
+            success = _IntermediateScsDispatch(wch, intermediates);
+            break;
         }
+    }
+    else if (intermediates.size() == 2)
+    {
+        success = _IntermediateScsDispatch(wch, intermediates);
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
@@ -297,8 +317,8 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
-                                                     const std::basic_string_view<wchar_t> intermediates,
-                                                     const std::basic_string_view<size_t> parameters)
+                                                     const gsl::span<const wchar_t> intermediates,
+                                                     const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
@@ -320,10 +340,10 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
             success = _dispatch->CursorBackward(1);
             break;
         case Vt52ActionCodes::EnterGraphicsMode:
-            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::DEC_LineDrawing);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
             break;
         case Vt52ActionCodes::ExitGraphicsMode:
-            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::USASCII);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
             break;
         case Vt52ActionCodes::CursorToHome:
             success = _dispatch->CursorPosition(1, 1);
@@ -340,7 +360,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
         case Vt52ActionCodes::DirectCursorAddress:
             // VT52 cursor addresses are provided as ASCII characters, with
             // the lowest value being a space, representing an address of 1.
-            success = _dispatch->CursorPosition(parameters.at(0) - ' ' + 1, parameters.at(1) - ' ' + 1);
+            success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
             break;
         case Vt52ActionCodes::Identify:
             success = _dispatch->Vt52DeviceAttributes();
@@ -370,6 +390,57 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
 }
 
 // Routine Description:
+// - Handles SCS charset designation actions that can have one or two possible intermediates.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediates - Intermediate characters in the sequence
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
+                                                        const gsl::span<const wchar_t> intermediates)
+{
+    bool success = false;
+
+    // If we have more than one intermediate, the second intermediate forms part of
+    // the charset identifier. Otherwise it's identified by just the final character.
+    const auto charset = intermediates.size() > 1 ? std::make_pair(til::at(intermediates, 1), wch) : std::make_pair(wch, L'\0');
+
+    switch (til::at(intermediates, 0))
+    {
+    case L'(':
+        success = _dispatch->Designate94Charset(0, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
+        break;
+    case L')':
+        success = _dispatch->Designate94Charset(1, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+        break;
+    case L'*':
+        success = _dispatch->Designate94Charset(2, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+        break;
+    case L'+':
+        success = _dispatch->Designate94Charset(3, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+        break;
+    case L'-':
+        success = _dispatch->Designate96Charset(1, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+        break;
+    case L'.':
+        success = _dispatch->Designate96Charset(2, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+        break;
+    case L'/':
+        success = _dispatch->Designate96Charset(3, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+        break;
+    }
+
+    return success;
+}
+
+// Routine Description:
 // - Triggers the CsiDispatch action to indicate that the listener should handle
 //      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
@@ -380,8 +451,8 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                 const std::basic_string_view<wchar_t> intermediates,
-                                                 std::basic_string_view<size_t> parameters)
+                                                 const gsl::span<const wchar_t> intermediates,
+                                                 gsl::span<const size_t> parameters)
 {
     bool success = false;
     size_t distance = 0;
@@ -393,11 +464,13 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     size_t clearType = 0;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
-    std::vector<DispatchTypes::GraphicsOptions> graphicsOptions;
+    // We hold the vector in the class because client applications that do a lot of color work
+    // would spend a lot of time reallocating/resizing the vector.
+    _graphicsOptions.clear();
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingParams = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
+    const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     if (intermediates.empty())
     {
@@ -432,7 +505,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _GetEraseOperation(parameters, eraseType);
             break;
         case VTActionCodes::SGR_SetGraphicsRendition:
-            success = _GetGraphicsOptions(parameters, graphicsOptions);
+            success = _GetGraphicsOptions(parameters, _graphicsOptions);
             break;
         case VTActionCodes::DSR_DeviceStatusReport:
             success = _GetDeviceStatusOperation(parameters, deviceStatusType);
@@ -543,7 +616,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
                 break;
             case VTActionCodes::SGR_SetGraphicsRendition:
-                success = _dispatch->SetGraphicsRendition({ graphicsOptions.data(), graphicsOptions.size() });
+                success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
                 break;
             case VTActionCodes::DSR_DeviceStatusReport:
@@ -628,6 +701,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case L'?':
             success = _IntermediateQuestionMarkDispatch(wch, parameters);
             break;
+        case L'>':
+        case L'=':
+            success = _IntermediateGreaterThanOrEqualDispatch(wch, value, parameters);
+            break;
         case L'!':
             success = _IntermediateExclamationDispatch(wch);
             break;
@@ -660,7 +737,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                                                 const std::basic_string_view<size_t> parameters)
+                                                                 const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
@@ -701,6 +778,43 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
 }
 
 // Routine Description:
+// - Handles actions that have postfix params on an intermediate '>' or '='.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediate - The intermediate character.
+// - parameters - Set of numeric parameters collected while parsing the sequence.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                                       const wchar_t intermediate,
+                                                                       const gsl::span<const size_t> parameters)
+{
+    bool success = false;
+
+    switch (wch)
+    {
+    case VTActionCodes::DA_DeviceAttributes:
+        if (_VerifyDeviceAttributesParams(parameters))
+        {
+            switch (intermediate)
+            {
+            case L'>':
+                success = _dispatch->SecondaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+                break;
+            case L'=':
+                success = _dispatch->TertiaryDeviceAttributes();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+                break;
+            }
+        }
+        break;
+    }
+
+    return success;
+}
+
+// Routine Description:
 // - Handles actions that have an intermediate '!', such as DECSTR
 // Arguments:
 // - wch - Character to dispatch.
@@ -732,7 +846,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(const wchar_t wc
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchAction,
-                                                          const std::basic_string_view<size_t> parameters)
+                                                          const gsl::span<const size_t> parameters)
 {
     bool success = false;
     DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
@@ -809,6 +923,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 {
     bool success = false;
     std::wstring title;
+    std::wstring setClipboardContent;
+    bool queryClipboard = false;
     size_t tableIndex = 0;
     DWORD color = 0;
 
@@ -826,6 +942,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
         success = _GetOscSetColor(string, color);
+        break;
+    case OscActionCodes::SetClipboard:
+        success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         break;
     case OscActionCodes::ResetCursorColor:
         // the console uses 0xffffffff as an "invalid color" value
@@ -863,6 +982,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
+        case OscActionCodes::SetClipboard:
+            if (!queryClipboard)
+            {
+                success = _dispatch->SetClipboard(setClipboardContent);
+            }
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
+            break;
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
@@ -896,7 +1022,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
-                                                 const std::basic_string_view<size_t> /*parameters*/) noexcept
+                                                 const gsl::span<const size_t> /*parameters*/) noexcept
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
@@ -910,7 +1036,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
 // - options - Space that will be filled with valid options from the GraphicsOptions enum
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetGraphicsOptions(const gsl::span<const size_t> parameters,
                                                    std::vector<DispatchTypes::GraphicsOptions>& options) const
 {
     bool success = false;
@@ -946,7 +1072,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<
 // - eraseType - Receives the erase type parameter
 // Return Value:
 // - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetEraseOperation(const gsl::span<const size_t> parameters,
                                                   DispatchTypes::EraseType& eraseType) const noexcept
 {
     bool success = false; // If we have too many parameters or don't know what to do with the given value, return false.
@@ -985,7 +1111,7 @@ bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<s
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetCursorDistance(const gsl::span<const size_t> parameters,
                                                   size_t& distance) const noexcept
 {
     bool success = false;
@@ -1019,7 +1145,7 @@ bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<s
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetScrollDistance(const gsl::span<const size_t> parameters,
                                                   size_t& distance) const noexcept
 {
     bool success = false;
@@ -1053,7 +1179,7 @@ bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<s
 // - consoleWidth - Receives the width
 // Return Value:
 // - True if we successfully pulled the width from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> parameters,
                                                 size_t& consoleWidth) const noexcept
 {
     bool success = false;
@@ -1088,7 +1214,7 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<siz
 // - column - Receives the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
                                               size_t& line,
                                               size_t& column) const noexcept
 {
@@ -1137,7 +1263,7 @@ bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_
 // - bottomMargin - Receives the bottom margin
 // Return Value:
 // - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTopBottomMargins(const gsl::span<const size_t> parameters,
                                                     size_t& topMargin,
                                                     size_t& bottomMargin) const noexcept
 {
@@ -1182,7 +1308,7 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view
 // - statusType - Receives the Status Type parameter
 // Return Value:
 // - True if we successfully found a device operation in the parameters stored. False otherwise.
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
                                                          DispatchTypes::AnsiStatusType& statusType) const noexcept
 {
     bool success = false;
@@ -1217,7 +1343,7 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
 // - privateModes - Space that will be filled with valid params from the PrivateModeParams enum
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_t> parameters,
                                                      std::vector<DispatchTypes::PrivateModeParams>& privateModes) const
 {
     bool success = false;
@@ -1238,7 +1364,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_vie
 // - parameters - The parameters to parse
 // Return Value:
 // - True if there were no parameters. False otherwise.
-bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const noexcept
+bool OutputStateMachineEngine::_VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept
 {
     return parameters.empty();
 }
@@ -1250,7 +1376,7 @@ bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_vi
 // - parameters - The parameters to parse
 // Return Value:
 // - True if the DA params were valid. False otherwise.
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const noexcept
+bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept
 {
     bool success = false;
 
@@ -1291,7 +1417,7 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
 // - distance - Receives the distance
 // Return Value:
 // - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTabDistance(const gsl::span<const size_t> parameters,
                                                size_t& distance) const noexcept
 {
     bool success = false;
@@ -1325,7 +1451,7 @@ bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size
 // - clearType - Receives the clear type
 // Return Value:
 // - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> parameters,
                                                 size_t& clearType) const noexcept
 {
     bool success = false;
@@ -1345,43 +1471,16 @@ bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<siz
     return success;
 }
 
-// Routine Description:
-// - Retrieves a designate charset type from the intermediate we've stored. False otherwise.
-// Arguments:
-// - intermediate - Intermediate character in the sequence
-// - designateType - Receives the designate type.
+// Method Description:
+// - Returns true if the engine should attempt to parse a control sequence
+//      following an SS3 escape prefix.
+//   If this is false, an SS3 escape sequence should be dispatched as soon
+//      as it is encountered.
 // Return Value:
-// - True if we successfully pulled the designate type from the intermediate we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
-                                                 DesignateCharsetTypes& designateType) const noexcept
+// - True iff we should parse a control sequence following an SS3.
+bool OutputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
 {
-    bool success = false;
-    designateType = DefaultDesignateCharsetType;
-
-    switch (intermediate)
-    {
-    case '(':
-        designateType = DesignateCharsetTypes::G0;
-        success = true;
-        break;
-    case ')':
-    case '-':
-        designateType = DesignateCharsetTypes::G1;
-        success = true;
-        break;
-    case '*':
-    case '.':
-        designateType = DesignateCharsetTypes::G2;
-        success = true;
-        break;
-    case '+':
-    case '/':
-        designateType = DesignateCharsetTypes::G3;
-        success = true;
-        break;
-    }
-
-    return success;
+    return false;
 }
 
 // Routine Description:
@@ -1529,7 +1628,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            auto& value = colorValues.at(component);
+            auto& value = til::at(colorValues, component);
             for (size_t i = 0; i < 3; i++)
             {
                 const wchar_t wch = *curr++;
@@ -1704,7 +1803,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                                           unsigned int& function) const noexcept
 {
     bool success = false;
@@ -1738,7 +1837,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_strin
 // - cursorStyle - Receives the cursorStyle
 // Return Value:
 // - True if we successfully pulled the cursor style from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorStyle(const std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetCursorStyle(const gsl::span<const size_t> parameters,
                                                DispatchTypes::CursorStyle& cursorStyle) const noexcept
 {
     bool success = false;
@@ -1787,7 +1886,7 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
 // Return Value:
 // - True if we successfully pulled the repeat count from the parameters.
 //   False otherwise.
-bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> parameters,
+bool OutputStateMachineEngine::_GetRepeatCount(gsl::span<const size_t> parameters,
                                                size_t& repeatCount) const noexcept
 {
     bool success = false;
@@ -1812,6 +1911,37 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
     }
 
     return success;
+}
+
+// Routine Description:
+// - Parse OscSetClipboard parameters with the format `Pc;Pd`. Currently the first parameter `Pc` is
+// ignored. The second parameter `Pd` should be a valid base64 string or character `?`.
+// Arguments:
+// - string - Osc String input.
+// - content - Content to set to clipboard.
+// - queryClipboard - Whether to get clipboard content and return it to terminal with base64 encoded.
+// Return Value:
+// - True if there was a valid base64 string or the passed parameter was `?`.
+bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view string,
+                                                   std::wstring& content,
+                                                   bool& queryClipboard) const noexcept
+{
+    const size_t pos = string.find(';');
+    if (pos != std::wstring_view::npos)
+    {
+        const std::wstring_view substr = string.substr(pos + 1);
+        if (substr == L"?")
+        {
+            queryClipboard = true;
+            return true;
+        }
+        else
+        {
+            return Base64::s_Decode(substr, content);
+        }
+    }
+
+    return false;
 }
 
 // Method Description:

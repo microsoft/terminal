@@ -85,7 +85,11 @@ try
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-CATCH_LOG()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return 0;
+}
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
@@ -557,11 +561,11 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
 try
 {
     const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags);
+    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 CATCH_LOG();
 
@@ -590,10 +594,10 @@ try
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
 }
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
@@ -728,7 +732,7 @@ try
         {
             const auto& fontData = _actualFont;
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
-            const COLORREF bgColor = _terminal->GetBackgroundColor(_terminal->GetDefaultBrushColors());
+            const COLORREF bgColor = _terminal->GetAttributeColors(_terminal->GetDefaultBrushColors()).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");

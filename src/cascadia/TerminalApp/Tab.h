@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
+        bool PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);
@@ -51,7 +52,14 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
         void ClosePane();
 
+        void SetTabText(winrt::hstring title);
+        void ResetTabText();
+
         std::optional<winrt::Windows::UI::Color> GetTabColor();
+
+        void SetTabColor(const winrt::Windows::UI::Color& color);
+        void ResetTabColor();
+        void ActivateColorPicker();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -80,8 +88,6 @@ namespace winrt::TerminalApp::implementation
         void _Focus();
 
         void _CreateContextMenu();
-        void _SetTabColor(const winrt::Windows::UI::Color& color);
-        void _ResetTabColor();
         void _RefreshVisualState();
 
         void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;

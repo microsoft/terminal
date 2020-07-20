@@ -20,14 +20,12 @@ using namespace Microsoft::Console::Render;
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
 // - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
-                                   std::basic_string_view<Cluster> const clusters,
                                    size_t const width,
                                    IBoxDrawingEffect* const boxEffect) :
     _factory{ factory.get() },
@@ -47,8 +45,43 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+}
 
-    _textClusterColumns.reserve(clusters.size());
+//Routine Description:
+// - Resets this custom text layout to the freshly allocated state in terms of text analysis.
+// Arguments:
+// - <none>, modifies internal state
+// Return Value:
+// - S_OK or suitable memory management issue
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Reset() noexcept
+try
+{
+    _runs.clear();
+    _breakpoints.clear();
+    _runIndex = 0;
+    _isEntireTextSimple = false;
+    _textClusterColumns.clear();
+    _text.clear();
+    _glyphScaleCorrections.clear();
+    _glyphClusters.clear();
+    _glyphIndices.clear();
+    _glyphDesignUnitAdvances.clear();
+    _glyphAdvances.clear();
+    _glyphOffsets.clear();
+    return S_OK;
+}
+CATCH_RETURN()
+
+// Routine Description:
+// - Appends text to this layout for analysis/processing.
+// Arguments:
+// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
+// Return Value:
+// - S_OK or suitable memory management issue.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters)
+try
+{
+    _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());
 
     for (const auto& cluster : clusters)
     {
@@ -64,7 +97,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         _text += text;
     }
+
+    return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Figures out how many columns this layout should take. This will use the analyze step only.
@@ -182,8 +218,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // This result will be subdivided by the analysis processes.
         _runs.resize(1);
         auto& initialRun = _runs.front();
-        initialRun.nextRunIndex = 0;
-        initialRun.textStart = 0;
         initialRun.textLength = textLength;
         initialRun.bidiLevel = (_readingDirection == DWRITE_READING_DIRECTION_RIGHT_TO_LEFT);
 
@@ -323,7 +357,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // With simple text, there's only one run. The actual glyph count is the same as textLength.
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
-            _glyphOffsets.resize(textLength);
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
@@ -337,6 +370,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
             }
+
+            // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
+            // Fill the clusters sequentially from 0 to N-1.
+            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
@@ -560,6 +597,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             //  1     1    .8 1  1
         }
 
+        // Dump the glyph scale corrections now that we're done with them.
+        _glyphScaleCorrections.clear();
+
+        // Order the runs.
         _OrderRuns();
     }
     CATCH_RETURN();
@@ -1827,21 +1868,13 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 // - <none>
 void CustomTextLayout::_OrderRuns()
 {
-    const size_t totalRuns = _runs.size();
-    std::vector<LinkedRun> runs;
-    runs.resize(totalRuns);
-
-    UINT32 nextRunIndex = 0;
-    for (UINT32 i = 0; i < totalRuns; ++i)
+    std::sort(_runs.begin(), _runs.end(), [](auto& a, auto& b) { return a.textStart < b.textStart; });
+    for (UINT32 i = 0; i < _runs.size() - 1; ++i)
     {
-        runs.at(i) = _runs.at(nextRunIndex);
-        runs.at(i).nextRunIndex = i + 1;
-        nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
+        til::at(_runs, i).nextRunIndex = i + 1;
     }
 
-    runs.back().nextRunIndex = 0;
-
-    _runs.swap(runs);
+    _runs.back().nextRunIndex = 0;
 }
 
 #pragma endregion

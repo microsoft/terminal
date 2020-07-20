@@ -47,7 +47,6 @@ stages:
   - stage: Build_x86
     displayName: Build x86
     dependsOn: []
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     jobs:
       - template: ./templates/build-console-ci.yml
         parameters:

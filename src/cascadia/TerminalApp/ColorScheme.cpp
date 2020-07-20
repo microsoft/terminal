@@ -105,9 +105,9 @@ ColorScheme ColorScheme::FromJson(const Json::Value& json)
 // - true iff the json object has the same `name` as we do.
 bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 {
-    if (const auto name{ json[JsonKey(NameKey)] })
+    std::wstring nameFromJson{};
+    if (JsonUtils::GetValueForKey(json, NameKey, nameFromJson))
     {
-        const auto nameFromJson = GetWstringFromJson(name);
         return nameFromJson == _schemeName;
     }
     return false;
@@ -125,39 +125,16 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void ColorScheme::LayerJson(const Json::Value& json)
 {
-    if (auto name{ json[JsonKey(NameKey)] })
-    {
-        _schemeName = winrt::to_hstring(name.asString());
-    }
-    if (auto fgString{ json[JsonKey(ForegroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(fgString.asString());
-        _defaultForeground = color;
-    }
-    if (auto bgString{ json[JsonKey(BackgroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(bgString.asString());
-        _defaultBackground = color;
-    }
-    if (auto sbString{ json[JsonKey(SelectionBackgroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(sbString.asString());
-        _selectionBackground = color;
-    }
-    if (auto sbString{ json[JsonKey(CursorColorKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(sbString.asString());
-        _cursorColor = color;
-    }
+    JsonUtils::GetValueForKey(json, NameKey, _schemeName);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _selectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _cursorColor);
 
     int i = 0;
     for (const auto& current : TableColors)
     {
-        if (auto str{ json[JsonKey(current)] })
-        {
-            const auto color = Utils::ColorFromHexString(str.asString());
-            _table.at(i) = color;
-        }
+        JsonUtils::GetValueForKey(json, current, _table.at(i));
         i++;
     }
 }
@@ -200,11 +177,7 @@ til::color ColorScheme::GetCursorColor() const noexcept
 // - the name of the color scheme represented by `json` as a std::wstring optional
 //   i.e. the value of the `name` property.
 // - returns std::nullopt if `json` doesn't have the `name` property
-std::optional<std::wstring> TerminalApp::ColorScheme::GetNameFromJson(const Json::Value& json)
+std::optional<std::wstring> ColorScheme::GetNameFromJson(const Json::Value& json)
 {
-    if (const auto name{ json[JsonKey(NameKey)] })
-    {
-        return GetWstringFromJson(name);
-    }
-    return std::nullopt;
+    return JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, NameKey);
 }

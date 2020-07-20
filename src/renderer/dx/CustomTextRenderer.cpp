@@ -5,6 +5,8 @@
 
 #include "CustomTextRenderer.h"
 
+#include "../../inc/DefaultSettings.h"
+
 #include <wrl.h>
 #include <wrl/client.h>
 #include <VersionHelpers.h>
@@ -220,6 +222,151 @@ using namespace Microsoft::Console::Render;
                               clientDrawingEffect);
 }
 
+// Function Description:
+// - Attempt to draw the cursor. If the cursor isn't visible or on, this
+//   function will do nothing. If the cursor isn't within the bounds of the
+//   current run of text, then this function will do nothing.
+// - This function will get called twice during a run, once before the text is
+//   drawn (underneath the text), and again after the text is drawn (above the
+//   text). Depending on if the cursor wants to be drawn above or below the
+//   text, this function will do nothing for the first/second pass
+//   (respectively).
+// Arguments:
+// - d2dContext - Pointer to the current D2D drawing context
+// - textRunBounds - The bounds of the current run of text.
+// - drawingContext - Pointer to structure of information required to draw
+// - firstPass - true if we're being called before the text is drawn, false afterwards.
+// Return Value:
+// - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
+[[nodiscard]] HRESULT _drawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                  D2D1_RECT_F textRunBounds,
+                                  const DrawingContext& drawingContext,
+                                  const bool firstPass)
+try
+{
+    if (!drawingContext.cursorInfo.has_value())
+    {
+        return S_FALSE;
+    }
+
+    const auto& options = drawingContext.cursorInfo.value();
+
+    // if the cursor is off, do nothing - it should not be visible.
+    if (!options.isOn)
+    {
+        return S_FALSE;
+    }
+
+    // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
+    // cursor draw on top again.
+
+    // Only draw the filled box in the first pass. All the other cursors should
+    // be drawn in the second pass.
+    //           | type==FullBox |
+    // firstPass |   T   |   F   |
+    //    T      | draw  |  skip |
+    //    F      | skip  |  draw |
+    if ((options.cursorType == CursorType::FullBox) != firstPass)
+    {
+        return S_FALSE;
+    }
+
+    const til::size glyphSize{ til::math::flooring,
+                               drawingContext.cellSize.width,
+                               drawingContext.cellSize.height };
+
+    // Create rectangular block representing where the cursor can fill.
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(glyphSize);
+
+    // If we're double-width, make it one extra glyph wider
+    if (options.fIsDoubleWidth)
+    {
+        rect.right += glyphSize.width();
+    }
+
+    // If the cursor isn't within the bounds of this current run of text, do nothing.
+    if (rect.top > textRunBounds.bottom ||
+        rect.bottom <= textRunBounds.top ||
+        rect.left > textRunBounds.right ||
+        rect.right <= textRunBounds.left)
+    {
+        return S_FALSE;
+    }
+
+    CursorPaintType paintType = CursorPaintType::Fill;
+
+    switch (options.cursorType)
+    {
+    case CursorType::Legacy:
+    {
+        // Enforce min/max cursor height
+        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
+        ulHeight = (glyphSize.height<ULONG>() * ulHeight) / 100;
+        rect.top = rect.bottom - ulHeight;
+        break;
+    }
+    case CursorType::VerticalBar:
+    {
+        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
+        // It's either the left + the proposed width from the ease of access setting, or
+        // it's the right edge of the block cursor as a maximum.
+        rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
+        break;
+    }
+    case CursorType::Underscore:
+    {
+        rect.top = rect.bottom - 1;
+        break;
+    }
+    case CursorType::EmptyBox:
+    {
+        paintType = CursorPaintType::Outline;
+        break;
+    }
+    case CursorType::FullBox:
+    {
+        break;
+    }
+    default:
+        return E_NOTIMPL;
+    }
+
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
+
+    if (options.fUseColor)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
+
+    switch (paintType)
+    {
+    case CursorPaintType::Fill:
+    {
+        d2dContext->FillRectangle(rect, brush.Get());
+        break;
+    }
+    case CursorPaintType::Outline:
+    {
+        // DrawRectangle in straddles physical pixels in an attempt to draw a line
+        // between them. To avoid this, bump the rectangle around by half the stroke width.
+        rect.top += 0.5f;
+        rect.left += 0.5f;
+        rect.bottom -= 0.5f;
+        rect.right -= 0.5f;
+
+        d2dContext->DrawRectangle(rect, brush.Get());
+        break;
+    }
+    default:
+        return E_NOTIMPL;
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
+
 // Routine Description:
 // - Implementation of IDWriteTextRenderer::DrawInlineObject
 // - Passes drawing control from the outer layout down into the context of an embedded object
@@ -262,10 +409,44 @@ using namespace Microsoft::Console::Render;
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
+    // Determine clip rectangle
+    D2D1_RECT_F clipRect;
+    clipRect.top = origin.y;
+    clipRect.bottom = clipRect.top + drawingContext->cellSize.height;
+    clipRect.left = 0;
+    clipRect.right = drawingContext->targetSize.width;
+
+    // If we already have a clip rectangle, check if it different than the previous one.
+    if (_clipRect.has_value())
+    {
+        const auto storedVal = _clipRect.value();
+        // If it is different, pop off the old one and push the new one on.
+        if (storedVal.top != clipRect.top || storedVal.bottom != clipRect.bottom ||
+            storedVal.left != clipRect.left || storedVal.right != clipRect.right)
+        {
+            d2dContext->PopAxisAlignedClip();
+
+            // Clip all drawing in this glyph run to where we expect.
+            // We need the AntialiasMode here to be Aliased to ensure
+            //  that background boxes line up with each other and don't leave behind
+            //  stray colors.
+            // See GH#3626 for more details.
+            d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _clipRect = clipRect;
+        }
+    }
+    // If we have no clip rectangle, it's easy. Push it on and go.
+    else
+    {
+        // See above for aliased flag explanation.
+        d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _clipRect = clipRect;
+    }
+
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
     const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
-    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+    const auto totalSpan = std::accumulate(advancesSpan.begin(), advancesSpan.end(), 0.0f);
 
     D2D1_RECT_F rect;
     rect.top = origin.y;
@@ -278,19 +459,9 @@ using namespace Microsoft::Console::Render;
     }
     rect.right = rect.left + totalSpan;
 
-    // Clip all drawing in this glyph run to where we expect.
-    // We need the AntialiasMode here to be Aliased to ensure
-    //  that background boxes line up with each other and don't leave behind
-    //  stray colors.
-    // See GH#3626 for more details.
-    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-
-    // Ensure we pop it on the way out
-    auto popclip = wil::scope_exit([&d2dContext]() noexcept {
-        d2dContext->PopAxisAlignedClip();
-    });
-
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+
+    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, true));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
@@ -479,9 +650,28 @@ using namespace Microsoft::Console::Render;
                                             drawingContext->foregroundBrush,
                                             clientDrawingEffect));
     }
+
+    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, false));
+
     return S_OK;
 }
 #pragma endregion
+
+[[nodiscard]] HRESULT CustomTextRenderer::EndClip(void* clientDrawingContext) noexcept
+try
+{
+    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF(E_INVALIDARG, !drawingContext);
+
+    if (_clipRect.has_value())
+    {
+        drawingContext->renderTarget->PopAxisAlignedClip();
+        _clipRect = std::nullopt;
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                              D2D1_POINT_2F baselineOrigin,

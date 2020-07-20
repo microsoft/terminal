@@ -39,11 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t GetColorTableEntry(int32_t index) const noexcept;
         void SetColorTableEntry(int32_t index, uint32_t value);
 
-        // the RowsToScroll getter needs to be implemented manually, so it can
-        // default to SPI_GETWHEELSCROLLLINES
-        int32_t RowsToScroll() noexcept;
-        void RowsToScroll(int32_t value) noexcept;
-
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
@@ -52,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         GETSET_PROPERTY(int32_t, InitialCols, 80);
 
         GETSET_PROPERTY(bool, SnapOnInput, true);
+        GETSET_PROPERTY(bool, AltGrAliasing, true);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
         GETSET_PROPERTY(CursorStyle, CursorShape, CursorStyle::Vintage);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
@@ -92,17 +88,17 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         GETSET_PROPERTY(ScrollbarState, ScrollState, ScrollbarState::Visible);
 
+        GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode, TextAntialiasingMode::Grayscale);
+
         GETSET_PROPERTY(bool, RetroTerminalEffect, false);
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
-
-        GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode, TextAntialiasingMode::Grayscale);
+        GETSET_PROPERTY(bool, ForceVTInput, false);
 
 #pragma warning(pop)
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
-        int32_t _rowsToScroll{ 0 };
     };
 }
 

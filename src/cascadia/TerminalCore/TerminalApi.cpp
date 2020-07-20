@@ -26,83 +26,14 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool Terminal::SetTextToDefaults(bool foreground, bool background) noexcept
+TextAttribute Terminal::GetTextAttributes() const noexcept
 {
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    if (foreground)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (background)
-    {
-        attrs.SetDefaultBackground();
-    }
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
+    return _buffer->GetCurrentAttributes();
 }
 
-bool Terminal::SetTextForegroundIndex(BYTE colorIndex) noexcept
+void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedForeground(colorIndex);
     _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextBackgroundIndex(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedBackground(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextForegroundIndex256(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedForeground256(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextBackgroundIndex256(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedBackground256(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextRgbColor(COLORREF color, bool foreground) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetColor(color, foreground);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::BoldText(bool boldOn) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetBold(boldOn);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::UnderlineText(bool underlineOn) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetUnderline(underlineOn);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::ReverseText(bool reversed) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetReverseVideo(reversed);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
 }
 
 bool Terminal::SetCursorPosition(short x, short y) noexcept
@@ -409,10 +340,11 @@ CATCH_LOG_RETURN_FALSE()
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
 {
-    _title = _suppressApplicationTitle ? _startingTitle : title;
-
-    _pfnTitleChanged(_title);
-
+    if (!_suppressApplicationTitle)
+    {
+        _title.emplace(title);
+        _pfnTitleChanged(_title.value());
+    }
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
@@ -521,6 +453,12 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
+{
+    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    return true;
+}
+
 bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
 {
     _terminalInput->ChangeCursorKeysMode(applicationMode);
@@ -532,6 +470,17 @@ bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
     _terminalInput->ChangeKeypadMode(applicationMode);
     return true;
 }
+
+bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+try
+{
+    _screenReversed = reverseMode;
+
+    // Repaint everything - the colors will have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
 
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
@@ -594,3 +543,12 @@ bool Terminal::EnableCursorBlinking(const bool enable) noexcept
     _buffer->GetCursor().SetIsOn(true);
     return true;
 }
+
+bool Terminal::CopyToClipboard(std::wstring_view content) noexcept
+try
+{
+    _pfnCopyToClipboard(content);
+
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()

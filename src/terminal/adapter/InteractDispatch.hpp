@@ -26,10 +26,10 @@ namespace Microsoft::Console::VirtualTerminal
         InteractDispatch(std::unique_ptr<ConGetSet> pConApi);
 
         bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-        bool WriteCtrlC() override;
+        bool WriteCtrlKey(const KeyEvent& event) override;
         bool WriteString(const std::wstring_view string) override;
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+                                const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
         bool MoveCursor(const size_t row, const size_t col) override;
 
         bool IsVtInputEnabled() const override;

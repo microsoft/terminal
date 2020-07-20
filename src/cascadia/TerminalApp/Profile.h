@@ -15,6 +15,7 @@ Author(s):
 --*/
 #pragma once
 #include "ColorScheme.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -35,14 +36,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 namespace TerminalApp
 {
     class Profile;
-
-    enum class CloseOnExitMode
-    {
-        Never = 0,
-        Graceful,
-        Always
-    };
-};
+}
 
 class TerminalApp::Profile final
 {
@@ -71,7 +65,7 @@ public:
     void SetGuid(GUID guid) noexcept { _guid = guid; }
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
-    std::optional<std::wstring>& GetSchemeName() noexcept;
+    const std::optional<std::wstring>& GetSchemeName() const noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;
     void SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
@@ -107,28 +101,7 @@ public:
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-    static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
-    static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
-    static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
-    static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
-    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
-    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
-
-    static winrt::Windows::UI::Text::FontWeight _ParseFontWeight(const Json::Value& json);
-
-    static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
-    static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
-
-    static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
-    static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
-    static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
-
-    static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
-    static std::wstring_view SerializeTextAntialiasingMode(const winrt::Microsoft::Terminal::Settings::TextAntialiasingMode antialiasingMode);
-
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
-
-    static bool _ConvertJsonToBool(const Json::Value& json);
 
     std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
@@ -147,6 +120,7 @@ private:
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
+    bool _altGrAliasing;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 
@@ -163,7 +137,7 @@ private:
     std::optional<winrt::Windows::UI::Xaml::Media::Stretch> _backgroundImageStretchMode;
     std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
-    std::optional<std::wstring> _scrollbarState;
+    std::optional<::winrt::Microsoft::Terminal::Settings::ScrollbarState> _scrollbarState;
     CloseOnExitMode _closeOnExitMode;
     std::wstring _padding;
 

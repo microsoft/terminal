@@ -59,7 +59,7 @@ public:
 
     GlobalAppSettings& GlobalSettings();
 
-    std::basic_string_view<Profile> GetProfiles() const noexcept;
+    gsl::span<const Profile> GetProfiles() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
@@ -70,6 +70,7 @@ public:
     static std::filesystem::path GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
+    const ColorScheme* GetColorSchemeForProfile(const GUID profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
