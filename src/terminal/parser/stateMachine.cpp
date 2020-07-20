@@ -1445,7 +1445,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 //   3. Store parameter data
 //   4. Collect Intermediate characters
 //   5. Pass through characters
-//   6. If we see a ESC, enter the DscTermination state.
+//   6. If we see a ESC, enter the DcsTermination state.
 //  DCS sequences are structurally almost the same as CSI sequences, just with a
 //      extra data string. It's safe to reuse CSI functions for
 //      determining if a character is a parameter, delimiter, or invalid.
@@ -1498,7 +1498,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 //   Events in this state will:
 //   1. Enter ground on a String terminator
 //   2. Ignore Delete characters
-//   3. If we see a ESC, enter the DscTermination state.
+//   3. If we see a ESC, enter the DcsTermination state.
 //   4. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1535,8 +1535,8 @@ void StateMachine::_EventDcsIgnore(const wchar_t wch)
 //   Events in this state will:
 //   1. Enter ground on a String terminator
 //   2. Collect intermediate data.
-//   3. Enter DscPassThrough if we see valid DSC characters
-//   4. If we see a ESC, enter the DscTermination state.
+//   3. Enter DcsPassThrough if we see valid DCS characters
+//   4. If we see a ESC, enter the DcsTermination state.
 //   5. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1573,9 +1573,9 @@ void StateMachine::_EventDcsIntermediate(const wchar_t wch)
 //   Events in this state will:
 //   1. Enter ground on a String terminator
 //   2. Collect DCS parameter data
-//   3. Enter DscIntermediate if we see an intermediate
-//   4. Enter DscPassThrough if we see valid DSC characters
-//   5. If we see a ESC, enter the DscTermination state.
+//   3. Enter DcsIntermediate if we see an intermediate
+//   4. Enter DcsPassThrough if we see valid DCS characters
+//   5. If we see a ESC, enter the DcsTermination state.
 //   6. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1617,7 +1617,7 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 //   Events in this state will:
 //   1. Enter ground on a String terminator
 //   2. Pass through if character is valid.
-//   3. If we see a ESC, enter the DscTermination state.
+//   3. If we see a ESC, enter the DcsTermination state.
 //   4. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1647,8 +1647,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 // Routine Description:
 // - Handle the two-character termination of a DCS sequence.
 //   Events in this state will:
-//   1. Enter ground on a '\'.
-//   2. Go back to DcsPassThrough on everything else. 
+//   1. Enter ground.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1661,10 +1660,9 @@ void StateMachine::_EventDcsTermination(const wchar_t wch)
     {
         _EnterGround();
     }
-    else
-    {
-        _EnterDcsPassThrough();
-    }
+
+    // TODO: nested-escape-sequence ST handling
+    _EnterGround();
 }
 
 // Routine Description:

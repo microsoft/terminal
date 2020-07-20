@@ -56,7 +56,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
     TEST_METHOD(TestEscapePath)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11}") // one value for each type of state test below.
+            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}") // one value for each type of state test below.
         END_TEST_METHOD_PROPERTIES()
 
         size_t uiTest;
@@ -66,6 +66,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         StateMachine mach(std::move(engine));
 
         // The OscString state shouldn't escape out after an ESC.
+        // Same for several DCS states.
         bool shouldEscapeOut = true;
 
         switch (uiTest)
@@ -141,6 +142,46 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         {
             Log::Comment(L"Escape from Ss3Param");
             mach._state = StateMachine::VTStates::Ss3Param;
+            break;
+        }
+        case 12:
+        {
+            Log::Comment(L"Escape from DcsEntry");
+            mach._state = StateMachine::VTStates::DcsEntry;
+            break;
+        }
+        case 13:
+        {
+            Log::Comment(L"Escape from DcsIgnore");
+            shouldEscapeOut = false;
+            mach._state = StateMachine::VTStates::DcsIgnore;
+            break;
+        }
+        case 14:
+        {
+            Log::Comment(L"Escape from DcsIntermediate");
+            shouldEscapeOut = false;
+            mach._state = StateMachine::VTStates::DcsIntermediate;
+            break;
+        }
+        case 15:
+        {
+            Log::Comment(L"Escape from DcsParam");
+            shouldEscapeOut = false;
+            mach._state = StateMachine::VTStates::DcsParam;
+            break;
+        }
+        case 16:
+        {
+            Log::Comment(L"Escape from DcsPassThrough");
+            shouldEscapeOut = false;
+            mach._state = StateMachine::VTStates::DcsPassThrough;
+            break;
+        }
+        case 17:
+        {
+            Log::Comment(L"Escape from DcsPassThrough");
+            mach._state = StateMachine::VTStates::DcsTermination;
             break;
         }
         }
@@ -284,6 +325,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        VERIFY_ARE_EQUAL(mach._parameters.size(), 4);
+        VERIFY_ARE_EQUAL(mach._parameters.at(0), 0u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
     }
 
     TEST_METHOD(TestLeadingZeroCsiParam)
@@ -650,7 +697,32 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::ST);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-        VERIFY_ARE_EQUAL(mach._parameters.back(), 8u);
+        VERIFY_ARE_EQUAL(mach._parameters.size(), 4);
+        VERIFY_ARE_EQUAL(mach._parameters.at(0), 0u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+    }
+
+    TEST_METHOD(TestDcsPassThrough)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'P');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
+        mach.ProcessCharacter(L' ');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
+        mach.ProcessCharacter(L'x');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 };
 
