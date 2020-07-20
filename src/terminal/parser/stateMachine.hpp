@@ -101,11 +101,11 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventSs3Param(const wchar_t wch);
         void _EventVt52Param(const wchar_t wch);
         void _EventDcsEntry(const wchar_t wch);
-        void _EventDcsIgnore(const wchar_t wch);
+        void _EventDcsIgnore(const wchar_t wch) noexcept;
         void _EventDcsIntermediate(const wchar_t wch);
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
-        void _EventDcsTermination(const wchar_t wch);
+        void _EventDcsTermination(const wchar_t wch) noexcept;
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 

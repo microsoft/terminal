@@ -1504,7 +1504,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsIgnore(const wchar_t wch)
+void StateMachine::_EventDcsIgnore(const wchar_t wch) noexcept
 {
     _trace.TraceOnEvent(L"DcsIgnore");
     if (_isStringTerminator(wch))
@@ -1651,7 +1651,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsTermination(const wchar_t wch)
+void StateMachine::_EventDcsTermination(const wchar_t wch) noexcept
 {
     _trace.TraceOnEvent(L"DcsTermination");
 
