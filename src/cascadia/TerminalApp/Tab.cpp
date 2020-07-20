@@ -594,8 +594,27 @@ namespace winrt::TerminalApp::implementation
 
         if (!_inRename)
         {
-            // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
-            _tabViewItem.Header(winrt::box_value(tabText));
+            if (_zoomedPane)
+            {
+                Controls::StackPanel sp;
+                sp.Orientation(Controls::Orientation::Horizontal);
+                Controls::FontIcon ico;
+                ico.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                ico.Glyph(L"\xE8A3");
+                ico.FontSize(12);
+                ico.Margin(ThicknessHelper::FromLengths(0, 0, 8, 0));
+                sp.Children().Append(ico);
+                Controls::TextBlock tb;
+                tb.Text(tabText);
+                sp.Children().Append(tb);
+
+                _tabViewItem.Header(sp);
+            }
+            else
+            {
+                // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
+                _tabViewItem.Header(winrt::box_value(tabText));
+            }
         }
         else
         {
@@ -897,25 +916,19 @@ namespace winrt::TerminalApp::implementation
         {
             EnterZoom();
         }
-        // if (_focused)
-        // {
-        //     auto lastFocusedControl = GetActiveTerminalControl();
-        //     if (lastFocusedControl)
-        //     {
-        //         lastFocusedControl.Focus(FocusState::Programmatic);
-        //     }
-        // }
     }
 
     void Tab::EnterZoom()
     {
         _zoomedPane = _activePane;
         _rootPane->Zoom(_zoomedPane);
+        _UpdateTabHeader();
     }
     void Tab::ExitZoom()
     {
         _rootPane->UnZoom(_zoomedPane);
         _zoomedPane = nullptr;
+        _UpdateTabHeader();
     }
 
     bool Tab::IsZoomed()
