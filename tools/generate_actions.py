@@ -41,56 +41,8 @@ def do_load_backend():
 
 actions_and_properties = {}
 
-
-def main():
-    print(TERMINAL_ROOT)
-    print(SCHEMA_ROOT)
-
-    rd = do_load_backend()
-    if not rd.success:
-        print('Failed to load schema file')
-        print(rd.data)
-        exit(-1)
-
-    json_dict = rd.data
-    definitions = json_dict["definitions"]
-    # for d in definitions.keys():
-    #     print(f'\t{d}')
-
-    all_actions = definitions["ShortcutActionName"]["enum"]
-    all_actions = [action for action in all_actions if action != 'unbound']
-    for action in all_actions:
-        actions_and_properties[action] = None
-
-    # get all the ActionArgs
-    actions_args = definitions['Keybinding']['properties']['command']['oneOf']
-
-    # get only the ones that have definitions - `null` won't pass this
-    actions_args = [aa['$ref'] for aa in actions_args if '$ref' in aa]
-
-    # get only the action name
-    actions_args = [aa.split('/')[-1] for aa in actions_args]
-
-    # remove ShortcutActionName, since we don't need that one
-    actions_args = [aa for aa in actions_args if aa != 'ShortcutActionName']
-
-    actions_arg_defs = [k for k in definitions.keys() if k in actions_args]
-    for action_name in actions_arg_defs:
-        action_definition = definitions[action_name]
-        action_props = action_definition['allOf'][-1]['properties']
-        action_string = action_props['action']['pattern']
-        actions_and_properties[action_string] = action_props
-
-
-    for action_string in actions_and_properties.keys():
-        props = actions_and_properties[action_string]
-        print(f'{action_string}->{props}')
-
-
-
-
+################################################################################
 # 4 things to fill in
-
 KEY_STRING_TMPL = 'static constexpr std::string_view {}Key{{ "{}" }};\n'
 KEY_NAMES_MAP_TMPL = '        {{ {}Key, ShortcutAction::{} }},\n'
 FROM_JSON_TMPL = '        {{ ShortcutAction::{}, winrt::TerminalApp::implementation::{}Args::FromJson }},\n'
@@ -276,6 +228,108 @@ namespace winrt::TerminalApp::implementation
 }
 """
 
+################################################################################
+
+KEY_STRING_TMPL = 'static constexpr std::string_view {}Key{{ "{}" }};\n'
+KEY_NAMES_MAP_TMPL = '        {{ {}Key, ShortcutAction::{} }},\n'
+FROM_JSON_TMPL = '        {{ ShortcutAction::{}, winrt::TerminalApp::implementation::{}Args::FromJson }},\n'
+GENERATE_NAME_TMPL = '                {{ ShortcutAction::{}, RS_(L"{}CommandKey") }},\n'
+
+ActionArgs_h = """
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+%s
+
+#include "../../cascadia/inc/cppwinrt_utils.h"
+#include "Utils.h"
+#include "JsonUtils.h"
+#include "TerminalWarnings.h"
+
+#include "TerminalSettingsSerializationHelpers.h"
+
+namespace winrt::TerminalApp::implementation
+{
+%s
+}
+"""
+
+ActionArgs_tmpl_1 = '        static constexpr std::string_view {0}Key{{ "{1}" }};'
+ActionArgs_tmpl_2 = 'otherAsUs->_{0} == _{0}'
+ActionArgs_tmpl_3 = '            JsonUtils::GetValueForKey(json, {0}Key, args->_{0});'
+ActionArgs_tmpl = """
+    struct {0}Args : public {0}ArgsT<{0}Args>
+    {{
+        {0}Args() = default;
+        GETSET_PROPERTY(bool, SingleLine, false);
+
+{1}
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {{
+            auto otherAsUs = other.try_as<{0}Args>();
+            if (otherAsUs)
+            {{
+                return {2};
+            }}
+            return false;
+        }};
+        static FromJsonResult FromJson(const Json::Value& json)
+        {{
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<{0}Args>();
+{3}
+            return {{ *args, {{}} }};
+        }}
+    }};
+
+"""
+
+def get_name_string(action_string):
+    props = actions_and_properties[action_string]
+    name = None
+    if props and 'name' in props:
+        name = props['name']
+    else:
+        action_string[0].capitalize()
+        name = action_string[0].capitalize() + action_string[1:]
+        return name
+
+def do_ActionArgs_h():
+    args_headers = ''
+    all_args = ''
+
+    for action_string in actions_and_properties.keys():
+        props = actions_and_properties[action_string]
+        if props is None:
+            continue
+
+        name = get_name_string(action_string)
+
+        getset_props = ''
+        equality = ''
+        deserializer = ''
+
+        for prop_name in props.keys():
+            if prop_name != 'action' and prop_name != 'name':
+                prop = props[prop_name]
+                prop_type = None
+                if 'type' in prop:
+                    prop_type = prop['type']
+                elif '$ref' in prop:
+                    prop_type = prop['$ref']
+                else:
+                    prop_type = 'FILL_THIS_IN_MANUALLY'
+                print(f'{prop_name}:{prop_type}')
+
+
+        complete_arg = ActionArgs_tmpl.format(name, getset_props, equality, deserializer)
+        all_args += complete_arg
+    return ActionArgs_h % (args_headers, all_args)
+
 def do_ActionAndArgs_cpp():
     key_strings = ''
     ActionKeyNamesMap = ''
@@ -284,14 +338,9 @@ def do_ActionAndArgs_cpp():
 
     for action_string in actions_and_properties.keys():
         props = actions_and_properties[action_string]
-        name = None
-        if props and 'name' in props:
-            name = props['name']
-        else:
-            action_string[0].capitalize()
-            name = action_string[0].capitalize() + action_string[1:]
+        name = get_name_string(action_string)
 
-        print(f'{action_string}->{props}')
+        # print(f'{action_string}->{props}')
         this_key_string = KEY_STRING_TMPL.format(name, action_string)
         key_strings += this_key_string
 
@@ -301,18 +350,16 @@ def do_ActionAndArgs_cpp():
             argParsers += FROM_JSON_TMPL.format(name, name)
 
         GeneratedActionNames += GENERATE_NAME_TMPL.format(name, name)
-
-
     # print(key_strings)
     # print(ActionKeyNamesMap)
     # print(argParsers)
     # print(GeneratedActionNames)
-    print(ActionAndArgs_cpp % (key_strings, ActionKeyNamesMap, argParsers, GeneratedActionNames))
+    return ActionAndArgs_cpp % (key_strings, ActionKeyNamesMap, argParsers, GeneratedActionNames)
 
 
 def main():
-    print(TERMINAL_ROOT)
-    print(SCHEMA_ROOT)
+    # print(TERMINAL_ROOT)
+    # print(SCHEMA_ROOT)
 
     rd = do_load_backend()
     if not rd.success:
@@ -354,7 +401,8 @@ def main():
     # for action_string in actions_and_properties.keys():
     #     props = actions_and_properties[action_string]
     #     print(f'{action_string}->{props}')
-    do_ActionAndArgs_cpp()
+    # do_ActionAndArgs_cpp()
+    do_ActionArgs_h()
 
 if __name__ == '__main__':
     main()
