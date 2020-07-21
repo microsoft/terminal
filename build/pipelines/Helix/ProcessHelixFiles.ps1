@@ -8,7 +8,7 @@ Param(
 )
 
 $helixLinkFile = "$OutputFolder\LinksToHelixTestFiles.html"
-$visualTreeVerificationFolder = "$OutputFolder\UpdatedVisualTreeVerificationFiles"
+# $visualTreeVerificationFolder = "$OutputFolder\UpdatedVisualTreeVerificationFiles"
 
 $accessTokenParam = ""
 if($HelixAccessToken)
@@ -71,9 +71,10 @@ foreach ($testRun in $testRuns.value)
 
             $screenShots = $files | where { $_.Name.EndsWith(".jpg") }
             $dumps = $files | where { $_.Name.EndsWith(".dmp") }
-            $visualTreeVerificationFiles = $files | where { $_.Name.EndsWith(".xml") -And (-Not $_.Name.Contains('testResults')) }
+            # $visualTreeVerificationFiles = $files | where { $_.Name.EndsWith(".xml") -And (-Not $_.Name.Contains('testResults')) }
             $pgcFiles = $files | where { $_.Name.EndsWith(".pgc") }
-            if ($screenShots.Count + $dumps.Count + $visualTreeVerificationFiles.Count + $pgcFiles.Count -gt 0)
+            # if ($screenShots.Count + $dumps.Count + $visualTreeVerificationFiles.Count + $pgcFiles.Count -gt 0)
+            if ($screenShots.Count + $dumps.Count + $pgcFiles.Count -gt 0)
             {
                 if(-Not $isTestRunNameShown)
                 {
@@ -83,23 +84,23 @@ foreach ($testRun in $testRuns.value)
                 Out-File -FilePath $helixLinkFile -Append -InputObject "<h3>$helixWorkItemName</h3>"
                 Generate-File-Links $screenShots "Screenshots"
                 Generate-File-Links $dumps "CrashDumps"
-                Generate-File-Links $visualTreeVerificationFiles "visualTreeVerificationFiles"
+                # Generate-File-Links $visualTreeVerificationFiles "visualTreeVerificationFiles"
                 Generate-File-Links $pgcFiles "PGC files"
                 $misc = $files | where { ($screenShots -NotContains $_) -And ($dumps -NotContains $_) -And ($visualTreeVerificationFiles -NotContains $_) -And ($pgcFiles -NotContains $_) }
                 Generate-File-Links $misc "Misc"
 
-                if( -Not (Test-Path $visualTreeVerificationFolder) )
-                {
-                    New-Item $visualTreeVerificationFolder -ItemType Directory
-                }
-                foreach($verificationFile in $visualTreeVerificationFiles)
-                {
+                # if( -Not (Test-Path $visualTreeVerificationFolder) )
+                # {
+                #     New-Item $visualTreeVerificationFolder -ItemType Directory
+                # }
+                # foreach($verificationFile in $visualTreeVerificationFiles)
+                # {
 
-                    $destination = "$visualTreeVerificationFolder\$($verificationFile.Name)"
-                    Write-Host "Copying $($verificationFile.Name) to $destination"
-                    $link = "$($verificationFile.Link)$accessTokenParam"
-                    $webClient.DownloadFile($link, $destination)
-                }
+                #     $destination = "$visualTreeVerificationFolder\$($verificationFile.Name)"
+                #     Write-Host "Copying $($verificationFile.Name) to $destination"
+                #     $link = "$($verificationFile.Link)$accessTokenParam"
+                #     $webClient.DownloadFile($link, $destination)
+                # }
 
                 foreach($pgcFile in $pgcFiles)
                 {

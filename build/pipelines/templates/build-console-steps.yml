@@ -96,3 +96,20 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
     ArtifactName: 'appx-$(BuildConfiguration)'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+
+- task: CopyFiles@2
+  displayName: 'Copy tests to Artifacts'
+  inputs:
+    Contents: |
+     **/*unit.test*.dll
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/test'
+    OverWrite: true
+    flattenFolders: true
+  condition: and(succeeded())
+  
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Test Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/test'
+    ArtifactName: 'test-$(BuildConfiguration)'
+  condition: and(succeeded())

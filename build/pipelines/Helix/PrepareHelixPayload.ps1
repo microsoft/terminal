@@ -42,7 +42,7 @@ function Copy-If-Exists
 }
 
 # Copy files from the 'drop' artifact dir
-Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\MUXControls.Test.dll" $payloadDir
+Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\Conhost.Unit.Tests.dll" $payloadDir
 Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\MUXControlsTestApp_Test\*" $payloadDir
 Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\MUXControlsTestApp_Test\Dependencies\$Platform\*" $payloadDir
 Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\AppThatUsesMUXIndirectly_Test\*" $payloadDir
@@ -68,5 +68,5 @@ Copy-Item "build\helix\HelixTestHelpers.cs" "$payloadDir"
 Copy-Item "build\helix\runtests.cmd" $payloadDir
 Copy-Item "build\helix\InstallTestAppDependencies.ps1" "$payloadDir"
 Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
-Copy-Item "version.props" "$payloadDir"
-Copy-Item "build\Helix\CopyVisualTreeVerificationFiles.ps1" "$payloadDir"
+# Copy-Item "version.props" "$payloadDir"
+# Copy-Item "build\Helix\CopyVisualTreeVerificationFiles.ps1" "$payloadDir"

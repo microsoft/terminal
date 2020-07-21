@@ -3,6 +3,10 @@ parameters:
   platform: ''
   additionalBuildArguments: ''
 
+variables:
+  minimumExpectedTestsExecutedCount: 3000  # Sanity check for minimum expected tests to be reported
+  rerunPassesRequiredToAvoidFailure: 5
+
 jobs:
 - job: Build${{ parameters.platform }}${{ parameters.configuration }}
   displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
@@ -15,3 +19,18 @@ jobs:
   - template: build-console-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+
+  - template: MUX-RunHelixTests-Job.yml
+    parameters:
+      name: 'RunTestsInHelix'
+      dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
+      condition: condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+      testSuite: 'DevTestSuite'
+      rerunPassesRequiredToAvoidFailure: $(rerunPassesRequiredToAvoidFailure)
+      
+  - template: MUX-ProcessTestResults-Job.yml
+    parameters:
+      dependsOn:
+      - RunTestsInHelix
+      rerunPassesRequiredToAvoidFailure: $(rerunPassesRequiredToAvoidFailure)
+      minimumExpectedTestsExecutedCount: $(minimumExpectedTestsExecutedCount)

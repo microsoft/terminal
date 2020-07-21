@@ -13,22 +13,16 @@ parameters:
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
   matrix: 
-    Debug_x86:
-      buildPlatform: 'x86'
-      buildConfiguration: 'debug'
-      # %3b is the escape code for ';' which is used as the delimiter
-      openHelixTargetQueues: 'windows.10.amd64.clientrs2.open.xaml%3bwindows.10.amd64.clientrs5.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.clientrs2.xaml%3bwindows.10.amd64.clientrs5.xaml'
     Release_x86:
       buildPlatform: 'x86'
       buildConfiguration: 'release'
-      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml%3bwindows.10.amd64.clientrs3.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml%3bwindows.10.amd64.clientrs3.xaml'
+      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
+      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
     Release_x64:
       buildPlatform: 'x64'
       buildConfiguration: 'release'
-      openHelixTargetQueues: 'windows.10.amd64.clientrs4.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.clientrs4.xaml'
+      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
+      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
 
 jobs:
 - job: ${{ parameters.name }}
@@ -137,7 +131,6 @@ jobs:
       
   - task: DotNetCoreCLI@2
     displayName: 'Run tests in Helix (open queues)'
-    condition: eq(variables['System.CollectionUri'],'https://dev.azure.com/ms/')
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
@@ -146,14 +139,3 @@ jobs:
       custom: msbuild
       arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=WinUI /p:HelixTargetQueues=$(openHelixTargetQueues)'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Run tests in Helix (closed queues)'
-    condition: ne(variables['System.CollectionUri'],'https://dev.azure.com/ms/')
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-      HelixAccessToken: $(HelixApiAccessToken)
-    inputs:
-      command: custom
-      projects: build\Helix\RunTestsInHelix.proj
-      custom: msbuild
-      arguments: '$(helixCommonArgs) /p:HelixTargetQueues=$(closedHelixTargetQueues)'
