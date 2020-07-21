@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.DotNet.Helix.Sdk" DefaultTargets="Test">
   <PropertyGroup>
-    <HelixSource>pr/winui/$(BUILD_SOURCEBRANCH)/</HelixSource>
+    <HelixSource>pr/terminal/$(BUILD_SOURCEBRANCH)/</HelixSource>
     <EnableXUnitReporter>true</EnableXUnitReporter>
     <EnableAzurePipelinesReporter>true</EnableAzurePipelinesReporter>
     <FailOnMissionControlTestFailure>true</FailOnMissionControlTestFailure>
     <HelixPreCommands>$(HelixPreCommands);set testnameprefix=$(Configuration).$(Platform);set testbuildplatform=$(Platform);set rerunPassesRequiredToAvoidFailure=$(rerunPassesRequiredToAvoidFailure)</HelixPreCommands>
-    <OutputPath>"..\..\bin\$(Platform)\$(Configuration)\"
+    <OutputPath>..\..\bin\$(Platform)\$(Configuration)\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
