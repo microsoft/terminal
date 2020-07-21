@@ -35,6 +35,7 @@ static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
+static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
@@ -85,6 +86,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { SetColorSchemeKey, ShortcutAction::SetColorScheme },
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
@@ -118,6 +120,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::SetColorScheme, winrt::TerminalApp::implementation::SetColorSchemeArgs::FromJson },
 
         { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
@@ -269,6 +273,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::Invalid, L"" },
                 { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
                 { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },

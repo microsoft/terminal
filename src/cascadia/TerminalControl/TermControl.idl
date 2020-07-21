@@ -38,6 +38,7 @@ namespace Microsoft.Terminal.TerminalControl
         static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
 
         void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
+        Microsoft.Terminal.Settings.IControlSettings Settings { get; };
 
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;

@@ -179,6 +179,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleCommandPaletteHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::SetColorScheme:
+        {
+            _SetColorSchemeHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::SetTabColor:
         {
             _SetTabColorHandlers(*this, *eventArgs);

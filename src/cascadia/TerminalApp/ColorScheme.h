@@ -38,7 +38,7 @@ public:
     ColorScheme(std::wstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor);
     ~ColorScheme();
 
-    void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
+    void ApplyScheme(winrt::Microsoft::Terminal::Settings::IControlSettings& terminalSettings) const;
 
     static ColorScheme FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;

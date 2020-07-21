@@ -74,6 +74,8 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
+    void ApplyColorScheme(winrt::Microsoft::Terminal::Settings::IControlSettings& settings, std::wstring_view schemeName);
+
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;

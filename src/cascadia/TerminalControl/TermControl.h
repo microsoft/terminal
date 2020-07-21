@@ -99,6 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         TerminalConnection::ConnectionState ConnectionState() const;
+        Settings::IControlSettings Settings() const;
 
         static Windows::Foundation::Size GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,

@@ -2819,6 +2819,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->ResetErrorStateAndResume();
     }
 
+    Settings::IControlSettings TermControl::Settings() const
+    {
+        return _settings;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

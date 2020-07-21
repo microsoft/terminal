@@ -15,6 +15,7 @@
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
@@ -227,6 +228,19 @@ namespace winrt::TerminalApp::implementation
         default:
             return RS_(L"OpenSettingsCommandKey");
         }
+    }
+
+    winrt::hstring SetColorSchemeArgs::GenerateName() const
+    {
+        // "Set color scheme to "{_SchemeName}""
+        if (!_SchemeName.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SetColorSchemeCommandKey")),
+                            _SchemeName.c_str())
+            };
+        }
+        return L"";
     }
 
     winrt::hstring SetTabColorArgs::GenerateName() const
