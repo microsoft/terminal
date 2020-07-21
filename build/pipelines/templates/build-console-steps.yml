@@ -105,11 +105,11 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/test'
     OverWrite: true
     flattenFolders: true
-  condition: and(succeeded())
+  condition: succeeded()
   
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Test Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/test'
     ArtifactName: 'test-$(BuildConfiguration)'
-  condition: and(succeeded())
+  condition: succeeded()
