@@ -4,6 +4,7 @@
 #include "HostClass.h"
 #include "HostClass.g.cpp"
 
+#include <wrl.h>
 extern std::mutex m;
 extern std::condition_variable cv;
 extern bool dtored;
@@ -66,19 +67,71 @@ namespace winrt::ScratchWinRTServer::implementation
 
     void HostClass::Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel)
     {
-        _panel = panel;
+        // // _panel = panel;
+        // ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative;
+        // reinterpret_cast<IUnknown*>(&panel)->QueryInterface(IID_PPV_ARGS(&panelNative));
+        // // panelNative->SetSwapChainHandle(m_swapChainHandle);
 
-        auto nativePanel2 = panel.try_as<ISwapChainPanelNative2>();
-        if (nativePanel2)
+        // // auto nativePanel2 = panel.try_as<ISwapChainPanelNative2>();
+        // // if (nativePanel2)
+        // if (panelNative)
+        // {
+        //     printf("Got the nativePanel2\n");
+        // }
+        // else
+        // {
+        //     printf("why why why\n");
+        // }
+        // // nativePanel2;
+        // panelNative;
+
+        // winrt::com_ptr<ISwapChainPanelNative2> native;
+        winrt::com_ptr<IUnknown> iunk = panel.try_as<IUnknown>();
+        if (iunk)
         {
-            printf("Got the nativePanel2\n");
+            printf("Got the IUnknown\n");
+            ////////////////////////////////////////////////////////////////////
+            auto nativePanel2 = iunk.try_as<ISwapChainPanelNative2>();
+            if (nativePanel2)
+            {
+                printf("Got the nativePanel2\n");
+            }
+            else
+            {
+                printf("Couldn't try_as to get the ISwapChainPanelNative2\n");
+            }
+            nativePanel2;
+            ////////////////////////////////////////////////////////////////////
+            ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative;
+            iunk->QueryInterface(IID_PPV_ARGS(&panelNative));
+            if (panelNative)
+            {
+                printf("Got the panelNative\n");
+            }
+            else
+            {
+                printf("Couldn't QueryInterface to get the ISwapChainPanelNative2\n");
+            }
+            ////////////////////////////////////////////////////////////////////
+            IUnknown* foo = iunk.get();
+            foo->QueryInterface(IID_PPV_ARGS(&panelNative));
+            if (panelNative)
+            {
+                printf("Got the panelNative\n");
+            }
+            else
+            {
+                printf("This didn't work either\n");
+            }
+            ////////////////////////////////////////////////////////////////////
         }
         else
         {
-            printf("why why why\n");
+            printf("Couldn't try_as to get the IUnknown\n");
         }
-        nativePanel2;
-        // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
+        iunk;
+
+        // // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
         //
         // winrt::Windows::UI::Xaml::Media::SolidColorBrush solidColor{};
         // til::color newBgColor{ 0x8F000000 };
