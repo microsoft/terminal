@@ -5,6 +5,7 @@
     <EnableAzurePipelinesReporter>true</EnableAzurePipelinesReporter>
     <FailOnMissionControlTestFailure>true</FailOnMissionControlTestFailure>
     <HelixPreCommands>$(HelixPreCommands);set testnameprefix=$(Configuration).$(Platform);set testbuildplatform=$(Platform);set rerunPassesRequiredToAvoidFailure=$(rerunPassesRequiredToAvoidFailure)</HelixPreCommands>
+    <OutputPath>"..\..\bin\$(Platform)\$(Configuration)\"
   </PropertyGroup>
 
   <ItemGroup>
