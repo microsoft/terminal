@@ -21,6 +21,19 @@ static constexpr std::string_view ArgsKey{ "args" };
 
 namespace winrt::TerminalApp::implementation
 {
+    Command::Command()
+    {
+        // Set the default IconSource to a BitmapIconSource with a nullptr UriSource
+        // (instead of just nullptr) because there's a really weird crash when swapping
+        // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+        // Swapping between nullptr IconSources and non-null IconSources causes a crash
+        // to occur, but swapping between IconSources with a null source and non-null IconSources
+        // work perfectly fine :shrug:.
+        winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
+        icon.UriSource(nullptr);
+        IconSource(icon);
+    }
+
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
     //   * If the "name" property is a string, return that value.

@@ -207,10 +207,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <ColumnDefinition Width="16"/>   <!-- gutter for scrollbar -->
                                 </Grid.ColumnDefinitions>
 
-                                <!-- TODO GH#6644: Add Icon to command palette entries, in column 0 -->
                                 <IconSourceElement
                                 Grid.Column="0"
-                                IconSource="{x:Bind IconSource, Mode=OneWay }"/>
+                                IconSource="{x:Bind IconSource, Mode=OneWay}"/>
 
                                 <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"

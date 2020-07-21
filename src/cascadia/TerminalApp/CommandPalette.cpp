@@ -355,6 +355,21 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::_switchToMode(CommandPaletteMode mode)
     {
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well when switching between
+        // modes because of the sheer amount of remove/adds. So, let's just
+        // clear + append when switching between modes.
+        if (mode != _currentMode)
+        {
+            _filteredActions.Clear();
+            auto commandsToFilter = _commandsToFilter();
+
+            for (auto action : commandsToFilter)
+            {
+                _filteredActions.Append(action);
+            }
+        }
+
         _currentMode = mode;
         switch (_currentMode)
         {
@@ -389,19 +404,6 @@ namespace winrt::TerminalApp::implementation
         return leftName.compare(rightName) < 0;
     }
 
-    // This is a helper to sort entries when in Tab Switcher mode.
-    // This compares the KeyChordText, which is used to indicate the Tab index on the Tab View.
-    // TODO: I don't really like this comparison.....
-    static bool _compareTabIndex(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
-    {
-        std::wstring_view leftIndex{ lhs.KeyChordText() };
-        std::wstring leftIdx{ leftIndex.substr(leftIndex.find_last_of(' ') + 1) };
-        std::wstring_view rightIndex{ rhs.KeyChordText() };
-        std::wstring rightIdx{ rightIndex.substr(rightIndex.find_last_of(' ') + 1) };
-
-        return stoi(leftIdx) > stoi(rightIdx);
-    }
-
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
@@ -416,7 +418,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (orderByTabIndex)
                 {
-                    return _compareTabIndex(command, other.command);
+                    return false;
                 }
                 return !_compareCommandNames(command, other.command);
             }
@@ -674,9 +676,6 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        // Reset back to action mode upon close.
-        _currentMode = CommandPaletteMode::ActionMode;
-
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(CommandPalette().Visibility());
 
@@ -740,13 +739,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (startIdx != _allTabActions.Size() - 1)
         {
-            for (auto i = startIdx + 1; i < _allTabActions.Size(); ++i)
+            for (auto i = startIdx; i < _allTabActions.Size(); ++i)
             {
                 auto command = _allTabActions.GetAt(i);
 
                 command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-
-                command.KeyChordText(L"Index:" + to_hstring(i));
             }
         }
     }
@@ -770,7 +767,6 @@ namespace winrt::TerminalApp::implementation
 
         auto command = winrt::make_self<implementation::Command>();
         command->Action(*focusTabAction);
-        command->KeyChordText(L"Index : " + to_hstring(idx));
         command->Name(tab.Title());
         command->IconSource(tab.IconSource());
 
