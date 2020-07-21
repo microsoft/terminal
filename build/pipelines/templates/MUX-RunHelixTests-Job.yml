@@ -100,34 +100,34 @@ jobs:
   - template: MUX-CreateHelixProjFile-Steps.yml
     parameters:
       condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
-      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\MUXControls.Test.dll'
-      outputProjFileName: 'RunTestsInHelix-InteractionTests.proj'
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TextBuffer.Unit.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-TextBufferUnitTests.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 
-  - template: MUX-CreateHelixProjFile-Steps.yml
-    parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
-      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\AppxPackages\MUXControlsTestApp_Test\MUXControlsTestApp.appx'
-      outputProjFileName: 'RunTestsInHelix-ApiTests.proj'
-      testSuite: '${{ parameters.testSuite }}'
-      taefQuery: ${{ parameters.taefQuery }}
+  # - template: MUX-CreateHelixProjFile-Steps.yml
+  #   parameters:
+  #     condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+  #     testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\AppxPackages\MUXControlsTestApp_Test\MUXControlsTestApp.appx'
+  #     outputProjFileName: 'RunTestsInHelix-ApiTests.proj'
+  #     testSuite: '${{ parameters.testSuite }}'
+  #     taefQuery: ${{ parameters.taefQuery }}
 
-  - template: MUX-CreateHelixProjFile-Steps.yml
-    parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
-      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\AppxPackages\IXMPTestApp_Test\IXMPTestApp.appx'
-      outputProjFileName: 'RunTestsInHelix-IXMPTestAppTests.proj'
-      testSuite: '${{ parameters.testSuite }}'
-      taefQuery: ${{ parameters.taefQuery }}
+  # - template: MUX-CreateHelixProjFile-Steps.yml
+  #   parameters:
+  #     condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+  #     testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\AppxPackages\IXMPTestApp_Test\IXMPTestApp.appx'
+  #     outputProjFileName: 'RunTestsInHelix-IXMPTestAppTests.proj'
+  #     testSuite: '${{ parameters.testSuite }}'
+  #     taefQuery: ${{ parameters.taefQuery }}
 
-  - template: MUX-CreateHelixProjFile-Steps.yml
-    parameters:
-      condition: and(succeeded(),eq('${{ parameters.testSuite }}','NugetTestSuite'))
-      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\MUXControls.ReleaseTest.dll'
-      outputProjFileName: 'RunTestsInHelix-NugetTests.proj'
-      testSuite: '${{ parameters.testSuite }}'
-      taefQuery: ${{ parameters.taefQuery }}
+  # - template: MUX-CreateHelixProjFile-Steps.yml
+  #   parameters:
+  #     condition: and(succeeded(),eq('${{ parameters.testSuite }}','NugetTestSuite'))
+  #     testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\MUXControls.ReleaseTest.dll'
+  #     outputProjFileName: 'RunTestsInHelix-NugetTests.proj'
+  #     testSuite: '${{ parameters.testSuite }}'
+  #     taefQuery: ${{ parameters.taefQuery }}
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish generated .proj files'

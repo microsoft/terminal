@@ -1,7 +1,7 @@
 parameters:
   dependsOn: ''
   rerunPassesRequiredToAvoidFailure: 5
-  minimumExpectedTestsExecutedCount: 3000
+  minimumExpectedTestsExecutedCount: 10
   checkJobAttempt: false
   pgoArtifact: ''
 
