@@ -22,7 +22,7 @@ jobs:
     parameters:
       name: 'RunTestsInHelix'
       dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
-      condition: condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+      condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
       testSuite: 'DevTestSuite'
       rerunPassesRequiredToAvoidFailure: $(rerunPassesRequiredToAvoidFailure)
       
