@@ -128,16 +128,17 @@ At the time of writing this spec, TerminalApp constructs `TerminalControl.Termin
 
 #### Settings UI: Modifying and Applying the Settings
 
-The Settings UI will also have a reference to the `AppSettings settings` from TerminalApp using a shared smart pointer
-as `settingsSource`. When the Settings UI is opened up, the Settings UI will also have its own `AppSettings settingsClone`
-that is a clone of TerminalApp's `AppSettings`.
+The Settings UI will also have a reference to the `AppSettings settings` from TerminalApp
+ as `settingsSource`. When the Settings UI is opened up, the Settings UI will also have its own `AppSettings settingsClone`
+ that is a clone of TerminalApp's `AppSettings`.
 ```c++
 settingsClone = settingsSource.Clone()
 ```
 
 As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
  As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
- When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
+ When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; 
+ this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
 
 As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
  Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
@@ -196,11 +197,11 @@ Profiles are proposed to be represented in an `IObservableVector`. They could be
  `IObservableMap` with the guid or profile name used as the key value. The main concern with representing
  profiles as a map is that this loses the order for the dropdown menu.
 
-Once Dropdown Customization is introduced, `Settings` is expected to serialize the relevant JSON and expose
- it to TerminalApp (probably as an `IObservableVector<DropdownMenuItem>`). Since this new object would
- handle the ordering of profiles (if any), the `IObservableVector<Profile>` could be replaced with
- an observable map indexed by the profile name, thus even potentially providing an opportunity to
- remove guid as an identifier entirely.
+Once Dropdown Customization is introduced, `AppSettings` can expose it to TerminalApp as
+ an `IObservableVector<DropdownMenuItem>`. This handles the ordering of profiles and other
+ dropdown menu items. Additionally, `IObservableVector<Profile>` can be replaced with
+ `IObservableMap<GUID, Profile>` or `IObservableMap<String, Profile>` (where the key is
+ a profile name). This would improve profile retrieval performance.
 
 
 ## Resources
