@@ -8,8 +8,8 @@ steps:
 
 - task: NuGetToolInstaller@0
   displayName: 'Use NuGet 5.2.0'
-    inputs:
-      versionSpec: 5.2.0
+  inputs:
+    versionSpec: 5.2.0
 
 - task: VisualStudioTestPlatformInstaller@1
   displayName: Ensure VSTest Platform
