@@ -52,14 +52,14 @@ steps:
 #     arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
 #     errorActionPreference: silentlyContinue
 
-- task: PowerShell@2
-  displayName: 'Rationalize build platform'
-  inputs:
-    targetType: inline
-    script: |
-      $Arch = "$(BuildPlatform)"
-      If ($Arch -Eq "x86") { $Arch = "Win32" }
-      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+# - task: PowerShell@2
+#   displayName: 'Rationalize build platform'
+#   inputs:
+#     targetType: inline
+#     script: |
+#       $Arch = "$(BuildPlatform)"
+#       If ($Arch -Eq "x86") { $Arch = "Win32" }
+#       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
 # - task: PowerShell@2
 #   displayName: 'Run Unit Tests'

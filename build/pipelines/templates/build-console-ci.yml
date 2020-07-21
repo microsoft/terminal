@@ -6,7 +6,7 @@ parameters:
   rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
-- job: Build${{ parameters.platform }}${{ parameters.configuration }}
+- job: Build
   displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
@@ -21,7 +21,7 @@ jobs:
 - template: MUX-RunHelixTests-Job.yml
   parameters:
     name: 'RunTestsInHelix'
-    dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
+    dependsOn: Build
     condition: succeeded()
     testSuite: 'DevTestSuite'
     rerunPassesRequiredToAvoidFailure: $(rerunPassesRequiredToAvoidFailure)
