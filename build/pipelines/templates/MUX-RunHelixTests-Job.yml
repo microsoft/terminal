@@ -36,7 +36,7 @@ jobs:
     matrix: ${{ parameters.matrix }}
   variables:
     artifactsDir: $(Build.SourcesDirectory)\Artifacts
-    taefPath: $(Build.SourcesDirectory)\build\pipelines\Helix\packages\taef.redist.wlk.10.31.180822002\build\Binaries\$(buildPlatform)
+    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.31.180822002\build\Binaries\$(buildPlatform)
     helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
 
       
@@ -52,9 +52,9 @@ jobs:
       versionSpec: 5.2.0
 
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-    displayName: 'NuGet restore build/pipelines/Helix/packages.config'
+    displayName: 'NuGet restore build/Helix/packages.config'
     inputs:
-      restoreSolution: build/pipelines/Helix/packages.config
+      restoreSolution: build/Helix/packages.config
       feedsToUse: config
       nugetConfigPath: nuget.config
       restoreDirectory: packages
@@ -88,7 +88,7 @@ jobs:
     displayName: 'PrepareHelixPayload.ps1'
     inputs:
       targetType: filePath
-      filePath: build\pipelines\Helix\PrepareHelixPayload.ps1
+      filePath: build\Helix\PrepareHelixPayload.ps1
       arguments: -Platform '$(buildPlatform)' -Configuration '$(buildConfiguration)' -ArtifactName '${{ parameters.artifactName }}'
       
   - task: CmdLine@1
@@ -141,7 +141,7 @@ jobs:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
       command: custom
-      projects: build\pipelines\Helix\RunTestsInHelix.proj
+      projects: build\Helix\RunTestsInHelix.proj
       custom: msbuild
       arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=WinUI /p:HelixTargetQueues=$(openHelixTargetQueues)'
 
