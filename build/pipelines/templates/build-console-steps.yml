@@ -111,5 +111,5 @@ steps:
   displayName: 'Publish Test Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/test'
-    ArtifactName: 'test-$(BuildConfiguration)'
+    ArtifactName: 'drop'
   condition: succeeded()
