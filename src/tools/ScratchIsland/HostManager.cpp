@@ -48,7 +48,14 @@ namespace winrt::ScratchIsland::implementation
         // Ooof this is dumb, but we need a sleep here to make the server starts.
         // That's _sub par_. Maybe we could use the host's stdout to have them emit
         // a byte when they're set up?
-        Sleep(100);
+        Sleep(1000);
+
+        // TODO MONDAY - It seems like it takes conhost too long to start up to
+        // host the ScratchWinRTServer that even a sleep 100 is too short. However,
+        // any longer, and XAML will just crash, because some frame took too long.
+        // So we _need_ to do the "have the server explicitly tell us it's ready"
+        // thing, and maybe also do it on a bg thread (and signal to the UI thread
+        // that it can attach now)
     }
 
     ScratchWinRTServer::HostClass HostManager::CreateHost()

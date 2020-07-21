@@ -25,6 +25,8 @@ private:
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
 
+    winrt::fire_and_forget _createHost();
+
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid{ nullptr };
     winrt::Windows::UI::Xaml::Controls::Grid _swapchainsGrid{ nullptr };
 
@@ -32,4 +34,6 @@ private:
     winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp1{ nullptr };
     winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp2{ nullptr };
     winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swp3{ nullptr };
+
+    winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _swp0_layoutUpdatedRevoker;
 };

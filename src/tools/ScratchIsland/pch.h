@@ -47,6 +47,7 @@ Abstract:
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/windows.ui.core.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 

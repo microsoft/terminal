@@ -20,5 +20,8 @@
   <file name="ScratchWinRTServer.exe" hashalg="SHA1">
     <activatableClass name="ScratchWinRTServer.ScratchClass" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
+  <file name="TerminalSettings.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.Terminal.Settings.TerminalSettings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
 
 </assembly>

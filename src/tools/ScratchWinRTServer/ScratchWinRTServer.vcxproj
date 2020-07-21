@@ -135,6 +135,22 @@
       <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
     </ProjectReference> -->
     <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj" />
+
+        <ProjectReference Include="$(SolutionDir)src\buffer\out\lib\bufferout.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\renderer\base\lib\base.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\renderer\dx\lib\dx.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\renderer\uia\lib\uia.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\terminal\parser\lib\parser.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\terminal\input\lib\terminalinput.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj">
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
@@ -143,6 +159,9 @@
       <!-- <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories> -->
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap_apiset.lib;d3dcompiler.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;dcomp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 
 

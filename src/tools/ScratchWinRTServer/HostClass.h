@@ -2,6 +2,12 @@
 
 #include "HostClass.g.h"
 #include "IMyComInterface.h"
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.h>
+#include "../../renderer/base/Renderer.hpp"
+#include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../cascadia/TerminalCore/Terminal.hpp"
 
 namespace winrt::ScratchWinRTServer::implementation
 {
@@ -16,14 +22,29 @@ namespace winrt::ScratchWinRTServer::implementation
 
         HRESULT __stdcall Call() override;
 
-        void Attach(const Windows::UI::Xaml::Controls::SwapChainPanel& panel);
+        void Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel);
         void BeginRendering();
+
+        void RenderEngineSwapChainChanged();
 
     private:
         int _DoCount{ 0 };
         winrt::guid _id;
 
         Windows::UI::Xaml::Controls::SwapChainPanel _panel{ nullptr };
+
+        bool _initializedTerminal{ false };
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection;
+        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
+        FontInfoDesired _desiredFont;
+        FontInfo _actualFont;
+
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
+        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        winrt::Microsoft::Terminal::Settings::IControlSettings _settings;
+        void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
+
+        bool _InitializeTerminal();
     };
 }
 
