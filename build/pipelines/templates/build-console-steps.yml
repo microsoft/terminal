@@ -102,7 +102,7 @@ steps:
   inputs:
     Contents: |
      **/*unit.test*.dll
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/test'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
   condition: succeeded()
@@ -110,6 +110,6 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Test Artifacts'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/test'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
   condition: succeeded()
