@@ -7,7 +7,7 @@ Param(
 
 $payloadDir = "HelixPayload\$Configuration\$Platform"
 
-$repoDirectory = Join-Path (Split-Path -Parent $script:MyInvocation.MyCommand.Path) "..\..\..\"
+$repoDirectory = Join-Path (Split-Path -Parent $script:MyInvocation.MyCommand.Path) "..\..\"
 $nugetPackagesDir = Join-Path (Split-Path -Parent $script:MyInvocation.MyCommand.Path) "packages"
  
 # Create the payload directory. Remove it if it already exists.
@@ -61,12 +61,12 @@ Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\
 
 # Copy files from the repo
 New-Item -ItemType Directory -Force -Path "$payloadDir"
-Copy-Item "build\pipelines\helix\ConvertWttLogToXUnit.ps1" "$payloadDir"
-Copy-Item "build\pipelines\helix\OutputFailedTestQuery.ps1" "$payloadDir"
-Copy-Item "build\pipelines\helix\OutputSubResultsJsonFiles.ps1" "$payloadDir"
-Copy-Item "build\pipelines\helix\HelixTestHelpers.cs" "$payloadDir"
-Copy-Item "build\pipelines\helix\runtests.cmd" $payloadDir
-Copy-Item "build\pipelines\helix\InstallTestAppDependencies.ps1" "$payloadDir"
-Copy-Item "build\pipelines\Helix\EnsureMachineState.ps1" "$payloadDir"
+Copy-Item "build\helix\ConvertWttLogToXUnit.ps1" "$payloadDir"
+Copy-Item "build\helix\OutputFailedTestQuery.ps1" "$payloadDir"
+Copy-Item "build\helix\OutputSubResultsJsonFiles.ps1" "$payloadDir"
+Copy-Item "build\helix\HelixTestHelpers.cs" "$payloadDir"
+Copy-Item "build\helix\runtests.cmd" $payloadDir
+Copy-Item "build\helix\InstallTestAppDependencies.ps1" "$payloadDir"
+Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
 # Copy-Item "version.props" "$payloadDir"
-# Copy-Item "build\pipelines\Helix\CopyVisualTreeVerificationFiles.ps1" "$payloadDir"
+# Copy-Item "build\Helix\CopyVisualTreeVerificationFiles.ps1" "$payloadDir"

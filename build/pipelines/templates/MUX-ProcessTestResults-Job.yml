@@ -23,7 +23,7 @@ jobs:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
       targetType: filePath
-      filePath: build\pipelines\Helix\UpdateUnreliableTests.ps1
+      filePath: build\Helix\UpdateUnreliableTests.ps1
       arguments: -RerunPassesRequiredToAvoidFailure '${{ parameters.rerunPassesRequiredToAvoidFailure }}'
 
   - task: powershell@2
@@ -33,7 +33,7 @@ jobs:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
       targetType: filePath
-      filePath: build\pipelines\Helix\OutputTestResults.ps1
+      filePath: build\Helix\OutputTestResults.ps1
       arguments: -MinimumExpectedTestsExecutedCount '${{ parameters.minimumExpectedTestsExecutedCount }}' -CheckJobAttempt $${{ parameters.checkJobAttempt }}
 
   - task: powershell@2
@@ -44,7 +44,7 @@ jobs:
       HelixAccessToken: $(HelixApiAccessToken)
     inputs:
       targetType: filePath
-      filePath: build\pipelines\Helix\ProcessHelixFiles.ps1
+      filePath: build\Helix\ProcessHelixFiles.ps1
       arguments: -OutputFolder '$(helixOutputFolder)'
 
   - ${{if ne(parameters.pgoArtifact, '') }}:
