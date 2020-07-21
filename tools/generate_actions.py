@@ -6,6 +6,22 @@ import json
 # from json import JSONEncoder
 from collections import namedtuple
 
+# TODO:
+# * [x] ActionAndArg.cpp
+# * [ ] ActionArgs.h
+# * [ ] includes in ActionArgs.cpp
+# * [ ] ShortcutActionDispatch.idl
+# * [ ] ShortcutActionDispatch.h
+# * [ ] ShortcutActionDispatch.cpp
+# * [ ] TerminalPage.h (action handlers)
+# * [ ] TerminalPage.cpp (hookup of action handlers)
+# * [ ] Save each of these to a reasonable place
+# DON'T GENERATE:
+# * resw
+# * GenerateName (in ActionArgs.cpp)
+
+
+
 __author__ = 'zadjii'
 
 ResultAndData = namedtuple('ResultAndData', 'success, data')
