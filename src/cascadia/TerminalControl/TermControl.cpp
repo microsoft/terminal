@@ -1398,7 +1398,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - location: the location of the mouse during this event. This location is
     //   relative to the origin of the control
     // - delta: the mouse wheel delta that triggered this event.
-    // - state: the state for each of the mouse buttons (pressed/unpressed)
+    // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
                                    const int32_t delta,
                                    const bool leftButtonDown,
