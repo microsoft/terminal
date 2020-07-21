@@ -2119,7 +2119,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
-    bool TermControl::CopySelectionToClipboard(bool singleLine, Windows::Foundation::IReference<CopyFormat> formats)
+    bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
         {

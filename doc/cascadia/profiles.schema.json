@@ -84,6 +84,34 @@
       ],
       "type": "string"
     },
+    "CopyFormat": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "html",
+              "rtf"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "plain",
+            "html",
+            "rtf",
+            "all",
+            "none"
+          ]
+        }
+      ]
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -155,18 +183,7 @@
               "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Setting this to null or not setting it inherits the global `copyFormatting` setting value.",
               "oneOf": [
                 {
-                  "type": "boolean"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "plain",
-                      "html",
-                      "rtf"
-                    ]
-                  }
+                  "$ref": "#/definitions/CopyFormat"
                 },
                 {
                   "type": "null"
@@ -366,18 +383,7 @@
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `plain`, `html`, and `rtf`.",
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [ "plain", "html", "rtf" ]
-              }
-            }
-          ]
+          "$ref": "#/definitions/CopyFormat"
         },
         "largePasteWarning": {
           "default": true,

@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _rtf(),
             _formats(Settings::CopyFormat::Plain) {}
 
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<Settings::CopyFormat> formats = nullptr) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<Settings::CopyFormat> formats) :
             _text(text),
             _html(html),
             _rtf(rtf),
@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool singleLine, Windows::Foundation::IReference<Settings::CopyFormat> formats);
+        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<Settings::CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;

@@ -1559,9 +1559,7 @@ namespace winrt::TerminalApp::implementation
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
         // The EventArgs.Formats() is an override for the global setting "copyFormatting"
-        //   if and only if it is not set
-        // Since 'Formats' cannot be represented as an optional in the EventArgs,
-        //   a sentinel value of 0 represents that "Formats" was not set.
+        //   iff it is set
         bool useGlobal = copiedData.Formats() == nullptr;
         auto copyFormats = useGlobal ?
                                _settings->GlobalSettings().CopyFormatting() :
@@ -1680,7 +1678,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, Windows::Foundation::IReference<Settings::CopyFormat> formats)
+    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<Settings::CopyFormat>& formats)
     {
         const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(singleLine, formats);
