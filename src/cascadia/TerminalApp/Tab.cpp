@@ -906,6 +906,16 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
     }
 
+    // Method Description:
+    // - Toggle our zoom state.
+    //   * If we're not zoomed, then zoom the active pane, making it take the
+    //     full size of the tab. We'll achieve this by changing our response to
+    //     Tab::GetRootElement, so that it'll return the zoomed pane only.
+    //   *  If we're currently zoomed on a pane, unzoom that pane.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Tab::ToggleZoom()
     {
         if (_zoomedPane)
@@ -917,17 +927,18 @@ namespace winrt::TerminalApp::implementation
             EnterZoom();
         }
     }
-
     void Tab::EnterZoom()
     {
         _zoomedPane = _activePane;
         _rootPane->Zoom(_zoomedPane);
+        // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
     }
     void Tab::ExitZoom()
     {
         _rootPane->UnZoom(_zoomedPane);
         _zoomedPane = nullptr;
+        // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();
     }
 

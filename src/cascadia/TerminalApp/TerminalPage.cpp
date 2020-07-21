@@ -1168,13 +1168,29 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    // Method Description:
+    // - Helper to manually exit "zoom" when certain actions take place.
+    //   Anything that modifies the state of the pane tree should probably
+    //   unzoom the focused pane first, so that the user can see the full pane
+    //   tree again. These actions include:
+    //   * Splitting a new pane
+    //   * Closing a pane
+    //   * Moving focus between panes
+    //   * Resizing a pane
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::_UnZoomIfNeeded()
     {
         auto activeTab = _GetFocusedTab();
         if (activeTab && activeTab->IsZoomed())
         {
+            // Remove the content from the tab first, so Pane::UnZoom can
+            // re-attach the content to the tree w/in the pane
             _tabContent.Children().Clear();
             activeTab->ExitZoom();
+            // Re-attach the tab's content to the UI tree.
             _tabContent.Children().Append(activeTab->GetRootElement());
         }
     }
