@@ -78,6 +78,12 @@ jobs:
       artifactName: ${{ parameters.artifactName }} 
       downloadPath: '$(artifactsDir)'
 
+  - task: CmdLine@1
+    displayName: 'Display Artifact Directory payload contents'
+    inputs:
+      filename: 'dir'
+      arguments: '/s $(artifactsDir)'
+
   - task: powershell@2
     displayName: 'PrepareHelixPayload.ps1'
     inputs:
