@@ -409,18 +409,23 @@ namespace winrt::TerminalApp::implementation
     {
         TerminalApp::Command command;
         int weight;
-        bool orderByTabIndex;
+        int inOrderCounter;
 
         bool operator<(const WeightedCommand& other) const
         {
-            // If two commands have the same weight, then we'll sort them alphabetically.
             if (weight == other.weight)
             {
-                if (orderByTabIndex)
+                // If two commands have the same weight, then we'll sort them alphabetically.
+                // If they both have the same name, fall back to the order in which they were
+                // pushed into the heap.
+                if (command.Name() == other.command.Name())
                 {
-                    return false;
+                    return inOrderCounter > other.inOrderCounter;
                 }
-                return !_compareCommandNames(command, other.command);
+                else
+                {
+                    return !_compareCommandNames(command, other.command);
+                }
             }
             return weight < other.weight;
         }
@@ -503,9 +508,13 @@ namespace winrt::TerminalApp::implementation
                 wc.command = action;
                 wc.weight = weight;
 
-                // If we're in Tab Switcher mode, we want to fall back to Index
-                // order, not Command Name alphabetical order.
-                wc.orderByTabIndex = _currentMode == CommandPaletteMode::TabSwitcherMode;
+                // I hate this but this adds an "inOrderCounter" to allow commands with
+                // the same names and weights to be ordered in the order they were pushed
+                // onto the heap. This specifically helps out tab actions in the Tab Switcher,
+                // since it's quite common to have tab titles be the same.
+                uint32_t counter = 0;
+                commandsToFilter.IndexOf(action, counter);
+                wc.inOrderCounter = counter;
 
                 heap.push(wc);
             }
