@@ -173,7 +173,7 @@ The deserialization process takes place right after comparing the `settingsSourc
  values of `AppSettings`. This would prevent those instanced changes from being lost on a settings
  reload.
 
-Since previewable commands like `setColorScheme` would require a clone of the existing `TerminalSettings`,
+Since previewing commands like `setColorScheme` would require a clone of the existing `TerminalSettings`,
  a `Clone` API can be added on `TerminalSettings` to accomplish that. When passing by value,
  `TerminalSettings` can just overwrite the existing property (i.e.: color scheme). When passing
  by reference, a slightly more complex mechanism is required to override the value.
@@ -181,7 +181,7 @@ Since previewable commands like `setColorScheme` would require a clone of the ex
 Now, instead of overwriting the value, we need to override the reference to a constant value
 (i.e.: `snapOnInput=true`) or a referenced value (i.e.: `colorScheme`).
 
-### Layering Additonal Settings
+### Layering Additional Settings
 As we begin to introduce more sources that affect the settings (via extensions or themes),
  we can introduce a `LayerSettings(String path)`. This layers the new settings file
  onto the existing `AppSettings`. This is already done internally, we would just expose
@@ -234,6 +234,6 @@ In the case that a user is simultaneously updating the settings file directly an
 
 ## Resources
 
-- [Previewable Commands](https://github.com/microsoft/terminal/issues/6689)
+- [Preview Commands](https://github.com/microsoft/terminal/issues/6689)
 - [New JSON Utils](https://github.com/microsoft/terminal/pull/6590)
 - [Spec: Settings UI](https://github.com/microsoft/terminal/pull/6720)
