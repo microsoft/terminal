@@ -200,13 +200,16 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 DELAYLOAD = \
-    PROPSYS.dll; \
     D2D1.dll; \
+    D3D11.dll; \
     DWrite.dll; \
     DXGI.dll; \
-    D3D11.dll; \
     OLEAUT32.dll; \
+    PROPSYS.dll; \
+    api-ms-win-core-com-l1.dll; \
+    api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \
+    api-ms-win-shcore-obsolete-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
     api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-dwmapi-ext-l1.dll; \
