@@ -532,11 +532,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     if (_titlebar)
     {
         _isFocused = wParam;
-        const auto state = _isFocused ? winrt::TerminalApp::WindowVisualState::WindowVisualStateFocused :
-                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateUnfocused;
         try
         {
-            _titlebar.SetWindowVisualState(state);
+            _titlebar.Focused(_isFocused);
         }
         CATCH_LOG();
     }

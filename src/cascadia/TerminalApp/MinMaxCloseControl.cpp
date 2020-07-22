@@ -78,6 +78,7 @@ namespace winrt::TerminalApp::implementation
             MaximizeButton().Height(maximizedHeight);
             CloseButton().Height(maximizedHeight);
             break;
+
         case WindowVisualState::WindowVisualStateUnfocused:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateUnfocused", false);
             VisualStateManager::GoToState(MinimizeButton(), L"WindowStateUnfocused", false);

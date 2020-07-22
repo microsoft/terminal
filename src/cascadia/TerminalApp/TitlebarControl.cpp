@@ -66,6 +66,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TitlebarControl::Focused(bool focused)
+    {
+    	const auto state = focused ? winrt::TerminalApp::WindowVisualState::WindowVisualStateFocused :
+                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateUnfocused;
+    	MinMaxCloseControl().SetWindowVisualState(state);
+    }
+
     void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         _OnMaximizeOrRestore(HTMAXBUTTON);
