@@ -8,7 +8,7 @@ Param(
 )
 
 $helixLinkFile = "$OutputFolder\LinksToHelixTestFiles.html"
-# $visualTreeVerificationFolder = "$OutputFolder\UpdatedVisualTreeVerificationFiles"
+$visualTreeVerificationFolder = "$OutputFolder\UpdatedVisualTreeVerificationFiles"
 
 $accessTokenParam = ""
 if($HelixAccessToken)
