@@ -361,10 +361,16 @@ namespace winrt::TerminalApp::implementation
             auto anchorKey = realArgs.AnchorKey();
             auto initDirection = realArgs.InitialDirection();
 
-            // The switcher should start at the currently focused index +/- 1
-            int delta = initDirection == TerminalApp::Direction::Down ? 1 : -1;
             auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = ((opt ? *opt : 0) + _tabs.Size() + delta) % _tabs.Size();
+            uint32_t startIdx = opt ? *opt : 0;
+
+            // If we're entering anchor mode, the switcher should start at the currently focused index +/- 1
+            // Otherwise if unanchored, I think it's better to start at the currently focused index.
+            if (anchorKey != VirtualKey::None)
+            {
+                int delta = initDirection == TerminalApp::Direction::Down ? 1 : -1;
+                startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
+            }
 
             CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
