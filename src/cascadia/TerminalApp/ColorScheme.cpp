@@ -75,10 +75,10 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     terminalSettings.SelectionBackground(static_cast<COLORREF>(_selectionBackground));
     terminalSettings.CursorColor(static_cast<COLORREF>(_cursorColor));
 
-    auto const tableCount = gsl::narrow_cast<unsigned int>(_table.size());
-    for (unsigned int i = 0; i < tableCount; i++)
+    auto const tableCount = _table.size();
+    for (size_t i = 0; i < tableCount; i++)
     {
-        terminalSettings.SetColorTableEntry(static_cast<size_t>(i), static_cast<COLORREF>(_table[i]));
+        terminalSettings.SetColorTableEntry(i, static_cast<COLORREF>(_table[i]));
     }
 }
 
@@ -131,10 +131,10 @@ void ColorScheme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _selectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _cursorColor);
 
-    unsigned int i = 0;
+    size_t i = 0;
     for (const auto& current : TableColors)
     {
-        JsonUtils::GetValueForKey(json, current, _table.at(static_cast<size_t>(i)));
+        JsonUtils::GetValueForKey(json, current, _table.at(i));
         i++;
     }
 }
