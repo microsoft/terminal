@@ -467,6 +467,17 @@ matters?
 
 ## Future considerations
 
+* Mentioned in [#7005] was the idea of shipping a default theme that had values
+  aligned with the appearance of the Edge browser. Perhaps something like:
+  ```jsonc
+  {
+      "name": "Edge",
+      "window.applicationTheme": "system",
+      "tab.background": "#whatever-color-edge-is", // Might need a "key:" resource here for light/dark theme switching
+      "tabRow.background": "accent",
+  },
+  ```
+
 #### Theming v2 Properties
 
 * `tab.padding`: Control the padding _within_ a tab between the text and the
@@ -491,9 +502,11 @@ matters?
 [#1337]: https://github.com/microsoft/terminal/issues/1337
 [#2994]: https://github.com/microsoft/terminal/issues/2994
 [#3774]: https://github.com/microsoft/terminal/issues/3774
+[#3789]: https://github.com/microsoft/terminal/pull/3789
 [#1963]: https://github.com/microsoft/terminal/issues/1963
 [#3335]: https://github.com/microsoft/terminal/issues/3335
 [#3459]: https://github.com/microsoft/terminal/issues/3459
+[#7005]: https://github.com/microsoft/terminal/issues/7005
 
 [#5280]: https://github.com/microsoft/terminal/pull/5280
 
