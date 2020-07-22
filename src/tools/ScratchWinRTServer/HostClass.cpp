@@ -317,7 +317,8 @@ namespace winrt::ScratchWinRTServer::implementation
             // Override the default width and height to match the size of the swapChainPanel
             // _settings.InitialCols(width); // <-- TODO
             // _settings.InitialRows(height); // <-- TODO
-
+            _settings.DefaultBackground(til::color{ 255, 0, 255, 255 }); //rgba
+            _settings.DefaultForeground(til::color{ 0, 0, 0, 255 }); //rgba
             _terminal->CreateFromSettings(_settings, renderTarget); // <-- TODO
 
             dxEngine->SetRetroTerminalEffects(false);
@@ -390,7 +391,7 @@ namespace winrt::ScratchWinRTServer::implementation
             // //      becomes a no-op.
             // this->Focus(FocusState::Programmatic);
 
-            // _initializedTerminal = true;
+            _initializedTerminal = true;
         } // scope for TerminalLock
 
         // Start the connection outside of lock, because it could
@@ -400,6 +401,8 @@ namespace winrt::ScratchWinRTServer::implementation
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
         // _InitializedHandlers(*this, nullptr);
+
+        _terminal->Write(L"Hello world from another process");
         return true;
     }
 

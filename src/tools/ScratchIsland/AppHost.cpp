@@ -155,6 +155,9 @@ winrt::fire_and_forget AppHost::_createHost()
     // }
 
     auto host0 = _manager.CreateHost();
+
+    co_await winrt::resume_foreground(_swp0.Dispatcher());
+
     host0.CreateSwapChain(_swp0);
 
     // wil::unique_handle _swapChainHandle;
@@ -167,7 +170,6 @@ winrt::fire_and_forget AppHost::_createHost()
 
     // host0.Attach(_swp0);
 
-    co_await winrt::resume_foreground(_swp0.Dispatcher());
 
     _swp0_layoutUpdatedRevoker = _swp0.LayoutUpdated(winrt::auto_revoke, [this, host0](auto /*s*/, auto /*e*/) {
         // This event fires every time the layout changes, but it is always the last one to fire

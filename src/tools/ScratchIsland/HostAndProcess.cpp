@@ -39,8 +39,7 @@ namespace winrt::ScratchIsland::implementation
 
         // {
         auto panelNative = panel.as<ISwapChainPanelNative2>();
-        panelNative;
-        panelNative->SetSwapChainHandle(_hOurSwapchain.get());
+        winrt::check_hresult(panelNative->SetSwapChainHandle(_hOurSwapchain.get()));
         // }
 
         _host.ThisIsInsane((uint64_t)_hTheirSwapchain.get());
