@@ -157,112 +157,6 @@ bool ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& curs
     return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), cursorInfo.dwSize, visible));
 }
 
-// Routine Description:
-// - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
-//     Sets BOTH the FG and the BG component of the attributes.
-// Arguments:
-// - attr - new color/graphical attributes to apply as default within the console text buffer
-// Return Value:
-// - true if successful (see DoSrvSetConsoleTextAttribute). false otherwise.
-bool ConhostInternalGetSet::SetConsoleTextAttribute(const WORD attr)
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleTextAttributeImpl(_io.GetActiveOutputBuffer(), attr));
-}
-
-// Routine Description:
-// - Connects the PrivateSetDefaultAttributes API call directly into our Driver Message servicing call inside Conhost.exe
-//     Sets the FG and/or BG to the Default attributes values.
-// Arguments:
-// - foreground - Set the foreground to the default attributes
-// - background - Set the background to the default attributes
-// Return Value:
-// - true if successful (see DoSrvPrivateSetDefaultAttributes). false otherwise.
-bool ConhostInternalGetSet::PrivateSetDefaultAttributes(const bool foreground,
-                                                        const bool background)
-{
-    DoSrvPrivateSetDefaultAttributes(_io.GetActiveOutputBuffer(), foreground, background);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateSetLegacyAttributes API call directly into our Driver Message servicing call inside Conhost.exe
-//     Sets only the components of the attributes requested with the foreground, background, and meta flags.
-// Arguments:
-// - attr - new color/graphical attributes to apply as default within the console text buffer
-// - foreground - The new attributes contain an update to the foreground attributes
-// - background - The new attributes contain an update to the background attributes
-// - meta - The new attributes contain an update to the meta attributes
-// Return Value:
-// - true if successful (see DoSrvVtSetLegacyAttributes). false otherwise.
-bool ConhostInternalGetSet::PrivateSetLegacyAttributes(const WORD attr,
-                                                       const bool foreground,
-                                                       const bool background,
-                                                       const bool meta)
-{
-    DoSrvPrivateSetLegacyAttributes(_io.GetActiveOutputBuffer(), attr, foreground, background, meta);
-    return true;
-}
-
-// Routine Description:
-// - Sets the current attributes of the screen buffer to use the color table entry specified by
-//     the xtermTableEntry. Sets either the FG or the BG component of the attributes.
-// Arguments:
-// - xtermTableEntry - The entry of the xterm table to use.
-// - isForeground - Whether or not the color applies to the foreground.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetConsoleXtermTextAttribute). false otherwise.
-bool ConhostInternalGetSet::SetConsoleXtermTextAttribute(const int xtermTableEntry, const bool isForeground)
-{
-    DoSrvPrivateSetConsoleXtermTextAttribute(_io.GetActiveOutputBuffer(), xtermTableEntry, isForeground);
-    return true;
-}
-
-// Routine Description:
-// - Sets the current attributes of the screen buffer to use the given rgb color.
-//     Sets either the FG or the BG component of the attributes.
-// Arguments:
-// - rgbColor - The rgb color to use.
-// - isForeground - Whether or not the color applies to the foreground.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetConsoleRGBTextAttribute). false otherwise.
-bool ConhostInternalGetSet::SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool isForeground)
-{
-    DoSrvPrivateSetConsoleRGBTextAttribute(_io.GetActiveOutputBuffer(), rgbColor, isForeground);
-    return true;
-}
-
-bool ConhostInternalGetSet::PrivateBoldText(const bool bolded)
-{
-    DoSrvPrivateBoldText(_io.GetActiveOutputBuffer(), bolded);
-    return true;
-}
-
-// Method Description:
-// - Retrieves the currently active ExtendedAttributes. See also
-//   DoSrvPrivateGetExtendedTextAttributes
-// Arguments:
-// - attrs: Receives the ExtendedAttributes value.
-// Return Value:
-// - true if successful (see DoSrvPrivateGetExtendedTextAttributes). false otherwise.
-bool ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes& attrs)
-{
-    attrs = DoSrvPrivateGetExtendedTextAttributes(_io.GetActiveOutputBuffer());
-    return true;
-}
-
-// Method Description:
-// - Sets the active ExtendedAttributes of the active screen buffer. Text
-//   written to this buffer will be written with these attributes.
-// Arguments:
-// - extendedAttrs: The new ExtendedAttributes to use
-// Return Value:
-// - true if successful (see DoSrvPrivateSetExtendedTextAttributes). false otherwise.
-bool ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
-{
-    DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);
-    return true;
-}
-
 // Method Description:
 // - Retrieves the current TextAttribute of the active screen buffer.
 // Arguments:
@@ -343,6 +237,37 @@ bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode
 bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 {
     return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
+}
+
+// Routine Description:
+// - Connects the PrivateEnableWin32InputMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateEnableWin32InputMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return Value:
+// - true always
+bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    DoSrvPrivateEnableWin32InputMode(win32InputMode);
+    return true;
+}
+
+// Routine Description:
+// - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+//   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    stateMachine.SetAnsiMode(ansiMode);
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.ChangeAnsiMode(ansiMode);
+    return true;
 }
 
 // Routine Description:
@@ -585,7 +510,7 @@ bool ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool enabled)
 // - true if successful (see DoSrvPrivateEraseAll). false otherwise.
 bool ConhostInternalGetSet::PrivateEraseAll()
 {
-    return NT_SUCCESS(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+    return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:
@@ -600,18 +525,6 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 {
     DoSrvSetCursorStyle(_io.GetActiveOutputBuffer(), style);
     return true;
-}
-
-// Routine Description:
-// - Retrieves the default color attributes information for the active screen buffer.
-// - This function is used to optimize SGR calls in lieu of calling GetConsoleScreenBufferInfoEx.
-// Arguments:
-// - pwAttributes - Pointer to space to receive color attributes data
-// Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(WORD& attributes)
-{
-    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_io.GetActiveOutputBuffer(), attributes));
 }
 
 // Routine Description:
@@ -652,6 +565,17 @@ bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 {
     return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_io.GetActiveInputBuffer(),
                                                           key));
+}
+
+// Routine Description:
+// - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - codepage - the new output codepage of the console.
+// Return Value:
+// - true if successful (see DoSrvSetConsoleOutputCodePage). false otherwise.
+bool ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+{
+    return SUCCEEDED(DoSrvSetConsoleOutputCodePage(codepage));
 }
 
 // Routine Description:
@@ -734,6 +658,19 @@ bool ConhostInternalGetSet::MoveToBottom() const
 }
 
 // Method Description:
+// - Connects the PrivateGetColorTableEntry call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - true if successful (see DoSrvPrivateGetColorTableEntry). false otherwise.
+bool ConhostInternalGetSet::PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept
+{
+    return SUCCEEDED(DoSrvPrivateGetColorTableEntry(index, value));
+}
+
+// Method Description:
 // - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
 //      call inside Conhost.exe
 // Arguments:
@@ -741,7 +678,7 @@ bool ConhostInternalGetSet::MoveToBottom() const
 // - value: the new RGB value to use for that index in the color table.
 // Return Value:
 // - true if successful (see DoSrvPrivateSetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept
+bool ConhostInternalGetSet::PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
 }

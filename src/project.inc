@@ -8,7 +8,7 @@
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY
 
 # -------------------------------------
 # CRT Configuration
@@ -16,6 +16,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
+NO_WCHAR_T              = 1 # use native wchar_t
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT
@@ -36,8 +37,11 @@ CONSOLE_OBJ_PATH        = $(WINCORE_OBJ_PATH)\console\open\src
 INCLUDES= \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc; \
-    $(CONSOLE_OBJ_PATH)\..\..\dep\$(O)\vpack; \
     $(CONSOLE_SRC_PATH)\..\..\inc; \
+    $(CONSOLE_SRC_PATH)\..\oss\dynamic_bitset; \
+    $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
+    $(CONSOLE_SRC_PATH)\..\oss\chromium; \
+    $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \

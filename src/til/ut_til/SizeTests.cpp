@@ -27,6 +27,13 @@ class SizeTests
         VERIFY_ARE_EQUAL(10, sz._height);
     }
 
+    TEST_METHOD(RawFloatingConstruct)
+    {
+        const til::size sz{ til::math::rounding, 3.2f, 7.8f };
+        VERIFY_ARE_EQUAL(3, sz._width);
+        VERIFY_ARE_EQUAL(8, sz._height);
+    }
+
     TEST_METHOD(UnsignedConstruct)
     {
         Log::Comment(L"0.) Normal unsigned construct.");
@@ -72,6 +79,26 @@ class SizeTests
         const til::size sz{ width, height };
         VERIFY_ARE_EQUAL(width, sz._width);
         VERIFY_ARE_EQUAL(height, sz._height);
+    }
+
+    TEST_METHOD(MixedRawTypeConstruct)
+    {
+        const ptrdiff_t a = -5;
+        const int b = -10;
+
+        Log::Comment(L"Case 1: ptrdiff_t/int");
+        {
+            const til::size sz{ a, b };
+            VERIFY_ARE_EQUAL(a, sz._width);
+            VERIFY_ARE_EQUAL(b, sz._height);
+        }
+
+        Log::Comment(L"Case 2: int/ptrdiff_t");
+        {
+            const til::size sz{ b, a };
+            VERIFY_ARE_EQUAL(b, sz._width);
+            VERIFY_ARE_EQUAL(a, sz._height);
+        }
     }
 
     TEST_METHOD(CoordConstruct)
@@ -428,6 +455,26 @@ class SizeTests
 
             auto fn = [&]() {
                 sz.area();
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+    TEST_METHOD(AreaCast)
+    {
+        Log::Comment(L"0.) Area of two things that should be in bounds.");
+        {
+            const til::size sz{ 5, 10 };
+            VERIFY_ARE_EQUAL(static_cast<SHORT>(sz.area()), sz.area<SHORT>());
+        }
+
+        Log::Comment(L"1.) Area is out of bounds on multiplication.");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<SHORT>().max();
+            const til::size sz{ bigSize, bigSize };
+
+            auto fn = [&]() {
+                sz.area<SHORT>();
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });

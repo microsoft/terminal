@@ -33,7 +33,7 @@ Run the test:
     - Run with no arguments to see the order in which processes are signaled.
     - Run `closetest.exe -d alternate --gap -n 4` to require multiple Close
       button clicks.
- - Observe the "closetest: child nnn: attached to console" messages in DbgView
+ - Observe the "closetest: child ###: attached to console" messages in DbgView
  - Click the console's Close button.
  - Observe the `CTRL_CLOSE_EVENT` messages in DbgView.
 DETAILS:
@@ -193,12 +193,12 @@ EXAMPLE 3: race condition between process cleanup and close signaling
 #endif
 
 #include <windows.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-#include <locale.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
+#include <clocale>
 
 #include <algorithm>
 #include <array>

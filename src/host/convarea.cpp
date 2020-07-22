@@ -104,6 +104,9 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->SaveCursorVisibility();
+
     gci.pInputBuffer->fInComposition = true;
     return S_OK;
 }
@@ -114,13 +117,16 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    pIme->RestoreCursorVisibility();
+
     gci.pInputBuffer->fInComposition = false;
     return S_OK;
 }
 
 [[nodiscard]] HRESULT ImeComposeData(std::wstring_view text,
-                                     std::basic_string_view<BYTE> attributes,
-                                     std::basic_string_view<WORD> colorArray)
+                                     gsl::span<const BYTE> attributes,
+                                     gsl::span<const WORD> colorArray)
 {
     try
     {

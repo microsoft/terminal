@@ -28,10 +28,7 @@ namespace Microsoft::Console::Render
     {
     public:
         XtermEngine(_In_ wil::unique_hfile hPipe,
-                    const Microsoft::Console::IDefaultColorProvider& colorProvider,
                     const Microsoft::Console::Types::Viewport initialViewport,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable,
                     const bool fUseAsciiOnly);
 
         virtual ~XtermEngine() override = default;
@@ -41,12 +38,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -57,17 +52,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
     protected:
-        const COLORREF* const _ColorTable;
-        const WORD _cColorTable;
         const bool _fUseAsciiOnly;
-        bool _usingUnderLine;
         bool _needToDisableCursor;
         bool _lastCursorIsVisible;
         bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
-
-        [[nodiscard]] HRESULT _UpdateUnderline(const WORD wLegacyAttrs) noexcept;
 
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 

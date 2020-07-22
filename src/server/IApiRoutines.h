@@ -113,11 +113,13 @@ public:
     [[nodiscard]] virtual HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                                     const std::string_view buffer,
                                                     size_t& read,
+                                                    bool requiresVtQuirk,
                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
                                                     const std::wstring_view buffer,
                                                     size_t& read,
+                                                    bool requiresVtQuirk,
                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
 #pragma region Thread Creation Info
@@ -144,7 +146,8 @@ public:
                                                                   const wchar_t character,
                                                                   const size_t lengthToWrite,
                                                                   const COORD startingCoordinate,
-                                                                  size_t& cellsModified) noexcept = 0;
+                                                                  size_t& cellsModified,
+                                                                  const bool enablePowershellShim = false) noexcept = 0;
 
     virtual void SetConsoleActiveScreenBufferImpl(IConsoleOutputObject& newContext) noexcept = 0;
 
@@ -190,7 +193,8 @@ public:
                                                                  const COORD target,
                                                                  std::optional<SMALL_RECT> clip,
                                                                  const wchar_t fillCharacter,
-                                                                 const WORD fillAttribute) noexcept = 0;
+                                                                 const WORD fillAttribute,
+                                                                 const bool enableCmdShim = false) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleTextAttributeImpl(IConsoleOutputObject& context,
                                                               const WORD attribute) noexcept = 0;
@@ -215,12 +219,12 @@ public:
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
-                                                         const std::basic_string_view<INPUT_RECORD> buffer,
+                                                         const gsl::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
-                                                         const std::basic_string_view<INPUT_RECORD> buffer,
+                                                         const gsl::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
@@ -235,7 +239,7 @@ public:
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                  const std::basic_string_view<WORD> attrs,
+                                                                  const gsl::span<const WORD> attrs,
                                                                   const COORD target,
                                                                   size_t& used) noexcept = 0;
 

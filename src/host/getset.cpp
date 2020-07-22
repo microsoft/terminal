@@ -127,7 +127,13 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
                                                              &data.dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
-        // Callers of this function expect to receive an exclusive rect, not an inclusive one.
+
+        // Callers of this function expect to receive an exclusive rect, not an
+        // inclusive one. The driver will mangle this value for us
+        // - For GetConsoleScreenBufferInfoEx, it will re-decrement these values
+        //   to return an inclusive rect.
+        // - For GetConsoleScreenBufferInfo, it will leave these values
+        //   untouched, returning an exclusive rect.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
     }
@@ -566,9 +572,12 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
-        gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
+        for (size_t i = 0; i < std::size(data.ColorTable); i++)
+        {
+            gci.SetColorTableEntry(i, data.ColorTable[i]);
+        }
 
-        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
+        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -589,7 +598,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (NewSize.X != context.GetViewport().Width() ||
             NewSize.Y != context.GetViewport().Height())
         {
+            // GH#1856 - make sure to hide the commandline _before_ we execute
+            // the resize, and the re-display it after the resize. If we leave
+            // it displayed, we'll crash during the resize when we try to figure
+            // out if the bounds of the old commandline fit within the new
+            // window (it might not).
+            CommandLine& commandLine = CommandLine::Instance();
+            commandLine.Hide(FALSE);
             context.SetViewportSize(&NewSize);
+            commandLine.Show();
 
             IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)
@@ -820,6 +837,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
 // - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// - enableCmdShim - true iff the client process that's calling this
+//   method is "cmd.exe". Used to enable certain compatibility shims for
+//   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
@@ -827,7 +847,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                                   const COORD target,
                                                                   std::optional<SMALL_RECT> clip,
                                                                   const wchar_t fillCharacter,
-                                                                  const WORD fillAttribute) noexcept
+                                                                  const WORD fillAttribute,
+                                                                  const bool enableCmdShim) noexcept
 {
     try
     {
@@ -839,7 +860,36 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         TextAttribute useThisAttr(fillAttribute);
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
-        return S_OK;
+        HRESULT hr = S_OK;
+
+        // GH#3126 - This is a shim for cmd's `cls` function. In the
+        // legacy console, `cls` is supposed to clear the entire buffer. In
+        // conpty however, there's no difference between the viewport and the
+        // entirety of the buffer. We're going to see if this API call exactly
+        // matched the way we expect cmd to call it. If it does, then
+        // let's manually emit a ^[[3J to the connected terminal, so that their
+        // entire buffer will be cleared as well.
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (enableCmdShim && gci.IsInVtIoMode())
+        {
+            const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
+            const bool sourceIsWholeBuffer = (source.Top == 0) &&
+                                             (source.Left == 0) &&
+                                             (source.Right == currentBufferDimensions.X) &&
+                                             (source.Bottom == currentBufferDimensions.Y);
+            const bool targetIsNegativeBufferHeight = (target.X == 0) &&
+                                                      (target.Y == -currentBufferDimensions.Y);
+            const bool noClipProvided = clip == std::nullopt;
+            const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
+                                     (fillAttribute == buffer.GetAttributes().GetLegacyAttributes());
+
+            if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
+            {
+                hr = gci.GetVtIo()->ManuallyClearScrollback();
+            }
+        }
+
+        return hr;
     }
     CATCH_RETURN();
 }
@@ -872,121 +922,23 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
-void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
-                                     const WORD Attribute,
-                                     const bool fForeground,
-                                     const bool fBackground,
-                                     const bool fMeta)
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
 {
-    auto& buffer = screenInfo.GetActiveBuffer();
-    const TextAttribute OldAttributes = buffer.GetAttributes();
-    TextAttribute NewAttributes = OldAttributes;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
 
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
-                                      const bool fForeground,
-                                      const bool fBackground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    if (fForeground)
+    // Do nothing if no change.
+    if (gci.OutputCP != codepage)
     {
-        NewAttributes.SetDefaultForeground();
-    }
-    if (fBackground)
-    {
-        NewAttributes.SetDefaultBackground();
-    }
-    buffer.SetAttributes(NewAttributes);
-}
+        // Set new code page
+        gci.OutputCP = codepage;
 
-void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                              const int iXtermTableEntry,
-                                              const bool fIsForeground)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& buffer = screenInfo.GetActiveBuffer();
-    TextAttribute NewAttributes = buffer.GetAttributes();
-
-    COLORREF rgbColor;
-    if (iXtermTableEntry < COLOR_TABLE_SIZE)
-    {
-        //Convert the xterm index to the win index
-        WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
-
-        rgbColor = gci.GetColorTableEntry(iWinEntry);
-    }
-    else
-    {
-        rgbColor = gci.GetColorTableEntry(iXtermTableEntry);
+        SetConsoleCPInfo(TRUE);
     }
 
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
-                                            const COLORREF rgbColor,
-                                            const bool fIsForeground)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-
-    TextAttribute NewAttributes = buffer.GetAttributes();
-    NewAttributes.SetColor(rgbColor, fIsForeground);
-    buffer.SetAttributes(NewAttributes);
-}
-
-void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    if (bolded)
-    {
-        attrs.Embolden();
-    }
-    else
-    {
-        attrs.Debolden();
-    }
-    buffer.SetAttributes(attrs);
-}
-
-// Method Description:
-// - Retrieves the active ExtendedAttributes (italic, underline, etc.) of the
-//   given screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to get the extended attrs from.
-// Return Value:
-// - the currently active ExtendedAttributes.
-ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    return attrs.GetExtendedAttributes();
-}
-
-// Method Description:
-// - Sets the active ExtendedAttributes (italic, underline, etc.) of the given
-//   screen buffer. Text written to this buffer will be written with these
-//   attributes.
-// Arguments:
-// - screenInfo: The buffer to set the extended attrs for.
-// - extendedAttrs: The new ExtendedAttributes to use
-// Return Value:
-// - <none>
-void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
-                                           const ExtendedAttributes extendedAttrs)
-{
-    auto& buffer = screenInfo.GetActiveBuffer();
-    auto attrs = buffer.GetAttributes();
-    attrs.SetExtendedAttributes(extendedAttrs);
-    buffer.SetAttributes(attrs);
+    return S_OK;
 }
 
 // Routine Description:
@@ -999,23 +951,9 @@ void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.OutputCP != codepage)
-        {
-            // Set new code page
-            gci.OutputCP = codepage;
-
-            SetConsoleCPInfo(TRUE);
-        }
-
-        return S_OK;
+        return DoSrvSetConsoleOutputCodePage(codepage);
     }
     CATCH_RETURN();
 }
@@ -1290,6 +1228,19 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Function Description:
+// - A private API call which enables/disables sending full input records
+//   encoded as a string of characters to the client application.
+// Parameters:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return value:
+// - <none>
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
 }
 
 // Routine Description:
@@ -1593,10 +1544,10 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 // Parameters:
 //  The ScreenBuffer to perform the erase on.
 // Return value:
-// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
-    return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
+    return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
@@ -1609,23 +1560,6 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
-}
-
-// Routine Description:
-// - A private API call to get only the default color attributes of the screen buffer.
-// - This is used as a performance optimization by the VT adapter in SGR (Set Graphics Rendition) instead
-//   of calling for this information through the public API GetConsoleScreenBufferInfoEx which returns a lot
-//   of extra unnecessary data and takes a lot of extra processing time.
-// Parameters
-// - screenInfo - The screen buffer to retrieve default color attributes information from
-// - attributes - Space that will receive color attributes data
-// Return Value:
-// - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo, WORD& attributes)
-{
-    attributes = screenInfo.GetActiveBuffer().GetAttributes().GetLegacyAttributes();
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1668,9 +1602,9 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         written = 0;
         needed = 0;
 
-        if (title.has_value() && title.value().size() > 0)
+        if (title.has_value() && title->size() > 0)
         {
-            title.value().at(0) = ANSI_NULL;
+            til::at(*title, 0) = ANSI_NULL;
         }
 
         // Get the appropriate title and length depending on the mode.
@@ -1694,13 +1628,13 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         // If we have a pointer to receive the data, then copy it out.
         if (title.has_value())
         {
-            HRESULT const hr = StringCchCopyNW(title.value().data(), title.value().size(), pwszTitle, cchTitleLength);
+            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), pwszTitle, cchTitleLength);
 
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
-                written = std::min(gsl::narrow<size_t>(title.value().size()), cchTitleLength);
+                written = std::min(title->size(), cchTitleLength);
             }
         }
         return S_OK;
@@ -1733,7 +1667,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 
         if (title.size() > 0)
         {
-            title.at(0) = ANSI_NULL;
+            til::at(title, 0) = ANSI_NULL;
         }
 
         // Figure out how big our temporary Unicode buffer must be to get the title.
@@ -1760,7 +1694,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         // The legacy A behavior is a bit strange. If the buffer given doesn't have enough space to hold
         // the string without null termination (e.g. the title is 9 long, 10 with null. The buffer given isn't >= 9).
         // then do not copy anything back and do not report how much space we need.
-        if (gsl::narrow<size_t>(title.size()) >= converted.size())
+        if (title.size() >= converted.size())
         {
             // Say how many characters of buffer we would need to hold the entire result.
             needed = converted.size();
@@ -1773,13 +1707,13 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
                 // And return the size copied (either the size of the buffer or the null terminated length of the string we filled it with.)
-                written = std::min(gsl::narrow<size_t>(title.size()), converted.size() + 1);
+                written = std::min(title.size(), converted.size() + 1);
 
                 // Another compatibility fix... If we had exactly the number of bytes needed for an unterminated string,
                 // then replace the terminator left behind by StringCchCopyNA with the final character of the title string.
-                if (gsl::narrow<size_t>(title.size()) == converted.size())
+                if (title.size() == converted.size())
                 {
-                    title.at(title.size() - 1) = converted.data()[converted.size() - 1];
+                    title.back() = converted.back();
                 }
             }
         }
@@ -1788,7 +1722,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
             // If we didn't copy anything back and there is space, null terminate the given buffer and return.
             if (title.size() > 0)
             {
-                title.at(0) = ANSI_NULL;
+                til::at(title, 0) = ANSI_NULL;
                 written = 1;
             }
         }
@@ -2061,6 +1995,28 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 }
 
 // Method Description:
+// - Retrieve the color table value at the specified index.
+// Arguments:
+// - index: the index in the table to retrieve.
+// - value: receives the RGB value for the color at that index in the table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept
+{
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Method Description:
 // - Sets the color table value in index to the color specified in value.
 //      Can be used to set the 256-color table as well as the 16-color table.
 // Arguments:
@@ -2071,7 +2027,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Notes:
 //  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
@@ -2079,7 +2035,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(index, value);
+        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.

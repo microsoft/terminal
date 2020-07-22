@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               COORD const coord,
                                               bool const fTrimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -60,10 +60,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                   const COLORREF colorBackground,
-                                                   const WORD legacyColorAttribute,
-                                                   const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;

@@ -32,6 +32,7 @@ public:
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
+    void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -52,14 +53,19 @@ private:
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
-    COLORREF _backgroundBrushColor;
+    til::color _backgroundBrushColor;
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
-    wil::unique_hrgn _dragBarRegion;
+    wil::unique_hwnd _dragBarWindow;
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
+
+    [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+
+    void _ResizeDragBarWindow() noexcept;
 
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
@@ -69,15 +75,17 @@ private:
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;
+    [[nodiscard]] LRESULT _OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept;
     void _OnMaximizeChange() noexcept;
-    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
+    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
-    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    void _SetIsBorderless(const bool borderlessEnabled) override;
+    void _SetIsFullscreen(const bool fullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
-    void _UpdateIslandRegion() const;
-    void _UpdateFrameTheme() const;
+
+    void _OpenSystemMenu(const int mouseX, const int mouseY) const noexcept;
 };

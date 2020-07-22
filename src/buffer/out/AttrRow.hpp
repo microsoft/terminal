@@ -42,12 +42,11 @@ public:
                          size_t* const pApplies) const;
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
-    void ReplaceLegacyAttrs(const WORD wToBeReplacedAttr, const WORD wReplaceWith) noexcept;
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
 
     void Resize(const size_t newWidth);
 
-    [[nodiscard]] HRESULT InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
+    [[nodiscard]] HRESULT InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
                                          const size_t iStart,
                                          const size_t iEnd,
                                          const size_t cBufferWidth);

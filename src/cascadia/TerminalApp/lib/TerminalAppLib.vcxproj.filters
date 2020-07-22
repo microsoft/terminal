@@ -4,11 +4,10 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="../Resources/en-US/Resources.resw" />
+    <PRIResource Include="..\Resources\en-US\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp">
@@ -50,14 +49,18 @@
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
-    <ClCompile Include="../JsonUtils.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
     <ClCompile Include="../Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
+    </ClCompile>
+    <ClCompile Include="../AppCommandlineArgs.cpp" />
+    <ClCompile Include="../Commandline.cpp" />
+    <ClCompile Include="../ColorHelper.cpp" />
+    <ClCompile Include="../DebugTapConnection.cpp" />
+    <ClCompile Include="../CommandSerialization.cpp">
+      <Filter>settings</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -85,6 +88,9 @@
     <ClInclude Include="../GlobalAppSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h">
+      <Filter>settings</Filter>
+    </ClInclude>
     <ClInclude Include="../KeyChordSerialization.h">
       <Filter>settings</Filter>
     </ClInclude>
@@ -106,7 +112,16 @@
     <ClInclude Include="../Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
-    <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="../AppCommandlineArgs.h" />
+    <ClInclude Include="../Commandline.h" />
+    <ClInclude Include="../DebugTapConnection.h" />
+    <ClInclude Include="../ColorHelper.h" />
+    <ClInclude Include="../TelnetGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="../CommandSerialization.h">
+      <Filter>settings</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
@@ -124,6 +139,10 @@
     <Midl Include="../Tab.idl">
       <Filter>tab</Filter>
     </Midl>
+    <Midl Include="../IF7Listener.idl" />
+    <Midl Include="../Command.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages.config" />
@@ -140,6 +159,12 @@
     </Page>
     <Page Include="../TitlebarControl.xaml">
       <Filter>controls</Filter>
+    </Page>
+    <Page Include="../ColorPickupFlyout.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="../CommandPalette.xaml">
+      <Filter>commandPalette</Filter>
     </Page>
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +188,9 @@
     </Filter>
     <Filter Include="tab">
       <UniqueIdentifier>{6d40e12f-b83f-462e-8f93-fa421f87b27e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="commandPalette">
+      <UniqueIdentifier>{2ad498e1-d8ea-4381-9464-a74c141bd7dd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

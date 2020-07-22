@@ -9,6 +9,7 @@
 #include <DefaultSettings.h>
 
 #include "LegacyProfileGeneratorNamespaces.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -28,6 +29,7 @@ static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
@@ -36,6 +38,7 @@ static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
 static constexpr std::string_view FontSizeKey{ "fontSize" };
+static constexpr std::string_view FontWeightKey{ "fontWeight" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -49,44 +52,6 @@ static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImag
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
-
-// Possible values for closeOnExit
-static constexpr std::string_view CloseOnExitAlways{ "always" };
-static constexpr std::string_view CloseOnExitGraceful{ "graceful" };
-static constexpr std::string_view CloseOnExitNever{ "never" };
-
-// Possible values for Scrollbar state
-static constexpr std::wstring_view AlwaysVisible{ L"visible" };
-static constexpr std::wstring_view AlwaysHide{ L"hidden" };
-
-// Possible values for Cursor Shape
-static constexpr std::wstring_view CursorShapeVintage{ L"vintage" };
-static constexpr std::wstring_view CursorShapeBar{ L"bar" };
-static constexpr std::wstring_view CursorShapeUnderscore{ L"underscore" };
-static constexpr std::wstring_view CursorShapeFilledbox{ L"filledBox" };
-static constexpr std::wstring_view CursorShapeEmptybox{ L"emptyBox" };
-
-// Possible values for Image Stretch Mode
-static constexpr std::string_view ImageStretchModeNone{ "none" };
-static constexpr std::string_view ImageStretchModeFill{ "fill" };
-static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
-static constexpr std::string_view ImageStretchModeUniformTofill{ "uniformToFill" };
-
-// Possible values for Image Alignment
-static constexpr std::string_view ImageAlignmentCenter{ "center" };
-static constexpr std::string_view ImageAlignmentLeft{ "left" };
-static constexpr std::string_view ImageAlignmentTop{ "top" };
-static constexpr std::string_view ImageAlignmentRight{ "right" };
-static constexpr std::string_view ImageAlignmentBottom{ "bottom" };
-static constexpr std::string_view ImageAlignmentTopLeft{ "topLeft" };
-static constexpr std::string_view ImageAlignmentTopRight{ "topRight" };
-static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
-static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
-
-// Possible values for TextAntialiasingMode
-static constexpr std::wstring_view AntialiasingModeGrayscale{ L"grayscale" };
-static constexpr std::wstring_view AntialiasingModeCleartype{ L"cleartype" };
-static constexpr std::wstring_view AntialiasingModeAliased{ L"aliased" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -107,6 +72,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _altGrAliasing{ true },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -115,6 +81,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
+    /* _fontWeight is initialized below because the structure won't accept a uint16_t directly */
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
@@ -128,6 +95,9 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _retroTerminalEffect{},
     _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
+    winrt::Windows::UI::Text::FontWeight weight;
+    weight.Weight = DEFAULT_FONT_WEIGHT;
+    _fontWeight = weight;
 }
 
 Profile::~Profile()
@@ -170,6 +140,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.AltGrAliasing(_altGrAliasing);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -180,6 +151,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
+    terminalSettings.FontWeight(_fontWeight);
     terminalSettings.Padding(_padding);
 
     terminalSettings.Commandline(_commandline);
@@ -226,8 +198,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (_scrollbarState)
     {
-        ScrollbarState result = ParseScrollbarState(_scrollbarState.value());
-        terminalSettings.ScrollState(result);
+        terminalSettings.ScrollState(_scrollbarState.value());
     }
 
     if (HasBackgroundImage())
@@ -261,183 +232,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.AntialiasingMode(_antialiasingMode);
 
     return terminalSettings;
-}
-
-// Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value Profile::ToJson() const
-{
-    Json::Value root = GenerateStub();
-
-    ///// Profile-specific settings /////
-    // As of #2795, all profile-specific settings were moved to GenerateStub. If
-    // any new profiles-specific settings are added, they should probably be
-    // added here instead of in that method.
-
-    ///// Core Settings /////
-    if (_defaultForeground)
-    {
-        root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground.value());
-    }
-    if (_defaultBackground)
-    {
-        root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
-    }
-    if (_selectionBackground)
-    {
-        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
-    }
-    if (_cursorColor)
-    {
-        root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor.value());
-    }
-    if (_schemeName)
-    {
-        const auto scheme = winrt::to_string(_schemeName.value());
-        root[JsonKey(ColorSchemeKey)] = scheme;
-    }
-    root[JsonKey(HistorySizeKey)] = _historySize;
-    root[JsonKey(SnapOnInputKey)] = _snapOnInput;
-    // Only add the cursor height property if we're a legacy-style cursor.
-    if (_cursorShape == CursorStyle::Vintage)
-    {
-        root[JsonKey(CursorHeightKey)] = _cursorHeight;
-    }
-    root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
-
-    root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
-    root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
-    root[JsonKey(FontSizeKey)] = _fontSize;
-    root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
-    root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
-
-    if (_connectionType)
-    {
-        root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
-    }
-    if (_scrollbarState)
-    {
-        const auto scrollbarState = winrt::to_string(_scrollbarState.value());
-        root[JsonKey(ScrollbarStateKey)] = scrollbarState;
-    }
-
-    if (_icon)
-    {
-        const auto icon = winrt::to_string(_icon.value());
-        root[JsonKey(IconKey)] = icon;
-    }
-
-    if (_tabTitle)
-    {
-        root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
-    }
-
-    if (_suppressApplicationTitle)
-    {
-        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
-    }
-
-    if (_startingDirectory)
-    {
-        root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
-    }
-
-    if (_backgroundImage)
-    {
-        root[JsonKey(BackgroundImageKey)] = winrt::to_string(_backgroundImage.value());
-    }
-
-    if (_backgroundImageOpacity)
-    {
-        root[JsonKey(BackgroundImageOpacityKey)] = _backgroundImageOpacity.value();
-    }
-
-    if (_backgroundImageStretchMode)
-    {
-        root[JsonKey(BackgroundImageStretchModeKey)] = SerializeImageStretchMode(_backgroundImageStretchMode.value()).data();
-    }
-
-    if (_backgroundImageAlignment)
-    {
-        root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
-    }
-
-    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
-
-    if (_retroTerminalEffect)
-    {
-        root[JsonKey(RetroTerminalEffectKey)] = _retroTerminalEffect.value();
-    }
-
-    root[JsonKey(AntialiasingModeKey)] = SerializeTextAntialiasingMode(_antialiasingMode).data();
-
-    return root;
-}
-
-// Method Description:
-// - This generates a json object `diff` s.t.
-//      this = other.LayerJson(diff)
-// So if:
-// - this has a nullopt for an optional, diff will have null for that member
-// - this has a value for an optional, diff will have our value. If the other
-//   did _not_ have a value, and we did, diff will have our value.
-// Arguments:
-// - other: the other profile object to use as the "base" for this diff. The
-//   result could be layered upon that json object to re-create this object's
-//   serialization.
-// Return Value:
-// - a diff between this and the other object, such that this could be recreated
-//   from the diff and the other object.
-Json::Value Profile::DiffToJson(const Profile& other) const
-{
-    auto otherJson = other.ToJson();
-    auto myJson = ToJson();
-    Json::Value diff;
-
-    // Iterate in two steps:
-    // - first over all the keys in the 'other' object's serialization.
-    // - then over all the keys in our serialization.
-    // In this way, we ensure all keys from both objects are present in the
-    // final object.
-    for (const auto& key : otherJson.getMemberNames())
-    {
-        if (myJson.isMember(key))
-        {
-            // Both objects have the key
-            auto otherVal = otherJson[key];
-            auto myVal = myJson[key];
-            if (otherVal != myVal)
-            {
-                diff[key] = myVal;
-            }
-        }
-        else
-        {
-            // key is not in this json object. Set to null, so that when the
-            // diff is layered upon the original object, we'll properly set
-            // nullopt for any optionals that weren't present in this object.
-            diff[key] = Json::Value::null;
-        }
-    }
-    for (const auto& key : myJson.getMemberNames())
-    {
-        if (otherJson.isMember(key))
-        {
-            // both objects have this key. Do nothing, this is handled above
-        }
-        else
-        {
-            // We have a key the other object did not. Add our value.
-            diff[key] = myJson[key];
-        }
-    }
-
-    return diff;
 }
 
 // Method Description:
@@ -505,11 +299,9 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 
     // First, check that GUIDs match. This is easy. If they don't match, they
     // should _definitely_ not layer.
-    if (json.isMember(JsonKey(GuidKey)))
+    if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<GUID>>(json, GuidKey) })
     {
-        const auto guid{ json[JsonKey(GuidKey)] };
-        const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
-        if (_guid.value() != otherGuid)
+        if (otherGuid != _guid) // optional compare takes care of this
         {
             return false;
         }
@@ -523,16 +315,17 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         return false;
     }
 
-    const auto& otherSource = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+    std::optional<std::wstring> otherSource;
+    bool otherHadSource = JsonUtils::GetValueForKey(json, SourceKey, otherSource);
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
     if (_source.has_value())
     {
-        if (json.isMember(JsonKey(SourceKey)))
+        if (otherHadSource)
         {
-            const auto otherSourceString = GetWstringFromJson(otherSource);
-            sourceMatches = otherSourceString == _source.value();
+            // If we have a source and the other has a source, compare them!
+            sourceMatches = otherSource == _source;
         }
         else
         {
@@ -550,50 +343,11 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     }
     else
     {
-        // We do not have a source. The only way we match is if source is set to null or "".
-        if (otherSource.isNull() || (otherSource.isString() && otherSource == ""))
-        {
-            sourceMatches = true;
-        }
+        // We do not have a source. The only way we match is if source is unset or set to "".
+        sourceMatches = (!otherSource.has_value() || otherSource.value() == L"");
     }
 
     return sourceMatches;
-}
-
-// Method Description:
-// - Helper function to convert a json value into a value of the Stretch enum.
-//   Calls into ParseImageStretchMode. Used with JsonUtils::GetOptionalValue.
-// Arguments:
-// - json: the Json::Value object to parse.
-// Return Value:
-// - An appropriate value from Windows.UI.Xaml.Media.Stretch
-Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
-{
-    return Profile::ParseImageStretchMode(json.asString());
-}
-
-// Method Description:
-// - Helper function to convert a json value into a value of the Stretch enum.
-//   Calls into ParseImageAlignment. Used with JsonUtils::GetOptionalValue.
-// Arguments:
-// - json: the Json::Value object to parse.
-// Return Value:
-// - A pair of HorizontalAlignment and VerticalAlignment
-std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
-{
-    return Profile::ParseImageAlignment(json.asString());
-}
-
-// Method Description:
-// - Helper function to convert a json value into a bool.
-//   Used with JsonUtils::GetOptionalValue.
-// Arguments:
-// - json: the Json::Value object to parse.
-// Return Value:
-// - A bool
-bool Profile::_ConvertJsonToBool(const Json::Value& json)
-{
-    return json.asBool();
 }
 
 // Method Description:
@@ -611,81 +365,45 @@ bool Profile::_ConvertJsonToBool(const Json::Value& json)
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
-    JsonUtils::GetWstring(json, NameKey, _name);
-
-    JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
-
-    JsonUtils::GetBool(json, HiddenKey, _hidden);
+    JsonUtils::GetValueForKey(json, NameKey, _name);
+    JsonUtils::GetValueForKey(json, GuidKey, _guid);
+    JsonUtils::GetValueForKey(json, HiddenKey, _hidden);
 
     // Core Settings
-    JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
-
-    JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
-
-    JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
-
-    JsonUtils::GetOptionalColor(json, CursorColorKey, _cursorColor);
-
-    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _selectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _cursorColor);
+    JsonUtils::GetValueForKey(json, ColorSchemeKey, _schemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::GetInt(json, HistorySizeKey, _historySize);
-
-    JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
-
-    JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
-
-    if (json.isMember(JsonKey(CursorShapeKey)))
-    {
-        auto cursorShape{ json[JsonKey(CursorShapeKey)] };
-        _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
-    }
-    JsonUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
+    JsonUtils::GetValueForKey(json, HistorySizeKey, _historySize);
+    JsonUtils::GetValueForKey(json, SnapOnInputKey, _snapOnInput);
+    JsonUtils::GetValueForKey(json, AltGrAliasingKey, _altGrAliasing);
+    JsonUtils::GetValueForKey(json, CursorHeightKey, _cursorHeight);
+    JsonUtils::GetValueForKey(json, CursorShapeKey, _cursorShape);
+    JsonUtils::GetValueForKey(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
-
-    JsonUtils::GetWstring(json, CommandlineKey, _commandline);
-
-    JsonUtils::GetWstring(json, FontFaceKey, _fontFace);
-
-    JsonUtils::GetInt(json, FontSizeKey, _fontSize);
-
-    JsonUtils::GetDouble(json, AcrylicTransparencyKey, _acrylicTransparency);
-
-    JsonUtils::GetBool(json, UseAcrylicKey, _useAcrylic);
-
-    JsonUtils::GetBool(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
-
-    if (json.isMember(JsonKey(CloseOnExitKey)))
-    {
-        auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
-        _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
-    }
-
-    JsonUtils::GetWstring(json, PaddingKey, _padding);
-
-    JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
-
-    JsonUtils::GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
-
-    JsonUtils::GetOptionalString(json, IconKey, _icon);
-
-    JsonUtils::GetOptionalString(json, BackgroundImageKey, _backgroundImage);
-
-    JsonUtils::GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
-
-    JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
-
-    JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
-
-    JsonUtils::GetOptionalValue(json, RetroTerminalEffectKey, _retroTerminalEffect, Profile::_ConvertJsonToBool);
-
-    if (json.isMember(JsonKey(AntialiasingModeKey)))
-    {
-        auto antialiasingMode{ json[JsonKey(AntialiasingModeKey)] };
-        _antialiasingMode = ParseTextAntialiasingMode(GetWstringFromJson(antialiasingMode));
-    }
+    JsonUtils::GetValueForKey(json, FontWeightKey, _fontWeight);
+    JsonUtils::GetValueForKey(json, ConnectionTypeKey, _connectionType);
+    JsonUtils::GetValueForKey(json, CommandlineKey, _commandline);
+    JsonUtils::GetValueForKey(json, FontFaceKey, _fontFace);
+    JsonUtils::GetValueForKey(json, FontSizeKey, _fontSize);
+    JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _acrylicTransparency);
+    JsonUtils::GetValueForKey(json, UseAcrylicKey, _useAcrylic);
+    JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
+    JsonUtils::GetValueForKey(json, CloseOnExitKey, _closeOnExitMode);
+    JsonUtils::GetValueForKey(json, PaddingKey, _padding);
+    JsonUtils::GetValueForKey(json, ScrollbarStateKey, _scrollbarState);
+    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _startingDirectory);
+    JsonUtils::GetValueForKey(json, IconKey, _icon);
+    JsonUtils::GetValueForKey(json, BackgroundImageKey, _backgroundImage);
+    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
+    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode);
+    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _backgroundImageAlignment);
+    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _retroTerminalEffect);
+    JsonUtils::GetValueForKey(json, AntialiasingModeKey, _antialiasingMode);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -698,7 +416,7 @@ void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
     _schemeName = std::move(schemeName);
 }
 
-std::optional<std::wstring>& Profile::GetSchemeName() noexcept
+const std::optional<std::wstring>& Profile::GetSchemeName() const noexcept
 {
     return _schemeName;
 }
@@ -728,17 +446,17 @@ void Profile::SetUseAcrylic(bool useAcrylic) noexcept
     _useAcrylic = useAcrylic;
 }
 
-void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
+void Profile::SetDefaultForeground(til::color defaultForeground) noexcept
 {
     _defaultForeground = defaultForeground;
 }
 
-void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
+void Profile::SetDefaultBackground(til::color defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
 }
 
-void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
+void Profile::SetSelectionBackground(til::color selectionBackground) noexcept
 {
     _selectionBackground = selectionBackground;
 }
@@ -889,7 +607,7 @@ bool Profile::IsHidden() const noexcept
 // Method Description:
 // - Helper function for expanding any environment variables in a user-supplied starting directory and validating the resulting path
 // Arguments:
-// - The value from the profiles.json file
+// - The value from the settings.json file
 // Return Value:
 // - The directory string with any environment variables expanded. If the resulting path is invalid,
 // - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
@@ -914,298 +632,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
         THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
 
         return std::wstring(defaultPath.get(), numCharsDefault);
-    }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified closeOnExit value to its corresponding enum
-// Arguments:
-// - The value from the profiles.json file
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
-{
-    if (json.isBool())
-    {
-        return json.asBool() ? CloseOnExitMode::Graceful : CloseOnExitMode::Never;
-    }
-
-    if (json.isString())
-    {
-        auto closeOnExit = json.asString();
-        if (closeOnExit == CloseOnExitAlways)
-        {
-            return CloseOnExitMode::Always;
-        }
-        else if (closeOnExit == CloseOnExitGraceful)
-        {
-            return CloseOnExitMode::Graceful;
-        }
-        else if (closeOnExit == CloseOnExitNever)
-        {
-            return CloseOnExitMode::Never;
-        }
-    }
-
-    return CloseOnExitMode::Graceful;
-}
-
-// Method Description:
-// - Helper function for converting a CloseOnExitMode to its corresponding string
-//   value.
-// Arguments:
-// - closeOnExitMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CloseOnExitMode
-std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
-{
-    switch (closeOnExitMode)
-    {
-    case CloseOnExitMode::Always:
-        return CloseOnExitAlways;
-    case CloseOnExitMode::Never:
-        return CloseOnExitNever;
-    case CloseOnExitMode::Graceful:
-    default:
-        return CloseOnExitGraceful;
-    }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified scrollbar state to its corresponding enum
-// Arguments:
-// - The value from the profiles.json file
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
-{
-    if (scrollbarState == AlwaysVisible)
-    {
-        return ScrollbarState::Visible;
-    }
-    else if (scrollbarState == AlwaysHide)
-    {
-        return ScrollbarState::Hidden;
-    }
-    else
-    {
-        return ScrollbarState::Visible;
-    }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified image stretch mode
-//   to the appropriate enum value
-// Arguments:
-// - The value from the profiles.json file
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
-{
-    if (imageStretchMode == ImageStretchModeNone)
-    {
-        return Media::Stretch::None;
-    }
-    else if (imageStretchMode == ImageStretchModeFill)
-    {
-        return Media::Stretch::Fill;
-    }
-    else if (imageStretchMode == ImageStretchModeUniform)
-    {
-        return Media::Stretch::Uniform;
-    }
-    else // Fall through to default behavior
-    {
-        return Media::Stretch::UniformToFill;
-    }
-}
-
-// Method Description:
-// - Helper function for converting an ImageStretchMode to the
-//   correct string value.
-// Arguments:
-// - imageStretchMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
-{
-    switch (imageStretchMode)
-    {
-    case Media::Stretch::None:
-        return ImageStretchModeNone;
-    case Media::Stretch::Fill:
-        return ImageStretchModeFill;
-    case Media::Stretch::Uniform:
-        return ImageStretchModeUniform;
-    default:
-    case Media::Stretch::UniformToFill:
-        return ImageStretchModeUniformTofill;
-    }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified image horizontal and vertical
-//   alignment to the appropriate enum values tuple
-// Arguments:
-// - The value from the profiles.json file
-// Return Value:
-// - The corresponding enum values tuple which maps to the string provided by the user
-std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)
-{
-    if (imageAlignment == ImageAlignmentTopLeft)
-    {
-        return std::make_tuple(HorizontalAlignment::Left,
-                               VerticalAlignment::Top);
-    }
-    else if (imageAlignment == ImageAlignmentBottomLeft)
-    {
-        return std::make_tuple(HorizontalAlignment::Left,
-                               VerticalAlignment::Bottom);
-    }
-    else if (imageAlignment == ImageAlignmentLeft)
-    {
-        return std::make_tuple(HorizontalAlignment::Left,
-                               VerticalAlignment::Center);
-    }
-    else if (imageAlignment == ImageAlignmentTopRight)
-    {
-        return std::make_tuple(HorizontalAlignment::Right,
-                               VerticalAlignment::Top);
-    }
-    else if (imageAlignment == ImageAlignmentBottomRight)
-    {
-        return std::make_tuple(HorizontalAlignment::Right,
-                               VerticalAlignment::Bottom);
-    }
-    else if (imageAlignment == ImageAlignmentRight)
-    {
-        return std::make_tuple(HorizontalAlignment::Right,
-                               VerticalAlignment::Center);
-    }
-    else if (imageAlignment == ImageAlignmentTop)
-    {
-        return std::make_tuple(HorizontalAlignment::Center,
-                               VerticalAlignment::Top);
-    }
-    else if (imageAlignment == ImageAlignmentBottom)
-    {
-        return std::make_tuple(HorizontalAlignment::Center,
-                               VerticalAlignment::Bottom);
-    }
-    else // Fall through to default alignment
-    {
-        return std::make_tuple(HorizontalAlignment::Center,
-                               VerticalAlignment::Center);
-    }
-}
-
-// Method Description:
-// - Helper function for converting the HorizontalAlignment+VerticalAlignment tuple
-//   to the correct string value.
-// Arguments:
-// - imageAlignment: The enum values tuple to convert to a string.
-// Return Value:
-// - The string value for the given ImageAlignment
-std::string_view Profile::SerializeImageAlignment(const std::tuple<HorizontalAlignment, VerticalAlignment> imageAlignment)
-{
-    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(imageAlignment);
-    const auto imageVerticalAlignment = std::get<VerticalAlignment>(imageAlignment);
-    switch (imageHorizontalAlignment)
-    {
-    case HorizontalAlignment::Left:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopLeft;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomLeft;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentLeft;
-        }
-
-    case HorizontalAlignment::Right:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTopRight;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottomRight;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentRight;
-        }
-
-    default:
-    case HorizontalAlignment::Center:
-        switch (imageVerticalAlignment)
-        {
-        case VerticalAlignment::Top:
-            return ImageAlignmentTop;
-        case VerticalAlignment::Bottom:
-            return ImageAlignmentBottom;
-        default:
-        case VerticalAlignment::Center:
-            return ImageAlignmentCenter;
-        }
-    }
-}
-
-// Method Description:
-// - Helper function for converting a user-specified cursor style corresponding
-//   CursorStyle enum value
-// Arguments:
-// - cursorShapeString: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
-{
-    if (cursorShapeString == CursorShapeVintage)
-    {
-        return CursorStyle::Vintage;
-    }
-    else if (cursorShapeString == CursorShapeBar)
-    {
-        return CursorStyle::Bar;
-    }
-    else if (cursorShapeString == CursorShapeUnderscore)
-    {
-        return CursorStyle::Underscore;
-    }
-    else if (cursorShapeString == CursorShapeFilledbox)
-    {
-        return CursorStyle::FilledBox;
-    }
-    else if (cursorShapeString == CursorShapeEmptybox)
-    {
-        return CursorStyle::EmptyBox;
-    }
-    // default behavior for invalid data
-    return CursorStyle::Bar;
-}
-
-// Method Description:
-// - Helper function for converting a CursorStyle to its corresponding string
-//   value.
-// Arguments:
-// - cursorShape: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given CursorStyle
-std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
-{
-    switch (cursorShape)
-    {
-    case CursorStyle::Underscore:
-        return CursorShapeUnderscore;
-    case CursorStyle::FilledBox:
-        return CursorShapeFilledbox;
-    case CursorStyle::EmptyBox:
-        return CursorShapeEmptybox;
-    case CursorStyle::Vintage:
-        return CursorShapeVintage;
-    default:
-    case CursorStyle::Bar:
-        return CursorShapeBar;
     }
 }
 
@@ -1274,17 +700,13 @@ GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optio
 // - The json's `guid`, or a guid synthesized for it.
 GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 {
-    std::optional<GUID> guid{ std::nullopt };
-
-    JsonUtils::GetOptionalGuid(json, GuidKey, guid);
-    if (guid)
+    if (const auto guid{ JsonUtils::GetValueForKey<std::optional<GUID>>(json, GuidKey) })
     {
         return guid.value();
     }
 
-    const auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
-    std::optional<std::wstring> source{ std::nullopt };
-    JsonUtils::GetOptionalString(json, SourceKey, source);
+    const auto name{ JsonUtils::GetValueForKey<std::wstring>(json, NameKey) };
+    const auto source{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, SourceKey) };
 
     return Profile::_GenerateGuidForProfile(name, source);
 }
@@ -1292,50 +714,4 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 void Profile::SetRetroTerminalEffect(bool value) noexcept
 {
     _retroTerminalEffect = value;
-}
-
-// Method Description:
-// - Helper function for converting a user-specified antialiasing mode
-//   corresponding TextAntialiasingMode enum value
-// Arguments:
-// - antialiasingMode: The string value from the settings file to parse
-// Return Value:
-// - The corresponding enum value which maps to the string provided by the user
-TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& antialiasingMode)
-{
-    if (antialiasingMode == AntialiasingModeCleartype)
-    {
-        return TextAntialiasingMode::Cleartype;
-    }
-    else if (antialiasingMode == AntialiasingModeAliased)
-    {
-        return TextAntialiasingMode::Aliased;
-    }
-    else if (antialiasingMode == AntialiasingModeGrayscale)
-    {
-        return TextAntialiasingMode::Grayscale;
-    }
-    // default behavior for invalid data
-    return TextAntialiasingMode::Grayscale;
-}
-
-// Method Description:
-// - Helper function for converting a TextAntialiasingMode to its corresponding
-//   string value.
-// Arguments:
-// - antialiasingMode: The enum value to convert to a string.
-// Return Value:
-// - The string value for the given TextAntialiasingMode
-std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingMode antialiasingMode)
-{
-    switch (antialiasingMode)
-    {
-    case TextAntialiasingMode::Cleartype:
-        return AntialiasingModeCleartype;
-    case TextAntialiasingMode::Aliased:
-        return AntialiasingModeAliased;
-    default:
-    case TextAntialiasingMode::Grayscale:
-        return AntialiasingModeGrayscale;
-    }
 }

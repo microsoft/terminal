@@ -207,8 +207,7 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
-    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
+    const auto GetAttributeColors = std::bind(&CONSOLE_INFORMATION::LookupAttributeColors, &gci, std::placeholders::_1);
 
     bool includeCRLF, trimTrailingWhitespace;
     if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
@@ -224,8 +223,7 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto text = buffer.GetText(includeCRLF,
                                      trimTrailingWhitespace,
                                      selectionRects,
-                                     GetForegroundColor,
-                                     GetBackgroundColor);
+                                     GetAttributeColors);
 
     CopyTextToSystemClipboard(text, copyFormatting);
 }
@@ -277,7 +275,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
             const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Windows Console Host");
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
             std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);

@@ -34,11 +34,15 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates) override;
+                               const gsl::span<const wchar_t> intermediates) override;
+
+        bool ActionVt52EscDispatch(const wchar_t wch,
+                                   const gsl::span<const wchar_t> intermediates,
+                                   const gsl::span<const size_t> parameters) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates,
-                               const std::basic_string_view<size_t> parameters) override;
+                               const gsl::span<const wchar_t> intermediates,
+                               const gsl::span<const size_t> parameters) override;
 
         bool ActionClear() noexcept override;
 
@@ -49,8 +53,9 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                               const std::basic_string_view<size_t> parameters) noexcept override;
+                               const gsl::span<const size_t> parameters) noexcept override;
 
+        bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
@@ -66,12 +71,18 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
+        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
+        bool _IntermediateScsDispatch(const wchar_t wch,
+                                      const gsl::span<const wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                               const std::basic_string_view<size_t> parameters);
+                                               const gsl::span<const size_t> parameters);
+        bool _IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
+                                                     const wchar_t intermediate,
+                                                     const gsl::span<const size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
-                                        const std::basic_string_view<size_t> parameters);
+                                        const gsl::span<const size_t> parameters);
 
         enum VTActionCodes : wchar_t
         {
@@ -123,7 +134,33 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
             DTTERM_WindowManipulation = L't',
             REP_RepeatCharacter = L'b',
+            SS2_SingleShift = L'N',
+            SS3_SingleShift = L'O',
+            LS2_LockingShift = L'n',
+            LS3_LockingShift = L'o',
+            LS1R_LockingShift = L'~',
+            LS2R_LockingShift = L'}',
+            LS3R_LockingShift = L'|',
             DECALN_ScreenAlignmentPattern = L'8'
+        };
+
+        enum Vt52ActionCodes : wchar_t
+        {
+            CursorUp = L'A',
+            CursorDown = L'B',
+            CursorRight = L'C',
+            CursorLeft = L'D',
+            EnterGraphicsMode = L'F',
+            ExitGraphicsMode = L'G',
+            CursorToHome = L'H',
+            ReverseLineFeed = L'I',
+            EraseToEndOfScreen = L'J',
+            EraseToEndOfLine = L'K',
+            DirectCursorAddress = L'Y',
+            Identify = L'Z',
+            EnterAlternateKeypadMode = L'=',
+            ExitAlternateKeypadMode = L'>',
+            ExitVt52Mode = L'<'
         };
 
         enum OscActionCodes : unsigned int
@@ -136,58 +173,51 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112,
-        };
-
-        enum class DesignateCharsetTypes
-        {
-            G0,
-            G1,
-            G2,
-            G3
+            ResetCursorColor = 112
         };
 
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
-        bool _GetGraphicsOptions(const std::basic_string_view<size_t> parameters,
+        bool _GetGraphicsOptions(const gsl::span<const size_t> parameters,
                                  std::vector<DispatchTypes::GraphicsOptions>& options) const;
 
         static constexpr DispatchTypes::EraseType DefaultEraseType = DispatchTypes::EraseType::ToEnd;
-        bool _GetEraseOperation(const std::basic_string_view<size_t> parameters,
+        bool _GetEraseOperation(const gsl::span<const size_t> parameters,
                                 DispatchTypes::EraseType& eraseType) const noexcept;
 
         static constexpr size_t DefaultCursorDistance = 1;
-        bool _GetCursorDistance(const std::basic_string_view<size_t> parameters,
+        bool _GetCursorDistance(const gsl::span<const size_t> parameters,
                                 size_t& distance) const noexcept;
 
         static constexpr size_t DefaultScrollDistance = 1;
-        bool _GetScrollDistance(const std::basic_string_view<size_t> parameters,
+        bool _GetScrollDistance(const gsl::span<const size_t> parameters,
                                 size_t& distance) const noexcept;
 
         static constexpr size_t DefaultConsoleWidth = 80;
-        bool _GetConsoleWidth(const std::basic_string_view<size_t> parameters,
+        bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
                               size_t& consoleWidth) const noexcept;
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
+        bool _GetXYPosition(const gsl::span<const size_t> parameters,
                             size_t& line,
                             size_t& column) const noexcept;
 
-        bool _GetDeviceStatusOperation(const std::basic_string_view<size_t> parameters,
+        bool _GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
                                        DispatchTypes::AnsiStatusType& statusType) const noexcept;
 
-        bool _VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const noexcept;
+        bool _VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept;
 
-        bool _VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const noexcept;
+        bool _VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept;
 
-        bool _GetPrivateModeParams(const std::basic_string_view<size_t> parameters,
+        bool _GetPrivateModeParams(const gsl::span<const size_t> parameters,
                                    std::vector<DispatchTypes::PrivateModeParams>& privateModes) const;
 
         static constexpr size_t DefaultTopMargin = 0;
         static constexpr size_t DefaultBottomMargin = 0;
-        bool _GetTopBottomMargins(const std::basic_string_view<size_t> parameters,
+        bool _GetTopBottomMargins(const gsl::span<const size_t> parameters,
                                   size_t& topMargin,
                                   size_t& bottomMargin) const noexcept;
 
@@ -195,19 +225,15 @@ namespace Microsoft::Console::VirtualTerminal
                           std::wstring& title) const;
 
         static constexpr size_t DefaultTabDistance = 1;
-        bool _GetTabDistance(const std::basic_string_view<size_t> parameters,
+        bool _GetTabDistance(const gsl::span<const size_t> parameters,
                              size_t& distance) const noexcept;
 
         static constexpr size_t DefaultTabClearType = 0;
-        bool _GetTabClearType(const std::basic_string_view<size_t> parameters,
+        bool _GetTabClearType(const gsl::span<const size_t> parameters,
                               size_t& clearType) const noexcept;
 
-        static constexpr DesignateCharsetTypes DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
-        bool _GetDesignateType(const wchar_t intermediate,
-                               DesignateCharsetTypes& designateType) const noexcept;
-
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
-        bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
         static bool s_HexToUint(const wchar_t wch,
@@ -223,12 +249,16 @@ namespace Microsoft::Console::VirtualTerminal
                              DWORD& rgb) const noexcept;
 
         static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
-        bool _GetCursorStyle(const std::basic_string_view<size_t> parameters,
+        bool _GetCursorStyle(const gsl::span<const size_t> parameters,
                              DispatchTypes::CursorStyle& cursorStyle) const noexcept;
 
         static constexpr size_t DefaultRepeatCount = 1;
-        bool _GetRepeatCount(const std::basic_string_view<size_t> parameters,
+        bool _GetRepeatCount(const gsl::span<const size_t> parameters,
                              size_t& repeatCount) const noexcept;
+
+        bool _GetOscSetClipboard(const std::wstring_view string,
+                                 std::wstring& content,
+                                 bool& queryClipboard) const noexcept;
 
         void _ClearLastChar() noexcept;
     };
