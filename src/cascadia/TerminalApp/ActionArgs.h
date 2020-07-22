@@ -422,30 +422,6 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
-    // Possible AnchorKey values
-    static constexpr std::string_view ControlString{ "ctrl" };
-    static constexpr std::string_view AltString{ "alt" };
-    static constexpr std::string_view ShiftString{ "shift" };
-
-    static Windows::System::VirtualKey ParseAnchorKey(const std::string& anchorString)
-    {
-        if (anchorString == ControlString)
-        {
-            return Windows::System::VirtualKey::Control;
-        }
-        else if (anchorString == AltString)
-        {
-            return Windows::System::VirtualKey::Menu;
-        }
-        else if (anchorString == ShiftString)
-        {
-            return Windows::System::VirtualKey::Shift;
-        }
-
-        // default behavior for invalid data
-        return Windows::System::VirtualKey::None;
-    };
-
     struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
     {
         ToggleTabSwitcherArgs() = default;
@@ -469,10 +445,7 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ToggleTabSwitcherArgs>();
-            if (auto targetString{ json[JsonKey(AnchorJsonKey)] })
-            {
-                args->_AnchorKey = ParseAnchorKey(targetString.asString());
-            }
+            JsonUtils::GetValueForKey(json, AnchorJsonKey, args->_AnchorKey);
             return { *args, {} };
         }
     };

@@ -270,3 +270,12 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
         pair_type{ "allFiles", ValueType::AllFiles },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "ctrl", ValueType::Control },
+        pair_type{ "alt", ValueType::Menu },
+        pair_type{ "shift", ValueType::Shift },
+    };
+};
