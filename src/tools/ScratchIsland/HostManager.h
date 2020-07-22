@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HostManager.g.h"
+#include "HostAndProcess.h"
 
 // 50dba6cd-4ddb-4b12-8363-5e06f5d0082c
 static constexpr GUID HostManager_clsid{
@@ -16,11 +17,11 @@ namespace winrt::ScratchIsland::implementation
     {
         HostManager();
 
-        Windows::Foundation::Collections::IObservableVector<ScratchWinRTServer::HostClass> Hosts();
-        ScratchWinRTServer::HostClass CreateHost();
+        Windows::Foundation::Collections::IObservableVector<winrt::ScratchIsland::HostAndProcess> Hosts();
+        winrt::ScratchIsland::HostAndProcess CreateHost();
 
     private:
-        Windows::Foundation::Collections::IObservableVector<ScratchWinRTServer::HostClass> _hosts{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<winrt::ScratchIsland::HostAndProcess> _hosts{ nullptr };
     };
 }
 

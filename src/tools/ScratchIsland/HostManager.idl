@@ -1,4 +1,4 @@
-
+import "HostAndProcess.idl";
 
 namespace ScratchIsland
 {
@@ -6,7 +6,7 @@ namespace ScratchIsland
     {
         HostManager();
 
-        Windows.Foundation.Collections.IObservableVector<ScratchWinRTServer.HostClass> Hosts { get; };
-        ScratchWinRTServer.HostClass CreateHost();
+        Windows.Foundation.Collections.IObservableVector<HostAndProcess> Hosts { get; };
+        HostAndProcess CreateHost();
     };
 }

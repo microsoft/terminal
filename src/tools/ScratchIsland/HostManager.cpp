@@ -12,15 +12,15 @@ namespace winrt::ScratchIsland::implementation
 {
     HostManager::HostManager()
     {
-        _hosts = winrt::single_threaded_observable_vector<ScratchWinRTServer::HostClass>();
+        _hosts = winrt::single_threaded_observable_vector<winrt::ScratchIsland::HostAndProcess>();
     }
 
-    Collections::IObservableVector<ScratchWinRTServer::HostClass> HostManager::Hosts()
+    Collections::IObservableVector<winrt::ScratchIsland::HostAndProcess> HostManager::Hosts()
     {
         return _hosts;
     }
 
-    static void _createHostClassProcess(const winrt::guid& g)
+    static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
     {
         auto guidStr{ Utils::GuidToString(g) };
         std::wstring commandline{ fmt::format(L"ScratchWinRTServer.exe {}", guidStr) };
@@ -39,16 +39,17 @@ namespace winrt::ScratchIsland::implementation
             &siOne, // lpStartupInfo
             &piOne // lpProcessInformation
         );
-        if (!succeeded)
-        {
-            printf("Failed to create host process\n");
-            return;
-        }
+        THROW_IF_WIN32_BOOL_FALSE(succeeded);
+        // if (!succeeded)
+        // {
+        //     printf("Failed to create host process\n");
+        //     return;
+        // }
 
         // Ooof this is dumb, but we need a sleep here to make the server starts.
         // That's _sub par_. Maybe we could use the host's stdout to have them emit
         // a byte when they're set up?
-        Sleep(1000);
+        Sleep(2500);
 
         // TODO MONDAY - It seems like it takes conhost too long to start up to
         // host the ScratchWinRTServer that even a sleep 100 is too short. However,
@@ -56,21 +57,25 @@ namespace winrt::ScratchIsland::implementation
         // So we _need_ to do the "have the server explicitly tell us it's ready"
         // thing, and maybe also do it on a bg thread (and signal to the UI thread
         // that it can attach now)
+
+        return std::move(piOne);
     }
 
-    ScratchWinRTServer::HostClass HostManager::CreateHost()
+    winrt::ScratchIsland::HostAndProcess HostManager::CreateHost()
     {
         // 1. Generate a GUID.
         winrt::guid g{ Utils::CreateGuid() };
 
         // 2. Spawn a Server.exe, with the guid on the commandline
-        _createHostClassProcess(g);
+        auto piContent{ std::move(_createHostClassProcess(g)) };
 
         auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(g, CLSCTX_LOCAL_SERVER);
         THROW_IF_NULL_ALLOC(host);
 
-        _hosts.Append(host);
+        auto hostAndProcess = winrt::make_self<HostAndProcess>(host, std::move(piContent));
 
-        return host;
+        _hosts.Append(*hostAndProcess);
+
+        return *hostAndProcess;
     }
 }

@@ -456,7 +456,8 @@ try
 
         switch (_chainMode)
         {
-        case SwapChainMode::ForHwnd: {
+        case SwapChainMode::ForHwnd:
+        {
             // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -485,8 +486,12 @@ try
 
             break;
         }
-        case SwapChainMode::ForComposition: {
-            RETURN_IF_FAILED(DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle));
+        case SwapChainMode::ForComposition:
+        {
+            if (!_swapChainHandle)
+            {
+                RETURN_IF_FAILED(DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle));
+            }
 
             RETURN_IF_FAILED(_dxgiFactory2.As(&_dxgiFactoryMedia));
 
@@ -993,13 +998,15 @@ CATCH_RETURN();
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rectangle{ clientRect }.size();
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         return _sizeTarget;
     }
     default:
@@ -2231,10 +2238,12 @@ CATCH_RETURN();
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;

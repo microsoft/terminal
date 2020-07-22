@@ -12,6 +12,8 @@ namespace ScratchWinRTServer
         void Attach(Windows.UI.Xaml.Controls.SwapChainPanel panel);
         void BeginRendering();
 
+        void ThisIsInsane(UInt64 swapchainHandle);
+
         // Adding a Windows.UI.Xaml element will crash the server when the
         // server tries to instantiate the element without a XAML host.
         //

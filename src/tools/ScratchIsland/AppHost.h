@@ -4,7 +4,6 @@
 #include "pch.h"
 
 #include "IslandWindow.h"
-#include <winrt/ScratchWinRTServer.h>
 #include "HostManager.h"
 
 class AppHost

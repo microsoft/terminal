@@ -118,6 +118,8 @@ namespace Microsoft::Console::Render
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
+        wil::unique_handle _swapChainHandle;
+
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
@@ -194,7 +196,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
 
-        wil::unique_handle _swapChainHandle;
         DXGI_SWAP_CHAIN_DESC1 _swapChainDesc;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;

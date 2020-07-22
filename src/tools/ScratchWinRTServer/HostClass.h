@@ -27,10 +27,12 @@ namespace winrt::ScratchWinRTServer::implementation
 
         void RenderEngineSwapChainChanged();
 
+        void ThisIsInsane(uint64_t swapchainHandle);
+
     private:
         int _DoCount{ 0 };
         winrt::guid _id;
-
+        wil::unique_handle _hSwapchain{ INVALID_HANDLE_VALUE };
         Windows::UI::Xaml::Controls::SwapChainPanel _panel{ nullptr };
 
         bool _initializedTerminal{ false };

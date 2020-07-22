@@ -4,7 +4,7 @@
 #include "HostClass.h"
 #include "HostClass.g.cpp"
 
-#include <wrl.h>
+// #include <wrl.h>
 extern std::mutex m;
 extern std::condition_variable cv;
 extern bool dtored;
@@ -67,99 +67,100 @@ namespace winrt::ScratchWinRTServer::implementation
 
     void HostClass::Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel)
     {
+        // /*onecore\com\combase\winrt\error \restrictederror.cpp(3285)\combase.dll !00007FFD9313FF74 : (caller : 00007FFD9313F147)ReturnHr(1) tid(5af0) 80070057 The parameter is incorrect.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error - 0x80040155 : 'Failed to find proxy registration for IID: {FCC4566D-82DC-5D36-BB84-3DA4F0926318}.'.'ScratchIsland.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\rometadata.dll'.Symbol loading disabled by Include / Exclude setting.'ScratchIsland.exe'(Win32) :
+        //     Loaded 'C:\Users\migrie\dev\private\OpenConsole\x64\Debug\ScratchWinRTServer.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.Xaml.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
+        //     0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchIsland.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchWinRTServer.exe : WinRT originate error -
+        //     0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchWinRTServer.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchWinRTServer.exe'(Win32) :
+        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
+        //     0x80040155 : 'Failed to find proxy registration for IID: {D5A2F60C-37B2-44A2-937B-8D8EB9726821}.'.*/
 
-        /*onecore\com\combase\winrt\error \restrictederror.cpp(3285)\combase.dll !00007FFD9313FF74 : (caller : 00007FFD9313F147)ReturnHr(1) tid(5af0) 80070057 The parameter is incorrect.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error - 0x80040155 : 'Failed to find proxy registration for IID: {FCC4566D-82DC-5D36-BB84-3DA4F0926318}.'.'ScratchIsland.exe'(Win32) :
-            Loaded 'C:\Windows\System32\rometadata.dll'.Symbol loading disabled by Include / Exclude setting.'ScratchIsland.exe'(Win32) :
-            Loaded 'C:\Users\migrie\dev\private\OpenConsole\x64\Debug\ScratchWinRTServer.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
-            Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.Xaml.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
-            0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchIsland.exe'(Win32) :
-            Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
-            Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchWinRTServer.exe : WinRT originate error -
-            0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchWinRTServer.exe'(Win32) :
-            Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchWinRTServer.exe'(Win32) :
-            Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
-            0x80040155 : 'Failed to find proxy registration for IID: {D5A2F60C-37B2-44A2-937B-8D8EB9726821}.'.*/
+        // {
+        //     auto f = winrt::get_abi(panel);
+        //     // auto whatEvenIsThis = &panel;
+        //     // IUnknown* dummy{ reinterpret_cast<IUnknown*>(&panel) };
+        //     IUnknown* dummy{ reinterpret_cast<IUnknown*>(f) };
+        //     ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative0;
+        //     winrt::guid g{ __uuidof(**(&panelNative0)) };
+        //     g;
+        //     dummy->QueryInterface(IID_PPV_ARGS(&panelNative0));
+        //     // // panelNative->SetSwapChainHandle(m_swapChainHandle);
 
-        {   
-            auto f = winrt::get_abi(panel);
-            // auto whatEvenIsThis = &panel;
-            // IUnknown* dummy{ reinterpret_cast<IUnknown*>(&panel) };
-            IUnknown* dummy{ reinterpret_cast<IUnknown*>(f) };
-            ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative0;
-            winrt::guid g{ __uuidof(**(&panelNative0)) };
-            g;
-            dummy->QueryInterface(IID_PPV_ARGS(&panelNative0));
-            // // panelNative->SetSwapChainHandle(m_swapChainHandle);
+        //     // // auto nativePanel2 = panel.try_as<ISwapChainPanelNative2>();
+        //     // // if (nativePanel2)
+        //     if (panelNative0)
+        //     {
+        //         printf("Got the nativePanel2\n");
+        //     }
+        //     else
+        //     {
+        //         printf("Couldn't reinterpret_cast\n");
+        //     }
+        // }
+        // // // _panel = panel;
+        // // // nativePanel2;
+        // // panelNative;
 
-            // // auto nativePanel2 = panel.try_as<ISwapChainPanelNative2>();
-            // // if (nativePanel2)
-            if (panelNative0)
-            {
-                printf("Got the nativePanel2\n");
-            }
-            else
-            {
-                printf("Couldn't reinterpret_cast\n");
-            }
-        }
-        // // _panel = panel;
-        // // nativePanel2;
-        // panelNative;
+        // // winrt::com_ptr<ISwapChainPanelNative2> native;
+        // winrt::com_ptr<IUnknown> iunk = panel.try_as<IUnknown>();
+        // if (iunk)
+        // {
+        //     printf("Got the IUnknown\n");
+        //     ////////////////////////////////////////////////////////////////////
+        //     auto nativePanel2 = iunk.try_as<ISwapChainPanelNative2>();
+        //     if (nativePanel2)
+        //     {
+        //         printf("Got the nativePanel2\n");
+        //     }
+        //     else
+        //     {
+        //         printf("Couldn't try_as to get the ISwapChainPanelNative2\n");
+        //     }
+        //     nativePanel2;
+        //     ////////////////////////////////////////////////////////////////////
+        //     ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative;
+        //     iunk->QueryInterface(IID_PPV_ARGS(&panelNative));
+        //     if (panelNative)
+        //     {
+        //         printf("Got the panelNative\n");
+        //     }
+        //     else
+        //     {
+        //         printf("Couldn't QueryInterface to get the ISwapChainPanelNative2\n");
+        //     }
+        //     ////////////////////////////////////////////////////////////////////
+        //     IUnknown* foo = iunk.get();
+        //     foo->QueryInterface(IID_PPV_ARGS(&panelNative));
+        //     if (panelNative)
+        //     {
+        //         printf("Got the panelNative\n");
+        //     }
+        //     else
+        //     {
+        //         printf("This didn't work either\n");
+        //     }
+        //     ////////////////////////////////////////////////////////////////////
+        // }
+        // else
+        // {
+        //     printf("Couldn't try_as to get the IUnknown\n");
+        // }
+        // iunk;
 
-        // winrt::com_ptr<ISwapChainPanelNative2> native;
-        winrt::com_ptr<IUnknown> iunk = panel.try_as<IUnknown>();
-        if (iunk)
-        {
-            printf("Got the IUnknown\n");
-            ////////////////////////////////////////////////////////////////////
-            auto nativePanel2 = iunk.try_as<ISwapChainPanelNative2>();
-            if (nativePanel2)
-            {
-                printf("Got the nativePanel2\n");
-            }
-            else
-            {
-                printf("Couldn't try_as to get the ISwapChainPanelNative2\n");
-            }
-            nativePanel2;
-            ////////////////////////////////////////////////////////////////////
-            ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative;
-            iunk->QueryInterface(IID_PPV_ARGS(&panelNative));
-            if (panelNative)
-            {
-                printf("Got the panelNative\n");
-            }
-            else
-            {
-                printf("Couldn't QueryInterface to get the ISwapChainPanelNative2\n");
-            }
-            ////////////////////////////////////////////////////////////////////
-            IUnknown* foo = iunk.get();
-            foo->QueryInterface(IID_PPV_ARGS(&panelNative));
-            if (panelNative)
-            {
-                printf("Got the panelNative\n");
-            }
-            else
-            {
-                printf("This didn't work either\n");
-            }
-            ////////////////////////////////////////////////////////////////////
-        }
-        else
-        {
-            printf("Couldn't try_as to get the IUnknown\n");
-        }
-        iunk;
+        // // // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
+        // //
+        // // winrt::Windows::UI::Xaml::Media::SolidColorBrush solidColor{};
+        // // til::color newBgColor{ 0x8F000000 };
+        // // solidColor.Color(newBgColor);
+        // // _panel.Background(solidColor);
+        // //
+        // // ANYTHING WE DO TO THE SWAPCHAINPANEL on this thread is NOT the UI thread. It can't _possibly_ be.
 
-        // // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
-        //
-        // winrt::Windows::UI::Xaml::Media::SolidColorBrush solidColor{};
-        // til::color newBgColor{ 0x8F000000 };
-        // solidColor.Color(newBgColor);
-        // _panel.Background(solidColor);
-        //
-        // ANYTHING WE DO TO THE SWAPCHAINPANEL on this thread is NOT the UI thread. It can't _possibly_ be.
+        printf("Hey dummy, we're not using Attach() anymore\n");
     }
 
     void HostClass::BeginRendering()
@@ -227,8 +228,17 @@ namespace winrt::ScratchWinRTServer::implementation
 
     void HostClass::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
     {
-        auto nativePanel = _panel.as<ISwapChainPanelNative2>();
-        nativePanel->SetSwapChainHandle(swapChainHandle);
+        // NOPE DONT DO THIS
+        // auto nativePanel = _panel.as<ISwapChainPanelNative2>();
+        // nativePanel->SetSwapChainHandle(swapChainHandle);
+    }
+
+    void HostClass::ThisIsInsane(uint64_t swapchainHandle)
+    {
+        HANDLE foo = (HANDLE)swapchainHandle;
+        _hSwapchain.reset(foo);
+        // _hSwapchain.put((HANDLE)swapchainHandle);
+        // _hSwapchain = (HANDLE)swapchainHandle;
     }
 
     bool HostClass::_InitializeTerminal()
@@ -279,6 +289,7 @@ namespace winrt::ScratchWinRTServer::implementation
 
             // Set up the DX Engine
             auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            dxEngine->_swapChainHandle.swap(_hSwapchain);
             _renderer->AddRenderEngine(dxEngine.get());
 
             // Initialize our font with the renderer
@@ -337,7 +348,7 @@ namespace winrt::ScratchWinRTServer::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            _AttachDxgiSwapChainToXaml(_renderEngine->GetSwapChainHandle());
+            // _AttachDxgiSwapChainToXaml(_renderEngine->GetSwapChainHandle());
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)

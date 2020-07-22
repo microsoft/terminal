@@ -1,0 +1,9 @@
+
+
+namespace ScratchIsland
+{
+    [default_interface] runtimeclass HostAndProcess {
+        ScratchWinRTServer.HostClass Host { get; };
+        void CreateSwapChain(Windows.UI.Xaml.Controls.SwapChainPanel panel);
+    };
+}

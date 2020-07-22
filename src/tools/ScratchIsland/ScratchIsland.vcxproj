@@ -55,6 +55,7 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="HostManager.h" />
+    <ClInclude Include="HostAndProcess.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -64,9 +65,11 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="HostManager.cpp" />
+    <ClCompile Include="HostAndProcess.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="HostManager.idl" />
+    <Midl Include="HostAndProcess.idl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ScratchIsland.rc" />
