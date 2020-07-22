@@ -359,10 +359,12 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
         {
             auto anchorKey = realArgs.AnchorKey();
+            auto initDirection = realArgs.InitialDirection();
 
-            // The switcher should start at the currently focused index + 1 (or idx = 0 if wrapping around).
+            // The switcher should start at the currently focused index +/- 1
+            int delta = initDirection == TerminalApp::Direction::Down ? 1 : -1;
             auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = ((opt ? *opt : 0) + 1) % _tabs.Size();
+            uint32_t startIdx = ((opt ? *opt : 0) + _tabs.Size() + delta) % _tabs.Size();
 
             CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
