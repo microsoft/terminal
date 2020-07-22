@@ -292,7 +292,7 @@ foreach ($testModule in $testModules)
 
     <HelixWorkItem Include="$($testClass.Name)" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
       <Timeout>00:30:00</Timeout>
-      <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name).*'$(if ($testSuiteExists) { "and not @TestSuite='*'" }))$($TaefQueryToAppend)"</Command>
+      <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name)*'$(if ($testSuiteExists) { "and not @TestSuite='*'" }))$($TaefQueryToAppend)"</Command>
     </HelixWorkItem>
 "@
         }
@@ -303,7 +303,7 @@ foreach ($testModule in $testModules)
 
     <HelixWorkItem Include="$($testClass.Name)-$testSuiteName" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
       <Timeout>00:30:00</Timeout>
-      <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name).*' and @TestSuite='$testSuiteName')$($TaefQueryToAppend)"</Command>
+      <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name)*' and @TestSuite='$testSuiteName')$($TaefQueryToAppend)"</Command>
     </HelixWorkItem>
 "@
         }
