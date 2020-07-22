@@ -166,31 +166,6 @@ static constexpr bool _isCsiIndicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a delimiter between two parameters in a "control sequence"
-//   This occurs in the middle of a control sequence after escape and CsiIndicator have been recognized
-//   between a series of parameters.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isCsiDelimiter(const wchar_t wch) noexcept
-{
-    return _isParameterDelimiter(wch);
-}
-
-// Routine Description:
-// - Determines if a character is a valid parameter value
-//   Parameters must be numerical digits.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isCsiParamValue(const wchar_t wch) noexcept
-{
-    return _isNumericParamValue(wch);
-}
-
-// Routine Description:
 // - Determines if a character is a private range marker for a control sequence.
 //   Private range markers indicate vendor-specific behavior.
 // Arguments:
@@ -1102,7 +1077,7 @@ void StateMachine::_EventCsiEntry(const wchar_t wch)
     {
         _EnterCsiIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterCsiParam();
@@ -1146,7 +1121,7 @@ void StateMachine::_EventCsiIntermediate(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiInvalid(wch) || _isCsiDelimiter(wch) || _isCsiPrivateMarker(wch))
+    else if (_isNumericParamValue(wch) || _isCsiInvalid(wch) || _isParameterDelimiter(wch) || _isCsiPrivateMarker(wch))
     {
         _EnterCsiIgnore();
     }
@@ -1184,7 +1159,7 @@ void StateMachine::_EventCsiIgnore(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiInvalid(wch) || _isCsiDelimiter(wch) || _isCsiPrivateMarker(wch))
+    else if (_isNumericParamValue(wch) || _isCsiInvalid(wch) || _isParameterDelimiter(wch) || _isCsiPrivateMarker(wch))
     {
         _ActionIgnore();
     }
@@ -1218,7 +1193,7 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
     }
@@ -1352,7 +1327,7 @@ void StateMachine::_EventSs3Entry(const wchar_t wch)
         //      CSI sequences ignore characters the same way.
         _EnterCsiIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterSs3Param();
@@ -1387,7 +1362,7 @@ void StateMachine::_EventSs3Param(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
     }
@@ -1440,7 +1415,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the DcsEntry state.
 //   Events in this state will:
-//   1. Execute C0 control characters
+//   1. Ignore C0 control characters
 //   2. Ignore Delete characters
 //   3. Store parameter data
 //   4. Collect Intermediate characters
@@ -1458,7 +1433,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     _trace.TraceOnEvent(L"DcsEntry");
     if (_isC0Code(wch))
     {
-        _ActionExecute(wch);
+        _ActionIgnore();
     }
     else if (_isDelete(wch))
     {
@@ -1468,7 +1443,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     {
         _EnterDcsIgnore();
     }
-    else if (_isNumericParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterDcsParam();
@@ -1489,7 +1464,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     }
     else
     {
-        _EnterGround();
+        _ActionIgnore();
     }
 }
 
@@ -1497,9 +1472,8 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - Processes a character event into an Action that occurs while in the DcsIgnore state.
 //   Events in this state will:
 //   1. Enter ground on a String terminator
-//   2. Ignore Delete characters
-//   3. If we see a ESC, enter the DcsTermination state.
-//   4. Ignore everything else.
+//   2. If we see a ESC, enter the DscTermination state.
+//   3. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1510,14 +1484,6 @@ void StateMachine::_EventDcsIgnore(const wchar_t wch) noexcept
     if (_isStringTerminator(wch))
     {
         _EnterGround();
-    }
-    else if (_isDelete(wch))
-    {
-        _ActionIgnore();
-    }
-    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch) || _isCsiInvalid(wch) || _isIntermediate(wch) || _isDcsPassThroughValid(wch))
-    {
-        _ActionIgnore();
     }
     else if (_isDcsTerminationInitiator(wch))
     {
@@ -1587,7 +1553,7 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
     {
         _EnterGround();
     }
-    else if (_isNumericParamValue(wch) || _isCsiDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
     }
@@ -1686,12 +1652,12 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIntermediate && _state != VTStates::DcsIgnore)
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough)
     {
         // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
         //
-        // Same for some DCS states.
+        // Same for DCS pass through state.
         _EnterEscape();
     }
     else
