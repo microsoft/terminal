@@ -90,16 +90,24 @@ bool TextAttribute::IsLegacy() const noexcept
 // - reverseScreenMode: true if the screen mode is reversed.
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode) const noexcept
 {
     auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
+    if (IsFaint())
+    {
+        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
+    }
     if (IsReverseVideo() ^ reverseScreenMode)
     {
         std::swap(fg, bg);
+    }
+    if (IsInvisible())
+    {
+        fg = bg;
     }
     return { fg, bg };
 }
@@ -211,6 +219,11 @@ bool TextAttribute::IsBold() const noexcept
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
 }
 
+bool TextAttribute::IsFaint() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Faint);
+}
+
 bool TextAttribute::IsItalic() const noexcept
 {
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Italics);
@@ -252,7 +265,12 @@ void TextAttribute::SetBold(bool isBold) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
 }
 
-void TextAttribute::SetItalics(bool isItalic) noexcept
+void TextAttribute::SetFaint(bool isFaint) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
+}
+
+void TextAttribute::SetItalic(bool isItalic) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Italics, isItalic);
 }
@@ -272,13 +290,13 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderline(bool isUnderlined) noexcept
+void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
 }
 
-void TextAttribute::SetOverline(bool isOverlined) noexcept
+void TextAttribute::SetOverlined(bool isOverlined) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
 }

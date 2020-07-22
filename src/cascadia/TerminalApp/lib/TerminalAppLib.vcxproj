@@ -109,6 +109,7 @@
     <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../DefaultProfileUtils.h" />
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IDynamicProfileGenerator.h" />
     <ClInclude Include="../PowershellCoreProfileGenerator.h" />
@@ -178,8 +179,6 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
-    <ClCompile Include="../JsonUtils.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />

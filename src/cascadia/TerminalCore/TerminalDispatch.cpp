@@ -354,12 +354,12 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
-bool TerminalDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept
 {
     return _SetResetPrivateModes(params, true);
 }
 
-bool TerminalDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept
 {
     return _SetResetPrivateModes(params, false);
 }
@@ -374,7 +374,7 @@ bool TerminalDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTy
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if ALL params were handled successfully. False otherwise.
-bool TerminalDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
+bool TerminalDispatch::_SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
 {
     // because the user might chain together params we don't support with params we DO support, execute all
     // params in the sequence, and only return failure if we failed at least one of them

@@ -138,7 +138,7 @@ void TextColor::SetDefault() noexcept
 // - brighten: if true, we'll brighten a dark color table index.
 // Return Value:
 // - a COLORREF containing the real value of this TextColor.
-COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
+COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
                              const COLORREF defaultColor,
                              bool brighten) const noexcept
 {
@@ -158,9 +158,9 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
             // If we find a match, return instead the bright version of this color
             for (size_t i = 0; i < 8; i++)
             {
-                if (colorTable.at(i) == defaultColor)
+                if (til::at(colorTable, i) == defaultColor)
                 {
-                    return colorTable.at(i + 8);
+                    return til::at(colorTable, i + 8);
                 }
             }
         }
@@ -173,11 +173,11 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
     }
     else if (IsIndex16() && brighten)
     {
-        return colorTable.at(_index | 8);
+        return til::at(colorTable, _index | 8);
     }
     else
     {
-        return colorTable.at(_index);
+        return til::at(colorTable, _index);
     }
 }
 

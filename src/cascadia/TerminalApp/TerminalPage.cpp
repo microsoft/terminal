@@ -46,7 +46,8 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() }
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _startupActions{ winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>() }
     {
         InitializeComponent();
     }
@@ -223,7 +224,7 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.empty())
+            if (_startupActions.Size() == 0)
             {
                 _OpenNewTab(nullptr);
 
@@ -231,22 +232,27 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions();
+                _ProcessStartupActions(_startupActions, true);
             }
         }
     }
 
     // Method Description:
-    // - Process all the startup actions in our list of startup actions. We'll
-    //   do this all at once here.
+    // - Process all the startup actions in the provided list of startup
+    //   actions. We'll do this all at once here.
     // Arguments:
-    // - <none>
+    // - actions: a winrt vector of actions to process. Note that this must NOT
+    //   be an IVector&, because we need the collection to be accessible on the
+    //   other side of the co_await.
+    // - initial: if true, we're parsing these args during startup, and we
+    //   should fire an Initialized event.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions,
+                                                                const bool initial)
     {
         // If there are no actions left, do nothing.
-        if (_startupActions.empty())
+        if (actions.Size() == 0)
         {
             return;
         }
@@ -256,11 +262,20 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : _startupActions)
+            for (const auto& action : actions)
             {
-                _actionDispatch->DoAction(action);
+                if (auto page{ weakThis.get() })
+                {
+                    _actionDispatch->DoAction(action);
+                }
+                else
+                {
+                    return;
+                }
             }
-
+        }
+        if (initial)
+        {
             _CompleteInitialization();
         }
     }
@@ -850,11 +865,14 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleRetroEffect({ this, &TerminalPage::_HandleToggleRetroEffect });
+        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
+        _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
     }
 
     // Method Description:
@@ -911,7 +929,7 @@ namespace winrt::TerminalApp::implementation
         // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (!_isFullscreen) &&
+        const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
                                (_settings->GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
                                 _settings->GlobalSettings().AlwaysShowTabs());
@@ -1362,19 +1380,20 @@ namespace winrt::TerminalApp::implementation
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-            const auto canSplit = focusedTab->CanSplitPane(splitType);
-
-            if (!canSplit && _startupState == StartupState::Initialized)
-            {
-                return;
-            }
+            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
             auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic && _startupState < StartupState::Initialized)
+            if (realSplitType == SplitState::Automatic)
             {
-                float contentWidth = gsl::narrow_cast<float>(_tabContent.ActualWidth());
-                float contentHeight = gsl::narrow_cast<float>(_tabContent.ActualHeight());
-                realSplitType = focusedTab->PreCalculateAutoSplit({ contentWidth, contentHeight });
+                realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
+            }
+
+            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, availableSpace);
+            if (!canSplit)
+            {
+                return;
             }
 
             TermControl newControl{ controlSettings, controlConnection };
@@ -1912,6 +1931,12 @@ namespace winrt::TerminalApp::implementation
             _UpdateTabWidthMode();
             _CreateNewTabFlyout();
         }
+
+        // Reload the current value of alwaysOnTop from the settings file. This
+        // will let the user hot-reload this setting, but any runtime changes to
+        // the alwaysOnTop setting will be lost.
+        _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
+        _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1922,9 +1947,13 @@ namespace winrt::TerminalApp::implementation
     // - actions: a list of Actions to process on startup.
     // Return Value:
     // - <none>
-    void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
+    void TerminalPage::SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions)
     {
-        _startupActions = actions;
+        // The fastest way to copy all the actions out of the std::vector and
+        // put them into a winrt::IVector is by making a copy, then moving the
+        // copy into the winrt vector ctor.
+        auto listCopy = actions;
+        _startupActions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(listCopy));
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
@@ -1967,19 +1996,43 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Toggles borderless mode. Hides the tab row, and raises our
+    //   FocusModeChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleFocusMode()
+    {
+        _isInFocusMode = !_isInFocusMode;
+        _UpdateTabView();
+        _focusModeChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
     // - Toggles fullscreen mode. Hides the tab row, and raises our
-    //   ToggleFullscreen event.
+    //   FullscreenChanged event.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TerminalPage::ToggleFullscreen()
     {
-        _toggleFullscreenHandlers(*this, nullptr);
-
         _isFullscreen = !_isFullscreen;
-
         _UpdateTabView();
+        _fullscreenChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Toggles always on top mode. Raises our AlwaysOnTopChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleAlwaysOnTop()
+    {
+        _isAlwaysOnTop = !_isAlwaysOnTop;
+        _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2160,6 +2213,49 @@ namespace winrt::TerminalApp::implementation
         // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
+    // Function Description:
+    // - This is a helper method to get the commandline out of a
+    //   ExecuteCommandline action, break it into subcommands, and attempt to
+    //   parse it into actions. This is used by _HandleExecuteCommandline for
+    //   processing commandlines in the current WT window.
+    // Arguments:
+    // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
+    // Return Value:
+    // - an empty list if we failed to parse, otherwise a list of actions to execute.
+    std::vector<winrt::TerminalApp::ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args)
+    {
+        if (!args || args.Commandline().empty())
+        {
+            return {};
+        }
+        // Convert the commandline into an array of args with
+        // CommandLineToArgvW, similar to how the app typically does when
+        // called from the commandline.
+        int argc = 0;
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
+        if (argv)
+        {
+            std::vector<winrt::hstring> args;
+
+            // Make sure the first argument is wt.exe, because ParseArgs will
+            // always skip the program name. The particular value of this first
+            // string doesn't terribly matter.
+            args.emplace_back(L"wt.exe");
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+            winrt::array_view<const winrt::hstring> argsView{ args };
+
+            ::TerminalApp::AppCommandlineArgs appArgs;
+            if (appArgs.ParseArgs(argsView) == 0)
+            {
+                return appArgs.GetStartupActions();
+            }
+        }
+        return {};
+    }
+
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
@@ -2170,11 +2266,36 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalPage::FocusMode() const
+    {
+        return _isInFocusMode;
+    }
+
+    bool TerminalPage::Fullscreen() const
+    {
+        return _isFullscreen;
+    }
+    // Method Description:
+    // - Returns true if we're currently in "Always on top" mode. When we're in
+    //   always on top mode, the window should be on top of all other windows.
+    //   If multiple windows are all "always on top", they'll maintain their own
+    //   z-order, with all the windows on top of all other non-topmost windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if we should be in "always on top" mode
+    bool TerminalPage::AlwaysOnTop() const
+    {
+        return _isAlwaysOnTop;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

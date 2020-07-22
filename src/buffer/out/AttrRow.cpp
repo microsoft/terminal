@@ -223,7 +223,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
-[[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
+[[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
                                                const size_t iStart,
                                                const size_t iEnd,
                                                const size_t cBufferWidth)
@@ -250,7 +250,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     if (newAttrs.size() == 1)
     {
         // Get the new color attribute we're trying to apply
-        const TextAttribute NewAttr = newAttrs.at(0).GetAttributes();
+        const TextAttribute NewAttr = til::at(newAttrs, 0).GetAttributes();
 
         // If the existing run was only 1 element...
         // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
@@ -372,7 +372,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     if (iStart == 0 && iEnd == iLastBufferCol)
     {
         // Just dump what we're given over what we have and call it a day.
-        _list.assign(newAttrs.cbegin(), newAttrs.cend());
+        _list.assign(newAttrs.begin(), newAttrs.end());
 
         return S_OK;
     }

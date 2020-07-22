@@ -19,24 +19,4 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         THROW_HR_IF(E_INVALIDARG, index >= colorTableCount);
         _colorTable.at(index) = value;
     }
-
-    int32_t TerminalSettings::RowsToScroll() noexcept
-    {
-        if (_rowsToScroll != 0)
-        {
-            return _rowsToScroll;
-        }
-        int systemRowsToScroll;
-        if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &systemRowsToScroll, 0))
-        {
-            systemRowsToScroll = 4;
-        }
-        return systemRowsToScroll;
-    }
-
-    void TerminalSettings::RowsToScroll(int32_t value) noexcept
-    {
-        _rowsToScroll = value;
-    }
-
 }
