@@ -17,8 +17,8 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl(uint64_t handle);
 
-        bool Focused() const;
-        void Focused(bool focused);
+        bool Focused() const;
+        void Focused(bool focused);
 
         IInspectable Content();
         void Content(IInspectable content);
