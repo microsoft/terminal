@@ -78,7 +78,7 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     auto const tableCount = gsl::narrow_cast<unsigned int>(_table.size());
     for (unsigned int i = 0; i < tableCount; i++)
     {
-        terminalSettings.SetColorTableEntry((size_t)i, static_cast<COLORREF>(_table[i]));
+        terminalSettings.SetColorTableEntry(static_cast<size_t>i, static_cast<COLORREF>(_table[i]));
     }
 }
 
@@ -134,7 +134,7 @@ void ColorScheme::LayerJson(const Json::Value& json)
     unsigned int i = 0;
     for (const auto& current : TableColors)
     {
-        JsonUtils::GetValueForKey(json, current, _table.at((size_t)i));
+        JsonUtils::GetValueForKey(json, current, _table.at(static_cast<size_t>i));
         i++;
     }
 }
