@@ -153,21 +153,18 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 13:
         {
             Log::Comment(L"Escape from DcsIgnore");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsIgnore;
             break;
         }
         case 14:
         {
             Log::Comment(L"Escape from DcsIntermediate");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsIntermediate;
             break;
         }
         case 15:
         {
             Log::Comment(L"Escape from DcsParam");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsParam;
             break;
         }
@@ -181,6 +178,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 17:
         {
             Log::Comment(L"Escape from DcsPassThrough");
+            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsTermination;
             break;
         }
@@ -610,7 +608,10 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'P');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
-        mach.ProcessCharacter(AsciiChars::ST);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
@@ -623,7 +624,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x90');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
-        mach.ProcessCharacter(AsciiChars::ST);
+        mach.ProcessCharacter(L':');
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
@@ -644,8 +647,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
         mach.ProcessCharacter(L'%');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
+        mach.ProcessCharacter(L':');
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -664,7 +667,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L':');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -694,14 +696,17 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsParam);
         mach.ProcessCharacter(L'8');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsParam);
-        mach.ProcessCharacter(AsciiChars::ST);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
         VERIFY_ARE_EQUAL(mach._parameters.at(0), 0u);
         VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
         VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
         VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+
+        mach.ProcessCharacter(L':');
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
     TEST_METHOD(TestDcsPassThrough)

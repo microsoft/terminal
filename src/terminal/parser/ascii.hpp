@@ -41,6 +41,5 @@ namespace Microsoft::Console::VirtualTerminal
         US = 0x1F, // Unit Separator
         SPC = 0x20, // Space, first printable character
         DEL = 0x7F, // Delete
-        ST = 0x9c, // String terminator
     };
 }
