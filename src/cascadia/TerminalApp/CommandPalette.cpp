@@ -686,7 +686,7 @@ namespace winrt::TerminalApp::implementation
         Visibility(Visibility::Collapsed);
 
         // Reset visibility in case anchor mode tab switcher just finished.
-        _searchBox().Visibility(CommandPalette().Visibility());
+        _searchBox().Visibility(Visibility::Visible);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");

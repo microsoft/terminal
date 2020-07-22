@@ -278,7 +278,6 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
                 { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
-                { ShortcutAction::ToggleTabSwitcher, RS_(L"ToggleTabSwitcherCommandKey") },
             };
         }();
 
