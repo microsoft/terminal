@@ -80,11 +80,11 @@ public:
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) noexcept override { return false; } // EL
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
-    bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
+    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
+    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
+    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
@@ -110,5 +110,5 @@ public:
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
-                            const std::basic_string_view<size_t> /*params*/) noexcept override { return false; }
+                            const gsl::span<const size_t> /*params*/) noexcept override { return false; }
 };

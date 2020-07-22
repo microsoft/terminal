@@ -52,6 +52,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
     _window->MakeWindow();
 }
 
@@ -156,7 +157,9 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
+    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
+    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
+    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
 
     _logic.Create();
 
@@ -283,9 +286,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
     const short islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
+        static_cast<long>(ceil(initialSize.Width)), 1);
     const short islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -352,10 +355,22 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFullscreen();
+    _window->FocusModeChanged(_logic.FocusMode());
+}
+
+void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FullscreenChanged(_logic.Fullscreen());
+}
+
+void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
+                                  const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
 // Method Description:

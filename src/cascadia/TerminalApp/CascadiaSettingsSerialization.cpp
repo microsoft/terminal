@@ -249,9 +249,9 @@ void CascadiaSettings::_LoadDynamicProfiles()
     const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
     if (disabledProfileSources.isArray())
     {
-        for (const auto& ns : disabledProfileSources)
+        for (const auto& json : disabledProfileSources)
         {
-            ignoredNamespaces.emplace(GetWstringFromJson(ns));
+            ignoredNamespaces.emplace(JsonUtils::GetValue<std::wstring>(json));
         }
     }
 

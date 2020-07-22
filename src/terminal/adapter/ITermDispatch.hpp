@@ -86,11 +86,11 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) = 0; // SGR
+    virtual bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) = 0; // SGR
 
-    virtual bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECSET
+    virtual bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECSET
 
-    virtual bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECRST
+    virtual bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
@@ -116,7 +116,7 @@ public:
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const std::basic_string_view<size_t> parameters) = 0;
+                                    const gsl::span<const size_t> parameters) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

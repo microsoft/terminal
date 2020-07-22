@@ -1403,7 +1403,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -1480,7 +1480,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3382,7 +3382,7 @@ void ScreenBufferTests::ScrollOperations()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3503,7 +3503,7 @@ void ScreenBufferTests::InsertChars()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3663,7 +3663,7 @@ void ScreenBufferTests::DeleteChars()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3895,7 +3895,7 @@ void ScreenBufferTests::EraseTests()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -5014,14 +5014,16 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
-    bool bold, italics, blink, invisible, crossedOut;
+    bool bold, faint, italics, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
@@ -5042,6 +5044,11 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     {
         WI_SetFlag(expectedAttrs, ExtendedAttributes::Bold);
         vtSeq += L"\x1b[1m";
+    }
+    if (faint)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Faint);
+        vtSeq += L"\x1b[2m";
     }
     if (italics)
     {
@@ -5100,9 +5107,10 @@ void ScreenBufferTests::TestExtendedTextAttributes()
 
     // One-by-one, turn off each of these states with VT, then check that the
     // state matched.
-    if (bold)
+    if (bold || faint)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Bold);
+        // The bold and faint attributes share the same reset sequence.
+        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Bold | ExtendedAttributes::Faint);
         vtSeq = L"\x1b[22m";
         validate(expectedAttrs, vtSeq);
     }
@@ -5147,6 +5155,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
@@ -5162,8 +5171,9 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     const int Use256Color = 2;
     const int UseRGBColor = 3;
 
-    bool bold, italics, blink, invisible, crossedOut;
+    bool bold, faint, italics, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
@@ -5189,9 +5199,14 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
         expectedAttr.SetBold(true);
         vtSeq += L"\x1b[1m";
     }
+    if (faint)
+    {
+        expectedAttr.SetFaint(true);
+        vtSeq += L"\x1b[2m";
+    }
     if (italics)
     {
-        expectedAttr.SetItalics(true);
+        expectedAttr.SetItalic(true);
         vtSeq += L"\x1b[3m";
     }
     if (blink)
@@ -5290,15 +5305,17 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
 
     // One-by-one, turn off each of these states with VT, then check that the
     // state matched.
-    if (bold)
+    if (bold || faint)
     {
+        // The bold and faint attributes share the same reset sequence.
         expectedAttr.SetBold(false);
+        expectedAttr.SetFaint(false);
         vtSeq = L"\x1b[22m";
         validate(expectedAttr, vtSeq);
     }
     if (italics)
     {
-        expectedAttr.SetItalics(false);
+        expectedAttr.SetItalic(false);
         vtSeq = L"\x1b[23m";
         validate(expectedAttr, vtSeq);
     }
@@ -5772,7 +5789,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     // Set the initial attributes.
     auto initialAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     initialAttr.SetReverseVideo(true);
-    initialAttr.SetUnderline(true);
+    initialAttr.SetUnderlined(true);
     si.SetAttributes(initialAttr);
 
     // Set some margins.

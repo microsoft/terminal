@@ -64,6 +64,7 @@
 #ifndef BLOCK_GSL
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
+#include <gsl/span_ext>
 #endif
 
 // CppCoreCheck

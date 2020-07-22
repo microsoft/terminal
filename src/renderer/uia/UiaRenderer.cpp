@@ -305,7 +305,7 @@ CATCH_RETURN();
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(gsl::span<const Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept

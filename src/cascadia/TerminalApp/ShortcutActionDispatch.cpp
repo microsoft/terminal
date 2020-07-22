@@ -159,9 +159,19 @@ namespace winrt::TerminalApp::implementation
             _ToggleRetroEffectHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleFocusMode:
+        {
+            _ToggleFocusModeHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ToggleAlwaysOnTop:
+        {
+            _ToggleAlwaysOnTopHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::ToggleCommandPalette:
@@ -183,6 +193,10 @@ namespace winrt::TerminalApp::implementation
         {
             _RenameTabHandlers(*this, *eventArgs);
             break;
+        }
+        case ShortcutAction::ExecuteCommandline:
+        {
+            _ExecuteCommandlineHandlers(*this, *eventArgs);
         }
         default:
             return false;

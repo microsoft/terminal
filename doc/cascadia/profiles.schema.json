@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
@@ -54,13 +54,16 @@
         "scrollUpPage",
         "splitPane",
         "switchToTab",
+        "toggleFocusMode",
         "toggleFullscreen",
+        "toggleAlwaysOnTop",
         "toggleRetroEffect",
         "find",
         "setTabColor",
         "openTabColorPicker",
         "renameTab",
         "commandPalette",
+        "wt",
         "unbound"
       ],
       "type": "string"
@@ -278,6 +281,23 @@
         }
       ]
     },
+    "WtAction": {
+      "description": "Arguments corresponding to a wt Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "wt" },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "a `wt` commandline to run in the current window"
+            }
+          }
+        }
+      ],
+      "required": [ "commandline" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -294,6 +314,7 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/WtAction" },
               { "type": "null" }
             ]
         },
@@ -323,6 +344,11 @@
       "additionalProperties": true,
       "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
+        "alwaysOnTop": {
+          "default": false,
+          "description": "When set to true, the window is created on top of all other windows. If multiple windows are all \"always on top\", the most recently focused one will be the topmost",
+          "type": "boolean"
+        },
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
@@ -396,10 +422,11 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
           "maximum": 999,
           "minimum": 0,
-          "type": [ "integer", "string" ]
+          "type": [ "integer", "string" ],
+          "deprecated": true
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
