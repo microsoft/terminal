@@ -80,34 +80,26 @@ This API will look something like this:
 ```c++
 runtimeclass AppSettings
 {
-    AppSettings();
-
-    // Load a settings file, and layer those changes on top of the existing AppSettings
-    void LayerSettings(String path);
-
-    // Create a copy of the existing AppSettings
-    AppSettings Clone();
-    
-    // Compares object to "source" and applies changes to
-    // the settings file at "outPath"
-    void Save(String outPath);
+    // Create an AppSettings based on the defaults.json file data
+    // and layer the settings file at "path" onto it
+    AppSettings(String path);
 }
 ```
 
 #### TerminalApp: Loading and Reloading Changes
 
 TerminalApp will construct and reference an `AppSettings settings` as follows:
-- TerminalApp will have a global reference to "defaults.json" and "settings.json" filepaths
-- construct an `AppSettings` using the default constructor
-- `settings.LayerSettings("defaults.json")`
-- `settings.LayerSettings("settings.json")`
+- TerminalApp will have a global reference to the "settings.json" filepath
+- construct an `AppSettings` using `AppSettings("settings.json")`. This builds an `AppSettings`
+   from the "defaults.json" file data (which is already compiled as a string literal) 
+   and layers the settings.json data on top of it.
 
 **NOTE:** This model allows us to layer even more settings files on top of the existing Terminal Settings
  Model, if so desired. This could be helpful when importing additional settings files from an external location
  such as a marketplace.
 
 When TerminalApp detects a change to "settings.json", it'll repeat the steps above. We could cache the result from
- `settings.LayerSettings("defaults.json")` to improve performance.
+ constructing an `AppSettings` from "defaults.json" data to improve performance.
 
 Additionally, TerminalApp would reference `settings` for the following functionality...
 - `Profiles` to populate the dropdown menu
@@ -122,34 +114,12 @@ At the time of writing this spec, TerminalApp constructs `TerminalControl.Termin
  and `ICoreSettings` down to the TerminalControl layer, TerminalApp can now have better control over
  how to expose relevant settings to a TerminalControl instance.
 
-`TerminalSettings` (which implements `IControlSettings` and `ICoreSettings`) will be moved to TerminalApp and act as a bridge that queries `AppSettings`. Thus,
- when TermControl requests `IControlSettings` data, `TerminalSettings` responds by extracting the
- relevant information from `AppSettings`. TerminalCore operates the same way with `ICoreSettings`.
+`TerminalSettings` (which implements `IControlSettings` and `ICoreSettings`) will be moved to
+ TerminalApp and act as a bridge connecting `AppSettings` to the TermControl. It will operate
+ very similarly as it does today. On construction of the TermControl or hot-reload,
+ `TerminalSettings` will be constructed by copying the relevant values of `AppSettings`.
+ Then, it will be passed to TermControl (and TermCore by extension).
 
-#### Settings UI: Modifying and Applying the Settings
-
-The Settings UI will also have a reference to the `AppSettings settings` from TerminalApp
- as `settingsSource`. When the Settings UI is opened up, the Settings UI will also have its own `AppSettings settingsClone`
- that is a clone of TerminalApp's `AppSettings`.
-```c++
-settingsClone = settingsSource.Clone()
-```
-
-As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
- As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
- When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; 
- this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
-
-As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
- Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
- something like this occurs, `settingsSource` will automatically be updated too.
-
-In the case that a user is simultaneously updating the settings file directly and the Settings UI,
- `settingsSource` and `settingsClone` can be compared to ensure that the Settings UI, the TerminalApp,
- and the settings files are all in sync.
-
- **NOTE:** In the event that the user would want to export their current configuration, `Save`
- can be used to export the changes to a new file.
 
 ## UI/UX Design
 
@@ -191,21 +161,79 @@ The deserialization process takes place right after comparing the `settingsSourc
 
 ## Future considerations
 
-### Dropdown Customization
+### TerminalSettings: passing by reference
 
-Profiles are proposed to be represented in an `IObservableVector`. They could be represented as an
- `IObservableMap` with the guid or profile name used as the key value. The main concern with representing
- profiles as a map is that this loses the order for the dropdown menu.
+`TermApp` synthesizes a `TerminalSettings` by copying the relevant values of `AppSettings`,
+ then giving it to a Terminal Control. Some visual keybindings and interactions like ctrl+scroll
+ and ctrl+shift+scroll to change the font size and acrylic opacity operate by directly modifying
+ the value of the instantiated `TerminalSettings`. However, when a settings reload occurs,
+ these instanced changes are lost.
 
-Once Dropdown Customization is introduced, `AppSettings` can expose it to TerminalApp as
- an `IObservableVector<DropdownMenuItem>`. This handles the ordering of profiles and other
- dropdown menu items. Additionally, `IObservableVector<Profile>` can be replaced with
- `IObservableMap<GUID, Profile>` or `IObservableMap<String, Profile>` (where the key is
- a profile name). This would improve profile retrieval performance.
+`TerminalSettings` can be used as a WinRT object that references (instead of copies) the relevant
+ values of `AppSettings`. This would prevent those instanced changes from being lost on a settings
+ reload.
 
+Since previewable commands like `setColorScheme` would require a clone of the existing `TerminalSettings`,
+ a `Clone` API can be added on `TerminalSettings` to accomplish that. When passing by value,
+ `TerminalSettings` can just overwrite the existing property (i.e.: color scheme). When passing
+ by reference, a slightly more complex mechanism is required to override the value.
+
+Now, instead of overwriting the value, we need to override the reference to a constant value
+(i.e.: `snapOnInput=true`) or a referenced value (i.e.: `colorScheme`).
+
+### Layering Additonal Settings
+As we begin to introduce more sources that affect the settings (via extensions or themes),
+ we can introduce a `LayerSettings(String path)`. This layers the new settings file
+ onto the existing `AppSettings`. This is already done internally, we would just expose
+ it via C++/WinRT.
+
+```c++
+runtimeclass AppSettings
+{
+    // Load a settings file, and layer those changes on top of the existing AppSettings
+    void LayerSettings(String path);
+}
+```
+
+### Settings UI: Modifying and Applying the Settings (DRAFT)
+
+```c++
+runtimeclass AppSettings
+{
+    // Create a copy of the existing AppSettings
+    AppSettings Clone();
+    
+    // Compares object to "source" and applies changes to
+    // the settings file at "outPath"
+    void Save(String outPath);
+}
+```
+
+The Settings UI will also have a reference to the `AppSettings settings` from TerminalApp
+ as `settingsSource`. When the Settings UI is opened up, the Settings UI will also have its own `AppSettings settingsClone`
+ that is a clone of TerminalApp's `AppSettings`.
+```c++
+settingsClone = settingsSource.Clone()
+```
+
+As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
+ As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
+ When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; 
+ this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
+
+As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
+ Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
+ something like this occurs, `settingsSource` will automatically be updated too.
+
+In the case that a user is simultaneously updating the settings file directly and the Settings UI,
+ `settingsSource` and `settingsClone` can be compared to ensure that the Settings UI, the TerminalApp,
+ and the settings files are all in sync.
+
+ **NOTE:** In the event that the user would want to export their current configuration, `Save`
+ can be used to export the changes to a new file.
 
 ## Resources
 
-- [Spec: Dropdown Customization](https://github.com/microsoft/terminal/pull/5888)
+- [Previewable Commands](https://github.com/microsoft/terminal/issues/6689)
 - [New JSON Utils](https://github.com/microsoft/terminal/pull/6590)
 - [Spec: Settings UI](https://github.com/microsoft/terminal/pull/6720)
