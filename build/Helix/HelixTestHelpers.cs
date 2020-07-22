@@ -548,8 +548,8 @@ namespace HelixTestHelpers
                 var test = new XElement("test");
                 test.SetAttributeValue("name", testNamePrefix + "." + result.Name);
 
-                var className = result.Name.Substring(0, result.Name.LastIndexOf('.'));
-                var methodName = result.Name.Substring(result.Name.LastIndexOf('.') + 1);
+                var className = GetTestClassName(result.Name);
+                var methodName = GetTestMethodName(result.Name);
                 test.SetAttributeValue("type", className);
                 test.SetAttributeValue("method", methodName);
 
@@ -638,6 +638,32 @@ namespace HelixTestHelpers
         {
             var filename = Path.GetFileName(filePath);
             return string.Format("{0}/{1}{2}", helixResultsContainerUri, filename, helixResultsContainerRsas);
+        }
+		
+		private string GetTestNameSeparator(string testname)
+        {
+            var separatorString = ".";
+            if (!testname.Contains(separatorString))
+            {
+                separatorString = "::";
+            }
+            return separatorString;
+        }
+
+        private string GetTestMethodName(string fullyQualifiedName)
+        {
+            var separatorString = GetTestNameSeparator(fullyQualifiedName);
+            var methodName = fullyQualifiedName.Substring(fullyQualifiedName.LastIndexOf(separatorString) + separatorString.Length);
+
+            return methodName;
+        }
+
+        private string GetTestClassName(string fullyQualifiedName)
+        {
+            var separatorString = GetTestNameSeparator(fullyQualifiedName);
+            var className = fullyQualifiedName.Substring(0, fullyQualifiedName.LastIndexOf(separatorString));
+
+            return className;
         }
     }
 }
