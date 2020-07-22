@@ -318,12 +318,12 @@
               "$ref": "#/definitions/AnchorKey",
               "default": null,
               "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
+            },
+            "initialDirection": {
+              "$ref": "#/definitions/Direction",
+              "default": "down",
+              "description": "Only accepts up or down. Opens the tab switcher with the previous tab selected (up), or the next tab selected (down)."
             }
-			"initialDirection": {
-			  "$ref": "#/definitions/Direction",
-			  "default": "down",
-			  "description": "Only accepts up or down. Opens the tab switcher with the previous tab selected (up), or the next tab selected (down)."
-			}
           }
         }
       ]
