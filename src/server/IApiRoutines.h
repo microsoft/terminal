@@ -219,12 +219,12 @@ public:
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
-                                                         const std::basic_string_view<INPUT_RECORD> buffer,
+                                                         const gsl::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
-                                                         const std::basic_string_view<INPUT_RECORD> buffer,
+                                                         const gsl::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
@@ -239,7 +239,7 @@ public:
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                  const std::basic_string_view<WORD> attrs,
+                                                                  const gsl::span<const WORD> attrs,
                                                                   const COORD target,
                                                                   size_t& used) noexcept = 0;
 

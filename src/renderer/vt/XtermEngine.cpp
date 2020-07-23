@@ -498,7 +498,7 @@ CATCH_RETURN();
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept

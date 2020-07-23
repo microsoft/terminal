@@ -147,9 +147,9 @@ std::unordered_map<std::wstring,
     // Ensure output variables are initialized
     writtenOrNeeded = 0;
 
-    if (target.has_value() && target.value().size() > 0)
+    if (target.has_value() && target->size() > 0)
     {
-        target.value().at(0) = UNICODE_NULL;
+        til::at(*target, 0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
@@ -178,9 +178,9 @@ std::unordered_map<std::wstring,
     if (target.has_value())
     {
         // if the user didn't give us enough space, return with insufficient buffer code early.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), gsl::narrow<size_t>(target.value().size()) < neededSize);
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), target->size() < neededSize);
 
-        RETURN_IF_FAILED(StringCchCopyNW(target.value().data(), target.value().size(), targetString.data(), targetSize));
+        RETURN_IF_FAILED(StringCchCopyNW(target->data(), target->size(), targetString.data(), targetSize));
     }
 
     return S_OK;
@@ -211,7 +211,7 @@ std::unordered_map<std::wstring,
     {
         if (target.size() > 0)
         {
-            target.at(0) = ANSI_NULL;
+            til::at(target, 0) = ANSI_NULL;
         }
 
         LockConsole();
@@ -449,14 +449,14 @@ void Alias::s_ClearCmdExeAliases()
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
 
-    if (aliasBuffer.has_value() && aliasBuffer.value().size() > 0)
+    if (aliasBuffer.has_value() && aliasBuffer->size() > 0)
     {
-        aliasBuffer.value().at(0) = UNICODE_NULL;
+        til::at(*aliasBuffer, 0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
 
-    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
+    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     // Each of the aliases will be made up of the source, a separator, the target, then a null character.
@@ -489,10 +489,10 @@ void Alias::s_ClearCmdExeAliases()
                 size_t cchNewTotal;
                 RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasBuffer.value().size()));
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > aliasBuffer->size());
 
                 size_t cchAliasBufferRemaining;
-                RETURN_IF_FAILED(SizeTSub(aliasBuffer.value().size(), cchTotalLength, &cchAliasBufferRemaining));
+                RETURN_IF_FAILED(SizeTSub(aliasBuffer->size(), cchTotalLength, &cchAliasBufferRemaining));
 
                 RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.first.data(), cchSource));
                 RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
@@ -543,7 +543,7 @@ void Alias::s_ClearCmdExeAliases()
     {
         if (alias.size() > 0)
         {
-            alias.at(0) = '\0';
+            til::at(alias, 0) = '\0';
         }
 
         LockConsole();
@@ -574,7 +574,7 @@ void Alias::s_ClearCmdExeAliases()
         // Copy safely to the output buffer
         // - Aliases are a series of null terminated strings. We cannot use a SafeString function to copy.
         //   So instead, validate and use raw memory copy.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(alias.size()));
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > alias.size());
         memcpy_s(alias.data(), alias.size(), converted.data(), converted.size());
 
         // And return the size copied.
@@ -696,12 +696,12 @@ void Alias::s_ClearCmdExeAliases()
 {
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
-    if (aliasExesBuffer.has_value() && aliasExesBuffer.value().size() > 0)
+    if (aliasExesBuffer.has_value() && aliasExesBuffer->size() > 0)
     {
-        aliasExesBuffer.value().at(0) = UNICODE_NULL;
+        til::at(*aliasExesBuffer, 0) = UNICODE_NULL;
     }
 
-    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer.value().data() : nullptr;
+    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     size_t const cchNull = 1;
@@ -722,10 +722,10 @@ void Alias::s_ClearCmdExeAliases()
             // Error out early if there is a problem.
             size_t cchNewTotal;
             RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
-            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasExesBuffer.value().size()));
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > aliasExesBuffer->size());
 
             size_t cchRemaining;
-            RETURN_IF_FAILED(SizeTSub(aliasExesBuffer.value().size(), cchTotalLength, &cchRemaining));
+            RETURN_IF_FAILED(SizeTSub(aliasExesBuffer->size(), cchTotalLength, &cchRemaining));
 
             RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, pair.first.data(), cchExe));
             AliasExesBufferPtrW += cchNeeded;
@@ -761,7 +761,7 @@ void Alias::s_ClearCmdExeAliases()
     {
         if (aliasExes.size() > 0)
         {
-            aliasExes.at(0) = '\0';
+            til::at(aliasExes, 0) = '\0';
         }
 
         LockConsole();
@@ -788,7 +788,7 @@ void Alias::s_ClearCmdExeAliases()
         // Copy safely to the output buffer
         // - AliasExes are a series of null terminated strings. We cannot use a SafeString function to copy.
         //   So instead, validate and use raw memory copy.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(aliasExes.size()));
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > aliasExes.size());
         memcpy_s(aliasExes.data(), aliasExes.size(), converted.data(), converted.size());
 
         // And return the size copied.
