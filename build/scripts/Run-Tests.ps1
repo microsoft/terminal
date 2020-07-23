@@ -15,7 +15,7 @@ if ($LogPath)
 {
     $args += '/enablewttlogging';
     $args += '/appendwttlogging';
-    $args += '/logFile:$LogPath';
+    $args += "/logFile:$LogPath";
     Write-Host "Wtt Logging Enabled";
 }
 
