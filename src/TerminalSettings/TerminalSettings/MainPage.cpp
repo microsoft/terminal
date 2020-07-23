@@ -68,10 +68,10 @@ namespace winrt::TerminalSettings::implementation
 
         if (clickedItemContainer != NULL)
         {
-            const hstring globalsPage = L"Globals_Page";
-            const hstring profilesPage = L"Profiles_Page";
-            const hstring colorSchemesPage = L"ColorSchemes_Page";
-            const hstring keybindingsPage = L"Keybindings_Page";
+            const hstring globalsPage = L"General_Nav";
+            const hstring profilesPage = L"Profiles_Nav";
+            const hstring colorSchemesPage = L"Appearance_Nav";
+            const hstring keybindingsPage = L"Keyboard_Nav";
 
             hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
 
