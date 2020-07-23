@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
         void Create();
 
@@ -49,16 +49,26 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
-        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
-        winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
+        void ToggleFocusMode();
+        void ToggleFullscreen();
+        void ToggleAlwaysOnTop();
+        bool FocusMode() const;
+        bool Fullscreen() const;
+        bool AlwaysOnTop() const;
+
+        void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
+        static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
+
+        winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
+        void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -81,24 +91,30 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
 
+        bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
+        bool _isAlwaysOnTop{ false };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+
+        // use a weak reference to prevent circular dependency with AppLogic
+        winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
-        winrt::fire_and_forget _ProcessStartupActions();
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
         void _ShowCloseTabDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
@@ -132,6 +148,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
+        winrt::com_ptr<Tab> _GetFocusedTab();
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedTabPane();
@@ -153,9 +170,8 @@ namespace winrt::TerminalApp::implementation
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
-        static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
-        fire_and_forget _LaunchSettings(const bool openDefaults);
+        fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
@@ -169,12 +185,14 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
-        void _ToggleFullscreen();
-
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
         void _ClearNonClientAreaColors();
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
+
+        void _CompleteInitialization();
+
+        void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
@@ -200,7 +218,16 @@ namespace winrt::TerminalApp::implementation
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleRetroEffect(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleFocusMode(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleExecuteCommandline(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;

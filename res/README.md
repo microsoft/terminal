@@ -17,5 +17,5 @@ Please consult the [license](https://raw.githubusercontent.com/microsoft/cascadi
 
 ### Fonts Included
 
-* Cascadia Code, Cascadia Mono
-   * from microsoft/cascadia-code@d733599504811e8f3969de20368817d20e162dba
+* Cascadia Code, Cascadia Mono (2007.15)
+   * from microsoft/cascadia-code@2a54363b2c867f7ae811b9a034c0024cef67de96

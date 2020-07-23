@@ -63,6 +63,9 @@
     <Page Include="../ColorPickupFlyout.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../CommandPalette.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -85,6 +88,15 @@
     <ClInclude Include="../ColorPickupFlyout.h">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../CommandPalette.h">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../Command.h">
+      <DependentUpon>../Command.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../CommandKeyChordVisibilityConverter.h">
+      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Tab.h">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClInclude>
@@ -97,13 +109,14 @@
     <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../DefaultProfileUtils.h" />
+    <ClInclude Include="../TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IDynamicProfileGenerator.h" />
     <ClInclude Include="../PowershellCoreProfileGenerator.h" />
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
-    <ClInclude Include="..\ColorHelper.h" />
+    <ClInclude Include="../ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
@@ -146,6 +159,15 @@
     <ClCompile Include="../ColorPickupFlyout.cpp">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../CommandPalette.cpp">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../Command.cpp">
+      <DependentUpon>../Command.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../CommandKeyChordVisibilityConverter.cpp">
+      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClCompile>
@@ -157,8 +179,6 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
-    <ClCompile Include="../JsonUtils.cpp" />
-    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
@@ -201,7 +221,7 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="../IF7Listener.idl" />
+    <Midl Include="../IDirectKeyListener.idl" />
     <Midl Include="../App.idl">
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
@@ -229,11 +249,18 @@
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="../Tab.idl"/>
+    <Midl Include="../CommandPalette.idl">
+      <DependentUpon>../CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../Command.idl" />
+    <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
+    <Midl Include="../Tab.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="..\Resources\*\Resources.resw" />
+    <PRIResource Include="..\Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="../Resources" />
     <None Include="../packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -302,13 +329,13 @@
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 
@@ -345,4 +372,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="..\userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

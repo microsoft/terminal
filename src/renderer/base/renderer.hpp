@@ -73,6 +73,7 @@ namespace Microsoft::Console::Render
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
+        void WaitUntilCanRender() override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
@@ -119,13 +120,19 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
-        SMALL_RECT _srViewportPrevious;
+        Microsoft::Console::Types::Viewport _viewport;
+
+        static constexpr float _shrinkThreshold = 0.8f;
+        std::vector<Cluster> _clusterBuffer;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
 
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
+
+        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
+        [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.

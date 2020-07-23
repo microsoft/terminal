@@ -65,8 +65,12 @@ if "%_EXCLUSIVE%" == "1" (
     if "%PROJECT_NAME%" == "" ( goto :eof ) else echo Building only %PROJECT_NAME%
 )
 
-echo Performing nuget restore...
-nuget.exe restore %OPENCON%\OpenConsole.sln
+if "%_SKIP_NUGET_RESTORE%" == "1" (
+    echo Skipped nuget restore
+) else (
+    echo Performing nuget restore...
+    nuget.exe restore %OPENCON%\OpenConsole.sln
+)
 
 set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
 
@@ -97,9 +101,8 @@ set MSBuildEmitSolution=1
 set MSBuildEmitSolution=
 
 rem Use bx.ps1 to figure out which target we're looking at
-set _BX_SCRIPT=powershell bx.ps1
 set _OUTPUT=
-FOR /F "tokens=* USEBACKQ" %%F IN (`powershell bx.ps1 2^> NUL`) DO (
+FOR /F "tokens=* USEBACKQ" %%F IN (`powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive bx.ps1 2^> NUL`) DO (
     set _OUTPUT=%%F
 )
 if "!_OUTPUT!" == "" (
@@ -113,8 +116,12 @@ set "__PROJECT_NAME=!_OUTPUT!"
 rem If we're trying to clean build, make sure to update the target here.
 if "%_MSBUILD_TARGET%" == "Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%
-) else if "%_MSBUILD_TARGET%" == "Clean,Build" (
+) else if "%_MSBUILD_TARGET%" == "Clean;Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%:Rebuild
+) else (
+    echo.
+    echo Oops... build bug in the neighborhood of configuring a build target.
+    echo.
 )
 rem This statement will propagate our internal variables up to the calling
 rem scope. Because they're all on one line, the value of our local variables

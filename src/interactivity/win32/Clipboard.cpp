@@ -207,8 +207,7 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
-    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
+    const auto GetAttributeColors = std::bind(&CONSOLE_INFORMATION::LookupAttributeColors, &gci, std::placeholders::_1);
 
     bool includeCRLF, trimTrailingWhitespace;
     if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
@@ -224,8 +223,7 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto text = buffer.GetText(includeCRLF,
                                      trimTrailingWhitespace,
                                      selectionRects,
-                                     GetForegroundColor,
-                                     GetBackgroundColor);
+                                     GetAttributeColors);
 
     CopyTextToSystemClipboard(text, copyFormatting);
 }

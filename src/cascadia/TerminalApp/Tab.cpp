@@ -14,6 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Windows::System;
 
 namespace winrt
 {
@@ -44,6 +45,16 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+
+        _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_inRename = true;
+                tab->_UpdateTabHeader();
+            }
+        });
+
+        _UpdateTitle();
     }
 
     // Method Description:
@@ -221,28 +232,33 @@ namespace winrt::TerminalApp::implementation
     // - the title string of the last focused terminal control in our tree.
     winrt::hstring Tab::GetActiveTitle() const
     {
+        if (!_runtimeTabText.empty())
+        {
+            return _runtimeTabText;
+        }
         const auto lastFocusedControl = GetActiveTerminalControl();
         return lastFocusedControl ? lastFocusedControl.Title() : L"";
     }
 
     // Method Description:
-    // - Set the text on the TabViewItem for this tab.
+    // - Set the text on the TabViewItem for this tab, and bubbles the new title
+    //   value up to anyone listening for changes to our title. Callers can
+    //   listen for the title change with a PropertyChanged even handler.
     // Arguments:
-    // - text: The new text string to use as the Header for our TabViewItem
+    // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
+    winrt::fire_and_forget Tab::_UpdateTitle()
     {
-        // Copy the hstring, so we don't capture a dead reference
-        winrt::hstring textCopy{ text };
         auto weakThis{ get_weak() };
-
         co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
-
         if (auto tab{ weakThis.get() })
         {
-            Title(text);
-            _tabViewItem.Header(winrt::box_value(text));
+            // Bubble our current tab text to anyone who's listening for changes.
+            Title(GetActiveTitle());
+
+            // Update the UI to reflect the changed
+            _UpdateTabHeader();
         }
     }
 
@@ -371,6 +387,18 @@ namespace winrt::TerminalApp::implementation
         _activePane->Close();
     }
 
+    void Tab::SetTabText(winrt::hstring title)
+    {
+        _runtimeTabText = title;
+        _UpdateTitle();
+    }
+
+    void Tab::ResetTabText()
+    {
+        _runtimeTabText = L"";
+        _UpdateTitle();
+    }
+
     // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
@@ -391,7 +419,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
-                tab->SetTabText(tab->GetActiveTitle());
+                tab->_UpdateTitle();
             }
         });
 
@@ -426,7 +454,7 @@ namespace winrt::TerminalApp::implementation
         _activePane->SetActive();
 
         // Update our own title text to match the newly-active pane.
-        SetTabText(GetActiveTitle());
+        _UpdateTitle();
 
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
@@ -492,7 +520,7 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_tabColorPickup.ShowAt(tab->_tabViewItem);
+                tab->ActivateColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
@@ -502,24 +530,173 @@ namespace winrt::TerminalApp::implementation
         _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_SetTabColor(newTabColor);
+                tab->SetTabColor(newTabColor);
             }
         });
 
         _tabColorPickup.ColorCleared([weakThis]() {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ResetTabColor();
+                tab->ResetTabColor();
             }
         });
+
+        Controls::MenuFlyoutItem renameTabMenuItem;
+        {
+            // "Rename Tab"
+            Controls::FontIcon renameTabSymbol;
+            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            renameTabSymbol.Glyph(L"\xE932"); // Label
+
+            renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_inRename = true;
+                    tab->_UpdateTabHeader();
+                }
+            });
+            renameTabMenuItem.Text(RS_(L"RenameTabText"));
+            renameTabMenuItem.Icon(renameTabSymbol);
+        }
 
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
+        newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - This will update the contents of our TabViewItem for our current state.
+    //   - If we're not in a rename, we'll set the Header of the TabViewItem to
+    //     simply our current tab text (either the runtime tab text or the
+    //     active terminal's text).
+    //   - If we're in a rename, then we'll set the Header to a TextBox with the
+    //     current tab text. The user can then use that TextBox to set a string
+    //     to use as an override for the tab's text.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_UpdateTabHeader()
+    {
+        winrt::hstring tabText{ GetActiveTitle() };
+
+        if (!_inRename)
+        {
+            // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
+            _tabViewItem.Header(winrt::box_value(tabText));
+        }
+        else
+        {
+            _ConstructTabRenameBox(tabText);
+        }
+    }
+
+    // Method Description:
+    // - Create a new TextBox to use as the control for renaming the tab text.
+    //   If the text box is already created, then this will do nothing, and
+    //   leave the current box unmodified.
+    // Arguments:
+    // - tabText: This should be the text to initialize the rename text box with.
+    // Return Value:
+    // - <none>
+    void Tab::_ConstructTabRenameBox(const winrt::hstring& tabText)
+    {
+        if (_tabViewItem.Header().try_as<Controls::TextBox>())
+        {
+            return;
+        }
+
+        Controls::TextBox tabTextBox;
+        tabTextBox.Text(tabText);
+
+        // The TextBox has a MinHeight already set by default, which is
+        // larger than we want. Get rid of it.
+        tabTextBox.MinHeight(0);
+        // Also get rid of the internal padding on the text box, between the
+        // border and the text content, on the top and bottom. This will
+        // help the box fit within the bounds of the tab.
+        Thickness internalPadding = ThicknessHelper::FromLengths(4, 0, 4, 0);
+        tabTextBox.Padding(internalPadding);
+
+        // Make the margin (0, -8, 0, -8), to counteract the padding that
+        // the TabViewItem has.
+        //
+        // This is maybe a bit fragile, as the actual value might not be exactly
+        // (0, 8, 0, 8), but using TabViewItemHeaderPadding to look up the real
+        // value at runtime didn't work. So this is good enough for now.
+        Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
+        tabTextBox.Margin(negativeMargins);
+
+        // Set up some event handlers on the text box. We need three of them:
+        // * A LostFocus event, so when the TextBox loses focus, we'll
+        //   remove it and return to just the text on the tab.
+        // * A KeyUp event, to be able to submit the tab text on Enter or
+        //   dismiss the text box on Escape
+        // * A LayoutUpdated event, so that we can auto-focus the text box
+        //   when it's added to the tree.
+        auto weakThis{ get_weak() };
+
+        // When the text box loses focus, update the tab title of our tab.
+        // - If there are any contents in the box, we'll use that value as
+        //   the new "runtime text", which will override any text set by the
+        //   application.
+        // - If the text box is empty, we'll reset the "runtime text", and
+        //   return to using the active terminal's title.
+        tabTextBox.LostFocus([weakThis](const IInspectable& sender, auto&&) {
+            auto tab{ weakThis.get() };
+            auto textBox{ sender.try_as<Controls::TextBox>() };
+            if (tab && textBox)
+            {
+                tab->_runtimeTabText = textBox.Text();
+                tab->_inRename = false;
+                tab->_UpdateTitle();
+            }
+        });
+
+        // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
+        // remove the TextBox from the UI tree, then the following KeyUp
+        // will bubble to the NewTabButton, which we don't want to have
+        // happen.
+        tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
+            auto tab{ weakThis.get() };
+            auto textBox{ sender.try_as<Controls::TextBox>() };
+            if (tab && textBox)
+            {
+                switch (e.OriginalKey())
+                {
+                case VirtualKey::Enter:
+                    tab->_runtimeTabText = textBox.Text();
+                    [[fallthrough]];
+                case VirtualKey::Escape:
+                    e.Handled(true);
+                    textBox.Text(tab->_runtimeTabText);
+                    tab->_inRename = false;
+                    tab->_UpdateTitle();
+                    break;
+                }
+            }
+        });
+
+        // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
+        _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
+            // Curiously, the sender for this event is null, so we have to
+            // get the TextBox from the Tab's Header().
+            auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
+            if (textBox)
+            {
+                textBox.SelectAll();
+                textBox.Focus(FocusState::Programmatic);
+            }
+            // Only let this succeed once.
+            _tabRenameBoxLayoutUpdatedRevoker.revoke();
+        });
+
+        _tabViewItem.Header(tabTextBox);
     }
 
     // Method Description:
@@ -541,7 +718,7 @@ namespace winrt::TerminalApp::implementation
     // - color: the shiny color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
+    void Tab::SetTabColor(const winrt::Windows::UI::Color& color)
     {
         auto weakThis{ get_weak() };
 
@@ -586,6 +763,7 @@ namespace winrt::TerminalApp::implementation
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
 
             tab->_RefreshVisualState();
 
@@ -601,7 +779,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_ResetTabColor()
+    void Tab::ResetTabColor()
     {
         auto weakThis{ get_weak() };
 
@@ -619,7 +797,8 @@ namespace winrt::TerminalApp::implementation
                 L"TabViewItemHeaderForegroundSelected",
                 L"TabViewItemHeaderForegroundPointerOver",
                 L"TabViewItemHeaderBackgroundPressed",
-                L"TabViewItemHeaderForegroundPressed"
+                L"TabViewItemHeaderForegroundPressed",
+                L"TabViewButtonForegroundActiveTab"
             };
 
             // simply clear any of the colors in the tab's dict
@@ -639,6 +818,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ActivateColorPicker()
+    {
+        _tabColorPickup.ShowAt(_tabViewItem);
+    }
+
+    // Method Description:
     // Toggles the visual state of the tab view item,
     // so that changes to the tab color are reflected immediately
     // Arguments:
@@ -649,13 +839,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (_focused)
         {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
         }
         else
         {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
         }
     }
 
@@ -685,6 +875,10 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
+    bool Tab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    {
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
+    }
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(Tab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(Tab, ColorCleared, _colorCleared, winrt::delegate<>);

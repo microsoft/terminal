@@ -47,7 +47,9 @@ public:
     bool SetColumns(const size_t /*columns*/) noexcept override { return false; } // DECCOLM
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
+    bool EnableWin32InputMode(const bool /*win32InputMode*/) noexcept override { return false; } // win32-input-mode
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
+    bool SetAnsiMode(const bool /*ansiMode*/) noexcept override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
@@ -78,16 +80,24 @@ public:
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) noexcept override { return false; } // EL
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
-    bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
+    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
+    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
+    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
+    bool SecondaryDeviceAttributes() noexcept override { return false; } // DA2
+    bool TertiaryDeviceAttributes() noexcept override { return false; } // DA3
+    bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
-    bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // SCS
+    bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
+    bool Designate94Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
+    bool Designate96Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
+    bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
+    bool LockingShiftRight(const size_t /*gsetNumber*/) noexcept override { return false; } // LS1R, LS2R, LS3R
+    bool SingleShift(const size_t /*gsetNumber*/) noexcept override { return false; } // SS2, SS3
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS
@@ -96,7 +106,9 @@ public:
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) noexcept override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) noexcept override { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
+    bool SetClipboard(std::wstring_view /*content*/) noexcept override { return false; } // OscSetClipboard
+
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
-                            const std::basic_string_view<size_t> /*params*/) noexcept override { return false; }
+                            const gsl::span<const size_t> /*params*/) noexcept override { return false; }
 };

@@ -42,8 +42,8 @@ class ConversionAreaInfo final
 public:
     ConversionAreaInfo(const COORD bufferSize,
                        const COORD windowSize,
-                       const CHAR_INFO fill,
-                       const CHAR_INFO popupFill,
+                       const TextAttribute& fill,
+                       const TextAttribute& popupFill,
                        const FontInfo fontInfo);
     ~ConversionAreaInfo() = default;
     ConversionAreaInfo(const ConversionAreaInfo&) = delete;

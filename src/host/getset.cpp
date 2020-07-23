@@ -572,9 +572,12 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
-        gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
+        for (size_t i = 0; i < std::size(data.ColorTable); i++)
+        {
+            gci.SetColorTableEntry(i, data.ColorTable[i]);
+        }
 
-        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
+        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -878,7 +881,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                       (target.Y == -currentBufferDimensions.Y);
             const bool noClipProvided = clip == std::nullopt;
             const bool fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
-                                     (fillAttribute == gci.GenerateLegacyAttributes(buffer.GetAttributes()));
+                                     (fillAttribute == buffer.GetAttributes().GetLegacyAttributes());
 
             if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
             {
@@ -919,6 +922,25 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+    // Do nothing if no change.
+    if (gci.OutputCP != codepage)
+    {
+        // Set new code page
+        gci.OutputCP = codepage;
+
+        SetConsoleCPInfo(TRUE);
+    }
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
@@ -929,23 +951,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.OutputCP != codepage)
-        {
-            // Set new code page
-            gci.OutputCP = codepage;
-
-            SetConsoleCPInfo(TRUE);
-        }
-
-        return S_OK;
+        return DoSrvSetConsoleOutputCodePage(codepage);
     }
     CATCH_RETURN();
 }
@@ -1220,6 +1228,19 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Function Description:
+// - A private API call which enables/disables sending full input records
+//   encoded as a string of characters to the client application.
+// Parameters:
+// - win32InputMode - set to true to enable win32-input-mode, false to disable.
+// Return value:
+// - <none>
+void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
 }
 
 // Routine Description:
@@ -1581,9 +1602,9 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         written = 0;
         needed = 0;
 
-        if (title.has_value() && title.value().size() > 0)
+        if (title.has_value() && title->size() > 0)
         {
-            title.value().at(0) = ANSI_NULL;
+            til::at(*title, 0) = ANSI_NULL;
         }
 
         // Get the appropriate title and length depending on the mode.
@@ -1607,13 +1628,13 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         // If we have a pointer to receive the data, then copy it out.
         if (title.has_value())
         {
-            HRESULT const hr = StringCchCopyNW(title.value().data(), title.value().size(), pwszTitle, cchTitleLength);
+            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), pwszTitle, cchTitleLength);
 
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
-                written = std::min(gsl::narrow<size_t>(title.value().size()), cchTitleLength);
+                written = std::min(title->size(), cchTitleLength);
             }
         }
         return S_OK;
@@ -1646,7 +1667,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 
         if (title.size() > 0)
         {
-            title.at(0) = ANSI_NULL;
+            til::at(title, 0) = ANSI_NULL;
         }
 
         // Figure out how big our temporary Unicode buffer must be to get the title.
@@ -1673,7 +1694,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         // The legacy A behavior is a bit strange. If the buffer given doesn't have enough space to hold
         // the string without null termination (e.g. the title is 9 long, 10 with null. The buffer given isn't >= 9).
         // then do not copy anything back and do not report how much space we need.
-        if (gsl::narrow<size_t>(title.size()) >= converted.size())
+        if (title.size() >= converted.size())
         {
             // Say how many characters of buffer we would need to hold the entire result.
             needed = converted.size();
@@ -1686,13 +1707,13 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
                 // And return the size copied (either the size of the buffer or the null terminated length of the string we filled it with.)
-                written = std::min(gsl::narrow<size_t>(title.size()), converted.size() + 1);
+                written = std::min(title.size(), converted.size() + 1);
 
                 // Another compatibility fix... If we had exactly the number of bytes needed for an unterminated string,
                 // then replace the terminator left behind by StringCchCopyNA with the final character of the title string.
-                if (gsl::narrow<size_t>(title.size()) == converted.size())
+                if (title.size() == converted.size())
                 {
-                    title.at(title.size() - 1) = converted.data()[converted.size() - 1];
+                    title.back() = converted.back();
                 }
             }
         }
@@ -1701,7 +1722,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
             // If we didn't copy anything back and there is space, null terminate the given buffer and return.
             if (title.size() > 0)
             {
-                title.at(0) = ANSI_NULL;
+                til::at(title, 0) = ANSI_NULL;
                 written = 1;
             }
         }

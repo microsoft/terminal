@@ -81,9 +81,8 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
-    ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
+    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
 
@@ -123,7 +122,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
@@ -221,7 +220,10 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _bHistoryNoDup = pStateInfo->HistoryNoDup;
     _uHistoryBufferSize = pStateInfo->HistoryBufferSize;
     _uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
-    memmove(_ColorTable, pStateInfo->ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
+    {
+        SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+    }
     _uCodePage = pStateInfo->CodePage;
     _bWrapText = !!pStateInfo->fWrapText;
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
@@ -263,7 +265,10 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.HistoryNoDup = _bHistoryNoDup;
     csi.HistoryBufferSize = _uHistoryBufferSize;
     csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
-    memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    for (size_t i = 0; i < std::size(csi.ColorTable); i++)
+    {
+        csi.ColorTable[i] = GetColorTableEntry(i);
+    }
     csi.CodePage = _uCodePage;
     csi.fWrapText = !!_bWrapText;
     csi.fFilterOnPaste = _fFilterOnPaste;
@@ -343,6 +348,10 @@ void Settings::Validate()
             _wFillAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
         }
     }
+
+    // At this point the default fill attributes are fully initialized
+    // so we can pass on the final colors to the TextAttribute class.
+    TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
 
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
@@ -717,26 +726,19 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-const COLORREF* const Settings::GetColorTable() const
+gsl::span<const COLORREF> Settings::Get16ColorTable() const
 {
-    return _ColorTable;
+    return Get256ColorTable().subspan(0, 16);
 }
-void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
-{
-    size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
-    memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
+gsl::span<const COLORREF> Settings::Get256ColorTable() const
+{
+    return { _colorTable.data(), _colorTable.size() };
 }
+
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        _ColorTable[index] = ColorValue;
-    }
-    else
-    {
-        _XtermColorTable[index] = ColorValue;
-    }
+    _colorTable.at(index) = ColorValue;
 }
 
 bool Settings::IsStartupTitleIsLinkNameSet() const
@@ -754,78 +756,9 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
-const size_t Settings::GetColorTableSize() const
-{
-    return ARRAYSIZE(_ColorTable);
-}
-
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        return _ColorTable[index];
-    }
-    else
-    {
-        return _XtermColorTable[index];
-    }
-}
-
-// Routine Description:
-// - Generates a legacy attribute from the given TextAttributes.
-//     This needs to be a method on the Settings because the generated index
-//     is dependent upon the particular values of the color table at the time of reading.
-// Parameters:
-// - attributes - The TextAttributes to generate a legacy attribute for.
-// Return value:
-// - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
-{
-    const WORD wLegacyOriginal = attributes.GetLegacyAttributes();
-    if (attributes.IsLegacy())
-    {
-        return wLegacyOriginal;
-    }
-    // We need to construct the legacy attributes manually
-    // First start with whatever our default legacy attributes are
-    BYTE fgIndex = static_cast<BYTE>((_wFillAttribute & FG_ATTRS));
-    BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
-    // If the attributes have any RGB components, we need to match that RGB
-    //      color to a color table value.
-    if (attributes.IsRgb())
-    {
-        // If the attribute doesn't have a "default" colored *ground, look up
-        //  the nearest color table value for its *ground.
-        const COLORREF rgbForeground = LookupForegroundColor(attributes);
-        fgIndex = attributes.ForegroundIsDefault() ?
-                      fgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
-
-        const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-        bgIndex = attributes.BackgroundIsDefault() ?
-                      bgIndex :
-                      static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
-    }
-
-    // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
-    //      it has if the component is a legacy index, otherwise it will use the
-    //      provided byte for each index. In this way, we can provide a value to
-    //      use should it not already have one.
-    const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
-    return wCompleteAttr;
-}
-
-//Routine Description:
-// For a given RGB color Color, finds the nearest color from the array ColorTable, and returns the index of that match.
-//Arguments:
-// - Color - The RGB color to fine the nearest color to.
-// - ColorTable - The array of colors to find a nearest color from.
-// - cColorTable - The number of elements in ColorTable
-// Return value:
-// The index in ColorTable of the nearest match to Color.
-WORD Settings::FindNearestTableIndex(const COLORREF Color) const
-{
-    return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
+    return _colorTable.at(index);
 }
 
 COLORREF Settings::GetCursorColor() const noexcept
@@ -878,20 +811,6 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
     _DefaultBackground = defaultBackground;
 }
 
-TextAttribute Settings::GetDefaultAttributes() const noexcept
-{
-    auto attrs = TextAttribute{ _wFillAttribute };
-    if (_DefaultForeground != INVALID_COLOR)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (_DefaultBackground != INVALID_COLOR)
-    {
-        attrs.SetDefaultBackground();
-    }
-    return attrs;
-}
-
 bool Settings::IsTerminalScrolling() const noexcept
 {
     return _TerminalScrolling;
@@ -924,7 +843,7 @@ bool Settings::GetUseDx() const noexcept
 COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(_wFillAttribute) & FG_ATTRS);
 }
 
 // Method Description:
@@ -939,47 +858,22 @@ COLORREF Settings::CalculateDefaultForeground() const noexcept
 COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(_wFillAttribute) & BG_ATTRS) >> 4);
 }
 
 // Method Description:
-// - Get the foreground color of a particular text attribute, using our color
-//      table, and our configured default attributes.
+// - Get the colors of a particular text attribute, using our color table,
+//      and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
-// - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> Settings::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-}
-
-// Method Description:
-// - Get the background color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the background color of.
-// Return Value:
-// - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
+    return attr.CalculateRgbColors(Get256ColorTable(),
+                                   CalculateDefaultForeground(),
+                                   CalculateDefaultBackground(),
+                                   _fScreenReversed);
 }
 
 bool Settings::GetCopyColor() const noexcept

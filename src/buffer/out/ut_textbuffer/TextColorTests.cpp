@@ -27,7 +27,7 @@ class TextColorTests
     COLORREF _colorTable[COLOR_TABLE_SIZE];
     COLORREF _defaultFg = RGB(1, 2, 3);
     COLORREF _defaultBg = RGB(4, 5, 6);
-    std::basic_string_view<COLORREF> _GetTableView();
+    gsl::span<const COLORREF> _GetTableView();
 };
 
 bool TextColorTests::ClassSetup()
@@ -51,9 +51,9 @@ bool TextColorTests::ClassSetup()
     return true;
 }
 
-std::basic_string_view<COLORREF> TextColorTests::_GetTableView()
+gsl::span<const COLORREF> TextColorTests::_GetTableView()
 {
-    return std::basic_string_view<COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
+    return gsl::span<const COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
 }
 
 void TextColorTests::TestDefaultColor()
@@ -81,7 +81,7 @@ void TextColorTests::TestDefaultColor()
 
 void TextColorTests::TestDarkIndexColor()
 {
-    TextColor indexColor((BYTE)(7));
+    TextColor indexColor((BYTE)(7), false);
 
     VERIFY_IS_FALSE(indexColor.IsDefault());
     VERIFY_IS_TRUE(indexColor.IsLegacy());
@@ -104,7 +104,7 @@ void TextColorTests::TestDarkIndexColor()
 
 void TextColorTests::TestBrightIndexColor()
 {
-    TextColor indexColor((BYTE)(15));
+    TextColor indexColor((BYTE)(15), false);
 
     VERIFY_IS_FALSE(indexColor.IsDefault());
     VERIFY_IS_TRUE(indexColor.IsLegacy());
@@ -186,7 +186,7 @@ void TextColorTests::TestChangeColor()
     color = rgbColor.GetColor(view, _defaultBg, true);
     VERIFY_ARE_EQUAL(_defaultBg, color);
 
-    rgbColor.SetIndex(7);
+    rgbColor.SetIndex(7, false);
     color = rgbColor.GetColor(view, _defaultFg, false);
     VERIFY_ARE_EQUAL(_colorTable[7], color);
 
@@ -199,7 +199,7 @@ void TextColorTests::TestChangeColor()
     color = rgbColor.GetColor(view, _defaultBg, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    rgbColor.SetIndex(15);
+    rgbColor.SetIndex(15, false);
     color = rgbColor.GetColor(view, _defaultFg, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 

@@ -30,6 +30,8 @@ public:
                                                   _Out_ BOOL* const pfReadConsoleProperties,
                                                   _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
                                                   const size_t cchShortcutTitle,
+                                                  _Out_writes_opt_(cchLinkTarget) PWSTR pwszLinkTarget,
+                                                  const size_t cchLinkTarget,
                                                   _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
                                                   const size_t cchIconLocation,
                                                   _Out_opt_ int* const piIcon,

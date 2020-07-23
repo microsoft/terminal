@@ -19,30 +19,13 @@ enum class ExtendedAttributes : BYTE
     // TODO:GH#2916 add support for these to the parser as well.
     Underlined = 0x20, // _technically_ different from LVB_UNDERSCORE, see TODO:GH#2915
     DoublyUnderlined = 0x40, // Included for completeness, but not currently supported.
-    Faint = 0x80, // Included for completeness, but not currently supported.
+    Faint = 0x80,
 };
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
-
-WORD FindNearestTableIndex(const COLORREF Color,
-                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                           const WORD cColorTable);
-
-bool FindTableIndex(const COLORREF Color,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable,
-                    _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(const size_t index) noexcept;
 WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
 WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
-
-COLORREF ForegroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable);
-
-COLORREF BackgroundColor(const WORD wLegacyAttrs,
-                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         const size_t cColorTable);
 
 const WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
 const WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;

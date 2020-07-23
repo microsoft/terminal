@@ -39,6 +39,7 @@ Revision History:
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
@@ -47,7 +48,6 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
-#include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
 // fwdecl unittest classes
@@ -214,7 +214,7 @@ public:
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
     TextAttribute GetAttributes() const;
-    const TextAttribute* const GetPopupAttributes() const;
+    TextAttribute GetPopupAttributes() const;
 
     void SetAttributes(const TextAttribute& attributes);
     void SetPopupAttributes(const TextAttribute& popupAttributes);
@@ -237,6 +237,9 @@ public:
     const FontInfoDesired& GetDesiredFont() const noexcept;
 
     void InitializeCursorRowAttributes();
+
+    void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
+    void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
@@ -299,6 +302,8 @@ private:
     short _virtualBottom;
 
     ScreenBufferRenderTarget _renderTarget;
+
+    bool _ignoreLegacyEquivalentVTAttributes;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

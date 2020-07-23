@@ -24,82 +24,82 @@
                         <Setter Property="Margin" Value="2"/>
                     </Style>
                 </VariableSizedWrapGrid.Resources>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Crimson">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Crimson" x:Uid="CrimsonColorButton">
                     <Button.Content>
                         <Rectangle Fill="Crimson"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="SteelBlue">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="SteelBlue" x:Uid="SteelBlueColorButton">
                     <Button.Content>
                         <Rectangle Fill="SteelBlue"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="MediumSeaGreen">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="MediumSeaGreen" x:Uid="MediumSeaGreenColorButton">
                     <Button.Content>
                         <Rectangle Fill="MediumSeaGreen"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="DarkOrange">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="DarkOrange" x:Uid="DarkOrangeColorButton">
                     <Button.Content>
                         <Rectangle Fill="DarkOrange"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="MediumVioletRed">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="MediumVioletRed" x:Uid="MediumVioletRedColorButton">
                     <Button.Content>
                         <Rectangle Fill="MediumVioletRed"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="DodgerBlue">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="DodgerBlue" x:Uid="DodgerBlueColorButton">
                     <Button.Content>
                         <Rectangle Fill="DodgerBlue"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="LimeGreen">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="LimeGreen" x:Uid="LimeGreenColorButton">
                     <Button.Content>
                         <Rectangle Fill="LimeGreen"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Yellow">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Yellow" x:Uid="YellowColorButton">
                     <Button.Content>
                         <Rectangle Fill="Yellow"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="BlueViolet">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="BlueViolet" x:Uid="BlueVioletColorButton">
                     <Button.Content>
                         <Rectangle Fill="BlueViolet"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="SlateBlue">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="SlateBlue" x:Uid="SlateBlueColorButton">
                     <Button.Content>
                         <Rectangle Fill="SlateBlue"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Lime">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Lime" x:Uid="LimeColorButton">
                     <Button.Content>
                         <Rectangle Fill="Lime"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Tan">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Tan" x:Uid="TanColorButton">
                     <Button.Content>
                         <Rectangle Fill="Tan"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Magenta">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Magenta" x:Uid="MagentaColorButton">
                     <Button.Content>
                         <Rectangle Fill="Magenta"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="Cyan">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="Cyan" x:Uid="CyanColorButton">
                     <Button.Content>
                         <Rectangle Fill="Cyan"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="SkyBlue">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="SkyBlue" x:Uid="SkyBlueColorButton">
                     <Button.Content>
                         <Rectangle Fill="SkyBlue"/>
                     </Button.Content>
                 </Button>
-                <Button Click="ColorButton_Click" AutomationProperties.Name="DarkGray">
+                <Button Click="ColorButton_Click" AutomationProperties.Name="DarkGray" x:Uid="DarkGrayColorButton">
                     <Button.Content>
                         <Rectangle Fill="DarkGray"/>
                     </Button.Content>
