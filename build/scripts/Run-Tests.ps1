@@ -17,8 +17,6 @@ if ($LogPath)
     $args += '/appendwttlogging';
     $args += '/logFile:$LogPath';
     Write-Host "Wtt Logging Enabled";
-	
-	cop
 }
 
 &".\bin\$Platform\$Configuration\te.exe" $args $testdlls.FullName
