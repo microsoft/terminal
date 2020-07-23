@@ -12,8 +12,8 @@ steps:
   inputs:
     versionSpec: 5.2.0
 
-- task: VisualStudioTestPlatformInstaller@1
-  displayName: Ensure VSTest Platform
+# - task: VisualStudioTestPlatformInstaller@1
+  # displayName: Ensure VSTest Platform
 
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
