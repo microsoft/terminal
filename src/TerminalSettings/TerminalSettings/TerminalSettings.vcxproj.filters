@@ -19,9 +19,29 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="MainPage.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="AppSettings.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalSettings.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorScheme.cpp" />
+    <ClCompile Include="Profile.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="AppSettings.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalSettings.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorScheme.h" />
+    <ClInclude Include="Profile.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">
@@ -88,6 +108,9 @@
   <ItemGroup>
     <Filter Include="Assets">
       <UniqueIdentifier>{e48dc53e-40b1-40cb-970a-f89935452892}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ObjectModel">
+      <UniqueIdentifier>{82df4a65-69a2-4d4a-bd7f-3eb55c6b2533}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
