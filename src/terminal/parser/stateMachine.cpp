@@ -342,6 +342,7 @@ static constexpr bool _isDcsTerminationInitiator(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isDcsPassThroughValid(const wchar_t wch) noexcept
 {
+    // 0x20 - 0x7E
     return wch >= AsciiChars::SPC && wch < AsciiChars::DEL;
 }
 
@@ -1488,8 +1489,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - Processes a character event into an Action that occurs while in the DcsIgnore state.
 //   Events in this state will:
 //   1. Enter ground on a String terminator
-//   2. If we see a ESC, enter the DscTermination state.
-//   3. Ignore everything else.
+//   2. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1500,10 +1500,6 @@ void StateMachine::_EventDcsIgnore(const wchar_t wch) noexcept
     if (_isStringTerminator(wch))
     {
         _EnterGround();
-    }
-    else if (_isDcsTerminationInitiator(wch))
-    {
-        _EnterDcsTermination();
     }
     else
     {
@@ -1635,7 +1631,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsTermination(const wchar_t wch) noexcept
+void StateMachine::_EventDcsTermination(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"DcsTermination");
 
@@ -1646,6 +1642,7 @@ void StateMachine::_EventDcsTermination(const wchar_t wch) noexcept
     }
     else
     {
+        _EnterEscape();
         _EventEscape(wch);
     }
 }
@@ -1672,12 +1669,12 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsTermination)
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough)
     {
         // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
         //
-        // Same for DCS pass through & termination state.
+        // Same for DCS pass through state.
         _EnterEscape();
     }
     else

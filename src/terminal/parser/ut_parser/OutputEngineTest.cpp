@@ -66,7 +66,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         StateMachine mach(std::move(engine));
 
         // The OscString state shouldn't escape out after an ESC.
-        // Same for several DCS states.
+        // Same for DcsPassThrough state.
         bool shouldEscapeOut = true;
 
         switch (uiTest)
@@ -177,8 +177,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         }
         case 17:
         {
-            Log::Comment(L"Escape from DcsPassThrough");
-            shouldEscapeOut = false;
+            Log::Comment(L"Escape from DcsTermination");
             mach._state = StateMachine::VTStates::DcsTermination;
             break;
         }
@@ -608,8 +607,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'P');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
-        mach.ProcessCharacter(L':');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -624,7 +621,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x90');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
-        mach.ProcessCharacter(L':');
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -647,7 +643,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
         mach.ProcessCharacter(L'%');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
-        mach.ProcessCharacter(L':');
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -703,13 +698,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
         VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
 
-        mach.ProcessCharacter(L':');
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
-    TEST_METHOD(TestDcsPassThrough)
+    TEST_METHOD(TestDcsIntermediateAndPassThrough)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -729,6 +723,36 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
+
+    TEST_METHOD(TestDcsLongStringPassThrough)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'P');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
+        mach.ProcessCharacter(L'q');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(L'#');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(L'1');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(L'N');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(L'N');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(L'N');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
 };
 
 class StatefulDispatch final : public TermDispatch

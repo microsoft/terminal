@@ -105,7 +105,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsIntermediate(const wchar_t wch);
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
-        void _EventDcsTermination(const wchar_t wch) noexcept;
+        void _EventDcsTermination(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 
