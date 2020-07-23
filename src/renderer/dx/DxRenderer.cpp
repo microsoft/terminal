@@ -341,11 +341,24 @@ HRESULT DxEngine::_SetupTerminalEffects()
 // - <none>
 void DxEngine::_ComputePixelShaderSettings() noexcept
 {
-    // Retro scan lines alternate every pixel row at 100% scaling.
-    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;
+    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
+    {
+        // Retro scan lines alternate evolution
+        _pixelShaderSettings.Downscale = _scale * 2.0f;
 
-    // Gaussian distribution sigma used for blurring.
-    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;
+        // Set the display resolution
+        _pixelShaderSettings.Width = 1.0f*_displaySizePixels.width<UINT>();
+        _pixelShaderSettings.Height = 1.0f*_displaySizePixels.height<UINT>();
+
+        // Set the background
+        _pixelShaderSettings.Background = _backgroundColor;
+
+        try
+        {
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
+        }
+        CATCH_LOG();
+    }
 }
 
 // Routine Description;
@@ -1689,6 +1702,9 @@ CATCH_RETURN()
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
     }
 
+    // Update pixel shader settings as background color might have changed
+    _ComputePixelShaderSettings();
+
     return S_OK;
 }
 
@@ -1744,15 +1760,8 @@ CATCH_RETURN();
 
     RETURN_IF_FAILED(InvalidateAll());
 
-    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
-    {
-        _ComputePixelShaderSettings();
-        try
-        {
-            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
-        }
-        CATCH_RETURN();
-    }
+    // Update pixel shader settings as scale might have changed
+    _ComputePixelShaderSettings();
 
     return S_OK;
 }

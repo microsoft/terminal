@@ -221,8 +221,10 @@ namespace Microsoft::Console::Render
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
-            float ScaledScanLinePeriod;
-            float ScaledGaussianSigma;
+            float Downscale;
+            float Width;
+            float Height;
+            D2D1_COLOR_F Background;
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 
