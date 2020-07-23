@@ -19,24 +19,47 @@
         <NavigationView.MenuItems>
             <NavigationViewItem Icon="Globe"
                 Tag="Globals_Nav" >
-                <TextBlock Tag="Globals_Page">Globals</TextBlock>
+                <TextBlock Tag="Globals_Page">General</TextBlock>
             </NavigationViewItem>
-            <NavigationViewItem Tag="Profiles_Nav">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE756;" />
-                </NavigationViewItem.Icon>
-                <TextBlock Tag="Profiles_Page">Profiles</TextBlock>
-            </NavigationViewItem>
+
             <NavigationViewItem Tag="ColorSchemes_Nav">
                 <NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;"></FontIcon>
                 </NavigationViewItem.Icon>
-                <TextBlock Tag="ColorSchemes_Page">Color Schemes</TextBlock>
+                <TextBlock Tag="ColorSchemes_Page">Appearance</TextBlock>
             </NavigationViewItem>
+
+            <NavigationViewItem Tag="Profiles_Nav">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE770;" />
+                </NavigationViewItem.Icon>
+                <TextBlock Tag="Profiles_Page">Profiles</TextBlock>
+            </NavigationViewItem>
+            
             <NavigationViewItem Icon="Keyboard"
                                     Tag="Keybindings_Nav">
-                <TextBlock Tag="Keybindings_Page">Keybindings</TextBlock>
+                <TextBlock Tag="Keybindings_Page">Keyboard</TextBlock>
             </NavigationViewItem>
+
+            <NavigationViewItem Tag="Keybindings_Nav">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE962;" />
+                </NavigationViewItem.Icon>
+                <TextBlock Tag="Keybindings_Page">Mouse</TextBlock>
+            </NavigationViewItem>
+
+            <NavigationViewItem Tag="Keybindings_Nav">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE945;" />
+                </NavigationViewItem.Icon>
+                <TextBlock Tag="Keybindings_Page">Command Palette</TextBlock>
+            </NavigationViewItem>
+
+            <NavigationViewItem Icon="Shop"
+                                    Tag="Keybindings_Nav">
+                <TextBlock Tag="Keybindings_Page">Marketplace</TextBlock>
+            </NavigationViewItem>
+
         </NavigationView.MenuItems>
         <NavigationView.PaneFooter>
             <NavigationViewItem>
