@@ -36,9 +36,7 @@ namespace winrt::TerminalSettings::implementation
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
-            const auto item0 = SettingsNav().MenuItems().GetAt(i);
-
-            const auto item = item0.as<Controls::ContentControl>();
+            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
             const hstring globalsNav = L"Globals_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
