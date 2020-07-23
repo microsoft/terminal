@@ -1,5 +1,6 @@
 ACCESSTOKEN
 aef
+appendwttlogging
 appxerror
 BUILDURI
 COLLECTIONURI
@@ -48,6 +49,7 @@ wlk
 workitem
 wtl
 wtt
+wttlog
 XDocument
 XElement
 xunit
