@@ -18,17 +18,17 @@ jobs:
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
 
-- template: MUX-RunHelixTests-Job.yml
-  parameters:
-    name: 'RunTestsInHelix'
-    dependsOn: BuildJob
-    condition: succeeded()
-    testSuite: 'DevTestSuite'
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+# - template: MUX-RunHelixTests-Job.yml
+  # parameters:
+    # name: 'RunTestsInHelix'
+    # dependsOn: BuildJob
+    # condition: succeeded()
+    # testSuite: 'DevTestSuite'
+    # rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
-- template: MUX-ProcessTestResults-Job.yml
-  parameters:
-    dependsOn:
-    - RunTestsInHelix
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-    minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
+# - template: MUX-ProcessTestResults-Job.yml
+  # parameters:
+    # dependsOn:
+    # - RunTestsInHelix
+    # rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+    # minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
