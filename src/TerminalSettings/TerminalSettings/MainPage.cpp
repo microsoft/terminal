@@ -31,18 +31,20 @@ namespace winrt::TerminalSettings::implementation
 
     }
 
-    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
+    void MainPage::SettingsNav_Loaded_1(IInspectable const& sender, RoutedEventArgs const& e)
     {
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
-            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::NavigationViewItemBase>();
+            const auto item0 = SettingsNav().MenuItems().GetAt(i);
+
+            const auto item = item0.as<Controls::ContentControl>();
             const hstring globalsNav = L"Globals_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
             if (itemTag == globalsNav)
             {
-                item.IsSelected(true);
+                // item.IsSelected(true); // have to investigate how to replace this
                 SettingsNav().Header() = item.Tag();
                 break;
             }
@@ -56,39 +58,39 @@ namespace winrt::TerminalSettings::implementation
 
     }
 
-    void MainPage::SettingsNav_ItemInvoked(Controls::NavigationView sender, Controls::NavigationViewItemInvokedEventArgs args)
+    void winrt::TerminalSettings::implementation::MainPage::SettingsNav_SelectionChanged_1(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& sender, winrt::Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& args)
     {
-        Controls::TextBlock item = args.InvokedItem().as<Controls::TextBlock>();
+    }
 
-        if (item != NULL)
+    void MainPage::SettingsNav_ItemInvoked_1(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& sender, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args)
+    {
+        auto clickedItemContainer = args.InvokedItemContainer();
+
+        if (clickedItemContainer != NULL)
         {
             const hstring globalsPage = L"Globals_Page";
             const hstring profilesPage = L"Profiles_Page";
             const hstring colorSchemesPage = L"ColorSchemes_Page";
             const hstring keybindingsPage = L"Keybindings_Page";
 
-            if (unbox_value<hstring>(item.Tag()) == globalsPage)
+            hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
+
+            if (clickedItemTag == globalsPage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == profilesPage)
+            else if (clickedItemTag == profilesPage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == colorSchemesPage)
+            else if (clickedItemTag == colorSchemesPage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == keybindingsPage)
+            else if (clickedItemTag == keybindingsPage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::Keybindings>());
             }
         }
     }
 }
-
-
-//void winrt::TerminalSettings::implementation::MainPage::SettingsNav_SelectionChanged(winrt::Windows::UI::Xaml::Controls::NavigationView const& sender, winrt::Windows::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& args)
-//{
-//
-//}
