@@ -6,6 +6,11 @@
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
+
 using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::SettingsControl::implementation
@@ -13,35 +18,33 @@ namespace winrt::SettingsControl::implementation
     MainPage::MainPage()
     {
         InitializeComponent();
-    }
 
-    int32_t MainPage::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void MainPage::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
+        // TODO: When we actually connect this to Windows Terminal,
+        //       this section will clone the active AppSettings
+        _settingsSource = AppSettings();
+        _settingsClone = _settingsSource.Clone();
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-
     }
 
-    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
+    void MainPage::SettingsNav_SelectionChanged(const MUX::Controls::NavigationView, const MUX::Controls::NavigationViewSelectionChangedEventArgs)
+    {
+    }
+
+    void MainPage::SettingsNav_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
     {
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
-            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::NavigationViewItemBase>();
+            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
             const hstring globalsNav = L"Globals_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
             if (itemTag == globalsNav)
             {
-                item.IsSelected(true);
+                // item.IsSelected(true); // have to investigate how to replace this
                 SettingsNav().Header() = item.Tag();
                 break;
             }
@@ -50,39 +53,35 @@ namespace winrt::SettingsControl::implementation
         contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
     }
 
-    void MainPage::SettingsNav_SelectionChanged(Controls::NavigationView sender, Controls::NavigationViewSelectionChangedEventArgs args)
+    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const& sender, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
     {
+        auto clickedItemContainer = args.InvokedItemContainer();
 
-    }
-
-    void MainPage::SettingsNav_ItemInvoked(Controls::NavigationView sender, Controls::NavigationViewItemInvokedEventArgs args)
-    {
-        Controls::TextBlock item = args.InvokedItem().as<Controls::TextBlock>();
-
-        if (item != NULL)
+        if (clickedItemContainer != NULL)
         {
-            const hstring globalsPage = L"Globals_Page";
-            const hstring profilesPage = L"Profiles_Page";
-            const hstring colorSchemesPage = L"ColorSchemes_Page";
-            const hstring keybindingsPage = L"Keybindings_Page";
+            const hstring globalsPage = L"General_Nav";
+            const hstring profilesPage = L"Profiles_Nav";
+            const hstring colorSchemesPage = L"Appearance_Nav";
+            const hstring keybindingsPage = L"Keyboard_Nav";
 
-            if (unbox_value<hstring>(item.Tag()) == globalsPage)
+            hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
+
+            if (clickedItemTag == globalsPage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == profilesPage)
+            else if (clickedItemTag == profilesPage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == colorSchemesPage)
+            else if (clickedItemTag == colorSchemesPage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
             }
-            else if (unbox_value<hstring>(item.Tag()) == keybindingsPage)
+            else if (clickedItemTag == keybindingsPage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
             }
         }
     }
 }
-
