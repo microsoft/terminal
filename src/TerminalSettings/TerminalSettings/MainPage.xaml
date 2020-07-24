@@ -8,45 +8,131 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
-    <NavigationView x:Name="SettingsNav"
+   
+    <muxc:NavigationView x:Name="SettingsNav"
                     IsSettingsVisible="False"
                     Loaded="SettingsNav_Loaded"
                     SelectionChanged="SettingsNav_SelectionChanged"
                     ItemInvoked="SettingsNav_ItemInvoked">
-        <NavigationView.AutoSuggestBox>
+        <muxc:NavigationView.AutoSuggestBox>
             <AutoSuggestBox PlaceholderText="Search" QueryIcon="Find"/>
-        </NavigationView.AutoSuggestBox>
-        <NavigationView.MenuItems>
-            <NavigationViewItem Icon="Globe"
-                Tag="Globals_Nav" >
-                <TextBlock Tag="Globals_Page">Globals</TextBlock>
-            </NavigationViewItem>
-            <NavigationViewItem Tag="Profiles_Nav">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE756;" />
-                </NavigationViewItem.Icon>
+        </muxc:NavigationView.AutoSuggestBox>
+        <muxc:NavigationView.MenuItems>
+
+            <muxc:NavigationViewItem Icon="Globe"
+                Tag="General_Nav" >
+                <TextBlock Tag="General_Page">General</TextBlock>
+
+                <muxc:NavigationViewItem.MenuItems>
+                    <muxc:NavigationViewItem Tag="Launch_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xEA86;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Globals_Page">Launch</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="Interaction_Nav" >
+                        <!-- Couldn't find cursor alone -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE7C9;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Globals_Page">Interaction</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="Rendering_Nav" >
+                        <!-- Couldn't find cursor alone -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE7F8;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Globals_Page">Rendering</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                </muxc:NavigationViewItem.MenuItems>
+
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem Tag="Appearance_Nav" Content="Appearance">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE790;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem Tag="Profiles_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE770;" />
+                </muxc:NavigationViewItem.Icon>
                 <TextBlock Tag="Profiles_Page">Profiles</TextBlock>
-            </NavigationViewItem>
-            <NavigationViewItem Tag="ColorSchemes_Nav">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE790;"></FontIcon>
-                </NavigationViewItem.Icon>
-                <TextBlock Tag="ColorSchemes_Page">Color Schemes</TextBlock>
-            </NavigationViewItem>
-            <NavigationViewItem Icon="Keyboard"
-                                    Tag="Keybindings_Nav">
-                <TextBlock Tag="Keybindings_Page">Keybindings</TextBlock>
-            </NavigationViewItem>
-        </NavigationView.MenuItems>
-        <NavigationView.PaneFooter>
-            <NavigationViewItem>
-                <NavigationViewItem.Icon>
+
+                <muxc:NavigationViewItem.MenuItems>
+                    <muxc:NavigationViewItem Tag="Global_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE909;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Global_Page">Global</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="CmdPrompt_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE909;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="CmdPrompt_Page">Command Prompt</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="Powershell_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE909;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Powershell_Page">Windows Powershell</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="Ubuntu_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE909;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Ubuntu_Page">Ubuntu</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="Powershell7_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE909;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="Powershell7_Page">PowerShell 7</TextBlock>
+                    </muxc:NavigationViewItem>
+
+                    <muxc:NavigationViewItem Tag="AddNew_Nav" >
+                        <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE710;" />
+                        </muxc:NavigationViewItem.Icon>
+                        <TextBlock Tag="AddNew_Page">Add new</TextBlock>
+                    </muxc:NavigationViewItem>
+                    
+                </muxc:NavigationViewItem.MenuItems>
+            </muxc:NavigationViewItem>
+
+
+            <muxc:NavigationViewItem Icon="Keyboard"
+                                    Tag="Keyboard_Nav">
+                <TextBlock Tag="Keyboard_Page">Keyboard</TextBlock>
+            </muxc:NavigationViewItem>
+
+        </muxc:NavigationView.MenuItems>
+        <muxc:NavigationView.PaneFooter>
+            <muxc:NavigationViewItem>
+                <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE713;" />
-                </NavigationViewItem.Icon>
+                </muxc:NavigationViewItem.Icon>
                 <TextBlock>Open JSON file</TextBlock>
-            </NavigationViewItem>
-        </NavigationView.PaneFooter>
+            </muxc:NavigationViewItem>
+        </muxc:NavigationView.PaneFooter>
         <Frame x:Name="contentFrame"
                    Margin="20"></Frame>
-    </NavigationView>
+    </muxc:NavigationView>
+
 </Page>
