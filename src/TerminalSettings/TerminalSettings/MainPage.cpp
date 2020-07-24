@@ -59,22 +59,41 @@ namespace winrt::TerminalSettings::implementation
 
         if (clickedItemContainer != NULL)
         {
-            const hstring globalsPage = L"General_Nav";
+            const hstring generalPage = L"General_Nav";
+            const hstring launchSubpage = L"Launch_Nav";
+            const hstring interactionSubpage = L"Interaction_Nav";
+            const hstring renderingSubpage = L"Rendering_Nav";
+
             const hstring profilesPage = L"Profiles_Nav";
-            const hstring colorSchemesPage = L"Appearance_Nav";
+            const hstring globalprofileSubpage = L"GlobalProfile_Nav";
+            const hstring addnewSubpage = L"AddNew_Nav";
+
+            const hstring appearancePage = L"Appearance_Nav";
+            const hstring colorSchemesPage = L"ColorSchemes_Nav";
+            const hstring globalAppearancePage = L"GlobalAppearance_Nav";
+
             const hstring keybindingsPage = L"Keyboard_Nav";
+            
 
             hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
 
-            if (clickedItemTag == globalsPage)
+            if (clickedItemTag == launchSubpage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
             }
-            else if (clickedItemTag == profilesPage)
+            else if (clickedItemTag == globalprofileSubpage)
+            {
+                contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
+            }
+            else if (clickedItemTag == addnewSubpage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
             }
             else if (clickedItemTag == colorSchemesPage)
+            {
+                contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
+            }
+            else if (clickedItemTag == globalAppearancePage)
             {
                 contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
             }
