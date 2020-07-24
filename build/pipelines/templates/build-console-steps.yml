@@ -112,7 +112,7 @@ steps:
     #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
     #mergeTestResults: false # Optional
     #failTaskOnFailedTests: false # Optional
-    #testRunTitle: # Optional
+    testRunTitle: 'On Build Machine Tests' # Optional
     buildPlatform: $(BuildPlatform) # Optional
     buildConfiguration: $(BuildConfiguration) # Optional
     #publishRunAttachments: true # Optional
