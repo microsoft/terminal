@@ -18,8 +18,8 @@ namespace winrt::SettingsControl::implementation
     private:
         // XAML should data-bind to the _settingsClone
         // When "save" is pressed, _settingsSource = _settingsClone
-        AppSettings _settingsSource;
-        AppSettings _settingsClone;
+        winrt::TerminalSettings::implementation::AppSettings _settingsSource;
+        winrt::TerminalSettings::implementation::AppSettings _settingsClone;
     };
 }
 

@@ -12,6 +12,7 @@ namespace winrt
 }
 
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::TerminalSettings::implementation;
 
 namespace winrt::SettingsControl::implementation
 {
@@ -33,7 +34,7 @@ namespace winrt::SettingsControl::implementation
     {
     }
 
-    void MainPage::SettingsNav_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
+    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
@@ -53,7 +54,7 @@ namespace winrt::SettingsControl::implementation
         contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
     }
 
-    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const& sender, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
+    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
     {
         auto clickedItemContainer = args.InvokedItemContainer();
 
