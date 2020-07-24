@@ -137,7 +137,7 @@ Below is the list of all settings on their respective pages in the settings UI. 
 | | | | | Green (color picker) | Font size (number picker) | **Appearance** | **Appearance** |
 | | | | | Purple (color picker) | Font weight (text box) | Font face (text box) | Font face (text box) |
 | | | | | Red (color picker) | Padding (text box) | Font size (number picker) | Font size (number picker) |
-| | | | | White (color picker) | Cursor shape (radio) | Font weight (text box) | Font weight (text box) |
+| | | | | White (color picker) | Cursor shape (radio) | Font weight (dropdown) | Font weight (dropdown) |
 | | | | | Yellow (color picker) | Cursor color (color picker) | Padding (text box) | Padding (text box) |
 | | | | | Bright black (color picker) | Cursor height (number picker) | Cursor shape (radio) | Cursor shape (radio) |
 | | | | | Bright blue (color picker) | Color scheme (dropdown) | Cursor color (color picker) | Cursor color (color picker) |
