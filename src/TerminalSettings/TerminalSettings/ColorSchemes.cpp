@@ -7,7 +7,7 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     ColorSchemes::ColorSchemes()
     {

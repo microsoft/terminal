@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalSettings", "TerminalSettings\TerminalSettings.vcxproj", "{35989071-0B5E-45C3-96A8-BB496BFE4E32}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SettingsControl", "TerminalSettings\SettingsControl.vcxproj", "{35989071-0B5E-45C3-96A8-BB496BFE4E32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

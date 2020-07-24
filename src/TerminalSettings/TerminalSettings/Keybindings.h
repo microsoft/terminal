@@ -2,7 +2,7 @@
 
 #include "Keybindings.g.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     struct Keybindings : KeybindingsT<Keybindings>
     {
@@ -15,7 +15,7 @@ namespace winrt::TerminalSettings::implementation
     };
 }
 
-namespace winrt::TerminalSettings::factory_implementation
+namespace winrt::SettingsControl::factory_implementation
 {
     struct Keybindings : KeybindingsT<Keybindings, implementation::Keybindings>
     {

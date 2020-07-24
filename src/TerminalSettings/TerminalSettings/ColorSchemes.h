@@ -2,7 +2,7 @@
 
 #include "ColorSchemes.g.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
@@ -15,7 +15,7 @@ namespace winrt::TerminalSettings::implementation
     };
 }
 
-namespace winrt::TerminalSettings::factory_implementation
+namespace winrt::SettingsControl::factory_implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes, implementation::ColorSchemes>
     {

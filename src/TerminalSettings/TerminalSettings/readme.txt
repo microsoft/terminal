@@ -1,5 +1,5 @@
 ========================================================================
-    C++/WinRT TerminalSettings Project Overview
+    C++/WinRT SettingsControl Project Overview
 ========================================================================
 
 This project demonstrates how to get started writing XAML apps directly

@@ -3,7 +3,7 @@
 #include "MainPage.g.h"
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     struct MainPage : MainPageT<MainPage>
     {
@@ -19,7 +19,7 @@ namespace winrt::TerminalSettings::implementation
     };
 }
 
-namespace winrt::TerminalSettings::factory_implementation
+namespace winrt::SettingsControl::factory_implementation
 {
     struct MainPage : MainPageT<MainPage, implementation::MainPage>
     {

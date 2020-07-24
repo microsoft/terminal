@@ -6,10 +6,9 @@
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 
-using namespace winrt;
-using namespace Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     MainPage::MainPage()
     {
@@ -48,7 +47,7 @@ namespace winrt::TerminalSettings::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
+        contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
     }
 
     void MainPage::SettingsNav_SelectionChanged(Controls::NavigationView sender, Controls::NavigationViewSelectionChangedEventArgs args)
@@ -69,26 +68,21 @@ namespace winrt::TerminalSettings::implementation
 
             if (unbox_value<hstring>(item.Tag()) == globalsPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
             }
             else if (unbox_value<hstring>(item.Tag()) == profilesPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
             }
             else if (unbox_value<hstring>(item.Tag()) == colorSchemesPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
             }
             else if (unbox_value<hstring>(item.Tag()) == keybindingsPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Keybindings>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
             }
         }
     }
 }
 
-
-//void winrt::TerminalSettings::implementation::MainPage::SettingsNav_SelectionChanged(winrt::Windows::UI::Xaml::Controls::NavigationView const& sender, winrt::Windows::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& args)
-//{
-//
-//}
