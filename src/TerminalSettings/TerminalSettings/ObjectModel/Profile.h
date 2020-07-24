@@ -4,50 +4,77 @@ namespace winrt::TerminalSettings::implementation
 {
     enum class CloseOnExitMode
     {
-        TODO_FIX
+        graceful,
+        always,
+        never
     };
 
     enum class ScrollbarState
     {
-        TODO_FIX
+        visible,
+        hidden
     };
 
     enum class FontWeight
     {
-        TODO_FIX
+        thin,
+        extra_light,
+        light,
+        semi_light,
+        normal,
+        medium,
+        semi_bold,
+        bold,
+        extra_bold,
+        black,
+        extra_black
     };
 
     enum class Stretch
     {
-        TODO_FIX
+        none,
+        fill,
+        uniform,
+        uniformToFill
     };
 
     enum class HorizontalAlignment
     {
-        TODO_FIX
+        left,
+        center,
+        right
     };
 
     enum class VerticalAlignment
     {
-        TODO_FIX
+        top,
+        center,
+        bottom
     };
 
     enum class TextAntialiasingMode
     {
-        TODO_FIX
+        grayscale,
+        cleartype,
+        aliased
     };
 
     enum class CursorStyle
     {
-        TODO_FIX
+        vintage,
+        bar,
+        underscore,
+        filledBox,
+        emptyBox
     };
 
     class Profile
     {
+    public:
         Profile() = default;
         ~Profile() = default;
 
-        std::optional<guid> Guid;
+        std::optional<hstring> Guid;
         hstring Name;
         std::optional<hstring> Source;
         std::optional<hstring> ConnectionType;

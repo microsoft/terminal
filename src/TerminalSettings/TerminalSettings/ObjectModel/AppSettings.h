@@ -26,12 +26,38 @@ namespace winrt::TerminalSettings::implementation
 
     enum class Action
     {
-        TODO_FIX
+        adjustFontSize,
+        closePane,
+        closeTab,
+        closeWindow,
+        copy,
+        duplicateTab,
+        find,
+        moveFocus,
+        newTab,
+        nextTab,
+        openNewTabDropdown,
+        openSetting,
+        paste,
+        prevTab,
+        resetFontSize,
+        resizePane,
+        scrollDown,
+        scrollUp,
+        scrollUpPage,
+        scrollDownPage,
+        splitPane,
+        switchToTab,
+        toggleFullscreen
     };
 
     class AppSettings
     {
+    public:
         AppSettings();
+        ~AppSettings() = default;
+
+        AppSettings Clone();
 
         GlobalSettings Globals;
         std::vector<Profile> Profiles;

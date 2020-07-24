@@ -4,6 +4,7 @@ namespace winrt::TerminalSettings::implementation
 {
     class ColorScheme
     {
+    public:
         ColorScheme() = default;
         ~ColorScheme() = default;
 

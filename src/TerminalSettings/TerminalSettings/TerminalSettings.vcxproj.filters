@@ -19,27 +19,31 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="MainPage.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="AppSettings.cpp">
+    <ClCompile Include="ObjectModel\AppSettings.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
-    <ClCompile Include="GlobalSettings.cpp">
+    <ClCompile Include="ObjectModel\ColorScheme.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
-    <ClCompile Include="ColorScheme.cpp" />
-    <ClCompile Include="Profile.cpp">
+    <ClCompile Include="ObjectModel\GlobalSettings.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AppSettings.h">
+    <ClInclude Include="ObjectModel\AppSettings.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalSettings.h">
+    <ClInclude Include="ObjectModel\ColorScheme.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
-    <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="Profile.h">
+    <ClInclude Include="ObjectModel\GlobalSettings.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
   </ItemGroup>

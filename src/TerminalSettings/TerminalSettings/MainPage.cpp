@@ -14,6 +14,11 @@ namespace winrt::TerminalSettings::implementation
     MainPage::MainPage()
     {
         InitializeComponent();
+
+        // TODO: When we actually connect this to Windows Terminal,
+        //       this section will clone the active AppSettings
+        _settingsSource = AppSettings();
+        _settingsClone = _settingsSource.Clone();
     }
 
     int32_t MainPage::MyProperty()

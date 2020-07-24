@@ -103,8 +103,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AppSettings.h" />
-    <ClInclude Include="ColorScheme.h" />
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -113,11 +111,14 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="GlobalSettings.h" />
     <ClInclude Include="Keybindings.h">
       <DependentUpon>Keybindings.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="ObjectModel\AppSettings.h" />
+    <ClInclude Include="ObjectModel\ColorScheme.h" />
+    <ClInclude Include="ObjectModel\GlobalSettings.h" />
+    <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -125,7 +126,6 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Profile.h" />
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -178,8 +178,6 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppSettings.cpp" />
-    <ClCompile Include="ColorScheme.cpp" />
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -188,11 +186,14 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="Keybindings.cpp">
       <DependentUpon>Keybindings.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ObjectModel\AppSettings.cpp" />
+    <ClCompile Include="ObjectModel\ColorScheme.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
+    <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -203,7 +204,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="Profile.cpp" />
     <ClCompile Include="Profiles.cpp">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
