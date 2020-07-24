@@ -102,7 +102,7 @@ steps:
     targetType: filePath
     filePath: build\Helix\ConvertWttLogToXUnit.ps1
     arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
-  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+  condition: or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86'))
 
 - task: PublishTestResults@2
   displayName: 'Upload converted test logs'
@@ -131,20 +131,27 @@ steps:
 #   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
 - task: CopyFiles@2
-  displayName: 'Copy tests and result logs to Artifacts'
+  displayName: 'Copy result logs to Artifacts'
+  inputs:
+    Contents: |
+     **/*.wtl
+     **/*onBuildMachineResults.xml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
+
+- task: CopyFiles@2
+  displayName: 'Copy tests needed for Helix run to Artifacts'
   inputs:
     Contents: |
      **/*unit.test*.dll
-     **/*.wtl
-     **/*onBuildMachineResults.xml
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
   condition: succeeded()
   
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish Test Artifacts'
+  displayName: 'Publish All Build Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
-  condition: succeeded()
