@@ -131,10 +131,12 @@ steps:
 #   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
 - task: CopyFiles@2
-  displayName: 'Copy tests to Artifacts'
+  displayName: 'Copy tests and result logs to Artifacts'
   inputs:
     Contents: |
      **/*unit.test*.dll
+     **/*.wtl
+     **/*onBuildMachineResults.xml
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
