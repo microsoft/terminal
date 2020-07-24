@@ -6,8 +6,12 @@
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 
-using namespace winrt;
-using namespace Windows::UI::Xaml;
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
+
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalSettings::implementation
 {
@@ -16,22 +20,15 @@ namespace winrt::TerminalSettings::implementation
         InitializeComponent();
     }
 
-    int32_t MainPage::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void MainPage::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
-    }
-
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-
     }
 
-    void MainPage::SettingsNav_Loaded_1(IInspectable const& sender, RoutedEventArgs const& e)
+    void MainPage::SettingsNav_SelectionChanged(const MUX::Controls::NavigationView, const MUX::Controls::NavigationViewSelectionChangedEventArgs)
+    {
+    }
+
+    void MainPage::SettingsNav_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
     {
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
@@ -51,16 +48,7 @@ namespace winrt::TerminalSettings::implementation
         contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
     }
 
-    void MainPage::SettingsNav_SelectionChanged(Controls::NavigationView sender, Controls::NavigationViewSelectionChangedEventArgs args)
-    {
-
-    }
-
-    void winrt::TerminalSettings::implementation::MainPage::SettingsNav_SelectionChanged_1(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& sender, winrt::Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& args)
-    {
-    }
-
-    void MainPage::SettingsNav_ItemInvoked_1(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& sender, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args)
+    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const& sender, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
     {
         auto clickedItemContainer = args.InvokedItemContainer();
 

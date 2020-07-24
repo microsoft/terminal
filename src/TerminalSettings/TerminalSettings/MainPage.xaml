@@ -11,9 +11,9 @@
    
     <muxc:NavigationView x:Name="SettingsNav"
                     IsSettingsVisible="False"
-                    Loaded="SettingsNav_Loaded_1"
-                    SelectionChanged="SettingsNav_SelectionChanged_1"
-                    ItemInvoked="SettingsNav_ItemInvoked_1">
+                    Loaded="SettingsNav_Loaded"
+                    SelectionChanged="SettingsNav_SelectionChanged"
+                    ItemInvoked="SettingsNav_ItemInvoked">
         <muxc:NavigationView.AutoSuggestBox>
             <AutoSuggestBox PlaceholderText="Search" QueryIcon="Find"/>
         </muxc:NavigationView.AutoSuggestBox>
@@ -115,30 +115,11 @@
                     
                 </muxc:NavigationViewItem.MenuItems>
             </muxc:NavigationViewItem>
-            
+
 
             <muxc:NavigationViewItem Icon="Keyboard"
                                     Tag="Keyboard_Nav">
                 <TextBlock Tag="Keyboard_Page">Keyboard</TextBlock>
-            </muxc:NavigationViewItem>
-
-            <muxc:NavigationViewItem Tag="Mouse_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE962;" />
-                </muxc:NavigationViewItem.Icon>
-                <TextBlock Tag="Mouse_Page">Mouse</TextBlock>
-            </muxc:NavigationViewItem>
-
-            <muxc:NavigationViewItem Tag="CmdPalette_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE945;" />
-                </muxc:NavigationViewItem.Icon>
-                <TextBlock Tag="CmdPalette_Page">Command Palette</TextBlock>
-            </muxc:NavigationViewItem>
-
-            <muxc:NavigationViewItem Icon="Shop"
-                                    Tag="Marketplace_Nav">
-                <TextBlock Tag="Marketplace_Page">Marketplace</TextBlock>
             </muxc:NavigationViewItem>
 
         </muxc:NavigationView.MenuItems>
