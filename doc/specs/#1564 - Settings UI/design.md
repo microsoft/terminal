@@ -47,9 +47,21 @@ This page requires special design because it includes the TerminalControl window
 
 ![Appearance page](./appearance.png)
 
-### TODO - Keyboard page
+### Keyboard page
 
-The keyboard page will list the enabled key bindings and provide a way for users to add and remove them. This design is currently being developed and will be added to this document once it's complete.
+The keyboard page will list the enabled key bindings and provide a way for users to add and remove them.
+
+![Keyboard page](./keyboard.png)
+
+When someone hovers over one of the items in the table, the Edit and Delete buttons will appear. Below is what the modal looks like if they were to click Edit on a command that does not have any arguments/actions.
+
+![Keyboard page modal](./keyboard-modal.png)
+
+If the command they select has additional arguments/actions, the modal will dynamically size as arguments/actions are added.
+
+![Keyboard page modal add new arguments](./keyboard-modal-add.png)
+
+![Keyboard page modal arguments](./keyboard-modal-args.png)
 
 ## Settings layout
 
