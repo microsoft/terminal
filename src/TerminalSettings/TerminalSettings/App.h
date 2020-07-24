@@ -2,7 +2,7 @@
 #include "App.xaml.g.h"
 #include "winrt/Microsoft.UI.Xaml.XamlTypeInfo.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     struct App : AppT<App>
     {

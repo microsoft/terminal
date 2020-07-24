@@ -12,8 +12,9 @@ namespace winrt
 }
 
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::TerminalSettings::implementation;
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     MainPage::MainPage()
     {
@@ -33,7 +34,7 @@ namespace winrt::TerminalSettings::implementation
     {
     }
 
-    void MainPage::SettingsNav_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
+    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
         //// set the initial selectedItem
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
@@ -50,10 +51,10 @@ namespace winrt::TerminalSettings::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
+        contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
     }
 
-    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const& sender, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
+    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
     {
         auto clickedItemContainer = args.InvokedItemContainer();
 
@@ -68,19 +69,19 @@ namespace winrt::TerminalSettings::implementation
 
             if (clickedItemTag == globalsPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Globals>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
             }
             else if (clickedItemTag == profilesPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
             }
             else if (clickedItemTag == colorSchemesPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
             }
             else if (clickedItemTag == keybindingsPage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Keybindings>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
             }
         }
     }

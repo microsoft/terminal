@@ -8,8 +8,8 @@
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{35989071-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
-    <ProjectName>TerminalSettings</ProjectName>
-    <RootNamespace>TerminalSettings</RootNamespace>
+    <ProjectName>SettingsControl</ProjectName>
+    <RootNamespace>SettingsControl</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
