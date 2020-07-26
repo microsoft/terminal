@@ -595,4 +595,16 @@
   <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dark Gray</value>
   </data>
+  <data name="CloseTabDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Close button text for Close all pane warning</comment>
+  </data>
+  <data name="CloseTabDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close all panes</value>
+    <comment>Primary button text for Close all pane warning</comment>
+  </data>
+  <data name="CloseTabDialog.Title" xml:space="preserve">
+    <value>Do you want to close all panes?</value>
+    <comment>Title for Close all pane warning </comment>
+  </data>
 </root>

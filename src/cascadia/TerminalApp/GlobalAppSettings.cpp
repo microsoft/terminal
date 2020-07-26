@@ -34,6 +34,7 @@ static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
+static constexpr std::string_view ConfirmCloseTabKey{ "confirmCloseTab" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
@@ -139,6 +140,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
     JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
+
+    JsonUtils::GetValueForKey(json, ConfirmCloseTabKey, _ConfirmCloseTab);
 
     JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
 

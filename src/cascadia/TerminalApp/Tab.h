@@ -49,6 +49,8 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
 
+        int _GetLeafPaneCount() const noexcept;
+
         void Shutdown();
         void ClosePane();
 
@@ -95,7 +97,6 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
-        int _GetLeafPaneCount() const noexcept;
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         void _UpdateTabHeader();
