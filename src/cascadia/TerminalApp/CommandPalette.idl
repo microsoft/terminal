@@ -5,11 +5,19 @@ import "../Command.idl";
 
 namespace TerminalApp
 {
+    runtimeclass CommandListEntry
+    {
+        //Command Command{ get; }
+        String Name { get; };
+        String KeyChordText { get; };
+		Windows.UI.Xaml.Controls.TextBlock RenderedText { get; };
+    };
+
     [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.Grid
     {
         CommandPalette();
 
-        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+        Windows.Foundation.Collections.IObservableVector<CommandListEntry> FilteredActions { get; };
 
         void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
 

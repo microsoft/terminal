@@ -6,6 +6,11 @@
 
 #include "CommandPalette.g.cpp"
 #include <winrt/Microsoft.Terminal.Settings.h>
+#include <locale>
+#include <numeric>
+#include <til/math.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -14,13 +19,224 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 
+namespace
+{
+    struct MatchRange
+    {
+        size_t start, end;
+    };
+    std::vector<MatchRange> _matchWordwise(const std::wstring_view& needle,
+                                           const std::wstring_view& haystack)
+    {
+        std::vector<MatchRange> ranges;
+        const auto start{ haystack.cbegin() };
+        auto it = start;
+        auto sit = needle.cbegin();
+
+        auto wordStart{ haystack.cend() };
+        const auto valid = [&]() { return it != haystack.cend() && sit != needle.cend(); };
+        const auto vend = [&]() {
+            if (wordStart != haystack.cend())
+            {
+                ranges.emplace_back(MatchRange{ gsl::narrow<size_t>(wordStart - start), gsl::narrow<size_t>(it - start) });
+                wordStart = haystack.cend();
+            }
+        };
+        while (valid())
+        {
+            while (valid() && *it == *sit)
+            {
+                if (wordStart == haystack.cend())
+                {
+                    // start of matching word
+                    wordStart = it;
+                }
+                ++it;
+                ++sit;
+            }
+            // if we get here, we've encountered a mismatch
+            // so, spit out the match length
+            vend();
+            // advance haystack until next word
+            for (; it != haystack.cend() && *it != ' '; ++it)
+                ;
+
+            if (it != haystack.cend()) // we found a space, now walk off it
+            {
+                ++it;
+            }
+
+            // advance needle if it's on a run of spaces
+            for (; sit != needle.cend() && *sit == ' '; ++sit)
+                ;
+        }
+
+        if (sit != needle.cend())
+        {
+            // didn't consume the entire needle
+            return {};
+        }
+
+        vend();
+        return ranges;
+    }
+
+    std::vector<MatchRange> _matchPrefix(const std::wstring_view& needle,
+                                         const std::wstring_view& haystack)
+    {
+        if (needle.size() > haystack.size())
+        {
+            return {};
+        }
+
+        const auto checkLength{ needle.size() };
+        if (haystack.compare(0u, checkLength, needle, 0u, checkLength) == 0)
+        {
+            return { MatchRange{ 0, checkLength } };
+        }
+        return {};
+    }
+
+    std::vector<MatchRange> _matchContiguousSubstring(const std::wstring_view& needle, const std::wstring_view& haystack)
+    {
+        if (needle.size() > haystack.size())
+        {
+            return {};
+        }
+
+        const auto found{ haystack.find(needle) };
+        if (found != std::wstring::npos)
+        {
+            return { MatchRange{ found, found + needle.size() } };
+        }
+        return {};
+    }
+
+    std::vector<MatchRange> _firstOrBestMatchRange(const std::wstring_view& needle, const std::wstring_view& haystack)
+    {
+        std::locale user("");
+        std::wstring nl{ needle };
+        std::wstring hl{ haystack };
+        std::for_each(nl.begin(), nl.end(), [&](auto&& c) { c = std::tolower(c, user); });
+        std::for_each(hl.begin(), hl.end(), [&](auto&& c) { c = std::tolower(c, user); });
+        if (auto matches{ _matchPrefix(nl, hl) }; matches.size() > 0)
+        {
+            return matches;
+        }
+        if (auto matches{ _matchWordwise(nl, hl) }; matches.size() > 0)
+        {
+            return matches;
+        }
+        if (auto matches{ _matchContiguousSubstring(nl, hl) }; matches.size() > 0)
+        {
+            return matches;
+        }
+        return {};
+    }
+}
+
+template<>
+struct ::fmt::formatter<MatchRange> : fmt::formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const MatchRange& mr, FormatContext& ctx)
+    {
+        return fmt::format_to(ctx.out(), "{{{0}-{1}}}", mr.start, mr.end);
+    }
+};
+
 namespace winrt::TerminalApp::implementation
 {
+    struct CommandListEntry : CommandListEntryT<CommandListEntry>
+    {
+        CommandListEntry(const TerminalApp::Command& command) :
+            command(command), coverage{ 0 } {}
+        CommandListEntry(const TerminalApp::Command& command, const std::vector<MatchRange>& matches) :
+            command(command), matches(matches)
+        {
+            const auto totalMatchLen{ std::accumulate(matches.cbegin(),
+                                                      matches.cend(),
+                                                      size_t{ 0 },
+                                                      [](const size_t val, const MatchRange& mr) { return val + mr.end - mr.start; }) };
+            coverage = til::math::rounding.cast<int>((gsl::narrow<double>(totalMatchLen) / command.Name().size()) * 100);
+        }
+        winrt::hstring Name() const { return command.Name(); }
+        winrt::hstring KeyChordText() const { return command.KeyChordText(); }
+        Windows::UI::Xaml::Controls::TextBlock RenderedText()
+        {
+            Windows::UI::Xaml::Controls::TextBlock tb;
+            if (matches.size() == 0)
+            {
+                tb.Text(Name());
+                return tb;
+            }
+
+            size_t last{ 0 };
+            std::wstring_view name{ command.Name() };
+            for (const auto& match : matches)
+            {
+                // vend an unbolded region
+                if (last != match.start)
+                {
+                    Windows::UI::Xaml::Documents::Run r;
+                    r.Text(std::wstring{ name.substr(last, match.start - last) });
+                    tb.Inlines().Append(r);
+                }
+
+                Windows::UI::Xaml::Documents::Run r;
+                r.Text(std::wstring{ name.substr(match.start, match.end - match.start) });
+                r.FontWeight(Windows::UI::Text::FontWeights::Bold());
+                tb.Inlines().Append(r);
+                last = match.end;
+            }
+
+            if (last != name.size())
+            {
+                Windows::UI::Xaml::Documents::Run r;
+                r.Text(std::wstring{ name.substr(last, std::wstring::npos) });
+                tb.Inlines().Append(r);
+            }
+
+            std::vector<size_t> starts, ends;
+            starts.emplace_back(0);
+            for (const auto& match : matches)
+            {
+                ends.emplace_back(match.start);
+                starts.emplace_back(match.start);
+                ends.emplace_back(match.end);
+                starts.emplace_back(match.end);
+            }
+            ends.emplace_back(name.size());
+
+            {
+                tb.Inlines().Append(Windows::UI::Xaml::Documents::LineBreak{});
+                Windows::UI::Xaml::Documents::Run r;
+                r.Text(fmt::format(L"Haystack Needle Coverage: {0}%", coverage));
+                r.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+                r.FontSize((8 * 96) / 72);
+                tb.Inlines().Append(r);
+            }
+            {
+                tb.Inlines().Append(Windows::UI::Xaml::Documents::LineBreak{});
+                Windows::UI::Xaml::Documents::Run r;
+                r.Text(til::u8u16(fmt::format("ranges: {0} || {1}", fmt::join(starts, ","), fmt::join(ends, ","))));
+                r.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+                r.FontSize((8 * 96) / 72);
+                tb.Inlines().Append(r);
+            }
+            return tb;
+        };
+
+        TerminalApp::Command command;
+        std::vector<MatchRange> matches;
+        int coverage;
+    };
+
     CommandPalette::CommandPalette()
     {
         InitializeComponent();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
+        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::CommandListEntry>();
         _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
         if (CommandPaletteShadow())
@@ -109,7 +325,11 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                _dispatchCommand(selectedItem.try_as<Command>());
+                if (const auto selectedCommand{ selectedItem.try_as<TerminalApp::CommandListEntry>() })
+                {
+                    auto cle{ winrt::get_self<implementation::CommandListEntry>(selectedCommand) };
+                    _dispatchCommand(cle->command);
+                }
             }
 
             e.Handled(true);
@@ -169,7 +389,11 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
+        if (const auto selectedCommand{ e.ClickedItem().try_as<TerminalApp::CommandListEntry>() })
+        {
+            auto cle{ winrt::get_self<implementation::CommandListEntry>(selectedCommand) };
+            _dispatchCommand(cle->command);
+        }
     }
 
     // Method Description:
@@ -236,7 +460,7 @@ namespace winrt::TerminalApp::implementation
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
-    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<TerminalApp::CommandListEntry> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -248,29 +472,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    static bool _compareCommandListItemNames(const TerminalApp::CommandListEntry& lhs, const TerminalApp::CommandListEntry& rhs)
     {
+        auto leftSelf{ winrt::get_self<implementation::CommandListEntry>(lhs) };
+        auto rightSelf{ winrt::get_self<implementation::CommandListEntry>(rhs) };
         std::wstring_view leftName{ lhs.Name() };
         std::wstring_view rightName{ rhs.Name() };
-        return leftName.compare(rightName) < 0;
+        return leftSelf->coverage != rightSelf->coverage ?
+                   leftSelf->coverage > rightSelf->coverage :
+                   (leftName.compare(rightName) < 0);
     }
-
-    // This is a helper struct to aid in sorting Commands by a given weighting.
-    struct WeightedCommand
-    {
-        TerminalApp::Command command;
-        int weight;
-
-        bool operator<(const WeightedCommand& other) const
-        {
-            // If two commands have the same weight, then we'll sort them alphabetically.
-            if (weight == other.weight)
-            {
-                return !_compareCommandNames(command, other.command);
-            }
-            return weight < other.weight;
-        }
-    };
 
     // Method Description:
     // - Produce a list of filtered actions to reflect the current contents of
@@ -280,9 +491,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
+    std::vector<winrt::TerminalApp::CommandListEntry> CommandPalette::_collectFilteredActions()
     {
-        std::vector<winrt::TerminalApp::Command> actions;
+        std::vector<winrt::TerminalApp::CommandListEntry> actions;
 
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
@@ -293,41 +504,37 @@ namespace winrt::TerminalApp::implementation
         if (addAll)
         {
             // Add all the commands, but make sure they're sorted alphabetically.
-            std::vector<TerminalApp::Command> sortedCommands;
-            sortedCommands.reserve(_allActions.Size());
+            actions.reserve(_allActions.Size());
 
             for (auto action : _allActions)
             {
-                sortedCommands.push_back(action);
+                actions.emplace_back(*winrt::make_self<CommandListEntry>(action));
             }
-            std::sort(sortedCommands.begin(),
-                      sortedCommands.end(),
-                      _compareCommandNames);
-
-            for (auto action : sortedCommands)
-            {
-                actions.push_back(action);
-            }
-
-            return actions;
         }
-
-        // Here, there was some filter text.
-        // Show these actions in a weighted order.
-        // - Matching the first character of a word, then the first char of a
-        //   subsequent word seems better than just "the order they appear in
-        //   the list".
-        // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
-        //      * This could be done by weighting the recently used commands
-        //        higher the more recently they were used, then weighting all
-        //        the unused commands as 1
-
-        // Use a priority queue to order commands so that "better" matches
-        // appear first in the list. The ordering will be determined by the
-        // match weight produced by _getWeight.
-        std::priority_queue<WeightedCommand> heap;
-        for (auto action : _allActions)
+        else
         {
+            // Here, there was some filter text.
+            // Show these actions in a weighted order.
+            // - Matching the first character of a word, then the first char of a
+            //   subsequent word seems better than just "the order they appear in
+            //   the list".
+            // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
+            //      * This could be done by weighting the recently used commands
+            //        higher the more recently they were used, then weighting all
+            //        the unused commands as 1
+
+            // Use a priority queue to order commands so that "better" matches
+            // appear first in the list. The ordering will be determined by the
+            // match weight produced by _getWeight.
+            //std::priority_queue<WeightedCommand> heap;
+            for (auto action : _allActions)
+            {
+                const auto matches{ _firstOrBestMatchRange(searchText, action.Name()) };
+                if (matches.size() > 0)
+                {
+                    actions.emplace_back(*winrt::make_self<implementation::CommandListEntry>(action, matches));
+                }
+                /*
             const auto weight = CommandPalette::_getWeight(searchText, action.Name());
             if (weight > 0)
             {
@@ -336,18 +543,27 @@ namespace winrt::TerminalApp::implementation
                 wc.weight = weight;
                 heap.push(wc);
             }
-        }
+            */
+            }
 
-        // At this point, all the commands in heap are matches. We've also
-        // sorted commands with the same weight alphabetically.
-        // Remove everything in-order from the queue, and add to the list of
-        // filtered actions.
+            // At this point, all the commands in heap are matches. We've also
+            // sorted commands with the same weight alphabetically.
+            // Remove everything in-order from the queue, and add to the list of
+            // filtered actions.
+            /*
         while (!heap.empty())
         {
             auto top = heap.top();
             heap.pop();
             actions.push_back(top.command);
         }
+        */
+        }
+
+        // finally, sort
+        std::sort(actions.begin(),
+                  actions.end(),
+                  _compareCommandListItemNames);
 
         return actions;
     }
@@ -399,45 +615,46 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Function Description:
-    // - Calculates a "weighting" by which should be used to order a command
-    //   name relative to other names, given a specific search string.
-    //   Currently, this is based off of two factors:
-    //   * The weight is incremented once for each matched character of the
-    //     search text.
-    //   * If a matching character from the search text was found at the start
-    //     of a word in the name, then we increment the weight again.
-    //     * For example, for a search string "sp", we want "Split Pane" to
-    //       appear in the list before "Close Pane"
-    //   * Consecutive matches will be weighted higher than matches with
-    //     characters in between the search characters.
-    // - This will return 0 if the command should not be shown. If all the
-    //   characters of search text appear in order in `name`, then this function
-    //   will return a positive number. There can be any number of characters
-    //   separating consecutive characters in searchText.
-    //   * For example:
-    //      "name": "New Tab"
-    //      "name": "Close Tab"
-    //      "name": "Close Pane"
-    //      "name": "[-] Split Horizontal"
-    //      "name": "[ | ] Split Vertical"
-    //      "name": "Next Tab"
-    //      "name": "Prev Tab"
-    //      "name": "Open Settings"
-    //      "name": "Open Media Controls"
-    //   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
-    //   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
-    //     **Tab**".
-    //   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
-    //     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
-    //     Controls".
-    //   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
-    //     "Split", then the **V** in "Vertical").
-    // Arguments:
-    // - searchText: the string of text to search for in `name`
-    // - name: the name to check
-    // Return Value:
-    // - the relative weight of this match
+// Function Description:
+// - Calculates a "weighting" by which should be used to order a command
+//   name relative to other names, given a specific search string.
+//   Currently, this is based off of two factors:
+//   * The weight is incremented once for each matched character of the
+//     search text.
+//   * If a matching character from the search text was found at the start
+//     of a word in the name, then we increment the weight again.
+//     * For example, for a search string "sp", we want "Split Pane" to
+//       appear in the list before "Close Pane"
+//   * Consecutive matches will be weighted higher than matches with
+//     characters in between the search characters.
+// - This will return 0 if the command should not be shown. If all the
+//   characters of search text appear in order in `name`, then this function
+//   will return a positive number. There can be any number of characters
+//   separating consecutive characters in searchText.
+//   * For example:
+//      "name": "New Tab"
+//      "name": "Close Tab"
+//      "name": "Close Pane"
+//      "name": "[-] Split Horizontal"
+//      "name": "[ | ] Split Vertical"
+//      "name": "Next Tab"
+//      "name": "Prev Tab"
+//      "name": "Open Settings"
+//      "name": "Open Media Controls"
+//   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
+//   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
+//     **Tab**".
+//   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
+//     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
+//     Controls".
+//   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
+//     "Split", then the **V** in "Vertical").
+// Arguments:
+// - searchText: the string of text to search for in `name`
+// - name: the name to check
+// Return Value:
+// - the relative weight of this match
+#if 0
     int CommandPalette::_getWeight(const winrt::hstring& searchText,
                                    const winrt::hstring& name)
     {
@@ -484,6 +701,7 @@ namespace winrt::TerminalApp::implementation
 
         return totalWeight;
     }
+#endif
 
     void CommandPalette::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
@@ -506,5 +724,4 @@ namespace winrt::TerminalApp::implementation
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
     }
-
 }

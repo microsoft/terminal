@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CommandPalette.g.h"
+#include "CommandListEntry.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -12,7 +13,7 @@ namespace winrt::TerminalApp::implementation
     {
         CommandPalette();
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::CommandListEntry> FilteredActions();
         void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
@@ -20,7 +21,7 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::CommandListEntry> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allActions{ nullptr };
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
@@ -37,7 +38,7 @@ namespace winrt::TerminalApp::implementation
         void _selectNextItem(const bool moveDown);
 
         void _updateFilteredActions();
-        std::vector<winrt::TerminalApp::Command> _collectFilteredActions();
+        std::vector<winrt::TerminalApp::CommandListEntry> _collectFilteredActions();
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 
