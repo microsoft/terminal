@@ -1657,7 +1657,7 @@ CATCH_RETURN()
 
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
-    _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
+    _foregroundColor = _ColorFFromColorRef(colorForeground);
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
@@ -1687,6 +1687,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->textPunchout = (usingTransparency) && textAttributes.GetBackground().IsDefault() && (pData->IsScreenReversed() ^ textAttributes.IsReverseVideo());
     }
 
     return S_OK;

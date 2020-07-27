@@ -30,7 +30,8 @@ namespace Microsoft::Console::Render
             cellSize(cellSize),
             targetSize(targetSize),
             cursorInfo(cursorInfo),
-            options(options)
+            options(options),
+            textPunchout(false)
         {
         }
 
@@ -44,6 +45,7 @@ namespace Microsoft::Console::Render
         D2D_SIZE_F targetSize;
         std::optional<CursorOptions> cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
+        bool textPunchout;
     };
 
     // Helper to choose which Direct2D method to use when drawing the cursor rectangle
@@ -133,6 +135,13 @@ namespace Microsoft::Console::Render
                                                 DWRITE_MEASURING_MODE measuringMode,
                                                 _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                 _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
+
+        [[nodiscard]] HRESULT _DrawGlyphRunPunchout(DrawingContext* clientDrawingContext,
+                                                    D2D1_POINT_2F baselineOrigin,
+                                                    D2D1_RECT_F rect,
+                                                    DWRITE_MEASURING_MODE measuringMode,
+                                                    _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                    _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
 
         std::optional<D2D1_RECT_F> _clipRect;
     };

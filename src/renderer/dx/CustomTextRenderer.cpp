@@ -459,7 +459,15 @@ CATCH_RETURN()
     }
     rect.right = rect.left + totalSpan;
 
-    d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+    if (drawingContext->textPunchout)
+    {
+        // fill with the foreground, we're going to blot out the sun with the text inverse background later
+        //d2dContext->FillRectangle(rect, drawingContext->foregroundBrush);
+    }
+    else
+    {
+        d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
+    }
 
     RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, true));
 
@@ -501,6 +509,16 @@ CATCH_RETURN()
         popLayer.release();
     }
     // Now go onto drawing the text.
+
+    if (drawingContext->textPunchout)
+    {
+        return _DrawGlyphRunPunchout(drawingContext,
+                                     baselineOrigin,
+                                     rect,
+                                     measuringMode,
+                                     glyphRun,
+                                     glyphRunDescription);
+    }
 
     // First check if we want a color font and try to extract color emoji first.
     // Color emoji are only available on Windows 10+
@@ -879,6 +897,62 @@ CATCH_RETURN();
     clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
 
     clientDrawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT CustomTextRenderer::_DrawGlyphRunPunchout(DrawingContext* clientDrawingContext,
+                                                                D2D1_POINT_2F baselineOrigin,
+                                                                D2D1_RECT_F rect,
+                                                                DWRITE_MEASURING_MODE /*measuringMode*/,
+                                                                _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                                _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
+
+    ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
+    clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1RectangleGeometry> rectGeom;
+    d2dFactory->CreateRectangleGeometry(rect, &rectGeom);
+
+    ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
+    d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1GeometrySink> geometrySink;
+    pathGeometry->Open(geometrySink.GetAddressOf());
+
+    glyphRun->fontFace->GetGlyphRunOutline(
+        glyphRun->fontEmSize,
+        glyphRun->glyphIndices,
+        glyphRun->glyphAdvances,
+        glyphRun->glyphOffsets,
+        glyphRun->glyphCount,
+        glyphRun->isSideways,
+        glyphRun->bidiLevel % 2,
+        geometrySink.Get());
+
+    geometrySink->Close();
+
+    D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+
+    ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> newPath;
+    d2dFactory->CreatePathGeometry(&newPath);
+
+    ::Microsoft::WRL::ComPtr<ID2D1GeometrySink> newSink;
+    newPath->Open(&newSink);
+
+    rectGeom->CombineWithGeometry(pathGeometry.Get(), D2D1_COMBINE_MODE_EXCLUDE, matrixAlign, newSink.Get());
+
+    newSink->Close();
+
+    const auto aaMode{ clientDrawingContext->renderTarget->GetAntialiasMode() };
+    auto restoreAA = wil::scope_exit([&]() {
+        clientDrawingContext->renderTarget->SetAntialiasMode(aaMode);
+    });
+    clientDrawingContext->renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    clientDrawingContext->renderTarget->FillGeometry(newPath.Get(), clientDrawingContext->backgroundBrush);
 
     return S_OK;
 }
