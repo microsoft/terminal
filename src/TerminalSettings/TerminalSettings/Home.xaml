@@ -10,6 +10,39 @@
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
           Margin="0,12,0,0">
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Row="0"
+                   Text="Home"
+                   Style="{StaticResource HeaderTextBlockStyle}"
+                   Margin="0,0,0,10" />
+        <GridView Grid.Row="1">
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Launch" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Interaction" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Rendering" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Global Appearance" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Color Schemes" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Profiles" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+            <GridViewItem Height="150" Width="300">
+                <TextBlock Text="Keyboard" Style="{StaticResource TitleTextBlockStyle}"/>
+            </GridViewItem>
+        </GridView>
     </Grid>
 </Page>
