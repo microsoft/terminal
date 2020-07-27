@@ -5,12 +5,105 @@
     xmlns:local="using:SettingsControl"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <Flyout x:Key="cursorColorPickerFlyout">
+            <RelativePanel>
+                <ColorPicker x:Name="cursorColorPicker"
+                         IsColorChannelTextInputVisible="False"
+                         IsHexInputVisible="False"/>
+
+                <Grid RelativePanel.Below="cursorColorPicker"
+                  RelativePanel.AlignLeftWithPanel="True"
+                  RelativePanel.AlignRightWithPanel="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="OK" Click="cursorColorPickerConfirmColor_Click"
+                        Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
+                    <Button Content="Cancel" Click="cursorColorPickerCancelColor_Click"
+                        Margin="2,12,0,0" HorizontalAlignment="Stretch"
+                        Grid.Column="1"/>
+                </Grid>
+            </RelativePanel>
+        </Flyout>
+        <Flyout x:Key="foregroundColorPickerFlyout">
+            <RelativePanel>
+                <ColorPicker x:Name="foregroundColorPicker"
+                         IsColorChannelTextInputVisible="False"
+                         IsHexInputVisible="False"/>
+
+                <Grid RelativePanel.Below="foregroundColorPicker"
+                  RelativePanel.AlignLeftWithPanel="True"
+                  RelativePanel.AlignRightWithPanel="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="OK" Click="foregroundColorPickerConfirmColor_Click"
+                        Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
+                    <Button Content="Cancel" Click="foregroundColorPickerCancelColor_Click"
+                        Margin="2,12,0,0" HorizontalAlignment="Stretch"
+                        Grid.Column="1"/>
+                </Grid>
+            </RelativePanel>
+        </Flyout>
+        <Flyout x:Key="backgroundColorPickerFlyout">
+            <RelativePanel>
+                <ColorPicker x:Name="backgroundColorPicker"
+                         IsColorChannelTextInputVisible="False"
+                         IsHexInputVisible="False"/>
+
+                <Grid RelativePanel.Below="backgroundColorPicker"
+                  RelativePanel.AlignLeftWithPanel="True"
+                  RelativePanel.AlignRightWithPanel="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="OK" Click="backgroundColorPickerConfirmColor_Click"
+                        Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
+                    <Button Content="Cancel" Click="backgroundColorPickerCancelColor_Click"
+                        Margin="2,12,0,0" HorizontalAlignment="Stretch"
+                        Grid.Column="1"/>
+                </Grid>
+            </RelativePanel>
+        </Flyout>
+        <Flyout x:Key="selectionBackgroundColorPickerFlyout">
+            <RelativePanel>
+                <ColorPicker x:Name="selectionBackgroundColorPicker"
+                         IsColorChannelTextInputVisible="False"
+                         IsHexInputVisible="False"/>
+
+                <Grid RelativePanel.Below="selectionBackgroundColorPicker"
+                  RelativePanel.AlignLeftWithPanel="True"
+                  RelativePanel.AlignRightWithPanel="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="OK" Click="selectionBackgroundColorPickerConfirmColor_Click"
+                        Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
+                    <Button Content="Cancel" Click="selectionBackgroundColorPickerCancelColor_Click"
+                        Margin="2,12,0,0" HorizontalAlignment="Stretch"
+                        Grid.Column="1"/>
+                </Grid>
+            </RelativePanel>
+        </Flyout>
+    </Page.Resources>
+
     <RelativePanel Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <FlyoutBase.AttachedFlyout>
+            <Flyout>
+                <Grid/>
+            </Flyout>
+        </FlyoutBase.AttachedFlyout>
         <TextBlock x:Name="TitleTextBox" 
-                   Text="Profiles"
+                   Text=""
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Margin="0,0,0,8" />
 
@@ -18,7 +111,7 @@
                   Margin="0,0,0,8"
                   RelativePanel.AlignLeftWithPanel="True"
                   RelativePanel.AlignRightWithPanel="True"
-                  RelativePanel.Below="TitleTextBox">
+                  RelativePanel.Below="TitleTextBox" Height="52">
             <GridView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <ItemsWrapGrid x:Name="MaxItemsWrapGrid" 
@@ -26,25 +119,143 @@
                            Orientation="Horizontal"/>
                 </ItemsPanelTemplate>
             </GridView.ItemsPanel>
-            <Image Source="Assets/AllTerminalProfiles (2).png"
-                   Stretch="Uniform"
-                   Width="300"/>
-            <Image Source="Assets/AllTerminalProfiles (3).png"
-                   Stretch="Uniform"
-                   Width="300"/>
-            <Image Source="Assets/AllTerminalProfiles (4).png"
-                   Stretch="Uniform"
-                   Width="300"/>
-            <Image Source="Assets/AllTerminalProfiles (5).png"
-                   Stretch="Uniform"
-                   Width="300"/>
-            <Image Source="Assets/AllTerminalProfiles (6).png"
-                   Stretch="Uniform"
-                   Width="300"/>
-            <Image Source="Assets/AllTerminalProfiles (7).png"
-                   Stretch="Uniform"
-                   Width="300"/>
         </GridView>
+        <Pivot >
+            <PivotItem Header="General">
+                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+                        <TextBox Header="Command line" Margin="0,0,0,10" />
+                        <TextBox Header="Starting directory" Margin="0,0,0,10" />
+                        <TextBox Header="Icon" Margin="0,0,0,10" />
+                        <TextBox Header="Tab title" Margin="0,0,0,10" />
+                        <Controls:RadioButtons Header="Scrollbar visibility" Margin="0,0,0,10">
+                            <RadioButton x:Name="ScrollBarVisible" Content="Visible"/>
+                            <RadioButton x:Name="ScrollBarHidden" Content="Hidden"/>
+                        </Controls:RadioButtons>
+                    </StackPanel>
+                </Grid>
+            </PivotItem>
+            <PivotItem Header="Appearance">
+
+                <ScrollViewer >
+                    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <!-- THIS IS WHERE THE MINI-TERMINAL WOULD GO -->
+
+                    
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,100,0">
+                        <CheckBox Content="Enable acrylic" />
+                        <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,10" Value="0.5" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" />
+                        <TextBox Header="Background image" Margin="0,0,0,10" />
+                        <Controls:RadioButtons Header="Background image stretch mode" Margin="0,0,0,10">
+                            <RadioButton x:Name="backgroundImageStretchModeNone" Content="none"/>
+                            <RadioButton x:Name="backgroundImageStretchModeFill" Content="fill"/>
+                            <RadioButton x:Name="backgroundImageStretchModeUniform" Content="uniform"/>
+                            <RadioButton x:Name="backgroundImageStretchModeUniformToFill" Content="uniformToFill"/>
+                        </Controls:RadioButtons>
+                        <DropDownButton Content="Background image alignment" Margin="0,0,0,10" >
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="Bottom">
+                                    <MenuFlyoutItem Text="center"/>
+                                    <MenuFlyoutItem Text="left"/>
+                                    <MenuFlyoutItem Text="top"/>
+                                    <MenuFlyoutItem Text="right"/>
+                                    <MenuFlyoutItem Text="bottom"/>
+                                    <MenuFlyoutItem Text="topLeft"/>
+                                    <MenuFlyoutItem Text="topRight"/>
+                                    <MenuFlyoutItem Text="bottomLeft"/>
+                                    <MenuFlyoutItem Text="bottomRight"/>
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
+                        <CheckBox Content="Retro terminal effects" />
+                    </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,80,0">
+                            <TextBox Header="Font face" Margin="0,0,0,10" />
+                            <Controls:NumberBox Header="Font size" Margin="0,0,0,10" Value="12" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" />
+                            <TextBox Header="Font weight" Margin="0,0,0,10"/>
+                            <TextBox Header="Padding" Margin="0,0,0,10" />
+                            <Controls:RadioButtons Header="Cursor shape" Margin="0,0,0,10">
+                                <RadioButton x:Name="CursorShapeBar" Content="Bar"/>
+                                <RadioButton x:Name="CursorShapeVintage" Content="Vintage"/>
+                                <RadioButton x:Name="CursorShapeUnderscore" Content="Underscore"/>
+                                <RadioButton x:Name="CursorShapeFilledBox" Content="FilledBox"/>
+                                <RadioButton x:Name="CursorShapeEmptyBox" Content="EmptyBox"/>
+                            </Controls:RadioButtons>
+                            <Controls:NumberBox Header="Cursor height" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" />
+                            <Button x:Name="cursorColorPickerButton" Content="Cursor color" Flyout="{StaticResource cursorColorPickerFlyout}"/>
+                            <Controls:NumberBox Header="Cursor height" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
+                            <DropDownButton Content="Color scheme" Margin="0,0,0,10" >
+                                <DropDownButton.Flyout>
+                                    <MenuFlyout Placement="Bottom">
+                                        <MenuFlyoutItem Text="Campbell"/>
+                                        <MenuFlyoutItem Text="Campbell Powershell"/>
+                                        <MenuFlyoutItem Text="Vintage"/>
+                                        <MenuFlyoutItem Text="One Half Dark"/>
+                                        <MenuFlyoutItem Text="One Half Light"/>
+                                        <MenuFlyoutItem Text="Tango Dark"/>
+                                        <MenuFlyoutItem Text="Tango Light"/>
+                                    </MenuFlyout>
+                                </DropDownButton.Flyout>
+                            </DropDownButton>
+                            <Button x:Name="foregroundColorPickerButton" Content="Foreground color" Flyout="{StaticResource foregroundColorPickerFlyout}"/>
+                            <Button x:Name="backgroundColorPickerButton" Content="Background color" Flyout="{StaticResource backgroundColorPickerFlyout}"/>
+                            <Button x:Name="selectionBackgroundColorPickerButton" Content="Selection background color" Flyout="{StaticResource selectionBackgroundColorPickerFlyout}"/>
+                        </StackPanel>
+                    </Grid>
+                    </ScrollViewer>
+            </PivotItem>
+            <PivotItem Header="Advanced">
+                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+                        <CheckBox Content="Hide profile from dropdown" />
+                        <CheckBox Content="Suppress title changes" />
+                        <Controls:RadioButtons Header="Antialiasing text" Margin="0,0,0,10">
+                            <RadioButton x:Name="antialiasingTextGrayscale" Content="grayscale"/>
+                            <RadioButton x:Name="antialiasingTextCleartype" Content="cleartype"/>
+                            <RadioButton x:Name="antialiasingTextAliased" Content="aliased"/>
+                        </Controls:RadioButtons>
+                        <CheckBox Content="AltGr aliasing" />
+                        <CheckBox Content="Scroll to input when typing" />
+                        <Controls:NumberBox Header="History size" Margin="0,0,0,10" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" />
+                        <Controls:RadioButtons Header="How the profile closes" Margin="0,0,0,10">
+                            <RadioButton x:Name="closeOnExitGraceful" Content="graceful"/>
+                            <RadioButton x:Name="closeOnExitAlways" Content="always"/>
+                            <RadioButton x:Name="closeOnExitNever" Content="never"/>
+                            <RadioButton x:Name="closeOnExitTrue" Content="true"/>
+                            <RadioButton x:Name="closeOnExitFalse" Content="false"/>
+                        </Controls:RadioButtons>
+                    </StackPanel>
+                </Grid>
+            </PivotItem>
+        </Pivot>
     </RelativePanel>
 
     <!--
