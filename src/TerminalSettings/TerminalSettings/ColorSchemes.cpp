@@ -29,7 +29,7 @@ namespace winrt::SettingsControl::implementation
         //Button().Content(box_value(L"Clicked"));
     }
 
-    void ColorSchemes::TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const& args)
+    void ColorSchemes::TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const&)
     {
     }
 }

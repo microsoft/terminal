@@ -38,6 +38,7 @@
                          Width="100"
                          TextChanged="TextBox_TextChanged" />
                 <Button Background="Black"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -55,24 +56,13 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Black"
-                        Tapped="Canvas_Tapped">-->
-                <!--<FlyoutBase.AttachedFlyout>
-                        <Flyout>
-                            <TextBox Text="WOOOOOO"></TextBox>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
-                </Canvas>-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal">
                 <TextBox Header="Black" Width="100" />
                 <Button Background="Black"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -85,16 +75,12 @@
                                              IsHexInputVisible="False"
                                              IsAlphaEnabled="False"
                                              IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                             IsAlphaTextInputVisible="True"
+                                />
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Black" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -102,28 +88,24 @@
                 <TextBox Header="Blue"
                          Width="100" />
                 <Button Background="Blue"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
                         CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Blue" />-->
+                        <Button.Flyout>
+                            <Flyout>
+                                <StackPanel>
+                                    <ColorPicker IsColorSliderVisible="False"
+                                                 IsColorChannelTextInputVisible="False"
+                                                 IsHexInputVisible="False"
+                                                 IsAlphaEnabled="False"
+                                                 IsAlphaSliderVisible="True"
+                                                 IsAlphaTextInputVisible="True" />
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -131,6 +113,7 @@
                 <TextBox Header="Cyan"
                          Width="100" />
                 <Button Background="Cyan"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -148,11 +131,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Cyan" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -160,6 +138,7 @@
                 <TextBox Header="Green"
                          Width="100" />
                 <Button Background="Green"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -177,11 +156,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Green" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -189,6 +163,7 @@
                 <TextBox Header="Purple"
                          Width="100" />
                 <Button Background="Purple"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -206,11 +181,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Purple" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -218,6 +188,7 @@
                 <TextBox Header="Red"
                          Width="100" />
                 <Button Background="Red"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -235,11 +206,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Red" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -247,6 +213,7 @@
                 <TextBox Header="White"
                          Width="100" />
                 <Button Background="WhiteSmoke"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -264,11 +231,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="WhiteSmoke" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -276,6 +238,7 @@
                 <TextBox Header="Yellow"
                          Width="100" />
                 <Button Background="Yellow"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -293,11 +256,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Yellow" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -313,6 +271,7 @@
                          Width="100"
                          TextChanged="TextBox_TextChanged" />
                 <Button Background="White"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -330,11 +289,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="White" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -342,6 +296,7 @@
                 <TextBox Header="Bright Black"
                          Width="100" />
                 <Button Background="DimGray"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -359,11 +314,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="DimGray" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -371,6 +321,7 @@
                 <TextBox Header="Bright Blue"
                          Width="100" />
                 <Button Background="LightBlue"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -388,11 +339,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightBlue" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -400,6 +346,7 @@
                 <TextBox Header="Bright Cyan"
                          Width="100" />
                 <Button Background="LightCyan"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -417,11 +364,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightCyan" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -429,6 +371,7 @@
                 <TextBox Header="Bright Green"
                          Width="100" />
                 <Button Background="LightGreen"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -446,11 +389,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightGreen" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -458,6 +396,7 @@
                 <TextBox Header="Bright Purple"
                          Width="100" />
                 <Button Background="MediumPurple"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -475,11 +414,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="MediumPurple" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -487,6 +421,7 @@
                 <TextBox Header="Bright Red"
                          Width="100" />
                 <Button Background="IndianRed"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -504,11 +439,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="IndianRed" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -516,6 +446,7 @@
                 <TextBox Header="Bright White"
                          Width="100" />
                 <Button Background="White"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -533,11 +464,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="White" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -545,6 +471,7 @@
                 <TextBox Header="Bright Yellow"
                          Width="100" />
                 <Button Background="LightYellow"
+                        BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
@@ -562,18 +489,10 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightYellow" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal"></StackPanel>
         </StackPanel>
     </Grid>
-    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="Button" Click="ClickHandler">Click Me</Button>
-    </StackPanel>-->
 </Page>
