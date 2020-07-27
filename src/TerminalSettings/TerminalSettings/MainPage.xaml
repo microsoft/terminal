@@ -19,6 +19,11 @@
         </muxc:NavigationView.AutoSuggestBox>
         <muxc:NavigationView.MenuItems>
 
+            <muxc:NavigationViewItem Icon="Home"
+                                    Tag="Home_Nav">
+                <TextBlock Tag="Home_Page">Home</TextBlock>
+            </muxc:NavigationViewItem>
+            
             <muxc:NavigationViewItem Icon="Globe"
                 Tag="General_Nav" >
                 <TextBlock>General</TextBlock>

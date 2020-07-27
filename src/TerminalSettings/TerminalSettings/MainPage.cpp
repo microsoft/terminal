@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
+#include "Home.h"
 #include "Globals.h"
 #include "Launch.h"
 #include "Interaction.h"
@@ -44,10 +45,10 @@ namespace winrt::SettingsControl::implementation
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
             const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring launchNav = L"Launch_Nav";
+            const hstring homeNav = L"Home_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
-            if (itemTag == launchNav)
+            if (itemTag == homeNav)
             {
                 // item.IsSelected(true); // have to investigate how to replace this
                 SettingsNav().Header() = item.Tag();
@@ -55,7 +56,7 @@ namespace winrt::SettingsControl::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
+        contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -64,6 +65,7 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemContainer != NULL)
         {
+            const hstring homePage = L"Home_Nav";
             const hstring generalPage = L"General_Nav";
             const hstring launchSubpage = L"Launch_Nav";
             const hstring interactionSubpage = L"Interaction_Nav";
@@ -82,7 +84,11 @@ namespace winrt::SettingsControl::implementation
 
             hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
 
-            if (clickedItemTag == launchSubpage)
+            if (clickedItemTag == homePage)
+            {
+                contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+            }
+            else if (clickedItemTag == launchSubpage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
             }
