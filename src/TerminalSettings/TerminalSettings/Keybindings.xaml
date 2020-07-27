@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿<Page
     x:Class="SettingsControl.Keybindings"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -7,6 +8,17 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+=======
+﻿<Page
+    x:Class="TerminalSettings.Keybindings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalSettings"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+>>>>>>> Profiles page almost done
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
           Margin="0,12,0,0">
         <StackPanel>
@@ -15,5 +27,10 @@
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Margin="0,0,0,8" />
         </StackPanel>
+<<<<<<< HEAD
     </Grid>
 </Page>
+=======
+    </Grid>
+</Page>
+>>>>>>> Profiles page almost done
