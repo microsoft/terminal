@@ -103,6 +103,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GlobalAppearance.h">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -111,9 +114,15 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Interaction.h">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Keybindings.h">
       <DependentUpon>Keybindings.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Launch.h">
+      <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
@@ -130,24 +139,39 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="GlobalAppearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Globals.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Interaction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Keybindings.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -178,6 +202,9 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GlobalAppearance.cpp">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -186,9 +213,15 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Interaction.cpp">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Keybindings.cpp">
       <DependentUpon>Keybindings.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Launch.cpp">
+      <DependentUpon>Launch.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
@@ -208,10 +241,17 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="GlobalAppearance.idl">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
@@ -219,6 +259,18 @@
     </Midl>
     <Midl Include="Globals.idl">
       <DependentUpon>Globals.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Launch.idl">
+      <DependentUpon>Launch.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Interaction.idl">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Rendering.idl">
+      <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Keybindings.idl">

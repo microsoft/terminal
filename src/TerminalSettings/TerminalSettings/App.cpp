@@ -3,7 +3,11 @@
 #include "App.h"
 #include "MainPage.h"
 #include "Globals.h"
+#include "Launch.h"
+#include "Interaction.h"
+#include "Rendering.h"
 #include "Profiles.h"
+#include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 

@@ -2,7 +2,11 @@
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include "Globals.h"
+#include "Launch.h"
+#include "Interaction.h"
+#include "Rendering.h"
 #include "Profiles.h"
+#include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 
@@ -40,10 +44,10 @@ namespace winrt::SettingsControl::implementation
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
             const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring generalPage = L"General_Nav";
+            const hstring launchNav = L"Launch_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
-            if (itemTag == generalPage)
+            if (itemTag == launchNav)
             {
                 // item.IsSelected(true); // have to investigate how to replace this
                 SettingsNav().Header() = item.Tag();
@@ -51,7 +55,7 @@ namespace winrt::SettingsControl::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
+        contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -80,7 +84,15 @@ namespace winrt::SettingsControl::implementation
 
             if (clickedItemTag == launchSubpage)
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
+            }
+            else if (clickedItemTag == interactionSubpage)
+            {
+                contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
+            }
+            else if (clickedItemTag == renderingSubpage)
+            {
+                contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
             }
             else if (clickedItemTag == globalprofileSubpage)
             {
@@ -96,7 +108,7 @@ namespace winrt::SettingsControl::implementation
             }
             else if (clickedItemTag == globalAppearancePage)
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
             }
             else if (clickedItemTag == keybindingsPage)
             {
