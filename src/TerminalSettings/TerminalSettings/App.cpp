@@ -4,6 +4,7 @@
 #include "MainPage.h"
 #include "Globals.h"
 #include "Launch.h"
+#include "Interaction.h"
 #include "Profiles.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"

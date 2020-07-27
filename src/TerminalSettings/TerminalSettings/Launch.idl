@@ -4,6 +4,5 @@ namespace SettingsControl
     runtimeclass Launch : Windows.UI.Xaml.Controls.Page
     {
         Launch();
-        Int32 MyProperty;
     }
 }
