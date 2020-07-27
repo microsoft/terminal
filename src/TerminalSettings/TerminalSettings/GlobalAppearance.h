@@ -1,12 +1,12 @@
 ﻿#pragma once
 
-#include "Launch.g.h"
+#include "GlobalAppearance.g.h"
 
 namespace winrt::SettingsControl::implementation
 {
-    struct Launch : LaunchT<Launch>
+    struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
     {
-        Launch();
+        GlobalAppearance();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
     };
@@ -14,7 +14,7 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Launch : LaunchT<Launch, implementation::Launch>
+    struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance, implementation::GlobalAppearance>
     {
     };
 }
