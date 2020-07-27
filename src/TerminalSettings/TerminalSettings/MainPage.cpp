@@ -2,6 +2,7 @@
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include "Globals.h"
+#include "Launch.h"
 #include "Profiles.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
@@ -40,10 +41,10 @@ namespace winrt::SettingsControl::implementation
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
             const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring globalsNav = L"Globals_Nav";
+            const hstring launchNav = L"Launch_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
-            if (itemTag == globalsNav)
+            if (itemTag == launchNav)
             {
                 // item.IsSelected(true); // have to investigate how to replace this
                 SettingsNav().Header() = item.Tag();
@@ -51,7 +52,7 @@ namespace winrt::SettingsControl::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
+        contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -80,7 +81,7 @@ namespace winrt::SettingsControl::implementation
 
             if (clickedItemTag == launchSubpage)
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Globals>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
             }
             else if (clickedItemTag == globalprofileSubpage)
             {

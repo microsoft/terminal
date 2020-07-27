@@ -21,7 +21,7 @@
 
             <muxc:NavigationViewItem Icon="Globe"
                 Tag="General_Nav" >
-                <TextBlock Tag="General_Page">General</TextBlock>
+                <TextBlock>General</TextBlock>
 
                 <muxc:NavigationViewItem.MenuItems>
                     <muxc:NavigationViewItem Tag="Launch_Nav" >
@@ -29,7 +29,7 @@
                         <muxc:NavigationViewItem.Icon>
                             <FontIcon Glyph="&#xEA86;" />
                         </muxc:NavigationViewItem.Icon>
-                        <TextBlock Tag="Globals_Page">Launch</TextBlock>
+                        <TextBlock Tag="Launch_Page">Launch</TextBlock>
                     </muxc:NavigationViewItem>
 
                     <muxc:NavigationViewItem Tag="Interaction_Nav" >
