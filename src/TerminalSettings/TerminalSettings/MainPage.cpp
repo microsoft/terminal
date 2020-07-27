@@ -84,7 +84,7 @@ namespace winrt::SettingsControl::implementation
             }
             else if (clickedItemTag == globalprofileSubpage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::Profiles>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
             }
             else if (clickedItemTag == addnewSubpage)
             {
@@ -96,7 +96,7 @@ namespace winrt::SettingsControl::implementation
             }
             else if (clickedItemTag == globalAppearancePage)
             {
-                contentFrame().Navigate(xaml_typename<TerminalSettings::ColorSchemes>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
             }
             else if (clickedItemTag == keybindingsPage)
             {
