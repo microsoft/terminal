@@ -114,6 +114,9 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Home.h">
+      <DependentUpon>Home.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -154,6 +157,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Globals.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Home.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Interaction.xaml">
@@ -213,6 +219,9 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Home.cpp">
+      <DependentUpon>Home.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClCompile>
@@ -248,6 +257,10 @@
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="Home.idl">
+      <DependentUpon>Home.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Midl>
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>

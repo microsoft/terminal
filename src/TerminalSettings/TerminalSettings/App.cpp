@@ -2,6 +2,7 @@
 
 #include "App.h"
 #include "MainPage.h"
+#include "Home.h"
 #include "Globals.h"
 #include "Launch.h"
 #include "Interaction.h"
