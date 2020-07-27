@@ -6,6 +6,7 @@
 #include "Interaction.h"
 #include "Rendering.h"
 #include "Profiles.h"
+#include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 
@@ -107,7 +108,7 @@ namespace winrt::SettingsControl::implementation
             }
             else if (clickedItemTag == globalAppearancePage)
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
             }
             else if (clickedItemTag == keybindingsPage)
             {

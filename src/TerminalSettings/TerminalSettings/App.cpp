@@ -7,6 +7,7 @@
 #include "Interaction.h"
 #include "Rendering.h"
 #include "Profiles.h"
+#include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
 

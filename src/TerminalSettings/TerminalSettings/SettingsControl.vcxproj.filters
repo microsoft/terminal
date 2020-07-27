@@ -12,6 +12,7 @@
     <Page Include="Launch.xaml" />
     <Page Include="Interaction.xaml" />
     <Page Include="Rendering.xaml" />
+    <Page Include="Appearance.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />

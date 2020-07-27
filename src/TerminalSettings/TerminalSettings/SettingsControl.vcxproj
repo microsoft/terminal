@@ -103,6 +103,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GlobalAppearance.h">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -144,6 +147,9 @@
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="GlobalAppearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -196,6 +202,9 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GlobalAppearance.cpp">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -239,6 +248,10 @@
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="GlobalAppearance.idl">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
