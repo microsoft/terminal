@@ -4,6 +4,7 @@
 #include "Globals.h"
 #include "Launch.h"
 #include "Interaction.h"
+#include "Rendering.h"
 #include "Profiles.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
@@ -87,6 +88,10 @@ namespace winrt::SettingsControl::implementation
             else if (clickedItemTag == interactionSubpage)
             {
                 contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
+            }
+            else if (clickedItemTag == renderingSubpage)
+            {
+                contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
             }
             else if (clickedItemTag == globalprofileSubpage)
             {

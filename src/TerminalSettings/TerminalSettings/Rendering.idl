@@ -1,0 +1,8 @@
+namespace SettingsControl
+{
+    [default_interface]
+    runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
+    {
+        Rendering();
+    }
+}

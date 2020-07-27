@@ -11,6 +11,7 @@
     <Page Include="Keybindings.xaml" />
     <Page Include="Launch.xaml" />
     <Page Include="Interaction.xaml" />
+    <Page Include="Rendering.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />

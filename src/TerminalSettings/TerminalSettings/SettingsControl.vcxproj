@@ -136,6 +136,9 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -160,6 +163,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -226,6 +232,9 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">
@@ -245,6 +254,10 @@
     </Midl>
     <Midl Include="Interaction.idl">
       <DependentUpon>Interaction.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Rendering.idl">
+      <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Keybindings.idl">
