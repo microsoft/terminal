@@ -224,6 +224,17 @@ static constexpr bool _isStringTerminator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
+// - Determines if a character is a string terminator indicator.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isStringTerminatorIndicator(const wchar_t wch) noexcept
+{
+    return wch == L'\\'; // 0x5c
+}
+
+// Routine Description:
 // - Determines if a character is a "Single Shift Select" indicator.
 //   This immediately follows an escape and signifies a varying length control string.
 // Arguments:
@@ -408,6 +419,13 @@ void StateMachine::_ActionPrint(const wchar_t wch)
 void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
+
+    if (_isStringTerminatorIndicator(wch))
+    {
+        // Presumably, ST can be safely ignored.
+        _trace.DispatchSequenceTrace(true);
+        return;
+    }
 
     const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
 
@@ -1606,6 +1624,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
     _trace.TraceOnEvent(L"DcsPassThrough");
     if (_isStringTerminator(wch))
     {
+        // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
         _EnterGround();
     }
     if (_isC0Code(wch) || _isDcsPassThroughValid(wch))
@@ -1635,9 +1654,9 @@ void StateMachine::_EventDcsTermination(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"DcsTermination");
 
-    if (wch == L'\\')
+    if (_isStringTerminatorIndicator(wch))
     {
-        // TODO: This is where we'd be dispatching the DCS command.
+        // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
         _EnterGround();
     }
     else
