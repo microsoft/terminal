@@ -103,6 +103,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
@@ -150,6 +153,9 @@
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="AddProfile.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="GlobalAppearance.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -208,6 +214,9 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -297,6 +306,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+	<Midl Include="AddProfile.idl">
+		<DependentUpon>AddProfile.xaml</DependentUpon>
+		<SubType>Code</SubType>
+	</Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

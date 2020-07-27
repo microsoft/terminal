@@ -10,6 +10,7 @@
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
+#include "AddProfile.h"
 
 namespace winrt
 {
@@ -106,7 +107,7 @@ namespace winrt::SettingsControl::implementation
             }
             else if (clickedItemTag == addnewSubpage)
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
+                contentFrame().Navigate(xaml_typename<SettingsControl::AddProfile>());
             }
             else if (clickedItemTag == colorSchemesPage)
             {
