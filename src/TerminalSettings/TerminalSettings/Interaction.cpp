@@ -1,18 +1,18 @@
 ﻿#include "pch.h"
-#include "Launch.h"
-#include "Launch.g.cpp"
+#include "Interaction.h"
+#include "Interaction.g.cpp"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
 namespace winrt::SettingsControl::implementation
 {
-    Launch::Launch()
+    Interaction::Interaction()
     {
         InitializeComponent();
     }
 
-    void Launch::ClickHandler(IInspectable const&, RoutedEventArgs const&)
+    void Interaction::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
     }
 }
