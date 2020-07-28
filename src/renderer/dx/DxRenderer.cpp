@@ -1707,7 +1707,8 @@ try
                                       _dpi,
                                       _dwriteTextFormat,
                                       _dwriteTextAnalyzer,
-                                      _dwriteFontFace));
+                                      _dwriteFontFace,
+                                      _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
 
@@ -1796,13 +1797,15 @@ float DxEngine::GetScaling() const noexcept
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
                             analyzer,
-                            face);
+                            face,
+                            lineMetrics);
 }
 
 // Routine Description:
@@ -2071,7 +2074,8 @@ CATCH_RETURN();
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 LineMetrics& lineMetrics) const noexcept
 {
     try
     {
@@ -2234,6 +2238,34 @@ CATCH_RETURN();
                              false,
                              scaled,
                              unscaled);
+
+        // There is no font metric for the grid line width, so we use a small
+        // multiple of the font size, which typically rounds to a pixel.
+        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+
+        // All other line metrics are in design units, so to get a pixel value,
+        // we scale by the font size divided by the design-units-per-em.
+        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+
+        // We always want the lines to be visible, so if a stroke width ends up
+        // at zero after rounding, we need to make it at least 1 pixel.
+        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+
+        // Offsets are relative to the base line of the font, so we subtract
+        // from the ascent to get an offset relative to the top of the cell.
+        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+
+        // We also add half the stroke width to the offset, since the line
+        // coordinates designate the center of the line.
+        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
     }
     CATCH_RETURN();
 
