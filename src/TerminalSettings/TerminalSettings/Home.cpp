@@ -15,4 +15,5 @@ namespace winrt::SettingsControl::implementation
     void Home::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
     }
+
 }
