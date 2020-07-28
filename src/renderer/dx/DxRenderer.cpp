@@ -1484,63 +1484,61 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const auto font = _glyphCell;
-    D2D_POINT_2F target = til::point{ coordTarget } * font;
+    const D2D1_SIZE_F font = _glyphCell;
+    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    D2D_POINT_2F start = { 0 };
-    D2D_POINT_2F end = { 0 };
-
-    for (size_t i = 0; i < cchLine; i++)
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
     {
-        // 0.5 pixel offset for crisp lines
-        start = { target.x + 0.5f, target.y + 0.5f };
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
+    };
 
-        if (lines & GridLines::Top)
-        {
-            end = start;
-            end.x += font.width();
+    // NOTE: Line coordinates are centered within the line, so they need to be
+    // offset by half the stroke width. For the start coordinate we add half
+    // the stroke width, and for the end coordinate we subtract half the width.
 
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
+    if (lines & (GridLines::Left | GridLines::Right))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startY = target.y + halfGridlineWidth;
+        const auto endY = target.y + font.height - halfGridlineWidth;
 
         if (lines & GridLines::Left)
         {
-            end = start;
-            end.y += font.height();
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            auto x = target.x + halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
         }
-
-        // NOTE: Watch out for inclusive/exclusive rectangles here.
-        // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle.
-        // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
-        // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
-        // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
-
-        // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
-        start = { target.x + 0.5f, target.y + font.height() - 0.5f };
-
-        if (lines & GridLines::Bottom)
-        {
-            end = start;
-            end.x += font.width() - 1.f;
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
-
-        start = { target.x + font.width() - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
-            end = start;
-            end.y += font.height() - 1.f;
+            auto x = target.x + font.width - halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
+        }
+    }
 
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+    if (lines & (GridLines::Top | GridLines::Bottom))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startX = target.x + halfGridlineWidth;
+        const auto endX = target.x + fullRunWidth - halfGridlineWidth;
+
+        if (lines & GridLines::Top)
+        {
+            const auto y = target.y + halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        // Move to the next character in this run.
-        target.x += font.width();
+        if (lines & GridLines::Bottom)
+        {
+            const auto y = target.y + font.height - halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
+        }
     }
 
     return S_OK;
