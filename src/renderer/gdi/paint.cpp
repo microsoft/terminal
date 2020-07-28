@@ -501,6 +501,18 @@ using namespace Microsoft::Console::Render;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
+    if (lines & GridLines::Underline)
+    {
+        const auto y = ptTarget.y + _lineMetrics.underlineOffset;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
+    }
+
+    if (lines & GridLines::Strikethrough)
+    {
+        const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
+    }
+
     return S_OK;
 }
 

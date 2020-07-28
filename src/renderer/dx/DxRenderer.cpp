@@ -1541,6 +1541,29 @@ try
         }
     }
 
+    // In the case of the underline and strikethrough offsets, the stroke width
+    // is already accounted for, so they don't require further adjustments.
+
+    if (lines & GridLines::Underline)
+    {
+        const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
+        const auto startX = target.x + halfUnderlineWidth;
+        const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
+        const auto y = target.y + _lineMetrics.underlineOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+    }
+
+    if (lines & GridLines::Strikethrough)
+    {
+        const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + _lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.strikethroughWidth);
+    }
+
     return S_OK;
 }
 CATCH_RETURN()
