@@ -128,6 +128,14 @@ namespace winrt::SettingsControl::implementation
             auto value = it->first;
             hstring item = value.as<Windows::Foundation::IPropertyValue>().GetString();
 
+            std::string tmp = winrt::to_string(item);
+            std::transform(tmp.begin(), tmp.end(), tmp.begin(), std::tolower);
+            item = winrt::to_hstring(tmp);
+
+            std::string tmp2 = winrt::to_string(query);
+            std::transform(tmp2.begin(), tmp2.end(), tmp2.begin(), std::tolower);
+            query = winrt::to_hstring(tmp2);
+
             if (std::wcsstr(item.c_str(), query.c_str()))
             {
                 suggestions.Append(value);
