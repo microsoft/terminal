@@ -30,6 +30,35 @@ namespace winrt::SettingsControl::implementation
         //       this section will clone the active AppSettings
         _settingsSource = AppSettings();
         _settingsClone = _settingsSource.Clone();
+
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Default profile"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch on startup"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch size"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch position"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Columns on first launch"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Rows on first launch"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Disable dynamic profiles"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Copy after selection is made"), L"Interaction_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Copy formatting"), L"Interaction_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimeters"), L"Interaction_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Interaction"), L"Interaction_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Window resize behavior"), L"Rendering_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Screen redrawing"), L"Rendering_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Software rendering"), L"Rendering_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Rendering"), L"Rendering_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Theme"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Show the title bar"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Show terminal title in title bar"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Always show tabs"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Tab width mode"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Hide close all tabs popup"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Global appearance"), L"GlobalAppearance_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Color scheme"), L"ColorSchemes_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Add new profile"), L"AddNew_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Keyboard"), L"Keyboard_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Global profile settings"), L"GlobalProfile_Nav"));
+
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
@@ -66,61 +95,102 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemContainer != NULL)
         {
-            const hstring homePage = L"Home_Nav";
-            const hstring generalPage = L"General_Nav";
-            const hstring launchSubpage = L"Launch_Nav";
-            const hstring interactionSubpage = L"Interaction_Nav";
-            const hstring renderingSubpage = L"Rendering_Nav";
+            Navigate(unbox_value<hstring>(clickedItemContainer.Tag()));
+        }
+    }
 
-            const hstring profilesPage = L"Profiles_Nav";
-            const hstring globalprofileSubpage = L"GlobalProfile_Nav";
-            const hstring addnewSubpage = L"AddNew_Nav";
+    void MainPage::AutoSuggestBox_TextChanged(IInspectable const &sender, const Controls::AutoSuggestBoxTextChangedEventArgs args)
+    {
+        Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
+        auto query = autoBox.Text();
+        SearchSettings(query, autoBox);
+    }
 
-            const hstring appearancePage = L"Appearance_Nav";
-            const hstring colorSchemesPage = L"ColorSchemes_Nav";
-            const hstring globalAppearancePage = L"GlobalAppearance_Nav";
+    void MainPage::AutoSuggestBox_QuerySubmitted(const Controls::AutoSuggestBox sender, const Controls::AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        auto value = args.QueryText();
+    }
 
-            const hstring keybindingsPage = L"Keyboard_Nav";
-            
+    void MainPage::AutoSuggestBox_SuggestionChosen(const Controls::AutoSuggestBox sender, const Controls::AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        auto selectItem = args.SelectedItem().as<Windows::Foundation::IPropertyValue>().GetString();
+        Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
 
-            hstring clickedItemTag = unbox_value<hstring>(clickedItemContainer.Tag());
+        Navigate(SearchList.at(args.SelectedItem()));
+    }
 
-            if (clickedItemTag == homePage)
+    void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox &autoBox)
+    {
+        Windows::Foundation::Collections::IVector<IInspectable> suggestions = single_threaded_vector<IInspectable>();
+
+        for (std::map<IInspectable, hstring>::iterator it = SearchList.begin(); it != SearchList.end(); ++it)
+        {
+            auto value = it->first;
+            hstring item = value.as<Windows::Foundation::IPropertyValue>().GetString();
+
+            if (std::wcsstr(item.c_str(), query.c_str()))
             {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+                suggestions.Append(value);
             }
-            else if (clickedItemTag == launchSubpage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
-            }
-            else if (clickedItemTag == interactionSubpage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
-            }
-            else if (clickedItemTag == renderingSubpage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
-            }
-            else if (clickedItemTag == globalprofileSubpage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
-            }
-            else if (clickedItemTag == addnewSubpage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::AddProfile>());
-            }
-            else if (clickedItemTag == colorSchemesPage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
-            }
-            else if (clickedItemTag == globalAppearancePage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
-            }
-            else if (clickedItemTag == keybindingsPage)
-            {
-                contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
-            }
+        }
+        autoBox.ItemsSource(suggestions);
+    }
+
+    void MainPage::Navigate(hstring clickedItemTag)
+    {
+        const hstring homePage = L"Home_Nav";
+        const hstring generalPage = L"General_Nav";
+        const hstring launchSubpage = L"Launch_Nav";
+        const hstring interactionSubpage = L"Interaction_Nav";
+        const hstring renderingSubpage = L"Rendering_Nav";
+
+        const hstring profilesPage = L"Profiles_Nav";
+        const hstring globalprofileSubpage = L"GlobalProfile_Nav";
+        const hstring addnewSubpage = L"AddNew_Nav";
+
+        const hstring appearancePage = L"Appearance_Nav";
+        const hstring colorSchemesPage = L"ColorSchemes_Nav";
+        const hstring globalAppearancePage = L"GlobalAppearance_Nav";
+
+        const hstring keybindingsPage = L"Keyboard_Nav";
+
+        if (clickedItemTag == homePage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+        }
+        else if (clickedItemTag == launchSubpage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
+        }
+        else if (clickedItemTag == interactionSubpage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
+        }
+        else if (clickedItemTag == renderingSubpage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
+        }
+        else if (clickedItemTag == globalprofileSubpage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
+        }
+        else if (clickedItemTag == addnewSubpage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::AddProfile>());
+        }
+        else if (clickedItemTag == colorSchemesPage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+        }
+        else if (clickedItemTag == globalAppearancePage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
+        }
+        else if (clickedItemTag == keybindingsPage)
+        {
+            contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
         }
     }
 }
+
+
