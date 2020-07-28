@@ -14,6 +14,7 @@
     <Page Include="Rendering.xaml" />
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="Home.xaml" />
+    <Page Include="AddProfile.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />

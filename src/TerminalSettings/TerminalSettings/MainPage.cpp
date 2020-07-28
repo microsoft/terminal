@@ -79,8 +79,7 @@ namespace winrt::SettingsControl::implementation
 
             if (itemTag == homeNav)
             {
-                // item.IsSelected(true); // have to investigate how to replace this
-                SettingsNav().Header() = item.Tag();
+                SettingsNav().SelectedItem(item);
                 break;
             }
         }

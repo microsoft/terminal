@@ -306,10 +306,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-	<Midl Include="AddProfile.idl">
-		<DependentUpon>AddProfile.xaml</DependentUpon>
-		<SubType>Code</SubType>
-	</Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
