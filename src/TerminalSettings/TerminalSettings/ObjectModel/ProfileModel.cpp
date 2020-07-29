@@ -9,6 +9,7 @@ namespace winrt::ObjectModel::implementation
     {
         m_Profile = winrt::make<ObjectModel::implementation::Profile>();
     }
+
     ObjectModel::Profile ProfileModel::Profile()
     {
         return m_Profile;
