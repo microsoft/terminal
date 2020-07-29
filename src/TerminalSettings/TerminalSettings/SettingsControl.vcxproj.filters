@@ -27,6 +27,12 @@
     </Midl>
     <Midl Include="HomeGridItem.idl" />
     <Midl Include="SettingsControlViewModel.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\Profile.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -45,6 +51,7 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="ProfileModel.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
@@ -65,6 +72,7 @@
     <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
+    <ClInclude Include="ProfileModel.h" />
     <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
