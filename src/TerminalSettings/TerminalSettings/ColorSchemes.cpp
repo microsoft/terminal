@@ -29,20 +29,8 @@ namespace winrt::SettingsControl::implementation
     {
     }
 
-    void ColorSchemes::Background_ColorChanged(ColorPicker const& , ColorChangedEventArgs const& )
+    void ColorSchemes::Background_ColorChanged(ColorPicker const& , ColorChangedEventArgs const& event)
     {
-        /*const hstring backgroundPicker = L"backgroundPicker";
-        const hstring backgroundPreview = L"backgroundPreview";
-
-        hstring clickedPicker = picker.Name();
-        if (clickedPicker == backgroundPicker)
-        {
-            Color newColor = event.NewColor();
-            Brush brush = SolidColorBrush(newColor);
-            Button button = picker.Parent().as<Button>();
-            button.Background(brush);
-        }*/
+        m_colorSchemeModel.ColorScheme().Background(event.NewColor());
     }
 }
-
-

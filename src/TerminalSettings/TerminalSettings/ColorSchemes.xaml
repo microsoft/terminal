@@ -36,8 +36,9 @@
                         Orientation="Horizontal">
                 <TextBox Header="Background"
                          Width="100"
-                         Text = "{x:Bind ColorSchemeModel.ColorScheme.BackgroundHexValue, Mode=OneWay}"/>
-                <Button Background="black"
+                         Text = "{x:Bind ColorSchemeModel.ColorScheme.BackgroundHexValue, Mode=TwoWay}"
+                         />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BackgroundBrush, Mode=OneWay}"
                         BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
                         Name="backgroundPreview"

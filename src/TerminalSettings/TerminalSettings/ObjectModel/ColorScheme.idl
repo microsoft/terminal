@@ -3,7 +3,7 @@ namespace ObjectModel
     runtimeclass ColorScheme : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Windows.UI.Color Background;
+        String BackgroundHexValue;
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
-        String BackgroundHexValue { get; };
     }
 }
