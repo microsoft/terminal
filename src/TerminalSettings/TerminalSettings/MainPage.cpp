@@ -98,6 +98,25 @@ namespace winrt::SettingsControl::implementation
         }
     }
 
+    void MainPage::SettingsNav_BackRequested(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewBackRequestedEventArgs const& args)
+    {
+        On_BackRequested();
+    }
+
+    bool MainPage::On_BackRequested()
+    {
+        if (!contentFrame().CanGoBack())
+            return false;
+
+        if (SettingsNav().IsPaneOpen() &&
+            (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(1) ||
+             SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(0)))
+            return false;
+
+        contentFrame().GoBack();
+        return true;
+    }
+
     void MainPage::AutoSuggestBox_TextChanged(IInspectable const &sender, const Controls::AutoSuggestBoxTextChangedEventArgs args)
     {
         Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
