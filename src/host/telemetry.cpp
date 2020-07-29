@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
+// Sample line.
 #include "precomp.h"
 
 #include <Intsafe.h>
