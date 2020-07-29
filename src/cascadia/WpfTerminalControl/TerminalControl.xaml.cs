@@ -71,6 +71,15 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
+        /// If text is selected, copies it to the clipboard, otherwise it copies the whole line.
+        /// </summary>
+        /// <returns>Selected text, empty string if no content is selected.</returns>
+        public string GetSelectedText()
+        {
+            return this.termContainer.GetSelectedText();
+        }
+
+        /// <summary>
         /// Resizes the terminal to the specified rows and columns.
         /// </summary>
         /// <param name="rows">Number of rows to display.</param>
