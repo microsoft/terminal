@@ -25,6 +25,8 @@
     <Midl Include="ObjectModel\GlobalSettingsModel.idl">
       <Filter>ObjectModel</Filter>
     </Midl>
+    <Midl Include="HomeGridItem.idl" />
+    <Midl Include="SettingsControlViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -46,6 +48,8 @@
     <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="HomeGridItem.cpp" />
+    <ClCompile Include="SettingsControlViewModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,6 +68,8 @@
     <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
+    <ClInclude Include="HomeGridItem.h" />
+    <ClInclude Include="SettingsControlViewModel.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">

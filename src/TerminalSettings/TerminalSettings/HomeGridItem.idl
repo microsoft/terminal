@@ -1,0 +1,7 @@
+namespace SettingsControl
+{
+    runtimeclass HomeGridItem : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title;
+    }
+}

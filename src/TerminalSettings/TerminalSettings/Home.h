@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Home.g.h"
+#include "SettingsControlViewModel.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -8,7 +9,13 @@ namespace winrt::SettingsControl::implementation
     {
         Home();
 
+        SettingsControl::SettingsControlViewModel HomeViewModel();
+
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void OnHomeGridItemClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
+        private:
+        SettingsControl::SettingsControlViewModel m_homeViewModel{ nullptr };
     };
 }
 
