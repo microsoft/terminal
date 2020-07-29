@@ -120,6 +120,7 @@
     <ClInclude Include="Home.h">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="HomeGridItem.h" />
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -148,6 +149,7 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsControlViewModel.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -231,6 +233,7 @@
     <ClCompile Include="Home.cpp">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="HomeGridItem.cpp" />
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClCompile>
@@ -262,6 +265,7 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingsControlViewModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">
@@ -283,6 +287,7 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="HomeGridItem.idl" />
     <Midl Include="Launch.idl">
       <DependentUpon>Launch.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -310,6 +315,7 @@
       <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="SettingsControlViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
