@@ -1,19 +1,28 @@
 #pragma once
+#include <winrt/Windows.UI.h>
+#include <winrt/Windows.UI.Xaml.Media.h>
+#include "ObjectModel.ColorScheme.g.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::ObjectModel::implementation
 {
-    class ColorScheme
+    struct ColorScheme : ColorSchemeT<ColorScheme>
     {
-    public:
-        ColorScheme() = default;
-        ~ColorScheme() = default;
+        ColorScheme();
 
-        hstring Name;
-        unsigned int Foreground;
-        unsigned int Background;
-        unsigned int SelectionBackground;
-        unsigned int CursorColor;
+        Windows::UI::Color Background();
+        Windows::UI::Xaml::Media::Brush BackgroundBrush();
+        winrt::hstring BackgroundHexValue();
+        void Background(Windows::UI::Xaml::Media::Brush const& brush);
+        void Background(Windows::UI::Color const& color);
 
-        std::array<unsigned int, 16> Table;
+        winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& value);
+        void PropertyChanged(winrt::event_token const& token);
+
+    private:
+        winrt::hstring colorToHex(Windows::UI::Color);
+        Windows::UI::Xaml::Media::Brush colorToBrush(Windows::UI::Color);
+        Windows::UI::Color brushToColor(Windows::UI::Xaml::Media::Brush);
+        Windows::UI::Color m_background;
+        winrt::event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
     };
 }

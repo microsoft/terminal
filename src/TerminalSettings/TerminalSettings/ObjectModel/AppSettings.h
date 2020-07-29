@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GlobalSettings.h"
-#include "ColorScheme.h"
 #include "Profile.h"
 
 namespace winrt::TerminalSettings::implementation
@@ -61,7 +60,6 @@ namespace winrt::TerminalSettings::implementation
 
         GlobalSettings Globals;
         std::vector<Profile> Profiles;
-        std::map<hstring, ColorScheme> Schemes;
         std::map<KeyChord, Action> Keybindings;
     };
 }

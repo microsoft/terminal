@@ -5,7 +5,7 @@
     xmlns:local="using:SettingsControl"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract"
+    xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract" xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -22,7 +22,7 @@
                    Grid.Row="0" />
         <StackPanel Grid.Row="1"
                     Grid.Column="0">
-            <DropDownButton Content="Name">
+            <Windows10version1809:DropDownButton Content="Name">
                 <DropDownButton.Flyout>
                     <MenuFlyout Placement="Bottom">
                         <MenuFlyoutItem Text="Send" />
@@ -30,16 +30,17 @@
                         <MenuFlyoutItem Text="Reply All" />
                     </MenuFlyout>
                 </DropDownButton.Flyout>
-            </DropDownButton>
+            </Windows10version1809:DropDownButton>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal">
                 <TextBox Header="Background"
                          Width="100"
-                         TextChanged="TextBox_TextChanged" />
-                <Button Background="Black"
+                         Text = "{x:Bind ColorSchemeModel.ColorScheme.BackgroundHexValue, Mode=OneWay}"/>
+                <Button Background="black"
                         BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
+                        Name="backgroundPreview"
                         Width="37"
                         Margin="10,22,0,0"
                         CornerRadius="2">
@@ -51,7 +52,9 @@
                                              IsHexInputVisible="False"
                                              IsAlphaEnabled="False"
                                              IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                             IsAlphaTextInputVisible="True"
+                                             Name ="backgroundPicker"
+                                             ColorChanged ="Background_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
@@ -268,8 +271,7 @@
                         Grid.Column="0"
                         Orientation="Horizontal">
                 <TextBox Header="Foreground"
-                         Width="100"
-                         TextChanged="TextBox_TextChanged" />
+                         Width="100"/>
                 <Button Background="White"
                         BorderBrush="{StaticResource SystemBaseLowColor}"
                         Height="37"
@@ -450,7 +452,7 @@
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
-                        CornerRadius="2">
+                        Windows10version1809:CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
@@ -475,7 +477,7 @@
                         Height="37"
                         Width="37"
                         Margin="10,22,0,0"
-                        CornerRadius="2">
+                        Windows10version1809:CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
@@ -484,7 +486,7 @@
                                              IsHexInputVisible="False"
                                              IsAlphaEnabled="False"
                                              IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                             IsAlphaTextInputVisible="True"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>

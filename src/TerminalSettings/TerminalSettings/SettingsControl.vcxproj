@@ -132,6 +132,7 @@
     </ClInclude>
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
     <ClInclude Include="ObjectModel\GlobalSettings.h" />
     <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
@@ -243,6 +244,7 @@
     </ClCompile>
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
     <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
@@ -267,6 +269,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="ObjectModel\ColorScheme.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -291,6 +294,7 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -306,10 +310,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-	<Midl Include="AddProfile.idl">
-		<DependentUpon>AddProfile.xaml</DependentUpon>
-		<SubType>Code</SubType>
-	</Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

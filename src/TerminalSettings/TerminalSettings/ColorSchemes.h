@@ -1,18 +1,20 @@
 ﻿#pragma once
 
 #include "ColorSchemes.g.h"
+#include "ObjectModel/ColorSchemeModel.h"
 
 namespace winrt::SettingsControl::implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
-
-        int32_t MyProperty();
-        void MyProperty(int32_t value);
+        ObjectModel::ColorSchemeModel ColorSchemeModel();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const& args);
+        void Background_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const& picker, Windows::UI::Xaml::Controls::ColorChangedEventArgs const& event);
+
+    private:
+        ObjectModel::ColorSchemeModel m_colorSchemeModel{ nullptr };
     };
 }
 

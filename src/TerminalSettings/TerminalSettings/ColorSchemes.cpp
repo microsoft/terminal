@@ -1,35 +1,48 @@
 ﻿#include "pch.h"
+#include <winrt/Windows.UI.Xaml.Media.h>
 #include "ColorSchemes.h"
 #if __has_include("ColorSchemes.g.cpp")
 #include "ColorSchemes.g.cpp"
 #endif
+#include <ObjectModel\ColorScheme.h>
 
 using namespace winrt;
+using namespace Windows::UI;
 using namespace Windows::UI::Xaml;
+using namespace Windows::UI::Xaml::Controls;
+using namespace Windows::UI::Xaml::Media;
 
 namespace winrt::SettingsControl::implementation
 {
     ColorSchemes::ColorSchemes()
     {
+        m_colorSchemeModel = winrt::make<ObjectModel::implementation::ColorSchemeModel>();
         InitializeComponent();
     }
 
-    int32_t ColorSchemes::MyProperty()
+    ObjectModel::ColorSchemeModel ColorSchemes::ColorSchemeModel()
     {
-        throw hresult_not_implemented();
-    }
-
-    void ColorSchemes::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
+        return m_colorSchemeModel;
     }
 
     void ColorSchemes::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        //Button().Content(box_value(L"Clicked"));
     }
 
-    void ColorSchemes::TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const&)
+    void ColorSchemes::Background_ColorChanged(ColorPicker const& , ColorChangedEventArgs const& )
     {
+        /*const hstring backgroundPicker = L"backgroundPicker";
+        const hstring backgroundPreview = L"backgroundPreview";
+
+        hstring clickedPicker = picker.Name();
+        if (clickedPicker == backgroundPicker)
+        {
+            Color newColor = event.NewColor();
+            Brush brush = SolidColorBrush(newColor);
+            Button button = picker.Parent().as<Button>();
+            button.Background(brush);
+        }*/
     }
 }
+
+

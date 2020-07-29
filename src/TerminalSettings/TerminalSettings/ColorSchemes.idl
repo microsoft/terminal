@@ -1,9 +1,10 @@
+import "ObjectModel/ColorSchemeModel.idl";
+
 namespace SettingsControl
 {
-    [default_interface]
-    runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
     {
         ColorSchemes();
-        Int32 MyProperty;
+        ObjectModel.ColorSchemeModel ColorSchemeModel { get; };
     }
 }
