@@ -120,6 +120,7 @@
     <ClInclude Include="Home.h">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="HomeGridItem.h" />
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -231,6 +232,7 @@
     <ClCompile Include="Home.cpp">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="HomeGridItem.cpp" />
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClCompile>
@@ -283,6 +285,7 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="HomeGridItem.idl" />
     <Midl Include="Launch.idl">
       <DependentUpon>Launch.xaml</DependentUpon>
       <SubType>Code</SubType>
