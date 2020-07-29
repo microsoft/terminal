@@ -22,9 +22,9 @@
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Margin="0,0,0,10" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <CheckBox Content="Windows resize behavior" />
-            <CheckBox Content="Screen redrawing" />
-            <CheckBox Content="Software rendering" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SnapToGridOnResize, Mode=TwoWay}" Content="Windows resize behavior" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Content="Screen redrawing" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SoftwareRendering, Mode=TwoWay}" Content="Software rendering" />
         </StackPanel>
     </Grid>
 </Page>

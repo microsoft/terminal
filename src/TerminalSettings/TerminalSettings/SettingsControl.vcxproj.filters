@@ -19,6 +19,12 @@
   <ItemGroup>
     <Midl Include="App.idl" />
     <Midl Include="MainPage.idl" />
+    <Midl Include="ObjectModel\GlobalSettings.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -37,6 +43,9 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -50,6 +59,9 @@
       <Filter>ObjectModel</Filter>
     </ClInclude>
     <ClInclude Include="ObjectModel\Profile.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
   </ItemGroup>

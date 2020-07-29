@@ -18,7 +18,7 @@ namespace winrt
 }
 
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::TerminalSettings::implementation;
+using namespace winrt::ObjectModel::implementation;
 
 namespace winrt::SettingsControl::implementation
 {

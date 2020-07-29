@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Interaction.g.h"
+#include "ObjectModel/GlobalSettingsModel.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -8,7 +9,12 @@ namespace winrt::SettingsControl::implementation
     {
         Interaction();
 
+        ObjectModel::GlobalSettingsModel GlobalSettingsModel();
+
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
+    private:
+        ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
     };
 }
 

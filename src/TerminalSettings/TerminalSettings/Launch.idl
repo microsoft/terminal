@@ -1,8 +1,11 @@
+import "ObjectModel/GlobalSettingsModel.idl";
+
 namespace SettingsControl
 {
-    [default_interface]
-    runtimeclass Launch : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass Launch : Windows.UI.Xaml.Controls.Page
     {
         Launch();
+
+        ObjectModel.GlobalSettingsModel GlobalSettingsModel { get; };
     }
 }
