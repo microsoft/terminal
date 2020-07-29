@@ -94,7 +94,7 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemContainer != NULL)
         {
-            Navigate(unbox_value<hstring>(clickedItemContainer.Tag()));
+            Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
         }
     }
 
@@ -115,7 +115,7 @@ namespace winrt::SettingsControl::implementation
         auto selectItem = args.SelectedItem().as<Windows::Foundation::IPropertyValue>().GetString();
         Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
 
-        Navigate(SearchList.at(args.SelectedItem()));
+        Navigate(contentFrame(), SearchList.at(args.SelectedItem()));
     }
 
     void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox &autoBox)
@@ -156,7 +156,7 @@ namespace winrt::SettingsControl::implementation
         autoBox.ItemsSource(suggestions);
     }
 
-    void MainPage::Navigate(hstring clickedItemTag)
+    void MainPage::Navigate(Controls::Frame contentFrame, hstring clickedItemTag)
     {
         const hstring homePage = L"Home_Nav";
         const hstring generalPage = L"General_Nav";
@@ -176,39 +176,39 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemTag == homePage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Home>());
         }
         else if (clickedItemTag == launchSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Launch>());
         }
         else if (clickedItemTag == interactionSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Interaction>());
         }
         else if (clickedItemTag == renderingSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Rendering>());
         }
         else if (clickedItemTag == globalprofileSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Profiles>());
         }
         else if (clickedItemTag == addnewSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::AddProfile>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::AddProfile>());
         }
         else if (clickedItemTag == colorSchemesPage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::ColorSchemes>());
         }
         else if (clickedItemTag == globalAppearancePage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
         }
         else if (clickedItemTag == keybindingsPage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Keybindings>());
         }
     }
 }

@@ -168,7 +168,8 @@
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.PaneFooter>
             <Frame x:Name="contentFrame"
-                       Margin="20"></Frame>
+                   Margin="20"
+                   x:FieldModifier="public"></Frame>
         </muxc:NavigationView>
     </Grid>
 </Page>

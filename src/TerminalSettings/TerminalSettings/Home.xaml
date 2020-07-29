@@ -8,8 +8,14 @@
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
+    <Frame x:Name="frame">
+        <Frame.ContentTransitions>
+            <TransitionCollection>
+                <NavigationThemeTransition/>
+            </TransitionCollection>
+        </Frame.ContentTransitions>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+            Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -18,15 +24,17 @@
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Row="0"
-                   Text="Windows Terminal Settings"
-                   Style="{StaticResource HeaderTextBlockStyle}"
-                   TextAlignment="Center"
-                   Margin="0,0,0,20" />
+                    Text="Windows Terminal Settings"
+                    Style="{StaticResource HeaderTextBlockStyle}"
+                    TextAlignment="Center"
+                    Margin="0,0,0,20" />
         <GridView Grid.Row="1"
-                  x:Name="HomeGridView"
-                  ItemsSource="{x:Bind HomeViewModel.HomeGridItems}"
-                  ItemContainerStyle="{StaticResource GridViewItemStyle}"
-                  IsItemClickEnabled="True">
+                    x:Name="HomeGridView"
+                    ItemsSource="{x:Bind HomeViewModel.HomeGridItems}"
+                    ItemContainerStyle="{StaticResource GridViewItemStyle}"
+                    IsItemClickEnabled="True"
+                    SelectionMode="None"
+                    ItemClick="HomeGridItemClickHandler">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:HomeGridItem">
                     <UserControl>
@@ -56,4 +64,5 @@
             </GridView.ItemTemplate>
         </GridView>
     </Grid>
+    </Frame>
 </Page>
