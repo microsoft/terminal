@@ -1,8 +1,10 @@
+import "SettingsControlViewModel.idl";
+
 namespace SettingsControl
 {
-    [default_interface]
     runtimeclass Home : Windows.UI.Xaml.Controls.Page
     {
         Home();
+        SettingsControlViewModel HomeViewModel{ get; };
     }
 }

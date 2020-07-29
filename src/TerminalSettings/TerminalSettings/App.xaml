@@ -4,6 +4,28 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:SettingsControl">
     <Application.Resources>
-        <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="GridViewItemStyle" TargetType="GridViewItem">
+                <Setter Property="Margin" Value="0,0,12,12" />
+            </Style>
+
+            <Style x:Key="IndentedGridViewItemStyle" TargetType="GridViewItem">
+                <Setter Property="Margin" Value="12,0,0,12" />
+            </Style>
+
+            <Style x:Key="GridViewItemStyleSmall" TargetType="GridViewItem">
+                <Setter Property="Margin" Value="0,0,0,12" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+
+            <Style x:Key="IndentedGridViewItemStyleSmall" TargetType="GridViewItem">
+                <Setter Property="Margin" Value="12,0,12,12" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
