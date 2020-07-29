@@ -546,55 +546,68 @@ CATCH_RETURN()
             // 1: IDX = 6, LEN = 8
             // 2: IDX = 14, LEN = 3
             // 3: IDX = 17, LEN = 9
-            if (afterIndex < _text.size())
-            {
-                _SetCurrentRun(afterIndex);
-                _SplitCurrentRun(afterIndex);
-            }
-            // If it's after the text, don't bother. The correction will just apply
-            // from the begin point to the end of the text.
-            // Example relative to above sample state:
-            // Correction says: IDX = 24, LEN = 2
-            // Text:
-            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
-            // LEN = 26
-            // Runs:
-            // ^0----^1---------^2-----xx
-            // xx is where we're going to put the correction when all is said and done.
-            // We don't need to split off the back portion because there's nothing after the xx.
 
-            // Now split just this glyph off.
-            // Example versus the one above where we did already split the back half off..
-            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
-            // Text:
-            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
-            // LEN = 26
-            // Runs:
-            // ^0----^1----^2^3-^4-------
-            // (The MN text has been broken into its own run, 2.)
-            // Scale Factors:
-            //  1     1     1 1  1
-            // (arrows are run begin)
-            // 0: IDX = 0, LEN = 6
-            // 1: IDX = 6, LEN = 6
-            // 2: IDX = 12, LEN = 2
-            // 2: IDX = 14, LEN = 3
-            // 3: IDX = 17, LEN = 9
             _SetCurrentRun(c.textIndex);
-            _SplitCurrentRun(c.textIndex);
-
-            // Get the run with the one glyph and adjust the scale.
             auto& run = _GetCurrentRun();
-            run.fontScale = c.scale;
-            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
-            // Text:
-            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
-            // LEN = 26
-            // Runs:
-            // ^0----^1----^2^3-^4-------
-            // (We've now only corrected run 2, selecting only the MN to 0.8)
-            // Scale Factors:
-            //  1     1    .8 1  1
+
+            // Do not split RTL runs, as it breaks directionality
+            if (WI_IsFlagSet(run.bidiLevel, 1))
+            {
+                run.fontScale = std::min(c.scale, run.fontScale); // Lowest common denominator scaling.
+            }
+
+            else
+            {
+                if (afterIndex < _text.size())
+                {
+                    _SetCurrentRun(afterIndex);
+                    _SplitCurrentRun(afterIndex);
+                }
+                // If it's after the text, don't bother. The correction will just apply
+                // from the begin point to the end of the text.
+                // Example relative to above sample state:
+                // Correction says: IDX = 24, LEN = 2
+                // Text:
+                // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                // LEN = 26
+                // Runs:
+                // ^0----^1---------^2-----xx
+                // xx is where we're going to put the correction when all is said and done.
+                // We don't need to split off the back portion because there's nothing after the xx.
+
+                // Now split just this glyph off.
+                // Example versus the one above where we did already split the back half off..
+                // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+                // Text:
+                // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                // LEN = 26
+                // Runs:
+                // ^0----^1----^2^3-^4-------
+                // (The MN text has been broken into its own run, 2.)
+                // Scale Factors:
+                //  1     1     1 1  1
+                // (arrows are run begin)
+                // 0: IDX = 0, LEN = 6
+                // 1: IDX = 6, LEN = 6
+                // 2: IDX = 12, LEN = 2
+                // 2: IDX = 14, LEN = 3
+                // 3: IDX = 17, LEN = 9
+                _SetCurrentRun(c.textIndex);
+                _SplitCurrentRun(c.textIndex);
+
+                // Get the run with the one glyph and adjust the scale.
+                run = _GetCurrentRun();
+                run.fontScale = c.scale;
+                // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+                // Text:
+                // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                // LEN = 26
+                // Runs:
+                // ^0----^1----^2^3-^4-------
+                // (We've now only corrected run 2, selecting only the MN to 0.8)
+                // Scale Factors:
+                //  1     1    .8 1  1
+            }
         }
 
         // Dump the glyph scale corrections now that we're done with them.
