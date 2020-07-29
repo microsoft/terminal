@@ -172,7 +172,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
 
-    JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
+    JsonUtils::GetValueForKey(json, ThemeKey, _ThemeName);
 
     JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
 
@@ -250,4 +250,18 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
 const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
 {
     return _commands;
+}
+
+const ::TerminalApp::Theme* GlobalAppSettings::Theme() const
+{
+    auto iterator = _themes.find(_ThemeName);
+    if (iterator != _themes.end())
+    {
+        // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+        // maybe not the _safest_ thing, but we have a mind to make Profile
+        // and ColorScheme winrt types in the future, so this will be safer
+        // then.
+        return &iterator->second;
+    }
+    return nullptr;
 }

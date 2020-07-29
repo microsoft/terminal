@@ -63,12 +63,14 @@ public:
     GUID DefaultProfile() const;
     std::wstring UnparsedDefaultProfile() const;
 
+    const ::TerminalApp::Theme* Theme() const;
+
     GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
     GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
     GETSET_PROPERTY(bool, AlwaysShowTabs, true);
     GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
     GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
-    GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+    // GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
     GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
     GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
@@ -85,6 +87,7 @@ public:
     GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
     GETSET_PROPERTY(bool, StartOnUserLogin, false);
     GETSET_PROPERTY(bool, AlwaysOnTop, false);
+    GETSET_PROPERTY(winrt::hstring, ThemeName);
 
 private:
     std::optional<std::wstring> _unparsedDefaultProfile;

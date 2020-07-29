@@ -13,10 +13,10 @@ using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view ForegroundKey{ "foreground" };
-static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view WindowApplicationThemeKey{ "window.applicationTheme" };
+// static constexpr std::string_view BackgroundKey{ "background" };
 
-Theme::Theme() 
+Theme::Theme()
 {
 }
 
@@ -79,6 +79,7 @@ bool Theme::ShouldBeLayered(const Json::Value& json) const
 void Theme::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, NameKey, _Name);
+    JsonUtils::GetValueForKey(json, WindowApplicationThemeKey, _ApplicationTheme);
     // JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
     // JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
 }

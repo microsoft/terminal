@@ -44,6 +44,7 @@ public:
     static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
     GETSET_PROPERTY(winrt::hstring, Name);
+    GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, ApplicationTheme, winrt::Windows::UI::Xaml::ElementTheme::Default);
 
 private:
     friend class TerminalAppLocalTests::SettingsTests;
