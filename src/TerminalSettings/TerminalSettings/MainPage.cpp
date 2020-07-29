@@ -17,6 +17,7 @@ namespace winrt
     namespace MUX = Microsoft::UI::Xaml;
 }
 
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::TerminalSettings::implementation;
 
@@ -120,8 +121,9 @@ namespace winrt::SettingsControl::implementation
     void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox &autoBox)
     {
         Windows::Foundation::Collections::IVector<IInspectable> suggestions = single_threaded_vector<IInspectable>();
+        std::vector<IInspectable> rawSuggestions;
 
-        for (std::map<IInspectable, hstring>::iterator it = SearchList.begin(); it != SearchList.end(); ++it)
+        for (auto& it = SearchList.begin(); it != SearchList.end(); ++it)
         {
             auto value = it->first;
             hstring item = value.as<Windows::Foundation::IPropertyValue>().GetString();
@@ -136,22 +138,21 @@ namespace winrt::SettingsControl::implementation
 
             if (std::wcsstr(item.c_str(), query.c_str()))
             {
-                bool added = false;
-                for (int i = 0; i < suggestions.Size(); ++i)
-                {
-                    if (value.as<Windows::Foundation::IPropertyValue>().GetString() < suggestions.GetAt(i).as<Windows::Foundation::IPropertyValue>().GetString())
-                    {
-                        suggestions.InsertAt(i, value);
-                        added = true;
-                        break;
-                    }
-                }
-                if (added == false)
-                {
-                    suggestions.Append(value);
-                }
+                rawSuggestions.emplace_back(value);
             }
         }
+
+        // perform sort comparing strings inside of IPropertyValues
+        std::sort(rawSuggestions.begin(), rawSuggestions.end(), [](const IInspectable& a, const IInspectable& b) -> bool {
+            return a.as<IPropertyValue>().GetString() < b.as<IPropertyValue>().GetString();
+        });
+
+        // Pass all elements from rawSuggestions to suggestions
+        for (const auto& suggestion : rawSuggestions)
+        {
+            suggestions.Append(suggestion);
+        }
+
         autoBox.ItemsSource(suggestions);
     }
 
