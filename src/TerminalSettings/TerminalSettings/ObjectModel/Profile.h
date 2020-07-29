@@ -48,24 +48,24 @@ namespace winrt::ObjectModel::implementation
         GETSET_PROPERTY(guid, ConnectionType);
         GETSET_PROPERTY(hstring, Icon);
         GETSET_PROPERTY(bool, Hidden, false);
-        GETSET_PROPERTY(CloseOnExitMode, CloseOnExit);
+        GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, CloseOnExitMode::graceful);
         GETSET_PROPERTY(hstring, TabTitle);
 
         // Terminal Control Settings
         GETSET_PROPERTY(bool, UseAcrylic, false);
         GETSET_PROPERTY(double, AcrylicOpacity, 0.5);
-        GETSET_PROPERTY(ScrollbarState, ScrollState);
-        GETSET_PROPERTY(hstring, FontFace);
-        GETSET_PROPERTY(int32_t, FontSize);
+        GETSET_PROPERTY(ScrollbarState, ScrollState, ScrollbarState::visible);
+        GETSET_PROPERTY(hstring, FontFace, L"Cascadia Mono");
+        GETSET_PROPERTY(int32_t, FontSize, 12);
         GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
-        GETSET_PROPERTY(hstring, Padding);
-        GETSET_PROPERTY(bool, CopyOnSelect);
+        GETSET_PROPERTY(hstring, Padding, L"8, 8, 8, 8");
+        GETSET_PROPERTY(bool, CopyOnSelect, false);
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
-        GETSET_PROPERTY(hstring, StartingDirectory);
+        GETSET_PROPERTY(hstring, StartingDirectory, L"%USERPROFILE%");
         GETSET_PROPERTY(hstring, EnvironmentVariables);
         GETSET_PROPERTY(hstring, BackgroundImage);
-        GETSET_PROPERTY(double, BackgroundImageOpacity);
-        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode);
+        GETSET_PROPERTY(double, BackgroundImageOpacity, 0.5);
+        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
     public:
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
@@ -76,25 +76,25 @@ namespace winrt::ObjectModel::implementation
 
         GETSET_PROPERTY(uint32_t, SelectionBackground);
         GETSET_PROPERTY(TextAntialiasingMode, AntialiasingMode);
-        GETSET_PROPERTY(bool, RetroTerminalEffect);
-        GETSET_PROPERTY(bool, ForceFullRepaintRendering);
-        GETSET_PROPERTY(bool, SoftwareRendering);
+        GETSET_PROPERTY(bool, RetroTerminalEffect, false);
+        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
+        GETSET_PROPERTY(bool, SoftwareRendering, false);
 
         // Terminal Core Settings
         GETSET_PROPERTY(uint32_t, DefaultForeground);
         GETSET_PROPERTY(uint32_t, DefaultBackground);
         GETSET_PROPERTY(hstring, ColorScheme, L"Campbell");
-        GETSET_PROPERTY(int32_t, HistorySize);
+        GETSET_PROPERTY(int32_t, HistorySize, 9001);
         GETSET_PROPERTY(int32_t, InitialRows);
         GETSET_PROPERTY(int32_t, InitialCols);
-        GETSET_PROPERTY(bool, SnapOnInput);
-        GETSET_PROPERTY(bool, AltGrAliasing);
+        GETSET_PROPERTY(bool, SnapOnInput, true);
+        GETSET_PROPERTY(bool, AltGrAliasing, false);
         GETSET_PROPERTY(uint32_t, CursorColor);
         GETSET_PROPERTY(CursorStyle, CursorShape);
         GETSET_PROPERTY(uint32_t, CursorHeight);
         GETSET_PROPERTY(hstring, StartingTitle);
-        GETSET_PROPERTY(bool, SuppressApplicationTitle);
-        GETSET_PROPERTY(bool, ForceVTInput);
+        GETSET_PROPERTY(bool, SuppressApplicationTitle, false);
+        GETSET_PROPERTY(bool, ForceVTInput, false);
 
         DEFINE_PROPERTYCHANGED();
 
