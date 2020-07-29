@@ -1465,9 +1465,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (auto focusedControl{ _GetActiveControl() })
                     {
-                        auto indexOpt = _GetFocusedTabIndex();
-                        auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
-                        return focusedTab->GetActiveTitle();
+                        return focusedControl.Title();
                     }
                 }
                 CATCH_LOG();
@@ -1797,7 +1795,7 @@ namespace winrt::TerminalApp::implementation
                 tab->SetFocused(true);
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, Title());
+                _titleChangeHandlers(*this, tab->GetActiveTitle());
 
                 // Raise an event that our titlebar color changed
                 std::optional<Windows::UI::Color> color = tab->GetTabColor();
