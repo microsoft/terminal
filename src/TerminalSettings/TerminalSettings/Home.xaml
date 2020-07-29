@@ -26,8 +26,7 @@
                   x:Name="HomeGridView"
                   ItemsSource="{x:Bind HomeViewModel.HomeGridItems}"
                   ItemContainerStyle="{StaticResource GridViewItemStyle}"
-                  IsItemClickEnabled="True"
-                  ItemClick="OnHomeGridItemClick">
+                  IsItemClickEnabled="True">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:HomeGridItem">
                     <UserControl>

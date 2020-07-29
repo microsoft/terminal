@@ -28,9 +28,7 @@ namespace winrt::SettingsControl::implementation
 
     void Home::OnHomeGridItemClick(IInspectable const& sender, RoutedEventArgs const& args)
     {
-        // This doesn't work
-        auto gridView = HomeGridView();
-        HomeViewModel().HomeGridItem().Title(L"CLICKED");
+
     }
 
     SettingsControl::SettingsControlViewModel Home::HomeViewModel()

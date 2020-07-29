@@ -6,7 +6,6 @@ namespace winrt::SettingsControl::implementation
 {
     SettingsControlViewModel::SettingsControlViewModel()
     {
-        m_homegriditem = winrt::make<SettingsControl::implementation::HomeGridItem>(L"");
         m_homegriditems = winrt::single_threaded_observable_vector<SettingsControl::HomeGridItem>();
     }
 
