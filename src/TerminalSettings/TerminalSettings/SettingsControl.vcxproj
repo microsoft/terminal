@@ -134,6 +134,7 @@
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
     <ClInclude Include="ObjectModel\GlobalSettings.h" />
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
     <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.h">
@@ -247,6 +248,7 @@
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
     <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -296,6 +298,8 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ObjectModel\GlobalSettings.idl" />
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>

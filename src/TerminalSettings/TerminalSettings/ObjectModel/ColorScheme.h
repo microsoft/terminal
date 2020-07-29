@@ -1,6 +1,6 @@
 #pragma once
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::ObjectModel::implementation
 {
     class ColorScheme
     {

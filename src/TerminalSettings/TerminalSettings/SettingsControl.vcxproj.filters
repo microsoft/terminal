@@ -19,6 +19,12 @@
   <ItemGroup>
     <Midl Include="App.idl" />
     <Midl Include="MainPage.idl" />
+    <Midl Include="ObjectModel\GlobalSettings.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
     <Midl Include="HomeGridItem.idl" />
     <Midl Include="SettingsControlViewModel.idl" />
   </ItemGroup>
@@ -39,6 +45,9 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
     <ClCompile Include="HomeGridItem.cpp" />
     <ClCompile Include="SettingsControlViewModel.cpp" />
   </ItemGroup>
@@ -54,6 +63,9 @@
       <Filter>ObjectModel</Filter>
     </ClInclude>
     <ClInclude Include="ObjectModel\Profile.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
     <ClInclude Include="HomeGridItem.h" />

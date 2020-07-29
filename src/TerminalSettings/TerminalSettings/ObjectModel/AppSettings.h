@@ -4,7 +4,7 @@
 #include "ColorScheme.h"
 #include "Profile.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::ObjectModel::implementation
 {
     enum class Modifiers
     {
@@ -54,12 +54,12 @@ namespace winrt::TerminalSettings::implementation
     class AppSettings
     {
     public:
-        AppSettings();
+        AppSettings() = default;
         ~AppSettings() = default;
 
-        AppSettings Clone();
+        AppSettings Clone() { return AppSettings(); }
 
-        GlobalSettings Globals;
+        //GlobalSettings Globals;
         std::vector<Profile> Profiles;
         std::map<hstring, ColorScheme> Schemes;
         std::map<KeyChord, Action> Keybindings;
