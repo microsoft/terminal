@@ -420,13 +420,6 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    if (_isStringTerminatorIndicator(wch))
-    {
-        // Presumably, ST can be safely ignored.
-        _trace.DispatchSequenceTrace(true);
-        return;
-    }
-
     const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
 
     // Trace the result.
