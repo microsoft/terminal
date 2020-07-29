@@ -1,4 +1,4 @@
-namespace TerminalSettings
+namespace SettingsControl
 {
     [default_interface]
     runtimeclass Profiles : Windows.UI.Xaml.Controls.Page

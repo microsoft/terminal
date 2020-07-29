@@ -17,7 +17,7 @@ using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Controls::Primitives;
 using namespace Windows::System;
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     Keybindings::Keybindings()
     {

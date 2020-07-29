@@ -7,7 +7,7 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     ColorSchemes::ColorSchemes()
     {
@@ -27,5 +27,9 @@ namespace winrt::TerminalSettings::implementation
     void ColorSchemes::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
         //Button().Content(box_value(L"Clicked"));
+    }
+
+    void ColorSchemes::TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const&)
+    {
     }
 }

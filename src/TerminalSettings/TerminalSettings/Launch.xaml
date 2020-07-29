@@ -1,0 +1,50 @@
+﻿<Page
+    x:Class="SettingsControl.Launch"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:SettingsControl"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Launch"
+                   Style="{StaticResource HeaderTextBlockStyle}"
+                   Margin="0,0,0,10" />
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+            <TextBox Header="Default profile" Margin="0,0,0,10" />
+            <CheckBox Content="Launch on startup" />
+            <Controls:RadioButtons Header="Launch size" Margin="0,0,0,10">
+                <RadioButton x:Name="DefaultLaunchSize" Content="Default"/>
+                <RadioButton x:Name="MaximizedLaunchSize" Content="Maximized"/>
+                <RadioButton x:Name="FullscreenLaunchSize" Content="Full screen"/>
+            </Controls:RadioButtons>
+            <TextBox Header="Launch position"/>
+            <Controls:NumberBox x:Name="InitialCols"
+                                    Header="Columns on first launch" 
+                                    Value="120" 
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"/>
+            <Controls:NumberBox x:Name="InitialRows"
+                                    Header="Rows on first lauch" 
+                                    Value="30" 
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
+            <CheckBox Content="Disable dynamic profiles" />
+        </StackPanel>
+    </Grid>
+</Page>

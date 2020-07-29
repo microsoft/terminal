@@ -2,7 +2,7 @@
 
 #include "ColorSchemes.g.h"
 
-namespace winrt::TerminalSettings::implementation
+namespace winrt::SettingsControl::implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
@@ -12,10 +12,11 @@ namespace winrt::TerminalSettings::implementation
         void MyProperty(int32_t value);
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void TextBox_TextChanged(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::TextChangedEventArgs const& args);
     };
 }
 
-namespace winrt::TerminalSettings::factory_implementation
+namespace winrt::SettingsControl::factory_implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes, implementation::ColorSchemes>
     {

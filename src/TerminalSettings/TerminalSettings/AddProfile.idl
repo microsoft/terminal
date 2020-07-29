@@ -1,0 +1,7 @@
+namespace SettingsControl
+{
+    [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page
+    {
+        AddProfile();
+    }
+}
