@@ -89,7 +89,9 @@ private:
     void _LayerOrCreateProfile(const Json::Value& profileJson);
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
+    void _LayerOrCreateTheme(const Json::Value& themeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
+    Theme* _FindMatchingTheme(const Json::Value& themeJson);
     void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
     static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);

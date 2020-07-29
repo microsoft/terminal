@@ -35,6 +35,7 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view ThemesKey{ "themes" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
@@ -517,6 +518,17 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
         }
     }
 
+    if (auto themes{ json[ThemesKey.data()] })
+    {
+        for (auto themeJson : themes)
+        {
+            if (themeJson.isObject())
+            {
+                _LayerOrCreateTheme(themeJson);
+            }
+        }
+    }
+
     for (auto profileJson : _GetProfilesJsonObject(json))
     {
         if (profileJson.isObject())
@@ -658,6 +670,20 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
 }
 
+void CascadiaSettings::_LayerOrCreateTheme(const Json::Value& themeJson)
+{
+    // Layer the json on top of an existing profile, if we have one:
+    auto pTheme = _FindMatchingTheme(themeJson);
+    if (pTheme)
+    {
+        pTheme->LayerJson(themeJson);
+    }
+    else
+    {
+        _globals.AddTheme(Theme::FromJson(themeJson));
+    }
+}
+
 // Method Description:
 // - Finds a color scheme from our list of color schemes that matches the given
 //   json object. Uses ColorScheme::GetNameFromJson to find the name and then
@@ -676,6 +702,25 @@ ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schem
         auto& schemes = _globals.GetColorSchemes();
         auto iterator = schemes.find(*schemeName);
         if (iterator != schemes.end())
+        {
+            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+            // maybe not the _safest_ thing, but we have a mind to make Profile
+            // and ColorScheme winrt types in the future, so this will be safer
+            // then.
+            return &iterator->second;
+        }
+    }
+    return nullptr;
+}
+
+Theme* CascadiaSettings::_FindMatchingTheme(const Json::Value& themeJson)
+{
+    if (auto nameOpt = Theme::GetNameFromJson(themeJson))
+    {
+        winrt::hstring name {nameOpt.value()};
+        auto& themes = _globals.GetThemes();
+        auto iterator = themes.find(name);
+        if (iterator != themes.end())
         {
             // HERE BE DRAGONS: Returning a pointer to a type in the vector is
             // maybe not the _safest_ thing, but we have a mind to make Profile

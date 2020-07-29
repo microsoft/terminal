@@ -77,6 +77,16 @@ const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColor
     return _colorSchemes;
 }
 
+std::unordered_map<winrt::hstring, ::TerminalApp::Theme>& GlobalAppSettings::GetThemes() noexcept
+{
+    return _themes;
+}
+
+const std::unordered_map<winrt::hstring, ::TerminalApp::Theme>& GlobalAppSettings::GetThemes() const noexcept
+{
+    return _themes;
+}
+
 void GlobalAppSettings::DefaultProfile(const GUID defaultProfile) noexcept
 {
     _unparsedDefaultProfile.reset();
@@ -215,6 +225,12 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);
+}
+
+void GlobalAppSettings::AddTheme(::TerminalApp::Theme theme)
+{
+    auto name{ theme.Name() };
+    _themes[name] = std::move(theme);
 }
 
 // Method Description:

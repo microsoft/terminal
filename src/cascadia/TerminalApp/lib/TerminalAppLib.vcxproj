@@ -102,6 +102,7 @@
     </ClInclude>
     <ClInclude Include="../Pane.h" />
     <ClInclude Include="../ColorScheme.h" />
+    <ClInclude Include="../Theme.h" />
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
@@ -173,6 +174,7 @@
     </ClCompile>
     <ClCompile Include="../Pane.cpp" />
     <ClCompile Include="../ColorScheme.cpp" />
+    <ClCompile Include="../Theme.cpp" />
     <ClCompile Include="../GlobalAppSettings.cpp" />
     <ClCompile Include="../Profile.cpp" />
     <ClCompile Include="../CascadiaSettings.cpp" />

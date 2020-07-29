@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
+#include "Theme.h"
 #include "Command.h"
 #include "SettingsTypes.h"
 
@@ -40,6 +41,10 @@ public:
     std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
     const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
     void AddColorScheme(ColorScheme scheme);
+
+    std::unordered_map<winrt::hstring, Theme>& GetThemes() noexcept;
+    const std::unordered_map<winrt::hstring, Theme>& GetThemes() const noexcept;
+    void AddTheme(Theme theme);
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
@@ -89,6 +94,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
+    std::unordered_map<winrt::hstring, ::TerminalApp::Theme> _themes;
     std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     friend class TerminalAppLocalTests::SettingsTests;

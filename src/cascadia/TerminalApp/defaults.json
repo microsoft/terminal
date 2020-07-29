@@ -271,6 +271,21 @@
             "brightWhite": "#EEEEEC"
         }
     ],
+    "themes":
+    [
+        {
+            "name": "system",
+            "window.applicationTheme": "system",
+        },
+        {
+            "name": "dark",
+            "window.applicationTheme": "dark",
+        },
+        {
+            "name": "light",
+            "window.applicationTheme": "light",
+        }
+    ],
     "bindings":
     [
         // Application-level Keys
