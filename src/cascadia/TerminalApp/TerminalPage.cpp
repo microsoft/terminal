@@ -1465,7 +1465,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (auto focusedControl{ _GetActiveControl() })
                     {
-                        return focusedControl.Title();
+                        auto indexOpt = _GetFocusedTabIndex();
+                        auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
+                        return focusedTab->GetActiveTitle();
                     }
                 }
                 CATCH_LOG();
