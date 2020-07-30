@@ -64,6 +64,14 @@ COORD Terminal::GetCursorPosition() noexcept
     return newPos;
 }
 
+bool Terminal::SetCursorColor(const COLORREF color) noexcept
+try
+{
+    _buffer->GetCursor().SetColor(color);
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
