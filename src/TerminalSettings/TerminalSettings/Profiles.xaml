@@ -133,8 +133,10 @@
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                        <TextBox Header="Command line" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Commandline, Mode=TwoWay}"/>
-                        <TextBox Header="Starting directory" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.StartingDirectory, Mode=TwoWay}"/>
+                        <TextBox x:Name="Commandline" Header="Command line" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Commandline, Mode=TwoWay}"/>
+                        <Button Content="Browse" Click="Commandline_Click"/>
+                        <TextBox x:Name="StartingDirectory" Header="Starting directory" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.StartingDirectory, Mode=TwoWay}"/>
+                        <!--<Button Content="Browse" Click="StartingDirectory_Click"/>-->
                         <TextBox Header="Icon" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Icon, Mode=TwoWay}"/>
                         <TextBox Header="Tab title" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.TabTitle, Mode=TwoWay}"/>
                         <Controls:RadioButtons Header="Scrollbar visibility" Margin="0,0,0,10">
@@ -163,8 +165,9 @@
                     <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,100,0">
                         <CheckBox Content="Enable acrylic" IsChecked="{x:Bind ProfileModel.Profile.UseAcrylic, Mode=TwoWay}"/>
                         <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,10" Value="{x:Bind ProfileModel.Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" />
-                        <TextBox Header="Background image" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.BackgroundImage, Mode=TwoWay}"/>
-                        <Controls:RadioButtons Header="Background image stretch mode" Margin="0,0,0,10">
+                        <TextBox x:Name="BackgroundImage" Header="Background image" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.BackgroundImage, Mode=TwoWay}"/>
+                            <Button Content="Browse" Click="BackgroundImage_Click"/>
+                            <Controls:RadioButtons Header="Background image stretch mode" Margin="0,0,0,10">
                             <RadioButton x:Name="backgroundImageStretchModeNone" Content="none"/>
                             <RadioButton x:Name="backgroundImageStretchModeFill" Content="fill"/>
                             <RadioButton x:Name="backgroundImageStretchModeUniform" Content="uniform"/>
