@@ -22,9 +22,9 @@
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Margin="0,0,0,10" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <CheckBox Content="Copy after selection is made" />
-            <CheckBox Content="Copy formatting" />
-            <TextBox Header="Word delimiters" Margin="0,0,0,10" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.CopyOnSelect, Mode=TwoWay}" Content="Copy after selection is made" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.CopyFormatting, Mode=TwoWay}" Content="Copy formatting" />
+            <TextBox Header="Word delimiters" Margin="0,0,0,10" Text="{x:Bind GlobalSettingsModel.GlobalSettings.WordDelimiters, Mode=TwoWay}"/>
         </StackPanel>
     </Grid>
 </Page>

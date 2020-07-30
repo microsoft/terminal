@@ -1,0 +1,9 @@
+import "ObjectModel/GlobalSettings.idl";
+
+namespace ObjectModel
+{
+    runtimeclass GlobalSettingsModel
+    {
+        GlobalSettings GlobalSettings { get; };
+    }
+}

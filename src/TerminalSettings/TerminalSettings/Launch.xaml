@@ -22,29 +22,29 @@
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Margin="0,0,0,10" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <TextBox Header="Default profile" Margin="0,0,0,10" />
-            <CheckBox Content="Launch on startup" />
+            <TextBox Text="{x:Bind GlobalSettingsModel.GlobalSettings.DefaultProfile}" Header="Default profile" Margin="0,0,0,10" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Content="Launch on startup" />
             <Controls:RadioButtons Header="Launch size" Margin="0,0,0,10">
                 <RadioButton x:Name="DefaultLaunchSize" Content="Default"/>
                 <RadioButton x:Name="MaximizedLaunchSize" Content="Maximized"/>
                 <RadioButton x:Name="FullscreenLaunchSize" Content="Full screen"/>
             </Controls:RadioButtons>
-            <TextBox Header="Launch position"/>
+            <TextBox Text="{x:Bind GlobalSettingsModel.GlobalSettings.LaunchPosition, Mode=TwoWay}" Header="Launch position"/>
             <Controls:NumberBox x:Name="InitialCols"
                                     Header="Columns on first launch" 
-                                    Value="120" 
+                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialCols, Mode=TwoWay}" 
                                     SpinButtonPlacementMode="Compact" 
                                     SmallChange="10"
                                     LargeChange="100"/>
             <Controls:NumberBox x:Name="InitialRows"
                                     Header="Rows on first lauch" 
-                                    Value="30" 
+                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialRows, Mode=TwoWay}" 
                                     SpinButtonPlacementMode="Compact" 
                                     SmallChange="10"
                                     LargeChange="100"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
-            <CheckBox Content="Disable dynamic profiles" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Content="Disable dynamic profiles" />
         </StackPanel>
     </Grid>
 </Page>

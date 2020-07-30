@@ -134,6 +134,7 @@
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
     <ClInclude Include="ObjectModel\GlobalSettings.h" />
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
     <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.h">
@@ -141,6 +142,9 @@
     </ClInclude>
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\ProfileModel.h">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
@@ -247,6 +251,7 @@
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
     <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -258,6 +263,9 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ObjectModel\ProfileModel.cpp">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Profiles.cpp">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -296,6 +304,10 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ObjectModel\GlobalSettings.idl" />
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
+    <Midl Include="ObjectModel\Profile.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>

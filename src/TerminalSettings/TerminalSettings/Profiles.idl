@@ -1,9 +1,11 @@
+import "ObjectModel/ProfileModel.idl";
+
 namespace SettingsControl
 {
     [default_interface]
     runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
-        Int32 MyProperty;
+        ObjectModel.ProfileModel ProfileModel { get; };
     }
 }

@@ -172,7 +172,7 @@
                                 <RadioButton x:Name="backgroundImageStretchModeUniform" Content="uniform"/>
                                 <RadioButton x:Name="backgroundImageStretchModeUniformToFill" Content="uniformToFill"/>
                             </Controls:RadioButtons>
-                            <DropDownButton Content="Background image alignment" Margin="0,0,0,10" >
+                            <Windows10version1809:DropDownButton Content="Background image alignment" Margin="0,0,0,10" >
                                 <DropDownButton.Flyout>
                                     <MenuFlyout Placement="Bottom">
                                         <MenuFlyoutItem Text="center"/>
@@ -186,7 +186,7 @@
                                         <MenuFlyoutItem Text="bottomRight"/>
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
-                            </DropDownButton>
+                            </Windows10version1809:DropDownButton>
                             <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
                             <CheckBox Content="Retro terminal effects" />
                         </StackPanel>
@@ -205,7 +205,7 @@
                             <Controls:NumberBox Header="Cursor height" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" />
                             <Button x:Name="cursorColorPickerButton" Content="Cursor color" Flyout="{StaticResource cursorColorPickerFlyout}"/>
                             <Controls:NumberBox Header="Cursor height" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
-                            <DropDownButton Content="Color scheme" Margin="0,0,0,10" >
+                            <Windows10version1809:DropDownButton Content="Color scheme" Margin="0,0,0,10" >
                                 <DropDownButton.Flyout>
                                     <MenuFlyout Placement="Bottom">
                                         <MenuFlyoutItem Text="Campbell"/>
@@ -217,7 +217,7 @@
                                         <MenuFlyoutItem Text="Tango Light"/>
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
-                            </DropDownButton>
+                            </Windows10version1809:DropDownButton>
                             <Button x:Name="foregroundColorPickerButton" Content="Foreground color" Flyout="{StaticResource foregroundColorPickerFlyout}"/>
                             <Button x:Name="backgroundColorPickerButton" Content="Background color" Flyout="{StaticResource backgroundColorPickerFlyout}"/>
                             <Button x:Name="selectionBackgroundColorPickerButton" Content="Selection background color" Flyout="{StaticResource selectionBackgroundColorPickerFlyout}"/>
