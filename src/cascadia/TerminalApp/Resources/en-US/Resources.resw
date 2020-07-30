@@ -595,4 +595,16 @@
   <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dark Gray</value>
   </data>
+  <data name="CloseDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseDialog.Content" xml:space="preserve">
+    <value>Do you wish to continue?</value>
+  </data>
+  <data name="CloseDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Quit </value>
+  </data>
+  <data name="CloseDialog.Title" xml:space="preserve">
+    <value>Quitting will end your session</value>
+  </data>
 </root>

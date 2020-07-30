@@ -51,7 +51,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="CloseAllDialog"
             x:Uid="CloseAllDialog"
             DefaultButton="Primary"
-            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
+            PrimaryButtonClick="_CloseAllWarningPrimaryButtonOnClick">
         </ContentDialog>
 
         <ContentDialog
@@ -66,6 +66,14 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="LargePasteDialog"
             x:Uid="LargePasteDialog"
             DefaultButton="Primary">
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="CloseDialog"
+            x:Uid="CloseDialog"
+            DefaultButton="Primary"
+            PrimaryButtonClick="_CloseWarningPrimaryButtonClick">
         </ContentDialog>
 
         <local:CommandPalette

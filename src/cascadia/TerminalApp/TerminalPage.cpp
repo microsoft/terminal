@@ -340,7 +340,7 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void TerminalPage::_ShowCloseWarningDialog()
+    void TerminalPage::_ShowCloseAllWarningDialog()
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
@@ -378,6 +378,21 @@ namespace winrt::TerminalApp::implementation
             co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal app
+    //   and the setting is true. Display messages to warn user
+    //   that thier session is about to end, and once the user clicks the OK button,
+    //   shut down the app. If cancel is clicked, the dialog will close
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void TerminalPage::_ShowCloseWarningDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"CloseDialog").try_as<WUX::Controls::ContentDialog>());
+        }
     }
 
     // Method Description:
@@ -1281,11 +1296,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (_tabs.Size() > 1 && _settings->GlobalSettings().ConfirmCloseAllTabs())
         {
-            _ShowCloseWarningDialog();
+            _ShowCloseAllWarningDialog();
         }
-        else
+        else if (_tabs.Size() > 1 && !_settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             _CloseAllTabs();
+        }
+        else if (_tabs.Size() == 1 && _settings->GlobalSettings().AlwaysWarnOnExit())
+        {
+            _ShowCloseWarningDialog();
+        }
+        else if (_tabs.Size() == 1 && !_settings->GlobalSettings().AlwaysWarnOnExit())
+        {
+            _CloseFocusedTab();
         }
     }
 
@@ -1868,10 +1891,24 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: unused
     // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+    void TerminalPage::_CloseAllWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
                                                          WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
+    }
+
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseFocusedTab(), which closes the focused tab, 
+    //  thus, the app will be closed. This method will be called if
+    //   the user confirms to end the session.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonClick(WUX::Controls::ContentDialog /* sender */,
+                                                     WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs */)
+    {
+        _CloseFocusedTab();
     }
 
     // Method Description:
