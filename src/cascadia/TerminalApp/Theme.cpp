@@ -18,6 +18,8 @@ static constexpr std::string_view WindowApplicationThemeKey{ "window.application
 // static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view TabRowBackgroundKey{ "tabRow.background" };
 
+static constexpr std::string_view TabBackgroundKey{ "tab.background" };
+
 Theme::Theme()
 {
 }
@@ -84,6 +86,8 @@ void Theme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, WindowApplicationThemeKey, _ApplicationTheme);
     // JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
     JsonUtils::GetValueForKey(json, TabRowBackgroundKey, _TabRowBackground);
+
+    JsonUtils::GetValueForKey(json, TabBackgroundKey, _TabBackground);
 }
 
 // Method Description:

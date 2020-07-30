@@ -36,6 +36,8 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
+    virtual void SetTitlebarColor(const winrt::Windows::UI::Color color);
+
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

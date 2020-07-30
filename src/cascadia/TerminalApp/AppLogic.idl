@@ -45,6 +45,8 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        Windows.UI.Color TitlebarColor { get; };
+
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
 
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
@@ -66,5 +68,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> TitlebarColorChanged;
     }
 }

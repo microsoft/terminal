@@ -1089,6 +1089,11 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    Windows::UI::Color AppLogic::TitlebarColor()
+    {
+        return _root->TitlebarColor();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

@@ -701,5 +701,9 @@ void IslandWindow::_ApplyWindowSize()
                                          SWP_FRAMECHANGED));
 }
 
+void IslandWindow::SetTitlebarColor(const winrt::Windows::UI::Color /*color*/)
+{
+}
+
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

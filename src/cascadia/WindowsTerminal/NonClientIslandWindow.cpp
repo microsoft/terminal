@@ -929,3 +929,8 @@ void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY
         PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
     }
 }
+
+void NonClientIslandWindow::SetTitlebarColor(const winrt::Windows::UI::Color color)
+{
+    _titlebar.Background().as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>().Color(color);
+}

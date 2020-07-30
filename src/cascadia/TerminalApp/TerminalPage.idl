@@ -22,6 +22,8 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        Windows.UI.Color TitlebarColor { get; };
+
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
@@ -34,5 +36,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> TitlebarColorChanged;
     }
 }
