@@ -84,8 +84,30 @@ namespace Microsoft::Console::VirtualTerminal
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         const gsl::span<const size_t> parameters);
 
-        enum VTActionCodes : wchar_t
+        enum EscActionCodes : wchar_t
         {
+            DECSC_CursorSave = L'7',
+            DECRC_CursorRestore = L'8',
+            DECKPAM_KeypadApplicationMode = L'=',
+            DECKPNM_KeypadNumericMode = L'>',
+            IND_Index = L'D',
+            NEL_NextLine = L'E',
+            HTS_HorizontalTabSet = L'H',
+            RI_ReverseLineFeed = L'M',
+            SS2_SingleShift = L'N',
+            SS3_SingleShift = L'O',
+            RIS_ResetToInitialState = L'c',
+            LS2_LockingShift = L'n',
+            LS3_LockingShift = L'o',
+            LS1R_LockingShift = L'~',
+            LS2R_LockingShift = L'}',
+            LS3R_LockingShift = L'|',
+            DECALN_ScreenAlignmentPattern = L'8' // With # intermediate
+        };
+
+        enum CsiActionCodes : wchar_t
+        {
+            ICH_InsertCharacter = L'@',
             CUU_CursorUp = L'A',
             CUD_CursorDown = L'B',
             CUF_CursorForward = L'C',
@@ -94,54 +116,35 @@ namespace Microsoft::Console::VirtualTerminal
             CPL_CursorPrevLine = L'F',
             CHA_CursorHorizontalAbsolute = L'G',
             CUP_CursorPosition = L'H',
+            CHT_CursorForwardTab = L'I',
             ED_EraseDisplay = L'J',
             EL_EraseLine = L'K',
+            IL_InsertLine = L'L',
+            DL_DeleteLine = L'M',
+            DCH_DeleteCharacter = L'P',
             SU_ScrollUp = L'S',
             SD_ScrollDown = L'T',
-            ICH_InsertCharacter = L'@',
-            DCH_DeleteCharacter = L'P',
-            SGR_SetGraphicsRendition = L'm',
-            DECSC_CursorSave = L'7',
-            DECRC_CursorRestore = L'8',
+            ECH_EraseCharacters = L'X',
+            CBT_CursorBackTab = L'Z',
+            HPA_HorizontalPositionAbsolute = L'`',
+            HPR_HorizontalPositionRelative = L'a',
+            REP_RepeatCharacter = L'b',
+            DA_DeviceAttributes = L'c',
+            VPA_VerticalLinePositionAbsolute = L'd',
+            VPR_VerticalPositionRelative = L'e',
+            HVP_HorizontalVerticalPosition = L'f',
+            TBC_TabClear = L'g',
             DECSET_PrivateModeSet = L'h',
             DECRST_PrivateModeReset = L'l',
-            ANSISYSSC_CursorSave = L's', // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
-            ANSISYSRC_CursorRestore = L'u', // NOTE: Overlaps with DECSMBV. Fix when/if implemented.
-            DECKPAM_KeypadApplicationMode = L'=',
-            DECKPNM_KeypadNumericMode = L'>',
+            SGR_SetGraphicsRendition = L'm',
             DSR_DeviceStatusReport = L'n',
-            DA_DeviceAttributes = L'c',
-            DECSCPP_SetColumnsPerPage = L'|',
-            IL_InsertLine = L'L',
-            DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceded by a CSI, and DL is.
-            HPA_HorizontalPositionAbsolute = L'`',
-            VPA_VerticalLinePositionAbsolute = L'd',
-            HPR_HorizontalPositionRelative = L'a',
-            VPR_VerticalPositionRelative = L'e',
             DECSTBM_SetScrollingRegion = L'r',
-            NEL_NextLine = L'E', // Not a CSI, so doesn't overlap with CNL
-            IND_Index = L'D', // Not a CSI, so doesn't overlap with CUB
-            RI_ReverseLineFeed = L'M',
-            HTS_HorizontalTabSet = L'H', // Not a CSI, so doesn't overlap with CUP
-            CHT_CursorForwardTab = L'I',
-            CBT_CursorBackTab = L'Z',
-            TBC_TabClear = L'g',
-            ECH_EraseCharacters = L'X',
-            HVP_HorizontalVerticalPosition = L'f',
-            DECSTR_SoftReset = L'p',
-            RIS_ResetToInitialState = L'c', // DA is prefaced by CSI, RIS by ESC
-            // 'q' is overloaded - no postfix is DECLL, ' ' postfix is DECSCUSR, and '"' is DECSCA
-            DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
-            DTTERM_WindowManipulation = L't',
-            REP_RepeatCharacter = L'b',
-            SS2_SingleShift = L'N',
-            SS3_SingleShift = L'O',
-            LS2_LockingShift = L'n',
-            LS3_LockingShift = L'o',
-            LS1R_LockingShift = L'~',
-            LS2R_LockingShift = L'}',
-            LS3R_LockingShift = L'|',
-            DECALN_ScreenAlignmentPattern = L'8'
+            ANSISYSSC_CursorSave = L's', // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
+            DTTERM_WindowManipulation = L't', // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
+            ANSISYSRC_CursorRestore = L'u', // NOTE: Overlaps with DECSMBV. Fix when/if implemented.
+            DECSCUSR_SetCursorStyle = L'q', // With SP intermediate
+            DECSTR_SoftReset = L'p', // With ! intermediate
+            DECSCPP_SetColumnsPerPage = L'|' // With $ intermediate
         };
 
         enum Vt52ActionCodes : wchar_t
