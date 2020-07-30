@@ -38,6 +38,7 @@ namespace winrt::ScratchWinRTServer::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
         _desiredFont = { _actualFont };
     }
+
     HostClass::~HostClass()
     {
         printf("~HostClass()\n");
@@ -45,168 +46,19 @@ namespace winrt::ScratchWinRTServer::implementation
         dtored = true;
         cv.notify_one();
     }
-    int HostClass::DoCount()
-    {
-        return _DoCount;
-    }
 
-    void HostClass::DoTheThing()
-    {
-        _DoCount++;
-    }
     winrt::guid HostClass::Id()
     {
         return _id;
     }
 
-    HRESULT __stdcall HostClass::Call()
-    {
-        _DoCount += 4;
-        return S_OK;
-    }
-
     void HostClass::Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel)
     {
-        // /*onecore\com\combase\winrt\error \restrictederror.cpp(3285)\combase.dll !00007FFD9313FF74 : (caller : 00007FFD9313F147)ReturnHr(1) tid(5af0) 80070057 The parameter is incorrect.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error - 0x80040155 : 'Failed to find proxy registration for IID: {FCC4566D-82DC-5D36-BB84-3DA4F0926318}.'.'ScratchIsland.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\rometadata.dll'.Symbol loading disabled by Include / Exclude setting.'ScratchIsland.exe'(Win32) :
-        //     Loaded 'C:\Users\migrie\dev\private\OpenConsole\x64\Debug\ScratchWinRTServer.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.Xaml.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
-        //     0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchIsland.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchIsland.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchWinRTServer.exe : WinRT originate error -
-        //     0x80040155 : 'Failed to find proxy registration for IID: {C589644F-EBA8-427A-B75A-9F1F93A11AE9}.'.'ScratchWinRTServer.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.Foundation.winmd'.Module was built without symbols.'ScratchWinRTServer.exe'(Win32) :
-        //     Loaded 'C:\Windows\System32\WinMetadata\Windows.UI.winmd'.Module was built without symbols.Exception thrown at 0x00007FFD918422CC(KernelBase.dll)in ScratchIsland.exe : WinRT originate error -
-        //     0x80040155 : 'Failed to find proxy registration for IID: {D5A2F60C-37B2-44A2-937B-8D8EB9726821}.'.*/
-
-        // {
-        //     auto f = winrt::get_abi(panel);
-        //     // auto whatEvenIsThis = &panel;
-        //     // IUnknown* dummy{ reinterpret_cast<IUnknown*>(&panel) };
-        //     IUnknown* dummy{ reinterpret_cast<IUnknown*>(f) };
-        //     ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative0;
-        //     winrt::guid g{ __uuidof(**(&panelNative0)) };
-        //     g;
-        //     dummy->QueryInterface(IID_PPV_ARGS(&panelNative0));
-        //     // // panelNative->SetSwapChainHandle(m_swapChainHandle);
-
-        //     // // auto nativePanel2 = panel.try_as<ISwapChainPanelNative2>();
-        //     // // if (nativePanel2)
-        //     if (panelNative0)
-        //     {
-        //         printf("Got the nativePanel2\n");
-        //     }
-        //     else
-        //     {
-        //         printf("Couldn't reinterpret_cast\n");
-        //     }
-        // }
-        // // // _panel = panel;
-        // // // nativePanel2;
-        // // panelNative;
-
-        // // winrt::com_ptr<ISwapChainPanelNative2> native;
-        // winrt::com_ptr<IUnknown> iunk = panel.try_as<IUnknown>();
-        // if (iunk)
-        // {
-        //     printf("Got the IUnknown\n");
-        //     ////////////////////////////////////////////////////////////////////
-        //     auto nativePanel2 = iunk.try_as<ISwapChainPanelNative2>();
-        //     if (nativePanel2)
-        //     {
-        //         printf("Got the nativePanel2\n");
-        //     }
-        //     else
-        //     {
-        //         printf("Couldn't try_as to get the ISwapChainPanelNative2\n");
-        //     }
-        //     nativePanel2;
-        //     ////////////////////////////////////////////////////////////////////
-        //     ::Microsoft::WRL::ComPtr<ISwapChainPanelNative2> panelNative;
-        //     iunk->QueryInterface(IID_PPV_ARGS(&panelNative));
-        //     if (panelNative)
-        //     {
-        //         printf("Got the panelNative\n");
-        //     }
-        //     else
-        //     {
-        //         printf("Couldn't QueryInterface to get the ISwapChainPanelNative2\n");
-        //     }
-        //     ////////////////////////////////////////////////////////////////////
-        //     IUnknown* foo = iunk.get();
-        //     foo->QueryInterface(IID_PPV_ARGS(&panelNative));
-        //     if (panelNative)
-        //     {
-        //         printf("Got the panelNative\n");
-        //     }
-        //     else
-        //     {
-        //         printf("This didn't work either\n");
-        //     }
-        //     ////////////////////////////////////////////////////////////////////
-        // }
-        // else
-        // {
-        //     printf("Couldn't try_as to get the IUnknown\n");
-        // }
-        // iunk;
-
-        // // // DO NOT UNDER ANY CIRCUMSTANCE DO THIS
-        // //
-        // // winrt::Windows::UI::Xaml::Media::SolidColorBrush solidColor{};
-        // // til::color newBgColor{ 0x8F000000 };
-        // // solidColor.Color(newBgColor);
-        // // _panel.Background(solidColor);
-        // //
-        // // ANYTHING WE DO TO THE SWAPCHAINPANEL on this thread is NOT the UI thread. It can't _possibly_ be.
-
         printf("Hey dummy, we're not using Attach() anymore\n");
     }
 
     void HostClass::BeginRendering()
     {
-        // IDXGISwapChain1* swapChain; // = _getSwapchainFromMyRenderer();
-
-        // // DANGER: I'm fairly certain that this needs to be called on the
-        // // `SwapChainPanel`s UI thread. So we may be slightly out of luck here.
-        // // Unless we can just
-        // //   co_await winrt::resume_foreground(_panel.Dispatcher());
-        // // But that's a thread in another process!
-
-        // auto nativePanel = _panel.as<ISwapChainPanelNative>();
-        // nativePanel->SetSwapChain(swapChain);
-
-        // Holy crap look at:
-        // ISwapChainPanelNative2::SetSwapChainHandle method
-        // https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-        //
-        // SetSwapChain(HANDLE swapChainHandle) allows a swap chain to be
-        // rendered by referencing a shared handle to the swap chain. This
-        // enables scenarios where a swap chain is created in one process and
-        // needs to be passed to another process.
-        //
-        // XAML supports setting a DXGI swap chain as the content of a
-        // SwapChainPanel element. Apps accomplish this by querying for the
-        // ISwapChainPanelNative interface from a SwapChainPanel instance and
-        // calling SetSwapChain(IDXGISwapChain *swapChain).
-        //
-        // This process works for pointers to in process swap chains. However,
-        // this doesn’t work for VoIP apps, which use a two-process model to
-        // enable continuing calls on a background process when a foreground
-        // process is suspended or shut down. This two-process implementation
-        // requires the ability to pass a shared handle to a swap chain, rather
-        // than a pointer, created on the background process to the foreground
-        // process to be rendered in a XAML SwapChainPanel in the foreground
-        // app.
-
-        // I _believe_ this will work something like:
-        //
-        // HANDLE hSwapChain;
-        // auto nativePanel2 = _panel.as<ISwapChainPanelNative2>();
-        // nativePanel2->SetSwapChainHandle(hSwapChain);
-        //
-        // But I'm not sure yet.
-
         _InitializeTerminal();
     }
 

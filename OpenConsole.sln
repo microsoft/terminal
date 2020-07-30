@@ -322,11 +322,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScratchWinRTServer", "src\t
 		{48D21369-3D7B-4431-9967-24E81292CF62} = {48D21369-3D7B-4431-9967-24E81292CF62}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScratchWinRTClient", "src\tools\ScratchWinRTClient\ScratchWinRTClient.vcxproj", "{06382349-D62A-4C7D-A7D3-9CA817EAE092}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D46D9547-F085-4645-B8F7-E8CD21559AB4} = {D46D9547-F085-4645-B8F7-E8CD21559AB4}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScratchIsland", "src\tools\ScratchIsland\ScratchIsland.vcxproj", "{23A1F736-CD19-4196-980F-84BCD50CF783}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D46D9547-F085-4645-B8F7-E8CD21559AB4} = {D46D9547-F085-4645-B8F7-E8CD21559AB4}

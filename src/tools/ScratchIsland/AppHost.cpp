@@ -143,33 +143,13 @@ void AppHost::Initialize()
 
 winrt::fire_and_forget AppHost::_createHost()
 {
-    // {
-    //     auto nativePanel2 = _swp0.as<ISwapChainPanelNative2>();
-    //     nativePanel2;
-    // }
-
     co_await winrt::resume_background();
-    // {
-    //     auto nativePanel2 = _swp0.as<ISwapChainPanelNative2>();
-    //     nativePanel2;
-    // }
 
     auto host0 = _manager.CreateHost();
 
     co_await winrt::resume_foreground(_swp0.Dispatcher());
 
     host0.CreateSwapChain(_swp0);
-
-    // wil::unique_handle _swapChainHandle;
-    // DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle);
-    // wil::unique_handle otherProcess = OpenProcess(contentProcessPid);
-    // HANDLE otherGuysHandleId = INVALID_HANDLE_VALUE;
-    // BOOL ret = DuplicateHandle(GetCurrentProcessHandle(), swapChainHandle.get(), otherProcess.get(), &otherGuysHandleId, 0, FALSE, DUPLICATE_SAME_ACCESS)
-    // HANDLE otherGuysHandleId = DuplicateHandle(otherProcess.get(), _swapChainHandle.get());
-    // StupidWinRtApiThatTakesInt64(otherGuysHandleId);
-
-    // host0.Attach(_swp0);
-
 
     _swp0_layoutUpdatedRevoker = _swp0.LayoutUpdated(winrt::auto_revoke, [this, host0](auto /*s*/, auto /*e*/) {
         // This event fires every time the layout changes, but it is always the last one to fire

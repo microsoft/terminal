@@ -1,7 +1,6 @@
 #pragma once
 
 #include "HostClass.g.h"
-#include "IMyComInterface.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
@@ -11,16 +10,11 @@
 
 namespace winrt::ScratchWinRTServer::implementation
 {
-    struct HostClass : HostClassT<HostClass, IMyComInterface>
+    struct HostClass : HostClassT<HostClass>
     {
         HostClass(const winrt::guid& g);
         ~HostClass();
         void DoTheThing();
-
-        int DoCount();
-        winrt::guid Id();
-
-        HRESULT __stdcall Call() override;
 
         void Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel);
         void BeginRendering();
