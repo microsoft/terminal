@@ -1795,7 +1795,7 @@ namespace winrt::TerminalApp::implementation
                 tab->SetFocused(true);
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, Title());
+                _titleChangeHandlers(*this, tab->GetActiveTitle());
 
                 // Raise an event that our titlebar color changed
                 std::optional<Windows::UI::Color> color = tab->GetTabColor();
