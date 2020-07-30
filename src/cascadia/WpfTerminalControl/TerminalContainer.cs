@@ -125,6 +125,20 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
+        /// Gets the selected text from the terminal renderer and clears the selection.
+        /// </summary>
+        /// <returns>The selected text, empty if no text is selected.</returns>
+        internal string GetSelectedText()
+        {
+            if (NativeMethods.TerminalIsSelectionActive(this.terminal))
+            {
+                return NativeMethods.TerminalGetSelection(this.terminal);
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// Triggers a refresh of the terminal with the given size.
         /// </summary>
         /// <param name="renderSize">Size of the rendering window.</param>
