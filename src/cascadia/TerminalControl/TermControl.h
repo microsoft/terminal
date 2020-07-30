@@ -100,7 +100,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
+                                                               const int32_t& fontSize,
+                                                               const winrt::Windows::UI::Text::FontWeight& fontWeight,
+                                                               const winrt::hstring& fontFace,
+                                                               const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                               const winrt::hstring& padding,
+                                                               const uint32_t dpi);
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------

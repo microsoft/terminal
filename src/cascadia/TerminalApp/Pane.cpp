@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -919,6 +920,102 @@ bool Pane::CanSplit(SplitState splitType)
     }
 
     return false;
+}
+
+// Method Description:
+// - This is a helper to determine if a given Pane can be split, but without
+//   using the ActualWidth() and ActualHeight() methods. This is used during
+//   processing of many "split-pane" commands, which could happen _before_ we've
+//   laid out a Pane for the first time. When this happens, the Pane's don't
+//   have an actual size yet. However, we'd still like to figure out if the pane
+//   could be split, once they're all laid out.
+// - This method assumes that the Pane we're attempting to split is `target`,
+//   and this method should be called on the root of a tree of Panes.
+// - We'll walk down the tree attempting to find `target`. As we traverse the
+//   tree, we'll reduce the size passed to each subsequent recursive call. The
+//   size passed to this method represents how much space this Pane _will_ have
+//   to use.
+//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//     available space to calculate which direction to split in.
+//   * If this pane is _any other leaf_, then just return nullopt, to indicate
+//     that the `target` Pane is not down this branch.
+//   * If this pane is a parent, calculate how much space our children will be
+//     able to use, and recurse into them.
+// Arguments:
+// - target: The Pane we're attempting to split.
+// - splitType: The direction we're attempting to split in.
+// - availableSpace: The theoretical space that's available for this pane to be able to split.
+// Return Value:
+// - nullopt if `target` is not this pane or a child of this pane, otherwise
+//   true iff we could split this pane, given `availableSpace`
+// Note:
+// - This method is highly similar to Pane::PreCalculateAutoSplit
+std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                               SplitState splitType,
+                                               const winrt::Windows::Foundation::Size availableSpace) const
+{
+    if (_IsLeaf())
+    {
+        if (target.get() == this)
+        {
+            // If this pane is a leaf, and it's the pane we're looking for, use
+            // the available space to calculate which direction to split in.
+            const Size minSize = _GetMinSize();
+
+            if (splitType == SplitState::None)
+            {
+                return { false };
+            }
+
+            else if (splitType == SplitState::Vertical)
+            {
+                const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+                const auto newWidth = widthMinusSeparator * Half;
+
+                return { newWidth > minSize.Width };
+            }
+
+            else if (splitType == SplitState::Horizontal)
+            {
+                const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+                const auto newHeight = heightMinusSeparator * Half;
+
+                return { newHeight > minSize.Height };
+            }
+        }
+        else
+        {
+            // If this pane is _any other leaf_, then just return nullopt, to
+            // indicate that the `target` Pane is not down this branch.
+            return std::nullopt;
+        }
+    }
+    else
+    {
+        // If this pane is a parent, calculate how much space our children will
+        // be able to use, and recurse into them.
+
+        const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        const float firstWidth = isVerticalSplit ?
+                                     (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+                                     availableSpace.Width;
+        const float secondWidth = isVerticalSplit ?
+                                      (availableSpace.Width - firstWidth) - PaneBorderSize :
+                                      availableSpace.Width;
+        const float firstHeight = !isVerticalSplit ?
+                                      (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+                                      availableSpace.Height;
+        const float secondHeight = !isVerticalSplit ?
+                                       (availableSpace.Height - firstHeight) - PaneBorderSize :
+                                       availableSpace.Height;
+
+        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, { secondWidth, secondHeight });
+    }
+
+    // We should not possibly be getting here - both the above branches should
+    // return a value.
+    FAIL_FAST();
 }
 
 // Method Description:

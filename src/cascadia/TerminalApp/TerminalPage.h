@@ -56,7 +56,8 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
-        void SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions);
+        void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
+        static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
@@ -106,8 +107,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
-        winrt::fire_and_forget _ProcessStartupActions();
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -221,6 +222,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleExecuteCommandline(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
