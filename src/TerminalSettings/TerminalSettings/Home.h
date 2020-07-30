@@ -12,10 +12,10 @@ namespace winrt::SettingsControl::implementation
         SettingsControl::SettingsControlViewModel HomeViewModel();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void OnHomeGridItemClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void HomeGridItemClickHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::ItemClickEventArgs const& args);
 
         private:
-        SettingsControl::SettingsControlViewModel m_homeViewModel{ nullptr };
+            SettingsControl::SettingsControlViewModel m_homeViewModel{ nullptr };
     };
 }
 
