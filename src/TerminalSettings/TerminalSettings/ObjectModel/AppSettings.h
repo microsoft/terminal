@@ -59,8 +59,8 @@ namespace winrt::ObjectModel::implementation
 
         AppSettings Clone() { return AppSettings(); }
 
-        //GlobalSettings Globals;
-        std::vector<Profile> Profiles;
+        // GlobalSettings Globals;
+        // std::vector<Profile> Profiles;
         std::map<hstring, ColorScheme> Schemes;
         std::map<KeyChord, Action> Keybindings;
     };

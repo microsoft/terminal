@@ -133,10 +133,10 @@
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                        <TextBox Header="Command line" Margin="0,0,0,10" />
-                        <TextBox Header="Starting directory" Margin="0,0,0,10" />
-                        <TextBox Header="Icon" Margin="0,0,0,10" />
-                        <TextBox Header="Tab title" Margin="0,0,0,10" />
+                        <TextBox Header="Command line" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Commandline, Mode=TwoWay}"/>
+                        <TextBox Header="Starting directory" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.StartingDirectory, Mode=TwoWay}"/>
+                        <TextBox Header="Icon" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Icon, Mode=TwoWay}"/>
+                        <TextBox Header="Tab title" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.TabTitle, Mode=TwoWay}"/>
                         <Controls:RadioButtons Header="Scrollbar visibility" Margin="0,0,0,10">
                             <RadioButton x:Name="ScrollBarVisible" Content="Visible"/>
                             <RadioButton x:Name="ScrollBarHidden" Content="Hidden"/>
@@ -161,9 +161,9 @@
 
                     
                     <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,100,0">
-                        <CheckBox Content="Enable acrylic" />
-                        <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,10" Value="0.5" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" />
-                        <TextBox Header="Background image" Margin="0,0,0,10" />
+                        <CheckBox Content="Enable acrylic" IsChecked="{x:Bind ProfileModel.Profile.UseAcrylic, Mode=TwoWay}"/>
+                        <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,10" Value="{x:Bind ProfileModel.Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" />
+                        <TextBox Header="Background image" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.BackgroundImage, Mode=TwoWay}"/>
                         <Controls:RadioButtons Header="Background image stretch mode" Margin="0,0,0,10">
                             <RadioButton x:Name="backgroundImageStretchModeNone" Content="none"/>
                             <RadioButton x:Name="backgroundImageStretchModeFill" Content="fill"/>
@@ -185,14 +185,14 @@
                                 </MenuFlyout>
                             </DropDownButton.Flyout>
                         </DropDownButton>
-                        <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,10" Value="100" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
-                        <CheckBox Content="Retro terminal effects" />
+                        <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,10" Value="{x:Bind ProfileModel.Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" />
+                        <CheckBox Content="Retro terminal effects" IsChecked="{x:Bind ProfileModel.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                     </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,80,0">
-                            <TextBox Header="Font face" Margin="0,0,0,10" />
-                            <Controls:NumberBox Header="Font size" Margin="0,0,0,10" Value="12" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" />
+                            <TextBox Header="Font face" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.FontFace, Mode=TwoWay}"/>
+                            <Controls:NumberBox Header="Font size" Margin="0,0,0,10" Value="{x:Bind ProfileModel.Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" />
                             <TextBox Header="Font weight" Margin="0,0,0,10"/>
-                            <TextBox Header="Padding" Margin="0,0,0,10" />
+                            <TextBox Header="Padding" Margin="0,0,0,10" Text="{x:Bind ProfileModel.Profile.Padding, Mode=TwoWay}"/>
                             <Controls:RadioButtons Header="Cursor shape" Margin="0,0,0,10">
                                 <RadioButton x:Name="CursorShapeBar" Content="Bar"/>
                                 <RadioButton x:Name="CursorShapeVintage" Content="Vintage"/>

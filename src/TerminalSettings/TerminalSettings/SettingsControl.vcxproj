@@ -143,6 +143,9 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ObjectModel\ProfileModel.h">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -260,6 +263,9 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ObjectModel\ProfileModel.cpp">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Profiles.cpp">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -300,6 +306,8 @@
     </Midl>
     <Midl Include="ObjectModel\GlobalSettings.idl" />
     <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
+    <Midl Include="ObjectModel\Profile.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
