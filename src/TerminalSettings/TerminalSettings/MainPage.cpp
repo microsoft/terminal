@@ -17,8 +17,9 @@ namespace winrt
     namespace MUX = Microsoft::UI::Xaml;
 }
 
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::TerminalSettings::implementation;
+using namespace winrt::ObjectModel::implementation;
 
 namespace winrt::SettingsControl::implementation
 {
@@ -93,8 +94,27 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemContainer != NULL)
         {
-            Navigate(unbox_value<hstring>(clickedItemContainer.Tag()));
+            Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
         }
+    }
+
+    void MainPage::SettingsNav_BackRequested(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewBackRequestedEventArgs const& args)
+    {
+        On_BackRequested();
+    }
+
+    bool MainPage::On_BackRequested()
+    {
+        if (!contentFrame().CanGoBack())
+            return false;
+
+        if (SettingsNav().IsPaneOpen() &&
+            (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(1) ||
+             SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(0)))
+            return false;
+
+        contentFrame().GoBack();
+        return true;
     }
 
     void MainPage::AutoSuggestBox_TextChanged(IInspectable const &sender, const Controls::AutoSuggestBoxTextChangedEventArgs args)
@@ -114,14 +134,15 @@ namespace winrt::SettingsControl::implementation
         auto selectItem = args.SelectedItem().as<Windows::Foundation::IPropertyValue>().GetString();
         Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
 
-        Navigate(SearchList.at(args.SelectedItem()));
+        Navigate(contentFrame(), SearchList.at(args.SelectedItem()));
     }
 
     void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox &autoBox)
     {
         Windows::Foundation::Collections::IVector<IInspectable> suggestions = single_threaded_vector<IInspectable>();
+        std::vector<IInspectable> rawSuggestions;
 
-        for (std::map<IInspectable, hstring>::iterator it = SearchList.begin(); it != SearchList.end(); ++it)
+        for (auto& it = SearchList.begin(); it != SearchList.end(); ++it)
         {
             auto value = it->first;
             hstring item = value.as<Windows::Foundation::IPropertyValue>().GetString();
@@ -136,26 +157,25 @@ namespace winrt::SettingsControl::implementation
 
             if (std::wcsstr(item.c_str(), query.c_str()))
             {
-                bool added = false;
-                for (int i = 0; i < suggestions.Size(); ++i)
-                {
-                    if (value.as<Windows::Foundation::IPropertyValue>().GetString() < suggestions.GetAt(i).as<Windows::Foundation::IPropertyValue>().GetString())
-                    {
-                        suggestions.InsertAt(i, value);
-                        added = true;
-                        break;
-                    }
-                }
-                if (added == false)
-                {
-                    suggestions.Append(value);
-                }
+                rawSuggestions.emplace_back(value);
             }
         }
+
+        // perform sort comparing strings inside of IPropertyValues
+        std::sort(rawSuggestions.begin(), rawSuggestions.end(), [](const IInspectable& a, const IInspectable& b) -> bool {
+            return a.as<IPropertyValue>().GetString() < b.as<IPropertyValue>().GetString();
+        });
+
+        // Pass all elements from rawSuggestions to suggestions
+        for (const auto& suggestion : rawSuggestions)
+        {
+            suggestions.Append(suggestion);
+        }
+
         autoBox.ItemsSource(suggestions);
     }
 
-    void MainPage::Navigate(hstring clickedItemTag)
+    void MainPage::Navigate(Controls::Frame contentFrame, hstring clickedItemTag)
     {
         const hstring homePage = L"Home_Nav";
         const hstring generalPage = L"General_Nav";
@@ -175,39 +195,39 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemTag == homePage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Home>());
         }
         else if (clickedItemTag == launchSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Launch>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Launch>());
         }
         else if (clickedItemTag == interactionSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Interaction>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Interaction>());
         }
         else if (clickedItemTag == renderingSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Rendering>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Rendering>());
         }
         else if (clickedItemTag == globalprofileSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Profiles>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Profiles>());
         }
         else if (clickedItemTag == addnewSubpage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::AddProfile>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::AddProfile>());
         }
         else if (clickedItemTag == colorSchemesPage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::ColorSchemes>());
         }
         else if (clickedItemTag == globalAppearancePage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
         }
         else if (clickedItemTag == keybindingsPage)
         {
-            contentFrame().Navigate(xaml_typename<SettingsControl::Keybindings>());
+            contentFrame.Navigate(xaml_typename<SettingsControl::Keybindings>());
         }
     }
 }

@@ -1,0 +1,10 @@
+import "HomeGridItem.idl";
+
+namespace SettingsControl
+{
+    runtimeclass SettingsControlViewModel
+    {
+        HomeGridItem HomeGridItem{ get; };
+        Windows.Foundation.Collections.IObservableVector<HomeGridItem> HomeGridItems{ get; };
+    }
+}

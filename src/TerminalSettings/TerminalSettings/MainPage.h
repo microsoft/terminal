@@ -14,7 +14,9 @@ namespace winrt::SettingsControl::implementation
         void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void SettingsNav_SelectionChanged(const Microsoft::UI::Xaml::Controls::NavigationView sender, const Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs args);
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
-        void Navigate(hstring clickedItemTag);
+        void SettingsNav_BackRequested(Microsoft::UI::Xaml::Controls::NavigationView const&, Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& args);
+        bool On_BackRequested();
+        void Navigate(Windows::UI::Xaml::Controls::Frame contentFrame, hstring clickedItemTag);
 
         std::map<IInspectable, hstring> SearchList;
 
@@ -26,8 +28,8 @@ namespace winrt::SettingsControl::implementation
     private:
         // XAML should data-bind to the _settingsClone
         // When "save" is pressed, _settingsSource = _settingsClone
-        winrt::TerminalSettings::implementation::AppSettings _settingsSource;
-        winrt::TerminalSettings::implementation::AppSettings _settingsClone;
+        winrt::ObjectModel::implementation::AppSettings _settingsSource;
+        winrt::ObjectModel::implementation::AppSettings _settingsClone;
     };
 }
 
