@@ -97,7 +97,7 @@ namespace winrt::SettingsControl::implementation
 
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::ComputerFolder);
-        picker.FileTypeFilter().ReplaceAll({ L".bat" });
+        picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe" });
 
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
