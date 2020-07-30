@@ -27,6 +27,12 @@
     </Midl>
     <Midl Include="HomeGridItem.idl" />
     <Midl Include="SettingsControlViewModel.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\Profile.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

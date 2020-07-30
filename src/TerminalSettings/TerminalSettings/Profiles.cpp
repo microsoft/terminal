@@ -9,36 +9,21 @@ namespace winrt::SettingsControl::implementation
 {
     Profiles::Profiles()
     {
+        m_profileModel = winrt::make<ObjectModel::implementation::ProfileModel>();
         InitializeComponent();
     }
 
-    Profiles::Profiles(winrt::hstring const& name) : m_name{ name }
+    Profiles::Profiles(ObjectModel::ProfileModel profile) :
+        m_profileModel{ profile }
     {
-
+        InitializeComponent();
     }
 
-    winrt::hstring Profiles::Name()
+    ObjectModel::ProfileModel Profiles::ProfileModel()
     {
-        return m_name;
+        return m_profileModel;
     }
 
-    void Profiles::Name(winrt::hstring const& value)
-    {
-        if (m_name != value)
-        {
-
-        }
-    }
-
-    int32_t Profiles::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void Profiles::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
-    }
 
     void Profiles::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {

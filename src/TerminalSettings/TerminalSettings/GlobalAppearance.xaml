@@ -27,15 +27,15 @@
                 <RadioButton x:Name="DarkTheme" Content="Dark"/>
                 <RadioButton x:Name="LightTheme" Content="Light"/>
             </Controls:RadioButtons>
-            <CheckBox Content="Show the title bar" />
-            <CheckBox Content="Show terminal title in title bar" />
-            <CheckBox Content="Always show tabs" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitlebar, Mode=TwoWay}" Content="Show the title bar" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Content="Show terminal title in title bar" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Content="Always show tabs" />
             <Controls:RadioButtons Header="Tab width mode" Margin="0,0,0,10">
                 <RadioButton x:Name="EqualTabWidthMode" Content="Equal"/>
                 <RadioButton x:Name="TitleLengthTabWidthMode" Content="Title length"/>
                 <RadioButton x:Name="CompactTabWidthMode" Content="Compact"/>
             </Controls:RadioButtons>
-            <CheckBox Content="Hide close all tabs popup" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Content="Show close all tabs popup" />
         </StackPanel>
     </Grid>
 </Page>

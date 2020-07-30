@@ -1,0 +1,9 @@
+import "ObjectModel/Profile.idl";
+
+namespace ObjectModel
+{
+    runtimeclass ProfileModel
+    {
+        Profile Profile { get; };
+    }
+}
