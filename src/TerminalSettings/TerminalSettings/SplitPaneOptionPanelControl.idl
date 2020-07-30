@@ -1,0 +1,13 @@
+namespace SettingsControl
+{
+    [default_interface]
+    runtimeclass SplitPaneOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        SplitPaneOptionPanelControl();
+        Int32 MyProperty;
+
+        String Argument();
+        String InputValue();
+        
+    }
+}

@@ -15,6 +15,8 @@
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="Home.xaml" />
     <Page Include="AddProfile.xaml" />
+    <Page Include="MyUserControl.xaml" />
+    <Page Include="NewTabOptionPanelControl.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />
@@ -51,6 +53,7 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="ProfileModel.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
       <Filter>ObjectModel</Filter>
@@ -72,6 +75,7 @@
     <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="ProfileModel.h" />
     <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
       <Filter>ObjectModel</Filter>
