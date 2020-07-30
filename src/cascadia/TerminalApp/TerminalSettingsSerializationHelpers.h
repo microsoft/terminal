@@ -270,3 +270,30 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
         pair_type{ "allFiles", ValueType::AllFiles },
     };
 };
+
+template<>
+struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::ThemeColor>
+{
+    ::TerminalApp::ThemeColor FromJson(const Json::Value& json)
+    {
+        ::TerminalApp::ThemeColor ret;
+        std::string str{ json.asString() };
+        if (str == "accent")
+        {
+            ret.type = ::TerminalApp::ColorType::Accent;
+            ret.value = til::color{ 0xff0000 };
+        }
+        else
+        {
+            ret.type = ::TerminalApp::ColorType::Value;
+            const auto value{ JsonUtils::GetValue<til::color>(json) };
+            ret.value = value;
+        }
+        return ret;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isString();
+    }
+};

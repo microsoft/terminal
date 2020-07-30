@@ -632,6 +632,11 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        // TODO TOMORROW
+        // This doesn't work, presumably because I'm trying to set these resources before the tabview exists.
+
+        newTabImpl->SetTabColor(_settings->GlobalSettings().Theme()->TabRowBackground().value.value());
+
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
 

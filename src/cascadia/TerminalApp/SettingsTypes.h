@@ -25,4 +25,19 @@ namespace TerminalApp
         std::optional<int> x;
         std::optional<int> y;
     };
+
+    enum class ColorType
+    {
+        Value = 0,
+        Accent,
+        TerminalBackground,
+        TerminalForeground,
+        ResourceKey
+    };
+
+    struct ThemeColor
+    {
+        ColorType type{ ColorType::Value };
+        std::optional<til::color> value{ 0xff00ff };
+    };
 };

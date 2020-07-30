@@ -7,6 +7,7 @@
 #include "../../types/inc/Utils.hpp"
 #include "Utils.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace ::Microsoft::Console;
 using namespace TerminalApp;
@@ -15,6 +16,7 @@ using namespace winrt::Microsoft::Terminal::Settings;
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view WindowApplicationThemeKey{ "window.applicationTheme" };
 // static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view TabRowBackgroundKey{ "tabRow.background" };
 
 Theme::Theme()
 {
@@ -81,7 +83,7 @@ void Theme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, WindowApplicationThemeKey, _ApplicationTheme);
     // JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
-    // JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
+    JsonUtils::GetValueForKey(json, TabRowBackgroundKey, _TabRowBackground);
 }
 
 // Method Description:

@@ -16,6 +16,7 @@ Author(s):
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../inc/conattrs.hpp"
 #include "../inc/cppwinrt_utils.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -45,6 +46,7 @@ public:
 
     GETSET_PROPERTY(winrt::hstring, Name);
     GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, ApplicationTheme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+    GETSET_PROPERTY(::TerminalApp::ThemeColor, TabRowBackground);
 
 private:
     friend class TerminalAppLocalTests::SettingsTests;
