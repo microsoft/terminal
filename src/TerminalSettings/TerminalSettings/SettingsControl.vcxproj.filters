@@ -21,10 +21,10 @@
   <ItemGroup>
     <Midl Include="App.idl" />
     <Midl Include="MainPage.idl" />
-    <Midl Include="ObjectModel\GlobalSettings.idl">
+    <Midl Include="ObjectModel\ColorScheme.idl">
       <Filter>ObjectModel</Filter>
     </Midl>
-    <Midl Include="ObjectModel\GlobalSettingsModel.idl">
+    <Midl Include="ObjectModel\ColorSchemeModel.idl">
       <Filter>ObjectModel</Filter>
     </Midl>
     <Midl Include="HomeGridItem.idl" />
@@ -53,6 +53,7 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp">
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="ProfileModel.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
@@ -75,6 +76,7 @@
     <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h">
     <ClInclude Include="Utils.h" />
     <ClInclude Include="ProfileModel.h" />
     <ClInclude Include="ObjectModel\GlobalSettingsModel.h">

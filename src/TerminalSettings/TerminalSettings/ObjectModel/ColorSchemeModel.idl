@@ -1,0 +1,9 @@
+import "ObjectModel/ColorScheme.idl";
+
+namespace ObjectModel
+{
+    runtimeclass ColorSchemeModel
+    {
+        ColorScheme ColorScheme { get; };
+    }
+}

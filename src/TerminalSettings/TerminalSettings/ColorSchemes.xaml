@@ -5,7 +5,7 @@
     xmlns:local="using:SettingsControl"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract"
+    xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract" xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -22,7 +22,7 @@
                    Grid.Row="0" />
         <StackPanel Grid.Row="1"
                     Grid.Column="0">
-            <DropDownButton Content="Name">
+            <Windows10version1809:DropDownButton Content="Name">
                 <DropDownButton.Flyout>
                     <MenuFlyout Placement="Bottom">
                         <MenuFlyoutItem Text="Send" />
@@ -30,233 +30,259 @@
                         <MenuFlyoutItem Text="Reply All" />
                     </MenuFlyout>
                 </DropDownButton.Flyout>
-            </DropDownButton>
+            </Windows10version1809:DropDownButton>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Background"
-                         Width="100"
-                         TextChanged="TextBox_TextChanged" />
-                <Button Background="Black"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Black" Width="100" />
-                <Button Background="Black"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True"
-                                />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Blue"
-                         Width="100" />
-                <Button Background="Blue"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                        <Button.Flyout>
-                            <Flyout>
-                                <StackPanel>
-                                    <ColorPicker IsColorSliderVisible="False"
-                                                 IsColorChannelTextInputVisible="False"
-                                                 IsHexInputVisible="False"
-                                                 IsAlphaEnabled="False"
-                                                 IsAlphaSliderVisible="True"
-                                                 IsAlphaTextInputVisible="True" />
-                                </StackPanel>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Cyan"
-                         Width="100" />
-                <Button Background="Cyan"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Green"
-                         Width="100" />
-                <Button Background="Green"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Purple"
-                         Width="100" />
-                <Button Background="Purple"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Red"
-                         Width="100" />
-                <Button Background="Red"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="White"
-                         Width="100" />
-                <Button Background="WhiteSmoke"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBox Header="Yellow"
-                         Width="100" />
-                <Button Background="Yellow"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Background"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BackgroundHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BackgroundBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Background_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Black"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BlackHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BlackBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Black_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Blue"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BlueHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BlueBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Blue_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Cyan"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.CyanHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.CyanBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Cyan_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Green"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.GreenHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.GreenBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Green_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Purple"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.PurpleHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.PurpleBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Purple_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Red"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.RedHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.RedBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Red_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="White"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.WhiteHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.WhiteBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="White_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
+<StackPanel Grid.Row="1"
+            Grid.Column="0"
+            Orientation="Horizontal">
+    <TextBox Header="Yellow"
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.YellowHexValue, Mode=TwoWay}"
+                />
+    <Button Background="{x:Bind ColorSchemeModel.ColorScheme.YellowBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
+        <Button.Flyout>
+            <Flyout>
+                <StackPanel>
+                    <ColorPicker IsColorSliderVisible="False"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Yellow_ColorChanged"/>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal">
@@ -265,226 +291,252 @@
         <StackPanel Grid.Row="1"
                     Grid.Column="1">
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Foreground"
-                         Width="100"
-                         TextChanged="TextBox_TextChanged" />
-                <Button Background="White"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.ForegroundHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.ForegroundBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="Foreground_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Black"
-                         Width="100" />
-                <Button Background="DimGray"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightBlackHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightBlackBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightBlack_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Blue"
-                         Width="100" />
-                <Button Background="LightBlue"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightBlueHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightBlueBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightBlue_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Cyan"
-                         Width="100" />
-                <Button Background="LightCyan"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightCyanHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightCyanBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightCyan_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Green"
-                         Width="100" />
-                <Button Background="LightGreen"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightGreenHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightGreenBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightGreen_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Purple"
-                         Width="100" />
-                <Button Background="MediumPurple"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightPurpleHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightPurpleBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightPurple_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Red"
-                         Width="100" />
-                <Button Background="IndianRed"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightRedHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightRedBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightRed_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright White"
-                         Width="100" />
-                <Button Background="White"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightWhiteHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightWhiteBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightWhite_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>
             <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+            Grid.Column="0"
+            Orientation="Horizontal">
                 <TextBox Header="Bright Yellow"
-                         Width="100" />
-                <Button Background="LightYellow"
-                        BorderBrush="{StaticResource SystemBaseLowColor}"
-                        Height="37"
-                        Width="37"
-                        Margin="10,22,0,0"
-                        CornerRadius="2">
+                Width="100"
+                Text = "{x:Bind ColorSchemeModel.ColorScheme.BrightYellowHexValue, Mode=TwoWay}"
+                />
+                <Button Background="{x:Bind ColorSchemeModel.ColorScheme.BrightYellowBrush, Mode=OneWay}"
+            BorderBrush="{StaticResource SystemBaseLowColor}"
+            Height="37"
+            Width="37"
+            Margin="10,22,0,0"
+            CornerRadius="2">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <ColorPicker IsColorSliderVisible="False"
-                                             IsColorChannelTextInputVisible="False"
-                                             IsHexInputVisible="False"
-                                             IsAlphaEnabled="False"
-                                             IsAlphaSliderVisible="True"
-                                             IsAlphaTextInputVisible="True" />
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="False"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="True"
+                                    IsAlphaTextInputVisible="True"
+                                    ColorChanged ="BrightYellow_ColorChanged"/>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>

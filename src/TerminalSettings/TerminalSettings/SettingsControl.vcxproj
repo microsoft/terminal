@@ -139,6 +139,7 @@
     </ClInclude>
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
     <ClInclude Include="ObjectModel\GlobalSettings.h" />
     <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
     <ClInclude Include="ObjectModel\Profile.h" />
@@ -269,6 +270,7 @@
     </ClCompile>
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
     <ClCompile Include="ObjectModel\Profile.cpp" />
@@ -299,6 +301,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="ObjectModel\ColorScheme.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -324,6 +327,7 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
     <Midl Include="ObjectModel\GlobalSettings.idl" />
     <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
     <Midl Include="ObjectModel\Profile.idl" />
