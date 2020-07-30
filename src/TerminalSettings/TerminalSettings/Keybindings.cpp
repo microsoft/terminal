@@ -4,11 +4,13 @@
 #include "Keybindings.g.cpp"
 #endif
 
+#include "Utils.h"
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Input.h>
+#include <winrt/Windows.UI.Popups.h>
 
 using namespace winrt;
 using namespace Windows::Foundation;
@@ -23,7 +25,10 @@ namespace winrt::SettingsControl::implementation
     {
         InitializeComponent();
 
-        Controls::TextBox tb = FindName(L"asdf").as<Controls::TextBox>();
+        m_optionalSettingsPanel = FindName(L"OptionalSettingsPanel").as<Controls::StackPanel>();
+        m_addNewButton = FindName(L"AddNewLink").as<Controls::HyperlinkButton>();
+
+        Controls::TextBox tb = FindName(L"KeyBindTextBox").as<Controls::TextBox>();
         tb.KeyDown({ this, &Keybindings::KeyDown });
 
         // tb.BeforeTextChanging({this, &Keybindings::asdf_BeforeTextChanging})
@@ -54,100 +59,45 @@ namespace winrt::SettingsControl::implementation
         }   
     }
 
-    void Keybindings::Button_Click_1(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
-    {
-        Popup popup = FindName(L"StandardPopup").as<Popup>();
-
-        if (popup.IsOpen())
-        {
-            popup.IsOpen(false);
-        }
-    }
-
-    void Keybindings::HyperlinkButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void Keybindings::AddNewButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
         hstring setting = GetSelectedItemTag(FindName(L"CommandComboBox"));
 
-        Controls::StackPanel panel = FindName(setting + L"OptionPanel").as<Controls::StackPanel>();
-        panel.Visibility(Visibility::Visible);
-    }
+        Controls::StackPanel panel{};
 
-    // This can be used to populate a map<VirtualKey, hstring> to perform conversions from key lists to hstring and viceversa
-    hstring Keybindings::KeyToString(VirtualKey key)
-    {
-        hstring generatedString;
-
-        if (key >= VirtualKey::F1 && key <= VirtualKey::F24)
+        if (setting == c_moveFocusTag || setting == c_resizePaneTag)
         {
-            return L"F" + hstring(std::to_wstring((int)key - (int)VirtualKey::F1 + 1));
+            panel = FindName(L"moveResizeFocusOptionPanel").as<Controls::StackPanel>();
+            panel.Visibility(Visibility::Visible);
+        }
+        else
+        {
+            panel = FindName(setting + L"OptionPanel").as<Controls::StackPanel>();
+            bool panelWasVisible = (panel.Visibility() == Visibility::Visible);
+            panel.Visibility(Visibility::Visible);
+            m_lastOpenedArgsPanel = panel;
+
+            Controls::HyperlinkButton button = sender.as<Controls::HyperlinkButton>();
+            if (setting == c_splitPaneTag)
+            {
+                if (panelWasVisible)
+                {
+                    panel.Children().Append(SplitPaneOptionPanelControl());
+                }
+                button.Visibility(Visibility::Visible);
+            }
+            else if (setting == c_newTabTag)
+            {
+                panel.Children().Append(NewTabOptionPanelControl());
+                button.Visibility(Visibility::Visible);
+            }
+            else
+            {
+                button.Visibility(Visibility::Collapsed);
+            }
         }
 
-        if (key >= VirtualKey::A && key <= VirtualKey::Z)
-        {
-            return hstring(std::wstring(1, (wchar_t)key));
-        }
-
-        if (key >= VirtualKey::Number0 && key <= VirtualKey::Number9)
-        {
-            return hstring(std::to_wstring((int)key - (int)VirtualKey::Number0));
-        }
-
-        if (key >= VirtualKey::NumberPad0 && key <= VirtualKey::NumberPad9)
-        {
-            return L"numpad_" + hstring(std::to_wstring((int)key - (int)VirtualKey::NumberPad0));
-        }
-
-        switch (key)
-        {
-        case VirtualKey::Control:
-            return L"ctrl+";
-        case VirtualKey::Shift:
-            return L"shift+";
-        case VirtualKey::Menu:
-            return L"alt+";
-        case VirtualKey::Add:
-            return L"plus";
-        case VirtualKey::Subtract:
-            return L"-";
-        case VirtualKey::Divide:
-            return L"/";
-        case VirtualKey::Decimal:
-            return L".";
-        case VirtualKey::Left:
-            return L"left";
-        case VirtualKey::Down:
-            return L"down";
-        case VirtualKey::Right:
-            return L"right";
-        case VirtualKey::Up:
-            return L"up";
-        case VirtualKey::PageDown:
-            return L"pagedown";
-        case VirtualKey::PageUp:
-            return L"pageup";
-        case VirtualKey::End:
-            return L"end";
-        case VirtualKey::Home:
-            return L"home";
-        case VirtualKey::Tab:
-            return L"tab";
-        case VirtualKey::Enter:
-            return L"enter";
-        case VirtualKey::Escape:
-            return L"esc";
-        case VirtualKey::Space:
-            return L"space";
-        case VirtualKey::Back:
-            return L"backspace";
-        case VirtualKey::Delete:
-            return L"delete";
-        case VirtualKey::Insert:
-            return L"insert";
-        default:
-            return L"";
-        }
-
-        return L"";
+        m_lastOpenedArgsPanel = panel;
     }
 
     hstring Keybindings::GetKeyListString()
@@ -214,7 +164,7 @@ namespace winrt::SettingsControl::implementation
         e.Handled(true);
     }
 
-    void Keybindings::asdf_TextChanging(winrt::Windows::UI::Xaml::Controls::TextBox const& sender, winrt::Windows::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& args)
+    void Keybindings::KeyBindTextBox_TextChanging(winrt::Windows::UI::Xaml::Controls::TextBox const& sender, winrt::Windows::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& args)
     {
         hstring currText = sender.Text();
         hstring newText = hstring(currText.data(), currText.size());
@@ -235,15 +185,17 @@ namespace winrt::SettingsControl::implementation
         settingsWithOptions.insert(c_splitPaneTag);
         settingsWithOptions.insert(c_copyTag);
 
-        Controls::StackPanel optionalSettingsPanel = FindName(L"OptionalSettingsPanel").as<Controls::StackPanel>();
-        Controls::HyperlinkButton addNewButton = FindName(L"AddNewLink").as<Controls::HyperlinkButton>();
         Windows::UI::Xaml::Visibility expectedVisibility = Visibility::Collapsed;
         if (settingsWithOptions.find(tag) != settingsWithOptions.end())
         {
             expectedVisibility = Visibility::Visible;
         }
-        optionalSettingsPanel.Visibility(expectedVisibility);
-        addNewButton.Visibility(expectedVisibility);
+        m_optionalSettingsPanel.Visibility(expectedVisibility);
+        m_addNewButton.Visibility(expectedVisibility);
+        if (m_lastOpenedArgsPanel != nullptr)
+        {
+            m_lastOpenedArgsPanel.Visibility(Visibility::Collapsed);
+        }
     }
 
     void Keybindings::CommandComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e)
@@ -252,12 +204,57 @@ namespace winrt::SettingsControl::implementation
         ShowOptionsButtonIfRequired(selectedItemTag);
     }
 
-    hstring Keybindings::GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable)
+    void Keybindings::SaveButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
-        Controls::ComboBox comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
-        Controls::ComboBoxItem selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();
-
-        return unbox_value<hstring>(selectedOption.Tag());
+        // Collect the information here
+        winrt::Windows::UI::Popups::MessageDialog msg{ CollectInputData() };
+        msg.ShowAsync();
     }
 
+    hstring Keybindings::TraversePanel(const Controls::Panel& panel)
+    {
+        hstring fullInfo = L"";
+
+        for (const auto panelChild : panel.Children())
+        {
+            if (Controls::ComboBox childComboBox = panelChild.try_as<Controls::ComboBox>())
+            {
+                fullInfo = fullInfo + childComboBox.Name() + L":" + GetSelectedItemTag(childComboBox);
+            }
+            else if (Controls::TextBox childTextBox = panelChild.try_as<Controls::TextBox>())
+            {
+                fullInfo = fullInfo + childTextBox.Name() + L":" + childTextBox.Text();
+            }
+            else if (SettingsControl::NewTabOptionPanelControl optionPanel = panelChild.try_as<SettingsControl::NewTabOptionPanelControl>())
+            {
+                fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
+            }
+            else if (SettingsControl::SplitPaneOptionPanelControl optionPanel = panelChild.try_as<SettingsControl::SplitPaneOptionPanelControl>())
+            {
+                fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
+            }
+            else if (Controls::Grid grid = panelChild.try_as<Controls::Grid>())
+            {
+                fullInfo = fullInfo + TraversePanel(grid);
+            }
+            fullInfo = fullInfo + L"\n";
+        }
+
+        return fullInfo;
+    }
+
+    hstring Keybindings::CollectInputData()
+    {
+        hstring fullInfo = L"";
+
+        Controls::ComboBox comboBox = FindName(L"CommandComboBox").as<Controls::ComboBox>();
+        fullInfo = fullInfo + comboBox.Name() + L":" + GetSelectedItemTag(comboBox) + L"\n";
+
+        Controls::TextBox textBox = FindName(L"KeyBindTextBox").as<Controls::TextBox>();
+        fullInfo = fullInfo + textBox.Name() + L":" + textBox.Text() + L"\n";
+
+        fullInfo = fullInfo + TraversePanel(m_lastOpenedArgsPanel);
+
+        return fullInfo;
+    }
 }

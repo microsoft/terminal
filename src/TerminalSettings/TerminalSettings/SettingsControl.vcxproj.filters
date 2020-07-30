@@ -15,6 +15,8 @@
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="Home.xaml" />
     <Page Include="AddProfile.xaml" />
+    <Page Include="MyUserControl.xaml" />
+    <Page Include="NewTabOptionPanelControl.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />
@@ -37,6 +39,7 @@
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -52,6 +55,7 @@
     <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">

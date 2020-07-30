@@ -130,6 +130,12 @@
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SplitPaneOptionPanelControl.h">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="NewTabOptionPanelControl.h">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
     <ClInclude Include="ObjectModel\GlobalSettings.h" />
@@ -148,6 +154,7 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -178,6 +185,12 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SplitPaneOptionPanelControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="NewTabOptionPanelControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles.xaml">
@@ -241,6 +254,12 @@
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SplitPaneOptionPanelControl.cpp">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="NewTabOptionPanelControl.cpp">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
     <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
@@ -262,6 +281,7 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">
@@ -308,6 +328,14 @@
     </Midl>
     <Midl Include="AddProfile.idl">
       <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SplitPaneOptionPanelControl.idl">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="NewTabOptionPanelControl.idl">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
