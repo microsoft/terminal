@@ -125,7 +125,7 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Gets the selected text from the terminal renderer.
+        /// Gets the selected text from the terminal renderer and clears the selection.
         /// </summary>
         /// <returns>The selected text, empty if no text is selected.</returns>
         internal string GetSelectedText()

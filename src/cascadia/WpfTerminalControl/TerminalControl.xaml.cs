@@ -71,7 +71,7 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// If text is selected, copies it to the clipboard, otherwise it copies the whole line.
+        /// Gets the selected text in the terminal, clearing the selection. Otherwise returns an empty string.
         /// </summary>
         /// <returns>Selected text, empty string if no content is selected.</returns>
         public string GetSelectedText()
