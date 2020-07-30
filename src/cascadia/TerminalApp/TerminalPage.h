@@ -196,6 +196,7 @@ namespace winrt::TerminalApp::implementation
 
         void _SetTabRowColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearTabRowColor();
+        til::color _EvaluateThemeColor(const ::TerminalApp::ThemeColor& themeColor, const til::color& terminalBG);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

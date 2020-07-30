@@ -635,7 +635,8 @@ namespace winrt::TerminalApp::implementation
         // TODO TOMORROW
         // This doesn't work, presumably because I'm trying to set these resources before the tabview exists.
 
-        newTabImpl->SetTabColor(_settings->GlobalSettings().Theme()->TabBackground().value.value());
+        auto tabColor = _EvaluateThemeColor(_settings->GlobalSettings().Theme()->TabBackground(), 0x0);
+        newTabImpl->SetTabColor(tabColor);
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -1944,9 +1945,10 @@ namespace winrt::TerminalApp::implementation
         _alwaysOnTopChangedHandlers(*this, nullptr);
 
         // THEME
-        auto selectedColor = _settings->GlobalSettings().Theme()->TabRowBackground().value.value();
-        Windows::UI::Color accentColor = ColorHelper::GetAccentColor(selectedColor);
-        _SetTabRowColor(selectedColor, accentColor);
+        auto tabRowColor = _EvaluateThemeColor(_settings->GlobalSettings().Theme()->TabRowBackground(), 0x0);
+        // auto selectedColor = _settings->GlobalSettings().Theme()->TabRowBackground().value.value();
+        Windows::UI::Color accentColor = ColorHelper::GetAccentColor(tabRowColor);
+        _SetTabRowColor(tabRowColor, accentColor);
     }
 
     // Method Description:
@@ -2432,6 +2434,31 @@ namespace winrt::TerminalApp::implementation
         return TabRow().TabView().Background().as<Windows::UI::Xaml::Media::SolidColorBrush>().Color();
     }
 
+    til::color TerminalPage::_EvaluateThemeColor(const ::TerminalApp::ThemeColor& themeColor,
+                                                 const til::color& /*terminalBG*/)
+    {
+        if (themeColor.type == ::TerminalApp::ColorType::Value)
+        {
+            return themeColor.value.value();
+        }
+        else if (themeColor.type == ::TerminalApp::ColorType::Accent)
+        {
+            const auto res = winrt::Windows::UI::Xaml::Application::Current().Resources();
+            const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+            if (res.HasKey(accentColorKey))
+            {
+                const auto colorFromResources = res.Lookup(accentColorKey);
+                return winrt::unbox_value_or<winrt::Windows::UI::Color>(colorFromResources, winrt::Windows::UI::Colors::Black());
+            }
+            else
+            {
+                // DON'T use Transparent here - if it's "Transparent", then it won't
+                // be able to hittest for clicks.
+                return winrt::Windows::UI::Colors::Black();
+            }
+        }
+        return 0xff00ff;
+    }
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

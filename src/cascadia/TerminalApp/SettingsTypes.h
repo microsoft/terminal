@@ -38,6 +38,6 @@ namespace TerminalApp
     struct ThemeColor
     {
         ColorType type{ ColorType::Value };
-        std::optional<til::color> value{ 0xff00ff };
+        std::optional<til::color> value{ std::nullopt };
     };
 };

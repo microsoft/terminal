@@ -281,7 +281,6 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::ThemeColor>
         if (str == "accent")
         {
             ret.type = ::TerminalApp::ColorType::Accent;
-            ret.value = til::color{ 0xff0000 };
         }
         else
         {
