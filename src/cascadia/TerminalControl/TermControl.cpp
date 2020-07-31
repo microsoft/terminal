@@ -738,7 +738,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
         const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
@@ -827,9 +831,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
         // Alt-Numpad# input will send us a character once the user releases
         // Alt, so we should be ignoring the individual keydowns. The character

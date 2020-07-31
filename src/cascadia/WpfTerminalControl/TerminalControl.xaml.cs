@@ -71,6 +71,15 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
+        /// Gets the selected text in the terminal, clearing the selection. Otherwise returns an empty string.
+        /// </summary>
+        /// <returns>Selected text, empty string if no content is selected.</returns>
+        public string GetSelectedText()
+        {
+            return this.termContainer.GetSelectedText();
+        }
+
+        /// <summary>
         /// Resizes the terminal to the specified rows and columns.
         /// </summary>
         /// <param name="rows">Number of rows to display.</param>
