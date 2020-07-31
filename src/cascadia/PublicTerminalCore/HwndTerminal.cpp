@@ -625,15 +625,19 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown) noexcept
 try
 {
-    const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
 }
 CATCH_LOG();
 
-void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode) noexcept
+void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept
 try
 {
     if (_terminal->IsSelectionActive())
@@ -653,21 +657,25 @@ try
         return;
     }
 
-    const auto flags = getControlKeyState();
-    _terminal->SendCharEvent(ch, scanCode, flags);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendCharEvent(ch, scanCode, modifiers);
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 
-void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendCharEvent(ch, scanCode);
+    publicTerminal->_SendCharEvent(ch, scanCode, flags);
 }
 
 void _stdcall DestroyTerminal(void* terminal)

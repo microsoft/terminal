@@ -20,6 +20,20 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
+        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
+        {
+            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
+            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
+            vkey = (ushort)wParam;
+        }
+
+        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
+        {
+            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
+            character = (char)vKey;
+        }
+
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -254,9 +268,9 @@ namespace Microsoft.Terminal.Wpf
                         {
                             // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                             NativeMethods.TerminalSetCursorVisible(this.terminal, true);
-                            ulong scanCode = (((ulong)lParam) & 0x00FF0000) >> 16;
 
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)scanCode, true);
+                            UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
                             this.blinkTimer?.Start();
                             break;
                         }
@@ -265,16 +279,16 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_KEYUP:
                         {
                             // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
-                            ulong scanCode = (((ulong)lParam) & 0x00FF0000) >> 16;
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)scanCode, false);
+                            UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, scanCode, flags, false);
                             break;
                         }
 
                     case NativeMethods.WindowMessage.WM_CHAR:
                         {
                             // WM_CHAR lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
-                            ulong scanCode = (((ulong)lParam) & 0x00FF0000) >> 16;
-                            NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, (ushort)scanCode);
+                            UnpackCharMessage(wParam, lParam, out char character, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendCharEvent(this.terminal, character, scanCode, flags);
                             break;
                         }
 
