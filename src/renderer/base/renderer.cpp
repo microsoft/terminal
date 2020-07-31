@@ -860,6 +860,11 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
     {
         lines |= IRenderEngine::GridLines::Right;
     }
+
+    if (textAttribute.IsCrossedOut())
+    {
+        lines |= IRenderEngine::GridLines::Strikethrough;
+    }
     return lines;
 }
 
