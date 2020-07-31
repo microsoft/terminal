@@ -34,6 +34,8 @@ another.
 
 ## Solution Design
 
+### Window and Content Processes
+
 The primary concept introduced by this spec is the idea of two types of process,
 which will work together to create a single Terminal window. These processes
 will be referred to as the "Window Process" and the "Content Process".
@@ -65,14 +67,92 @@ will be something like the following:
    hosting window.
 3. When the CP creates it's swap chain, it will raise an event which the WP will
    use to connect that swap chain to the WP's `SwapChainPanel`.
+4. The will process output from the connection and draw to the swap chain. The
+   contents that are rendered to the swap chain will be visible in the WP's
+   `SwapChainPanel`, because they share the same underlying kernel object.
 
-### Tab Tearoff/ Reattach
+The CP will be responsible for the terminal buffer and other terminal state (the
+core `Terminal` object), as well as the `Renderer`, `DxEngine`, and
+`TerminalConnection`. These are all being combined in the CP, as to maximize
+performance. We don't want to have to hop across the process boundary multiple
+times per frame, so the renderer must be in the same process as the buffer.
+Similarly, we want to be able to read data off of the connection as quickly as
+possible, and the best way to do this will be to have the connection in the same
+process as the `Terminal` core.
 
-### Single Instance Mode
 
-Monarch/Servant architecture
+#### Technical Details
 
-### Run `wt` in the current window
+Much of the above is powered by the magic of WinRT (which is powered by the
+magic of COM). Whenever we create WinRT types, WinRT provides metadata about
+these types that not only enables us to use them in-proc (via the
+implementation), but also enables using these types _across process boundaries_.
+
+Typically, these classes are given a unique GUID for the class. A process that
+wants to implement one of these out-of-proc WinRT objects can register with the
+system to say "I make `MyClass`'s, and their GUID is `{foo}`". these are called
+WinRT _servers_. Then, consumers (_clients_) of that class can ask the system
+"I'd like to instantiate a `{foo}` please", which will cause the server to
+create a new instance of that object (in the server process), and the client
+will be given a winrt object which can interact with the classes WinRT
+projection.
+
+A server can register the types it produces with `CoRegisterClassObject`, like so:
+
+```c++
+CoRegisterClassObject(MyClassGUID,
+                      winrt::make<MyClassFactory>().get(),
+                      CLSCTX_LOCAL_SERVER,
+                      REGCLS_MULTIPLEUSE,
+                      &dwRegistration);
+
+```
+
+And a client can attempt to get an instance of `MyClass` with
+
+```c++
+auto myClass = create_instance<winrt::MyClass>(MyClassGUID, CLSCTX_LOCAL_SERVER);
+```
+
+We're going to be using that system a little differently here. Instead of using
+a GUID to represent a single _Class_, we're going to use the GUID to uniquely
+identify _CPs_. Each CP will recieve a unique GUID when it is created, and it
+will register as the server for that GUID. Then, any WP will be able to connect
+to that specific CP strictly by GUID. Because each GUID is unique to each
+content process, any time any client calls `create_instance<>(theGuid, ...)`, it
+will uniquely attempt to connect to the content process hosting `theGuid`.
+
+This means that if we wanted to have a second WP connect to the _same_ CP as
+another window, all it needs is the CP's GUID.
+
+#### Scenario: Tab Tearoff/ Reattach
+
+Oh the flow between these sections is less than stellar. I need to introduce why moving object is hard first, then talk about just moving guids
+
+#### Scenario: Mixed Elevation
+
+### Monarch and Servant Processes
+
+With the current design, it's easy to connect many CPs to a WP, and move those
+CPs easily between windows. However, we want to make sure that it's also
+possible to communicate between these processes. What if we want to have only a
+single WT instance, so that whenever Wt is run, it creates a tab in the existing
+window? What if you want to run a commandline in a given WT window?
+
+In addition to the concept of Window and Content Processes, we'll also be
+introducing another type of categorization for WPs. These are "Monarch" and
+"Servant" processes. This will allow for the coordination across the various windows by the Monarch.
+
+
+
+
+
+
+#### Scenario: Single Instance Mode
+
+In Single Instance mode, the monarch _is_ the single instance. When `wt` is run, and it determines that it is not the monarch, it'll as the monarch if it's in single instance mode. If it is, then the servant that's starting up will instead pass it's commandline arguments to the monarch process, and let the monarch handle them, then exit.
+
+#### Scenario: Run `wt` in the current window
 
 We should reserve the session id `0` to always refer to "The current window", if
 there is one. So `wt -s 0 new-tab` will run `new-tab` in the current window (if
@@ -82,8 +162,7 @@ In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
 the commandline to glom to the existing single terminal instance, if there is
 one.
 
-### Quake Mode
-### Mixed Elevation
+#### Scenario: Quake Mode
 
 
 ## UI/UX Design
@@ -128,6 +207,25 @@ TODO: This is _very_ applicable
 
 TODO: These are _very_ expected
 
+Extensions & non-terminal content.
+
+## Implementation Plan
+
+Obviously, everything that's discussed here represents an _enormous_ amount of
+work. It's important that as we move towards this new model, that we do so in
+safe, incremental chunks, such that each step is still a viable Terminal
+application, but no single step is too large to review. As such, I'll attempt to
+break down the work required into atomic pieces, and provide a relative ordering
+for the work described above.
+
+
+1. Add Monarch/Servant capabilities to `wt` WPs.
+  - This does not need to involve any actual UX functionality, simply have the
+    WT instances communicate with one another to see who is the Monarch.
+  - The monarch will track and assign IDs to servants.
+2. (Dependant on 1): Add support for running a `wt` commandline in an existing window
+3. (Dependant on 1, maybe on 2): Add support for "single instance mode"
+
 ## Footnotes
 
 <a id="footnote-1"><a>[1]:
@@ -151,6 +249,11 @@ TODO: These are _very_ expected
     to be handled in the thin control, and the core will need to raise events to
     the control? oof
 
+
+## Resources
+
+* [Tab Tearout in the community toolkit]
+
 <!-- Footnotes -->
 
 [#5000]: https://github.com/microsoft/terminal/issues/5000
@@ -160,3 +263,5 @@ TODO: These are _very_ expected
 [#653]: https://github.com/microsoft/terminal/issues/653
 [#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
+
+[Tab Tearout in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
