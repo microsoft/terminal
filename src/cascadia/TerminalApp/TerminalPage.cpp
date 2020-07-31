@@ -383,7 +383,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app
     //   and the setting is true. Display messages to warn user
-    //   that thier session is about to end, and once the user clicks the OK button,
+    //   that their session is about to end, and once the user clicks the OK button,
     //   shut down the app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
