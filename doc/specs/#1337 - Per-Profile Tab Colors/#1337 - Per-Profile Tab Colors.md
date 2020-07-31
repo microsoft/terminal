@@ -126,7 +126,7 @@ None expected.
 provide support for setting colors as one of a variety of values:
 
   * An `#rrggbb` string
-  * The systen accent color
+  * The system accent color
   * The current background color of the Terminal
   * A value from a given resource key from XAML
 
@@ -135,7 +135,7 @@ When support for these other types of "smart" colors is added, then the profile
 
 ## Future considerations
 
-* It's not out of the realm of possibilty that someone might want to color each
+* It's not out of the realm of possibility that someone might want to color each
   _pane_'s color at runtime. In that case, the runtime color would be stored in
   the `Pane`, not the `Tab`.
 
