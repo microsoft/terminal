@@ -479,6 +479,11 @@
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
+        },
+        "confirmCloseWindow": {
+          "default": false,
+          "description": "When set to \"true\" closing a window will require confirmation. When set to \"false\", the confirmation dialog will not appear.",
+          "type": "boolean"
         }
       },
       "required": [
