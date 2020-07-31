@@ -167,7 +167,28 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTab(nullptr);
+                // if alt is pressed, open a pane
+                const CoreWindow window = CoreWindow::GetForCurrentThread();
+                const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                        WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                // Check for DebugTap
+                bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                if (altPressed && !debugTap)
+                {
+                    page->_SplitPane(TerminalApp::SplitState::Automatic,
+                                     TerminalApp::SplitType::Manual,
+                                     nullptr);
+                }
+                else
+                {
+                    page->_OpenNewTab(nullptr);
+                }
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
