@@ -632,11 +632,12 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
-        // TODO TOMORROW
-        // This doesn't work, presumably because I'm trying to set these resources before the tabview exists.
-
-        auto tabColor = _EvaluateThemeColor(_settings->GlobalSettings().Theme()->TabBackground(), 0x0);
-        newTabImpl->SetTabColor(tabColor);
+        auto themeTabBG = _settings->GlobalSettings().Theme()->TabBackground();
+        if (themeTabBG.has_value())
+        {
+            auto tabColor = _EvaluateThemeColor(*themeTabBG, 0x0);
+            newTabImpl->SetTabColor(tabColor);
+        }
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -1945,10 +1946,13 @@ namespace winrt::TerminalApp::implementation
         _alwaysOnTopChangedHandlers(*this, nullptr);
 
         // THEME
-        auto tabRowColor = _EvaluateThemeColor(_settings->GlobalSettings().Theme()->TabRowBackground(), 0x0);
-        // auto selectedColor = _settings->GlobalSettings().Theme()->TabRowBackground().value.value();
-        Windows::UI::Color accentColor = ColorHelper::GetAccentColor(tabRowColor);
-        _SetTabRowColor(tabRowColor, accentColor);
+        auto themeTabRowBG = _settings->GlobalSettings().Theme()->TabRowBackground();
+        if (themeTabRowBG.has_value())
+        {
+            auto tabRowColor = _EvaluateThemeColor(*themeTabRowBG, 0x0);
+            Windows::UI::Color accentColor = ColorHelper::GetAccentColor(tabRowColor);
+            _SetTabRowColor(tabRowColor, accentColor);
+        }
     }
 
     // Method Description:

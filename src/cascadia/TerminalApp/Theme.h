@@ -46,8 +46,8 @@ public:
 
     GETSET_PROPERTY(winrt::hstring, Name);
     GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, ApplicationTheme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-    GETSET_PROPERTY(::TerminalApp::ThemeColor, TabRowBackground);
-    GETSET_PROPERTY(::TerminalApp::ThemeColor, TabBackground);
+    GETSET_PROPERTY(std::optional<::TerminalApp::ThemeColor>, TabRowBackground);
+    GETSET_PROPERTY(std::optional<::TerminalApp::ThemeColor>, TabBackground);
 
 private:
     friend class TerminalAppLocalTests::SettingsTests;
