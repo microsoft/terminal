@@ -100,6 +100,7 @@ namespace Microsoft::Console::Render
         {
             int gridlineWidth;
             int underlineOffset;
+            int underlineOffset2;
             int underlineWidth;
             int strikethroughOffset;
             int strikethroughWidth;

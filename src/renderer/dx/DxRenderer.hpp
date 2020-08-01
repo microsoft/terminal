@@ -146,6 +146,7 @@ namespace Microsoft::Console::Render
         {
             float gridlineWidth;
             float underlineOffset;
+            float underlineOffset2;
             float underlineWidth;
             float strikethroughOffset;
             float strikethroughWidth;
