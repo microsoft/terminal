@@ -16,9 +16,8 @@ enum class ExtendedAttributes : BYTE
     Blinking = 0x04,
     Invisible = 0x08,
     CrossedOut = 0x10,
-    // TODO:GH#2916 add support for these to the parser as well.
     Underlined = 0x20,
-    DoublyUnderlined = 0x40, // Included for completeness, but not currently supported.
+    DoublyUnderlined = 0x40,
     Faint = 0x80,
 };
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
