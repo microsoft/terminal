@@ -2827,6 +2827,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->ResetErrorStateAndResume();
     }
 
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
+    {
+        auto coreColor = _terminal->GetTabColor();
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

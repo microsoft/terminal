@@ -57,8 +57,8 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
-        void SetTabColor(const winrt::Windows::UI::Color& color);
-        void ResetTabColor();
+        void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
+        void ResetRuntimeTabColor();
         void ActivateColorPicker();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
@@ -75,7 +75,8 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _activePane{ nullptr };
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
-        std::optional<winrt::Windows::UI::Color> _tabColor{};
+        std::optional<winrt::Windows::UI::Color> _themeTabColor{};
+        std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
@@ -101,6 +102,10 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabHeader();
         winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

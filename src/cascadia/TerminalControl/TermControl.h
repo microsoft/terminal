@@ -109,6 +109,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
 
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);

@@ -117,6 +117,7 @@ private:
     std::optional<til::color> _selectionBackground;
     std::optional<til::color> _cursorColor;
     std::optional<std::wstring> _tabTitle;
+    std::optional<til::color> _tabColor;
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;

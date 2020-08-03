@@ -176,6 +176,8 @@ public:
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
+    const std::optional<til::color> GetTabColor() const noexcept;
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionExpansionMode
@@ -205,6 +207,7 @@ private:
 
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
+    std::optional<til::color> _tabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;

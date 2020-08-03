@@ -124,4 +124,28 @@ namespace Microsoft::Console::Utils
         // few more times.
         return t1.value_or(CoalesceOptionals(std::forward<Ts>(t2)...));
     }
+
+    // Method Description:
+    // - Base case provided to handle the last argument to CoalesceOptionals<T...>()
+    template<typename T>
+    std::optional<T> CoalesceOptionalsOrNot(const std::optional<T>& base)
+    {
+        return base;
+    }
+
+    // Method Description:
+    // - Base case provided to handle the last argument to CoalesceOptionals<T...>(..., nullopt)
+    template<typename T>
+    std::optional<T> CoalesceOptionalsOrNot(const std::nullopt_t& base)
+    {
+        return base;
+    }
+
+    // Method Description:
+    // - Returns the value from the first populated optional, or the last one (if none of the previous had a value)
+    template<typename T, typename... Ts>
+    std::optional<T> CoalesceOptionalsOrNot(const std::optional<T>& t1, Ts&&... t2)
+    {
+        return t1.has_value() ? t1 : CoalesceOptionalsOrNot(std::forward<Ts>(t2)...);
+    }
 }
