@@ -487,6 +487,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
 {
     // viewportPos must be clamped to the dimensions of the viewport
+#pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
     auto clampedPos{ viewportPos };
     _mutableViewport.ToOrigin().Clamp(clampedPos);
     return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
