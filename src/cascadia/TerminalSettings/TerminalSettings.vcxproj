@@ -17,17 +17,12 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -37,13 +32,9 @@
     <ClCompile Include="KeyChord.cpp">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="ICoreSettings.idl" />
     <Midl Include="IControlSettings.idl" />
     <Midl Include="KeyChord.idl" />
@@ -53,6 +44,5 @@
     <None Include="packages.config" />
     <None Include="TerminalSettings.def" />
   </ItemGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>

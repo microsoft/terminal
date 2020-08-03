@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl() :
-        TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
+        TermControl(Settings::IControlSettings{ nullptr }, TerminalConnection::ITerminalConnection{ nullptr })
     {
     }
 
