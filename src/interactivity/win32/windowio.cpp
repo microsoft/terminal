@@ -123,7 +123,10 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+        auto clampedPosition{ cMousePosition };
+        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
+        clampViewport.Clamp(clampedPosition);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta);
     }
 
     return fWasHandled;
@@ -635,6 +638,20 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
         {
+            switch (Message)
+            {
+            case WM_LBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+                SetCapture(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+                break;
+            case WM_LBUTTONUP:
+            case WM_MBUTTONUP:
+            case WM_RBUTTONUP:
+                ReleaseCapture();
+                break;
+            }
+
             return FALSE;
         }
     }
