@@ -361,6 +361,7 @@ namespace winrt::TerminalApp::implementation
         // clear + append when switching between modes.
         if (mode != _currentMode)
         {
+            _currentMode = mode;
             _filteredActions.Clear();
             auto commandsToFilter = _commandsToFilter();
 
@@ -370,7 +371,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _currentMode = mode;
         switch (_currentMode)
         {
         case CommandPaletteMode::ActionMode:
