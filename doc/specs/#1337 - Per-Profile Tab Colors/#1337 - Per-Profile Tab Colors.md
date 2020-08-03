@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-07-31
+last updated: 2020-08-03
 issue id: #1337
 ---
 # Per-Profile Tab Colors
@@ -74,10 +74,7 @@ Some examples:
 
 In general, this is going to look exactly like the colored tabs look now.
 
-**TODO** Should using the tab color picker to clear a tab's color clear the
-currently set color? E.g if there's a Control Color, but no Runtime Color,
-should clear color remove the Control color to revert to the theme/default
-color?
+![preview](profile-tabColor-000.gif)
 
 ## Capabilities
 
