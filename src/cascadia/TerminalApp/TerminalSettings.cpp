@@ -6,7 +6,7 @@
 
 #include "TerminalSettings.g.cpp"
 
-namespace winrt::Microsoft::Terminal::Settings::implementation
+namespace winrt::TerminalApp::implementation
 {
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept
     {
