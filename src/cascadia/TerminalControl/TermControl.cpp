@@ -10,6 +10,7 @@
 #include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
+#include <winrt/Microsoft.Terminal.Settings.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
@@ -56,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return initialized;
     }
 
-    TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+    TermControl::TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
         _initializedTerminal{ false },
         _settings{ settings },
@@ -237,7 +238,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - newSettings: New settings values for the profile in this terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
     {
         _settings = newSettings;
         auto weakThis{ get_weak() };
@@ -2320,7 +2321,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                         const int32_t& fontHeight,
                                                                         const winrt::Windows::UI::Text::FontWeight& fontWeight,
                                                                         const winrt::hstring& fontFace,
-                                                                        const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                                        const ScrollbarState& scrollState,
                                                                         const winrt::hstring& padding,
                                                                         const uint32_t dpi)
     {

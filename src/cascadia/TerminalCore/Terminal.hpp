@@ -19,7 +19,7 @@
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
 //      headers that include Terminal.hpp
-namespace winrt::Microsoft::Terminal::Settings
+namespace winrt::Microsoft::Terminal::TerminalControl
 {
     struct ICoreSettings;
 }
@@ -58,10 +58,10 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
+    void CreateFromSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings,
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings);
+    void UpdateSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);

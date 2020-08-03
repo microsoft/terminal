@@ -5,9 +5,9 @@
 
 #include "DefaultSettings.h"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalCoreUnitTests
 {

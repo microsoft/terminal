@@ -12,9 +12,9 @@
 
   <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
   <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
-    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalSettings\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalSettings;$(CAExcludePath)</CAExcludePath>
+    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalControl\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalControl;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
-    
+
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
@@ -46,11 +46,11 @@
       <!-- WinRT_IncludePath is the SDK winrt path.
            cppwinrt is a sibling directory to it. This is needed for the
            #include <winrt/base>
-           from TerminalSettings's header to be able to be found.
+           from TerminalControl's header to be able to be found.
            Also manually include the generated header's path, because
            adding a project reference will confuse msbuild.
       -->
-      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalSettings\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalControl\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
