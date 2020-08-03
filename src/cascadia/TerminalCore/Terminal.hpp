@@ -168,6 +168,7 @@ public:
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
+    void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
@@ -201,6 +202,7 @@ private:
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
+    std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;

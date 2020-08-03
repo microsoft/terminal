@@ -439,6 +439,16 @@ namespace winrt::TerminalApp::implementation
                 _rootPane->Relayout();
             }
         });
+
+        control.TabColorChanged([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                // The control's tabColor changed, but it is not necessarily the
+                // active control in this tab. We'll just recalculate the
+                // current color anyways.
+                tab->_RecalculateAndApplyTabColor();
+            }
+        });
     }
 
     // Method Description:

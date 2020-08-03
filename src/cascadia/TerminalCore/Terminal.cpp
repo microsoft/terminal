@@ -155,6 +155,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
     }
+    _pfnTabColorChanged(_tabColor);
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -907,6 +908,11 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
+}
+
+void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept
+{
+    _pfnTabColorChanged.swap(pfn);
 }
 
 void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept

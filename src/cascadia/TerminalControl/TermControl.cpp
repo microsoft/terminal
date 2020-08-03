@@ -88,6 +88,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
+        auto pfnTabColorChanged = std::bind(&TermControl::_TerminalTabColorChanged, this, std::placeholders::_1);
+        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
+
         auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
         _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
@@ -2056,6 +2059,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
         _titleChangedHandlers(winrt::hstring{ wstr });
+    }
+    void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
+    {
+        _TabColorChangedHandlers(*this, nullptr);
     }
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
