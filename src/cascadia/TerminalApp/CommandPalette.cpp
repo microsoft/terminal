@@ -193,6 +193,7 @@ namespace winrt::TerminalApp::implementation
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CommandPaletteDispatchedAction",
                 TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                TraceLoggingUInt32(_searchBox().Text().size(), "Number of characters in the search string"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
