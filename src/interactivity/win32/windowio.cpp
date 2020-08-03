@@ -123,6 +123,8 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
+        // Events outside the viewport should be clamped to within the viewport
+        // to match other terminal emulators (GH#6401)
         auto clampedPosition{ cMousePosition };
         const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
         clampViewport.Clamp(clampedPosition);
@@ -638,6 +640,8 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
         {
+            // Capturing the mouse here ensures that we get events (drag/release)
+            // even if the user drags outside the window (GH#6401)
             switch (Message)
             {
             case WM_LBUTTONDOWN:
