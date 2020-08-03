@@ -426,10 +426,8 @@ namespace winrt::TerminalApp::implementation
     {
         ToggleTabSwitcherArgs() = default;
         GETSET_PROPERTY(Windows::System::VirtualKey, AnchorKey, Windows::System::VirtualKey::None);
-        GETSET_PROPERTY(TerminalApp::Direction, InitialDirection, TerminalApp::Direction::Down);
 
         static constexpr std::string_view AnchorJsonKey{ "anchorKey" };
-        static constexpr std::string_view InitialDirectionJsonKey{ "initialDirection" };
 
     public:
         hstring GenerateName() const;
@@ -439,8 +437,7 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<ToggleTabSwitcherArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_AnchorKey == _AnchorKey &&
-                       otherAsUs->_InitialDirection == _InitialDirection;
+                return otherAsUs->_AnchorKey == _AnchorKey;
             }
             return false;
         };
@@ -449,15 +446,6 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ToggleTabSwitcherArgs>();
             JsonUtils::GetValueForKey(json, AnchorJsonKey, args->_AnchorKey);
-
-            // We should only allow two directions - Up or Down, and Down is default.
-            JsonUtils::GetValueForKey(json, InitialDirectionJsonKey, args->_InitialDirection);
-            if (args->_InitialDirection == TerminalApp::Direction::Left ||
-                args->_InitialDirection == TerminalApp::Direction::Right)
-            {
-                // Default back to down in case the user decides to put left/right.
-                args->_InitialDirection = TerminalApp::Direction::Down;
-            }
 
             return { *args, {} };
         }

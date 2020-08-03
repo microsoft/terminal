@@ -359,16 +359,16 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
         {
             auto anchorKey = realArgs.AnchorKey();
-            auto initDirection = realArgs.InitialDirection();
 
             auto opt = _GetFocusedTabIndex();
             uint32_t startIdx = opt ? *opt : 0;
 
-            // If we're entering anchor mode, the switcher should start at the currently focused index +/- 1
-            // Otherwise if unanchored, I think it's better to start at the currently focused index.
             if (anchorKey != VirtualKey::None)
             {
-                int delta = initDirection == TerminalApp::Direction::Down ? 1 : -1;
+                // If we're entering anchor mode, the switcher should start at the currently focused index +/- 1
+                // Otherwise if unanchored, I think it's better to start at the currently focused index.
+                // TODO: File GH issue for adding a initialDirection arg.
+                int delta = 1;
                 startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
             }
 
