@@ -187,15 +187,16 @@ namespace winrt::TerminalApp::implementation
         {
             const auto actionAndArgs = command.Action();
             _dispatch.DoAction(actionAndArgs);
-            _close();
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CommandPaletteDispatchedAction",
                 TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
-                TraceLoggingUInt32(_searchBox().Text().size(), "Number of characters in the search string"),
+                TraceLoggingUInt32(_searchBox().Text().size(), "SearchTextLength", "Number of characters in the search string"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+            _close();
         }
     }
 
