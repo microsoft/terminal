@@ -486,14 +486,10 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
 {
-    // viewportPos must be within the dimensions of the viewport
-    const auto viewportDimensions = _mutableViewport.Dimensions();
-    if (viewportPos.X < 0 || viewportPos.X >= viewportDimensions.X || viewportPos.Y < 0 || viewportPos.Y >= viewportDimensions.Y)
-    {
-        return false;
-    }
-
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+    // viewportPos must be clamped to the dimensions of the viewport
+    auto clampedPos{ viewportPos };
+    _mutableViewport.ToOrigin().Clamp(clampedPos);
+    return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
 }
 
 // Method Description:
