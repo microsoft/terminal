@@ -45,3 +45,4 @@ Author(s):
 #define CON_USERPRIVAPI_INDIRECT
 #define CON_DPIAPI_INDIRECT
 #endif
+#include "winrt/Windows.Foundation.h"
