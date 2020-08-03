@@ -1298,7 +1298,8 @@ public:
         case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlined(true);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
@@ -1331,7 +1332,8 @@ public:
             break;
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
-            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetUnderlined(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
