@@ -146,15 +146,15 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates) override;
+                               const gsl::span<const wchar_t> intermediates) override;
 
         bool ActionVt52EscDispatch(const wchar_t wch,
-                                   const std::basic_string_view<wchar_t> intermediates,
-                                   const std::basic_string_view<size_t> parameters) noexcept override;
+                                   const gsl::span<const wchar_t> intermediates,
+                                   const gsl::span<const size_t> parameters) noexcept override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates,
-                               const std::basic_string_view<size_t> parameters) override;
+                               const gsl::span<const wchar_t> intermediates,
+                               const gsl::span<const size_t> parameters) override;
 
         bool ActionClear() noexcept override;
 
@@ -165,7 +165,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                               const std::basic_string_view<size_t> parameters) override;
+                               const gsl::span<const size_t> parameters) override;
 
         bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
@@ -180,19 +180,19 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
-        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept;
-        DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
-        DWORD _GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const CsiActionCodes actionCode) noexcept;
+        DWORD _GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept;
+        DWORD _GetSGRMouseModifierState(const gsl::span<const size_t> parameters) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
         bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
-                                        const std::basic_string_view<size_t> parameters,
+                                        const gsl::span<const size_t> parameters,
                                         DWORD& buttonState,
                                         DWORD& eventFlags) noexcept;
-        bool _GetGenericVkey(const std::basic_string_view<size_t> parameters,
+        bool _GetGenericVkey(const gsl::span<const size_t> parameters,
                              short& vkey) const;
         bool _GetCursorKeysVkey(const wchar_t wch, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
@@ -212,17 +212,17 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD modifierState,
                                 std::vector<INPUT_RECORD>& input);
 
-        bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        bool _GenerateWin32Key(const std::basic_string_view<size_t> parameters, KeyEvent& key);
+        bool _GenerateWin32Key(const gsl::span<const size_t> parameters, KeyEvent& key);
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
+        bool _GetXYPosition(const gsl::span<const size_t> parameters,
                             size_t& line,
                             size_t& column) const noexcept;
-        bool _GetSGRXYPosition(const std::basic_string_view<size_t> parameters,
+        bool _GetSGRXYPosition(const gsl::span<const size_t> parameters,
                                size_t& line,
                                size_t& column) const noexcept;
 

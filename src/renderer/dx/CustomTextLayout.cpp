@@ -78,7 +78,7 @@ CATCH_RETURN()
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // Return Value:
 // - S_OK or suitable memory management issue.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters)
 try
 {
     _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());

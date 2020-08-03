@@ -100,7 +100,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
+                                                               const int32_t& fontSize,
+                                                               const winrt::Windows::UI::Text::FontWeight& fontWeight,
+                                                               const winrt::hstring& fontFace,
+                                                               const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                               const winrt::hstring& padding,
+                                                               const uint32_t dpi);
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -150,7 +157,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        int _rowsToScroll;
+        unsigned int _rowsToScroll;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -185,6 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _ApplyUISettings();
+        void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();

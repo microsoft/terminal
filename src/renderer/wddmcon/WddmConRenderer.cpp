@@ -258,7 +258,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                      const COORD coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept

@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               COORD const coord,
                                               bool const fTrimLeft,
                                               const bool lineWrapped) noexcept override;

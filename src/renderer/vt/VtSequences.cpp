@@ -345,12 +345,23 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the faintness of the following text.
+// Arguments:
+// - isFaint: If true, we'll make the text faint. Otherwise we'll remove the faintness.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetFaint(const bool isFaint) noexcept
+{
+    return _Write(isFaint ? "\x1b[2m" : "\x1b[22m");
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the underline of the following text.
 // Arguments:
 // - isUnderlined: If true, we'll underline the text. Otherwise we'll remove the underline.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetUnderline(const bool isUnderlined) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetUnderlined(const bool isUnderlined) noexcept
 {
     return _Write(isUnderlined ? "\x1b[4m" : "\x1b[24m");
 }
@@ -361,7 +372,7 @@ using namespace Microsoft::Console::Render;
 // - isOverlined: If true, we'll overline the text. Otherwise we'll remove the overline.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetOverline(const bool isOverlined) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetOverlined(const bool isOverlined) noexcept
 {
     return _Write(isOverlined ? "\x1b[53m" : "\x1b[55m");
 }
@@ -372,7 +383,7 @@ using namespace Microsoft::Console::Render;
 // - isItalic: If true, we'll italicize the text. Otherwise we'll remove the italics.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetItalics(const bool isItalic) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetItalic(const bool isItalic) noexcept
 {
     return _Write(isItalic ? "\x1b[3m" : "\x1b[23m");
 }

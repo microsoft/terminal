@@ -110,7 +110,7 @@ public:
 
     const SHORT GetFirstRowIndex() const noexcept;
 
-    const Microsoft::Console::Types::Viewport GetSize() const;
+    const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
@@ -118,7 +118,7 @@ public:
 
     [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
-    void SetCurrentAttributes(const TextAttribute currentAttributes) noexcept;
+    void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
     void Reset();
 
@@ -152,8 +152,7 @@ public:
     const TextAndColor GetText(const bool lineSelection,
                                const bool trimTrailingWhitespace,
                                const std::vector<SMALL_RECT>& textRects,
-                               std::function<COLORREF(TextAttribute&)> GetForegroundColor = nullptr,
-                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor = nullptr) const;
+                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
@@ -177,6 +176,8 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
+    void _UpdateSize();
+    Microsoft::Console::Types::Viewport _size;
     std::deque<ROW> _storage;
     Cursor _cursor;
 
@@ -193,7 +194,7 @@ private:
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const;
+    COORD _GetPreviousFromCursor() const noexcept;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

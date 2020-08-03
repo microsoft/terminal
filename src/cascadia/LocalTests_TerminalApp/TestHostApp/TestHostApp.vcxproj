@@ -6,6 +6,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
+    <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
@@ -113,7 +114,7 @@
 
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.51.200127004\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
 
       <!-- This path is _relative to the .winmd_ -->

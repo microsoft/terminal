@@ -42,6 +42,8 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
+        std::vector<winrt::TerminalApp::Command> _collectFilteredActions();
+
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 

@@ -93,12 +93,14 @@ public:
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
+    bool SetCursorColor(const COLORREF color) noexcept override;
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
     bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
     bool SetCursorKeysMode(const bool applicationMode) noexcept override;
     bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetScreenMode(const bool reverseMode) noexcept override;
     bool EnableVT200MouseMode(const bool enabled) noexcept override;
     bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
     bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
@@ -138,8 +140,7 @@ public:
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
-    const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
-    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -208,6 +209,7 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    bool _screenReversed;
 
     bool _snapOnInput;
     bool _altGrAliasing;

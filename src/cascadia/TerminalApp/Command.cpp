@@ -7,11 +7,13 @@
 
 #include "Utils.h"
 #include "ActionAndArgs.h"
+#include "JsonUtils.h"
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Foundation;
+using namespace ::TerminalApp;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconPathKey{ "iconPath" };
@@ -53,25 +55,17 @@ namespace winrt::TerminalApp::implementation
         {
             if (name.isObject())
             {
-                try
+                if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(name, "key") })
                 {
-                    if (const auto keyJson{ name[JsonKey("key")] })
+                    if (HasLibraryResourceWithName(*resourceKey))
                     {
-                        // Make sure the key is present before we try
-                        // loading it. Otherwise we'll crash
-                        const auto resourceKey = GetWstringFromJson(keyJson);
-                        if (HasLibraryResourceWithName(resourceKey))
-                        {
-                            return GetLibraryResourceString(resourceKey);
-                        }
+                        return GetLibraryResourceString(*resourceKey);
                     }
                 }
-                CATCH_LOG();
             }
             else if (name.isString())
             {
-                auto nameStr = name.asString();
-                return winrt::to_hstring(nameStr);
+                return JsonUtils::GetValue<winrt::hstring>(name);
             }
         }
 

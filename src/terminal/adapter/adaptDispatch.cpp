@@ -731,6 +731,32 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - DA2 - Reports the terminal type, firmware version, and hardware options.
+//   For now we're following the XTerm practice of using 0 to represent a VT100
+//   terminal, the version is hardcoded as 10 (1.0), and the hardware option
+//   is set to 1 (indicating a PC Keyboard).
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SecondaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1b[>0;10;1c");
+}
+
+// Routine Description:
+// - DA3 - Reports the terminal unit identification code. Terminal emulators
+//   typically return a hardcoded value, the most common being all zeros.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TertiaryDeviceAttributes()
+{
+    return _WriteResponse(L"\x1bP!|00000000\x1b\\");
+}
+
+// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
@@ -1052,7 +1078,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable)
+bool AdaptDispatch::_SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable)
 {
     // because the user might chain together params we don't support with params we DO support, execute all
     // params in the sequence, and only return failure if we failed at least one of them
@@ -1070,7 +1096,7 @@ bool AdaptDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchT
 // - params - array of params to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
 {
     return _SetResetPrivateModes(params, true);
 }
@@ -1081,7 +1107,7 @@ bool AdaptDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::
 // - params - array of params to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
 {
     return _SetResetPrivateModes(params, false);
 }
@@ -1205,6 +1231,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetScreenMode(const bool reverseMode)
 {
+    // If we're a conpty, always return false
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
     return _pConApi->PrivateSetScreenMode(reverseMode);
 }
 
@@ -2276,7 +2308,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                       const std::basic_string_view<size_t> parameters)
+                                       const gsl::span<const size_t> parameters)
 {
     bool success = false;
     // Other Window Manipulation functions:

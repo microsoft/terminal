@@ -64,6 +64,14 @@ COORD Terminal::GetCursorPosition() noexcept
     return newPos;
 }
 
+bool Terminal::SetCursorColor(const COLORREF color) noexcept
+try
+{
+    _buffer->GetCursor().SetColor(color);
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
@@ -470,6 +478,17 @@ bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
     _terminalInput->ChangeKeypadMode(applicationMode);
     return true;
 }
+
+bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+try
+{
+    _screenReversed = reverseMode;
+
+    // Repaint everything - the colors will have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
 
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
