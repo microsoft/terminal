@@ -234,9 +234,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (_tabColor)
     {
-        uint32_t c = _tabColor.value();
-        winrt::Windows::Foundation::IReference<uint32_t> cr{ c };
-        terminalSettings.TabColor(cr);
+        winrt::Windows::Foundation::IReference<uint32_t> colorRef{ _tabColor.value() };
+        terminalSettings.TabColor(colorRef);
     }
 
     return terminalSettings;

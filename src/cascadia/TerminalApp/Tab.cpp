@@ -727,6 +727,21 @@ namespace winrt::TerminalApp::implementation
         {
             controlTabColor = currControlColor.Value();
         }
+
+        // A Tab's color will be the result of layering a variety of sources,
+        // from the bottom up:
+        //
+        // Color                |             | Set by
+        // -------------------- | --          | --
+        // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
+        // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
+        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
+        // Tab Default Color    | **default** | TabView in XAML
+        //
+        // CoalesceOptionalsOrNot will get us the first of these values that's
+        // actually set, with nullopt being our sentinel for "use the default
+        // tabview color" (and clear out any colors we've set).
+
         return Utils::CoalesceOptionalsOrNot(_runtimeTabColor,
                                              controlTabColor,
                                              _themeTabColor,
