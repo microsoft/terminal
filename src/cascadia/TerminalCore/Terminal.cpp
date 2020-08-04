@@ -155,7 +155,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
     }
-    _pfnTabColorChanged(_tabColor);
+    if (_pfnTabColorChanged)
+    {
+        _pfnTabColorChanged(_tabColor);
+    }
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
