@@ -274,7 +274,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CloseOtherTabsArgs::GenerateName() const
     {
-        // "Close other than index {0}"
+        // "Close tabs other than index {0}"
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
                         _Index)
