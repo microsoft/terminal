@@ -64,7 +64,9 @@ _fig 1_: A _very rough_ mockup of what this feature might look like
 There are five `type`s of objects in this menu:
 * `"type":"profile"`: This is a profile. Clicking on this entry will open a new
   tab, with that profile. The profile is identified with the `"profile"`
-  parameter, which accepts either a profile `name` or GUID.
+  parameter, which accepts either a profile `name` or GUID. The icon for this
+  entry will be the profile's icon, and the text on the entry will be the
+  profile's name.
 * `"type":"separator"`: This represents a XAML `MenuFlyoutSeparator`, enabling
   the user to visually space out entries.
 * `"type":"folder"`: This represents a nested menu of entries.
@@ -79,12 +81,10 @@ There are five `type`s of objects in this menu:
   - the `id` property will specify the global action ID (see [#6899], [#7175])
     to identify the action to perform when the user selects the entry. Actions
     with invalid IDs will be ignored and omitted from the list.
-  - The `"name"` property provides a string of text to display for the action.
-    If this string is omitted, then we'll use the action's label (which is
+  - The text for this entry will be the action's label (which is
     either provided as the `"name"` in the global list of actions, or the
-    generated name)
-  - The `"icon"` property provides a path to a image to use as the icon. This
-    property is optional.
+    generated name if no `name` was provided)
+  - The icon for this entry will similarly re-use the action's `icon`.
 * `"type":"remainingProfiles"`: This is a special type of entry that will be
   expanded to contain one `"type":"profile"` entry for every profile that was
   not already listed in the menu. This will allow users to add one entry for
@@ -92,12 +92,11 @@ There are five `type`s of objects in this menu:
   - This type of entry can only be specified once - trying to add it to the menu
     twice will raise a warning, and ignore all but the first `remainingProfiles`
     entry.
-  - This type of entry can also be set inside a `folder` entry, allowith users
+  - This type of entry can also be set inside a `folder` entry, allowing users
     to highlight only a couple profiles in the top-level of the menu, but
-    allowing all other profiles to also be accessible.
+    enabling all other profiles to also be accessible.
   - The "name" of these entries will simply be the name of the profile
   - The "icon" of these entries will simply be the profile's icon
-
 
 The "default" new tab menu could be imagined as the following blob of json:
 
@@ -108,6 +107,52 @@ The "default" new tab menu could be imagined as the following blob of json:
     ]
 }
 ```
+
+### Other considerations
+
+Also considered during the investigation for this feature was re-using the list
+of profiles to expose the structure of the new tab menu. For example, doing
+something like:
+
+```json
+"profiles": {
+  "defaults": {},
+  "list":
+  [
+    { "name": "cmd" },
+    { "name": "powershell" },
+    { "type": "separator" },
+    {
+      "type": "folder" ,
+      "profiles": [
+        { "name": "ubuntu" }
+      ]
+    }
+  ]
+}
+```
+
+This option was not pursued because we felt that it needlessly complicated the
+contents of the list of profiles objects. We'd rather have the `profiles` list
+exclusively contain `Profile` objects, and have other elements of the json
+_refer_ to those profiles. What if someone would like to have an action that
+opened a new tab with profile index 4, and then they set that action as entry 4
+in the profile's list? That would certainly be some sort of unexpected behavior.
+
+Additionally, what if someone wants to have an entry that opens a tab with one
+pane with one profile in it, and another pane with different profile in it? Or
+what if they want the same profile to appear twice in the menu?
+
+By overloading the structure of the `profiles` list, we're forcing all other
+consumers of the list of profiles to care about the structure of the elements of
+the list. These other consumers should only really care about the list of
+profiles, and not necessarily how they're structured in the new tab dropdown.
+Furthermore, it complicates the list of profiles, by adding actions intermixed
+with the profiles.
+
+The design chosen in this spec more cleanly seperates the responsibilities of
+the list of profiles and the contents of the new tab menu. This way, each object
+can be defined independent of the structure of the other.
 
 ## UI/UX Design
 
@@ -180,8 +225,7 @@ new tab menu is a:
 * `"type":"folder"`: Focus the first element in the sub menu, so the user could
   navigate it with the keyboard.
 * `"type":"separator"`: Ignore these when counting top-level entries.
-* `"type":"action"`: Do nothing. During settings validation, display a warning
-  to the user that the keybinding in question won't do anything.
+* `"type":"action"`: Perform the action.
 
 So for example:
 
@@ -221,9 +265,20 @@ And assuming the user has bound:
 ## Future considerations
 
 * The user could set a `"name"`/`"text"`, or `"icon"` property to these menu
-  items manually, to override the value from the profile
-    - This would be especially useful for the `"folder"` or aforementioned
-      `"action"` menu entry
+  items manually, to override the value from the profile or action. These
+  settings would be totally optional, but it's not unreasonable that someone
+  might want this.
+* We may want to consider adding a default icon for all folders or actions in
+  the menu. For example, a folder (like 📁) for `folder` entries, or something
+  like ⚡ for actions. We'll leave these unset by default, and evaluate setting
+  these icons by default in the future.
+* Something considered during review was a way to specify "All my WSL profiles".
+  Maybe the user wants to have all their profiles generated by the WSL Distro
+  Generator appear in a "WSL" folder. This would likely require a more elaborate
+  filtering syntax, to be able to select only profiles where a certain property
+  has a specific value. Consider the user who has multiple "SSH
+  me@\<somehost\>.com" profiles, and they want all their "SSH\*" profiles to
+  appear in an "SSH" folder. This feels out-of-scope for this spec.
 * A similar structure could potentially also be used for customizing the context
   menu within a control, or the context menu for the tab. (see [#3337])
   - In both of those cases, it might be important to somehow refer to the
