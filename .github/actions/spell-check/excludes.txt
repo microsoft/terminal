@@ -61,3 +61,4 @@ SUMS$
 ^src/tools/U8U16Test/(?:fr|ru|zh)\.txt$
 ^\.github/actions/spell-check/
 ^\.gitignore$
+\.vsdx$
