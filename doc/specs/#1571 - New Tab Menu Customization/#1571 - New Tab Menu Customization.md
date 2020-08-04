@@ -61,7 +61,7 @@ that looks like this:
 
 _fig 1_: A _very rough_ mockup of what this feature might look like
 
-There are three `type`s of objects in this menu:
+There are four `type`s of objects in this menu:
 * `"type":"profile"`: This is a profile. Clicking on this entry will open a new
   tab, with that profile. The profile is identified with the `"profile"`
   parameter, which accepts either a profile `name` or GUID.
@@ -76,12 +76,14 @@ There are three `type`s of objects in this menu:
     well!
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
+  - the `id` property will specify the global action ID (see [#6899], [#7175])
+    to identify the action to perform when the user selects the entry.
   - The `"name"` property provides a string of text to display for the action.
+    If this string is omitted, then we'll use the action's label (which is
+    either provided as the `"name"` in the global list of actions, or the
+    generated name)
   - The `"icon"` property provides a path to a image to use as the icon. This
     property is optional.
-  - The `"name"` property specifies a shortcut action similar to the "command"
-    property in keybindings. If this is a string, we'll treat it as a name of a
-    `ShortcutAction`. If it's an object, we'll treat it like an `ActionAndArgs`
 
 ## UI/UX Design
 
@@ -117,6 +119,8 @@ _(no change expected)_
 _(no change expected)_
 
 ### Performance, Power, and Efficiency
+
+_(no change expected)_
 
 ## Potential Issues
 
@@ -196,14 +200,8 @@ And assuming the user has bound:
   items manually, to override the value from the profile
     - This would be especially useful for the `"folder"` or aforementioned
       `"action"` menu entry
-* [#2046] covers the addition of a "Command Palette", and commands that the user
-  can run using that UI. Once that's added, we should make sure that we also
-  support either:
-  - A `ShortcutAction` for running a `command` from the command palette
-  - A `{ "type": "command", "command": "<command name>" }` type of entry, that
-    automatically uses the command's name and icon for the entry in the entry.
-* A similar structure could potemtially also be used for customizing the context
-  menu within a control, or the context menu for the tab.
+* A similar structure could potentially also be used for customizing the context
+  menu within a control, or the context menu for the tab. (see [#3337])
   - In both of those cases, it might be important to somehow refer to the
     context of the current tab or control in the json. Think for example about
     "Close tab" or "Close other tabs" - currently, those work by _knowing_ which
@@ -217,3 +215,7 @@ And assuming the user has bound:
 <!-- Footnotes -->
 [#2046]: https://github.com/microsoft/terminal/issues/2046
 [Command Palette, Addendum 1]: https://github.com/microsoft/terminal/blob/master/doc/specs/%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
+
+[#3337]: https://github.com/microsoft/terminal/issues/3337
+[#6899]: https://github.com/microsoft/terminal/issues/6899
+[#7175]: https://github.com/microsoft/terminal/issues/7175
