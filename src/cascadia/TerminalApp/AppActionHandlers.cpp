@@ -351,4 +351,19 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
+        {
+        }
+    }
+    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
+        {
+        }
+    }
 }
