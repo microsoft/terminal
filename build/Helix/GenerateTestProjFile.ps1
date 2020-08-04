@@ -266,11 +266,17 @@ foreach ($testModule in $testModules)
         $testSuiteExists = $false
         $suitelessTestExists = $false
 
-        foreach ($tests in $testClass.Tests)
+        foreach ($test in $testClass.Tests)
         {
-            if ($tests.Properties.ContainsKey("TestSuite"))
+            # A test method inherits its 'TestSuite' property from its TestClass
+            if (!$test.Properties.ContainsKey("TestSuite") -and $testClass.Properties.ContainsKey("TestSuite"))
             {
-                [string]$testSuite = $tests.Properties["TestSuite"]
+                $test.Properties["TestSuite"] = $testClass.Properties["TestSuite"]
+            }
+
+            if ($test.Properties.ContainsKey("TestSuite"))
+            {
+                [string]$testSuite = $test.Properties["TestSuite"]
 
                 if (-not $testSuiteNames.Contains($testSuite))
                 {
@@ -285,12 +291,23 @@ foreach ($testModule in $testModules)
                 $suitelessTestExists = $true
             }
         }
+        
+        $testClassSelectPattern = "$($testClass.Name).*"
+        if($testClass.Name.Contains("::"))
+        {
+            $testClassSelectPattern = "$($testClass.Name)::*"
+        }
+        $testNameQuery= "(@Name='$testClassSelectPattern')"
 
+        $workItemName = $testClass.Name
+        # Native tests use '::' as a separator, which is not valid for workItem names.
+        $workItemName = $workItemName -replace "::", "-"
+        
         if ($suitelessTestExists)
         {
             $projFileContent += @"
 
-    <HelixWorkItem Include="$($testClass.Name)" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
+    <HelixWorkItem Include="$($workItemName)" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
       <Timeout>00:30:00</Timeout>
       <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name)*'$(if ($testSuiteExists) { "and not @TestSuite='*'" }))$($TaefQueryToAppend)"</Command>
     </HelixWorkItem>
@@ -301,7 +318,7 @@ foreach ($testModule in $testModules)
         {
             $projFileContent += @"
 
-    <HelixWorkItem Include="$($testClass.Name)-$testSuiteName" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
+    <HelixWorkItem Include="$($workItemName)-$testSuiteName" Condition="'`$(TestSuite)'=='$($JobTestSuiteName)'">
       <Timeout>00:30:00</Timeout>
       <Command>call %HELIX_CORRELATION_PAYLOAD%\runtests.cmd /select:"(@Name='$($testClass.Name)*' and @TestSuite='$testSuiteName')$($TaefQueryToAppend)"</Command>
     </HelixWorkItem>
