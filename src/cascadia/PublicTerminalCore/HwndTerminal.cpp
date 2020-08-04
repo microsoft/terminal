@@ -55,10 +55,29 @@ try
 
     if (terminal)
     {
-        if (_IsMouseMessage(uMsg) && terminal->_CanSendVTMouseInput())
+        if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
+                // GH#6401: Capturing the mouse ensures that we get drag/release events
+                // even if the user moves outside the window.
+                // _SendMouseEvent returns false if the terminal's not in VT mode, so we'll
+                // fall through to release the capture.
+                switch (uMsg)
+                {
+                case WM_LBUTTONDOWN:
+                case WM_MBUTTONDOWN:
+                case WM_RBUTTONDOWN:
+                    SetCapture(hwnd);
+                    break;
+                case WM_LBUTTONUP:
+                case WM_MBUTTONUP:
+                case WM_RBUTTONUP:
+                    ReleaseCapture();
+                    break;
+                }
+
+                // Suppress all mouse events that made it into the terminal.
                 return 0;
             }
         }
@@ -76,6 +95,10 @@ try
             return 0;
         case WM_LBUTTONUP:
             terminal->_singleClickTouchdownPos = std::nullopt;
+            [[fallthrough]];
+        case WM_MBUTTONUP:
+        case WM_RBUTTONUP:
+            ReleaseCapture();
             break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))

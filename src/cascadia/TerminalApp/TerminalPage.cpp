@@ -32,7 +32,6 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
@@ -626,7 +625,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
     {
         // Initialize the new tab
 
@@ -727,7 +726,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
-                                                                                        winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+                                                                                        TerminalApp::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
 
@@ -1368,7 +1367,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto focusedTab = _GetStrongTabImpl(*indexOpt);
-            winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+            TerminalApp::TerminalSettings controlSettings;
             GUID realGuid;
             bool profileFound = false;
 

@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         void ResizePane(const winrt::TerminalApp::Direction& direction);
         void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
 
         void Shutdown();
