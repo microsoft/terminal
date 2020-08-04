@@ -150,7 +150,7 @@ profiles, and not necessarily how they're structured in the new tab dropdown.
 Furthermore, it complicates the list of profiles, by adding actions intermixed
 with the profiles.
 
-The design chosen in this spec more cleanly seperates the responsibilities of
+The design chosen in this spec more cleanly separates the responsibilities of
 the list of profiles and the contents of the new tab menu. This way, each object
 can be defined independent of the structure of the other.
 
@@ -277,7 +277,7 @@ And assuming the user has bound:
   Generator appear in a "WSL" folder. This would likely require a more elaborate
   filtering syntax, to be able to select only profiles where a certain property
   has a specific value. Consider the user who has multiple "SSH
-  me@\<somehost\>.com" profiles, and they want all their "SSH\*" profiles to
+  me@\<some host\>.com" profiles, and they want all their "SSH\*" profiles to
   appear in an "SSH" folder. This feels out-of-scope for this spec.
 * A similar structure could potentially also be used for customizing the context
   menu within a control, or the context menu for the tab. (see [#3337])
