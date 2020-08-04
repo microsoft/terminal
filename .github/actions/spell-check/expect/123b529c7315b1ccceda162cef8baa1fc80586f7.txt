@@ -4,11 +4,13 @@ appendwttlogging
 appxerror
 BUILDURI
 COLLECTIONURI
+debugbreak
 dhandler
 dmp
 dnceng
 dotnetfeed
 dst
+DWINRT
 EMPTYBOX
 enablewttlogging
 etcoreapp
@@ -24,6 +26,7 @@ PGO
 pgosweep
 preinstalled
 Remoting
+restrictederrorinfo
 robocopy
 rsas
 runtests
