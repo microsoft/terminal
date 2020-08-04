@@ -499,6 +499,12 @@ namespace winrt::TerminalApp::implementation
         // appear first in the list. The ordering will be determined by the
         // match weight produced by _getWeight.
         std::priority_queue<WeightedCommand> heap;
+
+        // I hate this but this adds an "inOrderCounter" to allow commands with
+        // the same names and weights to be ordered in the order they were pushed
+        // onto the heap. This specifically helps out tab actions in the Tab Switcher,
+        // since it's quite common to have tab titles be the same.
+        uint32_t counter = 0;
         for (auto action : commandsToFilter)
         {
             const auto weight = CommandPalette::_getWeight(searchText, action.Name());
@@ -507,14 +513,7 @@ namespace winrt::TerminalApp::implementation
                 WeightedCommand wc;
                 wc.command = action;
                 wc.weight = weight;
-
-                // I hate this but this adds an "inOrderCounter" to allow commands with
-                // the same names and weights to be ordered in the order they were pushed
-                // onto the heap. This specifically helps out tab actions in the Tab Switcher,
-                // since it's quite common to have tab titles be the same.
-                uint32_t counter = 0;
-                commandsToFilter.IndexOf(action, counter);
-                wc.inOrderCounter = counter;
+                wc.inOrderCounter = counter++;
 
                 heap.push(wc);
             }

@@ -29,8 +29,7 @@ namespace winrt::TerminalApp::implementation
         // Swapping between nullptr IconSources and non-null IconSources causes a crash
         // to occur, but swapping between IconSources with a null source and non-null IconSources
         // work perfectly fine :shrug:.
-        winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-        icon.UriSource(nullptr);
+        winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon{ nullptr };
         IconSource(icon);
     }
 
