@@ -57,30 +57,27 @@ try
     {
         if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_CanSendVTMouseInput())
+            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
-                if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+                // GH#6401: Capturing the mouse ensures that we get drag/release events
+                // even if the user moves outside the window.
+                // _SendMouseEvent returns false if the terminal's not in VT mode, so we'll
+                // fall through to release the capture.
+                switch (uMsg)
                 {
-                    // GH#6401: Capturing the mouse ensures that we get drag/release events
-                    // even if the user moves outside the window.
-                    // _SendMouseEvent returns false if the terminal's not in mouse mode, so we'll
-                    // fall through to release the capture.
-                    switch (uMsg)
-                    {
-                    case WM_LBUTTONDOWN:
-                    case WM_MBUTTONDOWN:
-                    case WM_RBUTTONDOWN:
-                        SetCapture(hwnd);
-                        break;
-                    case WM_LBUTTONUP:
-                    case WM_MBUTTONUP:
-                    case WM_RBUTTONUP:
-                        ReleaseCapture();
-                        break;
-                    }
+                case WM_LBUTTONDOWN:
+                case WM_MBUTTONDOWN:
+                case WM_RBUTTONDOWN:
+                    SetCapture(hwnd);
+                    break;
+                case WM_LBUTTONUP:
+                case WM_MBUTTONUP:
+                case WM_RBUTTONUP:
+                    ReleaseCapture();
+                    break;
                 }
 
-                // Suppress all mouse events that didn't make it into the terminal
+                // Suppress all mouse events that made it into the terminal.
                 return 0;
             }
         }
