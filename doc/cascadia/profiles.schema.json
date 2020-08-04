@@ -310,7 +310,7 @@
             "index": {
               "type": "integer",
               "default": "",
-              "description": "close the tabs folloing the tab at this index"
+              "description": "close the tabs following the tab at this index"
             }
           }
         }
@@ -327,7 +327,7 @@
             "index": {
               "type": "integer",
               "default": "",
-              "description": "the index of the tab to leave open"
+              "description": "close the tabs other than the one at this index"
             }
           }
         }
