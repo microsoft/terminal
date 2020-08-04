@@ -46,7 +46,7 @@ public:
 
     ~Profile();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
+    winrt::TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
 
     Json::Value GenerateStub() const;
     static Profile FromJson(const Json::Value& json);
