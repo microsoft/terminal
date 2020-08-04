@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include <winrt/Microsoft.Terminal.Settings.h>
 #include "ColorScheme.h"
 #include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
@@ -10,8 +11,7 @@
 
 using namespace ::Microsoft::Console;
 using namespace TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::TerminalApp;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view ForegroundKey{ "foreground" };

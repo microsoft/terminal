@@ -55,10 +55,29 @@ try
 
     if (terminal)
     {
-        if (_IsMouseMessage(uMsg) && terminal->_CanSendVTMouseInput())
+        if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
+                // GH#6401: Capturing the mouse ensures that we get drag/release events
+                // even if the user moves outside the window.
+                // _SendMouseEvent returns false if the terminal's not in VT mode, so we'll
+                // fall through to release the capture.
+                switch (uMsg)
+                {
+                case WM_LBUTTONDOWN:
+                case WM_MBUTTONDOWN:
+                case WM_RBUTTONDOWN:
+                    SetCapture(hwnd);
+                    break;
+                case WM_LBUTTONUP:
+                case WM_MBUTTONUP:
+                case WM_RBUTTONUP:
+                    ReleaseCapture();
+                    break;
+                }
+
+                // Suppress all mouse events that made it into the terminal.
                 return 0;
             }
         }
@@ -76,6 +95,10 @@ try
             return 0;
         case WM_LBUTTONUP:
             terminal->_singleClickTouchdownPos = std::nullopt;
+            [[fallthrough]];
+        case WM_MBUTTONUP:
+        case WM_RBUTTONUP:
+            ReleaseCapture();
             break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
@@ -625,15 +648,19 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown) noexcept
 try
 {
-    const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
 }
 CATCH_LOG();
 
-void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode) noexcept
+void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept
 try
 {
     if (_terminal->IsSelectionActive())
@@ -653,21 +680,25 @@ try
         return;
     }
 
-    const auto flags = getControlKeyState();
-    _terminal->SendCharEvent(ch, scanCode, flags);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendCharEvent(ch, scanCode, modifiers);
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 
-void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendCharEvent(ch, scanCode);
+    publicTerminal->_SendCharEvent(ch, scanCode, flags);
 }
 
 void _stdcall DestroyTerminal(void* terminal)

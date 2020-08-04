@@ -486,14 +486,14 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
 {
-    // viewportPos must be within the dimensions of the viewport
-    const auto viewportDimensions = _mutableViewport.Dimensions();
-    if (viewportPos.X < 0 || viewportPos.X >= viewportDimensions.X || viewportPos.Y < 0 || viewportPos.Y >= viewportDimensions.Y)
-    {
-        return false;
-    }
-
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+    // GH#6401: VT applications should be able to receive mouse events from outside the
+    // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+    // We shouldn't throw away perfectly good events when they're offscreen, so we just
+    // clamp them to be within the range [(0, 0), (W, H)].
+#pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
+    auto clampedPos{ viewportPos };
+    _mutableViewport.ToOrigin().Clamp(clampedPos);
+    return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
 }
 
 // Method Description:

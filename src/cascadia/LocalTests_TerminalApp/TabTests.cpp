@@ -84,7 +84,7 @@ namespace TerminalAppLocalTests
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
-        winrt::Microsoft::Terminal::Settings::TerminalSettings settings;
+        TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);
@@ -140,7 +140,7 @@ namespace TerminalAppLocalTests
             // 4. one of our types that uses MUX/Xaml in this dll (Tab).
             // Just creating all of them is enough to know that everything is working.
             const auto profileGuid{ Utils::CreateGuid() };
-            winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+            TerminalSettings settings{};
             VERIFY_IS_NOT_NULL(settings);
             winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
             VERIFY_IS_NOT_NULL(conn);

@@ -142,6 +142,16 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
+        struct LineMetrics
+        {
+            float gridlineWidth;
+            float underlineOffset;
+            float underlineWidth;
+            float strikethroughOffset;
+            float strikethroughWidth;
+        };
+
+        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
         til::size _glyphCell;
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
@@ -267,7 +277,8 @@ namespace Microsoft::Console::Render
                                                const int dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                               LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 

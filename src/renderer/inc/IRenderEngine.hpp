@@ -35,7 +35,9 @@ namespace Microsoft::Console::Render
             Top = 0x1,
             Bottom = 0x2,
             Left = 0x4,
-            Right = 0x8
+            Right = 0x8,
+            Underline = 0x10,
+            Strikethrough = 0x20
         };
 
         virtual ~IRenderEngine() = 0;

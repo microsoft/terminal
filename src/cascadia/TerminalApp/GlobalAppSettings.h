@@ -46,7 +46,7 @@ public:
     static GlobalAppSettings FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
-    void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
+    void ApplyToSettings(winrt::TerminalApp::TerminalSettings& settings) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
