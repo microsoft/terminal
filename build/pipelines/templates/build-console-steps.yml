@@ -136,6 +136,7 @@ steps:
     Contents: |
      **/*.wtl
      **/*onBuildMachineResults.xml
+     ${{ parameters.testLogPath }}
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true

@@ -42,7 +42,7 @@ function Copy-If-Exists
 }
 
 # Copy files from the 'drop' artifact dir
-Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test" $payloadDir -Recurse
+Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\*" $payloadDir -Recurse
 
 # Copy files from the repo
 New-Item -ItemType Directory -Force -Path "$payloadDir"
