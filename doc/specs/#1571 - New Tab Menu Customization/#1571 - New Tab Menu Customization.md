@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-07-13
+last updated: 2020-08-04
 issue id: 1571
 ---
 
@@ -61,7 +61,7 @@ that looks like this:
 
 _fig 1_: A _very rough_ mockup of what this feature might look like
 
-There are four `type`s of objects in this menu:
+There are five `type`s of objects in this menu:
 * `"type":"profile"`: This is a profile. Clicking on this entry will open a new
   tab, with that profile. The profile is identified with the `"profile"`
   parameter, which accepts either a profile `name` or GUID.
@@ -77,13 +77,37 @@ There are four `type`s of objects in this menu:
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
   - the `id` property will specify the global action ID (see [#6899], [#7175])
-    to identify the action to perform when the user selects the entry.
+    to identify the action to perform when the user selects the entry. Actions
+    with invalid IDs will be ignored and omitted from the list.
   - The `"name"` property provides a string of text to display for the action.
     If this string is omitted, then we'll use the action's label (which is
     either provided as the `"name"` in the global list of actions, or the
     generated name)
   - The `"icon"` property provides a path to a image to use as the icon. This
     property is optional.
+* `"type":"remainingProfiles"`: This is a special type of entry that will be
+  expanded to contain one `"type":"profile"` entry for every profile that was
+  not already listed in the menu. This will allow users to add one entry for
+  just "all the profiles they haven't manually added to the menu".
+  - This type of entry can only be specified once - trying to add it to the menu
+    twice will raise a warning, and ignore all but the first `remainingProfiles`
+    entry.
+  - This type of entry can also be set inside a `folder` entry, allowith users
+    to highlight only a couple profiles in the top-level of the menu, but
+    allowing all other profiles to also be accessible.
+  - The "name" of these entries will simply be the name of the profile
+  - The "icon" of these entries will simply be the profile's icon
+
+
+The "default" new tab menu could be imagined as the following blob of json:
+
+```json
+{
+    "newTabMenu": [
+        { "type":"remainingProfiles" }
+    ]
+}
+```
 
 ## UI/UX Design
 
@@ -142,7 +166,7 @@ unnecessarily complex.
 
 To cover that above scenario, we could consider adding an `index` parameter to
 the `openNewTabDropdown` action. If specified, that would open either the N'th
-action in the dropdown (ignoring seperators), or open the dropdown with the n'th
+action in the dropdown (ignoring separators), or open the dropdown with the n'th
 item selected.
 
 The N'th entry in the menu won't always be a profile: it might be a folder with
@@ -205,7 +229,7 @@ And assuming the user has bound:
   - In both of those cases, it might be important to somehow refer to the
     context of the current tab or control in the json. Think for example about
     "Close tab" or "Close other tabs" - currently, those work by _knowing_ which
-    tab the "action" is specifed for, not by actually using a `closeTab` action.
+    tab the "action" is specified for, not by actually using a `closeTab` action.
     In the future, they might need to be implemented as something like
     - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
     - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
