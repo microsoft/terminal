@@ -69,7 +69,6 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IControlSettings.idl" />
-    <Midl Include="ICoreSettings.idl" />
     <Midl Include="SearchBoxControl.idl">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </Midl>

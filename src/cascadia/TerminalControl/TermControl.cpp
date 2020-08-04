@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include <winrt/Microsoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"

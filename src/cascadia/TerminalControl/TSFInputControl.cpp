@@ -11,8 +11,12 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
+
+namespace winrt
+{
+    namespace TextCore = Windows::UI::Text::Core;
+}
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -31,14 +35,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         // Create a CoreTextEditingContext for since we are acting like a custom edit control
-        auto manager = Core::CoreTextServicesManager::GetForCurrentView();
+        auto manager = TextCore::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
         // InputPane is manually shown inside of TermControl.
-        _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
+        _editContext.InputPaneDisplayPolicy(TextCore::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
-        _editContext.InputScope(Core::CoreTextInputScope::Text);
+        _editContext.InputScope(TextCore::CoreTextInputScope::Text);
 
         _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 
@@ -262,7 +266,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
     // Return Value:
     // - <none>
-    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    void TSFInputControl::_layoutRequestedHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextLayoutRequestedEventArgs const& args)
     {
         auto request = args.Request();
 
@@ -283,7 +287,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionStartedHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextCompositionStartedEventArgs const& /*args*/)
     {
         _inComposition = true;
     }
@@ -296,7 +300,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionCompletedHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextCompositionCompletedEventArgs const& /*args*/)
     {
         _inComposition = false;
 
@@ -317,7 +321,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - object: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& /*object*/)
+    void TSFInputControl::_focusRemovedHandler(TextCore::CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& /*object*/)
     {
     }
 
@@ -330,7 +334,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextTextRequestedEventArgs to be updated with requested range text.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
+    void TSFInputControl::_textRequestedHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextTextRequestedEventArgs const& args)
     {
         // the range the TSF wants to know about
         const auto range = args.Request().Range();
@@ -356,7 +360,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextSelectionRequestedEventArgs for providing data for the SelectionRequested event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& /*args*/)
+    void TSFInputControl::_selectionRequestedHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextSelectionRequestedEventArgs const& /*args*/)
     {
     }
 
@@ -370,7 +374,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextSelectionUpdatingEventArgs for providing data for the SelectionUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, CoreTextSelectionUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_selectionUpdatingHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextSelectionUpdatingEventArgs const& /*args*/)
     {
     }
 
@@ -382,7 +386,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextTextUpdatingEventArgs contains new text to update buffer with.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
+    void TSFInputControl::_textUpdatingHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextTextUpdatingEventArgs const& args)
     {
         const auto incomingText = args.Text();
         const auto range = args.Range();
@@ -417,14 +421,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             // Notify the TSF that the update succeeded
-            args.Result(CoreTextTextUpdatingResult::Succeeded);
+            args.Result(TextCore::CoreTextTextUpdatingResult::Succeeded);
         }
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
 
             // indicate updating failed.
-            args.Result(CoreTextTextUpdatingResult::Failed);
+            args.Result(TextCore::CoreTextTextUpdatingResult::Failed);
         }
     }
 
@@ -465,7 +469,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: CoreTextFormatUpdatingEventArgs Provides data for the FormatUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_formatUpdatingHandler(TextCore::CoreTextEditContext sender, TextCore::CoreTextFormatUpdatingEventArgs const& /*args*/)
     {
     }
 

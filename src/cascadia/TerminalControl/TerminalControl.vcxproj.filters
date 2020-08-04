@@ -33,7 +33,6 @@
     <Midl Include="TSFInputControl.idl" />
     <Midl Include="IMouseWheelListener.idl" />
     <Midl Include="IControlSettings.idl" />
-    <Midl Include="ICoreSettings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />

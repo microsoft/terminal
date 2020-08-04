@@ -12,11 +12,12 @@
 
   <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
   <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
-    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalControl\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalControl;$(CAExcludePath)</CAExcludePath>
+    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalCore\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalCore;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
 
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxitems -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxitems" />
@@ -40,20 +41,24 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Midl Include="..\ICoreSettings.idl" />
+  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <!-- WinRT_IncludePath is the SDK winrt path.
            cppwinrt is a sibling directory to it. This is needed for the
            #include <winrt/base>
-           from TerminalControl's header to be able to be found.
+           from TerminalCore's header to be able to be found.
            Also manually include the generated header's path, because
            adding a project reference will confuse msbuild.
       -->
-      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalControl\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalCore\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
-    <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>
