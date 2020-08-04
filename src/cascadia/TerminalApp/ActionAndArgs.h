@@ -8,7 +8,6 @@ namespace winrt::TerminalApp::implementation
     struct ActionAndArgs : public ActionAndArgsT<ActionAndArgs>
     {
         static const std::map<std::string_view, ShortcutAction, std::less<>> ActionKeyNamesMap;
-
         static winrt::com_ptr<ActionAndArgs> FromJson(const Json::Value& json,
                                                       std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
