@@ -23,13 +23,18 @@ namespace winrt::TerminalApp::implementation
 {
     Command::Command()
     {
-        // Set the default IconSource to a BitmapIconSource with a nullptr UriSource
+        // Set the default IconSource to a FontIconSource with an empty glyph string
         // (instead of just nullptr) because there's a really weird crash when swapping
         // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
         // Swapping between nullptr IconSources and non-null IconSources causes a crash
         // to occur, but swapping between IconSources with a null source and non-null IconSources
         // work perfectly fine :shrug:.
-        winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon{ nullptr };
+
+        winrt::Windows::UI::Xaml::Controls::FontIconSource icon;
+        Windows::UI::Xaml::Media::FontFamily ffs{ L"Segoe MDL2 Assets" };
+        icon.FontFamily(ffs);
+        icon.Glyph(L"");
+
         IconSource(icon);
     }
 
