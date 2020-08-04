@@ -227,7 +227,7 @@ void CascadiaSettings::_ResolveDefaultProfile()
 {
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
     auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
-    auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
+    auto defaultProfileGuid{ til::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
     GlobalSettings().DefaultProfile(defaultProfileGuid);
 }
 
@@ -566,7 +566,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
+    return til::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
 }
 
 // Method Description:

@@ -8,7 +8,6 @@
 #include "Tab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -16,7 +15,6 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::System;
-using namespace ::Microsoft::Console;
 
 namespace winrt
 {
@@ -742,10 +740,10 @@ namespace winrt::TerminalApp::implementation
         // actually set, with nullopt being our sentinel for "use the default
         // tabview color" (and clear out any colors we've set).
 
-        return Utils::CoalesceOptionalsOrNot(_runtimeTabColor,
-                                             controlTabColor,
-                                             _themeTabColor,
-                                             std::optional<Windows::UI::Color>(std::nullopt));
+        return til::CoalesceOptionalsOrNot(_runtimeTabColor,
+                                           controlTabColor,
+                                           _themeTabColor,
+                                           std::optional<Windows::UI::Color>(std::nullopt));
     }
 
     // Method Description:
