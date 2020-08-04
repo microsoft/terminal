@@ -157,7 +157,7 @@ steps:
      **/TestHostApp/*
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
-    flattenFolders: false
+    flattenFolders: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
   
 - task: PublishBuildArtifacts@1
