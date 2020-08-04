@@ -278,6 +278,8 @@ namespace winrt::TerminalApp::implementation
         // If there's an anchor key set, don't generate a name so that
         // it won't show up in the command palette. Only an unanchored
         // tab switcher should be able to be toggled from the palette.
+        // TODO: GH#7179 - once this goes in, make sure to hide the
+        // anchor mode command that was given a name in settings.
         if (_AnchorKey != Windows::System::VirtualKey::None)
         {
             return L"";

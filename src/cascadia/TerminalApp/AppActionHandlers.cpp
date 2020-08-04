@@ -365,9 +365,8 @@ namespace winrt::TerminalApp::implementation
 
             if (anchorKey != VirtualKey::None)
             {
-                // If we're entering anchor mode, the switcher should start at the currently focused index +/- 1
-                // Otherwise if unanchored, I think it's better to start at the currently focused index.
-                // TODO: File GH issue for adding a initialDirection arg.
+                // TODO: GH#7178 - delta should also have the option of being -1, in the case when
+                // a user decides to open the tab switcher going to the prev tab.
                 int delta = 1;
                 startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
             }
