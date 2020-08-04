@@ -256,6 +256,43 @@ void ConsoleCheckDebug()
 #endif
 }
 
+HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
+                                const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
+                                HANDLE driverInputEvent)
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    g.handoffTarget = true;
+
+    char* ch = new char[30];
+
+    RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
+    RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
+
+    // Store the driver input event. It's already been told that it exists by whomever started us.
+    g.hInputEvent.reset(driverInputEvent);
+
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, nullptr, 0, nullptr);
+    RETURN_HR_IF(E_HANDLE, hThread == nullptr);
+    LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
+
+    // See MSFT:19918626
+    // Make sure to always set up the signal thread if we need to.
+    // Do this first, because breaking the signal pipe is used by the conpty API
+    //  to indicate that we should close.
+    // The conpty i/o threads need an actual client to be connected before they
+    //      can start, so they're started below, in ConsoleAllocateConsole
+    auto& gci = g.getConsoleInformation();
+    RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
+    RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
+
+    return S_OK;
+}
+
+[[nodiscard]] bool TestFunc()
+{
+    return false;
+}
+
 [[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     auto& g = ServiceLocator::LocateGlobals();

@@ -43,5 +43,6 @@ private:
                                      _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
                                      _In_ DWORD cbOutBufferSize) const;
 
+    public:
     wil::unique_handle _Server;
 };

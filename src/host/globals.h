@@ -69,6 +69,8 @@ public:
 
     ApiRoutines api;
 
+    bool handoffTarget = false;
+
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif

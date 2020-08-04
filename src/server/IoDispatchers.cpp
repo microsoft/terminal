@@ -157,6 +157,51 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
+    Globals& Globals = ServiceLocator::LocateGlobals();
+    if (!Globals.handoffTarget)
+    /*if (!ConsoleConnectionDeservesVisibleWindow(&Cac))*/
+    {
+        
+
+        typedef HRESULT (*PFNHANDOFF)(HANDLE,
+                                      const ConsoleArguments* const, // this can't stay like this because ConsoleArguments could change...
+                                      HANDLE);
+
+        typedef bool (*PFNTEST)();
+
+        HMODULE mod = LoadLibraryW(L"OpenConsole2.exe");
+        PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
+        /*PFNTEST addr = (PFNTEST)GetProcAddress(mod, "TestFunc");*/
+        HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get());
+        res;
+        if (res)
+        {
+            auto rect = til::rectangle{};
+            rect += til::size{ 2, 2 };
+        }
+        else
+        {
+            auto size = til::size{ 3, 3 };
+            auto h = size.height();
+            h;
+        }
+    }
+
+    //if (ConsoleConnectionDeservesVisibleWindow(&Cac))
+    //{
+    //    RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
+    //                                              cmd,
+    //                                              nullptr,
+    //                                              nullptr,
+    //                                              TRUE,
+    //                                              EXTENDED_STARTUPINFO_PRESENT,
+    //                                              nullptr,
+    //                                              nullptr,
+    //                                              &siEx.StartupInfo,
+    //                                              pi.addressof()));
+    //}
+    
+
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
                                                                           dwThreadId,
                                                                           Cac.ProcessGroupId,
