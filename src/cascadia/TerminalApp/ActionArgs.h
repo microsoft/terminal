@@ -18,8 +18,8 @@
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
 #include "ExecuteCommandlineArgs.g.h"
-#include "CloseOtherTabs.g.h"
-#include "CloseTabsAfter.g.h"
+#include "CloseOtherTabsArgs.g.h"
+#include "CloseTabsAfterArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -426,9 +426,9 @@ namespace winrt::TerminalApp::implementation
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
     {
         CloseOtherTabsArgs() = default;
-        GETSET_PROPERTY(int32_t, Index, 0);
+        GETSET_PROPERTY(uint32_t, Index, 0);
 
-        static constexpr std::string_view IndexKey{ "delta" };
+        static constexpr std::string_view IndexKey{ "index" };
 
     public:
         hstring GenerateName() const;
@@ -454,9 +454,9 @@ namespace winrt::TerminalApp::implementation
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
     {
         CloseTabsAfterArgs() = default;
-        GETSET_PROPERTY(int32_t, Index, 0);
+        GETSET_PROPERTY(uint32_t, Index, 0);
 
-        static constexpr std::string_view IndexKey{ "delta" };
+        static constexpr std::string_view IndexKey{ "index" };
 
     public:
         hstring GenerateName() const;

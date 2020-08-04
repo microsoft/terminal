@@ -123,11 +123,11 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
     {
-        Int32 Index { get; };
+        UInt32 Index { get; };
     };
 
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
-        Int32 Index { get; };
+        UInt32 Index { get; };
     };
 }

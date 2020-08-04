@@ -277,7 +277,7 @@ namespace winrt::TerminalApp::implementation
         // "Close other than index {0}"
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
-                        _Index.c_str())
+                        _Index)
         };
     }
 
@@ -286,7 +286,7 @@ namespace winrt::TerminalApp::implementation
         // "Close tabs after index {0}"
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
-                        _Index.c_str())
+                        _Index)
         };
     }
 }

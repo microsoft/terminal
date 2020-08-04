@@ -548,7 +548,7 @@
     <comment>{0} will be replaced with a user-defined commandline</comment>
   </data>
   <data name="CloseOtherTabsCommandKey" xml:space="preserve">
-    <value>Close other than index {0}</value>
+    <value>Close tabs other than index {0}</value>
     <comment>{0} will be replaced with a number</comment>
   </data>
   <data name="CloseTabsAfterCommandKey" xml:space="preserve">
