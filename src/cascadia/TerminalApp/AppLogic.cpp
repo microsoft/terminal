@@ -632,6 +632,12 @@ namespace winrt::TerminalApp::implementation
             hr = E_INVALIDARG;
             _settingsLoadExceptionText = _GetErrorText(ex.Error());
         }
+        catch (const std::exception& e)
+        {
+            hr = E_UNEXPECTED;
+            std::string_view what{ e.what() };
+            _settingsLoadExceptionText = til::u8u16(what);
+        }
         catch (...)
         {
             hr = wil::ResultFromCaughtException();

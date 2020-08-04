@@ -42,6 +42,48 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
+static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
+{
+    size_t line = 1, column = position + 1;
+    auto lastNL = string.find_last_of('\n', position);
+    if (lastNL != std::string::npos)
+    {
+        column = (position - lastNL) + 1;
+        line = std::count(string.cbegin(), string.cbegin() + lastNL + 1, '\n') + 1;
+    }
+
+    return { line, column };
+}
+
+static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view settingsString)
+{
+    std::string_view format{ "unknown type of exception..." };
+    std::optional<ptrdiff_t> pos;
+    std::string msg;
+
+    try
+    {
+        throw;
+    }
+    catch (const JsonUtils::DeserializationException& e)
+    {
+        pos = e.position;
+        msg = fmt::format("expected {} got {}", e.expectedValue, e.actualValue);
+        if (e.key)
+        {
+            msg = fmt::format("while parsing \"{}\": {}", *e.key, msg);
+        }
+        if (pos)
+        {
+            auto [l, c] = _LineAndColumnFromPosition(settingsString, pos.value_or(0));
+            msg = fmt::format("line {} column {}: {}", l, c, msg);
+        }
+    }
+    CATCH_LOG();
+
+    throw std::runtime_error{ msg };
+}
+
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -90,16 +132,23 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         needToWriteFile = true;
     }
 
-    // See microsoft/terminal#2325: find the defaultSettings from the user's
-    // settings. Layer those settings upon all the existing profiles we have
-    // (defaults and dynamic profiles). We'll also set
-    // _userDefaultProfileSettings here. When we LayerJson below to apply the
-    // user settings, we'll make sure to use these defaultSettings _before_ any
-    // profiles the user might have.
-    resultPtr->_ApplyDefaultsFromUserSettings();
+    try
+    {
+        // See microsoft/terminal#2325: find the defaultSettings from the user's
+        // settings. Layer those settings upon all the existing profiles we have
+        // (defaults and dynamic profiles). We'll also set
+        // _userDefaultProfileSettings here. When we LayerJson below to apply the
+        // user settings, we'll make sure to use these defaultSettings _before_ any
+        // profiles the user might have.
+        resultPtr->_ApplyDefaultsFromUserSettings();
 
-    // Apply the user's settings
-    resultPtr->LayerJson(resultPtr->_userSettings);
+        // Apply the user's settings
+        resultPtr->LayerJson(resultPtr->_userSettings);
+    }
+    catch (...)
+    {
+        _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
+    }
 
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.

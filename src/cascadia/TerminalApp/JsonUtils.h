@@ -69,52 +69,26 @@ namespace TerminalApp::JsonUtils
         };
     }
 
-    // These exceptions cannot use localized messages, as we do not have
-    // guaranteed access to the resource loader.
-    class TypeMismatchException : public std::runtime_error
+    class DeserializationException : public std::runtime_error
     {
     public:
-        TypeMismatchException() :
-            runtime_error("unexpected data type") {}
-    };
+        DeserializationException() :
+            runtime_error("failed to deserialize"), position{ std::nullopt } {}
+        DeserializationException(ptrdiff_t position) :
+            runtime_error("failed to deserialize"), position{ position } {}
 
-    class KeyedException : public std::runtime_error
-    {
-    public:
-        KeyedException(const std::string_view key, std::exception_ptr exception) :
-            runtime_error(fmt::format("error parsing \"{0}\"", key).c_str()),
-            _key{ key },
-            _innerException{ std::move(exception) } {}
-
-        std::string GetKey() const
+        void SetKey(std::string_view newKey)
         {
-            return _key;
+            if (!key)
+            {
+                key = newKey;
+            }
         }
 
-        [[noreturn]] void RethrowInner() const
-        {
-            std::rethrow_exception(_innerException);
-        }
-
-    private:
-        std::string _key;
-        std::exception_ptr _innerException;
-    };
-
-    class UnexpectedValueException : public std::runtime_error
-    {
-    public:
-        UnexpectedValueException(const std::string_view value) :
-            runtime_error(fmt::format("unexpected value \"{0}\"", value).c_str()),
-            _value{ value } {}
-
-        std::string GetValue() const
-        {
-            return _value;
-        }
-
-    private:
-        std::string _value;
+        std::optional<ptrdiff_t> position;
+        std::optional<std::string> key;
+        std::string actualValue;
+        std::string expectedValue;
     };
 
     template<typename T>
@@ -298,7 +272,9 @@ namespace TerminalApp::JsonUtils
                 }
             }
 
-            throw UnexpectedValueException{ name };
+            DeserializationException e{ json.getOffsetStart() };
+            e.actualValue = json.asString();
+            throw e;
         }
 
         bool CanConvert(const Json::Value& json)
@@ -343,7 +319,9 @@ namespace TerminalApp::JsonUtils
                          (value == AllClear && newFlag != AllClear)))
                     {
                         // attempt to combine AllClear (explicitly) with anything else
-                        throw UnexpectedValueException{ element.asString() };
+                        DeserializationException e{ json.getOffsetStart() };
+                        e.actualValue = element.asString();
+                        throw e;
                     }
                     value |= newFlag;
                 }
@@ -407,7 +385,10 @@ namespace TerminalApp::JsonUtils
         {
             if (!conv.CanConvert(json))
             {
-                throw TypeMismatchException{};
+                DeserializationException e{ json.getOffsetStart() };
+                e.actualValue = json.asString();
+                e.expectedValue = typeid(typename Detail::DeduceOptional<T>::Type).name();
+                throw e;
             }
 
             target = conv.FromJson(json);
@@ -435,10 +416,10 @@ namespace TerminalApp::JsonUtils
             {
                 return GetValue(*found, target, std::forward<Converter>(conv));
             }
-            catch (...)
+            catch (DeserializationException& e)
             {
-                // Wrap any caught exceptions in one that preserves context.
-                throw KeyedException(key, std::current_exception());
+                e.SetKey(key);
+                throw; // rethrow now that it has a key
             }
         }
         return false;
