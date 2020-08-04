@@ -149,6 +149,16 @@ steps:
     OverWrite: true
     flattenFolders: true
   condition: succeeded()
+
+- task: CopyFiles@2
+  displayName: 'Copy Terminal Test Host needed for Helix run to Artifacts (x64)'
+  inputs:
+    Contents: |
+     **/TestHostApp/*
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: false
+  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
   
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'

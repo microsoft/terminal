@@ -42,22 +42,7 @@ function Copy-If-Exists
 }
 
 # Copy files from the 'drop' artifact dir
-Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\TextBuffer.Unit.Tests.dll" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\MUXControlsTestApp_Test\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\MUXControlsTestApp_Test\Dependencies\$Platform\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\AppThatUsesMUXIndirectly_Test\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\AppThatUsesMUXIndirectly_Test\Dependencies\$Platform\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\IXMPTestApp_Test\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\IXMPTestApp_Test\Dependencies\$Platform\*" $payloadDir
-
-# Copy files from the 'NugetPkgTestsDrop' or 'FrameworkPkgTestsDrop' artifact dir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\MUXControls.ReleaseTest.dll" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\pgosweep.exe" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test\vcruntime140.dll" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\NugetPackageTestApp_Test\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\NugetPackageTestApp_Test\Dependencies\$Platform\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\NugetPackageTestAppCX_Test\*" $payloadDir
-Copy-If-Exists "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\AppxPackages\NugetPackageTestAppCX_Test\Dependencies\$Platform\*" $payloadDir
+Copy-Item "$repoDirectory\Artifacts\$ArtifactName\$Configuration\$Platform\Test" $payloadDir -Recurse
 
 # Copy files from the repo
 New-Item -ItemType Directory -Force -Path "$payloadDir"
@@ -68,5 +53,3 @@ Copy-Item "build\helix\HelixTestHelpers.cs" "$payloadDir"
 Copy-Item "build\helix\runtests.cmd" $payloadDir
 Copy-Item "build\helix\InstallTestAppDependencies.ps1" "$payloadDir"
 Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
-# Copy-Item "version.props" "$payloadDir"
-# Copy-Item "build\Helix\CopyVisualTreeVerificationFiles.ps1" "$payloadDir"

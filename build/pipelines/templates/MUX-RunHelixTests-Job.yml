@@ -105,6 +105,15 @@ jobs:
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 
+  - template: MUX-CreateHelixProjFile-Steps.yml
+    parameters:
+      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.Local.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+
   # - template: MUX-CreateHelixProjFile-Steps.yml
   #   parameters:
   #     condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
