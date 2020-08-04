@@ -73,8 +73,6 @@ For `SelectionExpansionMode = Buffer`, the selection anchor will be moved to the
 
 Every combination of the `Direction` and `SelectionExpansionMode` will map to a keybinding. These pairings are shown below in the UI/UX Design --> Keybindings section.
 
-**NOTE**: If `copyOnSelect` is enabled, we need to make sure we update the clipboard on every change in selection.
-
 
 
 ### Copy Mode
@@ -119,8 +117,8 @@ If a selection exists, the user is basically already in Copy Mode. The user shou
 During Copy Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Copy Mode. The target endpoint being modified in Copy Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier in the flowchart).
 
 
-#### Exiting Mark Mode
-The user exits mark mode when the selection is cleared. Thus, the user can press...
+#### Exiting Copy Mode
+The user exits copy mode when the selection is cleared. Thus, the user can press...
 - the `ESC` key
 - the `copy` keybinding (which also copies the contents of the selection to the user's clipboard)
 - keys that generate input and clear a selection
@@ -130,7 +128,7 @@ In all of these cases, the selection will be cleared.
 If `copyOnSelect` is enabled, `ESC` is interpreted as "cancelling" the selection, so nothing is copied. Keys that generate input are also interpreted as "cancelling" the selection. Only the `copy` keybinding or copying using the mouse is considered "completing" the selection operation, and copying the content to the clipboard.
 
 NOTE - Related to #3884:
-    If the user has chosen to have selections persist after a copy operation, the selection created by Mark Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation. However, if the user exits Mark Mode in any of the other situations, the selection is cleared.
+    If the user has chosen to have selections persist after a copy operation, the selection created by Copy Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation. However, if the user exits Copy Mode in any of the other situations, the selection is cleared.
 
 
 
@@ -147,7 +145,7 @@ Thanks to Keybinding Args, there will only be 2 new commands that need to be add
 |                       | `Enum direction { up, down, left, right }`                     | The direction the selection will be moved in. |
 |                       | `Enum expandBy { cell, word, page, all }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectAll`  | | Select the entire text buffer.
-| `markMode`      | | Cycle the selection point targeted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
+| `copyMode`      | | Cycle the selection point targeted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
 | `toggleBlockSelection`      | | Transform the existing selection between a block selection and a line selection.  |
 
 
@@ -176,8 +174,8 @@ By default, the following keybindings will be set:
 // Select All
 { "command": "selectAll", "keys": "ctrl+shift+a" },
 
-// Mark Mode
-{ "command": "markMode", "keys": "ctrl+shift+m" },
+// Copy Mode
+{ "command": "copyMode", "keys": "ctrl+shift+m" },
 { "command": "toggleBlockSelection", "keys": "alt+shift+m" },
 ```
 These are in accordance with ConHost's keyboard selection model.
@@ -220,6 +218,9 @@ At the time of writing this spec, expanding or moving by word is interrupted by 
 
 ### Contextual Keybindings
 This feature introduces a large number of keybindings that only work if a selection is active. Currently, key bindings cannot be bound to a context, so if a user binds `moveSelectionPoint` to `shift+up` and there is no selection, `shift+up` is sent directly to the Terminal. In the future, a `context` key could be added to new bindings to get around this problem. That way, users could bind other actions to `shift+up` to run specifically when a selection is not active.
+
+### Copy Mode - Start in Block Selection
+If requested by a user, a boolean `blockMode` keybinding argument can be added to `copyMode`. It will default to false. A user can set it to true to have `copyMode` start in block selection mode.
 
 
 ## Resources
