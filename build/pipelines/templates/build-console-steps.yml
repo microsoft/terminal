@@ -150,6 +150,15 @@ steps:
     OverWrite: true
     flattenFolders: true
   condition: succeeded()
+  
+- task: CopyFiles@2
+  displayName: 'Send VcLib dependencies to artifacts so Helix can install them'
+  inputs:
+    Contents: |
+     **/Microsoft.VCLibs.*.appx
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
 
 - task: CopyFiles@2
   displayName: 'Copy Terminal Test Host needed for Helix run to Artifacts (x64)'
