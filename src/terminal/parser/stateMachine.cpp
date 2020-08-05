@@ -87,22 +87,14 @@ static constexpr bool _isC0Code(const wchar_t wch) noexcept
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-static constexpr bool _isC1Csi(const wchar_t wch) noexcept
+static constexpr bool _isC1ControlCharacter(const wchar_t wch) noexcept
 {
-    return wch == L'\x9b';
+    return (wch >= L'\x80' && wch <= L'\x8F') || (wch >= L'\x90' && wch <= L'\x9F');
 }
 
-// Routine Description:
-// - Determines if a character is a C1 DCS (Device Control Strings)
-//   This is a single-character way to start a control sequence, as opposed to "ESC P".
-//
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isC1Dcs(const wchar_t wch) noexcept
+static constexpr wchar_t _c1To7Bit(const wchar_t wch) noexcept
 {
-    return wch == L'\x90';
+    return wch - L'\x40';
 }
 
 // Routine Description:
@@ -213,17 +205,6 @@ static constexpr bool _isParameterInvalid(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a string terminator.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isStringTerminator(const wchar_t wch) noexcept
-{
-    return wch == L'\x9C';
-}
-
-// Routine Description:
 // - Determines if a character is a string terminator indicator.
 // Arguments:
 // - wch - Character to check.
@@ -319,7 +300,7 @@ static constexpr bool _isOscInvalid(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isOscTerminator(const wchar_t wch) noexcept
 {
-    return wch == AsciiChars::BEL || _isStringTerminator(wch); // Bell character or C1 terminator
+    return wch == AsciiChars::BEL; // Bell character
 }
 
 // Routine Description:
@@ -335,17 +316,6 @@ static constexpr bool _isDcsIndicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character should be initiate the end of a DCS sequence.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isDcsTerminationInitiator(const wchar_t wch) noexcept
-{
-    return wch == AsciiChars::ESC;
-}
-
-// Routine Description:
 // - Determines if a character is valid for a DCS pass through sequence.
 // Arguments:
 // - wch - Character to check.
@@ -358,6 +328,42 @@ static constexpr bool _isDcsPassThroughValid(const wchar_t wch) noexcept
 }
 
 // Routine Description:
+// - Determines if a character is "start of string" beginning
+//      indicator.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isSosIndicator(const wchar_t wch) noexcept
+{
+    return wch == L'X'; // 0x58
+}
+
+// Routine Description:
+// - Determines if a character is "private message" beginning
+//      indicator.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isPmIndicator(const wchar_t wch) noexcept
+{
+    return wch == L'^'; // 0x5E
+}
+
+// Routine Description:
+// - Determines if a character is "application program command" beginning
+//      indicator.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isApcIndicator(const wchar_t wch) noexcept
+{
+    return wch == L'_'; // 0x5F
+}
+
+// Routine Description:
 // - Determines if a character indicates an action that should be taken in the ground state -
 //     These are C0 characters and the C1 [single-character] CSI.
 // Arguments:
@@ -366,7 +372,7 @@ static constexpr bool _isDcsPassThroughValid(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
 {
-    return (wch <= AsciiChars::US) || _isC1Csi(wch) || _isC1Dcs(wch) || _isDelete(wch);
+    return (wch <= AsciiChars::US) || _isC1ControlCharacter(wch) || _isDelete(wch);
 }
 
 #pragma warning(pop)
@@ -928,6 +934,34 @@ void StateMachine::_EnterDcsTermination() noexcept
 }
 
 // Routine Description:
+// - Moves the state machine into the SosPmApcString state.
+//   This state is entered:
+//   1. When the Sos character is seen after an Escape entry
+//   2. When the Pm character is seen after an Escape entry
+//   3. When the Apc character is seen after an Escape entry
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterSosPmApcString() noexcept
+{
+    _state = VTStates::SosPmApcString;
+    _trace.TraceStateChange(L"SosPmApcString");
+}
+
+void StateMachine::_EnterVariableLengthStringTermination() noexcept
+{
+    if (_state == VTStates::OscString)
+    {
+        _EnterOscTermination();
+    }
+    else if (_state == VTStates::DcsPassThrough)
+    {
+        _EnterDcsTermination();
+    }
+}
+
+// Routine Description:
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
@@ -943,14 +977,6 @@ void StateMachine::_EventGround(const wchar_t wch)
     if (_isC0Code(wch) || _isDelete(wch))
     {
         _ActionExecute(wch);
-    }
-    else if (_isC1Csi(wch) && _isInAnsiMode)
-    {
-        _EnterCsiEntry();
-    }
-    else if (_isC1Dcs(wch) && _isInAnsiMode)
-    {
-        _EnterDcsEntry();
     }
     else
     {
@@ -1019,6 +1045,10 @@ void StateMachine::_EventEscape(const wchar_t wch)
         else if (_isDcsIndicator(wch))
         {
             _EnterDcsEntry();
+        }
+        else if (_isSosIndicator(wch) || _isPmIndicator(wch) || _isApcIndicator(wch))
+        {
+            _EnterSosPmApcString();
         }
         else
         {
@@ -1300,9 +1330,9 @@ void StateMachine::_EventOscString(const wchar_t wch)
         _ActionOscDispatch(wch);
         _EnterGround();
     }
-    else if (_isOscTerminationInitiator(wch))
+    else if (_isEscape(wch))
     {
-        _EnterOscTermination();
+         _EnterOscTermination();
     }
     else if (_isOscInvalid(wch))
     {
@@ -1323,13 +1353,6 @@ void StateMachine::_EventOscString(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventOscTermination(const wchar_t wch)
-{
-    _trace.TraceOnEvent(L"OscTermination");
-
-    _ActionOscDispatch(wch);
-    _EnterGround();
-}
 
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the Ss3Entry state.
@@ -1505,17 +1528,10 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsIgnore(const wchar_t wch) noexcept
+void StateMachine::_EventDcsIgnore() noexcept
 {
     _trace.TraceOnEvent(L"DcsIgnore");
-    if (_isStringTerminator(wch))
-    {
-        _EnterGround();
-    }
-    else
-    {
-        _ActionIgnore();
-    }
+    _ActionIgnore();
 }
 
 // Routine Description:
@@ -1615,16 +1631,11 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"DcsPassThrough");
-    if (_isStringTerminator(wch))
-    {
-        // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
-        _EnterGround();
-    }
     if (_isC0Code(wch) || _isDcsPassThroughValid(wch))
     {
         _ActionDcsPassThrough(wch);
     }
-    else if (_isDcsTerminationInitiator(wch))
+    else if (_isEscape(wch))
     {
         _EnterDcsTermination();
     }
@@ -1635,21 +1646,39 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 }
 
 // Routine Description:
-// - Handle the two-character termination of a DCS sequence.
+// - Handle SOS/PM/APC string
 //   Events in this state will:
-//   1. Enter ground on a string terminator
-//   2. Pass on everything else as the start of a regular escape sequence
+//   1. Ignore everything until the control function ST is recognized.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsTermination(const wchar_t wch)
+void StateMachine::_EventSosPmApcString(const wchar_t wch)
 {
-    _trace.TraceOnEvent(L"DcsTermination");
-
+    _trace.TraceOnEvent(L"SosPmApcString");
     if (_isStringTerminatorIndicator(wch))
     {
-        // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
+        _EnterGround();
+    }
+    else
+    {
+        _ActionIgnore();
+    }
+}
+
+void StateMachine::_EventVariableLengthStringTermination(const wchar_t wch)
+{
+    if (_isStringTerminatorIndicator(wch))
+    {
+        if (_state == VTStates::OscTermination)
+        {
+            _ActionOscDispatch(wch);
+        }
+        if (_state == VTStates::DcsTermination)
+        {
+            // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
+        }
+
         _EnterGround();
     }
     else
@@ -1681,12 +1710,23 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::DcsPassThrough)
+    else if (_isC1ControlCharacter(wch))
     {
-        // Don't go to escape from the OSC string state - ESC can be used to
-        //      terminate OSC strings.
-        //
-        // Same for DCS pass through state.
+        // Don't go to escape from the variable length string state - ESC can be used to
+        //      terminate variable length control string.
+        if (_IsVariableLengthStringState())
+        {
+            _EnterVariableLengthStringTermination();
+            _EventVariableLengthStringTermination(_c1To7Bit(wch));  
+        }
+        else
+        {
+            _EnterEscape();
+            _EventEscape(_c1To7Bit(wch));
+        }
+    }
+    else if (_isEscape(wch) && !_IsVariableLengthStringState())
+    {
         _EnterEscape();
     }
     else
@@ -1713,7 +1753,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::OscString:
             return _EventOscString(wch);
         case VTStates::OscTermination:
-            return _EventOscTermination(wch);
+            return _EventVariableLengthStringTermination(wch);
         case VTStates::Ss3Entry:
             return _EventSs3Entry(wch);
         case VTStates::Ss3Param:
@@ -1723,7 +1763,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::DcsEntry:
             return _EventDcsEntry(wch);
         case VTStates::DcsIgnore:
-            return _EventDcsIgnore(wch);
+            return _EventDcsIgnore();
         case VTStates::DcsIntermediate:
             return _EventDcsIntermediate(wch);
         case VTStates::DcsParam:
@@ -1731,7 +1771,9 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::DcsPassThrough:
             return _EventDcsPassThrough(wch);
         case VTStates::DcsTermination:
-            return _EventDcsTermination(wch);
+            return _EventVariableLengthStringTermination(wch);
+        case VTStates::SosPmApcString:
+            return _EventSosPmApcString(wch);
         default:
             return;
         }
@@ -1952,4 +1994,9 @@ void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
     {
         value = MAX_PARAMETER_VALUE;
     }
+}
+
+const bool StateMachine::_IsVariableLengthStringState() const noexcept
+{
+    return _state == VTStates::OscString || _state == VTStates::DcsPassThrough || _state == VTStates::SosPmApcString;
 }
