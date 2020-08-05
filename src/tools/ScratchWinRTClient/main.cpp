@@ -41,7 +41,7 @@ void createExistingObjectApp(int /*argc*/, char** argv)
     if (canConvert)
     {
         std::wstring wideGuidStr{ til::u8u16(guidString) };
-        printf("\x1b[90mSERVER: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
+        printf("\x1b[90mCLIENT: Found GUID:%ls\x1b[m\n", wideGuidStr.c_str());
         GUID result{};
         THROW_IF_FAILED(IIDFromString(wideGuidStr.c_str(), &result));
         guidFromCmdline = result;
@@ -215,129 +215,53 @@ void managerApp()
 
     printf("increment host 0:\n");
 
-    struct Foo : winrt::implements<Foo, IMyComInterface>
-    {
-        HRESULT __stdcall Call() noexcept override
-        {
-            return S_OK;
-        }
-    };
-    auto f = winrt::make<Foo>();
-    try
-    {
-        auto b = f.as<IMyComInterface>();
-        winrt::check_hresult(b->Call());
-        printf("The Foo works just _fine_\n");
-    }
-    catch (hresult_error const& e)
-    {
-        printf("Error just doing the Foo thing: %ls\n", e.message().c_str());
-    }
-
-    try
-    {
-        // winrt::com_ptr<IMyComInterface> f;
-        //f.copy_from(host0);
-        // auto unk = winrt::get_unknown(host0);
-        // DebugBreak();
-
-        // This obviously doesn't work, because winrt::Server::HostClass doesn't
-        // implement IMyComInterface. The implementation does!
-        // auto mci = host0.as<IMyComInterface>();
-        // if (mci)
-        // if (mci)
-        // {
-        //     mci->Call();
-        // }
-
-        // Again, this doesn't work because the compiler doesn't know that
-        // Server::impl::HostClass implements IMyComInterface
-        // winrt::com_ptr<IMyComInterface> c;
-        // c.copy_from(winrt::get_self<IMyComInterface>(host0));
-        // if (c)
-        // {
-        //     c->Call();
-        // }
-
-        // Unsurprisingly, none of the follwoing works either:
-        // auto pvoid = winrt::put_abi(host0);
-        // printf("Step 1\n");
-        // // winrt::com_ptr<::IUnknown> unk{};
-        // ::IUnknown* iunk = (::IUnknown*)*pvoid;
-        // printf("Step 2\n");
-        // winrt::com_ptr<::IUnknown> unk; // { &iunk };
-        // unk.copy_from(iunk);
-        // printf("Step 3\n");
-
-        // auto mci = unk.as<IMyComInterface>();
-        // if (mci)
-        // {
-        //     mci->Call();
-        //     printf("Step 4\n");
-        // }
-
-        // printf("Step 5\n");
-        // IMyComInterface* mciraw;
-        // unk->QueryInterface(__uuidof(IMyComInterface), (void**)&mciraw);
-        // if (mci)
-        // {
-        //     mci->Call();
-        //     printf("Step 6\n");
-        // }
-        // printf("Step 7\n");
-    }
-    catch (hresult_error const& e)
-    {
-        printf("Error converting to the IMyComInterface: %ls\n", e.message().c_str());
-    }
-
-    // host0.DoTheThing();
-    // host0.DoTheThing();
-    // host0.DoTheThing();
-    // host0.DoTheThing();
+    host0.DoTheThing();
+    host0.DoTheThing();
+    host0.DoTheThing();
+    host0.DoTheThing();
     printHosts(manager);
 
-    return;
+    // return;
 
-    // bool exitRequested = false;
-    // while (!exitRequested)
-    // {
-    //     printf("-----------------------------\n");
-    //     printf("input a command (l, i, c, q): ");
-    //     const auto ch = _getch();
-    //     printf("\n");
-    //     if (ch == 'l')
-    //     {
-    //         printHosts(manager);
-    //     }
-    //     else if (ch == 'i')
-    //     {
-    //         printf("input a host to increment: ");
-    //         const auto ch2 = _getch();
-    //         if (ch2 >= '0' && ch2 <= '9')
-    //         {
-    //             uint32_t index = ((int)(ch2)) - ((int)('0'));
-    //             if (index < manager.Hosts().Size())
-    //             {
-    //                 manager.Hosts().GetAt(index).DoTheThing();
-    //                 printHosts(manager);
-    //             }
-    //         }
-    //     }
-    //     else if (ch == 'c')
-    //     {
-    //         printf("Creating a new host\n");
-    //         manager.CreateHost();
-    //         printHosts(manager);
-    //     }
-    //     else if (ch == 'q')
-    //     {
-    //         exitRequested = true;
-    //     }
-    // }
+    bool exitRequested = false;
+    while (!exitRequested)
+    {
+        printf("-----------------------------\n");
+        printf("input a command (l, i, c, q): ");
+        const auto ch = _getch();
+        printf("\n");
+        if (ch == 'l')
+        {
+            printHosts(manager);
+        }
+        else if (ch == 'i')
+        {
+            printf("input a host to increment: ");
+            const auto ch2 = _getch();
+            if (ch2 >= '0' && ch2 <= '9')
+            {
+                uint32_t index = ((int)(ch2)) - ((int)('0'));
+                if (index < manager.Hosts().Size())
+                {
+                    manager.Hosts().GetAt(index).DoTheThing();
+                    printHosts(manager);
+                }
+            }
+        }
+        else if (ch == 'c')
+        {
+            printf("Creating a new host\n");
+            manager.CreateHost();
+            printHosts(manager);
+        }
+        else if (ch == 'q')
+        {
+            exitRequested = true;
+        }
+    }
 }
 
-int main(int /*argc*/, char** /*argv*/)
+int main(int argc, char** argv)
 {
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
@@ -347,31 +271,31 @@ int main(int /*argc*/, char** /*argv*/)
 
     init_apartment();
 
-    // try
-    // {
-    //     // If a GUID was passed on the commandline, then try to instead make an instance of that class.
-    //     if (argc > 1)
-    //     {
-    //         createExistingObjectApp(argc, argv);
-    //     }
-    //     else
-    //     {
-    //         scratchApp();
-    //     }
-    // }
-    // catch (hresult_error const& e)
-    // {
-    //     printf("Error: %ls\n", e.message().c_str());
-    // }
-
     try
     {
-        managerApp();
+        // If a GUID was passed on the commandline, then try to instead make an instance of that class.
+        if (argc > 1)
+        {
+            createExistingObjectApp(argc, argv);
+        }
+        else
+        {
+            managerApp();
+        }
     }
     catch (hresult_error const& e)
     {
         printf("Error: %ls\n", e.message().c_str());
     }
+
+    // try
+    // {
+    //     managerApp();
+    // }
+    // catch (hresult_error const& e)
+    // {
+    //     printf("Error: %ls\n", e.message().c_str());
+    // }
 
     // printf("Press Enter me when you're done.");
     // getchar();
