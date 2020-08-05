@@ -144,6 +144,16 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
+        struct LineMetrics
+        {
+            float gridlineWidth;
+            float underlineOffset;
+            float underlineWidth;
+            float strikethroughOffset;
+            float strikethroughWidth;
+        };
+
+        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
         til::size _glyphCell;
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
@@ -159,6 +169,7 @@ namespace Microsoft::Console::Render
         bool _invalidateFullRows;
         til::bitmap _invalidMap;
         til::point _invalidScroll;
+        bool _allInvalid;
 
         bool _presentReady;
         std::vector<RECT> _presentDirty;
@@ -269,11 +280,13 @@ namespace Microsoft::Console::Render
                                                const int dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                               LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 
         void _InvalidateRectangle(const til::rectangle& rc);
+        bool _IsAllInvalid() const noexcept;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

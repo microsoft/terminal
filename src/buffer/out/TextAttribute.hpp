@@ -100,12 +100,12 @@ public:
 
     void SetBold(bool isBold) noexcept;
     void SetFaint(bool isFaint) noexcept;
-    void SetItalics(bool isItalic) noexcept;
+    void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
-    void SetUnderline(bool isUnderlined) noexcept;
-    void SetOverline(bool isOverlined) noexcept;
+    void SetUnderlined(bool isUnderlined) noexcept;
+    void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
@@ -218,11 +218,12 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x)}",
+                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
                     attr.IsBold(),
-                    attr._wAttrLegacy);
+                    attr._wAttrLegacy,
+                    static_cast<DWORD>(attr._extendedAttrs));
             }
         };
     }

@@ -67,20 +67,20 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 
     if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
     {
-        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
-        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+        RETURN_IF_FAILED(_SetUnderlined(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderlined(textAttributes.IsUnderlined());
     }
 
     if (textAttributes.IsOverlined() != _lastTextAttributes.IsOverlined())
     {
-        RETURN_IF_FAILED(_SetOverline(textAttributes.IsOverlined()));
-        _lastTextAttributes.SetOverline(textAttributes.IsOverlined());
+        RETURN_IF_FAILED(_SetOverlined(textAttributes.IsOverlined()));
+        _lastTextAttributes.SetOverlined(textAttributes.IsOverlined());
     }
 
     if (textAttributes.IsItalic() != _lastTextAttributes.IsItalic())
     {
-        RETURN_IF_FAILED(_SetItalics(textAttributes.IsItalic()));
-        _lastTextAttributes.SetItalics(textAttributes.IsItalic());
+        RETURN_IF_FAILED(_SetItalic(textAttributes.IsItalic()));
+        _lastTextAttributes.SetItalic(textAttributes.IsItalic());
     }
 
     if (textAttributes.IsBlinking() != _lastTextAttributes.IsBlinking())

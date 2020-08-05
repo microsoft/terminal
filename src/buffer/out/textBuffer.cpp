@@ -787,7 +787,7 @@ const Cursor& TextBuffer::GetCursor() const noexcept
     return _currentAttributes;
 }
 
-void TextBuffer::SetCurrentAttributes(const TextAttribute currentAttributes) noexcept
+void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept
 {
     _currentAttributes = currentAttributes;
 }

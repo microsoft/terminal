@@ -32,7 +32,6 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
@@ -46,7 +45,8 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() }
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _startupActions{ winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>() }
     {
         InitializeComponent();
     }
@@ -166,7 +166,28 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTab(nullptr);
+                // if alt is pressed, open a pane
+                const CoreWindow window = CoreWindow::GetForCurrentThread();
+                const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                        WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                // Check for DebugTap
+                bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                                WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+                if (altPressed && !debugTap)
+                {
+                    page->_SplitPane(TerminalApp::SplitState::Automatic,
+                                     TerminalApp::SplitType::Manual,
+                                     nullptr);
+                }
+                else
+                {
+                    page->_OpenNewTab(nullptr);
+                }
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -223,7 +244,7 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.empty())
+            if (_startupActions.Size() == 0)
             {
                 _OpenNewTab(nullptr);
 
@@ -231,22 +252,27 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions();
+                _ProcessStartupActions(_startupActions, true);
             }
         }
     }
 
     // Method Description:
-    // - Process all the startup actions in our list of startup actions. We'll
-    //   do this all at once here.
+    // - Process all the startup actions in the provided list of startup
+    //   actions. We'll do this all at once here.
     // Arguments:
-    // - <none>
+    // - actions: a winrt vector of actions to process. Note that this must NOT
+    //   be an IVector&, because we need the collection to be accessible on the
+    //   other side of the co_await.
+    // - initial: if true, we're parsing these args during startup, and we
+    //   should fire an Initialized event.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions,
+                                                                const bool initial)
     {
         // If there are no actions left, do nothing.
-        if (_startupActions.empty())
+        if (actions.Size() == 0)
         {
             return;
         }
@@ -256,11 +282,20 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : _startupActions)
+            for (const auto& action : actions)
             {
-                _actionDispatch->DoAction(action);
+                if (auto page{ weakThis.get() })
+                {
+                    _actionDispatch->DoAction(action);
+                }
+                else
+                {
+                    return;
+                }
             }
-
+        }
+        if (initial)
+        {
             _CompleteInitialization();
         }
     }
@@ -590,7 +625,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
     {
         // Initialize the new tab
 
@@ -691,7 +726,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
-                                                                                        winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+                                                                                        TerminalApp::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
 
@@ -857,6 +892,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
+        _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
     }
 
     // Method Description:
@@ -1331,7 +1367,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto focusedTab = _GetStrongTabImpl(*indexOpt);
-            winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+            TerminalApp::TerminalSettings controlSettings;
             GUID realGuid;
             bool profileFound = false;
 
@@ -1364,19 +1400,20 @@ namespace winrt::TerminalApp::implementation
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-            const auto canSplit = focusedTab->CanSplitPane(splitType);
-
-            if (!canSplit && _startupState == StartupState::Initialized)
-            {
-                return;
-            }
+            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
             auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic && _startupState < StartupState::Initialized)
+            if (realSplitType == SplitState::Automatic)
             {
-                float contentWidth = gsl::narrow_cast<float>(_tabContent.ActualWidth());
-                float contentHeight = gsl::narrow_cast<float>(_tabContent.ActualHeight());
-                realSplitType = focusedTab->PreCalculateAutoSplit({ contentWidth, contentHeight });
+                realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
+            }
+
+            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, availableSpace);
+            if (!canSplit)
+            {
+                return;
             }
 
             TermControl newControl{ controlSettings, controlConnection };
@@ -1778,7 +1815,7 @@ namespace winrt::TerminalApp::implementation
                 tab->SetFocused(true);
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, Title());
+                _titleChangeHandlers(*this, tab->GetActiveTitle());
 
                 // Raise an event that our titlebar color changed
                 std::optional<Windows::UI::Color> color = tab->GetTabColor();
@@ -1930,9 +1967,13 @@ namespace winrt::TerminalApp::implementation
     // - actions: a list of Actions to process on startup.
     // Return Value:
     // - <none>
-    void TerminalPage::SetStartupActions(std::deque<winrt::TerminalApp::ActionAndArgs>& actions)
+    void TerminalPage::SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions)
     {
-        _startupActions = actions;
+        // The fastest way to copy all the actions out of the std::vector and
+        // put them into a winrt::IVector is by making a copy, then moving the
+        // copy into the winrt vector ctor.
+        auto listCopy = actions;
+        _startupActions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(listCopy));
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
@@ -2190,6 +2231,49 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ClearNonClientAreaColors()
     {
         // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
+    }
+
+    // Function Description:
+    // - This is a helper method to get the commandline out of a
+    //   ExecuteCommandline action, break it into subcommands, and attempt to
+    //   parse it into actions. This is used by _HandleExecuteCommandline for
+    //   processing commandlines in the current WT window.
+    // Arguments:
+    // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
+    // Return Value:
+    // - an empty list if we failed to parse, otherwise a list of actions to execute.
+    std::vector<winrt::TerminalApp::ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args)
+    {
+        if (!args || args.Commandline().empty())
+        {
+            return {};
+        }
+        // Convert the commandline into an array of args with
+        // CommandLineToArgvW, similar to how the app typically does when
+        // called from the commandline.
+        int argc = 0;
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
+        if (argv)
+        {
+            std::vector<winrt::hstring> args;
+
+            // Make sure the first argument is wt.exe, because ParseArgs will
+            // always skip the program name. The particular value of this first
+            // string doesn't terribly matter.
+            args.emplace_back(L"wt.exe");
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+            winrt::array_view<const winrt::hstring> argsView{ args };
+
+            ::TerminalApp::AppCommandlineArgs appArgs;
+            if (appArgs.ParseArgs(argsView) == 0)
+            {
+                return appArgs.GetStartupActions();
+            }
+        }
+        return {};
     }
 
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
