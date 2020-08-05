@@ -29,14 +29,14 @@ namespace winrt::ScratchWinRTServer::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
-        _settings = winrt::Microsoft::Terminal::Settings::TerminalSettings();
+        // _settings = winrt::Microsoft::Terminal::Settings::TerminalSettings();
 
-        auto fontSize = _settings.FontSize();
-        const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
-        const auto fontFace = _settings.FontFace();
-        const auto fontWeight = _settings.FontWeight();
-        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
-        _desiredFont = { _actualFont };
+        // auto fontSize = _settings.FontSize();
+        // const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+        // const auto fontFace = _settings.FontFace();
+        // const auto fontWeight = _settings.FontWeight();
+        // _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+        // _desiredFont = { _actualFont };
     }
     HostClass::~HostClass()
     {

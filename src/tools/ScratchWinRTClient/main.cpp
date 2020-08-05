@@ -52,7 +52,10 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         return; // -1;
     }
 
-    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline, CLSCTX_LOCAL_SERVER);
+    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
+                                                                      CLSCTX_LOCAL_SERVER
+                                                                      // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
+    );
 
     if (!host)
     {
@@ -93,7 +96,7 @@ void createHostClassProcess(const winrt::guid& g)
     // Ooof this is dumb, but we need a sleep here to make the server starts.
     // That's _sub par_. Maybe we could use the host's stdout to have them emit
     // a byte when they're set up?
-    Sleep(100);
+    Sleep(1000);
 }
 
 void scratchApp()

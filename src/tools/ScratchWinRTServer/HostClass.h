@@ -43,7 +43,7 @@ namespace winrt::ScratchWinRTServer::implementation
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
-        winrt::Microsoft::Terminal::Settings::IControlSettings _settings;
+        winrt::Microsoft::Terminal::Settings::IControlSettings _settings{ nullptr };
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
 
         bool _InitializeTerminal();
