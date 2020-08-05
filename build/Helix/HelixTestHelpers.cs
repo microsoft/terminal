@@ -518,7 +518,7 @@ namespace HelixTestHelpers
             var assembly = new XElement("assembly");
             assembly.SetAttributeValue("name", "MUXControls.Test.dll");
             assembly.SetAttributeValue("test-framework", "TAEF");
-            assembly.SetAttributeValue("run-date", DateTime.Now.ToString("yyyy-mm-dd"));
+            assembly.SetAttributeValue("run-date", DateTime.Now.ToString("yyyy-MM-dd"));
 
             // This doesn't need to be completely accurate since it's not exposed anywhere.
             // If we need accurate an start time we can probably calculate it from the te.wtl file, but for
