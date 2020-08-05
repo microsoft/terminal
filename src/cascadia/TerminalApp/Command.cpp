@@ -10,7 +10,6 @@
 #include "JsonUtils.h"
 #include <LibraryResources.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace ::TerminalApp;
 

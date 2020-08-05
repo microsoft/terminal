@@ -10,7 +10,6 @@
 #include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
-//#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
