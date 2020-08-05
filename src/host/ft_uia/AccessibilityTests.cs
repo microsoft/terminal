@@ -360,6 +360,10 @@ namespace Conhost.UIA.Tests
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -395,6 +399,10 @@ namespace Conhost.UIA.Tests
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -475,6 +483,10 @@ namespace Conhost.UIA.Tests
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -536,6 +548,10 @@ namespace Conhost.UIA.Tests
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
