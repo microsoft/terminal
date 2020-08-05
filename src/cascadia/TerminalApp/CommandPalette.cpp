@@ -125,10 +125,10 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // If the ATS is in anchored mode, focus the listview so that screen readers
+            // If the ATS is in anchored mode, focus the list view so that screen readers
             // can read out the tab titles. We don't want to do this for non-accessibility
             // unanchored mode because we'd like the search bar to stay focused as the user
-            // tabcycles/arrows through the tabs.
+            // cycles through the tabs.
             if (_anchorKey != VirtualKey::None)
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
