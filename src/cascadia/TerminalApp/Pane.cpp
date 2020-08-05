@@ -1237,7 +1237,7 @@ void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
     {
         if (zoomedPane == _firstChild || zoomedPane == _secondChild)
         {
-            // When we're un-zoom'ing the pane, we'll need to re-add it to our UI
+            // When we're un-zooming the pane, we'll need to re-add it to our UI
             // tree where it originally belonged. easy way: just re-add both.
             _root.Children().Clear();
             _root.Children().Append(_firstChild->GetRootElement());
