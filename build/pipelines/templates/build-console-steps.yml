@@ -117,6 +117,17 @@ steps:
     buildConfiguration: $(BuildConfiguration) # Optional
     #publishRunAttachments: true # Optional
 
+- task: CopyFiles@2
+  displayName: 'Copy result logs to Artifacts'
+  inputs:
+    Contents: |
+     **/*.wtl
+     **/*onBuildMachineResults.xml
+     ${{ parameters.testLogPath }}
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
+
 # - task: CopyFiles@2
 #   displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
 #   inputs:
@@ -131,45 +142,20 @@ steps:
 #   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
 - task: CopyFiles@2
-  displayName: 'Copy result logs to Artifacts'
+  displayName: 'Copy outputs needed for test runs to Artifacts'
   inputs:
     Contents: |
-     **/*.wtl
-     **/*onBuildMachineResults.xml
-     ${{ parameters.testLogPath }}
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
-
-- task: CopyFiles@2
-  displayName: 'Copy tests needed for Helix run to Artifacts'
-  inputs:
-    Contents: |
+     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.xml
      **/*unit.test*.dll
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
-  condition: succeeded()
-  
-- task: CopyFiles@2
-  displayName: 'Send VcLib dependencies to artifacts so Helix can install them'
-  inputs:
-    Contents: |
      **/Microsoft.VCLibs.*.appx
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
-
-- task: CopyFiles@2
-  displayName: 'Copy Terminal Test Host needed for Helix run to Artifacts (x64)'
-  inputs:
-    Contents: |
      **/TestHostApp/*
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-  
+
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'
   inputs:
