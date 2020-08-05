@@ -911,7 +911,7 @@ namespace winrt::TerminalApp::implementation
     //   * If we're not zoomed, then zoom the active pane, making it take the
     //     full size of the tab. We'll achieve this by changing our response to
     //     Tab::GetRootElement, so that it'll return the zoomed pane only.
-    //   *  If we're currently zoomed on a pane, unzoom that pane.
+    //   *  If we're currently zoomed on a pane, un-zoom that pane.
     // Arguments:
     // - <none>
     // Return Value:

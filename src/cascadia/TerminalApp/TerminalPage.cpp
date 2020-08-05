@@ -1171,7 +1171,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Helper to manually exit "zoom" when certain actions take place.
     //   Anything that modifies the state of the pane tree should probably
-    //   unzoom the focused pane first, so that the user can see the full pane
+    //   un-zoom the focused pane first, so that the user can see the full pane
     //   tree again. These actions include:
     //   * Splitting a new pane
     //   * Closing a pane

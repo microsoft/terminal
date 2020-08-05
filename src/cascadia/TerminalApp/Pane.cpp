@@ -1204,7 +1204,7 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
         {
             // When we're zooming the pane, we'll need to remove it from our UI
             // tree. Easy way: just remove both children. We'll re-attach both
-            // when we unzoom.
+            // when we un-zoom.
             _root.Children().Clear();
         }
 
@@ -1216,14 +1216,14 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
 }
 
 // Method Description:
-// - Recursively attempt to "unzoom" the given pane. This does the opposite of
+// - Recursively attempt to "un-zoom" the given pane. This does the opposite of
 //   Pane::Zoom. When we find the given pane, we should return the pane to our
 //   UI tree. We'll also clear the internal state, so the pane can display its
 //   borders correctly.
 // - The caller should make sure to have removed the zoomed pane from the UI
 //   tree _before_ calling this.
 // Arguments:
-// - zoomedPane: This is the pane which we're attempting to unzoom.
+// - zoomedPane: This is the pane which we're attempting to un-zoom.
 // Return Value:
 // - <none>
 void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
@@ -1237,7 +1237,7 @@ void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
     {
         if (zoomedPane == _firstChild || zoomedPane == _secondChild)
         {
-            // When we're unzoom-ing the pane, we'll need to re-add it to our UI
+            // When we're un-zoom'ing the pane, we'll need to re-add it to our UI
             // tree where it originally belonged. easy way: just re-add both.
             _root.Children().Clear();
             _root.Children().Append(_firstChild->GetRootElement());
