@@ -63,6 +63,7 @@
         "openTabColorPicker",
         "renameTab",
         "commandPalette",
+        "wt",
         "unbound"
       ],
       "type": "string"
@@ -280,6 +281,23 @@
         }
       ]
     },
+    "WtAction": {
+      "description": "Arguments corresponding to a wt Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "wt" },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "a `wt` commandline to run in the current window"
+            }
+          }
+        }
+      ],
+      "required": [ "commandline" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -296,6 +314,7 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/WtAction" },
               { "type": "null" }
             ]
         },

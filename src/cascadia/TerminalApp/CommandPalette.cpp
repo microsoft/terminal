@@ -187,14 +187,16 @@ namespace winrt::TerminalApp::implementation
         {
             const auto actionAndArgs = command.Action();
             _dispatch.DoAction(actionAndArgs);
-            _close();
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CommandPaletteDispatchedAction",
                 TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                TraceLoggingUInt32(_searchBox().Text().size(), "SearchTextLength", "Number of characters in the search string"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+            _close();
         }
     }
 
@@ -271,16 +273,17 @@ namespace winrt::TerminalApp::implementation
     };
 
     // Method Description:
-    // - Update our list of filtered actions to reflect the current contents of
+    // - Produce a list of filtered actions to reflect the current contents of
     //   the input box. For more details on which commands will be displayed,
     //   see `_getWeight`.
     // Arguments:
-    // - <none>
+    // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    void CommandPalette::_updateFilteredActions()
+    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
     {
-        _filteredActions.Clear();
+        std::vector<winrt::TerminalApp::Command> actions;
+
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
 
@@ -303,10 +306,10 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                _filteredActions.Append(action);
+                actions.push_back(action);
             }
 
-            return;
+            return actions;
         }
 
         // Here, there was some filter text.
@@ -343,7 +346,56 @@ namespace winrt::TerminalApp::implementation
         {
             auto top = heap.top();
             heap.pop();
-            _filteredActions.Append(top.command);
+            actions.push_back(top.command);
+        }
+
+        return actions;
+    }
+
+    // Method Description:
+    // - Update our list of filtered actions to reflect the current contents of
+    //   the input box. For more details on which commands will be displayed,
+    //   see `_getWeight`.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateFilteredActions()
+    {
+        auto actions = _collectFilteredActions();
+
+        // Make _filteredActions look identical to actions, using only Insert and Remove.
+        // This allows WinUI to nicely animate the ListView as it changes.
+        for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
+        {
+            for (uint32_t j = i; j < _filteredActions.Size(); j++)
+            {
+                if (_filteredActions.GetAt(j) == actions[i])
+                {
+                    for (uint32_t k = i; k < j; k++)
+                    {
+                        _filteredActions.RemoveAt(i);
+                    }
+                    break;
+                }
+            }
+
+            if (_filteredActions.GetAt(i) != actions[i])
+            {
+                _filteredActions.InsertAt(i, actions[i]);
+            }
+        }
+
+        // Remove any extra trailing items from the destination
+        while (_filteredActions.Size() > actions.size())
+        {
+            _filteredActions.RemoveAtEnd();
+        }
+
+        // Add any extra trailing items from the source
+        while (_filteredActions.Size() < actions.size())
+        {
+            _filteredActions.Append(actions[_filteredActions.Size()]);
         }
     }
 

@@ -194,6 +194,10 @@ namespace winrt::TerminalApp::implementation
             _RenameTabHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ExecuteCommandline:
+        {
+            _ExecuteCommandlineHandlers(*this, *eventArgs);
+        }
         default:
             return false;
         }
