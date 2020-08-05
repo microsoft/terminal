@@ -124,16 +124,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            // Update the command palette when settings reload
-            auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
-            {
-                commandsCollection.Append(nameAndCommand.second);
-            }
-
-            _recursiveUpdateCommandKeybindingLabels(_settings, commandsCollection);
-
-            CommandPalette().SetActions(commandsCollection);
+            _UpdateCommandsForPalette();
         }
     }
 
@@ -1979,6 +1970,28 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Repopulates the list of commands in the command palette with the
+    //   current commands in the settings. Also updates the keybinding labels to
+    //   reflect any matching keybindings.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateCommandsForPalette()
+    {
+        // Update the command palette when settings reload
+        auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
+        {
+            commandsCollection.Append(nameAndCommand.second);
+        }
+
+        _recursiveUpdateCommandKeybindingLabels(_settings, commandsCollection);
+
+        CommandPalette().SetActions(commandsCollection);
     }
 
     // Method Description:
