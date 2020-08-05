@@ -8,7 +8,7 @@
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
-  <Import Project="..\..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="resource.h" />

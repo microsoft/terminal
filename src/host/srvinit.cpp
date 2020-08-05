@@ -263,8 +263,6 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
-    char* ch = new char[30];
-
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
     RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 

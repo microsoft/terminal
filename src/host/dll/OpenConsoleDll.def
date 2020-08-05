@@ -1,0 +1,4 @@
+LIBRARY OpenConsoleDll
+
+EXPORTS	
+    
