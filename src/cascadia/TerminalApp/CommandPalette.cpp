@@ -117,7 +117,7 @@ namespace winrt::TerminalApp::implementation
             // When the search bar is visible, keyboard navigation with Tab should cycle between
             // the search bar and the list view. However, ATS wants to allow Tab to cycle between
             // tabs while maintaining focus on the search bar. These two scenarios conflict with each
-            // other, and in the interest of not trapping keyboard navigators in the listview, we'll
+            // other, and in the interest of not trapping keyboard navigators in the ListView, we'll
             // explicitly _not_ handle tab when a program is actively listening for these accessibility events.
             bool screenReaderAttached = Automation::Peers::AutomationPeer::ListenerExists(Automation::Peers::AutomationEvents::PropertyChanged);
             if (screenReaderAttached && _anchorKey == VirtualKey::None)
@@ -125,7 +125,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // If the ATS is in anchored mode, focus the list view so that screen readers
+            // If the ATS is in anchored mode, focus the ListView so that screen readers
             // can read out the tab titles. We don't want to do this for non-accessibility
             // unanchored mode because we'd like the search bar to stay focused as the user
             // cycles through the tabs.
