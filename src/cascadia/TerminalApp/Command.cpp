@@ -31,8 +31,8 @@ namespace winrt::TerminalApp::implementation
         // work perfectly fine :shrug:.
 
         winrt::Windows::UI::Xaml::Controls::FontIconSource icon;
-        Windows::UI::Xaml::Media::FontFamily ffs{ L"Segoe MDL2 Assets" };
-        icon.FontFamily(ffs);
+        Windows::UI::Xaml::Media::FontFamily fontFamily{ L"Segoe MDL2 Assets" };
+        icon.FontFamily(fontFamily);
         icon.Glyph(L"");
 
         IconSource(icon);
