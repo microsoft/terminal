@@ -16,7 +16,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     PreviewKeyDown="_previewKeyDownHandler"
     KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
 
     <UserControl.Resources>
         <ResourceDictionary>

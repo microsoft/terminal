@@ -113,6 +113,11 @@ namespace winrt::TerminalApp::implementation
         // they do raise PreviewKeyDown events.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode && key == VirtualKey::Tab)
         {
+            // In the command palette, tab swaps focus between the search box and the list view.
+            // So, when the focus is on the list view, screen readers are able to read out the
+            // items. Since anchored mode tab switcher handles the tab key manually, we also need
+            // to manually shift focus to the ListView for screen readers to work.
+            _filteredActionsView().Focus(FocusState::Keyboard);
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
@@ -376,6 +381,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::ActionMode:
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            ControlName(L"Command Palette");
             break;
         case CommandPaletteMode::TabSwitcherMode:
         {
@@ -385,6 +391,11 @@ namespace winrt::TerminalApp::implementation
             if (_anchorKey != VirtualKey::None)
             {
                 _searchBox().Visibility(Visibility::Collapsed);
+                ControlName(L"Tab Switcher Anchored Mode");
+            }
+            else
+            {
+                ControlName(L"Tab Switcher UnAnchored Mode");
             }
 
             break;
@@ -392,6 +403,7 @@ namespace winrt::TerminalApp::implementation
         default:
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            ControlName(L"Command Palette");
             break;
         }
     }
