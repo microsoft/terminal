@@ -1764,10 +1764,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
-    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
-    //      that are set up in TerminalPage::Create()
+    // - Responds to changes in the TabView's item list by changing the
+    //   tabview's visibility.
+    // - This method is also invoked when tabs are dragged / dropped as part of
+    //   tab reordering and this method hands that case as well in concert with
+    //   TabDragStarting and TabDragCompleted handlers that are set up in
+    //   TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
@@ -1784,6 +1786,10 @@ namespace winrt::TerminalApp::implementation
             {
                 _rearrangeTo = eventArgs.Index();
             }
+        }
+        else
+        {
+            _UpdateCommandsForPalette();
         }
 
         _UpdateTabView();
