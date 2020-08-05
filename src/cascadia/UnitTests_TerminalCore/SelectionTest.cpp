@@ -5,7 +5,7 @@
 * This File was generated using the VisualTAEF C++ Project Wizard.
 * Class Name: SelectionTest
 */
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "DefaultSettings.h"
