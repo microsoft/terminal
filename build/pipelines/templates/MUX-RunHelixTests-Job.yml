@@ -117,7 +117,7 @@ jobs:
     parameters:
       condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Conhost.UIA.Tests.dll'
-      outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
+      outputProjFileName: 'RunTestsInHelix-HostTestsUIA.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 

@@ -145,9 +145,9 @@ steps:
   displayName: 'Copy outputs needed for test runs to Artifacts'
   inputs:
     Contents: |
-     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.exe
-     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.dll
-     $(Build.BinariesDirectory)/$(BuildPlatform)/$(BuildConfiguration)/*.xml
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.xml
      **/*unit.test*.dll
      **/Microsoft.VCLibs.*.appx
      **/TestHostApp/*
