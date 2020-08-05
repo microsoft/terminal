@@ -114,7 +114,6 @@ namespace winrt::TerminalApp::implementation
         // they do raise PreviewKeyDown events.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode && key == VirtualKey::Tab)
         {
-
             // When the search bar is visible, keyboard navigation with Tab should cycle between
             // the search bar and the list view. However, ATS wants to allow Tab to cycle between
             // tabs while maintaining focus on the search bar. These two scenarios conflict with each
