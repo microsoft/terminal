@@ -731,9 +731,9 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - <none>
 void CascadiaSettings::_ExpandCommands()
 {
-    winrt::TerminalApp::implementation::Command::ExpandCommands(_globals.GetCommands(),
-                                                                _profiles,
-                                                                _warnings);
+    // winrt::TerminalApp::implementation::Command::ExpandCommands(_globals.GetCommands(),
+    //                                                             _profiles,
+    //                                                             _warnings);
 }
 
 // Method Description:

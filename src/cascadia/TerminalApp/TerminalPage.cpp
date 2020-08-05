@@ -1982,9 +1982,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _settings->GlobalSettings().GetCommands();
+
+        Command::ExpandCommands(copyOfCommands,
+                                _settings->GetProfiles(),
+                                warnings);
+
         // Update the command palette when settings reload
         auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
+        for (auto& nameAndCommand : copyOfCommands)
         {
             commandsCollection.Append(nameAndCommand.second);
         }
