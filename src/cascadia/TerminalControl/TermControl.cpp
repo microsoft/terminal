@@ -10,8 +10,7 @@
 #include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
-#include <winrt/Microsoft.Terminal.Settings.h>
-#include <winrt/Microsoft.Terminal.Core.h>
+//#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
@@ -27,7 +26,6 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 // The minimum delay between updates to the scroll bar's values.

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IKeyBindings.idl";
+
 namespace Microsoft.Terminal.TerminalControl
 {
     enum ScrollbarState
@@ -21,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings
+    interface IControlSettings requires ICoreSettings
     {
         String ProfileName;
 
@@ -34,7 +36,7 @@ namespace Microsoft.Terminal.TerminalControl
         Windows.UI.Text.FontWeight FontWeight;
         String Padding;
 
-        Microsoft.Terminal.Settings.IKeyBindings KeyBindings;
+        Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings;
 
         Boolean CopyOnSelect;
 

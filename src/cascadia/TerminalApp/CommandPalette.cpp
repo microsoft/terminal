@@ -5,7 +5,7 @@
 #include "CommandPalette.h"
 
 #include "CommandPalette.g.cpp"
-#include <winrt/Microsoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;

@@ -10,9 +10,9 @@
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 
-#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-using namespace winrt::Microsoft::Terminal::Core;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;

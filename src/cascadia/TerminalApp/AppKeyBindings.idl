@@ -5,15 +5,15 @@ import "../ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
-        void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
+        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.TerminalControl.KeyChord chord);
+        void ClearKeyBinding(Microsoft.Terminal.TerminalControl.KeyChord chord);
 
-        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
-        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
+        Microsoft.Terminal.TerminalControl.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        Microsoft.Terminal.TerminalControl.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
 
         void SetDispatch(ShortcutActionDispatch dispatch);
     }
