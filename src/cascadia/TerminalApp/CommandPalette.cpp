@@ -10,6 +10,7 @@
 #include "CommandPalette.g.cpp"
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include <LibraryResources.h>
+#include <winrt/Windows.UI.Xaml.Automation.Peers.h>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -113,11 +114,27 @@ namespace winrt::TerminalApp::implementation
         // they do raise PreviewKeyDown events.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode && key == VirtualKey::Tab)
         {
-            // In the command palette, tab swaps focus between the search box and the list view.
-            // So, when the focus is on the list view, screen readers are able to read out the
-            // items. Since anchored mode tab switcher handles the tab key manually, we also need
-            // to manually shift focus to the ListView for screen readers to work.
-            _filteredActionsView().Focus(FocusState::Keyboard);
+
+            // When the search bar is visible, keyboard navigation with Tab should cycle between
+            // the search bar and the list view. However, ATS wants to allow Tab to cycle between
+            // tabs while maintaining focus on the search bar. These two scenarios conflict with each
+            // other, and in the interest of not trapping keyboard navigators in the listview, we'll
+            // explicitly _not_ handle tab when a program is actively listening for these accessibility events.
+            bool screenReaderAttached = Automation::Peers::AutomationPeer::ListenerExists(Automation::Peers::AutomationEvents::PropertyChanged);
+            if (screenReaderAttached && _anchorKey == VirtualKey::None)
+            {
+                return;
+            }
+
+            // If the ATS is in anchored mode, focus the listview so that screen readers
+            // can read out the tab titles. We don't want to do this for non-accessibility
+            // unanchored mode because we'd like the search bar to stay focused as the user
+            // tabcycles/arrows through the tabs.
+            if (_anchorKey != VirtualKey::None)
+            {
+                _filteredActionsView().Focus(FocusState::Keyboard);
+            }
+
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
