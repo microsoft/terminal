@@ -56,7 +56,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);

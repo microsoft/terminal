@@ -93,7 +93,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TryCreateWinRTType()
     {
-        winrt::Microsoft::Terminal::Settings::TerminalSettings settings;
+        TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);

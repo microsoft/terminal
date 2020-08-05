@@ -32,7 +32,6 @@ namespace Microsoft.Terminal.TerminalControl
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
-        TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
