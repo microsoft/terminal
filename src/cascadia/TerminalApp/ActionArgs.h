@@ -17,6 +17,7 @@
 #include "OpenSettingsArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
+#include "ExecuteCommandlineArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -387,6 +388,39 @@ namespace winrt::TerminalApp::implementation
             return { *args, {} };
         }
     };
+
+    struct ExecuteCommandlineArgs : public ExecuteCommandlineArgsT<ExecuteCommandlineArgs>
+    {
+        ExecuteCommandlineArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Commandline, L"");
+
+        static constexpr std::string_view CommandlineKey{ "commandline" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ExecuteCommandlineArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Commandline == _Commandline;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ExecuteCommandlineArgs>();
+            JsonUtils::GetValueForKey(json, CommandlineKey, args->_Commandline);
+            if (args->_Commandline.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            return { *args, {} };
+        }
+    };
+
 }
 
 namespace winrt::TerminalApp::factory_implementation

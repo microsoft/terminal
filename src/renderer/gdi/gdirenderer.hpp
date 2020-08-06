@@ -96,6 +96,16 @@ namespace Microsoft::Console::Render
 
         std::vector<RECT> cursorInvertRects;
 
+        struct LineMetrics
+        {
+            int gridlineWidth;
+            int underlineOffset;
+            int underlineWidth;
+            int strikethroughOffset;
+            int strikethroughWidth;
+        };
+
+        LineMetrics _lineMetrics;
         COORD _coordFontLast;
         int _iCurrentDpi;
 

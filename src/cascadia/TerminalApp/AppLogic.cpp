@@ -474,7 +474,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point AppLogic::GetLaunchDimensions(uint32_t dpi)
+    winrt::Windows::Foundation::Size AppLogic::GetLaunchDimensions(uint32_t dpi)
     {
         if (!_loadedInitialSettings)
         {
@@ -504,7 +504,7 @@ namespace winrt::TerminalApp::implementation
             // of the height calculation here.
             auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
             titlebar.Measure({ SHRT_MAX, SHRT_MAX });
-            proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
+            proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
         }
         else if (_settings->GlobalSettings().AlwaysShowTabs())
         {
@@ -519,7 +519,7 @@ namespace winrt::TerminalApp::implementation
             // For whatever reason, there's about 6px of unaccounted-for space
             // in the application. I couldn't tell you where these 6px are
             // coming from, but they need to be included in this math.
-            proposedSize.Y += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
         }
 
         return proposedSize;
@@ -974,7 +974,7 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see AppLogic::_ParseArgs)
     int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> args)
     {
-        const auto result = _ParseArgs(args);
+        const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
             _appArgs.ValidateStartupCommands();
@@ -982,53 +982,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         return result;
-    }
-
-    // Method Description:
-    // - Attempts to parse an array of commandline args into a list of
-    //   commands to execute, and then parses these commands. As commands are
-    //   successfully parsed, they will generate ShortcutActions for us to be
-    //   able to execute. If we fail to parse any commands, we'll return the
-    //   error code from the failure to parse that command, and stop processing
-    //   additional commands.
-    // Arguments:
-    // - args: an array of strings to process as a commandline. These args can contain spaces
-    // Return Value:
-    // - 0 if the commandline was successfully parsed
-    int AppLogic::_ParseArgs(winrt::array_view<const hstring>& args)
-    {
-        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
-
-        for (auto& cmdBlob : commands)
-        {
-            // On one hand, it seems like we should be able to have one
-            // AppCommandlineArgs for parsing all of them, and collect the
-            // results one at a time.
-            //
-            // On the other hand, re-using a CLI::App seems to leave state from
-            // previous parsings around, so we could get mysterious behavior
-            // where one command affects the values of the next.
-            //
-            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
-            // > If that option is not given, CLI11 will not touch the initial
-            // > value. This allows you to set up defaults by simply setting
-            // > your value beforehand.
-            //
-            // So we pretty much need the to either manually reset the state
-            // each command, or build new ones.
-            const auto result = _appArgs.ParseCommand(cmdBlob);
-
-            // If this succeeded, result will be 0. Otherwise, the caller should
-            // exit(result), to exit the program.
-            if (result != 0)
-            {
-                return result;
-            }
-        }
-
-        // If all the args were successfully parsed, we'll have some commands
-        // built in _appArgs, which we'll use when the application starts up.
-        return 0;
     }
 
     // Method Description:

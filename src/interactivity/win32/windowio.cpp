@@ -134,7 +134,14 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
             WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
         };
 
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta, state);
+        // GH#6401: VT applications should be able to receive mouse events from outside the
+        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+        // We shouldn't throw away perfectly good events when they're offscreen, so we just
+        // clamp them to be within the range [(0, 0), (W, H)].
+        auto clampedPosition{ cMousePosition };
+        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
+        clampViewport.Clamp(clampedPosition);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
@@ -646,6 +653,25 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
         {
+            // GH#6401: Capturing the mouse ensures that we get drag/release events
+            // even if the user moves outside the window.
+            // HandleTerminalMouseEvent returns false if the terminal's not in VT mode,
+            // so capturing/releasing here should not impact other console mouse event
+            // consumers.
+            switch (Message)
+            {
+            case WM_LBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+                SetCapture(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+                break;
+            case WM_LBUTTONUP:
+            case WM_MBUTTONUP:
+            case WM_RBUTTONUP:
+                ReleaseCapture();
+                break;
+            }
+
             return FALSE;
         }
     }
