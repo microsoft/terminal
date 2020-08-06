@@ -165,16 +165,16 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
         typedef HRESULT (*PFNHANDOFF)(HANDLE,
                                       const ConsoleArguments* const, // this can't stay like this because ConsoleArguments could change...
-                                      HANDLE);
+                                      HANDLE,
+                                      PCONSOLE_API_MSG);
 
         typedef bool (*PFNTEST)();
 
         HMODULE mod = LoadLibraryW(L"OpenConsoleDll.dll");
         PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
         /*PFNTEST addr = (PFNTEST)GetProcAddress(mod, "TestFunc");*/
-        HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get());
-        res;
-        if (res)
+        HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get(), pReceiveMsg);
+        if (res == S_OK)
         {
             Sleep(INFINITE);
             auto rect = til::rectangle{};

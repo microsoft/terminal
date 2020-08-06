@@ -30,8 +30,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 extern "C" __declspec(dllexport) HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                                                  const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
-                                                                 HANDLE driverInputEvent);
-
-extern "C" __declspec(dllexport) bool TestFunc();
+                                                                 HANDLE driverInputEvent,
+                                                                 PCONSOLE_API_MSG connectMessage);
 
 void ConsoleCheckDebug();

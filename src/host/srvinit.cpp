@@ -258,7 +258,8 @@ void ConsoleCheckDebug()
 
 HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                 const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
-                                HANDLE driverInputEvent)
+                                HANDLE driverInputEvent,
+                                PCONSOLE_API_MSG connectMessage)
 {
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
@@ -269,7 +270,7 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     // Store the driver input event. It's already been told that it exists by whomever started us.
     g.hInputEvent.reset(driverInputEvent);
 
-    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, nullptr, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -284,11 +285,6 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
-}
-
-[[nodiscard]] bool TestFunc()
-{
-    return false;
 }
 
 [[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
@@ -688,10 +684,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 // - This routine is the main one in the console server IO thread.
 // - It reads IO requests submitted by clients through the driver, services and completes them in a loop.
 // Arguments:
-// - <none>
+// - lpParameter - PCONSOLE_API_MSG being handed off to us from the previous I/O.
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
+DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
 {
     auto& globals = ServiceLocator::LocateGlobals();
 
@@ -699,6 +695,15 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
     ReceiveMsg._pApiRoutines = &globals.api;
     ReceiveMsg._pDeviceComm = globals.pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
+
+    // If we were given a message on startup, process that in our context and then continue with the IO loop normally.
+    if (lpParameter)
+    {
+        ReceiveMsg = *(PCONSOLE_API_MSG)lpParameter;
+        ReceiveMsg._pApiRoutines = &globals.api;
+        ReceiveMsg._pDeviceComm = globals.pDeviceComm;
+        IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
+    }
 
     bool fShouldExit = false;
     while (!fShouldExit)
