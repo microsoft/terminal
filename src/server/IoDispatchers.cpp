@@ -168,40 +168,14 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                       HANDLE,
                                       PCONSOLE_API_MSG);
 
-        typedef bool (*PFNTEST)();
-
         HMODULE mod = LoadLibraryW(L"OpenConsoleDll.dll");
         PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
-        /*PFNTEST addr = (PFNTEST)GetProcAddress(mod, "TestFunc");*/
         HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get(), pReceiveMsg);
-        if (res == S_OK)
+        if (SUCCEEDED(res))
         {
-            Sleep(INFINITE);
-            auto rect = til::rectangle{};
-            rect += til::size{ 2, 2 };
-        }
-        else
-        {
-            auto size = til::size{ 3, 3 };
-            auto h = size.height();
-            h;
+            ExitThread(S_OK);
         }
     }
-
-    //if (ConsoleConnectionDeservesVisibleWindow(&Cac))
-    //{
-    //    RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-    //                                              cmd,
-    //                                              nullptr,
-    //                                              nullptr,
-    //                                              TRUE,
-    //                                              EXTENDED_STARTUPINFO_PRESENT,
-    //                                              nullptr,
-    //                                              nullptr,
-    //                                              &siEx.StartupInfo,
-    //                                              pi.addressof()));
-    //}
-    
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
                                                                           dwThreadId,
