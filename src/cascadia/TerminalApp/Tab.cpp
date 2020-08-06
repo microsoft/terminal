@@ -600,7 +600,7 @@ namespace winrt::TerminalApp::implementation
                 sp.Orientation(Controls::Orientation::Horizontal);
                 Controls::FontIcon ico;
                 ico.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-                ico.Glyph(L"\xE8A3");
+                ico.Glyph(L"\xE8A3"); // "ZoomIn", a magnifying glass with a '+' in it.
                 ico.FontSize(12);
                 ico.Margin(ThicknessHelper::FromLengths(0, 0, 8, 0));
                 sp.Children().Append(ico);
@@ -612,7 +612,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
+                // If we're not currently in the process of renaming the tab,
+                // then just set the tab's text to whatever our active title is.
                 _tabViewItem.Header(winrt::box_value(tabText));
             }
         }
@@ -930,13 +931,13 @@ namespace winrt::TerminalApp::implementation
     void Tab::EnterZoom()
     {
         _zoomedPane = _activePane;
-        _rootPane->Zoom(_zoomedPane);
+        _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
     }
     void Tab::ExitZoom()
     {
-        _rootPane->UnZoom(_zoomedPane);
+        _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();

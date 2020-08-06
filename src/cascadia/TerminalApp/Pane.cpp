@@ -1191,7 +1191,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 // - zoomedPane: This is the pane which we're attempting to zoom on.
 // Return Value:
 // - <none>
-void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
+void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
 {
     if (_IsLeaf())
     {
@@ -1210,14 +1210,14 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
 
         // Always recurse into both children. If the (un)zoomed pane was one of
         // our direct children, we'll still want to update it's borders.
-        _firstChild->Zoom(zoomedPane);
-        _secondChild->Zoom(zoomedPane);
+        _firstChild->Maximize(zoomedPane);
+        _secondChild->Maximize(zoomedPane);
     }
 }
 
 // Method Description:
 // - Recursively attempt to "un-zoom" the given pane. This does the opposite of
-//   Pane::Zoom. When we find the given pane, we should return the pane to our
+//   Pane::Maximize. When we find the given pane, we should return the pane to our
 //   UI tree. We'll also clear the internal state, so the pane can display its
 //   borders correctly.
 // - The caller should make sure to have removed the zoomed pane from the UI
@@ -1226,7 +1226,7 @@ void Pane::Zoom(std::shared_ptr<Pane> zoomedPane)
 // - zoomedPane: This is the pane which we're attempting to un-zoom.
 // Return Value:
 // - <none>
-void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
+void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 {
     if (_IsLeaf())
     {
@@ -1246,8 +1246,8 @@ void Pane::UnZoom(std::shared_ptr<Pane> zoomedPane)
 
         // Always recurse into both children. If the (un)zoomed pane was one of
         // our direct children, we'll still want to update it's borders.
-        _firstChild->UnZoom(zoomedPane);
-        _secondChild->UnZoom(zoomedPane);
+        _firstChild->Restore(zoomedPane);
+        _secondChild->Restore(zoomedPane);
     }
 }
 

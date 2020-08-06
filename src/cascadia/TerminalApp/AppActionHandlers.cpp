@@ -111,9 +111,9 @@ namespace winrt::TerminalApp::implementation
         if (activeTab)
         {
             // First thing's first, remove the current content from the UI
-            // tree This is important, because we might be leaving zoom, and if
+            // tree. This is important, because we might be leaving zoom, and if
             // a pane is zoomed, then it's currently in the UI tree, and should
-            // be removed before it's re-added in Pane::UnZoom
+            // be removed before it's re-added in Pane::Restore
             _tabContent.Children().Clear();
 
             activeTab->ToggleZoom();
