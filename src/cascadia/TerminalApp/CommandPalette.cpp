@@ -11,6 +11,7 @@
 #include <til/math.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <deque>
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -25,60 +26,63 @@ namespace
     {
         size_t start, end;
     };
+    static auto _nextWord(const std::wstring_view& text, size_t s)
+    {
+        for (auto i{ s }; i < text.size(); ++i)
+        {
+            if (text[i] == L' ' || (i > 0 && text[i - 1] == L' '))
+            {
+                return i;
+            }
+        }
+        return text.size();
+    }
+    static std::optional<std::deque<MatchRange>> _subMatch(const std::wstring_view& needle, size_t ni, const std::wstring_view& haystack, size_t hi)
+    {
+        auto nit{ needle.cbegin() + ni };
+        auto hit{ haystack.cbegin() + hi };
+        if (nit == needle.cend())
+        {
+            // base case: we ran out of needle (match could be successful)
+            return std::deque<MatchRange>{};
+        }
+        if (hit == haystack.cend() || *nit != *hit)
+        {
+            // failure case: we ran out of haystack
+            return std::nullopt;
+        }
+
+        auto nextWordInHaystack{ hi + 1 };
+        auto result{ _subMatch(needle, ni + 1, haystack, hi + 1) };
+        // if we didn't get any matches forward (including the base case),
+        // fork here and go to each next word (but preserve the needle position)
+        while (!result && (nextWordInHaystack = _nextWord(haystack, nextWordInHaystack)) < haystack.size())
+        {
+            result = _subMatch(needle, ni + 1, haystack, nextWordInHaystack);
+            nextWordInHaystack++;
+        }
+
+        // if we got a match (including the base case), prepend
+        // this character position to the head of the list (since our match fully proved out
+        // that the needle represents word prefixes in the haystack)
+        if (result)
+        {
+            // only vend a match if we .. had .. matches
+            result->push_front(MatchRange{ hi, hi + 1 });
+        }
+        return result;
+    }
     std::vector<MatchRange> _matchWordwise(const std::wstring_view& needle,
                                            const std::wstring_view& haystack)
     {
-        std::vector<MatchRange> ranges;
-        const auto start{ haystack.cbegin() };
-        auto it = start;
-        auto sit = needle.cbegin();
-
-        auto wordStart{ haystack.cend() };
-        const auto valid = [&]() { return it != haystack.cend() && sit != needle.cend(); };
-        const auto vend = [&]() {
-            if (wordStart != haystack.cend())
-            {
-                ranges.emplace_back(MatchRange{ gsl::narrow<size_t>(wordStart - start), gsl::narrow<size_t>(it - start) });
-                wordStart = haystack.cend();
-            }
-        };
-        while (valid())
+        size_t i = 0;
+        std::optional<std::deque<MatchRange>> result;
+        while (i < haystack.size() && (result = _subMatch(needle, 0, haystack, i)) == std::nullopt)
         {
-            while (valid() && *it == *sit)
-            {
-                if (wordStart == haystack.cend())
-                {
-                    // start of matching word
-                    wordStart = it;
-                }
-                ++it;
-                ++sit;
-            }
-            // if we get here, we've encountered a mismatch
-            // so, spit out the match length
-            vend();
-            // advance haystack until next word
-            for (; it != haystack.cend() && *it != ' '; ++it)
-                ;
-
-            if (it != haystack.cend()) // we found a space, now walk off it
-            {
-                ++it;
-            }
-
-            // advance needle if it's on a run of spaces
-            for (; sit != needle.cend() && *sit == ' '; ++sit)
-                ;
+            // no match yet, advance haystack to the next word
+            i = _nextWord(haystack, i + 1);
         }
-
-        if (sit != needle.cend())
-        {
-            // didn't consume the entire needle
-            return {};
-        }
-
-        vend();
-        return ranges;
+        return { result->cbegin(), result->cend() };
     }
 
     std::vector<MatchRange> _matchPrefix(const std::wstring_view& needle,
@@ -172,16 +176,19 @@ namespace winrt::TerminalApp::implementation
             }
 
             size_t last{ 0 };
-            std::wstring_view name{ command.Name() };
+            const std::wstring_view name{ command.Name() };
+            const auto regularUntil = [&](const size_t end) {
+                if (end != last)
+                {
+                    Windows::UI::Xaml::Documents::Run r;
+                    r.Text(std::wstring{ name.substr(last, end - last) });
+                    tb.Inlines().Append(r);
+                }
+            };
             for (const auto& match : matches)
             {
                 // vend an unbolded region
-                if (last != match.start)
-                {
-                    Windows::UI::Xaml::Documents::Run r;
-                    r.Text(std::wstring{ name.substr(last, match.start - last) });
-                    tb.Inlines().Append(r);
-                }
+                regularUntil(match.start);
 
                 Windows::UI::Xaml::Documents::Run r;
                 r.Text(std::wstring{ name.substr(match.start, match.end - match.start) });
@@ -190,23 +197,8 @@ namespace winrt::TerminalApp::implementation
                 last = match.end;
             }
 
-            if (last != name.size())
-            {
-                Windows::UI::Xaml::Documents::Run r;
-                r.Text(std::wstring{ name.substr(last, std::wstring::npos) });
-                tb.Inlines().Append(r);
-            }
-
-            std::vector<size_t> starts, ends;
-            starts.emplace_back(0);
-            for (const auto& match : matches)
-            {
-                ends.emplace_back(match.start);
-                starts.emplace_back(match.start);
-                ends.emplace_back(match.end);
-                starts.emplace_back(match.end);
-            }
-            ends.emplace_back(name.size());
+            // vend the remaining non-bold region
+            regularUntil(name.size());
 
             {
                 tb.Inlines().Append(Windows::UI::Xaml::Documents::LineBreak{});
@@ -219,7 +211,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tb.Inlines().Append(Windows::UI::Xaml::Documents::LineBreak{});
                 Windows::UI::Xaml::Documents::Run r;
-                r.Text(til::u8u16(fmt::format("ranges: {0} || {1}", fmt::join(starts, ","), fmt::join(ends, ","))));
+                r.Text(til::u8u16(fmt::format("ranges: {0}", fmt::join(matches, "|"))));
                 r.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
                 r.FontSize((8 * 96) / 72);
                 tb.Inlines().Append(r);
