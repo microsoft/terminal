@@ -157,7 +157,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
         for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
         {
-            NewRun[coord.X + i].Character = clusters.at(i).GetTextAsSingle();
+            NewRun[coord.X + i].Character = til::at(clusters, i).GetTextAsSingle();
             NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
         }
 

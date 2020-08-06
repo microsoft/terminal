@@ -21,7 +21,7 @@ static constexpr bool _IsMouseMessage(UINT uMsg)
     return uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_LBUTTONDBLCLK ||
            uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP || uMsg == WM_MBUTTONDBLCLK ||
            uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_RBUTTONDBLCLK ||
-           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL;
+           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL;
 }
 
 // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -628,16 +628,21 @@ bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 try
 {
-    const til::point cursorPosition{
+    til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
     const til::size fontSize{ this->_actualFont.GetSize() };
     short wheelDelta{ 0 };
-    if (uMsg == WM_MOUSEWHEEL)
+    if (uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL)
     {
         wheelDelta = HIWORD(wParam);
+
+        // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
+        POINT coordsToTransform = cursorPosition;
+        ScreenToClient(_hwnd.get(), &coordsToTransform);
+        cursorPosition = coordsToTransform;
     }
 
     return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
