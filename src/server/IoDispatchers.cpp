@@ -169,13 +169,14 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
         typedef bool (*PFNTEST)();
 
-        HMODULE mod = LoadLibraryW(L"OpenConsole2.exe");
+        HMODULE mod = LoadLibraryW(L"OpenConsoleDll.dll");
         PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
         /*PFNTEST addr = (PFNTEST)GetProcAddress(mod, "TestFunc");*/
         HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get());
         res;
         if (res)
         {
+            Sleep(INFINITE);
             auto rect = til::rectangle{};
             rect += til::size{ 2, 2 };
         }
