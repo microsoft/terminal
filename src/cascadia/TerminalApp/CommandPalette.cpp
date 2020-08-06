@@ -51,7 +51,8 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (_anchorKey != VirtualKey::None)
                     {
-                        // Anchor mode won't have the SearchBox visible, so lets focus the control itself.
+                        // Anchor mode shouldn't have the SearchBox visible, so lets focus the control itself.
+                        _searchBox().Visibility(Visibility::Collapsed);
                         Focus(FocusState::Keyboard);
                     }
                     else
@@ -390,37 +391,23 @@ namespace winrt::TerminalApp::implementation
             {
                 _filteredActions.Append(action);
             }
-        }
 
-        switch (_currentMode)
-        {
-        case CommandPaletteMode::ActionMode:
-            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-            ControlName(L"Command Palette");
-            break;
-        case CommandPaletteMode::TabSwitcherMode:
-        {
-            SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
-            NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-
-            if (_anchorKey != VirtualKey::None)
+            switch (_currentMode)
             {
-                _searchBox().Visibility(Visibility::Collapsed);
-                ControlName(L"Tab Switcher Anchored Mode");
-            }
-            else
+            case CommandPaletteMode::TabSwitcherMode:
             {
-                ControlName(L"Tab Switcher UnAnchored Mode");
+                SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+                NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
+                ControlName(RS_(L"TabSwitcherControlName"));
+                break;
             }
-
-            break;
-        }
-        default:
-            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-            ControlName(L"Command Palette");
-            break;
+            // Let's say the default mode for now is ActionMode.
+            default:
+                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+                ControlName(RS_(L"CommandPaletteControlName"));
+                break;
+            }
         }
     }
 
@@ -528,10 +515,9 @@ namespace winrt::TerminalApp::implementation
         // match weight produced by _getWeight.
         std::priority_queue<WeightedCommand> heap;
 
-        // I hate this but this adds an "inOrderCounter" to allow commands with
-        // the same names and weights to be ordered in the order they were pushed
-        // onto the heap. This specifically helps out tab actions in the Tab Switcher,
-        // since it's quite common to have tab titles be the same.
+        // TODO GH#7205: Find a better way to ensure that WCs of the same
+        // weight and name stay in the order in which they were pushed onto
+        // the PQ.
         uint32_t counter = 0;
         for (auto action : commandsToFilter)
         {
@@ -737,12 +723,6 @@ namespace winrt::TerminalApp::implementation
 
             switch (changedEvent)
             {
-            case CollectionChange::ItemChanged:
-            {
-                auto tab = tabList.GetAt(idx);
-                GenerateCommandForTab(idx, false, tab);
-                break;
-            }
             case CollectionChange::ItemInserted:
             {
                 auto tab = tabList.GetAt(idx);
@@ -809,7 +789,7 @@ namespace winrt::TerminalApp::implementation
         // Listen for changes to the Tab so we can update this Command's attributes accordingly.
         auto weakThis{ get_weak() };
         auto weakCommand{ command->get_weak() };
-        tab.PropertyChanged([weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+        command->propertyChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
             auto palette{ weakThis.get() };
             auto command{ weakCommand.get() };
 
