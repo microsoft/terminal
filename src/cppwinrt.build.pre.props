@@ -29,7 +29,7 @@
     <ApplicationType>Windows Store</ApplicationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
-	  <!-- Some of our projects include the cppwinrt build options to
+    <!-- Some of our projects include the cppwinrt build options to
          just build cppwinrt things, but don't want the store bits
          in full swing. MinimalCoreWin != false means "don't let me
          use win32 APIs"
