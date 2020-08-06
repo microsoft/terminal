@@ -193,6 +193,7 @@ int main(int argc, char** argv)
                                         // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_AAA,
                                         // CLSCTX_LOCAL_SERVER | CLSCTX_ACTIVATE_AAA_AS_IU,
                                         // CLSCTX_LOCAL_SERVER | CLSCTX_FROM_DEFAULT_CONTEXT,
+                                        // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
     printf("%d\n", registrationHostClass);

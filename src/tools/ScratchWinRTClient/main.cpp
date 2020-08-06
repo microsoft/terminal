@@ -52,10 +52,68 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         return; // -1;
     }
 
-    auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
-                                                                      CLSCTX_LOCAL_SERVER
-                                                                      // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
-    );
+    winrt::ScratchWinRTServer::HostClass host{ nullptr };
+    {
+        HANDLE hToken;
+
+        // Open a handle to the access token for the
+        // calling process that is the currently login access token
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken))
+        {
+            printf("OpenProcessToken()-Getting the handle to access token failed, error %u\n", GetLastError());
+        }
+        else
+        {
+            printf("OpenProcessToken()-Got the handle to access token!\n");
+        }
+
+        // Lets the calling process impersonate the security context of a logged-on user.
+        if (ImpersonateLoggedOnUser(hToken))
+        {
+            printf("ImpersonateLoggedOnUser() is OK.\n");
+        }
+        else
+        {
+            printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
+            exit(-1);
+        }
+
+        if (SetThreadToken(nullptr, hToken))
+        {
+            printf("SetThreadToken() succeeded\n");
+        }
+        else
+        {
+            printf("STT failed %x\n", GetLastError());
+        }
+
+        host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
+                                                                     // CLSCTX_LOCAL_SERVER
+                                                                     CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
+                                                                     //
+        );
+        // Terminates the impersonation of a client.
+
+        if (RevertToSelf())
+        {
+            printf("Impersonation was terminated.\n");
+        }
+
+        // Close the handle
+        if (CloseHandle(hToken))
+        {
+            printf("Handle to an access token was closed.\n");
+        }
+        else
+        {
+            printf("Failed to close the hToken handle! error %x\n", GetLastError());
+        }
+    }
+    // auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
+    //                                                                   // CLSCTX_LOCAL_SERVER
+    //                                                                   CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
+    //                                                                   //
+    // );
 
     if (!host)
     {
