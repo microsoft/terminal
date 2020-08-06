@@ -736,14 +736,14 @@ namespace winrt::TerminalApp::implementation
         // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
         // Tab Default Color    | **default** | TabView in XAML
         //
-        // CoalesceOptionalsOrNot will get us the first of these values that's
+        // coalesce will get us the first of these values that's
         // actually set, with nullopt being our sentinel for "use the default
         // tabview color" (and clear out any colors we've set).
 
-        return til::CoalesceOptionalsOrNot(_runtimeTabColor,
-                                           controlTabColor,
-                                           _themeTabColor,
-                                           std::optional<Windows::UI::Color>(std::nullopt));
+        return til::coalesce(_runtimeTabColor,
+                             controlTabColor,
+                             _themeTabColor,
+                             std::optional<Windows::UI::Color>(std::nullopt));
     }
 
     // Method Description:
