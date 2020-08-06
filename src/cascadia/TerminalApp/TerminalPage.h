@@ -224,6 +224,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleExecuteCommandline(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 
