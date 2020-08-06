@@ -267,24 +267,113 @@ introducing another type of categorization for window processes. These are
 "Monarch" and "Servant" processes. This will allow for the coordination across
 the various windows by the Monarch.
 
+There will only ever be one monarch process at a given time, and every other WT
+WP is a servant process. However, we want this system to be redundant, so that
+if the monarch ever dies, one of the remaining servant processes can take over
+for it. The new monarch will be chosen at random, so we'll call this a
+probabalistic elective monarchy.
 
+Essentially, the probabalistic elective monarchy will work in the following way:
 
+1. We'll introduce a WinRT class (for the puspose of this doc we'll call it
+  `Monarch`), with a unique GUID.
+2. When any WP starts up, it'll first try to register as the server for the
+  `Monarch` WinRT class.
+   - The OS will allow subsequent processes to successfully register as the
+    server for `Monarch` objects, but when someone tries to `create_instance` a
+    `Monarch`, the OS will always create the `Monarch` from the first process to
+    register.
+3. After registering as a server for `Monarch`s, attempt to create a `Monarch`
+   using `winrt::create_instance`.
+4. Using that `Monarch`, ask it for it's PID.
+   - If that PID is the same as the PID of the current process, then the WP
+     knows that it is the monarch.
+   - If that PID is some other process, then we know that we're not currently
+     the monarch.
+     - If we don't currently have an ID assigned to us, then ask the `Monarch`
+       to assign one to us.
+     - If we do have an ID (from a previous monarch), then let the new monarch
+       know that we exist.
+5. If we're a servant process, then `WaitForSingleObject` on a handle to the
+   monarch process. When the current monarch dies, go back to 3. At this point,
+   we might be appointed the new monarch (by whatever process the OS uses to
+   choose who the new server for `Monarch`s is.)
+   - We're suggesting `WaitForSingleObject` here as opposed to having the
+     monarch raise a WinRT event when it's closed, because it's possible that
+     the monarch <!-- is assasinated --> closes unexpectedly, before it has an
+     opprotunity to notify the servants.
 
+By this mechanism, the processes will be able to communicate with the Monarch,
+who'll be responsible for managing any inter-process communication between
+windows we might need.
 
 
 #### Scenario: Single Instance Mode
 
-In Single Instance mode, the monarch _is_ the single instance. When `wt` is run,
-and it determines that it is not the monarch, it'll as the monarch if it's in
+In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is run,
+and it determines that it is not the monarch, it'll ask the monarch if it's in
 single instance mode. If it is, then the servant that's starting up will instead
 pass it's commandline arguments to the monarch process, and let the monarch
 handle them, then exit.
 
+So, this will make it seem like new starting a new `wt.exe` will just create a
+new tab in the existing window. If someone does `wt -d .` in explorer,
+
 #### Scenario: Run `wt` in the current window
+
+One often requested scenario is the ability to run a `wt.exe` commandline in the
+current window, as opposed to always creating a new window. With the ability to
+communicate between different window processes, one could imagine a logical
+extension of this scenario being "run a `wt` commandline in _any_ given WT
+window".
+
+This spec by no means attempts to fully document how this functionality should
+work. This scenarios deserves it's own spec to discuss various differnt naming
+schemes for the commandline parameters. The following is given as an example of
+how these arguments _might_ be authored and implemented to satisfy some of these
+scenarios.
+
+Since each WP will have it's own unique ID assigned to it by the monarch, then
+running a command in a given window with ID `N` should be as easy as something
+like:
+
+```
+wt.exe --session N new-tab ; split-pane
+```
+
+(or for shorthand, `wt -s N new-tab ; split-pane`).
+
+This would create a new servant, who could then ask the monarch if there is a
+servant with ID `N`. If there is, then the servant can connect to that other
+servant, dispatch the current commandline to that other servant, and exit,
+before ever creating a window. If this commandline instead creates a new monarch
+process, then there was _no_ other monarch, and so there must logically not be
+any other existing WT windows, and the `--session N` argument could be safely
+ignored, and the command run in the current window.
 
 We should reserve the session id `0` to always refer to "The current window", if
 there is one. So `wt -s 0 new-tab` will run `new-tab` in the current window (if
-we're being run from WT), otherwise it will create a new window.
+we're being run from WT).
+
+If `wt -s 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
+onto _the most recent WT window_ instead. This seems more logical than something
+like `wt --session last` or some other special value indicating "run this in the
+MRU window".
+
+That might be a simple, but **wrong**, implementation for "the current window".
+If the servants always raise an event when their window is focused, and the
+monarch keeps track of the MRU order for servants, then one could naively assume
+that the execution of `wt -s 0 <commands>` would always return the window the
+user was typing in, the current one. However, if someone were to do something
+like `sleep 10 ; wt -s 0 <commands>`, then the user could easily focus another
+WT window during the sleep, which would cause the MRU window to not be the same
+as the window executing the command.
+
+I'm not sure that there is a better solution for the `-s 0` scenario other than
+atempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
+spawned and that's in it's environment variables, it could try and ask the
+monarch for the servant who's hosting the session corresponding to that GUID.
+This is more of a theoretical solution than anything else.
 
 In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
 the commandline to glom to the existing single terminal instance, if there is
@@ -292,9 +381,78 @@ one.
 
 #### Scenario: Quake Mode
 
+"Quake mode" has a variety of different scenarios<sup>[[1]](#footnote-1)</sup>
+that have all been requested, more than what fits cleanly into this spec.
+However, there's one key aspect of quake mode that is specifically relevant and
+worth mentioning here.
+
+One of the biggest challenges with registering a global shortcut handler is
+_what happens when multiple windows try to register for the same shortcut at the
+same time_? From my initial research, it seems that only the first process to
+register for the shortcut will succeed. This makes it hard for multiple windows
+to handle the global shortcut key gracefully. If a second window is created, and
+it fails to register the global hotkey, then the first window is closed, there's
+no way for the second process to track that and re-register as the handler for
+that key.
+
+With the addition of monarch/servant processes, this problem becomes much easier
+to solve. Now, the monarch process will _always_ be the process to register the
+shortcut key, whnever it's elected. If it dies and another servant is elected
+monarch, then the new monarch will register as the global hotkey handler.
+
+Then, the monarch can use it's pre-established channels of communication with
+the other window processes to actuall drive the response we're looking for.
+
+#### Rough interface design
+
+This is by no means definitive, but one could imagine the `Monarch` and
+`Servant` classes exposing the following WinRT projections:
+
+```c#
+class Servant
+{
+    void AssignID(UInt64 id); // Should only be called by the monarch
+    UInt64 GetID();
+    UInt64 GetPID();
+    Boolean ExecuteCommandline(String[] args, Sting currentDirectory);
+    event TypedEventHandler<Object, Object> WindowActivated;
+}
+
+class Monarch : Servant
+{
+    UInt64 AddServant(Servant servant);
+    Boolean IsInSingleInstanceMode();
+    Servant GetServant(UInt64 servantID);
+    Servant GetMostRecentServant();
+}
+```
+
+The servant process can instantiate the `Servant` object itself, in it's process
+space. Initially, the `Servant` object won't have an ID assigned, and the call
+to `AddServant` on the `Monarch` will both cause the Monarch to assign the
+`Servant` an ID, and add it to the Monarch process's list of processes. If the
+`Servant` already had an ID assigned by a previous monarch, then the new onarch
+will simply re-use the value already existing in the `Servant`. Now, the monarch
+can call methods on the `Servant` object directly to trigger changes in the
+servant process.
+
+Note that the monarch also needs to have a servant ID, because the monarch is
+really just a servant with the added responsibility of keeping track of the
+other servants as well.
+
+It's important that `ExecuteCommandline` takes a `currentDirectory` parameter.
+Consider the scenario `wt -s 0 -d .` - in this scenario, the process that's
+executing the provided commandline should first change its working directory to
+the provided `currentDirectory` so that something like `.` actually refers to
+the directory where the command was executed.
 
 ## UI/UX Design
 
+TODO: Is there really all that much UX for this scenario? Ideally, all this will
+happen behind the scenes.
+
+I suppose at the very least, we will be able to have resizes happen off of the
+UI thread, so that's nice.
 
 ## Capabilities
 
@@ -347,6 +505,10 @@ safe, incremental chunks, such that each step is still a viable Terminal
 application, but no single step is too large to review. As such, I'll attempt to
 break down the work required into atomic pieces, and provide a relative ordering
 for the work described above.
+
+These tasks are broken into sections, because it seems that there's roughly
+three tracks of work to be done here, which can be done relatively independently
+of each other.
 
 
 <hr>
@@ -457,7 +619,8 @@ for the work described above.
 
 ## Footnotes
 
-<a id="footnote-1"><a>[1]:
+<a name="footnote-1"><a>[1]: See [Quake mode scenarios] for a longer enumeration
+of possible scenarios.
 
 ## Future considerations
 
@@ -483,6 +646,10 @@ for the work described above.
   and continue dragging the current window. This should make the drag/drop
   experience feel more seamless, and might be able to allow us to render the tab
   content as we're drag/dropping.
+  - If we pursue this, then we'll need to make sure that we re-assign the window
+    ID's as appropriate. the _new_ window (with the tabs that are being left
+    behind) should still have the same servant ID as the original window, which
+    will now get a new ID (as to )
 * We could definitely do a `NewWindowFromTab(index:int?)` action that creates a
   new window from a current tab once this all lands.
   - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
@@ -519,3 +686,4 @@ for the work described above.
 [#632]: https://github.com/microsoft/terminal/issues/632
 
 [Tab Tearout in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
+[Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
