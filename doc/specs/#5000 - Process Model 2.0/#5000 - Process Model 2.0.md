@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-07-31
+last updated: 2020-08-06
 issue id: #5000
 ---
 
@@ -201,6 +201,58 @@ window process which is rendering the content process's swapchain.
 
 #### Scenario: Mixed Elevation
 
+With the ability for window processes to connect to other pre-existing content
+processes, we can now also support mixed elevation scenarios as well.
+
+If a user requests a new elevated tab from an otherwise unelevated window, we
+can use UAC to create a new, elevated WP, and "move" all the current tabs to
+that WP, as well as the new elevated client. Now, the WP is elevated, preventing
+it from input injection, but still contains all the previously existing tabs.
+The original WP can now be discarded, as the new elevated WP will pretend to be
+the original window.
+
+We would probably want to provide some additional configuration options here as
+well:
+* Users will most likely want to be able to specify that a given profile should
+  always run elevated.
+  - We should also provide some argument to the `NewTerminalArgs` (used by the
+    `new-tab` and `split-pane` actions) to allow a user to elevate an otherwise
+    unelevated profile.
+* We'll probably want to create new CPs in a medium-IL context by default,
+  unless the profile or launch args otherwise indicates launching elevated. So a
+  WP running elevated would still create unelevated profiles by default.
+* Currently, if a user launches the terminal as an administrator, then _all_ of
+  their tabs run elevated. We'll probably want to provide a similar
+  configuration as well. Maybe if a WP is initially launched as elevated (rather
+  than inheriting from an existing session), then it could either:
+  - default all future connections it creates to elevated connections
+  - assume the _first_ tab (or all the terminals created by the startup
+    commandline) should be elevated, but then subsequent connections would
+    default to unelevated processes.
+
+It's a long-standing platform bug that you cannot use drag-and-drop in elevated
+scenarios. This unfortunately means that elevated WPs will _not_ be able to tear
+tabs out into their own windows. Even tabs that only contain unelevated CPs in
+them will not be able to be torn out, because the drag-and-drop service is
+fundamentally incapable of connecting to elevated windows.
+
+We should probably have a discussion about what happens when the last elevated
+CP in an elevated WP is closed. If an elevated WP doesn't have any remaining
+elevated CPs, then it should be able to revert to an unelevated WP. Should we do
+this? There's likely some visual flickering that will happen as we re-create the
+new window process, so maybe it would be unappealing to users. However, there's
+also the negative side effect that come from elevated windows (the aformentioned
+lack of drag/drop), so maybe users will want to return to the more permissive
+unelevated WP.
+
+This is one section where unfortunately I don't have a working prototype yet.
+From my research, an elevated process cannot simply `create_instance` a class
+that's hosted by an unelevated process. However, after proposing this idea to
+the broad C++/WinRT discussion alias, no one on that thread immediately shot
+down the idea as being impossible or terrible from a security perspective, so I
+believe that it _will_ be possible. We still need to do some research on the
+actual mechanisms for some token impersonation.
+
 ### Monarch and Servant Processes
 
 With the current design, it's easy to connect many content processes to a window
@@ -269,6 +321,8 @@ TODO: This is _very_ applicable
 <td><strong>Compatibility</strong></td>
 <td>
 TODO: This is _very_ applicable
+
+TODO: Concerns with the Universal App version of the Terminal?
 </td>
 </tr>
 <tr>
@@ -295,12 +349,111 @@ break down the work required into atomic pieces, and provide a relative ordering
 for the work described above.
 
 
+<hr>
+
 1. Add Monarch/Servant capabilities to `wt` window processes.
-  - This does not need to involve any actual UX functionality, simply have the
+   - This does not need to involve any actual UX functionality, simply have the
     WT instances communicate with one another to see who is the Monarch.
-  - The monarch will track and assign IDs to servants.
-2. (Dependant on 1): Add support for running a `wt` commandline in an existing window
-3. (Dependant on 1, maybe on 2): Add support for "single instance mode"
+   - The monarch will track and assign IDs to servants.
+2. (Dependent on 1): Add support for running a `wt` commandline in an existing
+   window
+   - Monarch should assign simple IDs for use with the `wt` commandline
+   - `0` should be reserved as an alias for "the current window"
+3. (Dependent on 1, maybe on 2): Add support for "single instance mode". New
+   servant windows will first ask the monarch if it's in single instance mode,
+   and pass the servant's commandline to the monarch if it is.
+4. (Dependent on 1): Monarch registers for the global quake hotkey, and uses
+   that to activate _the monarch_.
+   - Pressing the key when a window is currently focused should minimize? Do nothing?
+5. (Dependent on 4): any othe quake mode improvements:
+   - Summon the nearest window
+   - make the window "drop down" from the top
+   - Summon the MRU window
+     - It would need to track a the MRU for windows, so pressing the shortcut when
+       no window is active summons the MRU one.
+
+<hr>
+
+6. Change `TermControl`/`DxEngine` to create its own swap chain using
+   `DCompositionCreateSurfaceHandle` and
+   `CreateSwapChainForCompositionSurfaceHandle`. This is something that's
+   already done in commit TODO:`ffffff`.
+
+7. (Dependent on 6) Refactor `TermControl` to allow it to have a WinUI layer and
+   a Core layer. The WinUI layer will be only responsible for interacting with
+   XAML, processing input, etc, and sending it to the core layer, which handles
+   all the logic concerning input. The core will expose these methods that the
+   UI layer calls as projected methods
+
+8. (Dependent on 7): Expose the methods the UI layer calls on the core as
+   projected methods. The control is still fundamentally in-proc, and the UI
+   layer calls directly into the implementation of the control core, but the
+   methods _could_ be used x-proc.
+
+9. (Dependent on 8): Enable a `TermControl` to have an out-of proc core.
+   - The core will need to be able to accept a PID using some method, and be able
+    to `DuplicateHandle` the swapchain to that PID. It'll also need to raise the
+    `SwapChainHandleChanged` event.
+   - The Control UI layer would need to recieve a GUID in the ctor, and use that
+     connect to the out-of-proc core. It'll pass the UI's PID to the core, and
+     attach to the core's swap chain handle.
+   - The UI layer will be smart enough to call either the implementation method
+     (if it's hosting in-proc) or the projected method (if it's out-of-proc).
+
+10. (Dependent on 9?) The core layer needs to be able to construct connections
+    itself, rather than have one passed in to it.
+   - In the future we'll probably want this to be more extensible, but for now
+     we can probably just pass an enum for connection type, and an
+     `IConnectionSettings` object to the core, and use the `ConnectionType` and
+     setting to build the limited types of connection we currently have.
+
+11. (Dependent on 9, 10) `wt.exe` needs to be able to spawn as a content
+    process, accepting a GUID for its ID, and spawning a single control core.
+   - When the content process is first spawned, it won't create the core or
+     connection, nor will it have any settings. The first client to connect to
+     the content process should make sure to set up the settings before
+     initializing the control.
+   - A scratch XAML Island application might be a useful tool at this point, to
+     test hosting the content in another process (that's not a full-blown
+     terminal instance).
+
+12. (Dependent on 11) TerminalApp creates new content processes for each and
+    every terminal instance it spawns. At this point, there's no tearout, but
+    the terminal instances are all out-of-proc from the window process.
+
+13. (Dependent on 12) Terminal can drop tabs onto another WT window process by
+    communicating the structure of the tab's panes and their content GUIDs.
+   - At this point, the tabs can't be torn out to create new windows, only move
+     between existing windows
+   - It might be hard to have the tab "attach" to the tab row of the other window.
+   - It might be easiest to do this after 1, and communicate to the new WP the
+     GUID of the old WP and the tab within the original WP, and just have the
+     new WP ask the old WP what the structure of the tab is
+     - Though, the tab won't be in the original process's list of tabs anymore,
+       so that might not be helpful.
+
+14. `wt` accepts an initial position, size on the commandline.
+
+15. (Dependent on 13, 14) Tearing out a tab and dropping it _not_ on another WT
+    window creates a new window for the tab.
+   - This will require and additional argument to `wt` for it to be able to
+     inherit the structure of a given set of tabs. Either this will need to be
+     passed on the cmdline, or the newly spawned process will need to be able to
+     communicate with the original process to ask it what structure it should be
+     building.
+   - Doing this after 1 might be helpful.
+   - Needs 14 to be able to specify the location of the new window.
+
+<hr>
+
+16. Add support for a `NewWindow` action
+17. `wt` accepts a commandline arg to force it to auto-elevate itself if it
+    isn't already elevated.
+18. (Dependent on 16, 17) Users can mark a profile as `"elevated": true`, to
+    always force a new elevated window to be created for elevated profiles.
+19. (Dependent on 18, 13) When a user creates an elevated profile, we'll
+    automatically create an elevated version of the current window, and move all
+    the current tabs to that new window.
 
 ## Footnotes
 
@@ -330,14 +483,19 @@ for the work described above.
   and continue dragging the current window. This should make the drag/drop
   experience feel more seamless, and might be able to allow us to render the tab
   content as we're drag/dropping.
+* We could definitely do a `NewWindowFromTab(index:int?)` action that creates a
+  new window from a current tab once this all lands.
+  - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
+    current tab, a specific tab, or many tabs.
+
 
 ## TODOs
 
-* Prove that a elevated window can host an unelevated content
-* Prove that I can toss content process IDs from one window to another
-* come up with a commandline mechanism for starting one `wt.exe` process either
+* [ ] Prove that a elevated window can host an unelevated content
+* [ ] Prove that I can toss content process IDs from one window to another
+* [ ] come up with a commandline mechanism for starting one `wt.exe` process either
   as a window process, or as a content process
-* What about handling XAML input events? The "thin" term control will need to do
+* [ ] What about handling XAML input events? The "thin" term control will need to do
   that in-proc, so it can reply on the UI thread if a particular keystroke was
   handled or not.
   - I'm almost certain that the `Terminal::HandleKey()` stuff is going to need
