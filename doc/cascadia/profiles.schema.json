@@ -291,7 +291,7 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "setColorScheme" },
-            "name": {
+            "colorScheme": {
               "type": "string",
               "default": "",
               "description": "the name of the scheme to apply to the active pane"
