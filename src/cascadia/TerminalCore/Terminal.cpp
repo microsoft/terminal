@@ -10,9 +10,9 @@
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -84,8 +84,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
-void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-                                  Microsoft::Console::Render::IRenderTarget& renderTarget)
+void Terminal::CreateFromSettings(ICoreSettings settings,
+                                  IRenderTarget& renderTarget)
 {
     const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
@@ -101,7 +101,7 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
 //   CoreSettings object.
 // Arguments:
 // - settings: an ICoreSettings with new settings values for us to use.
-void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings)
+void Terminal::UpdateSettings(ICoreSettings settings)
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
@@ -344,7 +344,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
-    _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
+    _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try

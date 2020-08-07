@@ -7,10 +7,9 @@
 #include "ActionArgs.h"
 #include "Command.h"
 
-#include "CommandPalette.g.cpp"
-#include <winrt/Microsoft.Terminal.Settings.h>
 #include <LibraryResources.h>
-#include <winrt/Windows.UI.Xaml.Automation.Peers.h>
+
+#include "CommandPalette.g.cpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;

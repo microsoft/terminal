@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"

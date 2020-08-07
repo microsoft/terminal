@@ -12,9 +12,8 @@
 #include "KeyChordSerialization.h"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include <winrt/Microsoft.Terminal.Settings.h>
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
 static constexpr std::string_view KeysKey{ "keys" };
