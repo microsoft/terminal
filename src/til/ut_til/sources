@@ -16,6 +16,7 @@ SOURCES = \
     $(SOURCES) \
     BaseTests.cpp \
     BitmapTests.cpp \
+    ClumpTests.cpp \
     ColorTests.cpp \
     OperatorTests.cpp \
     PointTests.cpp \
