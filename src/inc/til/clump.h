@@ -6,6 +6,7 @@
 #include <vector>
 #include <optional>
 #include <gsl/span>
+#include <numeric>
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
@@ -32,7 +33,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _clump_iterator_base operator++(int)
             {
                 auto ret{ *this };
-                ++ret;
+                ++*this;
                 return ret;
             }
 
@@ -46,15 +47,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return !(*this == other);
             }
 
-            const value_type operator*()
+            const_reference operator*() const
             {
                 const auto s{ _s ? **_s : 1 };
-                return { &*_c, s };
+                _cur = { &*_c, s };
+                return _cur;
+            }
+
+            const value_type* operator->() const
+            {
+                return &*(*this);
+            }
+
+            const ptrdiff_t operator-(const _clump_iterator_base<T, TValIterator, TSizeIterator>& other) const
+            {
+                if (_s.has_value() != other._s.has_value())
+                {
+                    throw std::invalid_argument("difference of two iterators where one had sizes but the other didn't?");
+                }
+
+                if (_s && other._s)
+                {
+                    return *_s - *other._s;
+                }
+                return _c - other._c;
             }
 
         private:
             TValIterator _c;
             std::optional<TSizeIterator> _s;
+            mutable value_type _cur;
         };
 
         template<typename T>
@@ -167,15 +189,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename... Args>
         void emplace_glom(Args&&... args)
         {
-            _ensureSizes(); // might fill _sizes with {}
-            if (_sizes->size() > 0)
-            {
-                _sizes->back()++;
-            }
-            else
-            {
-                _sizes->emplace_back(1u);
-            }
+            auto& ensuredSizes = _ensureSizes(); // sizes is always valid after this; filled with _contents.size() '1's
+            auto& lastSize = ensuredSizes.size() > 0 ? ensuredSizes.back() : ensuredSizes.emplace_back(0);
+            ++lastSize;
+
             _contents.emplace_back(std::forward<Args>(args)...);
         }
 
@@ -193,7 +210,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename U>
         friend class clump_view;
 
-        void _ensureSizes()
+        std::vector<T> _contents;
+        std::optional<std::vector<size_type>> _sizes;
+
+        auto _ensureSizes() -> decltype(*this->_sizes)&
         {
             if (!_sizes)
             {
@@ -201,10 +221,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 v.resize(_contents.size(), 1u); // fill with 1s
                 _sizes = std::move(v);
             }
+            return *_sizes;
         }
-
-        std::vector<T> _contents;
-        std::optional<std::vector<size_type>> _sizes;
     };
 
     // clump_view is a read-only view over a clump
@@ -229,6 +247,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
+        clump_view() :
+            _contents{}, _sizes{} {}
+
         size_t size() const
         {
             // if we have no sizes, each one is 1 (so we can use _contents' size)
@@ -240,27 +261,73 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _contents.empty();
         }
 
-        const value_type front()
+        const value_type front() const
         {
             return _contents.front();
         }
 
-        const value_type back()
+        const value_type back() const
         {
             return _contents.back();
         }
 
-        const_iterator begin()
+        const_iterator begin() const
         {
             return const_iterator{ _contents.begin(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.begin(); }) };
         }
 
-        const_iterator end()
+        const_iterator end() const
         {
             return const_iterator{ _contents.end(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.end(); }) };
         }
 
+        clump_view<T> subview(const size_t index) const
+        {
+            auto o{ index };
+            if (_sizes)
+            {
+                o = std::accumulate(_sizes->begin(), _sizes->begin() + index, static_cast<size_t>(0u));
+            }
+
+            return {
+                /* contents */ _contents.subspan(o),
+                /* sizes + offset */ details::eval_or_nullopt(_sizes, [=](auto&& s) { return s.subspan(index); })
+            };
+        }
+
+        gsl::span<const T> operator[](const ptrdiff_t index) const
+        {
+            auto o{ index };
+            size_t s{ 1u };
+            if (_sizes)
+            {
+                o = std::accumulate(_sizes->begin(), _sizes->begin() + index, static_cast<size_t>(0u));
+                s = til::at(*_sizes, index);
+            }
+            return _contents.subspan(o, s);
+        }
+
+        gsl::span<const T> at(const ptrdiff_t index) const
+        {
+            const auto max{ _sizes ? _sizes->size() - 1 : _contents.size() - 1 };
+            if (index > max)
+            {
+                throw std::out_of_range("attempt to index beyond end of clump_view");
+            }
+            return (*this)[index];
+        }
+
+        // returns a span without any length information
+        // used by consumers who know exactly what they're doing
+        gsl::span<const T> flat_view() const
+        {
+            return _contents;
+        }
+
     private:
+        clump_view(gsl::span<const T> contents, std::optional<gsl::span<const size_t>> sizes) :
+            _contents{ std::move(contents) },
+            _sizes{ std::move(sizes) } {}
         gsl::span<const T> _contents;
         std::optional<gsl::span<const size_t>> _sizes;
     };
