@@ -174,6 +174,10 @@ void AppCommandlineArgs::_buildParser()
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
+    // Incoming PTY flags
+    //  --pty
+    _app.add_option("--pty", _ptySigHandle, "PTY Signal Handle");
+
     // Maximized and Fullscreen flags
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch
@@ -464,6 +468,8 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusNextTab = false;
     _focusPrevTab = false;
 
+    _ptySigHandle = 0;
+
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
@@ -660,6 +666,11 @@ void AppCommandlineArgs::ValidateStartupCommands()
         newTabAction->Args(*args);
         // push the arg onto the front
         _startupActions.insert(_startupActions.begin(), 1, *newTabAction);
+    }
+
+    if (_ptySigHandle != 0)
+    {
+        
     }
 }
 

@@ -305,6 +305,18 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
+    wil::unique_handle signalPipeTheirSide;
+    wil::unique_handle signalPipeOurSide;
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(sa);
+    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
+    sa.bInheritHandle = FALSE;
+    sa.lpSecurityDescriptor = nullptr;
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
    return ConsoleCreateIoThread(Server, args, driverInputEvent, connectMessage);
 }
 

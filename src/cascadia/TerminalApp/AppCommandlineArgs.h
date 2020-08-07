@@ -73,6 +73,8 @@ private:
     CLI::App* _focusTabShort;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
+    int64_t _ptySigHandle;
+
     std::string _profileName;
     std::string _startingDirectory;
     std::string _startingTitle;
