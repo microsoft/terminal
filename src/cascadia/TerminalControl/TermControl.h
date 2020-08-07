@@ -7,7 +7,6 @@
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -56,9 +55,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+        TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
 
         hstring Title();
         hstring GetProfileName() const;
@@ -99,12 +98,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        static Windows::Foundation::Size GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
                                                                const int32_t& fontSize,
                                                                const winrt::Windows::UI::Text::FontWeight& fontWeight,
                                                                const winrt::hstring& fontFace,
-                                                               const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                               const ScrollbarState& scrollState,
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
 
@@ -137,7 +136,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
-        Settings::IControlSettings _settings;
+        IControlSettings _settings;
         bool _focused;
         std::atomic<bool> _closing;
 

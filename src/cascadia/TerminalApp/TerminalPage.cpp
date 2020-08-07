@@ -1206,7 +1206,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
+    TermControl TerminalPage::_GetActiveControl()
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
@@ -1503,21 +1503,21 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - a string representation of the key modifiers for the shortcut
     //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    static std::wstring _FormatOverrideShortcutText(KeyModifiers modifiers)
     {
         std::wstring buffer{ L"" };
 
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
         {
             buffer += L"Ctrl+";
         }
 
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
 
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
         {
             buffer += L"Alt+";
         }
@@ -1531,7 +1531,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
     void TerminalPage::_SetAcceleratorForMenuItem(WUX::Controls::MenuFlyoutItem& menuItem,
-                                                  const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+                                                  const KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
@@ -1590,7 +1590,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
-                                                                 const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
+                                                                 const CopyToClipboardEventArgs copiedData)
     {
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 

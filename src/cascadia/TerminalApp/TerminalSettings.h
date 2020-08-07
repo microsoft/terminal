@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, SnapOnInput, true);
         GETSET_PROPERTY(bool, AltGrAliasing, true);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::CursorStyle, CursorShape, Microsoft::Terminal::Settings::CursorStyle::Vintage);
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Vintage);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_PROPERTY(bool, CopyOnSelect, false);
@@ -78,7 +78,7 @@ namespace winrt::TerminalApp::implementation
                         BackgroundImageVerticalAlignment,
                         winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::IKeyBindings, KeyBindings, nullptr);
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
 
         GETSET_PROPERTY(hstring, Commandline);
         GETSET_PROPERTY(hstring, StartingDirectory);
@@ -86,9 +86,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, SuppressApplicationTitle);
         GETSET_PROPERTY(hstring, EnvironmentVariables);
 
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::ScrollbarState, ScrollState, Microsoft::Terminal::Settings::ScrollbarState::Visible);
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Settings::TextAntialiasingMode::Grayscale);
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
 
         GETSET_PROPERTY(bool, RetroTerminalEffect, false);
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
