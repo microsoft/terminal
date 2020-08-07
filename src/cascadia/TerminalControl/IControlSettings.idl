@@ -25,37 +25,37 @@ namespace Microsoft.Terminal.TerminalControl
     //      for specifically the control.
     interface IControlSettings requires ICoreSettings
     {
-        String ProfileName;
+        String ProfileName { get; };
 
-        Boolean UseAcrylic;
-        Double TintOpacity;
-        ScrollbarState ScrollState;
+        Boolean UseAcrylic { get; };
+        Double TintOpacity { get; };
+        ScrollbarState ScrollState { get; };
 
-        String FontFace;
-        Int32 FontSize;
-        Windows.UI.Text.FontWeight FontWeight;
-        String Padding;
+        String FontFace { get; };
+        Int32 FontSize { get; };
+        Windows.UI.Text.FontWeight FontWeight { get; };
+        String Padding { get; };
 
-        Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings;
+        Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings { get; };
 
-        Boolean CopyOnSelect;
+        Boolean CopyOnSelect { get; };
 
-        String Commandline;
-        String StartingDirectory;
-        String EnvironmentVariables;
+        String Commandline { get; };
+        String StartingDirectory { get; };
+        String EnvironmentVariables { get; };
 
-        String BackgroundImage;
-        Double BackgroundImageOpacity;
-        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
-        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
-        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+        String BackgroundImage { get; };
+        Double BackgroundImageOpacity { get; };
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode { get; };
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment { get; };
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment { get; };
 
-        UInt32 SelectionBackground;
+        UInt32 SelectionBackground { get; };
 
-        TextAntialiasingMode AntialiasingMode;
+        TextAntialiasingMode AntialiasingMode { get; };
 
-        Boolean RetroTerminalEffect;
-        Boolean ForceFullRepaintRendering;
-        Boolean SoftwareRendering;
+        Boolean RetroTerminalEffect { get; };
+        Boolean ForceFullRepaintRendering { get; };
+        Boolean SoftwareRendering { get; };
     };
 }
