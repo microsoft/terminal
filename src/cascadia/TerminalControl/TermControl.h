@@ -16,6 +16,11 @@
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    struct MouseButtonState;
+}
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct CopyToClipboardEventArgs :
@@ -87,7 +92,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
-        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
+        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
         ~TermControl();
 
@@ -230,7 +235,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
-        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const bool isLeftButtonPressed);
+        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);

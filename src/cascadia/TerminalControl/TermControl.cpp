@@ -16,6 +16,7 @@
 #include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
+using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Xaml;
@@ -1007,7 +1008,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
+        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     }
 
     // Method Description:
@@ -1331,10 +1333,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto point = args.GetCurrentPoint(*this);
+        const auto props = point.Properties();
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
         auto result = _DoMouseWheel(point.Position(),
                                     ControlKeyStates{ args.KeyModifiers() },
                                     point.Properties().MouseWheelDelta(),
-                                    point.Properties().IsLeftButtonPressed());
+                                    state);
         if (result)
         {
             args.Handled(true);
@@ -1357,7 +1361,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
                                     const ControlKeyStates modifiers,
                                     const int32_t delta,
-                                    const bool isLeftButtonPressed)
+                                    const TerminalInput::MouseButtonState state)
     {
         if (_CanSendVTMouseInput())
         {
@@ -1369,7 +1373,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return _terminal->SendMouseEvent(_GetTerminalPosition(point),
                                              WM_MOUSEWHEEL,
                                              _GetPressedModifierKeys(),
-                                             ::base::saturated_cast<short>(delta));
+                                             ::base::saturated_cast<short>(delta),
+                                             state);
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -1385,7 +1390,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            _MouseScrollHandler(delta, point, isLeftButtonPressed);
+            _MouseScrollHandler(delta, point, state.isLeftButtonDown);
         }
         return false;
     }
@@ -1399,11 +1404,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - location: the location of the mouse during this event. This location is
     //   relative to the origin of the control
     // - delta: the mouse wheel delta that triggered this event.
+    // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const int32_t delta)
+                                   const int32_t delta,
+                                   const bool leftButtonDown,
+                                   const bool midButtonDown,
+                                   const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        return _DoMouseWheel(location, modifiers, delta, false);
+        TerminalInput::MouseButtonState state{ leftButtonDown, midButtonDown, rightButtonDown };
+        return _DoMouseWheel(location, modifiers, delta, state);
     }
 
     // Method Description:
