@@ -148,7 +148,7 @@ namespace Microsoft::Console::Render
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
         [[nodiscard]] HRESULT _DrawGlyphRun(_In_opt_ void* clientDrawingContext,
-                                            IDWriteTextRenderer* renderer,
+                                            gsl::not_null<IDWriteTextRenderer*> renderer,
                                             D2D_POINT_2F& mutableOrigin,
                                             const Run& run) noexcept;
 

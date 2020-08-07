@@ -868,7 +868,9 @@ CATCH_RETURN();
                 // Step 1: Get to the last contiguous RTL run from here
                 while (lastIndexRTL < _runs.size() - 1) // only could ever advance if there's something left
                 {
-                    const Run& nextRun = _runs.at(lastIndexRTL + 1);
+                    // This casting, to the best of my knowledge, is entirely unnecessary.
+                    // However, I am hoping it will make the static analyzer stop yelling at me.
+                    const Run& nextRun = _runs.at((long long)lastIndexRTL + 1LL);
                     if (WI_IsFlagSet(nextRun.bidiLevel, 1))
                     {
                         lastIndexRTL++;
@@ -903,7 +905,7 @@ CATCH_RETURN();
 // - origin - pixel point of top left corner on final surface for drawing
 // - run - the run to be drawn
 [[nodiscard]] HRESULT CustomTextLayout::_DrawGlyphRun(_In_opt_ void* clientDrawingContext,
-                                                      IDWriteTextRenderer* renderer,
+                                                      gsl::not_null<IDWriteTextRenderer*> renderer,
                                                       D2D_POINT_2F& mutableOrigin,
                                                       const Run& run) noexcept
 {
