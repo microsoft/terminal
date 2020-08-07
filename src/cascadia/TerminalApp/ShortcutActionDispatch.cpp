@@ -199,6 +199,16 @@ namespace winrt::TerminalApp::implementation
             _ExecuteCommandlineHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::CloseOtherTabs:
+        {
+            _CloseOtherTabsHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::CloseTabsAfter:
+        {
+            _CloseTabsAfterHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleTabSwitcher:
         {
             _ToggleTabSwitcherHandlers(*this, *eventArgs);

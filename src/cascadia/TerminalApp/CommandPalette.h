@@ -75,6 +75,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
         uint32_t _switcherStartIdx;
 
+        winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
+
         void _dispatchCommand(const TerminalApp::Command& command);
 
         void _dismissPalette();

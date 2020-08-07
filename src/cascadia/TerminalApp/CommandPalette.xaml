@@ -188,6 +188,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             AllowDrop="False"
             IsItemClickEnabled="True"
             ItemClick="_listItemClicked"
+            PreviewKeyDown="_keyDownHandler"
             ItemsSource="{x:Bind FilteredActions}">
 
                 <ItemsControl.ItemTemplate >

@@ -273,6 +273,24 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
+    winrt::hstring CloseOtherTabsArgs::GenerateName() const
+    {
+        // "Close tabs other than index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
+                        _Index)
+        };
+    }
+
+    winrt::hstring CloseTabsAfterArgs::GenerateName() const
+    {
+        // "Close tabs after index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
+                        _Index)
+        };
+    }
+
     winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
     {
         // If there's an anchor key set, don't generate a name so that

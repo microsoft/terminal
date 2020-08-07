@@ -41,6 +41,8 @@ namespace TerminalApp
         RenameTab,
         ExecuteCommandline,
         ToggleCommandPalette,
+        CloseOtherTabs,
+        CloseTabsAfter,
         ToggleTabSwitcher
     };
 
@@ -87,6 +89,8 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ExecuteCommandline;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseOtherTabs;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseTabsAfter;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleTabSwitcher;
     }
 }

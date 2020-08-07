@@ -51,9 +51,8 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (_anchorKey != VirtualKey::None)
                     {
-                        // Anchor mode shouldn't have the SearchBox visible, so lets focus the control itself.
                         _searchBox().Visibility(Visibility::Collapsed);
-                        Focus(FocusState::Keyboard);
+                        _filteredActionsView().Focus(FocusState::Keyboard);
                     }
                     else
                     {
@@ -82,6 +81,19 @@ namespace winrt::TerminalApp::implementation
                 // Raise an event to return control to the Terminal.
                 _dismissPalette();
             }
+        });
+
+        // Focusing the ListView when the Command Palette control is set to Visible
+        // for the first time fails because the ListView hasn't finished loading by
+        // the time Focus is called. Luckily, We can listen to SizeChanged to know
+        // when the ListView has been measured out and is ready, and we'll immediately
+        // revoke the handler because we only needed to handle it once on initialization.
+        _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            if (_anchorKey != VirtualKey::None)
+            {
+                _filteredActionsView().Focus(FocusState::Keyboard);
+            }
+            _sizeChangedRevoker.revoke();
         });
     }
 
@@ -113,28 +125,14 @@ namespace winrt::TerminalApp::implementation
         // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
         // they're not considered input key presses. While they don't raise KeyDown events,
         // they do raise PreviewKeyDown events.
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode && key == VirtualKey::Tab)
+        //
+        // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
+        // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
+        // a really widely used keyboard navigation key.
+        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
+            key == VirtualKey::Tab &&
+            _anchorKey != VirtualKey::None)
         {
-            // When the search bar is visible, keyboard navigation with Tab should cycle between
-            // the search bar and the list view. However, ATS wants to allow Tab to cycle between
-            // tabs while maintaining focus on the search bar. These two scenarios conflict with each
-            // other, and in the interest of not trapping keyboard navigators in the ListView, we'll
-            // explicitly _not_ handle tab when a program is actively listening for these accessibility events.
-            bool screenReaderAttached = Automation::Peers::AutomationPeer::ListenerExists(Automation::Peers::AutomationEvents::PropertyChanged);
-            if (screenReaderAttached && _anchorKey == VirtualKey::None)
-            {
-                return;
-            }
-
-            // If the ATS is in anchored mode, focus the ListView so that screen readers
-            // can read out the tab titles. We don't want to do this for non-accessibility
-            // unanchored mode because we'd like the search bar to stay focused as the user
-            // cycles through the tabs.
-            if (_anchorKey != VirtualKey::None)
-            {
-                _filteredActionsView().Focus(FocusState::Keyboard);
-            }
-
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
@@ -317,6 +315,7 @@ namespace winrt::TerminalApp::implementation
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CommandPaletteDispatchedAction",
                 TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                TraceLoggingUInt32(_searchBox().Text().size(), "SearchTextLength", "Number of characters in the search string"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
@@ -732,6 +731,10 @@ namespace winrt::TerminalApp::implementation
             }
             case CollectionChange::ItemRemoved:
             {
+                winrt::com_ptr<Command> item;
+                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
+                item->propertyChangedRevoker.revoke();
+
                 _allTabActions.RemoveAt(idx);
                 UpdateTabIndices(idx);
                 break;
