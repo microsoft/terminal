@@ -59,7 +59,7 @@
     <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
-    <ClCompile Include="../CommandSerialization.cpp">
+    <ClCompile Include="../TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
   </ItemGroup>
@@ -119,7 +119,7 @@
     <ClInclude Include="../TelnetGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../CommandSerialization.h">
+    <ClInclude Include="../TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
   </ItemGroup>
@@ -139,9 +139,13 @@
     <Midl Include="../Tab.idl">
       <Filter>tab</Filter>
     </Midl>
-    <Midl Include="../IF7Listener.idl" />
     <Midl Include="../Command.idl">
       <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="../IDirectKeyListener.idl" />
+    <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
+    <Midl Include="../TerminalSettings.idl">
+      <Filter>settings</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>

@@ -68,6 +68,7 @@ DxEngine::DxEngine() :
     _invalidateFullRows{ true },
     _invalidMap{},
     _invalidScroll{},
+    _allInvalid{ false },
     _firstFrame{ true },
     _presentParams{ 0 },
     _presentReady{ false },
@@ -847,6 +848,11 @@ void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
     _invalidMap.set(invalidate);
 }
 
+bool DxEngine::_IsAllInvalid() const noexcept
+{
+    return std::llabs(_invalidScroll.y()) >= _invalidMap.size().height();
+}
+
 // Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
@@ -858,7 +864,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    }
 
     return S_OK;
 }
@@ -875,7 +884,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    }
 
     return S_OK;
 }
@@ -892,9 +904,12 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
 
-    // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
-    // to cells.
-    _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    if (!_allInvalid)
+    {
+        // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
+        // to cells.
+        _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    }
 
     return S_OK;
 }
@@ -908,9 +923,12 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    for (const auto& rect : rectangles)
+    if (!_allInvalid)
     {
-        RETURN_IF_FAILED(Invalidate(&rect));
+        for (const auto& rect : rectangles)
+        {
+            RETURN_IF_FAILED(Invalidate(&rect));
+        }
     }
     return S_OK;
 }
@@ -930,11 +948,15 @@ try
 
     const til::point deltaCells{ *pcoordDelta };
 
-    if (deltaCells != til::point{ 0, 0 })
+    if (!_allInvalid)
     {
-        // Shift the contents of the map and fill in revealed area.
-        _invalidMap.translate(deltaCells, true);
-        _invalidScroll += deltaCells;
+        if (deltaCells != til::point{ 0, 0 })
+        {
+            // Shift the contents of the map and fill in revealed area.
+            _invalidMap.translate(deltaCells, true);
+            _invalidScroll += deltaCells;
+            _allInvalid = _IsAllInvalid();
+        }
     }
 
     return S_OK;
@@ -951,6 +973,7 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+    _allInvalid = true;
 
     // Since everything is invalidated here, mark this as a "first frame", so
     // that we won't use incremental drawing on it. The caller of this intended
@@ -1209,6 +1232,7 @@ try
     }
 
     _invalidMap.reset_all();
+    _allInvalid = false;
 
     _invalidScroll = {};
 
@@ -1460,63 +1484,84 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const auto font = _glyphCell;
-    D2D_POINT_2F target = til::point{ coordTarget } * font;
+    const D2D1_SIZE_F font = _glyphCell;
+    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    D2D_POINT_2F start = { 0 };
-    D2D_POINT_2F end = { 0 };
-
-    for (size_t i = 0; i < cchLine; i++)
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
     {
-        // 0.5 pixel offset for crisp lines
-        start = { target.x + 0.5f, target.y + 0.5f };
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
+    };
 
-        if (lines & GridLines::Top)
-        {
-            end = start;
-            end.x += font.width();
+    // NOTE: Line coordinates are centered within the line, so they need to be
+    // offset by half the stroke width. For the start coordinate we add half
+    // the stroke width, and for the end coordinate we subtract half the width.
 
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
+    if (lines & (GridLines::Left | GridLines::Right))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startY = target.y + halfGridlineWidth;
+        const auto endY = target.y + font.height - halfGridlineWidth;
 
         if (lines & GridLines::Left)
         {
-            end = start;
-            end.y += font.height();
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            auto x = target.x + halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
         }
-
-        // NOTE: Watch out for inclusive/exclusive rectangles here.
-        // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle.
-        // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
-        // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
-        // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
-
-        // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
-        start = { target.x + 0.5f, target.y + font.height() - 0.5f };
-
-        if (lines & GridLines::Bottom)
-        {
-            end = start;
-            end.x += font.width() - 1.f;
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
-
-        start = { target.x + font.width() - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
-            end = start;
-            end.y += font.height() - 1.f;
+            auto x = target.x + font.width - halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
+        }
+    }
 
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+    if (lines & (GridLines::Top | GridLines::Bottom))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startX = target.x + halfGridlineWidth;
+        const auto endX = target.x + fullRunWidth - halfGridlineWidth;
+
+        if (lines & GridLines::Top)
+        {
+            const auto y = target.y + halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        // Move to the next character in this run.
-        target.x += font.width();
+        if (lines & GridLines::Bottom)
+        {
+            const auto y = target.y + font.height - halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
+        }
+    }
+
+    // In the case of the underline and strikethrough offsets, the stroke width
+    // is already accounted for, so they don't require further adjustments.
+
+    if (lines & GridLines::Underline)
+    {
+        const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
+        const auto startX = target.x + halfUnderlineWidth;
+        const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
+        const auto y = target.y + _lineMetrics.underlineOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+    }
+
+    if (lines & GridLines::Strikethrough)
+    {
+        const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + _lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.strikethroughWidth);
     }
 
     return S_OK;
@@ -1683,7 +1728,8 @@ try
                                       _dpi,
                                       _dwriteTextFormat,
                                       _dwriteTextAnalyzer,
-                                      _dwriteFontFace));
+                                      _dwriteFontFace,
+                                      _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
 
@@ -1772,13 +1818,15 @@ float DxEngine::GetScaling() const noexcept
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
                             analyzer,
-                            face);
+                            face,
+                            lineMetrics);
 }
 
 // Routine Description:
@@ -2047,7 +2095,8 @@ CATCH_RETURN();
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 LineMetrics& lineMetrics) const noexcept
 {
     try
     {
@@ -2210,6 +2259,34 @@ CATCH_RETURN();
                              false,
                              scaled,
                              unscaled);
+
+        // There is no font metric for the grid line width, so we use a small
+        // multiple of the font size, which typically rounds to a pixel.
+        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+
+        // All other line metrics are in design units, so to get a pixel value,
+        // we scale by the font size divided by the design-units-per-em.
+        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+
+        // We always want the lines to be visible, so if a stroke width ends up
+        // at zero after rounding, we need to make it at least 1 pixel.
+        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+
+        // Offsets are relative to the base line of the font, so we subtract
+        // from the ascent to get an offset relative to the top of the cell.
+        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+
+        // We also add half the stroke width to the offset, since the line
+        // coordinates designate the center of the line.
+        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
     }
     CATCH_RETURN();
 

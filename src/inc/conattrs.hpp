@@ -17,7 +17,7 @@ enum class ExtendedAttributes : BYTE
     Invisible = 0x08,
     CrossedOut = 0x10,
     // TODO:GH#2916 add support for these to the parser as well.
-    Underlined = 0x20, // _technically_ different from LVB_UNDERSCORE, see TODO:GH#2915
+    Underlined = 0x20,
     DoublyUnderlined = 0x40, // Included for completeness, but not currently supported.
     Faint = 0x80,
 };

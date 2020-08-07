@@ -18,10 +18,10 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-#include <winrt/Microsoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
 {
     static constexpr std::array<pair_type, 5> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -42,7 +42,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -68,7 +68,7 @@ JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::w
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },

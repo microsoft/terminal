@@ -8,7 +8,7 @@
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 
-#include "precomp.h"
+#include "pch.h"
 #include <wextestclass.h>
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"

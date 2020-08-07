@@ -10,7 +10,6 @@
 #include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
@@ -199,7 +198,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
             // It's possible that the user provided commands have some warnings
             // in them, similar to the keybindings.
-            _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     };
     parseBindings(LegacyKeybindingsKey);

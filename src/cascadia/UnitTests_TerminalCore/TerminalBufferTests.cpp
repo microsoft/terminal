@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../renderer/inc/DummyRenderTarget.hpp"
@@ -10,7 +10,7 @@
 #include "consoletaeftemplates.hpp"
 #include "TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 
 using namespace WEX::Common;
