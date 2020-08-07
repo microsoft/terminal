@@ -16,7 +16,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalAppLocalTests
 {
@@ -93,7 +93,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TryCreateWinRTType()
     {
-        winrt::Microsoft::Terminal::Settings::TerminalSettings settings;
+        TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);

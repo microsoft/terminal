@@ -54,8 +54,8 @@ public:
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    std::tuple<GUID, winrt::Microsoft::Terminal::Settings::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
-    winrt::Microsoft::Terminal::Settings::TerminalSettings BuildSettings(GUID profileGuid) const;
+    std::tuple<GUID, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    winrt::TerminalApp::TerminalSettings BuildSettings(GUID profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
 

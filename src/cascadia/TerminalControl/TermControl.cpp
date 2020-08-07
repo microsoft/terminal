@@ -25,7 +25,6 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 // The minimum delay between updates to the scroll bar's values.
@@ -56,12 +55,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return initialized;
     }
 
-    TermControl::TermControl() :
-        TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
-    {
-    }
-
-    TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+    TermControl::TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
         _initializedTerminal{ false },
         _settings{ settings },
@@ -242,7 +236,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - newSettings: New settings values for the profile in this terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
     {
         _settings = newSettings;
         auto weakThis{ get_weak() };
@@ -738,7 +732,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
         const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
@@ -827,9 +825,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
         // Alt-Numpad# input will send us a character once the user releases
         // Alt, so we should be ignoring the individual keydowns. The character
@@ -2317,7 +2319,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                         const int32_t& fontHeight,
                                                                         const winrt::Windows::UI::Text::FontWeight& fontWeight,
                                                                         const winrt::hstring& fontFace,
-                                                                        const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                                        const ScrollbarState& scrollState,
                                                                         const winrt::hstring& padding,
                                                                         const uint32_t dpi)
     {

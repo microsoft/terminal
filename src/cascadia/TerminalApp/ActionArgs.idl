@@ -120,4 +120,14 @@ namespace TerminalApp
     {
         String Commandline;
     };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        UInt32 Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        UInt32 Index { get; };
+    };
 }
