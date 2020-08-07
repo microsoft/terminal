@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
         SetColorSchemeArgs() = default;
         GETSET_PROPERTY(winrt::hstring, SchemeName, L"");
 
-        static constexpr std::string_view NameKey{ "name" };
+        static constexpr std::string_view NameKey{ "colorScheme" };
 
     public:
         hstring GenerateName() const;

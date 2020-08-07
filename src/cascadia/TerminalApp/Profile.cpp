@@ -177,8 +177,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         const auto found = schemes.find(_schemeName.value());
         if (found != schemes.end())
         {
-            IControlSettings controlSettings = terminalSettings;
-            found->second.ApplyScheme(controlSettings);
+            found->second.ApplyScheme(terminalSettings);
         }
     }
     if (_defaultForeground)

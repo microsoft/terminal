@@ -280,9 +280,6 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto activeControl = activeTab->GetActiveTerminalControl())
                 {
-                    // Theoretically, if the properties in an IControlSettings
-                    // were all observable, then the TermControl could just
-                    // listen for their changes, and update in real time.
                     auto controlSettings = activeControl.Settings();
                     _settings->ApplyColorScheme(controlSettings, realArgs.SchemeName());
                     activeControl.UpdateSettings(controlSettings);
