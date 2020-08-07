@@ -753,8 +753,9 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
 // - settings: the IControlSettings object to modify
 // - name: the name of the scheme to apply
 // Return Value:
-// - <none>
-void CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, std::wstring_view schemeName)
+// - true iff we found a matching scheme for the name schemeName
+bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
+                                        std::wstring_view schemeName)
 {
     std::wstring name{ schemeName };
     auto schemeAndName = _globals.GetColorSchemes().find(name);
@@ -762,5 +763,7 @@ void CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalCont
     {
         const auto& scheme = schemeAndName->second;
         scheme.ApplyScheme(settings);
+        return true;
     }
+    return false;
 }
