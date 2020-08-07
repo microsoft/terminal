@@ -17,7 +17,6 @@
 #include "WslDistroGenerator.h"
 #include "AzureCloudShellGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
@@ -755,7 +754,7 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
 // - name: the name of the scheme to apply
 // Return Value:
 // - <none>
-void CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::Settings::IControlSettings& settings, std::wstring_view schemeName)
+void CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, std::wstring_view schemeName)
 {
     std::wstring name{ schemeName };
     auto schemeAndName = _globals.GetColorSchemes().find(name);

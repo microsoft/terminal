@@ -14,7 +14,6 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
@@ -371,6 +370,51 @@ namespace winrt::TerminalApp::implementation
                 actionArgs.Handled(true);
                 _ProcessStartupActions(actions, false);
             }
+        }
+    }
+
+    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
+        {
+            uint32_t index = realArgs.Index();
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // Remove all of them leading up to the selected tab
+            while (_tabs.Size() > 1)
+            {
+                _RemoveTabViewItemByIndex(0);
+            }
+
+            actionArgs.Handled(true);
+        }
+    }
+    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
+        {
+            uint32_t index = realArgs.Index();
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // TODO:GH#7182 For whatever reason, if you run this action
+            // when the tab that's currently focused is _before_ the `index`
+            // param, then the tabs will expand to fill the entire width of the
+            // tab row, until you mouse over them. Probably has something to do
+            // with tabs not resizing down until there's a mouse exit event.
+
+            actionArgs.Handled(true);
         }
     }
 }
