@@ -99,7 +99,6 @@ AStomps
 ASYNCWINDOWPOS
 atch
 ATest
-atg
 attr
 ATTRCOLOR
 aumid
@@ -160,7 +159,6 @@ bitsavers
 bitset
 BKCOLOR
 BKGND
-BKMK
 Bksp
 blog
 Blt
@@ -295,7 +293,6 @@ codepage
 codepoint
 codeproject
 COINIT
-colo
 colorizing
 colororacle
 colorref
@@ -352,7 +349,6 @@ conpty
 conptylib
 consecteturadipiscingelit
 conserv
-consoleaccessibility
 consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
@@ -640,7 +636,6 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
-Dst
 DSwap
 DTest
 dtor
@@ -683,7 +678,6 @@ Elems
 elif
 elseif
 emacs
-emptybox
 enabledelayedexpansion
 endian
 endif
@@ -752,7 +746,6 @@ fdw
 fea
 fesb
 FFDE
-FFF
 FFrom
 FGCOLOR
 fgetc
@@ -769,7 +762,6 @@ FILETYPE
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
-Filledbox
 FILTERONPASTE
 finalizer
 FINDCASE
@@ -821,7 +813,6 @@ fsproj
 fstream
 fte
 Ftm
-fullcolor
 fullscreen
 fullwidth
 func
@@ -1011,7 +1002,6 @@ hwheel
 hwnd
 HWNDPARENT
 hxx
-hyperlink
 IAccessibility
 IAction
 IApi
@@ -1034,7 +1024,6 @@ ICore
 IData
 IDCANCEL
 IDD
-IDefault
 IDesktop
 IDictionary
 IDISHWND
@@ -1384,7 +1373,6 @@ mincore
 mindbogglingly
 mingw
 minkernel
-minmax
 minwin
 minwindef
 Mip
@@ -1545,7 +1533,6 @@ NOYIELD
 NOZORDER
 NPM
 npos
-NRCS
 NSTATUS
 ntapi
 ntcon
@@ -1722,7 +1709,6 @@ pguid
 pgup
 PHANDLE
 phhook
-phsl
 phwnd
 pid
 pidl
@@ -1752,7 +1738,6 @@ POBJECT
 Podcast
 POINTSLIST
 POLYTEXTW
-popclip
 popd
 POPF
 poppack
@@ -1935,7 +1920,6 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
-remoting
 renderengine
 rendersize
 reparent
@@ -1943,7 +1927,6 @@ reparenting
 replatformed
 Replymessage
 repositorypath
-rerendered
 rescap
 Resequence
 Reserialize
@@ -1989,7 +1972,6 @@ RMENU
 roadmap
 robomac
 roundtrip
-ROWSTOSCROLL
 rparen
 RRF
 RRRGGGBB
@@ -2051,7 +2033,6 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
-SCS
 scursor
 sddl
 sdeleted
@@ -2121,7 +2102,6 @@ Shl
 shlguid
 shlobj
 shlwapi
-shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2194,14 +2174,11 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
-stdarg
 stdcall
-stddef
 stderr
 stdexcept
 stdin
 stdio
-stdlib
 STDMETHODCALLTYPE
 STDMETHODIMP
 stdout
@@ -2295,7 +2272,6 @@ telnetd
 telnetpp
 templated
 terminalcore
-terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
@@ -2351,7 +2327,6 @@ TMult
 tmultiple
 tmux
 todo
-Tofill
 tofrom
 tokenhelpers
 tokenized
@@ -2447,7 +2422,6 @@ undef
 Unescape
 unexpand
 Unfocus
-unfocuses
 unhighlighting
 unhosted
 unicode
@@ -2753,33 +2727,26 @@ WWith
 wx
 wxh
 xa
-xab
 xact
 xamarin
 xaml
 Xamlmeta
 xargs
 xaz
-xb
-xbc
 xbf
 xbutton
 XBUTTONDBLCLK
 XBUTTONDOWN
 XBUTTONUP
-xca
 XCast
-xce
 XCENTER
 XColors
 xcopy
 XCount
-xdd
 xdy
 xe
 XEncoding
 xff
-xffff
 XFile
 xlang
 XManifest
