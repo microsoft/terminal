@@ -139,12 +139,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         clump(){};
 
-        void clear()
-        {
-            _contents.clear();
-            _sizes.reset();
-        }
-
+        /* Accessors */
         size_t size() const
         {
             // if we have no sizes, each one is 1 (so we can use _contents' size)
@@ -164,6 +159,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         reference back()
         {
             return _contents.back();
+        }
+
+        const_iterator begin()
+        {
+            return const_iterator{ _contents.cbegin(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.cbegin(); }) };
+        }
+
+        const_iterator end()
+        {
+            return const_iterator{ _contents.cend(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.cend(); }) };
+        }
+
+        /* Mutators */
+        void clear()
+        {
+            _contents.clear();
+            _sizes.reset();
         }
 
         void push_back(const T& v)
@@ -194,16 +206,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ++lastSize;
 
             _contents.emplace_back(std::forward<Args>(args)...);
-        }
-
-        const_iterator begin()
-        {
-            return const_iterator{ _contents.cbegin(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.cbegin(); }) };
-        }
-
-        const_iterator end()
-        {
-            return const_iterator{ _contents.cend(), details::eval_or_nullopt(_sizes, [](auto&& s) { return s.cend(); }) };
         }
 
     private:
@@ -250,6 +252,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         clump_view() :
             _contents{}, _sizes{} {}
 
+        /* Accessors */
         size_t size() const
         {
             // if we have no sizes, each one is 1 (so we can use _contents' size)
@@ -309,12 +312,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         gsl::span<const T> at(const ptrdiff_t index) const
         {
-            const auto max{ _sizes ? _sizes->size() - 1 : _contents.size() - 1 };
+            const ptrdiff_t max{ gsl::narrow_cast<ptrdiff_t>(size()) - 1 };
             if (index > max)
             {
                 throw std::out_of_range("attempt to index beyond end of clump_view");
             }
-            return (*this)[index];
+            return til::at(*this, index); // unchecked at (since we just checked it)
         }
 
         // returns a span without any length information
@@ -328,6 +331,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         clump_view(gsl::span<const T> contents, std::optional<gsl::span<const size_t>> sizes) :
             _contents{ std::move(contents) },
             _sizes{ std::move(sizes) } {}
+
         gsl::span<const T> _contents;
         std::optional<gsl::span<const size_t>> _sizes;
     };
