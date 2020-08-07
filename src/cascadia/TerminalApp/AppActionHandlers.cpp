@@ -289,11 +289,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (tabColor.has_value())
             {
-                activeTab->SetTabColor(tabColor.value());
+                activeTab->SetRuntimeTabColor(tabColor.value());
             }
             else
             {
-                activeTab->ResetTabColor();
+                activeTab->ResetRuntimeTabColor();
             }
         }
         args.Handled(true);

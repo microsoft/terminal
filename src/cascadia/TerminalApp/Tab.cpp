@@ -54,6 +54,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         _UpdateTitle();
+        _RecalculateAndApplyTabColor();
     }
 
     // Method Description:
@@ -435,6 +436,16 @@ namespace winrt::TerminalApp::implementation
                 _rootPane->Relayout();
             }
         });
+
+        control.TabColorChanged([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                // The control's tabColor changed, but it is not necessarily the
+                // active control in this tab. We'll just recalculate the
+                // current color anyways.
+                tab->_RecalculateAndApplyTabColor();
+            }
+        });
     }
 
     // Method Description:
@@ -479,6 +490,7 @@ namespace winrt::TerminalApp::implementation
             if (tab && sender != tab->_activePane)
             {
                 tab->_UpdateActivePane(sender);
+                tab->_RecalculateAndApplyTabColor();
             }
         });
     }
@@ -529,14 +541,14 @@ namespace winrt::TerminalApp::implementation
         _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
             if (auto tab{ weakThis.get() })
             {
-                tab->SetTabColor(newTabColor);
+                tab->SetRuntimeTabColor(newTabColor);
             }
         });
 
         _tabColorPickup.ColorCleared([weakThis]() {
             if (auto tab{ weakThis.get() })
             {
-                tab->ResetTabColor();
+                tab->ResetRuntimeTabColor();
             }
         });
 
@@ -706,79 +718,57 @@ namespace winrt::TerminalApp::implementation
     // - The tab's color, if any
     std::optional<winrt::Windows::UI::Color> Tab::GetTabColor()
     {
-        return _tabColor;
+        const auto currControlColor{ GetActiveTerminalControl().TabColor() };
+        std::optional<winrt::Windows::UI::Color> controlTabColor;
+        if (currControlColor != nullptr)
+        {
+            controlTabColor = currControlColor.Value();
+        }
+
+        // A Tab's color will be the result of layering a variety of sources,
+        // from the bottom up:
+        //
+        // Color                |             | Set by
+        // -------------------- | --          | --
+        // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
+        // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
+        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
+        // Tab Default Color    | **default** | TabView in XAML
+        //
+        // coalesce will get us the first of these values that's
+        // actually set, with nullopt being our sentinel for "use the default
+        // tabview color" (and clear out any colors we've set).
+
+        return til::coalesce(_runtimeTabColor,
+                             controlTabColor,
+                             _themeTabColor,
+                             std::optional<Windows::UI::Color>(std::nullopt));
     }
 
     // Method Description:
-    // - Sets the tab background color to the color chosen by the user
+    // - Sets the runtime tab background color to the color chosen by the user
     // - Sets the tab foreground color depending on the luminance of
     // the background color
     // Arguments:
-    // - color: the shiny color the user picked for their tab
+    // - color: the color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::SetTabColor(const winrt::Windows::UI::Color& color)
+    void Tab::SetRuntimeTabColor(const winrt::Windows::UI::Color& color)
     {
-        auto weakThis{ get_weak() };
-
-        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, color]() {
-            auto ptrTab = weakThis.get();
-            if (!ptrTab)
-                return;
-
-            auto tab{ ptrTab };
-            Media::SolidColorBrush selectedTabBrush{};
-            Media::SolidColorBrush deselectedTabBrush{};
-            Media::SolidColorBrush fontBrush{};
-            Media::SolidColorBrush hoverTabBrush{};
-            // calculate the luminance of the current color and select a font
-            // color based on that
-            // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-            if (TerminalApp::ColorHelper::IsBrightColor(color))
-            {
-                fontBrush.Color(winrt::Windows::UI::Colors::Black());
-            }
-            else
-            {
-                fontBrush.Color(winrt::Windows::UI::Colors::White());
-            }
-
-            hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
-            selectedTabBrush.Color(color);
-
-            // currently if a tab has a custom color, a deselected state is
-            // signified by using the same color with a bit ot transparency
-            auto deselectedTabColor = color;
-            deselectedTabColor.A = 64;
-            deselectedTabBrush.Color(deselectedTabColor);
-
-            // currently if a tab has a custom color, a deselected state is
-            // signified by using the same color with a bit ot transparency
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-
-            tab->_RefreshVisualState();
-
-            tab->_tabColor.emplace(color);
-            tab->_colorSelected(color);
-        });
+        _runtimeTabColor.emplace(color);
+        _RecalculateAndApplyTabColor();
     }
 
     // Method Description:
-    // Clear the custom color of the tab, if any
-    // the background color
+    // - This function dispatches a function to the UI thread to recalculate
+    //   what this tab's current background color should be. If a color is set,
+    //   it will apply the given color to the tab's background. Otherwise, it
+    //   will clear the tab's background color.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::ResetTabColor()
+    void Tab::_RecalculateAndApplyTabColor()
     {
         auto weakThis{ get_weak() };
 
@@ -788,32 +778,119 @@ namespace winrt::TerminalApp::implementation
                 return;
 
             auto tab{ ptrTab };
-            winrt::hstring keys[] = {
-                L"TabViewItemHeaderBackground",
-                L"TabViewItemHeaderBackgroundSelected",
-                L"TabViewItemHeaderBackgroundPointerOver",
-                L"TabViewItemHeaderForeground",
-                L"TabViewItemHeaderForegroundSelected",
-                L"TabViewItemHeaderForegroundPointerOver",
-                L"TabViewItemHeaderBackgroundPressed",
-                L"TabViewItemHeaderForegroundPressed",
-                L"TabViewButtonForegroundActiveTab"
-            };
 
-            // simply clear any of the colors in the tab's dict
-            for (auto keyString : keys)
+            std::optional<winrt::Windows::UI::Color> currentColor = tab->GetTabColor();
+            if (currentColor.has_value())
             {
-                auto key = winrt::box_value(keyString);
-                if (tab->_tabViewItem.Resources().HasKey(key))
-                {
-                    tab->_tabViewItem.Resources().Remove(key);
-                }
+                tab->_ApplyTabColor(currentColor.value());
             }
-
-            tab->_RefreshVisualState();
-            tab->_tabColor.reset();
-            tab->_colorCleared();
+            else
+            {
+                tab->_ClearTabBackgroundColor();
+            }
         });
+    }
+
+    // Method Description:
+    // - Applies the given color to the background of this tab's TabViewItem.
+    // - Sets the tab foreground color depending on the luminance of
+    // the background color
+    // - This method should only be called on the UI thread.
+    // Arguments:
+    // - color: the color the user picked for their tab
+    // Return Value:
+    // - <none>
+    void Tab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
+    {
+        Media::SolidColorBrush selectedTabBrush{};
+        Media::SolidColorBrush deselectedTabBrush{};
+        Media::SolidColorBrush fontBrush{};
+        Media::SolidColorBrush hoverTabBrush{};
+        // calculate the luminance of the current color and select a font
+        // color based on that
+        // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
+        if (TerminalApp::ColorHelper::IsBrightColor(color))
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::Black());
+        }
+        else
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::White());
+        }
+
+        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
+        selectedTabBrush.Color(color);
+
+        // currently if a tab has a custom color, a deselected state is
+        // signified by using the same color with a bit ot transparency
+        auto deselectedTabColor = color;
+        deselectedTabColor.A = 64;
+        deselectedTabBrush.Color(deselectedTabColor);
+
+        // currently if a tab has a custom color, a deselected state is
+        // signified by using the same color with a bit ot transparency
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
+
+        _RefreshVisualState();
+
+        _colorSelected(color);
+    }
+
+    // Method Description:
+    // - Clear the custom runtime color of the tab, if any color is set. This
+    //   will re-apply whatever the tab's base color should be (either the color
+    //   from the control, the theme, or the default tab color.)
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ResetRuntimeTabColor()
+    {
+        _runtimeTabColor.reset();
+        _RecalculateAndApplyTabColor();
+    }
+
+    // Method Description:
+    // - Clear out any color we've set for the TabViewItem.
+    // - This method should only be called on the UI thread.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_ClearTabBackgroundColor()
+    {
+        winrt::hstring keys[] = {
+            L"TabViewItemHeaderBackground",
+            L"TabViewItemHeaderBackgroundSelected",
+            L"TabViewItemHeaderBackgroundPointerOver",
+            L"TabViewItemHeaderForeground",
+            L"TabViewItemHeaderForegroundSelected",
+            L"TabViewItemHeaderForegroundPointerOver",
+            L"TabViewItemHeaderBackgroundPressed",
+            L"TabViewItemHeaderForegroundPressed",
+            L"TabViewButtonForegroundActiveTab"
+        };
+
+        // simply clear any of the colors in the tab's dict
+        for (auto keyString : keys)
+        {
+            auto key = winrt::box_value(keyString);
+            if (_tabViewItem.Resources().HasKey(key))
+            {
+                _tabViewItem.Resources().Remove(key);
+            }
+        }
+
+        _RefreshVisualState();
+        _colorCleared();
     }
 
     // Method Description:

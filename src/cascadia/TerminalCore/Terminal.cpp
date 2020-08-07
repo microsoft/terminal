@@ -147,6 +147,19 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
+    if (settings.TabColor() == nullptr)
+    {
+        _tabColor = std::nullopt;
+    }
+    else
+    {
+        _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
+    }
+    if (_pfnTabColorChanged)
+    {
+        _pfnTabColorChanged(_tabColor);
+    }
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -913,6 +926,11 @@ void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_vie
     _pfnTitleChanged.swap(pfn);
 }
 
+void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept
+{
+    _pfnTabColorChanged.swap(pfn);
+}
+
 void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnCopyToClipboard.swap(pfn);
@@ -968,4 +986,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
+}
+
+const std::optional<til::color> Terminal::GetTabColor() const noexcept
+{
+    return _tabColor;
 }

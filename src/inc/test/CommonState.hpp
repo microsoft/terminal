@@ -22,7 +22,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
 
-#include "precomp.h"
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../buffer/out/CharRow.hpp"

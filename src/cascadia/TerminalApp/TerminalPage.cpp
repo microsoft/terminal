@@ -1818,17 +1818,6 @@ namespace winrt::TerminalApp::implementation
 
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab->GetActiveTitle());
-
-                // Raise an event that our titlebar color changed
-                std::optional<Windows::UI::Color> color = tab->GetTabColor();
-                if (color.has_value())
-                {
-                    _SetNonClientAreaColors(color.value());
-                }
-                else
-                {
-                    _ClearNonClientAreaColors();
-                }
             }
             CATCH_LOG();
         }

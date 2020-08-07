@@ -82,6 +82,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
+        auto pfnTabColorChanged = std::bind(&TermControl::_TerminalTabColorChanged, this, std::placeholders::_1);
+        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
+
         auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
         _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
@@ -2051,6 +2054,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _titleChangedHandlers(winrt::hstring{ wstr });
     }
+    void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
+    {
+        _TabColorChangedHandlers(*this, nullptr);
+    }
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
@@ -2819,6 +2826,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // It's already loaded if we get here, so just hide it.
         RendererFailedNotice().Visibility(Visibility::Collapsed);
         _renderer->ResetErrorStateAndResume();
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
+    {
+        auto coreColor = _terminal->GetTabColor();
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

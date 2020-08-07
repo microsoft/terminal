@@ -107,6 +107,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
 
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -118,6 +120,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -219,6 +222,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
+        void _TerminalTabColorChanged(const std::optional<til::color> color);
         void _CopyToClipboard(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         void _TerminalCursorPositionChanged();
