@@ -868,9 +868,7 @@ CATCH_RETURN();
                 // Step 1: Get to the last contiguous RTL run from here
                 while (lastIndexRTL < _runs.size() - 1) // only could ever advance if there's something left
                 {
-                    // This casting, to the best of my knowledge, is entirely unnecessary.
-                    // However, I am hoping it will make the static analyzer stop yelling at me.
-                    const Run& nextRun = _runs.at((long long)lastIndexRTL + 1LL);
+                    const Run& nextRun = _runs.at(gsl::narrow_cast<size_t>(lastIndexRTL + 1));
                     if (WI_IsFlagSet(nextRun.bidiLevel, 1))
                     {
                         lastIndexRTL++;
