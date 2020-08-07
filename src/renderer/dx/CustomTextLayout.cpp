@@ -847,7 +847,7 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (INT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+        for (INT32 runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
@@ -866,7 +866,7 @@ CATCH_RETURN();
                 INT32 lastIndexRTL = runIndex;
 
                 // Step 1: Get to the last contiguous RTL run from here
-                while (lastIndexRTL < _runs.size() - 1) // only could ever advance if there's something left
+                while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
                 {
                     const Run& nextRun = _runs.at(gsl::narrow_cast<size_t>(lastIndexRTL + 1));
                     if (WI_IsFlagSet(nextRun.bidiLevel, 1))
