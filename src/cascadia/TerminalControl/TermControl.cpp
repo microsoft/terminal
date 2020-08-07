@@ -34,7 +34,7 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
-DEFINE_ENUM_FLAG_OPERATORS(CopyFormat);
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {

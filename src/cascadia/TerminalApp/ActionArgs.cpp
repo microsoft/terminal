@@ -21,6 +21,8 @@
 
 #include <LibraryResources.h>
 
+using namespace winrt::Microsoft::Terminal::TerminalControl;
+
 namespace winrt::TerminalApp::implementation
 {
     winrt::hstring NewTerminalArgs::GenerateName() const
@@ -62,11 +64,44 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CopyTextArgs::GenerateName() const
     {
+        winrt::hstring singleLineStr;
         if (_SingleLine)
         {
-            return RS_(L"CopyTextAsSingleLineCommandKey");
+            // as a single line
+            singleLineStr = RS_(L"CopyTextAsSingleLineCommandKey");
         }
-        return RS_(L"CopyTextCommandKey");
+
+        winrt::hstring copyFormatStr;
+        if (_CopyFormatting != nullptr)
+        {
+            if (_CopyFormatting.Value() == CopyFormat::All ||
+                (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML) && WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF)))
+            {
+                // with formatting
+                copyFormatStr = RS_(L"CopyTextFormatAllCommandKey");
+            }
+            else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
+            {
+                // without formatting
+                copyFormatStr = RS_(L"CopyTextFormatNoneCommandKey");
+            }
+            else
+            {
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
+                {
+                    // html
+                    copyFormatStr = RS_(L"CopyTextFormatHTMLCommandKey");
+                }
+                else if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+                {
+                    // rtf
+                    copyFormatStr = RS_(L"CopyTextFormatRTFCommandKey");
+                }
+            }
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CopyTextCommandKey")), singleLineStr, copyFormatStr)
+        };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const

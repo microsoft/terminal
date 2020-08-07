@@ -3,15 +3,6 @@
 
 namespace TerminalApp
 {
-    // Each CopyFormat value should be a flag in a bitfield
-    enum CopyFormat
-    {
-        Plain = 0x1,
-        HTML = 0x2,
-        RTF = 0x4,
-        All = 0xffffffff
-    };
-
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety

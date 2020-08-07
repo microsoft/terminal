@@ -1604,11 +1604,8 @@ namespace winrt::TerminalApp::implementation
                                _settings->GlobalSettings().CopyFormatting() :
                                copiedData.Formats().Value();
 
-        if (WI_IsFlagSet(copyFormats, CopyFormat::Plain))
-        {
-            // copy text to dataPack
-            dataPack.SetText(copiedData.Text());
-        }
+        // copy text to dataPack
+        dataPack.SetText(copiedData.Text());
 
         if (WI_IsFlagSet(copyFormats, CopyFormat::HTML))
         {
@@ -1717,7 +1714,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<Settings::CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(singleLine, formats);

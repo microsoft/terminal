@@ -180,13 +180,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
     };
 };
 
-DEFINE_ENUM_FLAG_OPERATORS(::winrt::Microsoft::Terminal::Settings::CopyFormat);
-
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 {
     JSON_MAPPINGS(5) = {
         pair_type{ "none", AllClear },
-        pair_type{ "plain", ValueType::Plain },
+        pair_type{ "plain", AllClear },
         pair_type{ "html", ValueType::HTML },
         pair_type{ "rtf", ValueType::RTF },
         pair_type{ "all", AllSet },
@@ -196,7 +194,7 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::CopyFormat)
     {
         if (json.isBool())
         {
-            return json.asBool() ? AllSet : ValueType::Plain;
+            return json.asBool() ? AllSet : AllClear;
         }
         return BaseFlagMapper::FromJson(json);
     }
