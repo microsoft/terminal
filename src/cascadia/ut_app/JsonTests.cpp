@@ -14,7 +14,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalAppUnitTests
 {

@@ -17,7 +17,6 @@
 #include "WslDistroGenerator.h"
 #include "AzureCloudShellGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;

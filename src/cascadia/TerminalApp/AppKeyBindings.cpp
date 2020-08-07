@@ -9,12 +9,12 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
     void AppKeyBindings::SetKeyBinding(const TerminalApp::ActionAndArgs& actionAndArgs,
-                                       const Settings::KeyChord& chord)
+                                       const KeyChord& chord)
     {
         _keyShortcuts[chord] = actionAndArgs;
     }
@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
     // - chord: the keystroke to remove the action for.
     // Return Value:
     // - <none>
-    void AppKeyBindings::ClearKeyBinding(const Settings::KeyChord& chord)
+    void AppKeyBindings::ClearKeyBinding(const KeyChord& chord)
     {
         _keyShortcuts.erase(chord);
     }
@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
         return { nullptr };
     }
 
-    bool AppKeyBindings::TryKeyChord(const Settings::KeyChord& kc)
+    bool AppKeyBindings::TryKeyChord(const KeyChord& kc)
     {
         const auto keyIter = _keyShortcuts.find(kc);
         if (keyIter != _keyShortcuts.end())
@@ -87,19 +87,19 @@ namespace winrt::TerminalApp::implementation
     // - Takes the KeyModifier flags from Terminal and maps them to the WinRT types which are used by XAML
     // Return Value:
     // - a Windows::System::VirtualKeyModifiers object with the flags of which modifiers used.
-    Windows::System::VirtualKeyModifiers AppKeyBindings::ConvertVKModifiers(Settings::KeyModifiers modifiers)
+    Windows::System::VirtualKeyModifiers AppKeyBindings::ConvertVKModifiers(KeyModifiers modifiers)
     {
         Windows::System::VirtualKeyModifiers keyModifiers = Windows::System::VirtualKeyModifiers::None;
 
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
         {
             keyModifiers |= Windows::System::VirtualKeyModifiers::Control;
         }
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
         {
             keyModifiers |= Windows::System::VirtualKeyModifiers::Shift;
         }
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
         {
             // note: Menu is the Alt VK_MENU
             keyModifiers |= Windows::System::VirtualKeyModifiers::Menu;

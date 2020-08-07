@@ -15,7 +15,6 @@ Author(s):
 
 --*/
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "TerminalSettings.h"
 #include "../../inc/conattrs.hpp"
 

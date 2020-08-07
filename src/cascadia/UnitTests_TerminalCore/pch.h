@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- precomp.h
+- pch.h
 
 Abstract:
 - Contains external headers to include in the precompile phase of console build

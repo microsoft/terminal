@@ -1,14 +1,14 @@
 #pragma once
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "DefaultSettings.h"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "../inc/cppwinrt_utils.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalCoreUnitTests
 {

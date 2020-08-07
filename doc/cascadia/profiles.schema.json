@@ -64,6 +64,8 @@
         "renameTab",
         "commandPalette",
         "wt",
+        "closeOtherTabs",
+        "closeTabsAfter",
         "unbound"
       ],
       "type": "string"
@@ -298,6 +300,40 @@
       ],
       "required": [ "commandline" ]
     },
+    "CloseOtherTabsAction": {
+      "description": "Arguments for a closeOtherTabs action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeOtherTabs" },
+            "index": {
+              "type": "integer",
+              "default": "",
+              "description": "close the tabs following the tab at this index"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
+    "CloseTabsAfterAction": {
+      "description": "Arguments for a closeTabsAfter action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTabsAfter" },
+            "index": {
+              "type": "integer",
+              "default": "",
+              "description": "close the tabs other than the one at this index"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -315,6 +351,8 @@
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
               { "$ref": "#/definitions/WtAction" },
+              { "$ref": "#/definitions/CloseOtherTabsAction" },
+              { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "type": "null" }
             ]
         },
