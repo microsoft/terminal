@@ -61,6 +61,11 @@ namespace winrt::TerminalApp::implementation
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
 
+        void ToggleZoom();
+        bool IsZoomed();
+        void EnterZoom();
+        void ExitZoom();
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -73,6 +78,7 @@ namespace winrt::TerminalApp::implementation
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
+        std::shared_ptr<Pane> _zoomedPane{ nullptr };
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};

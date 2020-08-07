@@ -65,7 +65,14 @@ namespace winrt::TerminalApp::implementation
     // - The UIElement acting as root of the Tab's root pane.
     UIElement Tab::GetRootElement()
     {
-        return _rootPane->GetRootElement();
+        if (_zoomedPane)
+        {
+            return _zoomedPane->GetRootElement();
+        }
+        else
+        {
+            return _rootPane->GetRootElement();
+        }
     }
 
     // Method Description:
@@ -598,8 +605,28 @@ namespace winrt::TerminalApp::implementation
 
         if (!_inRename)
         {
-            // If we're not currently in the process of renaming the tab, then just set the tab's text to whatever our active title is.
-            _tabViewItem.Header(winrt::box_value(tabText));
+            if (_zoomedPane)
+            {
+                Controls::StackPanel sp;
+                sp.Orientation(Controls::Orientation::Horizontal);
+                Controls::FontIcon ico;
+                ico.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                ico.Glyph(L"\xE8A3"); // "ZoomIn", a magnifying glass with a '+' in it.
+                ico.FontSize(12);
+                ico.Margin(ThicknessHelper::FromLengths(0, 0, 8, 0));
+                sp.Children().Append(ico);
+                Controls::TextBlock tb;
+                tb.Text(tabText);
+                sp.Children().Append(tb);
+
+                _tabViewItem.Header(sp);
+            }
+            else
+            {
+                // If we're not currently in the process of renaming the tab,
+                // then just set the tab's text to whatever our active title is.
+                _tabViewItem.Header(winrt::box_value(tabText));
+            }
         }
         else
         {
@@ -955,6 +982,48 @@ namespace winrt::TerminalApp::implementation
     {
         return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
     }
+
+    // Method Description:
+    // - Toggle our zoom state.
+    //   * If we're not zoomed, then zoom the active pane, making it take the
+    //     full size of the tab. We'll achieve this by changing our response to
+    //     Tab::GetRootElement, so that it'll return the zoomed pane only.
+    //   *  If we're currently zoomed on a pane, un-zoom that pane.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ToggleZoom()
+    {
+        if (_zoomedPane)
+        {
+            ExitZoom();
+        }
+        else
+        {
+            EnterZoom();
+        }
+    }
+    void Tab::EnterZoom()
+    {
+        _zoomedPane = _activePane;
+        _rootPane->Maximize(_zoomedPane);
+        // Update the tab header to show the magnifying glass
+        _UpdateTabHeader();
+    }
+    void Tab::ExitZoom()
+    {
+        _rootPane->Restore(_zoomedPane);
+        _zoomedPane = nullptr;
+        // Update the tab header to hide the magnifying glass
+        _UpdateTabHeader();
+    }
+
+    bool Tab::IsZoomed()
+    {
+        return _zoomedPane != nullptr;
+    }
+
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(Tab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(Tab, ColorCleared, _colorCleared, winrt::delegate<>);

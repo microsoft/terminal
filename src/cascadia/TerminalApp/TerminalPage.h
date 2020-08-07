@@ -191,6 +191,8 @@ namespace winrt::TerminalApp::implementation
 
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
+        void _UnZoomIfNeeded();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -202,6 +204,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSplitPane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleTogglePaneZoom(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
