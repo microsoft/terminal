@@ -402,7 +402,11 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _useAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
     JsonUtils::GetValueForKey(json, CloseOnExitKey, _closeOnExitMode);
-    JsonUtils::GetValueForKey(json, PaddingKey, _padding);
+
+    // Padding was never specified as an integer, but it was a common working mistake.
+    // Allow it to be permissive.
+    JsonUtils::GetValueForKey(json, PaddingKey, _padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _scrollbarState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _startingDirectory);
     JsonUtils::GetValueForKey(json, IconKey, _icon);
