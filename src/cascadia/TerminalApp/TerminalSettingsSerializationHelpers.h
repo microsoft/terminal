@@ -184,7 +184,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 {
     JSON_MAPPINGS(5) = {
         pair_type{ "none", AllClear },
-        pair_type{ "plain", AllClear },
         pair_type{ "html", ValueType::HTML },
         pair_type{ "rtf", ValueType::RTF },
         pair_type{ "all", AllSet },
