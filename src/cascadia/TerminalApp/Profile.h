@@ -14,7 +14,7 @@ Author(s):
 
 --*/
 #pragma once
-#include "ColorScheme.h"
+#include "ColorScheme.g.h"
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes
@@ -46,7 +46,7 @@ public:
 
     ~Profile();
 
-    winrt::TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
+    winrt::TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes) const;
 
     Json::Value GenerateStub() const;
     static Profile FromJson(const Json::Value& json);
