@@ -735,8 +735,15 @@
         "padding": {
           "default": "8, 8, 8, 8",
           "description": "Sets the padding around the text within the window. Can have three different formats:\n -\"#\" sets the same padding for all sides \n -\"#, #\" sets the same padding for left-right and top-bottom\n -\"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
-          "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
-          "type": "string"
+          "oneOf": [
+            {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
         },
         "scrollbarState": {
           "default": "visible",

@@ -360,6 +360,25 @@ namespace TerminalApp::JsonUtils
         }
     };
 
+    template<typename T>
+    struct PermissiveStringConverter
+    {
+    };
+
+    template<>
+    struct PermissiveStringConverter<std::wstring>
+    {
+        std::wstring FromJson(const Json::Value& json)
+        {
+            return til::u8u16(json.asString());
+        }
+
+        bool CanConvert(const Json::Value& /*unused*/)
+        {
+            return true;
+        }
+    };
+
     // Method Description:
     // - Helper that will populate a reference with a value converted from a json object.
     // Arguments:
