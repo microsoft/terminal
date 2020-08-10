@@ -1,7 +1,7 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
 created on: 2020-06-29
-last updated: 2020-07-13
+last updated: 2020-08-10
 issue id: #1564
 ---
 
@@ -47,14 +47,14 @@ As users edit fields in the settings UI, they are automatically saved and writte
 
 ## UI/UX Design
 
-Layout of all of the settings per page can be found in [Appendix 1](#appendix-1).
+Layout of all of the settings per page can be found in the [design doc](./design.md).
 
 ### Top-level navigation: more descriptive navigation
 
 The navigation menu is broken up into more digestible sections. This aligns more closely to other terminals. The following are the proposed navigation items:
 
 - General
-    - Launch
+    - Startup
     - Interaction
     - Rendering
 - Appearance
@@ -114,50 +114,9 @@ This does not affect performance, power, nor efficiency.
 ## Future considerations
 
 - We will have to have design reviews for all of the content pages.
+- The `hidden` property will need special consideration. Ideally, all profiles will appear in the settings regardless if `hidden` is set to `true`.
 - We should have undo functionality. In a text editor, you can type `Ctrl+Z` however the settings UI is a bit more complex.
 - Once we have a marketplace for themes and extensions, this should be added to the top-level navigation.
 - As we add more features, the top-level navigation is subject to change in favor of improved usability.
 
 ## Resources
-
-## Appendix 1
-
-Below is the list of all settings on their respective pages in the settings UI. The title row aligns with the navigation view on the left of the UI. Bolded headers in those columns align with top nav on the page.
-
-| General - Launch | General - Interaction | General - Rendering | Appearance - Global | Appearance - Color Schemes | Profiles - Global | Profiles - Enumerate profiles | Profiles - Add new |
-| ---------------- | --------------------- | ------------------- | ------------------- | -------------------------- | ----------------- | ----------------------------- | ------------------ |
-| Default profile (dropdown) | Copy after selection is made (checkbox) | Windows resize behavior (checkbox) | Theme (radio) | Name (text box) | **General** | **General** | **General** | **General** |
-| Launch on startup (checkbox) | Copy formatting (checkbox) | Screen redrawing (checkbox) | Show/Hide the title bar (checkbox) | Cursor color (color picker) | Command line (text box) | GUID (text box) | GUID (text box) |
-| Launch size (radio) | Word delimiters (text box) | Software rendering (checkbox) | Show terminal title in title bar (checkbox) | Selection background (color picker) | Starting directory (text box) | Command line (text box) | Command line (text box) |
-| Launch position (text box) | | | Always show tabs (checkbox) | Background (color picker) | Icon (text box) | Starting directory (text box) | Starting directory (text box) |
-| Columns on first launch (number picker) | | | Tab width mode (radio) | Foreground (color picker) | Tab title (text box) | Name (text box) | Name (text box) |
-| Rows on first launch (number picker) | | | Hide close all tabs popup (checkbox) | Black (color picker) | Scrollbar visibility (radio) | Icon (text box) | Icon (text box) |
-| Disable dynamic profiles (checkbox) | | | | Blue (color picker) | **Appearance** | Tab title (text box) | Tab title (text box) |
-| | | | | Cyan (color picker) | Font face (text box) | Scrollbar visibility (radio) | Scrollbar visibility (radio) |
-| | | | | Green (color picker) | Font size (number picker) | **Appearance** | **Appearance** |
-| | | | | Purple (color picker) | Font weight (text box) | Font face (text box) | Font face (text box) |
-| | | | | Red (color picker) | Padding (text box) | Font size (number picker) | Font size (number picker) |
-| | | | | White (color picker) | Cursor shape (radio) | Font weight (dropdown) | Font weight (dropdown) |
-| | | | | Yellow (color picker) | Cursor color (color picker) | Padding (text box) | Padding (text box) |
-| | | | | Bright black (color picker) | Cursor height (number picker) | Cursor shape (radio) | Cursor shape (radio) |
-| | | | | Bright blue (color picker) | Color scheme (dropdown) | Cursor color (color picker) | Cursor color (color picker) |
-| | | | | Bright cyan (color picker) | Foreground color (color picker) | Cursor height (number picker) | Cursor height (number picker) |
-| | | | | Bright green (color picker) | Background color (color picker) | Color scheme (dropdown) | Color scheme (dropdown) |
-| | | | | Bright purple (color picker) | Selection background color (color picker) | Foreground color (color picker) | Foreground color (color picker) |
-| | | | | Bright red (color picker) | Enable acrylic (checkbox) | Background color (color picker) | Background color (color picker) |
-| | | | | Bright white (color picker) | Acrylic opacity (number picker) | Selection background color (color picker) | Selection background color (color picker) |
-| | | | | Bright yellow (color picker) | Background image (text box) | Enable acrylic (checkbox) | Enable acrylic (checkbox) |
-| | | | | | Background image stretch mode (radio) | Acrylic opacity (number picker) | Acrylic opacity (number picker) |
-| | | | | | Background image alignment (dropdown) | Background image (text box) | Background image (text box) |
-| | | | | | Background image opacity (number picker) | Background image stretch mode (radio) | Background image stretch mode (radio) |
-| | | | | | Retro terminal effects (checkbox) | Background image alignment (dropdown) | Background image alignment (dropdown) |
-| | | | | | **Advanced** | Background image opacity (number picker) | Background image opacity (number picker) |
-| | | | | | Hide profile from dropdown (checkbox) | Retro terminal effects (checkbox) | Retro terminal effects (checkbox) |
-| | | | | | Suppress title changes (checkbox) | **Advanced** | **Advanced** |
-| | | | | | Antialiasing text (radio) | Hide profile from dropdown (checkbox) | Hide profile from dropdown (checkbox) |
-| | | | | | AltGr aliasing (checkbox) | Suppress title changes (checkbox) | Suppress title changes (checkbox) |
-| | | | | | Scroll to input when typing (checkbox) | Antialiasing text (radio) | Antialiasing text (radio) |
-| | | | | | History size (number picker) | AltGr aliasing (checkbox) | AltGr aliasing (checkbox) |
-| | | | | | How the profile closes (radio) | Scroll to input when typing (checkbox) | Scroll to input when typing (checkbox) |
-| | | | | | | History size (number picker) | History size (number picker) |
-| | | | | | | How the profile closes (radio) | How the profile closes (radio) |

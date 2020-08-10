@@ -9,16 +9,16 @@ issue id: #1564
 
 ## Abstract
 
-This design document describes how each page of the settings UI will be laid out along with design mockups to display how the UI will appear.
+This design document describes how each page of the settings UI will be laid out along with design mockups to display how the UI will appear. The mock ups are for appearance purposes and some layouts and namings may be different in this doc. This doc should be considered the final say.
 
 ## UI Design
 
-### Overall navigation with Launch page
+### Overall navigation with Startup page
 
 This is the list of the top-level navigation items that will appear on the left nav bar:
 
 - General
-    - Launch
+    - Startup
     - Interaction
     - Rendering
 - Appearance
@@ -67,17 +67,17 @@ If the command they select has additional arguments/actions, the modal will dyna
 
 Below is the list of all settings on their respective pages in the settings UI. The title row aligns with the navigation view on the left of the UI. Bolded headers in those columns align with top nav on the page.
 
-| General - Launch | General - Interaction | General - Rendering | Appearance - Global | Appearance - Color Schemes | Profiles - Global | Profiles - Enumerate profiles | Profiles - Add new |
+| General - Startup | General - Interaction | General - Rendering | Appearance - Global | Appearance - Color Schemes | Profiles - Global | Profiles - Enumerate profiles | Profiles - Add new |
 | ---------------- | --------------------- | ------------------- | ------------------- | -------------------------- | ----------------- | ----------------------------- | ------------------ |
-| Default profile (dropdown) | Copy after selection is made (checkbox) | Windows resize behavior (checkbox) | Theme (radio) | Name (text box) | **General** | **General** | **General** | **General** |
-| Launch on startup (checkbox) | Copy formatting (checkbox) | Screen redrawing (checkbox) | Show/Hide the title bar (checkbox) | Cursor color (color picker) | Command line (text box) | GUID (text box) | GUID (text box) |
-| Launch size (radio) | Word delimiters (text box) | Software rendering (checkbox) | Show terminal title in title bar (checkbox) | Selection background (color picker) | Starting directory (text box) | Command line (text box) | Command line (text box) |
-| Launch position (text box) | | | Always show tabs (checkbox) | Background (color picker) | Icon (text box) | Starting directory (text box) | Starting directory (text box) |
+| Default profile (dropdown) | Copy after selection is made (checkbox) | Software rendering (checkbox) | Theme (radio) | Name (text box) | **General** | **General** | **General** | **General** |
+| Launch on startup (checkbox) | Copy formatting (checkbox) | Screen redrawing (checkbox) | Show/Hide the title bar (checkbox) | Cursor color (color picker) | Command line (text box) | Scrollbar visibility (radio) | Scrollbar visibility (radio) |
+| Launch size (radio) | Word delimiters (text box) | | Show terminal title in title bar (checkbox) | Selection background (color picker) | Starting directory (browse button) | Command line (browse button) | Command line (browse button) |
+| Launch position (text box) | Window resize behavior (checkbox) | | Always show tabs (checkbox) | Background (color picker) | Icon (browse button) | Starting directory (browse button) | Starting directory (browse button) |
 | Columns on first launch (number picker) | | | Tab width mode (radio) | Foreground (color picker) | Tab title (text box) | Name (text box) | Name (text box) |
-| Rows on first launch (number picker) | | | Hide close all tabs popup (checkbox) | Black (color picker) | Scrollbar visibility (radio) | Icon (text box) | Icon (text box) |
-| Disable dynamic profiles (checkbox) | | | | Blue (color picker) | **Appearance** | Tab title (text box) | Tab title (text box) |
-| | | | | Cyan (color picker) | Font face (text box) | Scrollbar visibility (radio) | Scrollbar visibility (radio) |
-| | | | | Green (color picker) | Font size (number picker) | **Appearance** | **Appearance** |
+| Rows on first launch (number picker) | | | Hide close all tabs popup (checkbox) | Black (color picker) | Scrollbar visibility (radio) | Icon (browss button) | Icon (browse button) |
+| Automatically create new profiles when new shells are installed (checkbox) | | | | Blue (color picker) | **Appearance** | Tab title (text box) | Tab title (text box) |
+| | | | | Cyan (color picker) | Font face (text box) | **Appearance** | **Appearance** |
+| | | | | Green (color picker) | Font size (number picker) | Retro terminal effects (checkbox) | Retro terminal effects (checkbox) |
 | | | | | Purple (color picker) | Font weight (text box) | Font face (text box) | Font face (text box) |
 | | | | | Red (color picker) | Padding (text box) | Font size (number picker) | Font size (number picker) |
 | | | | | White (color picker) | Cursor shape (radio) | Font weight (text box) | Font weight (text box) |
@@ -89,14 +89,14 @@ Below is the list of all settings on their respective pages in the settings UI. 
 | | | | | Bright purple (color picker) | Selection background color (color picker) | Foreground color (color picker) | Foreground color (color picker) |
 | | | | | Bright red (color picker) | Enable acrylic (checkbox) | Background color (color picker) | Background color (color picker) |
 | | | | | Bright white (color picker) | Acrylic opacity (number picker) | Selection background color (color picker) | Selection background color (color picker) |
-| | | | | Bright yellow (color picker) | Background image (text box) | Enable acrylic (checkbox) | Enable acrylic (checkbox) |
+| | | | | Bright yellow (color picker) | Background image (browse button) | Enable acrylic (checkbox) | Enable acrylic (checkbox) |
 | | | | | | Background image stretch mode (radio) | Acrylic opacity (number picker) | Acrylic opacity (number picker) |
-| | | | | | Background image alignment (dropdown) | Background image (text box) | Background image (text box) |
+| | | | | | Background image alignment (dropdown) | Background image (browse button) | Background image (browse button) |
 | | | | | | Background image opacity (number picker) | Background image stretch mode (radio) | Background image stretch mode (radio) |
 | | | | | | Retro terminal effects (checkbox) | Background image alignment (dropdown) | Background image alignment (dropdown) |
 | | | | | | **Advanced** | Background image opacity (number picker) | Background image opacity (number picker) |
-| | | | | | Hide profile from dropdown (checkbox) | Retro terminal effects (checkbox) | Retro terminal effects (checkbox) |
-| | | | | | Suppress title changes (checkbox) | **Advanced** | **Advanced** |
+| | | | | | Hide profile from dropdown (checkbox) | **Advanced** | **Advanced** |
+| | | | | | Suppress title changes (checkbox) | GUID (text box) | GUID (text box) |
 | | | | | | Antialiasing text (radio) | Hide profile from dropdown (checkbox) | Hide profile from dropdown (checkbox) |
 | | | | | | AltGr aliasing (checkbox) | Suppress title changes (checkbox) | Suppress title changes (checkbox) |
 | | | | | | Scroll to input when typing (checkbox) | Antialiasing text (radio) | Antialiasing text (radio) |
