@@ -73,7 +73,8 @@ namespace TerminalApp::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error("failed to deserialize"), jsonValue{ value } {}
+            runtime_error("failed to deserialize"),
+            jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
         {
