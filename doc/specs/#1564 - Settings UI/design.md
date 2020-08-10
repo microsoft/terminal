@@ -9,7 +9,7 @@ issue id: #1564
 
 ## Abstract
 
-This design document describes how each page of the settings UI will be laid out along with design mockups to display how the UI will appear. The mock ups are for appearance purposes and some layouts and namings may be different in this doc. This doc should be considered the final say.
+This design document describes how each page of the settings UI will be laid out along with design mockups to display how the UI will appear. The mock ups are for appearance purposes and some layouts and naming may be different in this doc. This doc should be considered the final say.
 
 ## UI Design
 
@@ -74,7 +74,7 @@ Below is the list of all settings on their respective pages in the settings UI. 
 | Launch size (radio) | Word delimiters (text box) | | Show terminal title in title bar (checkbox) | Selection background (color picker) | Starting directory (browse button) | Command line (browse button) | Command line (browse button) |
 | Launch position (text box) | Window resize behavior (checkbox) | | Always show tabs (checkbox) | Background (color picker) | Icon (browse button) | Starting directory (browse button) | Starting directory (browse button) |
 | Columns on first launch (number picker) | | | Tab width mode (radio) | Foreground (color picker) | Tab title (text box) | Name (text box) | Name (text box) |
-| Rows on first launch (number picker) | | | Hide close all tabs popup (checkbox) | Black (color picker) | Scrollbar visibility (radio) | Icon (browss button) | Icon (browse button) |
+| Rows on first launch (number picker) | | | Hide close all tabs popup (checkbox) | Black (color picker) | Scrollbar visibility (radio) | Icon (browse button) | Icon (browse button) |
 | Automatically create new profiles when new shells are installed (checkbox) | | | | Blue (color picker) | **Appearance** | Tab title (text box) | Tab title (text box) |
 | | | | | Cyan (color picker) | Font face (text box) | **Appearance** | **Appearance** |
 | | | | | Green (color picker) | Font size (number picker) | Retro terminal effects (checkbox) | Retro terminal effects (checkbox) |
