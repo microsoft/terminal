@@ -15,6 +15,7 @@
 #include "AdjustFontSizeArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "SetColorSchemeArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
 #include "ExecuteCommandlineArgs.g.h"
@@ -328,6 +329,38 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<OpenSettingsArgs>();
             JsonUtils::GetValueForKey(json, TargetKey, args->_Target);
+            return { *args, {} };
+        }
+    };
+
+    struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
+    {
+        SetColorSchemeArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, SchemeName, L"");
+
+        static constexpr std::string_view NameKey{ "colorScheme" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SetColorSchemeArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SchemeName == _SchemeName;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SetColorSchemeArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
+            if (args->_SchemeName.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
             return { *args, {} };
         }
     };

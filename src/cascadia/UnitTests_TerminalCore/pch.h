@@ -17,31 +17,40 @@ Author(s):
 
 #pragma once
 
-// <Conhost includes>
-// This header and define are needed so that the console host code can build in
-// this test binary.
-
-// Block minwindef.h min/max macros to prevent <algorithm> conflict
-#define NOMINMAX
-
-// This includes a lot of common headers needed by both the host and the propsheet
-// including: windows.h, winuser, ntstatus, assert, and the DDK
-#include "HostAndPropsheetIncludes.h"
-// </Conhost Includes>
-
+#define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
-
-#ifdef BUILDING_INSIDE_WINIDE
-#define DbgRaiseAssertionFailure() __int2c()
+// This is inexplicable, but for whatever reason, cppwinrt conflicts with the
+//      SDK definition of this function, so the only fix is to undef it.
+// from WinBase.h
+// Windows::UI::Xaml::Media::Animation::IStoryboard::GetCurrentTime
+#ifdef GetCurrentTime
+#undef GetCurrentTime
 #endif
 
-#include <ShellScalingApi.h>
+#include <wil/cppwinrt.h>
+#include <unknwn.h>
+#include <hstring.h>
 
-// Comment to build against the private SDK.
-#define CON_BUILD_PUBLIC
+#include <WexTestClass.h>
+#include "consoletaeftemplates.hpp"
 
-#ifdef CON_BUILD_PUBLIC
-#define CON_USERPRIVAPI_INDIRECT
-#define CON_DPIAPI_INDIRECT
-#endif
+#include <winrt/Windows.system.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#include "til.h"
+
+// <Conhost includes>
+// These are needed because the roundtrip tests included in this library also
+// re-use some conhost code that depends on these.
+
+#include "conddkrefs.h"
+// From ntdef.h, but that can't be included or it'll fight over PROBE_ALIGNMENT and other such arch specific defs
+typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
+/*lint -save -e624 */ // Don't complain about different typedefs.
+typedef NTSTATUS* PNTSTATUS;
+/*lint -restore */ // Resume checking for different typedefs.
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+// </Conhost Includes>

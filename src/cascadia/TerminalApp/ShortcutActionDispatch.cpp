@@ -121,6 +121,12 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
+        case ShortcutAction::TogglePaneZoom:
+        {
+            _TogglePaneZoomHandlers(*this, *eventArgs);
+            break;
+        }
+
         case ShortcutAction::SwitchToTab:
         {
             _SwitchToTabHandlers(*this, *eventArgs);
@@ -177,6 +183,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ToggleCommandPalette:
         {
             _ToggleCommandPaletteHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::SetColorScheme:
+        {
+            _SetColorSchemeHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::SetTabColor:
