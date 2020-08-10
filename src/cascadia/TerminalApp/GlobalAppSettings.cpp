@@ -105,9 +105,9 @@ GUID GlobalAppSettings::DefaultProfile() const
     return _defaultProfile;
 }
 
-std::wstring GlobalAppSettings::UnparsedDefaultProfile() const
+std::optional<std::wstring> GlobalAppSettings::UnparsedDefaultProfile() const
 {
-    return _unparsedDefaultProfile.value();
+    return _unparsedDefaultProfile;
 }
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
