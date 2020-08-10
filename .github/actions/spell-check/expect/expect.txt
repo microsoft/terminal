@@ -497,6 +497,7 @@ DCOLORVALUE
 dcommon
 DCompile
 dcompiler
+DComposition
 dde
 DDESHARE
 DDevice
@@ -664,6 +665,7 @@ ECH
 echokey
 ecount
 ECpp
+Edgium
 EDITKEYS
 EDITTEXT
 EDITUPDATE
@@ -2388,6 +2390,7 @@ typename
 typeof
 typeparam
 TYUI
+UAC
 uap
 uapadmin
 UAX

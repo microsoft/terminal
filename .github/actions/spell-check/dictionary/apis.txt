@@ -13,6 +13,7 @@ IAsync
 IBind
 IBox
 IClass
+IConnection
 IComparable
 ICustom
 IDialog
@@ -25,6 +26,7 @@ llabs
 LCID
 lround
 LSHIFT
+MULTIPLEUSE
 NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
@@ -35,6 +37,7 @@ ocidl
 otms
 OUTLINETEXTMETRICW
 PAGESCROLL
+REGCLS
 RETURNCMD
 rfind
 roundf

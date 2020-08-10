@@ -28,7 +28,7 @@ following scenarios:
 ## Inspiration
 
 Much of the design for this feature was inspired by (what I believe is) the web
-browser process model. For a web browser, there's often a seperate process for
+browser process model. For a web browser, there's often a separate process for
 each of the tabs within the browser, to help isolate the actual tabs from one
 another.
 
@@ -77,12 +77,12 @@ to another with a drag and drop operation. If we wanted to use a string to
 transfer the data, we'd somehow need to serialize then entire state of the tab,
 it's tree of panes, and the state of each of the buffers in the tab, into some
 sort of string, and then have the new window deserialize that string to
-re-create the tab state. Consider that each bufer might include 32000 rows of
+re-create the tab state. Consider that each buffer might include 32000 rows of
 80+ characters each, each with possibly RGB attributes, and you're looking at
 30MB+ of raw data to serialize and de-serialize per buffer, minimum. This sounds
 extremely fragile, if not impossible to do robustly.
 
-What we need is a more effective way for seperate Terminal windows to to be able
+What we need is a more effective way for separate Terminal windows to to be able
 to connect to and display content that's being hosted in another process.
 
 ## Solution Design
@@ -114,11 +114,11 @@ These two types of processes will work together to present both the UI of the
 Windows Terminal app, as well as the contents of the terminal buffers. A single
 window process may be in communication with multiple content processes - one per
 terminal instance. That means that each and every `TermControl` in a window
-process will be hosted in a seperate process.
+process will be hosted in a separate process.
 
 The window process will be full of "thin" `TermControl`s - controls which are
 only the XAML layer and a WinRT object which is hosted by the content process.
-These thin `TermControl`s will recieve input, and have all the UI elements
+These thin `TermControl`s will receive input, and have all the UI elements
 (including the `SwapChainPanel`) of the `TermControl` today, but the actual
 _rendering_ to the swap chain, and the handling of those inputs will be done by
 the content process.
@@ -187,7 +187,7 @@ auto myClass = create_instance<winrt::MyClass>(MyClassGUID, CLSCTX_LOCAL_SERVER)
 
 We're going to be using that system a little differently here. Instead of using
 a GUID to represent a single _Class_, we're going to use the GUID to uniquely
-identify _content processes_. Each content process will recieve a unique GUID
+identify _content processes_. Each content process will receive a unique GUID
 when it is created, and it will register as the server for that GUID. Then, any
 window process will be able to connect to that specific content process strictly
 by GUID. Because each GUID is unique to each content process, any time any
@@ -261,7 +261,7 @@ process doesn't have any remaining elevated content processes, then it should be
 able to revert to an unelevated window process. Should we do this? There's
 likely some visual flickering that will happen as we re-create the new window
 process, so maybe it would be unappealing to users. However, there's also the
-negative side effect that come from elevated windows (the aformentioned lack of
+negative side effect that come from elevated windows (the aforementioned lack of
 drag/drop), so maybe users will want to return to the more permissive unelevated
 window process.
 
@@ -291,11 +291,11 @@ There will only ever be one monarch process at a given time, and every other WT
 window process is a servant process. However, we want this system to be
 redundant, so that if the monarch ever dies, one of the remaining servant
 processes can take over for it. The new monarch will be chosen at random, so
-we'll call this a probabalistic elective monarchy.
+we'll call this a probabilistic elective monarchy.
 
-Essentially, the probabalistic elective monarchy will work in the following way:
+Essentially, the probabilistic elective monarchy will work in the following way:
 
-1. We'll introduce a WinRT class (for the puspose of this doc we'll call it
+1. We'll introduce a WinRT class (for the purpose of this doc we'll call it
   `Monarch`), with a unique GUID.
 2. When any window process starts up, it'll first try to register as the server
    for the `Monarch` WinRT class.
@@ -320,8 +320,8 @@ Essentially, the probabalistic elective monarchy will work in the following way:
    choose who the new server for `Monarch`s is.)
    - We're suggesting `WaitForSingleObject` here as opposed to having the
      monarch raise a WinRT event when it's closed, because it's possible that
-     the monarch <!-- is assasinated --> closes unexpectedly, before it has an
-     opprotunity to notify the servants.
+     the monarch <!-- is assassinated --> closes unexpectedly, before it has an
+     opportunity to notify the servants.
 
 By this mechanism, the processes will be able to communicate with the Monarch,
 who'll be responsible for managing any inter-process communication between
@@ -390,7 +390,7 @@ WT window during the sleep, which would cause the MRU window to not be the same
 as the window executing the command.
 
 I'm not sure that there is a better solution for the `-s 0` scenario other than
-atempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
+attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
 spawned and that's in it's environment variables, it could try and ask the
 monarch for the servant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
@@ -417,7 +417,7 @@ that key.
 
 With the addition of monarch/servant processes, this problem becomes much easier
 to solve. Now, the monarch process will _always_ be the process to register the
-shortcut key, whnever it's elected. If it dies and another servant is elected
+shortcut key, whenever it's elected. If it dies and another servant is elected
 monarch, then the new monarch will register as the global hotkey handler.
 
 Then, the monarch can use it's pre-established channels of communication with
@@ -451,7 +451,7 @@ The servant process can instantiate the `Servant` object itself, in it's process
 space. Initially, the `Servant` object won't have an ID assigned, and the call
 to `AddServant` on the `Monarch` will both cause the Monarch to assign the
 `Servant` an ID, and add it to the Monarch process's list of processes. If the
-`Servant` already had an ID assigned by a previous monarch, then the new onarch
+`Servant` already had an ID assigned by a previous monarch, then the new monarch
 will simply re-use the value already existing in the `Servant`. Now, the monarch
 can call methods on the `Servant` object directly to trigger changes in the
 servant process.
@@ -553,7 +553,7 @@ on the UI thread, blocking all input until they're finished.
 Ideally, we'll want the tab that's being dragged to be able to show the contents
 of the tab as we're dragging it, similar to the way that Edgium currently does.
 However, this is expected to be challenging and something that won't be a part
-of the initial release of tab tearout.
+of the initial release of tab tear-out.
 
 ## Capabilities
 
@@ -647,7 +647,7 @@ The biggest concern regarding compatibility will be ensuring that the Universal
 app version of the Windows Terminal will still work as before. Although that
 application isn't used by any customer-facing scenarios currently, it still
 represents some long term goals for the Terminal.  We'll probably need to
-disable tearout _entirely_ on the universal app, at least to begin with.
+disable tear-out _entirely_ on the universal app, at least to begin with.
 Additionally, we'll need to ensure that all the controls in the universal
 application are in-proc controls, not using the window/content split process
 model.
@@ -710,7 +710,7 @@ of each other.
 4. (Dependent on 1): Monarch registers for the global quake hotkey, and uses
    that to activate _the monarch_.
    - Pressing the key when a window is currently focused should minimize? Do nothing?
-5. (Dependent on 4): any othe quake mode improvements:
+5. (Dependent on 4): any other quake mode improvements:
    - Summon the nearest window
    - make the window "drop down" from the top
    - Summon the MRU window
@@ -739,7 +739,7 @@ of each other.
    - The core will need to be able to accept a PID using some method, and be able
     to `DuplicateHandle` the swapchain to that PID. It'll also need to raise the
     `SwapChainHandleChanged` event.
-   - The Control UI layer would need to recieve a GUID in the ctor, and use that
+   - The Control UI layer would need to receive a GUID in the ctor, and use that
      connect to the out-of-proc core. It'll pass the UI's PID to the core, and
      attach to the core's swap chain handle.
    - The UI layer will be smart enough to call either the implementation method
@@ -763,7 +763,7 @@ of each other.
      terminal instance).
 
 12. (Dependent on 11) TerminalApp creates new content processes for each and
-    every terminal instance it spawns. At this point, there's no tearout, but
+    every terminal instance it spawns. At this point, there's no tear-out, but
     the terminal instances are all out-of-proc from the window process.
 
 13. (Dependent on 12) Terminal can drop tabs onto another WT window process by
@@ -811,7 +811,7 @@ of possible scenarios.
 * Yea add these
 
 * Non-terminal content in the Terminal. We've now created a _very_
-  terminal-specific IPC mechanism for transfering _terminal_ state from one
+  terminal-specific IPC mechanism for transferring _terminal_ state from one
   thread to another. When we start to plan on having panes that contain
   non-terminal content in them, they won't be able to move across-process like
   this. Options available here include:
