@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
 {
     struct Command : CommandT<Command>
     {
-        Command();
+        Command() = default;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json, std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,

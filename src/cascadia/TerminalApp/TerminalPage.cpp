@@ -81,6 +81,16 @@ namespace winrt::TerminalApp::implementation
                     command.KeyChordText(KeyChordSerialization::ToString(keyChord));
                 }
 
+                // Set the default IconSource to a BitmapIconSource with an empty urisource
+                // (instead of just nullptr) because there's a really weird crash when swapping
+                // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+                // Swapping between nullptr IconSources and non-null IconSources causes a crash
+                // to occur, but swapping between IconSources with a null source and non-null IconSources
+                // work perfectly fine :shrug:.
+                winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
+                icon.UriSource(nullptr);
+                command.IconSource(icon);
+
                 commandsCollection.Append(command);
             }
             CommandPalette().SetCommands(commandsCollection);

@@ -399,7 +399,7 @@ namespace winrt::TerminalApp::implementation
                 ControlName(RS_(L"TabSwitcherControlName"));
                 break;
             }
-            // Let's say the default mode for now is ActionMode.
+            case CommandPaletteMode::ActionMode:
             default:
                 SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
                 NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
@@ -721,6 +721,17 @@ namespace winrt::TerminalApp::implementation
 
             switch (changedEvent)
             {
+            case CollectionChange::ItemChanged:
+            {
+                winrt::com_ptr<Command> item;
+                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
+                item->propertyChangedRevoker.revoke();
+
+                auto tab = tabList.GetAt(idx);
+                GenerateCommandForTab(idx, false, tab);
+                UpdateTabIndices(idx);
+                break;
+            }
             case CollectionChange::ItemInserted:
             {
                 auto tab = tabList.GetAt(idx);
