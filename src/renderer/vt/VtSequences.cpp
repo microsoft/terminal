@@ -367,6 +367,17 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the double underline of the following text.
+// Arguments:
+// - isUnderlined: If true, we'll doubly underline the text. Otherwise we'll remove the underline.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetDoublyUnderlined(const bool isUnderlined) noexcept
+{
+    return _Write(isUnderlined ? "\x1b[21m" : "\x1b[24m");
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the overline of the following text.
 // Arguments:
 // - isOverlined: If true, we'll overline the text. Otherwise we'll remove the overline.
