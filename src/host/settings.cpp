@@ -81,7 +81,7 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
@@ -122,7 +122,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
@@ -726,12 +726,12 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-std::basic_string_view<COLORREF> Settings::Get16ColorTable() const
+gsl::span<const COLORREF> Settings::Get16ColorTable() const
 {
-    return Get256ColorTable().substr(0, 16);
+    return Get256ColorTable().subspan(0, 16);
 }
 
-std::basic_string_view<COLORREF> Settings::Get256ColorTable() const
+gsl::span<const COLORREF> Settings::Get256ColorTable() const
 {
     return { _colorTable.data(), _colorTable.size() };
 }

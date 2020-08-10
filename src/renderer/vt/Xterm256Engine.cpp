@@ -65,22 +65,40 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         _lastTextAttributes.SetFaint(true);
     }
 
-    if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
+    // Turning off the underline styles must be handled at the same time,
+    // since there is only one sequence that resets both of them.
+    const auto singleTurnedOff = !textAttributes.IsUnderlined() && _lastTextAttributes.IsUnderlined();
+    const auto doubleTurnedOff = !textAttributes.IsDoublyUnderlined() && _lastTextAttributes.IsDoublyUnderlined();
+    if (singleTurnedOff || doubleTurnedOff)
     {
-        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
-        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+        RETURN_IF_FAILED(_SetUnderlined(false));
+        _lastTextAttributes.SetUnderlined(false);
+        _lastTextAttributes.SetDoublyUnderlined(false);
+    }
+
+    // Once we've handled the cases where they need to be turned off,
+    // we can then check if either should be turned back on again.
+    if (textAttributes.IsUnderlined() && !_lastTextAttributes.IsUnderlined())
+    {
+        RETURN_IF_FAILED(_SetUnderlined(true));
+        _lastTextAttributes.SetUnderlined(true);
+    }
+    if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
+    {
+        RETURN_IF_FAILED(_SetDoublyUnderlined(true));
+        _lastTextAttributes.SetDoublyUnderlined(true);
     }
 
     if (textAttributes.IsOverlined() != _lastTextAttributes.IsOverlined())
     {
-        RETURN_IF_FAILED(_SetOverline(textAttributes.IsOverlined()));
-        _lastTextAttributes.SetOverline(textAttributes.IsOverlined());
+        RETURN_IF_FAILED(_SetOverlined(textAttributes.IsOverlined()));
+        _lastTextAttributes.SetOverlined(textAttributes.IsOverlined());
     }
 
     if (textAttributes.IsItalic() != _lastTextAttributes.IsItalic())
     {
-        RETURN_IF_FAILED(_SetItalics(textAttributes.IsItalic()));
-        _lastTextAttributes.SetItalics(textAttributes.IsItalic());
+        RETURN_IF_FAILED(_SetItalic(textAttributes.IsItalic()));
+        _lastTextAttributes.SetItalic(textAttributes.IsItalic());
     }
 
     if (textAttributes.IsBlinking() != _lastTextAttributes.IsBlinking())

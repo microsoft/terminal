@@ -7,7 +7,6 @@
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -16,6 +15,11 @@
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
+
+namespace Microsoft::Console::VirtualTerminal
+{
+    struct MouseButtonState;
+}
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -56,10 +60,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl();
-        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+        TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
 
         hstring Title();
         hstring GetProfileName() const;
@@ -89,7 +92,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
-        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
+        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
         ~TermControl();
 
@@ -99,8 +102,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         TerminalConnection::ConnectionState ConnectionState() const;
+        IControlSettings Settings() const;
 
-        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
+                                                               const int32_t& fontSize,
+                                                               const winrt::Windows::UI::Text::FontWeight& fontWeight,
+                                                               const winrt::hstring& fontFace,
+                                                               const ScrollbarState& scrollState,
+                                                               const winrt::hstring& padding,
+                                                               const uint32_t dpi);
+
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -113,6 +126,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -131,7 +145,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
-        Settings::IControlSettings _settings;
+        IControlSettings _settings;
         bool _focused;
         std::atomic<bool> _closing;
 
@@ -150,7 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        int _rowsToScroll;
+        unsigned int _rowsToScroll;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -185,6 +199,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _ApplyUISettings();
+        void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
@@ -213,6 +228,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
+        void _TerminalTabColorChanged(const std::optional<til::color> color);
         void _CopyToClipboard(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         void _TerminalCursorPositionChanged();
@@ -220,7 +236,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
-        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const bool isLeftButtonPressed);
+        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);

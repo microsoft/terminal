@@ -231,6 +231,10 @@
   <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
     <value>Move focus to the next tab</value>
   </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>An alias for the "focus-tab" subcommand.</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
   <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
     <value>Move focus to the previous tab</value>
   </data>
@@ -240,11 +244,19 @@
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>Create a new tab</value>
   </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>An alias for the "new-tab" subcommand.</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Create a new split pane</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>An alias for the "split-pane" subcommand.</value>
+    <comment>{Locked="\"split-pane\""}</comment>
   </data>
   <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
     <value>Create the new pane as a horizontal split (think [-])</value>
@@ -387,6 +399,9 @@
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
   </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>Toggle always on top mode</value>
+  </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
   </data>
@@ -436,6 +451,9 @@
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
+  </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Toggle pane zoom</value>
   </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
@@ -511,6 +529,10 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Set color scheme to {0}</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
   <data name="SetTabColorCommandKey" xml:space="preserve">
     <value>Set tab color to {0}</value>
     <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
@@ -523,10 +545,22 @@
   </data>
   <data name="RenameTabCommandKey" xml:space="preserve">
     <value>Rename tab to "{0}"</value>
-    <comment>{0} will be replaced with user-defined string</comment>
+    <comment>{0} will be replaced with a user-defined string</comment>
   </data>
   <data name="ResetTabNameCommandKey" xml:space="preserve">
     <value>Reset tab title</value>
+  </data>
+  <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
+    <value>Run commandline "{0}" in this window</value>
+    <comment>{0} will be replaced with a user-defined commandline</comment>
+  </data>
+  <data name="CloseOtherTabsCommandKey" xml:space="preserve">
+    <value>Close tabs other than index {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseTabsAfterCommandKey" xml:space="preserve">
+    <value>Close tabs after index {0}</value>
+    <comment>{0} will be replaced with a number</comment>
   </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>

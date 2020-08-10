@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
@@ -56,12 +56,17 @@
         "switchToTab",
         "toggleFocusMode",
         "toggleFullscreen",
+        "toggleAlwaysOnTop",
         "toggleRetroEffect",
         "find",
+        "setColorScheme",
         "setTabColor",
         "openTabColorPicker",
         "renameTab",
         "commandPalette",
+        "wt",
+        "closeOtherTabs",
+        "closeTabsAfter",
         "unbound"
       ],
       "type": "string"
@@ -279,6 +284,74 @@
         }
       ]
     },
+    "SetColorSchemeAction": {
+      "description": "Arguments corresponding to a Set Color Scheme Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setColorScheme" },
+            "colorScheme": {
+              "type": "string",
+              "default": "",
+              "description": "the name of the scheme to apply to the active pane"
+            }
+          }
+        }
+      ],
+      "required": [ "name" ]
+    },
+    "WtAction": {
+      "description": "Arguments corresponding to a wt Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "wt" },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "a `wt` commandline to run in the current window"
+            }
+          }
+        }
+      ],
+      "required": [ "commandline" ]
+    },
+    "CloseOtherTabsAction": {
+      "description": "Arguments for a closeOtherTabs action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeOtherTabs" },
+            "index": {
+              "type": "integer",
+              "default": "",
+              "description": "close the tabs following the tab at this index"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
+    "CloseTabsAfterAction": {
+      "description": "Arguments for a closeTabsAfter action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTabsAfter" },
+            "index": {
+              "type": "integer",
+              "default": "",
+              "description": "close the tabs other than the one at this index"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -295,6 +368,10 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/SetColorSchemeAction" },
+              { "$ref": "#/definitions/WtAction" },
+              { "$ref": "#/definitions/CloseOtherTabsAction" },
+              { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "type": "null" }
             ]
         },
@@ -324,6 +401,11 @@
       "additionalProperties": true,
       "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
+        "alwaysOnTop": {
+          "default": false,
+          "description": "When set to true, the window is created on top of all other windows. If multiple windows are all \"always on top\", the most recently focused one will be the topmost",
+          "type": "boolean"
+        },
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
@@ -397,10 +479,11 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
           "maximum": 999,
           "minimum": 0,
-          "type": [ "integer", "string" ]
+          "type": [ "integer", "string" ],
+          "deprecated": true
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
@@ -652,8 +735,15 @@
         "padding": {
           "default": "8, 8, 8, 8",
           "description": "Sets the padding around the text within the window. Can have three different formats:\n -\"#\" sets the same padding for all sides \n -\"#, #\" sets the same padding for left-right and top-bottom\n -\"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
-          "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
-          "type": "string"
+          "oneOf": [
+            {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
         },
         "scrollbarState": {
           "default": "visible",

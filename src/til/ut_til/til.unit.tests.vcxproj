@@ -18,10 +18,12 @@
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>

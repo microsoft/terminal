@@ -48,8 +48,8 @@ public:
     [[nodiscard]] HRESULT ResizeAllAreas(const COORD newSize);
 
     void WriteCompMessage(const std::wstring_view text,
-                          const std::basic_string_view<BYTE> attributes,
-                          const std::basic_string_view<WORD> colorArray);
+                          const gsl::span<const BYTE> attributes,
+                          const gsl::span<const WORD> colorArray);
 
     void WriteResultMessage(const std::wstring_view text);
 
@@ -64,18 +64,18 @@ private:
     void _ClearComposition();
 
     void _WriteUndeterminedChars(const std::wstring_view text,
-                                 const std::basic_string_view<BYTE> attributes,
-                                 const std::basic_string_view<WORD> colorArray);
+                                 const gsl::span<const BYTE> attributes,
+                                 const gsl::span<const WORD> colorArray);
 
     void _InsertConvertedString(const std::wstring_view text);
 
     static TextAttribute s_RetrieveAttributeAt(const size_t pos,
-                                               const std::basic_string_view<BYTE> attributes,
-                                               const std::basic_string_view<WORD> colorArray);
+                                               const gsl::span<const BYTE> attributes,
+                                               const gsl::span<const WORD> colorArray);
 
     static std::vector<OutputCell> s_ConvertToCells(const std::wstring_view text,
-                                                    const std::basic_string_view<BYTE> attributes,
-                                                    const std::basic_string_view<WORD> colorArray);
+                                                    const gsl::span<const BYTE> attributes,
+                                                    const gsl::span<const WORD> colorArray);
 
     std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                  const std::vector<OutputCell>::const_iterator end,
@@ -86,6 +86,6 @@ private:
     bool _isSavedCursorVisible;
 
     std::wstring _text;
-    std::basic_string<BYTE> _attributes;
-    std::basic_string<WORD> _colorArray;
+    std::vector<BYTE> _attributes;
+    std::vector<WORD> _colorArray;
 };

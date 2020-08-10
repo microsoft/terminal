@@ -121,6 +121,12 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
+        case ShortcutAction::TogglePaneZoom:
+        {
+            _TogglePaneZoomHandlers(*this, *eventArgs);
+            break;
+        }
+
         case ShortcutAction::SwitchToTab:
         {
             _SwitchToTabHandlers(*this, *eventArgs);
@@ -169,9 +175,19 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleAlwaysOnTop:
+        {
+            _ToggleAlwaysOnTopHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleCommandPalette:
         {
             _ToggleCommandPaletteHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::SetColorScheme:
+        {
+            _SetColorSchemeHandlers(*this, *eventArgs);
             break;
         }
         case ShortcutAction::SetTabColor:
@@ -187,6 +203,21 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::RenameTab:
         {
             _RenameTabHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ExecuteCommandline:
+        {
+            _ExecuteCommandlineHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::CloseOtherTabs:
+        {
+            _CloseOtherTabsHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::CloseTabsAfter:
+        {
+            _CloseTabsAfterHandlers(*this, *eventArgs);
             break;
         }
         default:

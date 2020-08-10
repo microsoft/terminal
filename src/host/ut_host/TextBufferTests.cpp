@@ -757,8 +757,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, 0);
-    VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
+    VERIFY_ARE_EQUAL(attrA.IsUnderlined(), false);
+    VERIFY_ARE_EQUAL(attrB.IsUnderlined(), true);
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);

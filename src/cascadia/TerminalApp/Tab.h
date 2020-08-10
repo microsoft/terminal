@@ -40,12 +40,13 @@ namespace winrt::TerminalApp::implementation
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
+        bool PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);
         void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
 
         void Shutdown();
@@ -56,9 +57,14 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
-        void SetTabColor(const winrt::Windows::UI::Color& color);
-        void ResetTabColor();
+        void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
+        void ResetRuntimeTabColor();
         void ActivateColorPicker();
+
+        void ToggleZoom();
+        bool IsZoomed();
+        void EnterZoom();
+        void ExitZoom();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -72,9 +78,11 @@ namespace winrt::TerminalApp::implementation
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
+        std::shared_ptr<Pane> _zoomedPane{ nullptr };
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
-        std::optional<winrt::Windows::UI::Color> _tabColor{};
+        std::optional<winrt::Windows::UI::Color> _themeTabColor{};
+        std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
@@ -100,6 +108,10 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabHeader();
         winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

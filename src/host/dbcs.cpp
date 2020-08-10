@@ -64,13 +64,15 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
     DWORD iDst = 0;
 
     // Walk through every CHAR_INFO
-    for (DWORD iSrc = 0; iSrc < gsl::narrow<size_t>(buffer.size()); iSrc++)
+    for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        if (!WI_IsFlagSet(buffer.at(iSrc).Attributes, COMMON_LVB_TRAILING_BYTE))
+        auto& src{ til::at(buffer, iSrc) };
+        if (!WI_IsFlagSet(src.Attributes, COMMON_LVB_TRAILING_BYTE))
         {
-            buffer.at(iDst) = buffer.at(iSrc);
-            WI_ClearAllFlags(buffer.at(iDst).Attributes, COMMON_LVB_SBCSDBCS);
+            auto& dst{ til::at(buffer, iDst) };
+            dst = src;
+            WI_ClearAllFlags(dst.Attributes, COMMON_LVB_SBCSDBCS);
             iDst++;
         }
 
@@ -90,7 +92,7 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF(!(iDst == gsl::narrow<size_t>(buffer.size())));
+    FAIL_FAST_IF(iDst != buffer.size());
 
     return iDst;
 }

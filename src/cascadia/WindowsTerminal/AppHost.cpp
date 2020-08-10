@@ -17,6 +17,10 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 AppHost::AppHost() noexcept :
     _app{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
@@ -52,6 +56,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
     _window->MakeWindow();
 }
 
@@ -156,8 +161,9 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
-    _logic.ToggleFocusMode({ this, &AppHost::_ToggleFocusMode });
+    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
+    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
+    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
 
     _logic.Create();
 
@@ -284,9 +290,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
     const short islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
+        static_cast<long>(ceil(initialSize.Width)), 1);
     const short islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -353,16 +359,22 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleFocusMode(const winrt::Windows::Foundation::IInspectable&,
-                               const winrt::TerminalApp::ToggleFocusModeEventArgs&)
+void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFocusMode();
+    _window->FocusModeChanged(_logic.FocusMode());
 }
 
-void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFullscreen();
+    _window->FullscreenChanged(_logic.Fullscreen());
+}
+
+void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
+                                  const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
 // Method Description:
@@ -397,7 +409,11 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    if (control.OnMouseWheel(offsetPoint, delta))
+                    const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
+                    const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
+                    const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
+
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.

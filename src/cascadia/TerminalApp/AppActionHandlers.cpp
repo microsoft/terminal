@@ -11,9 +11,9 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
@@ -101,6 +101,26 @@ namespace winrt::TerminalApp::implementation
             _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
             args.Handled(true);
         }
+    }
+
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            // First thing's first, remove the current content from the UI
+            // tree. This is important, because we might be leaving zoom, and if
+            // a pane is zoomed, then it's currently in the UI tree, and should
+            // be removed before it's re-added in Pane::Restore
+            _tabContent.Children().Clear();
+
+            activeTab->ToggleZoom();
+
+            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
+            _UpdatedSelectedTab(_tabView.SelectedIndex());
+        }
+        args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
@@ -253,6 +273,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleAlwaysOnTop();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const TerminalApp::ActionEventArgs& args)
     {
@@ -262,6 +289,27 @@ namespace winrt::TerminalApp::implementation
                                         Visibility::Collapsed :
                                         Visibility::Visible);
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        args.Handled(false);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetColorSchemeArgs>())
+        {
+            if (auto activeTab = _GetFocusedTab())
+            {
+                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                {
+                    auto controlSettings = activeControl.Settings();
+                    if (_settings->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
+                    {
+                        activeControl.UpdateSettings(controlSettings);
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
     }
 
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
@@ -282,11 +330,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (tabColor.has_value())
             {
-                activeTab->SetTabColor(tabColor.value());
+                activeTab->SetRuntimeTabColor(tabColor.value());
             }
             else
             {
-                activeTab->ResetTabColor();
+                activeTab->ResetRuntimeTabColor();
             }
         }
         args.Handled(true);
@@ -326,5 +374,66 @@ namespace winrt::TerminalApp::implementation
             }
         }
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleExecuteCommandline(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
+        {
+            auto actions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(
+                TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
+
+            if (_startupActions.Size() != 0)
+            {
+                actionArgs.Handled(true);
+                _ProcessStartupActions(actions, false);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
+        {
+            uint32_t index = realArgs.Index();
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // Remove all of them leading up to the selected tab
+            while (_tabs.Size() > 1)
+            {
+                _RemoveTabViewItemByIndex(0);
+            }
+
+            actionArgs.Handled(true);
+        }
+    }
+    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
+        {
+            uint32_t index = realArgs.Index();
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // TODO:GH#7182 For whatever reason, if you run this action
+            // when the tab that's currently focused is _before_ the `index`
+            // param, then the tabs will expand to fill the entire width of the
+            // tab row, until you mouse over them. Probably has something to do
+            // with tabs not resizing down until there's a mouse exit event.
+
+            actionArgs.Handled(true);
+        }
     }
 }

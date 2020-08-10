@@ -21,6 +21,7 @@ namespace TerminalApp
         SplitVertical,
         SplitHorizontal,
         SplitPane,
+        TogglePaneZoom,
         SwitchToTab,
         AdjustFontSize,
         ResetFontSize,
@@ -34,11 +35,16 @@ namespace TerminalApp
         ToggleRetroEffect,
         ToggleFocusMode,
         ToggleFullscreen,
+        ToggleAlwaysOnTop,
+        OpenSettings,
+        SetColorScheme,
         SetTabColor,
         OpenTabColorPicker,
-        OpenSettings,
         RenameTab,
-        ToggleCommandPalette
+        ExecuteCommandline,
+        ToggleCommandPalette,
+        CloseOtherTabs,
+        CloseTabsAfter
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -65,6 +71,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> NextTab;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> PrevTab;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitPane;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> TogglePaneZoom;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> AdjustFontSize;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResetFontSize;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUp;
@@ -78,9 +85,14 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleRetroEffect;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleAlwaysOnTop;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleCommandPalette;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetColorScheme;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenTabColorPicker;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> RenameTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ExecuteCommandline;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseOtherTabs;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseTabsAfter;
     }
 }

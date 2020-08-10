@@ -155,8 +155,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
     {
-        RETURN_IF_FAILED(_SetUnderline(textAttributes.IsUnderlined()));
-        _lastTextAttributes.SetUnderline(textAttributes.IsUnderlined());
+        RETURN_IF_FAILED(_SetUnderlined(textAttributes.IsUnderlined()));
+        _lastTextAttributes.SetUnderlined(textAttributes.IsUnderlined());
     }
 
     return S_OK;
@@ -498,7 +498,7 @@ CATCH_RETURN();
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept
