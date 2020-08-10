@@ -61,7 +61,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // GH 3588, we need this below to know if the user chose something that wasn't our default.
     // Collect it up here in case it gets modified by any of the other layers between now and when
     // the user's preferences are loaded and layered.
-    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().UnparsedDefaultProfile();
+    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
 
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
@@ -141,12 +141,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // is a lot of computation we can skip if no one cares.
     if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        const auto hardcodedDefaultGuidAsGuid = Utils::GuidFromString(hardcodedDefaultGuid);
         const auto guid = resultPtr->GlobalSettings().DefaultProfile();
 
         // Compare to the defaults.json one that we set on install.
         // If it's different, log what the user chose.
-        if (hardcodedDefaultGuidAsGuid != guid)
+        if (hardcodedDefaultGuid != guid)
         {
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -229,6 +228,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     // them from a file (and the potential that could fail)
     resultPtr->_ParseJsonString(DefaultJson, true);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
+    resultPtr->_ResolveDefaultProfile();
 
     return resultPtr;
 }

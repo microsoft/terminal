@@ -225,9 +225,12 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 void CascadiaSettings::_ResolveDefaultProfile()
 {
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
-    auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
-    auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, GUID{}) };
-    GlobalSettings().DefaultProfile(defaultProfileGuid);
+    if (unparsedDefaultProfile)
+    {
+        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
+        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, GUID{}) };
+        GlobalSettings().DefaultProfile(defaultProfileGuid);
+    }
 }
 
 // Method Description:
