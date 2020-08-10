@@ -72,10 +72,8 @@ namespace TerminalApp::JsonUtils
     class DeserializationError : public std::runtime_error
     {
     public:
-        DeserializationError() :
-            runtime_error("failed to deserialize"), position{ std::nullopt } {}
-        DeserializationError(ptrdiff_t position) :
-            runtime_error("failed to deserialize"), position{ position } {}
+        DeserializationError(const Json::Value& value) :
+            runtime_error("failed to deserialize"), jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
         {
@@ -85,10 +83,9 @@ namespace TerminalApp::JsonUtils
             }
         }
 
-        std::optional<ptrdiff_t> position;
         std::optional<std::string> key;
-        std::string actualValue;
-        std::string expectedValue;
+        Json::Value jsonValue;
+        std::string expectedType;
     };
 
     template<typename T>
@@ -319,8 +316,8 @@ namespace TerminalApp::JsonUtils
                 }
             }
 
-            DeserializationError e{ json.getOffsetStart() };
-            e.actualValue = json.asString();
+            DeserializationError e{ json };
+            e.expectedType = TypeName();
             throw e;
         }
 
@@ -373,8 +370,8 @@ namespace TerminalApp::JsonUtils
                          (value == AllClear && newFlag != AllClear)))
                     {
                         // attempt to combine AllClear (explicitly) with anything else
-                        DeserializationError e{ json.getOffsetStart() };
-                        e.actualValue = element.asString();
+                        DeserializationError e{ element };
+                        e.expectedType = TypeName();
                         throw e;
                     }
                     value |= newFlag;
@@ -444,9 +441,8 @@ namespace TerminalApp::JsonUtils
         {
             if (!conv.CanConvert(json))
             {
-                DeserializationError e{ json.getOffsetStart() };
-                e.actualValue = json.asString();
-                e.expectedValue = conv.TypeName();
+                DeserializationError e{ json };
+                e.expectedType = conv.TypeName();
                 throw e;
             }
 

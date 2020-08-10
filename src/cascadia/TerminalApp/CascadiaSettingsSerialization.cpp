@@ -48,7 +48,7 @@ static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_v
     auto lastNL = string.find_last_of('\n', position);
     if (lastNL != std::string::npos)
     {
-        column = (position - lastNL) + 1;
+        column = (position - lastNL);
         line = std::count(string.cbegin(), string.cbegin() + lastNL + 1, '\n') + 1;
     }
 
@@ -68,9 +68,19 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
         static constexpr std::string_view basicHeader{ "* Line {line}, Column {column}\n{message}" };
         static constexpr std::string_view keyedHeader{ "* Line {line}, Column {column} ({key})\n{message}" };
 
-        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", e.actualValue, e.expectedValue);
+        std::string jsonValueAsString{ "array or object" };
+        try
+        {
+            jsonValueAsString = e.jsonValue.asString();
+        }
+        catch (...)
+        {
+            // discard: we're in the middle of error handling
+        }
 
-        auto [l, c] = _LineAndColumnFromPosition(settingsString, e.position.value_or(0));
+        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", jsonValueAsString, e.expectedType);
+
+        auto [l, c] = _LineAndColumnFromPosition(settingsString, e.jsonValue.getOffsetStart());
         msg = fmt::format((e.key ? keyedHeader : basicHeader),
                           fmt::arg("line", l),
                           fmt::arg("column", c),
