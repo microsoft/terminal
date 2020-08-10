@@ -103,6 +103,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            // First thing's first, remove the current content from the UI
+            // tree. This is important, because we might be leaving zoom, and if
+            // a pane is zoomed, then it's currently in the UI tree, and should
+            // be removed before it's re-added in Pane::Restore
+            _tabContent.Children().Clear();
+
+            activeTab->ToggleZoom();
+
+            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
+            _UpdatedSelectedTab(_tabView.SelectedIndex());
+        }
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
@@ -310,11 +330,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (tabColor.has_value())
             {
-                activeTab->SetTabColor(tabColor.value());
+                activeTab->SetRuntimeTabColor(tabColor.value());
             }
             else
             {
-                activeTab->ResetTabColor();
+                activeTab->ResetRuntimeTabColor();
             }
         }
         args.Handled(true);

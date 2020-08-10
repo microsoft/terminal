@@ -72,6 +72,9 @@ public:
 
     int GetLeafPaneCount() const noexcept;
 
+    void Maximize(std::shared_ptr<Pane> zoomedPane);
+    void Restore(std::shared_ptr<Pane> zoomedPane);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
@@ -102,6 +105,8 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
+
+    bool _zoomed{ false };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

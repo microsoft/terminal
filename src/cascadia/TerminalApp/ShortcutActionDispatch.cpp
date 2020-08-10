@@ -121,6 +121,12 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
+        case ShortcutAction::TogglePaneZoom:
+        {
+            _TogglePaneZoomHandlers(*this, *eventArgs);
+            break;
+        }
+
         case ShortcutAction::SwitchToTab:
         {
             _SwitchToTabHandlers(*this, *eventArgs);

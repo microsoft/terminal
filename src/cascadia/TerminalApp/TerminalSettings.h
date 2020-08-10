@@ -54,6 +54,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_PROPERTY(bool, CopyOnSelect, false);
 
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+
         // ------------------------ End of Core Settings -----------------------
 
         GETSET_PROPERTY(hstring, ProfileName);

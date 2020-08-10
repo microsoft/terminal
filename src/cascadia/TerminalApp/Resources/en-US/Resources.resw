@@ -452,6 +452,9 @@
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Toggle pane zoom</value>
+  </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
   </data>

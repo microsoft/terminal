@@ -53,6 +53,7 @@ static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImag
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
+static constexpr std::string_view TabColorKey{ "tabColor" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -232,6 +233,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     terminalSettings.AntialiasingMode(_antialiasingMode);
 
+    if (_tabColor)
+    {
+        winrt::Windows::Foundation::IReference<uint32_t> colorRef{ _tabColor.value() };
+        terminalSettings.TabColor(colorRef);
+    }
+
     return terminalSettings;
 }
 
@@ -405,6 +412,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _backgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _retroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _antialiasingMode);
+
+    JsonUtils::GetValueForKey(json, TabColorKey, _tabColor);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
