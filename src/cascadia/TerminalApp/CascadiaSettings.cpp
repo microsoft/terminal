@@ -744,3 +744,26 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
         return nullptr;
     }
 }
+
+// Method Description:
+// - Apply the color scheme (provided by name) to the given IControlSettings.
+//   The settings are modified in-place.
+// - If the name doesn't correspond to any of our schemes, this does nothing.
+// Arguments:
+// - settings: the IControlSettings object to modify
+// - name: the name of the scheme to apply
+// Return Value:
+// - true iff we found a matching scheme for the name schemeName
+bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
+                                        std::wstring_view schemeName)
+{
+    std::wstring name{ schemeName };
+    auto schemeAndName = _globals.GetColorSchemes().find(name);
+    if (schemeAndName != _globals.GetColorSchemes().end())
+    {
+        const auto& scheme = schemeAndName->second;
+        scheme.ApplyScheme(settings);
+        return true;
+    }
+    return false;
+}

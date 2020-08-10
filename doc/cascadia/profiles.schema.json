@@ -59,6 +59,7 @@
         "toggleAlwaysOnTop",
         "toggleRetroEffect",
         "find",
+        "setColorScheme",
         "setTabColor",
         "openTabColorPicker",
         "renameTab",
@@ -283,6 +284,23 @@
         }
       ]
     },
+    "SetColorSchemeAction": {
+      "description": "Arguments corresponding to a Set Color Scheme Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setColorScheme" },
+            "colorScheme": {
+              "type": "string",
+              "default": "",
+              "description": "the name of the scheme to apply to the active pane"
+            }
+          }
+        }
+      ],
+      "required": [ "name" ]
+    },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
       "allOf": [
@@ -350,6 +368,7 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/SetColorSchemeAction" },
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },

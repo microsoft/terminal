@@ -39,6 +39,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         void UpdateSettings(Microsoft.Terminal.TerminalControl.IControlSettings newSettings);
 
+        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
+
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;

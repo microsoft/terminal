@@ -529,6 +529,10 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Set color scheme to {0}</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
   <data name="SetTabColorCommandKey" xml:space="preserve">
     <value>Set tab color to {0}</value>
     <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>

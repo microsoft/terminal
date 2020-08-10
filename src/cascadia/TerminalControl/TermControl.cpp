@@ -2838,6 +2838,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->ResetErrorStateAndResume();
     }
 
+    IControlSettings TermControl::Settings() const
+    {
+        return _settings;
+    }
+
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();

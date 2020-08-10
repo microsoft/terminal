@@ -222,6 +222,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleFocusMode(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleAlwaysOnTop(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSetColorScheme(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

@@ -291,6 +291,27 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        args.Handled(false);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetColorSchemeArgs>())
+        {
+            if (auto activeTab = _GetFocusedTab())
+            {
+                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                {
+                    auto controlSettings = activeControl.Settings();
+                    if (_settings->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
+                    {
+                        activeControl.UpdateSettings(controlSettings);
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const TerminalApp::ActionEventArgs& args)
     {
