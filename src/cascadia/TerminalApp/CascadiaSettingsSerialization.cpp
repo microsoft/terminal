@@ -57,31 +57,27 @@ static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_v
 
 static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view settingsString)
 {
-    std::string_view format{ "unknown type of exception..." };
-    std::optional<ptrdiff_t> pos;
     std::string msg;
 
     try
     {
         throw;
     }
-    catch (const JsonUtils::DeserializationException& e)
+    catch (const JsonUtils::DeserializationError& e)
     {
-        pos = e.position;
-        msg = fmt::format("expected {} got {}", e.expectedValue, e.actualValue);
-        if (e.key)
-        {
-            msg = fmt::format("while parsing \"{}\": {}", *e.key, msg);
-        }
-        if (pos)
-        {
-            auto [l, c] = _LineAndColumnFromPosition(settingsString, pos.value_or(0));
-            msg = fmt::format("line {} column {}: {}", l, c, msg);
-        }
-    }
-    CATCH_LOG();
+        static constexpr std::string_view basicHeader{ "* Line {line}, Column {column}\n{message}" };
+        static constexpr std::string_view keyedHeader{ "* Line {line}, Column {column} ({key})\n{message}" };
 
-    throw std::runtime_error{ msg };
+        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", e.actualValue, e.expectedValue);
+
+        auto [l, c] = _LineAndColumnFromPosition(settingsString, e.position.value_or(0));
+        msg = fmt::format((e.key ? keyedHeader : basicHeader),
+                          fmt::arg("line", l),
+                          fmt::arg("column", c),
+                          fmt::arg("key", e.key.value_or("")),
+                          fmt::arg("message", msg));
+        throw SettingsTypedDeserializationException{ msg };
+    }
 }
 
 // Method Description:

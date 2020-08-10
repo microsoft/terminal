@@ -69,12 +69,12 @@ namespace TerminalApp::JsonUtils
         };
     }
 
-    class DeserializationException : public std::runtime_error
+    class DeserializationError : public std::runtime_error
     {
     public:
-        DeserializationException() :
+        DeserializationError() :
             runtime_error("failed to deserialize"), position{ std::nullopt } {}
-        DeserializationException(ptrdiff_t position) :
+        DeserializationError(ptrdiff_t position) :
             runtime_error("failed to deserialize"), position{ position } {}
 
         void SetKey(std::string_view newKey)
@@ -97,6 +97,8 @@ namespace TerminalApp::JsonUtils
         // Forward-declare these so the linker can pick up specializations from elsewhere!
         T FromJson(const Json::Value&);
         bool CanConvert(const Json::Value& json);
+
+        std::string TypeName() const { return "<unknown>"; }
     };
 
     template<>
@@ -111,6 +113,11 @@ namespace TerminalApp::JsonUtils
         {
             return json.isString();
         }
+
+        std::string TypeName() const
+        {
+            return "string";
+        }
     };
 
     template<>
@@ -124,6 +131,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isString();
+        }
+
+        std::string TypeName() const
+        {
+            return "string";
         }
     };
 
@@ -151,6 +163,11 @@ namespace TerminalApp::JsonUtils
         {
             return json.isBool();
         }
+
+        std::string TypeName() const
+        {
+            return "true | false";
+        }
     };
 
     template<>
@@ -164,6 +181,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isInt();
+        }
+
+        std::string TypeName() const
+        {
+            return "number";
         }
     };
 
@@ -179,6 +201,11 @@ namespace TerminalApp::JsonUtils
         {
             return json.isUInt();
         }
+
+        std::string TypeName() const
+        {
+            return "number (>= 0)";
+        }
     };
 
     template<>
@@ -193,6 +220,11 @@ namespace TerminalApp::JsonUtils
         {
             return json.isNumeric();
         }
+
+        std::string TypeName() const
+        {
+            return "number";
+        }
     };
 
     template<>
@@ -206,6 +238,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isNumeric();
+        }
+
+        std::string TypeName() const
+        {
+            return "number";
         }
     };
 
@@ -226,6 +263,11 @@ namespace TerminalApp::JsonUtils
 
             const auto string{ Detail::GetStringView(json) };
             return string.length() == 38 && string.front() == '{' && string.back() == '}';
+        }
+
+        std::string TypeName() const
+        {
+            return "guid";
         }
     };
 
@@ -253,6 +295,11 @@ namespace TerminalApp::JsonUtils
             const auto string{ Detail::GetStringView(json) };
             return (string.length() == 7 || string.length() == 4) && string.front() == '#';
         }
+
+        std::string TypeName() const
+        {
+            return "color (#rrggbb, #rgb)";
+        }
     };
 
     template<typename T, typename TBase>
@@ -272,7 +319,7 @@ namespace TerminalApp::JsonUtils
                 }
             }
 
-            DeserializationException e{ json.getOffsetStart() };
+            DeserializationError e{ json.getOffsetStart() };
             e.actualValue = json.asString();
             throw e;
         }
@@ -280,6 +327,13 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isString();
+        }
+
+        std::string TypeName() const
+        {
+            std::vector<std::string_view> names;
+            std::transform(TBase::mappings.cbegin(), TBase::mappings.cend(), std::back_inserter(names), [](auto&& p) { return p.first; });
+            return fmt::format("{}", fmt::join(names, " | "));
         }
     };
 
@@ -319,7 +373,7 @@ namespace TerminalApp::JsonUtils
                          (value == AllClear && newFlag != AllClear)))
                     {
                         // attempt to combine AllClear (explicitly) with anything else
-                        DeserializationException e{ json.getOffsetStart() };
+                        DeserializationError e{ json.getOffsetStart() };
                         e.actualValue = element.asString();
                         throw e;
                     }
@@ -355,6 +409,11 @@ namespace TerminalApp::JsonUtils
         {
             return true;
         }
+
+        std::string TypeName() const
+        {
+            return "any";
+        }
     };
 
     // Method Description:
@@ -385,9 +444,9 @@ namespace TerminalApp::JsonUtils
         {
             if (!conv.CanConvert(json))
             {
-                DeserializationException e{ json.getOffsetStart() };
+                DeserializationError e{ json.getOffsetStart() };
                 e.actualValue = json.asString();
-                e.expectedValue = typeid(typename Detail::DeduceOptional<T>::Type).name();
+                e.expectedValue = conv.TypeName();
                 throw e;
             }
 
@@ -416,7 +475,7 @@ namespace TerminalApp::JsonUtils
             {
                 return GetValue(*found, target, std::forward<Converter>(conv));
             }
-            catch (DeserializationException& e)
+            catch (DeserializationError& e)
             {
                 e.SetKey(key);
                 throw; // rethrow now that it has a key
