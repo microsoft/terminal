@@ -452,6 +452,9 @@
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Toggle pane zoom</value>
+  </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
   </data>
@@ -528,6 +531,10 @@
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
     <value>Command Palette</value>
+  </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Set color scheme to {0}</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
   </data>
   <data name="SetTabColorCommandKey" xml:space="preserve">
     <value>Set tab color to {0}</value>

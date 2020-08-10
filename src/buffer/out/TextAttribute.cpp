@@ -249,6 +249,11 @@ bool TextAttribute::IsUnderlined() const noexcept
     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Underlined);
 }
 
+bool TextAttribute::IsDoublyUnderlined() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
+}
+
 bool TextAttribute::IsOverlined() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
@@ -292,6 +297,11 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Underlined, isUnderlined);
+}
+
+void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept

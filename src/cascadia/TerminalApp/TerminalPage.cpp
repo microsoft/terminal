@@ -890,6 +890,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
         _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
         _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
+        _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
@@ -907,6 +908,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
+        _actionDispatch->SetColorScheme({ this, &TerminalPage::_HandleSetColorScheme });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
@@ -1209,6 +1211,33 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Helper to manually exit "zoom" when certain actions take place.
+    //   Anything that modifies the state of the pane tree should probably
+    //   un-zoom the focused pane first, so that the user can see the full pane
+    //   tree again. These actions include:
+    //   * Splitting a new pane
+    //   * Closing a pane
+    //   * Moving focus between panes
+    //   * Resizing a pane
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UnZoomIfNeeded()
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab && activeTab->IsZoomed())
+        {
+            // Remove the content from the tab first, so Pane::UnZoom can
+            // re-attach the content to the tree w/in the pane
+            _tabContent.Children().Clear();
+            activeTab->ExitZoom();
+            // Re-attach the tab's content to the UI tree.
+            _tabContent.Children().Append(activeTab->GetRootElement());
+        }
+    }
+
+    // Method Description:
     // - Attempt to move focus between panes, as to focus the child on
     //   the other side of the separator. See Pane::NavigateFocus for details.
     // - Moves the focus of the currently focused tab.
@@ -1221,6 +1250,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->NavigateFocus(direction);
         }
     }
@@ -1311,6 +1341,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->ClosePane();
         }
     }
@@ -1442,6 +1473,8 @@ namespace winrt::TerminalApp::implementation
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
 
+            _UnZoomIfNeeded();
+
             focusedTab->SplitPane(realSplitType, realGuid, newControl);
         }
         CATCH_LOG();
@@ -1460,6 +1493,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->ResizePane(direction);
         }
     }
@@ -1837,17 +1871,6 @@ namespace winrt::TerminalApp::implementation
 
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab->GetActiveTitle());
-
-                // Raise an event that our titlebar color changed
-                std::optional<Windows::UI::Color> color = tab->GetTabColor();
-                if (color.has_value())
-                {
-                    _SetNonClientAreaColors(color.value());
-                }
-                else
-                {
-                    _ClearNonClientAreaColors();
-                }
             }
             CATCH_LOG();
         }
