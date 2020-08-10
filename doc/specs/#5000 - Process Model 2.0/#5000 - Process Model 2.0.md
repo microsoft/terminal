@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-08-06
+last updated: 2020-08-07
 issue id: #5000
 ---
 
@@ -205,11 +205,11 @@ With the ability for window processes to connect to other pre-existing content
 processes, we can now also support mixed elevation scenarios as well.
 
 If a user requests a new elevated tab from an otherwise unelevated window, we
-can use UAC to create a new, elevated WP, and "move" all the current tabs to
-that WP, as well as the new elevated client. Now, the WP is elevated, preventing
-it from input injection, but still contains all the previously existing tabs.
-The original WP can now be discarded, as the new elevated WP will pretend to be
-the original window.
+can use UAC to create a new, elevated window process, and "move" all the current
+tabs to that window process, as well as the new elevated client. Now, the window
+process is elevated, preventing it from input injection, but still contains all
+the previously existing tabs. The original window process can now be discarded,
+as the new elevated window process will pretend to be the original window.
 
 We would probably want to provide some additional configuration options here as
 well:
@@ -218,32 +218,36 @@ well:
   - We should also provide some argument to the `NewTerminalArgs` (used by the
     `new-tab` and `split-pane` actions) to allow a user to elevate an otherwise
     unelevated profile.
-* We'll probably want to create new CPs in a medium-IL context by default,
-  unless the profile or launch args otherwise indicates launching elevated. So a
-  WP running elevated would still create unelevated profiles by default.
+* We'll probably want to create new content processes in a medium-IL context by
+  default, unless the profile or launch args otherwise indicates launching
+  elevated. So a window process running elevated would still create unelevated
+  profiles by default.
 * Currently, if a user launches the terminal as an administrator, then _all_ of
   their tabs run elevated. We'll probably want to provide a similar
-  configuration as well. Maybe if a WP is initially launched as elevated (rather
-  than inheriting from an existing session), then it could either:
+  configuration as well. Maybe if a window process is initially launched as
+  elevated (rather than inheriting from an existing session), then it could
+  either:
   - default all future connections it creates to elevated connections
   - assume the _first_ tab (or all the terminals created by the startup
     commandline) should be elevated, but then subsequent connections would
     default to unelevated processes.
 
 It's a long-standing platform bug that you cannot use drag-and-drop in elevated
-scenarios. This unfortunately means that elevated WPs will _not_ be able to tear
-tabs out into their own windows. Even tabs that only contain unelevated CPs in
-them will not be able to be torn out, because the drag-and-drop service is
-fundamentally incapable of connecting to elevated windows.
+scenarios. This unfortunately means that elevated window processes will _not_ be
+able to tear tabs out into their own windows. Even tabs that only contain
+unelevated content processes in them will not be able to be torn out, because
+the drag-and-drop service is fundamentally incapable of connecting to elevated
+windows.
 
 We should probably have a discussion about what happens when the last elevated
-CP in an elevated WP is closed. If an elevated WP doesn't have any remaining
-elevated CPs, then it should be able to revert to an unelevated WP. Should we do
-this? There's likely some visual flickering that will happen as we re-create the
-new window process, so maybe it would be unappealing to users. However, there's
-also the negative side effect that come from elevated windows (the aformentioned
-lack of drag/drop), so maybe users will want to return to the more permissive
-unelevated WP.
+content process in an elevated window process is closed. If an elevated window
+process doesn't have any remaining elevated content processes, then it should be
+able to revert to an unelevated window process. Should we do this? There's
+likely some visual flickering that will happen as we re-create the new window
+process, so maybe it would be unappealing to users. However, there's also the
+negative side effect that come from elevated windows (the aformentioned lack of
+drag/drop), so maybe users will want to return to the more permissive unelevated
+window process.
 
 This is one section where unfortunately I don't have a working prototype yet.
 From my research, an elevated process cannot simply `create_instance` a class
@@ -268,17 +272,17 @@ introducing another type of categorization for window processes. These are
 the various windows by the Monarch.
 
 There will only ever be one monarch process at a given time, and every other WT
-WP is a servant process. However, we want this system to be redundant, so that
-if the monarch ever dies, one of the remaining servant processes can take over
-for it. The new monarch will be chosen at random, so we'll call this a
-probabalistic elective monarchy.
+window process is a servant process. However, we want this system to be
+redundant, so that if the monarch ever dies, one of the remaining servant
+processes can take over for it. The new monarch will be chosen at random, so
+we'll call this a probabalistic elective monarchy.
 
 Essentially, the probabalistic elective monarchy will work in the following way:
 
 1. We'll introduce a WinRT class (for the puspose of this doc we'll call it
   `Monarch`), with a unique GUID.
-2. When any WP starts up, it'll first try to register as the server for the
-  `Monarch` WinRT class.
+2. When any window process starts up, it'll first try to register as the server
+   for the `Monarch` WinRT class.
    - The OS will allow subsequent processes to successfully register as the
     server for `Monarch` objects, but when someone tries to `create_instance` a
     `Monarch`, the OS will always create the `Monarch` from the first process to
@@ -286,8 +290,8 @@ Essentially, the probabalistic elective monarchy will work in the following way:
 3. After registering as a server for `Monarch`s, attempt to create a `Monarch`
    using `winrt::create_instance`.
 4. Using that `Monarch`, ask it for it's PID.
-   - If that PID is the same as the PID of the current process, then the WP
-     knows that it is the monarch.
+   - If that PID is the same as the PID of the current process, then the window
+     process knows that it is the monarch.
    - If that PID is some other process, then we know that we're not currently
      the monarch.
      - If we don't currently have an ID assigned to us, then ask the `Monarch`
@@ -333,9 +337,9 @@ schemes for the commandline parameters. The following is given as an example of
 how these arguments _might_ be authored and implemented to satisfy some of these
 scenarios.
 
-Since each WP will have it's own unique ID assigned to it by the monarch, then
-running a command in a given window with ID `N` should be as easy as something
-like:
+Since each window process will have it's own unique ID assigned to it by the
+monarch, then running a command in a given window with ID `N` should be as easy
+as something like:
 
 ```
 wt.exe --session N new-tab ; split-pane
@@ -446,13 +450,94 @@ executing the provided commandline should first change its working directory to
 the provided `currentDirectory` so that something like `.` actually refers to
 the directory where the command was executed.
 
+
+### Default Terminal
+
+In parallel to the above scenarios, the team is also investigating ways of
+supporting a "default terminal application" on Windows (refer to [#492]). The
+vision for default terminals is that when a commandline application is started
+on Windows, instead of booting into `conhost.exe` as a default terminal, the
+system will instead boot up whatever application the user has set as their
+"default terminal application", whether that be the Windows Terminal or some
+other terminal app (ConEmu, mintty, Hyper, etc).
+
+This is another scenario that deserves its own full spec, though it warrants a
+special callout in this document as well.
+
+If we break down how the "defterm" scenario works, it's a bit of an inversion
+from the normal way that the Terminal is started. Instead of the Terminal
+creating a new connection, the connection already exists, it just needs to be
+attached to a window of some sort.
+
+Considering all the changes proposed above, we can also support defterm with the
+following mechanism:
+
+1. When `wt` is started as the target of a "defterm" invocation, the system will
+   somehow pass us a `HANDLE` (or pair of `HANDLE`s) to indicate that we're
+   being started to be the terminal for that commandline client.
+  - The details of the connection information aren't really important at this time.
+
+Then we have two paths forward:
+
+2a. The `wt` that's spawned in this way should become the _content process_ for
+this connection, because it has the direct connection to the client that's
+attempting to start.
+
+3a. This new content process will need a window. Depending on the configuration of the
+Terminal, the following could happen:
+  - the content process could discover that there's no existing Monarch process,
+    and that a new monarch should be created, with a reference to this content
+    process (as a first tab)
+  - The content process connects to the monarch, who then creates a new window
+    process who attaches to the content process. (A new window is created.)
+  - The content process connects to the monarch, who then tells an existing
+    window process to attaches to the content process. (The client opens as a
+    new tab either in the single instance or the most recent window, if glomming
+    is enabled.)
+
+**OR**
+
+2b. The `wt` that's spawned by the defterm connection is a new window process.
+It should create a new content process to handle this connection.
+  - the content process will need a way of being invoked by passing it handles
+    to the new client. This way, the content process can dupe these handles into
+    it's own process space, to be able to create the `ITerminalConnection` in
+    its own process space.
+
+3b. If this new window process is the monarch, then great! There are no other
+windows to glom onto, so create the tab in this window process.
+
+4b. It'll ask the monarch if it's in single instance mode, or if the monarch is
+configured to glom tabs onto the most recent window, instead of spawning new
+ones. If it is configured in such a way, the new servant window process will
+pass the content process's GUID to the Servant\* that _should_ be the window for
+that new client
+  - \*: note that this servant could just be the monarch (in single instance
+    mode, for example).
+
+<hr>
+
+This area is left intentionally vague, because we're not exactly sure what the
+API surface exposed for default terminal invocations will look like. Hopefully,
+it shows that however we do end up implementing support for default terminal
+apps, the proposed Window/Content/Monarch/Servant architecture will still be a
+compatible solution.
+
 ## UI/UX Design
 
-TODO: Is there really all that much UX for this scenario? Ideally, all this will
-happen behind the scenes.
+There's not really all that much UI for this scenario. Ideally, all this will
+happen behind the scenes, without the user really being exposed to the inner
+machinations of the Terminal processes.
 
-I suppose at the very least, we will be able to have resizes happen off of the
-UI thread, so that's nice.
+At the very least, resizes will occur off of the UI thread, which will help that
+scenario feel better. While resizes happen fairly responsively in Release
+builds, Debug builds used for development have fairly painful resizes occuring
+on the UI thread, blocking all input until they're finished.
+
+Ideally, we'll want the tab that's being dragged to be able to show the contents
+of the tab as we're dragging it, similar to the way that Edgium currently does.
+However, this is expected to be challenging and something that won't be a part
+of the initial release of tab tearout.
 
 ## Capabilities
 
@@ -497,6 +582,8 @@ TODO: These are _very_ expected
 
 Extensions & non-terminal content.
 
+Mixed elevation & Monarch / Peasant issues
+
 ## Implementation Plan
 
 Obviously, everything that's discussed here represents an _enormous_ amount of
@@ -509,7 +596,6 @@ for the work described above.
 These tasks are broken into sections, because it seems that there's roughly
 three tracks of work to be done here, which can be done relatively independently
 of each other.
-
 
 <hr>
 
@@ -588,9 +674,10 @@ of each other.
    - At this point, the tabs can't be torn out to create new windows, only move
      between existing windows
    - It might be hard to have the tab "attach" to the tab row of the other window.
-   - It might be easiest to do this after 1, and communicate to the new WP the
-     GUID of the old WP and the tab within the original WP, and just have the
-     new WP ask the old WP what the structure of the tab is
+   - It might be easiest to do this after 1, and communicate to the new window
+     process the GUID of the old window process and the tab within the original
+     window process, and just have the new window process ask the old window
+     process what the structure of the tab is
      - Though, the tab won't be in the original process's list of tabs anymore,
        so that might not be helpful.
 
@@ -658,17 +745,24 @@ of possible scenarios.
 
 ## TODOs
 
-* [ ] Prove that a elevated window can host an unelevated content
-* [ ] Prove that I can toss content process IDs from one window to another
+* [ ] Experimentally prove that a elevated window can host an unelevated content
+* [ ] Experimentally prove that I can toss content process IDs from one window
+  to another
+  - I don't have any doubt that this will work, but I want to have a
+    proof-of-concept just in case.
 * [ ] come up with a commandline mechanism for starting one `wt.exe` process either
   as a window process, or as a content process
+  - `wt --content {guid}` seems reasonable to me. If there's a `--content
+    {guid}` as the only two args, I think that's a distinct enough way to
+    identify "you should be a content process".
 * [ ] What about handling XAML input events? The "thin" term control will need to do
   that in-proc, so it can reply on the UI thread if a particular keystroke was
   handled or not.
   - I'm almost certain that the `Terminal::HandleKey()` stuff is going to need
     to be handled in the thin control, and the core will need to raise events to
     the control? oof
-
+* [ ] Make sure I can pass the UiaProvider for the control core out to the
+  Window Process, so the window process can use it to query buffer info.
 
 ## Resources
 
@@ -684,6 +778,7 @@ of possible scenarios.
 [#653]: https://github.com/microsoft/terminal/issues/653
 [#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
+[#492]: https://github.com/microsoft/terminal/issues/492
 
 [Tab Tearout in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
