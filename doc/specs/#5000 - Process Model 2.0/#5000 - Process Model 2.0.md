@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-08-07
+last updated: 2020-08-10
 issue id: #5000
 ---
 
@@ -89,6 +89,17 @@ to connect to and display content that's being hosted in another process.
 
 ### Window and Content Processes
 
+To begin, let's first take a look at a rough diagram of how the Windows Terminal
+process looks today:
+
+![figure-001](figure-001.png)
+
+Currently, the entire Windows Terminal exists as a single process composed of
+many parts. it has a top Win32 layer responsible for the window, which includes
+a UWP XAML-like App layer, which embeds many `TermControl`s, each of which
+contains the buffer and renderer, and communicates with a connection to another
+process.
+
 The primary concept introduced by this spec is the idea of two types of process,
 which will work together to create a single Terminal window. These processes
 will be referred to as the "Window Process" and the "Content Process".
@@ -112,6 +123,8 @@ These thin `TermControl`s will recieve input, and have all the UI elements
 _rendering_ to the swap chain, and the handling of those inputs will be done by
 the content process.
 
+![figure-002](figure-002.png)
+
 As a broad outline, whenever the window wants to create a terminal, the flow
 will be something like the following:
 
@@ -126,6 +139,8 @@ will be something like the following:
    process's `SwapChainPanel`, because they share the same underlying kernel
    object.
 
+![figure-003](figure-003.png)
+
 The content process will be responsible for the terminal buffer and other
 terminal state (the core `Terminal` object), as well as the `Renderer`,
 `DxEngine`, and `TerminalConnection`. These are all being combined in the
@@ -134,6 +149,7 @@ the process boundary multiple times per frame, so the renderer must be in the
 same process as the buffer. Similarly, we want to be able to read data off of
 the connection as quickly as possible, and the best way to do this will be to
 have the connection in the same process as the `Terminal` core.
+
 
 
 #### Technical Details
@@ -182,7 +198,7 @@ This means that if we wanted to have a second window process connect to the
 _same_ content process as another window, all it needs is the content process's
 GUID.
 
-#### Scenario: Tab Tearoff/ Reattach
+#### Scenario: Tab Tear-off and Reattach
 
 Because all that's needed to uniquely identify an individual terminal instance
 is the GUID of the content process, it becomes fairly trivial to be able to
@@ -545,33 +561,114 @@ of the initial release of tab tearout.
 <tr>
 <td><strong>Accessibility</strong></td>
 <td>
-TODO: This is _very_ applicable
+
+When working on the implementation of the window/content process split, we'll
+need to ensure that the contents of the buffer are still readable by
+accessibility tools like Narrator and NVDA. We'll be moving the actual buffer
+out of the window process into the content process, so we'll need to make sure
+that we can hook up the `TermControlAutomationPeer` across the process boundary.
+Presumably, this is possible trivially because it's already implemented as a
+WinRT type.
+
+I'll be especially curious to make sure that
+`TermControl::OnCreateAutomationPeer` can occur off the window process's UI
+thread, because all cross-process calls will need to happen off the UI thread.
+
 </td>
 </tr>
 <tr>
 <td><strong>Security</strong></td>
 <td>
-TODO: This is _very_ applicable
+
+As we'll be introducing a mechanism for crossing elevation boundaries, we'll
+want to be especially careful as we make these changes.
+
+Our biggest concern regarding mixed elevation was regarding the ability for a
+non-elevated process to send input to another unelevated WT window, which was
+connected to an elevated client process. With these proposed changes, we won't
+have any unelevated windows connected to unelevated processes, so that concern
+should be mitigated.
+
+Additionally, we'll probably want to make sure that the user is visually
+prompted when a connection to an elevated client is initiated. Typically, this
+is done with a UAC prompt, which seems reasonable in this scenario as well.
+
+We'll likely want to default elevated windows to spawning unelevated
+connections, as to prevent accidentally running connections as an administrator.
+This is in contrast to existing behavior, where all connections in an elevated
+WT window are elevated.
+
+Furthermore, we'll want to ensure that there's nothing that an unelevated client
+process could do to trigger any sort of input callback in the parent window. If
+the parent window is an elevated window, with other elevated connections, then
+we don't want the uelevated content process to act as a vector by which
+malicious software could hijack the elevated window.
+
 </td>
 </tr>
 <tr>
 <td><strong>Reliability</strong></td>
 <td>
-TODO: This is _very_ applicable
+
+This is probably the biggest concern in this section. Because there will now be
+many, many more processes in the process tree, it is imperitive that whenever
+we're doing cross-process operations, we do them safely.
+
+Whenever we're working with an object that's hosted by another process, we'll
+need to make sure that we work with it in a try/catch, because at _any_ time,
+the other process could be killed. At any point, a content process could be
+killed, without the window being closed. The window will need to be redundant to
+such a scenario, and if the content process is killed, display an appropriate
+error message, but _continue running_.
+
+When the monarch process dies, we'll need to be able to reliably elect a new
+monarch. While we're electing a new monarch, and updating the new monarch,
+there's always the chance that the _new_ monarch is also killed (This is the
+"Pope Stephen II" scenario). In this sccenario, if at any point a servant
+notices that the monarch has died, the servant will need to begin checking who
+the new monarch is again.
+
+There is certain to be a long tail of edge cases we'll discover as a product of
+this change. We'll need to be prepared to see an inevitable decrease in initial
+reliability numbers, and increased bug reports for a time. Additionally, these
+bug will likely be fairly difficult to track down.
+
+In the long run, this may end up _increasing_ reliability, as crashes in the
+buffer should no longer cause the _entire_ terminal application to crash.
+
+
 </td>
 </tr>
 <tr>
 <td><strong>Compatibility</strong></td>
 <td>
-TODO: This is _very_ applicable
 
-TODO: Concerns with the Universal App version of the Terminal?
+The biggest concern regarding compatibility will be ensuring that the Universal
+app version of the Windows Terminal will still work as before. Although that
+application isn't used by any customer-facing scenarios currently, it still
+represents some long term goals for the Terminal.  We'll probably need to
+disable tearout _entirely_ on the universal app, at least to begin with.
+Additionally, we'll need to ensure that all the controls in the universal
+application are in-proc controls, not using the window/content split process
+model.
+
+I'm also concerned that each individual atomic step along the path towards this
+goal still works. For more on this topic, see [Implementation
+Plan](#implementation-plan).
+
 </td>
 </tr>
 <tr>
 <td><strong>Performance, Power, and Efficiency</strong></td>
 <td>
-TODO: This is _very_ applicable
+
+There's no dramatic change expected here. There may be a minor delay in the
+spawning of new terminal instances, due to requiring cross-process hops for the
+instantiation of the content process.
+
+Additionally, minor delays are expected to be introduced during startup for the
+initial setup of the monarch/servant relationship.
+
 </td>
 </tr>
 </table>
