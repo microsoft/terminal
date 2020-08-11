@@ -960,7 +960,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The total number of leaf panes hosted by this tab.
-    int Tab::_GetLeafPaneCount() const noexcept
+    int Tab::GetLeafPaneCount() const noexcept
     {
         return _rootPane->GetLeafPaneCount();
     }
