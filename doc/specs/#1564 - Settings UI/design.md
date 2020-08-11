@@ -1,7 +1,7 @@
 ---
 author: Kayla Cinnamon @cinnamon-msft
 created on: 2020-07-13
-last updated: 2020-07-13
+last updated: 2020-08-11
 issue id: #1564
 ---
 
@@ -53,7 +53,7 @@ The keyboard page will list the enabled key bindings and provide a way for users
 
 ![Keyboard page](./keyboard.png)
 
-When someone hovers over one of the items in the table, the Edit and Delete buttons will appear. Below is what the modal looks like if they were to click Edit on a command that does not have any arguments/actions.
+When someone hovers over one of the items in the table, the Edit and Delete buttons will appear. Below is what the modal looks like if they were to click Edit on a command that does not have any arguments/actions. In the future, we would want this text box to be able to listen for key combinations. This would add a "listen" button to the UI.
 
 ![Keyboard page modal](./keyboard-modal.png)
 
@@ -78,9 +78,9 @@ Below is the list of all settings on their respective pages in the settings UI. 
 | Automatically create new profiles when new shells are installed (checkbox) | | | | Blue (color picker) | **Appearance** | Tab title (text box) | Tab title (text box) |
 | | | | | Cyan (color picker) | Font face (text box) | **Appearance** | **Appearance** |
 | | | | | Green (color picker) | Font size (number picker) | Retro terminal effects (checkbox) | Retro terminal effects (checkbox) |
-| | | | | Purple (color picker) | Font weight (text box) | Font face (text box) | Font face (text box) |
+| | | | | Purple (color picker) | Font weight (dropdown) | Font face (text box) | Font face (text box) |
 | | | | | Red (color picker) | Padding (text box) | Font size (number picker) | Font size (number picker) |
-| | | | | White (color picker) | Cursor shape (radio) | Font weight (text box) | Font weight (text box) |
+| | | | | White (color picker) | Cursor shape (radio) | Font weight (dropdown) | Font weight (dropdown) |
 | | | | | Yellow (color picker) | Cursor color (color picker) | Padding (text box) | Padding (text box) |
 | | | | | Bright black (color picker) | Cursor height (number picker) | Cursor shape (radio) | Cursor shape (radio) |
 | | | | | Bright blue (color picker) | Color scheme (dropdown) | Cursor color (color picker) | Cursor color (color picker) |
