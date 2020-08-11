@@ -49,6 +49,46 @@ namespace Microsoft::Console::VirtualTerminal
 
         uint64_t _value;
     };
+
+    class VTIDBuilder
+    {
+    public:
+        void Clear() noexcept
+        {
+            _idAccumulator = 0;
+            _idShift = 0;
+        }
+
+        void AddIntermediate(const wchar_t intermediateChar) noexcept
+        {
+            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            {
+                // If there is not enough space in the accumulator to add
+                // the intermediate and still have room left for the final,
+                // then we reset the accumulator to zero. This will result
+                // in an id with all zero intermediates, which shouldn't
+                // match anything.
+                _idAccumulator = 0;
+            }
+            else
+            {
+                // Otherwise we shift the intermediate so as to add it to the
+                // accumulator in the next available space, and then increment
+                // the shift by 8 bits in preparation for the next character.
+                _idAccumulator += (static_cast<uint64_t>(intermediateChar) << _idShift);
+                _idShift += CHAR_BIT;
+            }
+        }
+
+        VTID Finalize(const wchar_t finalChar) noexcept
+        {
+            return _idAccumulator + (static_cast<uint64_t>(finalChar) << _idShift);
+        }
+
+    private:
+        uint64_t _idAccumulator = 0;
+        size_t _idShift = 0;
+    };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
