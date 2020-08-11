@@ -49,7 +49,7 @@ permission of the user to spawn an elevated client application. The user would
 see a UAC prompt, they'd accept, and then they'd be able to have an elevated
 shell alongside their unelevated tabs.
 
-However, this creates an escalation of priviledge vector. Now, there's an
+However, this creates an escalation of privilege vector. Now, there's an
 unelevated window which is connected directly to an elevated process. At this
 point, any other unelevated application could send input to the Terminal's
 `HWND`, making it possible for another unelevated process to "drive" the
@@ -134,7 +134,7 @@ will be something like the following:
 3. When the content process creates it's swap chain, it will raise an event
    which the window process will use to connect that swap chain to the window
    process's `SwapChainPanel`.
-4. The will process output from the connection and draw to the swap chain. The
+4. The content process will read output from the connection and draw to the swap chain. The
    contents that are rendered to the swap chain will be visible in the window
    process's `SwapChainPanel`, because they share the same underlying kernel
    object.
@@ -206,7 +206,7 @@ is the GUID of the content process, it becomes fairly trivial to be able to
 
 When a drag/drop operation happens, the payload of the event will simply contain
 the structure of the tree of panes, and the GUIDs of the content processes that
-make up the leaf nodes of the tree. The recieving window process will then be
+make up the leaf nodes of the tree. The receiving window process will then be
 able to use that tree to be able to re-create a similar pane structure in its
 window, and use the GUIDs to be able to connect to the content processes for the
 terminals in that tab.
@@ -348,7 +348,8 @@ extension of this scenario being "run a `wt` commandline in _any_ given WT
 window".
 
 This spec by no means attempts to fully document how this functionality should
-work. This scenarios deserves it's own spec to discuss various differnt naming
+work. This scenarios deserves it's own spec to discuss various different naming
+
 schemes for the commandline parameters. The following is given as an example of
 how these arguments _might_ be authored and implemented to satisfy some of these
 scenarios.
@@ -421,7 +422,7 @@ shortcut key, whenever it's elected. If it dies and another servant is elected
 monarch, then the new monarch will register as the global hotkey handler.
 
 Then, the monarch can use it's pre-established channels of communication with
-the other window processes to actuall drive the response we're looking for.
+the other window processes to actually drive the response we're looking for.
 
 #### Rough interface design
 
@@ -434,7 +435,7 @@ class Servant
     void AssignID(UInt64 id); // Should only be called by the monarch
     UInt64 GetID();
     UInt64 GetPID();
-    Boolean ExecuteCommandline(String[] args, Sting currentDirectory);
+    Boolean ExecuteCommandline(String[] args, String currentDirectory);
     event TypedEventHandler<Object, Object> WindowActivated;
 }
 
@@ -624,14 +625,14 @@ error message, but _continue running_.
 When the monarch process dies, we'll need to be able to reliably elect a new
 monarch. While we're electing a new monarch, and updating the new monarch,
 there's always the chance that the _new_ monarch is also killed (This is the
-"Pope Stephen II" scenario). In this sccenario, if at any point a servant
+"Pope Stephen II" scenario). In this scenario, if at any point a servant
 notices that the monarch has died, the servant will need to begin checking who
 the new monarch is again.
 
 There is certain to be a long tail of edge cases we'll discover as a product of
 this change. We'll need to be prepared to see an inevitable decrease in initial
 reliability numbers, and increased bug reports for a time. Additionally, these
-bug will likely be fairly difficult to track down.
+bugs will likely be fairly difficult to track down.
 
 In the long run, this may end up _increasing_ reliability, as crashes in the
 buffer should no longer cause the _entire_ terminal application to crash.
