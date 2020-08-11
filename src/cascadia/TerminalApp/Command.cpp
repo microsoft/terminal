@@ -405,6 +405,9 @@ namespace winrt::TerminalApp::implementation
         std::string errs; // This string will receive any error text from failing to parse.
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
+        // First, get a string for the original Json::Value
+        auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
+
         if (expandable->_IterateOn == ExpandCommandType::Profiles)
         {
             for (const auto& p : profiles)
@@ -418,8 +421,6 @@ namespace winrt::TerminalApp::implementation
                 //   then re-attempt to parse the action and args.
 
                 // Replace all the keywords in the original json, and try and parse that
-                // - First, get a string for the original Json::Value
-                auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(p.GetName());
