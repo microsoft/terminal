@@ -13,6 +13,8 @@ namespace TerminalApp
         ActionAndArgs Action;
         String KeyChordText;
 
+        Windows.UI.Xaml.Controls.IconSource IconSource;
+
         Windows.Foundation.Collections.IVector<Command> NestedCommands { get; };
     }
 }

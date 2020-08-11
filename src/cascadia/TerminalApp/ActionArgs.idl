@@ -135,4 +135,9 @@ namespace TerminalApp
     {
         UInt32 Index { get; };
     };
+
+    [default_interface] runtimeclass ToggleTabSwitcherArgs : IActionArgs
+    {
+        Windows.System.VirtualKey AnchorKey { get; };
+    };
 }
