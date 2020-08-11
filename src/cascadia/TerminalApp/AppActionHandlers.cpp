@@ -285,6 +285,7 @@ namespace winrt::TerminalApp::implementation
     {
         // TODO GH#6677: When we add support for commandline mode, first set the
         // mode that the command palette should be in, before making it visible.
+        CommandPalette().EnableCommandPaletteMode();
         CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
                                         Visibility::Collapsed :
                                         Visibility::Visible);
@@ -414,6 +415,7 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
         }
     }
+
     void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
                                              const TerminalApp::ActionEventArgs& actionArgs)
     {
@@ -435,5 +437,29 @@ namespace winrt::TerminalApp::implementation
 
             actionArgs.Handled(true);
         }
+    }
+
+    void TerminalPage::_HandleToggleTabSwitcher(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
+        {
+            auto anchorKey = realArgs.AnchorKey();
+
+            auto opt = _GetFocusedTabIndex();
+            uint32_t startIdx = opt ? *opt : 0;
+
+            if (anchorKey != VirtualKey::None)
+            {
+                // TODO: GH#7178 - delta should also have the option of being -1, in the case when
+                // a user decides to open the tab switcher going to the prev tab.
+                int delta = 1;
+                startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
+            }
+
+            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
+            CommandPalette().Visibility(Visibility::Visible);
+        }
+        args.Handled(true);
     }
 }

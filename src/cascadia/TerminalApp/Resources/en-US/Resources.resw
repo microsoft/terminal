@@ -529,6 +529,9 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
     <value>Set color scheme to {0}</value>
     <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
@@ -561,6 +564,18 @@
   <data name="CloseTabsAfterCommandKey" xml:space="preserve">
     <value>Close tabs after index {0}</value>
     <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Tab Switcher</value>
+  </data>
+  <data name="ToggleTabSwitcherCommandKey" xml:space="preserve">
+    <value>Toggle tab switcher</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Type a tab name...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>No matching tab name</value>
   </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>

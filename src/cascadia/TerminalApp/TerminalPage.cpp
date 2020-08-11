@@ -80,9 +80,20 @@ namespace winrt::TerminalApp::implementation
                 {
                     command.KeyChordText(KeyChordSerialization::ToString(keyChord));
                 }
+
+                // Set the default IconSource to a BitmapIconSource with a null source
+                // (instead of just nullptr) because there's a really weird crash when swapping
+                // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+                // Swapping between nullptr IconSources and non-null IconSources causes a crash
+                // to occur, but swapping between IconSources with a null source and non-null IconSources
+                // work perfectly fine :shrug:.
+                winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
+                icon.UriSource(nullptr);
+                command.IconSource(icon);
+
                 commandsCollection.Append(command);
             }
-            CommandPalette().SetActions(commandsCollection);
+            CommandPalette().SetCommands(commandsCollection);
         }
     }
 
@@ -208,6 +219,13 @@ namespace winrt::TerminalApp::implementation
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
                 _CommandPaletteClosed(nullptr, nullptr);
+            }
+        });
+
+        _tabs.VectorChanged([weakThis{ get_weak() }](auto&& s, auto&& e) {
+            if (auto page{ weakThis.get() })
+            {
+                page->CommandPalette().OnTabsChanged(s, e);
             }
         });
 
@@ -897,6 +915,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
+        _actionDispatch->ToggleTabSwitcher({ this, &TerminalPage::_HandleToggleTabSwitcher });
     }
 
     // Method Description:

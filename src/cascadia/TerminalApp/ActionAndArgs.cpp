@@ -44,6 +44,7 @@ static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view CloseOtherTabsKey{ "closeOtherTabs" };
 static constexpr std::string_view CloseTabsAfterKey{ "closeTabsAfter" };
+static constexpr std::string_view ToggleTabSwitcherKey{ "tabSwitcher" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -100,6 +101,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
         { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
         { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
+        { ToggleTabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -138,6 +140,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::CloseOtherTabs, winrt::TerminalApp::implementation::CloseOtherTabsArgs::FromJson },
 
         { ShortcutAction::CloseTabsAfter, winrt::TerminalApp::implementation::CloseTabsAfterArgs::FromJson },
+
+        { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };

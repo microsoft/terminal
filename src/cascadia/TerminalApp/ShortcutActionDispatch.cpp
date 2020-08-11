@@ -220,6 +220,11 @@ namespace winrt::TerminalApp::implementation
             _CloseTabsAfterHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleTabSwitcher:
+        {
+            _ToggleTabSwitcherHandlers(*this, *eventArgs);
+            break;
+        }
         default:
             return false;
         }

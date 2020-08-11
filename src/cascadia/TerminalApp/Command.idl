@@ -12,5 +12,7 @@ namespace TerminalApp
         String Name;
         ActionAndArgs Action;
         String KeyChordText;
+
+        Windows.UI.Xaml.Controls.IconSource IconSource;
     }
 }

@@ -59,6 +59,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ExecuteCommandline,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseOtherTabs,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ToggleTabSwitcher,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         // clang-format on
 
     private:
