@@ -79,9 +79,7 @@ public:
     bool DispatchIntermediatesFromEscape() const override { return false; };
 
     // ActionCsiDispatch is the only method that's actually implemented.
-    bool ActionCsiDispatch(const wchar_t /*wch*/,
-                           const gsl::span<const wchar_t> /*intermediates*/,
-                           const gsl::span<const size_t> parameters) override
+    bool ActionCsiDispatch(const VTID /*id*/, const gsl::span<const size_t> parameters) override
     {
         // If flush to terminal is registered for a test, then use it.
         if (pfnFlushToTerminal)

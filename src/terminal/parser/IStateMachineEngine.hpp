@@ -35,9 +35,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionEscDispatch(const VTID id) = 0;
         virtual bool ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters) = 0;
-        virtual bool ActionCsiDispatch(const wchar_t wch,
-                                       const gsl::span<const wchar_t> intermediates,
-                                       const gsl::span<const size_t> parameters) = 0;
+        virtual bool ActionCsiDispatch(const VTID id, const gsl::span<const size_t> parameters) = 0;
 
         virtual bool ActionClear() = 0;
 

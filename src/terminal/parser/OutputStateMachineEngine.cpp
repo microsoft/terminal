@@ -393,14 +393,11 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
 //      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence
+// - id - Identifier of the control sequence to dispatch.
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                 const gsl::span<const wchar_t> intermediates,
-                                                 gsl::span<const size_t> parameters)
+bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const size_t> parameters)
 {
     bool success = false;
     size_t distance = 0;
@@ -412,301 +409,166 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     size_t clearType = 0;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
+    std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
     // We hold the vector in the class because client applications that do a lot of color work
     // would spend a lot of time reallocating/resizing the vector.
     _graphicsOptions.clear();
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
+    DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
-    if (intermediates.empty())
+    // fill params
+    switch (id)
     {
-        // fill params
-        switch (wch)
-        {
-        case CsiActionCodes::CUU_CursorUp:
-        case CsiActionCodes::CUD_CursorDown:
-        case CsiActionCodes::CUF_CursorForward:
-        case CsiActionCodes::CUB_CursorBackward:
-        case CsiActionCodes::CNL_CursorNextLine:
-        case CsiActionCodes::CPL_CursorPrevLine:
-        case CsiActionCodes::CHA_CursorHorizontalAbsolute:
-        case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-        case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-        case CsiActionCodes::HPR_HorizontalPositionRelative:
-        case CsiActionCodes::VPR_VerticalPositionRelative:
-        case CsiActionCodes::ICH_InsertCharacter:
-        case CsiActionCodes::DCH_DeleteCharacter:
-        case CsiActionCodes::ECH_EraseCharacters:
-            success = _GetCursorDistance(parameters, distance);
-            break;
-        case CsiActionCodes::HVP_HorizontalVerticalPosition:
-        case CsiActionCodes::CUP_CursorPosition:
-            success = _GetXYPosition(parameters, line, column);
-            break;
-        case CsiActionCodes::DECSTBM_SetScrollingRegion:
-            success = _GetTopBottomMargins(parameters, topMargin, bottomMargin);
-            break;
-        case CsiActionCodes::ED_EraseDisplay:
-        case CsiActionCodes::EL_EraseLine:
-            success = _GetEraseOperation(parameters, eraseType);
-            break;
-        case CsiActionCodes::SGR_SetGraphicsRendition:
-            success = _GetGraphicsOptions(parameters, _graphicsOptions);
-            break;
-        case CsiActionCodes::DSR_DeviceStatusReport:
-            success = _GetDeviceStatusOperation(parameters, deviceStatusType);
-            break;
-        case CsiActionCodes::DA_DeviceAttributes:
-            success = _VerifyDeviceAttributesParams(parameters);
-            break;
-        case CsiActionCodes::SU_ScrollUp:
-        case CsiActionCodes::SD_ScrollDown:
-            success = _GetScrollDistance(parameters, distance);
-            break;
-        case CsiActionCodes::ANSISYSSC_CursorSave:
-        case CsiActionCodes::ANSISYSRC_CursorRestore:
-            success = _VerifyHasNoParameters(parameters);
-            break;
-        case CsiActionCodes::IL_InsertLine:
-        case CsiActionCodes::DL_DeleteLine:
-            success = _GetScrollDistance(parameters, distance);
-            break;
-        case CsiActionCodes::CHT_CursorForwardTab:
-        case CsiActionCodes::CBT_CursorBackTab:
-            success = _GetTabDistance(parameters, numTabs);
-            break;
-        case CsiActionCodes::TBC_TabClear:
-            success = _GetTabClearType(parameters, clearType);
-            break;
-        case CsiActionCodes::DTTERM_WindowManipulation:
-            success = _GetWindowManipulationType(parameters, function);
-            break;
-        case CsiActionCodes::REP_RepeatCharacter:
-            success = _GetRepeatCount(parameters, repeatCount);
-            break;
-        default:
-            // If no params to fill, param filling was successful.
-            success = true;
-            break;
-        }
-
-        // if param filling successful, try to dispatch
-        if (success)
-        {
-            switch (wch)
-            {
-            case CsiActionCodes::CUU_CursorUp:
-                success = _dispatch->CursorUp(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
-                break;
-            case CsiActionCodes::CUD_CursorDown:
-                success = _dispatch->CursorDown(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
-                break;
-            case CsiActionCodes::CUF_CursorForward:
-                success = _dispatch->CursorForward(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
-                break;
-            case CsiActionCodes::CUB_CursorBackward:
-                success = _dispatch->CursorBackward(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
-                break;
-            case CsiActionCodes::CNL_CursorNextLine:
-                success = _dispatch->CursorNextLine(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
-                break;
-            case CsiActionCodes::CPL_CursorPrevLine:
-                success = _dispatch->CursorPrevLine(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
-                break;
-            case CsiActionCodes::CHA_CursorHorizontalAbsolute:
-            case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-                success = _dispatch->CursorHorizontalPositionAbsolute(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
-                break;
-            case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-                success = _dispatch->VerticalLinePositionAbsolute(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
-                break;
-            case CsiActionCodes::HPR_HorizontalPositionRelative:
-                success = _dispatch->HorizontalPositionRelative(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
-                break;
-            case CsiActionCodes::VPR_VerticalPositionRelative:
-                success = _dispatch->VerticalPositionRelative(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
-                break;
-            case CsiActionCodes::CUP_CursorPosition:
-            case CsiActionCodes::HVP_HorizontalVerticalPosition:
-                success = _dispatch->CursorPosition(line, column);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
-                break;
-            case CsiActionCodes::DECSTBM_SetScrollingRegion:
-                success = _dispatch->SetTopBottomScrollingMargins(topMargin, bottomMargin);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
-                break;
-            case CsiActionCodes::ICH_InsertCharacter:
-                success = _dispatch->InsertCharacter(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
-                break;
-            case CsiActionCodes::DCH_DeleteCharacter:
-                success = _dispatch->DeleteCharacter(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
-                break;
-            case CsiActionCodes::ED_EraseDisplay:
-                success = _dispatch->EraseInDisplay(eraseType);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
-                break;
-            case CsiActionCodes::EL_EraseLine:
-                success = _dispatch->EraseInLine(eraseType);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
-                break;
-            case CsiActionCodes::SGR_SetGraphicsRendition:
-                success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
-                break;
-            case CsiActionCodes::DSR_DeviceStatusReport:
-                success = _dispatch->DeviceStatusReport(deviceStatusType);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
-                break;
-            case CsiActionCodes::DA_DeviceAttributes:
-                success = _dispatch->DeviceAttributes();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
-                break;
-            case CsiActionCodes::SU_ScrollUp:
-                success = _dispatch->ScrollUp(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
-                break;
-            case CsiActionCodes::SD_ScrollDown:
-                success = _dispatch->ScrollDown(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
-                break;
-            case CsiActionCodes::ANSISYSSC_CursorSave:
-                success = _dispatch->CursorSaveState();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
-                break;
-            case CsiActionCodes::ANSISYSRC_CursorRestore:
-                success = _dispatch->CursorRestoreState();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
-                break;
-            case CsiActionCodes::IL_InsertLine:
-                success = _dispatch->InsertLine(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
-                break;
-            case CsiActionCodes::DL_DeleteLine:
-                success = _dispatch->DeleteLine(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
-                break;
-            case CsiActionCodes::CHT_CursorForwardTab:
-                success = _dispatch->ForwardTab(numTabs);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
-                break;
-            case CsiActionCodes::CBT_CursorBackTab:
-                success = _dispatch->BackwardsTab(numTabs);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
-                break;
-            case CsiActionCodes::TBC_TabClear:
-                success = _dispatch->TabClear(clearType);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
-                break;
-            case CsiActionCodes::ECH_EraseCharacters:
-                success = _dispatch->EraseCharacters(distance);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
-                break;
-            case CsiActionCodes::DTTERM_WindowManipulation:
-                success = _dispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
-                                                        remainingParams);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
-                break;
-            case CsiActionCodes::REP_RepeatCharacter:
-                // Handled w/o the dispatch. This function is unique in that way
-                // If this were in the ITerminalDispatch, then each
-                // implementation would effectively be the same, calling only
-                // functions that are already part of the interface.
-                // Print the last graphical character a number of times.
-                if (_lastPrintedChar != AsciiChars::NUL)
-                {
-                    std::wstring wstr(repeatCount, _lastPrintedChar);
-                    _dispatch->PrintString(wstr);
-                }
-                success = true;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
-                break;
-            default:
-                // If no functions to call, overall dispatch was a failure.
-                success = false;
-                break;
-            }
-        }
-    }
-    else if (intermediates.size() == 1)
-    {
-        const auto value = til::at(intermediates, 0);
-        switch (value)
-        {
-        case L'?':
-            success = _IntermediateQuestionMarkDispatch(wch, parameters);
-            break;
-        case L'>':
-        case L'=':
-            success = _IntermediateGreaterThanOrEqualDispatch(wch, value, parameters);
-            break;
-        case L'!':
-            success = _IntermediateExclamationDispatch(wch);
-            break;
-        case L' ':
-            success = _IntermediateSpaceDispatch(wch, parameters);
-            break;
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
-            break;
-        }
-    }
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
-    }
-
-    _ClearLastChar();
-
-    return success;
-}
-
-// Routine Description:
-// - Handles actions that have postfix params on an intermediate '?', such as DECTCEM, DECCOLM, ATT610
-// Arguments:
-// - wch - Character to dispatch.
-// - parameters - set of numeric parameters collected while parsing the sequence.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                                                 const gsl::span<const size_t> parameters)
-{
-    bool success = false;
-
-    std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
-    // Ensure that there was the right number of params
-    switch (wchAction)
-    {
+    case CsiActionCodes::CUU_CursorUp:
+    case CsiActionCodes::CUD_CursorDown:
+    case CsiActionCodes::CUF_CursorForward:
+    case CsiActionCodes::CUB_CursorBackward:
+    case CsiActionCodes::CNL_CursorNextLine:
+    case CsiActionCodes::CPL_CursorPrevLine:
+    case CsiActionCodes::CHA_CursorHorizontalAbsolute:
+    case CsiActionCodes::HPA_HorizontalPositionAbsolute:
+    case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
+    case CsiActionCodes::HPR_HorizontalPositionRelative:
+    case CsiActionCodes::VPR_VerticalPositionRelative:
+    case CsiActionCodes::ICH_InsertCharacter:
+    case CsiActionCodes::DCH_DeleteCharacter:
+    case CsiActionCodes::ECH_EraseCharacters:
+        success = _GetCursorDistance(parameters, distance);
+        break;
+    case CsiActionCodes::HVP_HorizontalVerticalPosition:
+    case CsiActionCodes::CUP_CursorPosition:
+        success = _GetXYPosition(parameters, line, column);
+        break;
+    case CsiActionCodes::DECSTBM_SetScrollingRegion:
+        success = _GetTopBottomMargins(parameters, topMargin, bottomMargin);
+        break;
+    case CsiActionCodes::ED_EraseDisplay:
+    case CsiActionCodes::EL_EraseLine:
+        success = _GetEraseOperation(parameters, eraseType);
+        break;
     case CsiActionCodes::DECSET_PrivateModeSet:
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = _GetPrivateModeParams(parameters, privateModeParams);
         break;
-
+    case CsiActionCodes::SGR_SetGraphicsRendition:
+        success = _GetGraphicsOptions(parameters, _graphicsOptions);
+        break;
+    case CsiActionCodes::DSR_DeviceStatusReport:
+        success = _GetDeviceStatusOperation(parameters, deviceStatusType);
+        break;
+    case CsiActionCodes::DA_DeviceAttributes:
+    case CsiActionCodes::DA2_SecondaryDeviceAttributes:
+    case CsiActionCodes::DA3_TertiaryDeviceAttributes:
+        success = _VerifyDeviceAttributesParams(parameters);
+        break;
+    case CsiActionCodes::SU_ScrollUp:
+    case CsiActionCodes::SD_ScrollDown:
+        success = _GetScrollDistance(parameters, distance);
+        break;
+    case CsiActionCodes::ANSISYSSC_CursorSave:
+    case CsiActionCodes::ANSISYSRC_CursorRestore:
+        success = _VerifyHasNoParameters(parameters);
+        break;
+    case CsiActionCodes::IL_InsertLine:
+    case CsiActionCodes::DL_DeleteLine:
+        success = _GetScrollDistance(parameters, distance);
+        break;
+    case CsiActionCodes::CHT_CursorForwardTab:
+    case CsiActionCodes::CBT_CursorBackTab:
+        success = _GetTabDistance(parameters, numTabs);
+        break;
+    case CsiActionCodes::TBC_TabClear:
+        success = _GetTabClearType(parameters, clearType);
+        break;
+    case CsiActionCodes::DTTERM_WindowManipulation:
+        success = _GetWindowManipulationType(parameters, function);
+        break;
+    case CsiActionCodes::REP_RepeatCharacter:
+        success = _GetRepeatCount(parameters, repeatCount);
+        break;
+    case CsiActionCodes::DECSCUSR_SetCursorStyle:
+        success = _GetCursorStyle(parameters, cursorStyle);
+        break;
     default:
         // If no params to fill, param filling was successful.
         success = true;
         break;
     }
+
+    // if param filling successful, try to dispatch
     if (success)
     {
-        switch (wchAction)
+        switch (id)
         {
+        case CsiActionCodes::CUU_CursorUp:
+            success = _dispatch->CursorUp(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
+            break;
+        case CsiActionCodes::CUD_CursorDown:
+            success = _dispatch->CursorDown(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
+            break;
+        case CsiActionCodes::CUF_CursorForward:
+            success = _dispatch->CursorForward(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
+            break;
+        case CsiActionCodes::CUB_CursorBackward:
+            success = _dispatch->CursorBackward(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
+            break;
+        case CsiActionCodes::CNL_CursorNextLine:
+            success = _dispatch->CursorNextLine(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
+            break;
+        case CsiActionCodes::CPL_CursorPrevLine:
+            success = _dispatch->CursorPrevLine(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
+            break;
+        case CsiActionCodes::CHA_CursorHorizontalAbsolute:
+        case CsiActionCodes::HPA_HorizontalPositionAbsolute:
+            success = _dispatch->CursorHorizontalPositionAbsolute(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
+            break;
+        case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
+            success = _dispatch->VerticalLinePositionAbsolute(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
+            break;
+        case CsiActionCodes::HPR_HorizontalPositionRelative:
+            success = _dispatch->HorizontalPositionRelative(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
+            break;
+        case CsiActionCodes::VPR_VerticalPositionRelative:
+            success = _dispatch->VerticalPositionRelative(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
+            break;
+        case CsiActionCodes::CUP_CursorPosition:
+        case CsiActionCodes::HVP_HorizontalVerticalPosition:
+            success = _dispatch->CursorPosition(line, column);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
+            break;
+        case CsiActionCodes::DECSTBM_SetScrollingRegion:
+            success = _dispatch->SetTopBottomScrollingMargins(topMargin, bottomMargin);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
+            break;
+        case CsiActionCodes::ICH_InsertCharacter:
+            success = _dispatch->InsertCharacter(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
+            break;
+        case CsiActionCodes::DCH_DeleteCharacter:
+            success = _dispatch->DeleteCharacter(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
+            break;
+        case CsiActionCodes::ED_EraseDisplay:
+            success = _dispatch->EraseInDisplay(eraseType);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
+            break;
+        case CsiActionCodes::EL_EraseLine:
+            success = _dispatch->EraseInLine(eraseType);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
+            break;
         case CsiActionCodes::DECSET_PrivateModeSet:
             success = _dispatch->SetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
             //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
@@ -716,116 +578,108 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
             success = _dispatch->ResetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
             break;
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
+        case CsiActionCodes::SGR_SetGraphicsRendition:
+            success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
             break;
-        }
-    }
-    return success;
-}
-
-// Routine Description:
-// - Handles actions that have postfix params on an intermediate '>' or '='.
-// Arguments:
-// - wch - Character to dispatch.
-// - intermediate - The intermediate character.
-// - parameters - Set of numeric parameters collected while parsing the sequence.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
-                                                                       const wchar_t intermediate,
-                                                                       const gsl::span<const size_t> parameters)
-{
-    bool success = false;
-
-    switch (wch)
-    {
-    case CsiActionCodes::DA_DeviceAttributes:
-        if (_VerifyDeviceAttributesParams(parameters))
-        {
-            switch (intermediate)
+        case CsiActionCodes::DSR_DeviceStatusReport:
+            success = _dispatch->DeviceStatusReport(deviceStatusType);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+            break;
+        case CsiActionCodes::DA_DeviceAttributes:
+            success = _dispatch->DeviceAttributes();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+            break;
+        case CsiActionCodes::DA2_SecondaryDeviceAttributes:
+            success = _dispatch->SecondaryDeviceAttributes();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+            break;
+        case CsiActionCodes::DA3_TertiaryDeviceAttributes:
+            success = _dispatch->TertiaryDeviceAttributes();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+            break;
+        case CsiActionCodes::SU_ScrollUp:
+            success = _dispatch->ScrollUp(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
+            break;
+        case CsiActionCodes::SD_ScrollDown:
+            success = _dispatch->ScrollDown(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
+            break;
+        case CsiActionCodes::ANSISYSSC_CursorSave:
+            success = _dispatch->CursorSaveState();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
+            break;
+        case CsiActionCodes::ANSISYSRC_CursorRestore:
+            success = _dispatch->CursorRestoreState();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
+            break;
+        case CsiActionCodes::IL_InsertLine:
+            success = _dispatch->InsertLine(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
+            break;
+        case CsiActionCodes::DL_DeleteLine:
+            success = _dispatch->DeleteLine(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
+            break;
+        case CsiActionCodes::CHT_CursorForwardTab:
+            success = _dispatch->ForwardTab(numTabs);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
+            break;
+        case CsiActionCodes::CBT_CursorBackTab:
+            success = _dispatch->BackwardsTab(numTabs);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
+            break;
+        case CsiActionCodes::TBC_TabClear:
+            success = _dispatch->TabClear(clearType);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
+            break;
+        case CsiActionCodes::ECH_EraseCharacters:
+            success = _dispatch->EraseCharacters(distance);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
+            break;
+        case CsiActionCodes::DTTERM_WindowManipulation:
+            success = _dispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
+                                                    remainingParams);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
+            break;
+        case CsiActionCodes::REP_RepeatCharacter:
+            // Handled w/o the dispatch. This function is unique in that way
+            // If this were in the ITerminalDispatch, then each
+            // implementation would effectively be the same, calling only
+            // functions that are already part of the interface.
+            // Print the last graphical character a number of times.
+            if (_lastPrintedChar != AsciiChars::NUL)
             {
-            case L'>':
-                success = _dispatch->SecondaryDeviceAttributes();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
-                break;
-            case L'=':
-                success = _dispatch->TertiaryDeviceAttributes();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
-                break;
+                std::wstring wstr(repeatCount, _lastPrintedChar);
+                _dispatch->PrintString(wstr);
             }
-        }
-        break;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Handles actions that have an intermediate '!', such as DECSTR
-// Arguments:
-// - wch - Character to dispatch.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateExclamationDispatch(const wchar_t wchAction)
-{
-    bool success = false;
-
-    switch (wchAction)
-    {
-    case CsiActionCodes::DECSTR_SoftReset:
-        success = _dispatch->SoftReset();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
-        break;
-    default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
-        break;
-    }
-    return success;
-}
-
-// Routine Description:
-// - Handles actions that have an intermediate ' ' (0x20), such as DECSCUSR
-// Arguments:
-// - wch - Character to dispatch.
-// - parameters - set of numeric parameters collected while parsing the sequence.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchAction,
-                                                          const gsl::span<const size_t> parameters)
-{
-    bool success = false;
-    DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
-
-    // Parse params
-    switch (wchAction)
-    {
-    case CsiActionCodes::DECSCUSR_SetCursorStyle:
-        success = _GetCursorStyle(parameters, cursorStyle);
-        break;
-    default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
-        break;
-    }
-
-    // if param filling successful, try to dispatch
-    if (success)
-    {
-        switch (wchAction)
-        {
+            success = true;
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
+            break;
         case CsiActionCodes::DECSCUSR_SetCursorStyle:
             success = _dispatch->SetCursorStyle(cursorStyle);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
             break;
+        case CsiActionCodes::DECSTR_SoftReset:
+            success = _dispatch->SoftReset();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             success = false;
             break;
         }
     }
+
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !success)
+    {
+        success = _pfnFlushToTerminal();
+    }
+
+    _ClearLastChar();
 
     return success;
 }

@@ -37,9 +37,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters) override;
 
-        bool ActionCsiDispatch(const wchar_t wch,
-                               const gsl::span<const wchar_t> intermediates,
-                               const gsl::span<const size_t> parameters) override;
+        bool ActionCsiDispatch(const VTID id, const gsl::span<const size_t> parameters) override;
 
         bool ActionClear() noexcept override;
 
@@ -70,15 +68,6 @@ namespace Microsoft::Console::VirtualTerminal
         wchar_t _lastPrintedChar;
         std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
-        bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                               const gsl::span<const size_t> parameters);
-        bool _IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
-                                                     const wchar_t intermediate,
-                                                     const gsl::span<const size_t> parameters);
-        bool _IntermediateExclamationDispatch(const wchar_t wch);
-        bool _IntermediateSpaceDispatch(const wchar_t wchAction,
-                                        const gsl::span<const size_t> parameters);
-
         enum EscActionCodes : uint64_t
         {
             DECSC_CursorSave = VTID("7"),
@@ -100,46 +89,48 @@ namespace Microsoft::Console::VirtualTerminal
             DECALN_ScreenAlignmentPattern = VTID("#8")
         };
 
-        enum CsiActionCodes : wchar_t
+        enum CsiActionCodes : uint64_t
         {
-            ICH_InsertCharacter = L'@',
-            CUU_CursorUp = L'A',
-            CUD_CursorDown = L'B',
-            CUF_CursorForward = L'C',
-            CUB_CursorBackward = L'D',
-            CNL_CursorNextLine = L'E',
-            CPL_CursorPrevLine = L'F',
-            CHA_CursorHorizontalAbsolute = L'G',
-            CUP_CursorPosition = L'H',
-            CHT_CursorForwardTab = L'I',
-            ED_EraseDisplay = L'J',
-            EL_EraseLine = L'K',
-            IL_InsertLine = L'L',
-            DL_DeleteLine = L'M',
-            DCH_DeleteCharacter = L'P',
-            SU_ScrollUp = L'S',
-            SD_ScrollDown = L'T',
-            ECH_EraseCharacters = L'X',
-            CBT_CursorBackTab = L'Z',
-            HPA_HorizontalPositionAbsolute = L'`',
-            HPR_HorizontalPositionRelative = L'a',
-            REP_RepeatCharacter = L'b',
-            DA_DeviceAttributes = L'c',
-            VPA_VerticalLinePositionAbsolute = L'd',
-            VPR_VerticalPositionRelative = L'e',
-            HVP_HorizontalVerticalPosition = L'f',
-            TBC_TabClear = L'g',
-            DECSET_PrivateModeSet = L'h',
-            DECRST_PrivateModeReset = L'l',
-            SGR_SetGraphicsRendition = L'm',
-            DSR_DeviceStatusReport = L'n',
-            DECSTBM_SetScrollingRegion = L'r',
-            ANSISYSSC_CursorSave = L's', // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
-            DTTERM_WindowManipulation = L't', // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
-            ANSISYSRC_CursorRestore = L'u', // NOTE: Overlaps with DECSMBV. Fix when/if implemented.
-            DECSCUSR_SetCursorStyle = L'q', // With SP intermediate
-            DECSTR_SoftReset = L'p', // With ! intermediate
-            DECSCPP_SetColumnsPerPage = L'|' // With $ intermediate
+            ICH_InsertCharacter = VTID("@"),
+            CUU_CursorUp = VTID("A"),
+            CUD_CursorDown = VTID("B"),
+            CUF_CursorForward = VTID("C"),
+            CUB_CursorBackward = VTID("D"),
+            CNL_CursorNextLine = VTID("E"),
+            CPL_CursorPrevLine = VTID("F"),
+            CHA_CursorHorizontalAbsolute = VTID("G"),
+            CUP_CursorPosition = VTID("H"),
+            CHT_CursorForwardTab = VTID("I"),
+            ED_EraseDisplay = VTID("J"),
+            EL_EraseLine = VTID("K"),
+            IL_InsertLine = VTID("L"),
+            DL_DeleteLine = VTID("M"),
+            DCH_DeleteCharacter = VTID("P"),
+            SU_ScrollUp = VTID("S"),
+            SD_ScrollDown = VTID("T"),
+            ECH_EraseCharacters = VTID("X"),
+            CBT_CursorBackTab = VTID("Z"),
+            HPA_HorizontalPositionAbsolute = VTID("`"),
+            HPR_HorizontalPositionRelative = VTID("a"),
+            REP_RepeatCharacter = VTID("b"),
+            DA_DeviceAttributes = VTID("c"),
+            DA2_SecondaryDeviceAttributes = VTID(">c"),
+            DA3_TertiaryDeviceAttributes = VTID("=c"),
+            VPA_VerticalLinePositionAbsolute = VTID("d"),
+            VPR_VerticalPositionRelative = VTID("e"),
+            HVP_HorizontalVerticalPosition = VTID("f"),
+            TBC_TabClear = VTID("g"),
+            DECSET_PrivateModeSet = VTID("?h"),
+            DECRST_PrivateModeReset = VTID("?l"),
+            SGR_SetGraphicsRendition = VTID("m"),
+            DSR_DeviceStatusReport = VTID("n"),
+            DECSTBM_SetScrollingRegion = VTID("r"),
+            ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
+            DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
+            ANSISYSRC_CursorRestore = VTID("u"),
+            DECSCUSR_SetCursorStyle = VTID(" q"),
+            DECSTR_SoftReset = VTID("!p"),
+            DECSCPP_SetColumnsPerPage = VTID("$|")
         };
 
         enum Vt52ActionCodes : uint64_t
