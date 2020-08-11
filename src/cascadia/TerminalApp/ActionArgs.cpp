@@ -177,7 +177,7 @@ namespace winrt::TerminalApp::implementation
 
         auto escapedInput = VisualizeControlCodes(_Input);
         auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
-        return winrt::hstring{name};
+        return winrt::hstring{ name };
     }
 
     winrt::hstring SplitPaneArgs::GenerateName() const
