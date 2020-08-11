@@ -294,6 +294,10 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SendInputArgs>();
             JsonUtils::GetValueForKey(json, InputKey, args->_Input);
+            if (args->_Input.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
             return { *args, {} };
         }
     };
