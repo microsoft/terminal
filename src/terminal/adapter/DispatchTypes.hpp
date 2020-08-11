@@ -155,10 +155,10 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ASCII = VTID("B")
     };
 
-    enum CodingSystem : wchar_t
+    enum CodingSystem : uint64_t
     {
-        ISO2022 = L'@',
-        UTF8 = L'G'
+        ISO2022 = VTID("@"),
+        UTF8 = VTID("G")
     };
 
     enum TabClearType : unsigned short
