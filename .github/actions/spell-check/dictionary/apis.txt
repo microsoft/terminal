@@ -4,6 +4,7 @@ alignof
 bitfield
 bitfields
 CLASSNOTAVAILABLE
+environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
 fullkbd
@@ -46,3 +47,4 @@ STDCPP
 syscall
 tmp
 tx
+userenv
