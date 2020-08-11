@@ -64,44 +64,41 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CopyTextArgs::GenerateName() const
     {
-        winrt::hstring singleLineStr;
+        std::wstringstream ss;
+
         if (_SingleLine)
         {
-            // as a single line
-            singleLineStr = RS_(L"CopyTextAsSingleLineCommandKey");
+            ss << fmt::format(L"singleLine: {}, ", _SingleLine);
         }
 
-        winrt::hstring copyFormatStr;
         if (_CopyFormatting != nullptr)
         {
-            if (_CopyFormatting.Value() == CopyFormat::All ||
-                (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML) && WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF)))
+            ss << L"copyFormatting: ";
+            if (_CopyFormatting.Value() == CopyFormat::All)
             {
-                // with formatting
-                copyFormatStr = RS_(L"CopyTextFormatAllCommandKey");
+                ss << fmt::format(L"all, ");
             }
             else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
             {
-                // without formatting
-                copyFormatStr = RS_(L"CopyTextFormatNoneCommandKey");
+                ss << fmt::format(L"none, ");
             }
             else
             {
                 if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
                 {
-                    // html
-                    copyFormatStr = RS_(L"CopyTextFormatHTMLCommandKey");
+                    ss << fmt::format(L"html, ");
                 }
-                else if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
                 {
-                    // rtf
-                    copyFormatStr = RS_(L"CopyTextFormatRTFCommandKey");
+                    ss << fmt::format(L"rtf, ");
                 }
             }
         }
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"CopyTextCommandKey")), singleLineStr, copyFormatStr)
-        };
+
+        // Chop off the last ","
+        auto result = fmt::format(L"{}, {}", RS_(L"CopyTextCommandKey"), ss.str());
+        return winrt::hstring{ result.substr(0, result.size() - 2) };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const

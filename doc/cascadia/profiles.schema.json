@@ -181,7 +181,7 @@
             },
             "copyFormatting": {
               "default": null,
-              "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Setting this to null or not setting it inherits the global `copyFormatting` setting value.",
+              "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
               "oneOf": [
                 {
                   "$ref": "#/definitions/CopyFormat"
@@ -437,7 +437,7 @@
         },
         "copyFormatting": {
           "default": true,
-          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`.",
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
         },
         "largePasteWarning": {

@@ -480,23 +480,10 @@
     <value>Split pane vertically</value>
   </data>
   <data name="CopyTextCommandKey" xml:space="preserve">
-    <value>Copy text {0} {1}</value>
-    <comment>{0} will be replaced with SingleLine value. {1} will be replaced with formats</comment>
+    <value>Copy text</value>
   </data>
   <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
     <value>as a single line</value>
-  </data>
-  <data name="CopyTextFormatAllCommandKey" xml:space="preserve">
-    <value>with formatting</value>
-  </data>
-  <data name="CopyTextFormatNoneCommandKey" xml:space="preserve">
-    <value>without formatting</value>
-  </data>
-  <data name="CopyTextFormatHTMLCommandKey" xml:space="preserve">
-    <value>with HTML data</value>
-  </data>
-  <data name="CopyTextFormatRTFCommandKey" xml:space="preserve">
-    <value>with RTF data</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
