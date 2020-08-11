@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
                                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static void ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                   const std::vector<::TerminalApp::Profile>& profiles,
+                                   gsl::span<const ::TerminalApp::Profile> profiles,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(winrt::com_ptr<Command> expandable,
-                                                                       const std::vector<::TerminalApp::Profile>& profiles,
+                                                                       gsl::span<const ::TerminalApp::Profile> profiles,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         void _createView();
 

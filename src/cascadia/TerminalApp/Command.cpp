@@ -305,7 +305,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void Command::ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                 const std::vector<::TerminalApp::Profile>& profiles,
+                                 gsl::span<const ::TerminalApp::Profile> profiles,
                                  std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::hstring> commandsToRemove;
@@ -385,7 +385,7 @@ namespace winrt::TerminalApp::implementation
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
     std::vector<winrt::TerminalApp::Command> Command::_expandCommand(winrt::com_ptr<Command> expandable,
-                                                                     const std::vector<::TerminalApp::Profile>& profiles,
+                                                                     gsl::span<const ::TerminalApp::Profile> profiles,
                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
