@@ -149,7 +149,7 @@ winrt::hstring ColorScheme::Name() const noexcept
 winrt::com_array<Color> ColorScheme::Table() noexcept
 {
     winrt::com_array<Color> result = winrt::com_array<Color>(COLOR_TABLE_SIZE);
-    for (int i = 0; i < _table.size(); i++)
+    for (uint32_t i = 0; i < _table.size(); i++)
     {
         result[i] = _table[i];
     }
