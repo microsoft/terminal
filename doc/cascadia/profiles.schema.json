@@ -52,6 +52,7 @@
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
+        "sendInput",
         "splitPane",
         "switchToTab",
         "toggleFocusMode",
@@ -230,6 +231,28 @@
       ],
       "required": [ "direction" ]
     },
+    "SendInputAction": {
+      "description": "Arguments corresponding to a Send Input Action",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "pattern": "sendInput"
+            },
+            "input": {
+              "type": "string",
+              "default": "",
+              "description": "The text input to feed into the shell. ANSI escape sequences may be used. Escape codes like \\x1b must be written as \\u001b."
+            }
+          }
+        }
+      ],
+      "required": [ "input" ]
+    },
     "SplitPaneAction": {
       "description": "Arguments corresponding to a Split Pane Action",
       "allOf": [
@@ -390,6 +413,7 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },

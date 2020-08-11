@@ -296,6 +296,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void TermControl::SendInput(const winrt::hstring& input)
+    {
+        _SendInputToConnection(input);
+    }
+
     void TermControl::ToggleRetroEffect()
     {
         auto lock = _terminal->LockForWriting();
@@ -1769,7 +1781,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::_SendInputToConnection(const std::wstring& wstr)
+    void TermControl::_SendInputToConnection(const winrt::param::hstring& wstr)
     {
         _connection.WriteInput(wstr);
     }

@@ -71,6 +71,7 @@ namespace Microsoft.Terminal.TerminalControl
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
+        void SendInput(String input);
         void ToggleRetroEffect();
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };

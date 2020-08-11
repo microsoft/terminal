@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
+#include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
@@ -165,6 +166,16 @@ namespace winrt::TerminalApp::implementation
                                                  _Delta)
                                  };
         }
+    }
+
+    winrt::hstring SendInputArgs::GenerateName() const
+    {
+        // The string will be similar to the following:
+        // * "Send Input: ...input..."
+
+        return winrt::hstring{
+            fmt::format(L"{}: {}", RS_(L"SendInputCommandKey"), _Input)
+        };
     }
 
     winrt::hstring SplitPaneArgs::GenerateName() const

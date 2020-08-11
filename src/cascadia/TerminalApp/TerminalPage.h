@@ -203,6 +203,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleScrollDown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSendInput(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSplitPane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleTogglePaneZoom(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

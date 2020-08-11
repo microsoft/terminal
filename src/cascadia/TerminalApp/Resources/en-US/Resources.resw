@@ -449,6 +449,9 @@
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
   </data>
+  <data name="SendInputCommandKey" xml:space="preserve">
+    <value>Send Input</value>
+  </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>
