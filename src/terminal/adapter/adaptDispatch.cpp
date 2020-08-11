@@ -1706,10 +1706,10 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate94Charset(gsetNumber, charset);
 }
@@ -1721,10 +1721,10 @@ bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate96Charset(gsetNumber, charset);
 }

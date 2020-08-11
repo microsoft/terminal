@@ -403,7 +403,7 @@ bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
 
     // If we have more than one intermediate, the second intermediate forms part of
     // the charset identifier. Otherwise it's identified by just the final character.
-    const auto charset = intermediates.size() > 1 ? std::make_pair(til::at(intermediates, 1), wch) : std::make_pair(wch, L'\0');
+    const VTID charset = intermediates.size() > 1 ? (wch << 8) + til::at(intermediates, 1) : wch;
 
     switch (til::at(intermediates, 0))
     {

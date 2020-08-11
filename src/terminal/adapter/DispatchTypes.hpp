@@ -149,11 +149,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         W32IM_Win32InputMode = 9001
     };
 
-    namespace CharacterSets
+    enum CharacterSets : uint64_t
     {
-        constexpr auto DecSpecialGraphics = std::make_pair(L'0', L'\0');
-        constexpr auto ASCII = std::make_pair(L'B', L'\0');
-    }
+        DecSpecialGraphics = VTID("0"),
+        ASCII = VTID("B")
+    };
 
     enum CodingSystem : wchar_t
     {
