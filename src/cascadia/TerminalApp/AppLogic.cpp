@@ -632,6 +632,12 @@ namespace winrt::TerminalApp::implementation
             hr = E_INVALIDARG;
             _settingsLoadExceptionText = _GetErrorText(ex.Error());
         }
+        catch (const ::TerminalApp::SettingsTypedDeserializationException& e)
+        {
+            hr = E_INVALIDARG;
+            std::string_view what{ e.what() };
+            _settingsLoadExceptionText = til::u8u16(what);
+        }
         catch (...)
         {
             hr = wil::ResultFromCaughtException();

@@ -101,6 +101,8 @@ JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
     {
         return EnumMapper::CanConvert(json) || json.isBool();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
@@ -151,6 +153,8 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::Fon
     {
         return BaseEnumMapper::CanConvert(json) || json.isUInt();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
@@ -230,6 +234,11 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
     bool CanConvert(const Json::Value& json)
     {
         return json.isString();
+    }
+
+    std::string TypeDescription() const
+    {
+        return "x, y";
     }
 };
 
