@@ -195,24 +195,41 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
     Log::Comment(L"Print enough lines to get the buffer just about ready to "
                  L"circle (on the next newline)");
-    auto viewBottom = term->GetViewport().BottomInclusive();
+    auto viewBottom = term->_mutableViewport.BottomInclusive();
     do
     {
         termSm.ProcessString(L"x\n");
-        viewBottom = term->GetViewport().BottomInclusive();
-    } while (viewBottom >= termTb.GetSize().BottomInclusive());
+        viewBottom = term->_mutableViewport.BottomInclusive();
+    } while (viewBottom < termTb.GetSize().BottomInclusive());
 
     const auto fifthView = term->GetViewport();
     VERIFY_ARE_EQUAL(7, fifthView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight + 7, fifthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength - 7, term->_scrollOffset);
 
     Log::Comment(L"Print 3 more lines, and see that we stick to where the old "
                  L"rows now are in the buffer (after circling)");
     for (int i = 0; i < 3; i++)
     {
         termSm.ProcessString(L"x\n");
+        Log::Comment(NoThrowString().Format(
+            L"_scrollOffset: %d", term->_scrollOffset));
     }
     const auto sixthView = term->GetViewport();
     VERIFY_ARE_EQUAL(4, sixthView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight + 4, sixthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength - 4, term->_scrollOffset);
+
+    Log::Comment(L"Print 8 more lines, and see that we're now just stuck at the"
+                 L"top of the buffer");
+    for (int i = 0; i < 8; i++)
+    {
+        termSm.ProcessString(L"x\n");
+        Log::Comment(NoThrowString().Format(
+            L"_scrollOffset: %d", term->_scrollOffset));
+    }
+    const auto seventhView = term->GetViewport();
+    VERIFY_ARE_EQUAL(0, seventhView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, seventhView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength, term->_scrollOffset);
 }
