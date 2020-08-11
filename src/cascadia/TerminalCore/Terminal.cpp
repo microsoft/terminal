@@ -843,8 +843,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
     }
 
-    if (updatedViewport)
+    // If the viewport moved, or we circled the buffer, we might need to update
+    // our _scrollOffset
+    if (updatedViewport || newRows != 0)
     {
+        const auto oldScrollOffset = _scrollOffset;
+
         // scroll if...
         //   - no selection is active
         //   - viewport is already at the bottom
@@ -852,6 +856,18 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
         _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
+        // Clamp the range to make sure that we don't scroll way off the top of the buffer
+        _scrollOffset = std::clamp(_scrollOffset,
+                                   0,
+                                   _buffer->GetSize().Height() - _mutableViewport.Height());
+
+        // If the new scroll offset is different, then we'll still want to raise a scroll event
+        updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
+    }
+
+    // If the viewport moved, then send a scrolling notification.
+    if (updatedViewport)
+    {
         _NotifyScrollEvent();
     }
 
