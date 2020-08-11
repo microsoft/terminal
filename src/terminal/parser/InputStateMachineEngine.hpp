@@ -145,8 +145,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPassThroughString(const std::wstring_view string) override;
 
-        bool ActionEscDispatch(const wchar_t wch,
-                               const gsl::span<const wchar_t> intermediates) override;
+        bool ActionEscDispatch(const VTID id) override;
 
         bool ActionVt52EscDispatch(const wchar_t wch,
                                    const gsl::span<const wchar_t> intermediates,

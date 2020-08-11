@@ -50,8 +50,7 @@ public:
         return true;
     };
 
-    bool ActionEscDispatch(const wchar_t /* wch */,
-                           const gsl::span<const wchar_t> /* intermediates */) override { return true; };
+    bool ActionEscDispatch(const VTID /* id */) override { return true; };
 
     bool ActionVt52EscDispatch(const wchar_t /*wch*/,
                                const gsl::span<const wchar_t> /*intermediates*/,

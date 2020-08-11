@@ -298,12 +298,10 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 //      a simple escape sequence. These sequences traditionally start with ESC
 //      and a simple letter. No complicated parameters.
 // Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence
+// - id - Identifier of the escape sequence to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                const gsl::span<const wchar_t> /*intermediates*/)
+bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
     if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
     {
@@ -311,6 +309,9 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     }
 
     bool success = false;
+
+    // There are no intermediates, so the id is effectively the final char.
+    const wchar_t wch = gsl::narrow_cast<wchar_t>(id);
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)

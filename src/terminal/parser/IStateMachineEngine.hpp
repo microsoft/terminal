@@ -12,6 +12,9 @@ Abstract:
     the existing VT parsing.
 */
 #pragma once
+
+#include "../adapter/DispatchTypes.hpp"
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class IStateMachineEngine
@@ -30,8 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionPassThroughString(const std::wstring_view string) = 0;
 
-        virtual bool ActionEscDispatch(const wchar_t wch,
-                                       const gsl::span<const wchar_t> intermediates) = 0;
+        virtual bool ActionEscDispatch(const VTID id) = 0;
         virtual bool ActionVt52EscDispatch(const wchar_t wch,
                                            const gsl::span<const wchar_t> intermediates,
                                            const gsl::span<const size_t> parameters) = 0;

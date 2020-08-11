@@ -353,7 +353,12 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
+    VTIDBuilder idBuilder;
+    for (wchar_t intermediate : _intermediates)
+    {
+        idBuilder.AddIntermediate(intermediate);
+    }
+    const bool success = _engine->ActionEscDispatch(idBuilder.Finalize(wch));
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);

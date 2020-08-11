@@ -33,8 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPassThroughString(const std::wstring_view string) override;
 
-        bool ActionEscDispatch(const wchar_t wch,
-                               const gsl::span<const wchar_t> intermediates) override;
+        bool ActionEscDispatch(const VTID id) override;
 
         bool ActionVt52EscDispatch(const wchar_t wch,
                                    const gsl::span<const wchar_t> intermediates,
@@ -73,8 +72,6 @@ namespace Microsoft::Console::VirtualTerminal
         wchar_t _lastPrintedChar;
         std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
-        bool _IntermediateScsDispatch(const wchar_t wch,
-                                      const gsl::span<const wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const gsl::span<const size_t> parameters);
         bool _IntermediateGreaterThanOrEqualDispatch(const wchar_t wch,
@@ -84,25 +81,25 @@ namespace Microsoft::Console::VirtualTerminal
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         const gsl::span<const size_t> parameters);
 
-        enum EscActionCodes : wchar_t
+        enum EscActionCodes : uint64_t
         {
-            DECSC_CursorSave = L'7',
-            DECRC_CursorRestore = L'8',
-            DECKPAM_KeypadApplicationMode = L'=',
-            DECKPNM_KeypadNumericMode = L'>',
-            IND_Index = L'D',
-            NEL_NextLine = L'E',
-            HTS_HorizontalTabSet = L'H',
-            RI_ReverseLineFeed = L'M',
-            SS2_SingleShift = L'N',
-            SS3_SingleShift = L'O',
-            RIS_ResetToInitialState = L'c',
-            LS2_LockingShift = L'n',
-            LS3_LockingShift = L'o',
-            LS1R_LockingShift = L'~',
-            LS2R_LockingShift = L'}',
-            LS3R_LockingShift = L'|',
-            DECALN_ScreenAlignmentPattern = L'8' // With # intermediate
+            DECSC_CursorSave = VTID("7"),
+            DECRC_CursorRestore = VTID("8"),
+            DECKPAM_KeypadApplicationMode = VTID("="),
+            DECKPNM_KeypadNumericMode = VTID(">"),
+            IND_Index = VTID("D"),
+            NEL_NextLine = VTID("E"),
+            HTS_HorizontalTabSet = VTID("H"),
+            RI_ReverseLineFeed = VTID("M"),
+            SS2_SingleShift = VTID("N"),
+            SS3_SingleShift = VTID("O"),
+            RIS_ResetToInitialState = VTID("c"),
+            LS2_LockingShift = VTID("n"),
+            LS3_LockingShift = VTID("o"),
+            LS1R_LockingShift = VTID("~"),
+            LS2R_LockingShift = VTID("}"),
+            LS3R_LockingShift = VTID("|"),
+            DECALN_ScreenAlignmentPattern = VTID("#8")
         };
 
         enum CsiActionCodes : wchar_t

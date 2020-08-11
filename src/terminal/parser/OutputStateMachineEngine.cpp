@@ -179,119 +179,125 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 //      a simple escape sequence. These sequences traditionally start with ESC
 //      and a simple letter. No complicated parameters.
 // Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence
+// - id - Identifier of the escape sequence to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                 const gsl::span<const wchar_t> intermediates)
+bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
     bool success = false;
 
-    // no intermediates.
-    if (intermediates.empty())
+    switch (id)
     {
-        switch (wch)
+    case EscActionCodes::DECSC_CursorSave:
+        success = _dispatch->CursorSaveState();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
+        break;
+    case EscActionCodes::DECRC_CursorRestore:
+        success = _dispatch->CursorRestoreState();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
+        break;
+    case EscActionCodes::DECKPAM_KeypadApplicationMode:
+        success = _dispatch->SetKeypadMode(true);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPAM);
+        break;
+    case EscActionCodes::DECKPNM_KeypadNumericMode:
+        success = _dispatch->SetKeypadMode(false);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
+        break;
+    case EscActionCodes::NEL_NextLine:
+        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
+        break;
+    case EscActionCodes::IND_Index:
+        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::IND);
+        break;
+    case EscActionCodes::RI_ReverseLineFeed:
+        success = _dispatch->ReverseLineFeed();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
+        break;
+    case EscActionCodes::HTS_HorizontalTabSet:
+        success = _dispatch->HorizontalTabSet();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
+        break;
+    case EscActionCodes::RIS_ResetToInitialState:
+        success = _dispatch->HardReset();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
+        break;
+    case EscActionCodes::SS2_SingleShift:
+        success = _dispatch->SingleShift(2);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SS2);
+        break;
+    case EscActionCodes::SS3_SingleShift:
+        success = _dispatch->SingleShift(3);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SS3);
+        break;
+    case EscActionCodes::LS2_LockingShift:
+        success = _dispatch->LockingShift(2);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
+        break;
+    case EscActionCodes::LS3_LockingShift:
+        success = _dispatch->LockingShift(3);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
+        break;
+    case EscActionCodes::LS1R_LockingShift:
+        success = _dispatch->LockingShiftRight(1);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS1R);
+        break;
+    case EscActionCodes::LS2R_LockingShift:
+        success = _dispatch->LockingShiftRight(2);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2R);
+        break;
+    case EscActionCodes::LS3R_LockingShift:
+        success = _dispatch->LockingShiftRight(3);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+        break;
+    case EscActionCodes::DECALN_ScreenAlignmentPattern:
+        success = _dispatch->ScreenAlignmentPattern();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
+        break;
+    default:
+        const auto commandChar = id[0];
+        const auto commandParameter = id.SubSequence(1);
+        switch (commandChar)
         {
-        case EscActionCodes::DECSC_CursorSave:
-            success = _dispatch->CursorSaveState();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
+        case '%':
+            success = _dispatch->DesignateCodingSystem(commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
             break;
-        case EscActionCodes::DECRC_CursorRestore:
-            success = _dispatch->CursorRestoreState();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
+        case '(':
+            success = _dispatch->Designate94Charset(0, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
             break;
-        case EscActionCodes::DECKPAM_KeypadApplicationMode:
-            success = _dispatch->SetKeypadMode(true);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPAM);
+        case ')':
+            success = _dispatch->Designate94Charset(1, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
             break;
-        case EscActionCodes::DECKPNM_KeypadNumericMode:
-            success = _dispatch->SetKeypadMode(false);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
+        case '*':
+            success = _dispatch->Designate94Charset(2, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
             break;
-        case EscActionCodes::NEL_NextLine:
-            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
+        case '+':
+            success = _dispatch->Designate94Charset(3, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
             break;
-        case EscActionCodes::IND_Index:
-            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::IND);
+        case '-':
+            success = _dispatch->Designate96Charset(1, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
             break;
-        case EscActionCodes::RI_ReverseLineFeed:
-            success = _dispatch->ReverseLineFeed();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
+        case '.':
+            success = _dispatch->Designate96Charset(2, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
             break;
-        case EscActionCodes::HTS_HorizontalTabSet:
-            success = _dispatch->HorizontalTabSet();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
-            break;
-        case EscActionCodes::RIS_ResetToInitialState:
-            success = _dispatch->HardReset();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
-            break;
-        case EscActionCodes::SS2_SingleShift:
-            success = _dispatch->SingleShift(2);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS2);
-            break;
-        case EscActionCodes::SS3_SingleShift:
-            success = _dispatch->SingleShift(3);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS3);
-            break;
-        case EscActionCodes::LS2_LockingShift:
-            success = _dispatch->LockingShift(2);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
-            break;
-        case EscActionCodes::LS3_LockingShift:
-            success = _dispatch->LockingShift(3);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
-            break;
-        case EscActionCodes::LS1R_LockingShift:
-            success = _dispatch->LockingShiftRight(1);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS1R);
-            break;
-        case EscActionCodes::LS2R_LockingShift:
-            success = _dispatch->LockingShiftRight(2);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2R);
-            break;
-        case EscActionCodes::LS3R_LockingShift:
-            success = _dispatch->LockingShiftRight(3);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+        case '/':
+            success = _dispatch->Designate96Charset(3, commandParameter);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
             success = false;
             break;
         }
-    }
-    else if (intermediates.size() == 1)
-    {
-        switch (til::at(intermediates, 0))
-        {
-        case L'%':
-            success = _dispatch->DesignateCodingSystem(wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
-            break;
-        case L'#':
-            switch (wch)
-            {
-            case EscActionCodes::DECALN_ScreenAlignmentPattern:
-                success = _dispatch->ScreenAlignmentPattern();
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
-                break;
-            default:
-                // If no functions to call, overall dispatch was a failure.
-                success = false;
-                break;
-            }
-            break;
-        default:
-            success = _IntermediateScsDispatch(wch, intermediates);
-            break;
-        }
-    }
-    else if (intermediates.size() == 2)
-    {
-        success = _IntermediateScsDispatch(wch, intermediates);
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
@@ -385,57 +391,6 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
     }
 
     _ClearLastChar();
-
-    return success;
-}
-
-// Routine Description:
-// - Handles SCS charset designation actions that can have one or two possible intermediates.
-// Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
-                                                        const gsl::span<const wchar_t> intermediates)
-{
-    bool success = false;
-
-    // If we have more than one intermediate, the second intermediate forms part of
-    // the charset identifier. Otherwise it's identified by just the final character.
-    const VTID charset = intermediates.size() > 1 ? (wch << 8) + til::at(intermediates, 1) : wch;
-
-    switch (til::at(intermediates, 0))
-    {
-    case L'(':
-        success = _dispatch->Designate94Charset(0, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
-        break;
-    case L')':
-        success = _dispatch->Designate94Charset(1, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-        break;
-    case L'*':
-        success = _dispatch->Designate94Charset(2, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-        break;
-    case L'+':
-        success = _dispatch->Designate94Charset(3, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-        break;
-    case L'-':
-        success = _dispatch->Designate96Charset(1, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-        break;
-    case L'.':
-        success = _dispatch->Designate96Charset(2, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-        break;
-    case L'/':
-        success = _dispatch->Designate96Charset(3, charset);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-        break;
-    }
 
     return success;
 }
