@@ -228,7 +228,7 @@ void CascadiaSettings::_ResolveDefaultProfile()
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
     if (unparsedDefaultProfile)
     {
-        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
+        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
         auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
         GlobalSettings().DefaultProfile(defaultProfileGuid);
     }
