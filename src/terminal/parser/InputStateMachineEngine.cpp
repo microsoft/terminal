@@ -340,14 +340,11 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 //      a VT52 escape sequence. These sequences start with ESC and a single letter,
 //      sometimes followed by parameters.
 // Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence.
+// - id - Identifier of the VT52 sequence to dispatch.
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionVt52EscDispatch(const wchar_t /*wch*/,
-                                                    const gsl::span<const wchar_t> /*intermediates*/,
-                                                    const gsl::span<const size_t> /*parameters*/) noexcept
+bool InputStateMachineEngine::ActionVt52EscDispatch(const VTID /*id*/, const gsl::span<const size_t> /*parameters*/) noexcept
 {
     // VT52 escape sequences are not used in the input state machine.
     return false;

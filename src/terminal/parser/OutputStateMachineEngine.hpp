@@ -35,9 +35,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionEscDispatch(const VTID id) override;
 
-        bool ActionVt52EscDispatch(const wchar_t wch,
-                                   const gsl::span<const wchar_t> intermediates,
-                                   const gsl::span<const size_t> parameters) override;
+        bool ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
                                const gsl::span<const wchar_t> intermediates,
@@ -144,23 +142,23 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCPP_SetColumnsPerPage = L'|' // With $ intermediate
         };
 
-        enum Vt52ActionCodes : wchar_t
+        enum Vt52ActionCodes : uint64_t
         {
-            CursorUp = L'A',
-            CursorDown = L'B',
-            CursorRight = L'C',
-            CursorLeft = L'D',
-            EnterGraphicsMode = L'F',
-            ExitGraphicsMode = L'G',
-            CursorToHome = L'H',
-            ReverseLineFeed = L'I',
-            EraseToEndOfScreen = L'J',
-            EraseToEndOfLine = L'K',
-            DirectCursorAddress = L'Y',
-            Identify = L'Z',
-            EnterAlternateKeypadMode = L'=',
-            ExitAlternateKeypadMode = L'>',
-            ExitVt52Mode = L'<'
+            CursorUp = VTID("A"),
+            CursorDown = VTID("B"),
+            CursorRight = VTID("C"),
+            CursorLeft = VTID("D"),
+            EnterGraphicsMode = VTID("F"),
+            ExitGraphicsMode = VTID("G"),
+            CursorToHome = VTID("H"),
+            ReverseLineFeed = VTID("I"),
+            EraseToEndOfScreen = VTID("J"),
+            EraseToEndOfLine = VTID("K"),
+            DirectCursorAddress = VTID("Y"),
+            Identify = VTID("Z"),
+            EnterAlternateKeypadMode = VTID("="),
+            ExitAlternateKeypadMode = VTID(">"),
+            ExitVt52Mode = VTID("<")
         };
 
         enum OscActionCodes : unsigned int

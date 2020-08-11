@@ -317,77 +317,70 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 //      a VT52 escape sequence. These sequences start with ESC and a single letter,
 //      sometimes followed by parameters.
 // Arguments:
-// - wch - Character to dispatch.
-// - intermediates - Intermediate characters in the sequence.
+// - id - Identifier of the VT52 sequence to dispatch.
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
-                                                     const gsl::span<const wchar_t> intermediates,
-                                                     const gsl::span<const size_t> parameters)
+bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters)
 {
     bool success = false;
 
-    // no intermediates.
-    if (intermediates.empty())
+    switch (id)
     {
-        switch (wch)
-        {
-        case Vt52ActionCodes::CursorUp:
-            success = _dispatch->CursorUp(1);
-            break;
-        case Vt52ActionCodes::CursorDown:
-            success = _dispatch->CursorDown(1);
-            break;
-        case Vt52ActionCodes::CursorRight:
-            success = _dispatch->CursorForward(1);
-            break;
-        case Vt52ActionCodes::CursorLeft:
-            success = _dispatch->CursorBackward(1);
-            break;
-        case Vt52ActionCodes::EnterGraphicsMode:
-            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
-            break;
-        case Vt52ActionCodes::ExitGraphicsMode:
-            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
-            break;
-        case Vt52ActionCodes::CursorToHome:
-            success = _dispatch->CursorPosition(1, 1);
-            break;
-        case Vt52ActionCodes::ReverseLineFeed:
-            success = _dispatch->ReverseLineFeed();
-            break;
-        case Vt52ActionCodes::EraseToEndOfScreen:
-            success = _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
-            break;
-        case Vt52ActionCodes::EraseToEndOfLine:
-            success = _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
-            break;
-        case Vt52ActionCodes::DirectCursorAddress:
-            // VT52 cursor addresses are provided as ASCII characters, with
-            // the lowest value being a space, representing an address of 1.
-            success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
-            break;
-        case Vt52ActionCodes::Identify:
-            success = _dispatch->Vt52DeviceAttributes();
-            break;
-        case Vt52ActionCodes::EnterAlternateKeypadMode:
-            success = _dispatch->SetKeypadMode(true);
-            break;
-        case Vt52ActionCodes::ExitAlternateKeypadMode:
-            success = _dispatch->SetKeypadMode(false);
-            break;
-        case Vt52ActionCodes::ExitVt52Mode:
-        {
-            const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
-            success = _dispatch->SetPrivateModes(mode);
-            break;
-        }
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
-            break;
-        }
+    case Vt52ActionCodes::CursorUp:
+        success = _dispatch->CursorUp(1);
+        break;
+    case Vt52ActionCodes::CursorDown:
+        success = _dispatch->CursorDown(1);
+        break;
+    case Vt52ActionCodes::CursorRight:
+        success = _dispatch->CursorForward(1);
+        break;
+    case Vt52ActionCodes::CursorLeft:
+        success = _dispatch->CursorBackward(1);
+        break;
+    case Vt52ActionCodes::EnterGraphicsMode:
+        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
+        break;
+    case Vt52ActionCodes::ExitGraphicsMode:
+        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
+        break;
+    case Vt52ActionCodes::CursorToHome:
+        success = _dispatch->CursorPosition(1, 1);
+        break;
+    case Vt52ActionCodes::ReverseLineFeed:
+        success = _dispatch->ReverseLineFeed();
+        break;
+    case Vt52ActionCodes::EraseToEndOfScreen:
+        success = _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
+        break;
+    case Vt52ActionCodes::EraseToEndOfLine:
+        success = _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
+        break;
+    case Vt52ActionCodes::DirectCursorAddress:
+        // VT52 cursor addresses are provided as ASCII characters, with
+        // the lowest value being a space, representing an address of 1.
+        success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
+        break;
+    case Vt52ActionCodes::Identify:
+        success = _dispatch->Vt52DeviceAttributes();
+        break;
+    case Vt52ActionCodes::EnterAlternateKeypadMode:
+        success = _dispatch->SetKeypadMode(true);
+        break;
+    case Vt52ActionCodes::ExitAlternateKeypadMode:
+        success = _dispatch->SetKeypadMode(false);
+        break;
+    case Vt52ActionCodes::ExitVt52Mode:
+    {
+        const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
+        success = _dispatch->SetPrivateModes(mode);
+        break;
+    }
+    default:
+        // If no functions to call, overall dispatch was a failure.
+        success = false;
+        break;
     }
 
     _ClearLastChar();
