@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "ToggleTabSwitcherArgs.g.h"
 
+#include "Utils.h"
+
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
@@ -173,9 +175,9 @@ namespace winrt::TerminalApp::implementation
         // The string will be similar to the following:
         // * "Send Input: ...input..."
 
-        return winrt::hstring{
-            fmt::format(L"{}: {}", RS_(L"SendInputCommandKey"), _Input)
-        };
+        auto escapedInput = VisualizeControlCodes(_Input);
+        auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+        return winrt::hstring{name};
     }
 
     winrt::hstring SplitPaneArgs::GenerateName() const

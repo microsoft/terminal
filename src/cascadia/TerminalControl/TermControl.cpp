@@ -104,8 +104,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
-        auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-        _terminal->SetWriteInputCallback(inputFn);
+        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
+            _SendInputToConnection(wstr);
+        });
 
         _terminal->UpdateSettings(settings);
 

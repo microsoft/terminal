@@ -288,7 +288,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
-                { ShortcutAction::SendInput, RS_(L"SendInputCommandKey") },
+                { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::Invalid, L"" },
