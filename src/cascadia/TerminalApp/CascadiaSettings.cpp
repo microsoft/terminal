@@ -187,8 +187,6 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateKeybindings();
 
     _ValidateNoGlobalsKey();
-
-    _ExpandCommands();
 }
 
 // Method Description:
@@ -721,21 +719,6 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     replace(finalSettings, "%COMMAND_PROMPT_LOCALIZED_NAME%", RS_A(L"CommandPromptDisplayName"));
 
     return finalSettings;
-}
-
-// Method Description:
-// - Expands any commands with `iterateOn` set. If we successfully generated
-//   expanded commands for them, then we'll remove the original command, and add
-//   all the newly generated commands.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::_ExpandCommands()
-{
-    // winrt::TerminalApp::implementation::Command::ExpandCommands(_globals.GetCommands(),
-    //                                                             _profiles,
-    //                                                             _warnings);
 }
 
 // Method Description:

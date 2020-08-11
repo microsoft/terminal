@@ -342,5 +342,4 @@
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
         { "command": "resetFontSize", "keys": "ctrl+0" }
     ]
-
 }

@@ -124,7 +124,6 @@ private:
     void _ValidateMediaResources();
     void _ValidateKeybindings();
     void _ValidateNoGlobalsKey();
-    void _ExpandCommands();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
