@@ -70,7 +70,11 @@ namespace winrt::TerminalApp::implementation
 
         if (_SingleLine)
         {
-            ss << fmt::format(L"singleLine: {}, ", _SingleLine);
+            ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
+        }
+        else
+        {
+            ss << RS_(L"CopyTextCommandKey").c_str();
         }
 
         if (_CopyFormatting != nullptr)
@@ -78,28 +82,28 @@ namespace winrt::TerminalApp::implementation
             ss << L"copyFormatting: ";
             if (_CopyFormatting.Value() == CopyFormat::All)
             {
-                ss << fmt::format(L"all, ");
+                ss << L"all, ";
             }
             else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
             {
-                ss << fmt::format(L"none, ");
+                ss << L"none, ";
             }
             else
             {
                 if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
                 {
-                    ss << fmt::format(L"html, ");
+                    ss << L"html, ";
                 }
 
                 if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
                 {
-                    ss << fmt::format(L"rtf, ");
+                    ss << L"rtf, ";
                 }
             }
         }
 
         // Chop off the last ","
-        auto result = fmt::format(L"{}, {}", RS_(L"CopyTextCommandKey"), ss.str());
+        auto result = ss.str();
         return winrt::hstring{ result.substr(0, result.size() - 2) };
     }
 

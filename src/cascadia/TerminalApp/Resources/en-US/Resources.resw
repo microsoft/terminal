@@ -486,7 +486,7 @@
     <value>Copy text</value>
   </data>
   <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
-    <value>as a single line</value>
+    <value>Copy text as a single line</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
