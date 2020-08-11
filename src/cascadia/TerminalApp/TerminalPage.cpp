@@ -44,35 +44,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    // Method Description:
-    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
-    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
-    //      in the same order that XAML would put them as well.
-    // Return Value:
-    // - a string representation of the key modifiers for the shortcut
-    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
-    {
-        std::wstring buffer{ L"" };
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
-        {
-            buffer += L"Ctrl+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
-        {
-            buffer += L"Shift+";
-        }
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
-        {
-            buffer += L"Alt+";
-        }
-
-        return buffer;
-    }
-
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
         _startupActions{ winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>() }
@@ -914,6 +885,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
         _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
         _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
+        _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
@@ -931,10 +903,13 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
         _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
         _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
+        _actionDispatch->SetColorScheme({ this, &TerminalPage::_HandleSetColorScheme });
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
+        _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
+        _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
     }
 
     // Method Description:
@@ -1230,6 +1205,33 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Helper to manually exit "zoom" when certain actions take place.
+    //   Anything that modifies the state of the pane tree should probably
+    //   un-zoom the focused pane first, so that the user can see the full pane
+    //   tree again. These actions include:
+    //   * Splitting a new pane
+    //   * Closing a pane
+    //   * Moving focus between panes
+    //   * Resizing a pane
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UnZoomIfNeeded()
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab && activeTab->IsZoomed())
+        {
+            // Remove the content from the tab first, so Pane::UnZoom can
+            // re-attach the content to the tree w/in the pane
+            _tabContent.Children().Clear();
+            activeTab->ExitZoom();
+            // Re-attach the tab's content to the UI tree.
+            _tabContent.Children().Append(activeTab->GetRootElement());
+        }
+    }
+
+    // Method Description:
     // - Attempt to move focus between panes, as to focus the child on
     //   the other side of the separator. See Pane::NavigateFocus for details.
     // - Moves the focus of the currently focused tab.
@@ -1242,11 +1244,12 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->NavigateFocus(direction);
         }
     }
 
-    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
+    TermControl TerminalPage::_GetActiveControl()
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
@@ -1332,6 +1335,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->ClosePane();
         }
     }
@@ -1463,6 +1467,8 @@ namespace winrt::TerminalApp::implementation
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
 
+            _UnZoomIfNeeded();
+
             focusedTab->SplitPane(realSplitType, realGuid, newControl);
         }
         CATCH_LOG();
@@ -1481,6 +1487,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
+            _UnZoomIfNeeded();
             focusedTab->ResizePane(direction);
         }
     }
@@ -1537,12 +1544,41 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a string representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
+    static std::wstring _FormatOverrideShortcutText(KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return buffer;
+    }
+
+    // Method Description:
     // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
     void TerminalPage::_SetAcceleratorForMenuItem(WUX::Controls::MenuFlyoutItem& menuItem,
-                                                  const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+                                                  const KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
@@ -1601,7 +1637,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
-                                                                 const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
+                                                                 const CopyToClipboardEventArgs copiedData)
     {
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 
@@ -1829,17 +1865,6 @@ namespace winrt::TerminalApp::implementation
 
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab->GetActiveTitle());
-
-                // Raise an event that our titlebar color changed
-                std::optional<Windows::UI::Color> color = tab->GetTabColor();
-                if (color.has_value())
-                {
-                    _SetNonClientAreaColors(color.value());
-                }
-                else
-                {
-                    _ClearNonClientAreaColors();
-                }
             }
             CATCH_LOG();
         }

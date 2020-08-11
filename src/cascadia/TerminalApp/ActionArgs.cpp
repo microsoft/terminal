@@ -15,6 +15,7 @@
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
@@ -229,6 +230,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring SetColorSchemeArgs::GenerateName() const
+    {
+        // "Set color scheme to "{_SchemeName}""
+        if (!_SchemeName.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SetColorSchemeCommandKey")),
+                            _SchemeName.c_str())
+            };
+        }
+        return L"";
+    }
+
     winrt::hstring SetTabColorArgs::GenerateName() const
     {
         // "Set tab color to #RRGGBB"
@@ -272,4 +286,21 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
+    winrt::hstring CloseOtherTabsArgs::GenerateName() const
+    {
+        // "Close tabs other than index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
+                        _Index)
+        };
+    }
+
+    winrt::hstring CloseTabsAfterArgs::GenerateName() const
+    {
+        // "Close tabs after index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
+                        _Index)
+        };
+    }
 }

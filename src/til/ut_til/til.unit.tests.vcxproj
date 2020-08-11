@@ -18,6 +18,7 @@
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

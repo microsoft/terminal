@@ -15,9 +15,12 @@
 #include "AdjustFontSizeArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "SetColorSchemeArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
 #include "ExecuteCommandlineArgs.g.h"
+#include "CloseOtherTabsArgs.g.h"
+#include "CloseTabsAfterArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -330,6 +333,38 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
+    struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
+    {
+        SetColorSchemeArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, SchemeName, L"");
+
+        static constexpr std::string_view NameKey{ "colorScheme" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SetColorSchemeArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SchemeName == _SchemeName;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SetColorSchemeArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
+            if (args->_SchemeName.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            return { *args, {} };
+        }
+    };
+
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
@@ -417,6 +452,62 @@ namespace winrt::TerminalApp::implementation
             {
                 return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
+            return { *args, {} };
+        }
+    };
+
+    struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
+    {
+        CloseOtherTabsArgs() = default;
+        GETSET_PROPERTY(uint32_t, Index, 0);
+
+        static constexpr std::string_view IndexKey{ "index" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<CloseOtherTabsArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Index == _Index;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CloseOtherTabsArgs>();
+            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
+            return { *args, {} };
+        }
+    };
+
+    struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
+    {
+        CloseTabsAfterArgs() = default;
+        GETSET_PROPERTY(uint32_t, Index, 0);
+
+        static constexpr std::string_view IndexKey{ "index" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<CloseTabsAfterArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Index == _Index;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CloseTabsAfterArgs>();
+            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
             return { *args, {} };
         }
     };

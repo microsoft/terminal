@@ -1,13 +1,14 @@
 #pragma once
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "DefaultSettings.h"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include "../inc/cppwinrt_utils.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalCoreUnitTests
 {
@@ -62,6 +63,8 @@ namespace TerminalCoreUnitTests
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}
+
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
     private:
         int32_t _historySize;
