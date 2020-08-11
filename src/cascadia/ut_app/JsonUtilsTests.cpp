@@ -34,7 +34,7 @@ struct ConversionTrait<StructWithConverterSpecialization>
         return value.isInt();
     }
 
-    std::string TypeName() const { return ""; }
+    std::string TypeDescription() const { return ""; }
 };
 
 // Converts a JSON string value to an int and multiplies it by a specified factor
@@ -52,7 +52,7 @@ struct CustomConverter
         return true;
     }
 
-    std::string TypeName() const { return ""; }
+    std::string TypeDescription() const { return ""; }
 };
 
 enum class JsonTestEnum : int

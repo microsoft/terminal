@@ -96,7 +96,7 @@ namespace TerminalApp::JsonUtils
         T FromJson(const Json::Value&);
         bool CanConvert(const Json::Value& json);
 
-        std::string TypeName() const { return "<unknown>"; }
+        std::string TypeDescription() const { return "<unknown>"; }
     };
 
     template<>
@@ -112,7 +112,7 @@ namespace TerminalApp::JsonUtils
             return json.isString();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "string";
         }
@@ -131,7 +131,7 @@ namespace TerminalApp::JsonUtils
             return json.isString();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "string";
         }
@@ -162,7 +162,7 @@ namespace TerminalApp::JsonUtils
             return json.isBool();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "true | false";
         }
@@ -181,7 +181,7 @@ namespace TerminalApp::JsonUtils
             return json.isInt();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "number";
         }
@@ -200,7 +200,7 @@ namespace TerminalApp::JsonUtils
             return json.isUInt();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "number (>= 0)";
         }
@@ -219,7 +219,7 @@ namespace TerminalApp::JsonUtils
             return json.isNumeric();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "number";
         }
@@ -238,7 +238,7 @@ namespace TerminalApp::JsonUtils
             return json.isNumeric();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "number";
         }
@@ -263,7 +263,7 @@ namespace TerminalApp::JsonUtils
             return string.length() == 38 && string.front() == '{' && string.back() == '}';
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "guid";
         }
@@ -294,7 +294,7 @@ namespace TerminalApp::JsonUtils
             return (string.length() == 7 || string.length() == 4) && string.front() == '#';
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "color (#rrggbb, #rgb)";
         }
@@ -318,7 +318,7 @@ namespace TerminalApp::JsonUtils
             }
 
             DeserializationError e{ json };
-            e.expectedType = TypeName();
+            e.expectedType = TypeDescription();
             throw e;
         }
 
@@ -327,7 +327,7 @@ namespace TerminalApp::JsonUtils
             return json.isString();
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             std::vector<std::string_view> names;
             std::transform(TBase::mappings.cbegin(), TBase::mappings.cend(), std::back_inserter(names), [](auto&& p) { return p.first; });
@@ -372,7 +372,7 @@ namespace TerminalApp::JsonUtils
                     {
                         // attempt to combine AllClear (explicitly) with anything else
                         DeserializationError e{ element };
-                        e.expectedType = TypeName();
+                        e.expectedType = TypeDescription();
                         throw e;
                     }
                     value |= newFlag;
@@ -408,7 +408,7 @@ namespace TerminalApp::JsonUtils
             return true;
         }
 
-        std::string TypeName() const
+        std::string TypeDescription() const
         {
             return "any";
         }
@@ -443,7 +443,7 @@ namespace TerminalApp::JsonUtils
             if (!conv.CanConvert(json))
             {
                 DeserializationError e{ json };
-                e.expectedType = conv.TypeName();
+                e.expectedType = conv.TypeDescription();
                 throw e;
             }
 
