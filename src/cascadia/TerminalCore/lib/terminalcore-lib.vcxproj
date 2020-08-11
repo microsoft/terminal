@@ -8,6 +8,10 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
+
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
     <!--
       DON'T REDIRECT OUR OUTPUT.
       Setting this will tell cppwinrt.build.post.props to copy our output from
