@@ -134,7 +134,7 @@ TextColor TextAttribute::GetBackground() const noexcept
 }
 
 // Method description:
-// - Retrives the hyperlink ID of the text
+// - Retrieves the hyperlink ID of the text
 // Return value:
 // - The hyperlink ID
 SHORT TextAttribute::GetHyperlinkId() const noexcept

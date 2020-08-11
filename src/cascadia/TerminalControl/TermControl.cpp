@@ -1114,12 +1114,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (ctrlEnabled && mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     // Control+Click: if the text selected is a hyperlink, open the link
-                    auto attr = _terminal->GetTextBuffer().GetCellDataAt(terminalPosition)->TextAttr();
-                    if (attr.IsHyperlink())
-                    {
-                        auto uri = _terminal->GetTextBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
-                        ShellExecute(nullptr, L"open", uri.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-                    }
+                    _terminal->OpenHyperlink(terminalPosition);
                 }
                 else if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
