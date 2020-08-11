@@ -59,6 +59,8 @@ namespace Microsoft::Terminal::Core
 
         virtual bool CopyToClipboard(std::wstring_view content) noexcept = 0;
 
+        virtual bool AddHyperlink(std::wstring uri) noexcept = 0;
+
     protected:
         ITerminalApi() = default;
     };

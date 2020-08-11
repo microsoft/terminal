@@ -170,6 +170,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            Hyperlink = 8,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
@@ -259,6 +260,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,
                                  bool& queryClipboard) const noexcept;
+
+        bool _ParseHyperlink(const std::wstring_view string,
+                             std::wstring& params,
+                             std::wstring& uri) noexcept;
 
         void _ClearLastChar() noexcept;
     };

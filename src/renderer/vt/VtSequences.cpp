@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -444,4 +445,17 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
 {
     return _Write("\x1b[?9001h");
+}
+
+// Method Description:
+// - Formats and writes a sequence to add a hyperlink to the terminal buffer
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(std::wstring uri) noexcept
+{
+    const auto convertedUri = ConvertToA(CP_UTF8, uri);
+    const auto hyperlinkFormat = "\x1b]8;;" + convertedUri + "\x7";
+    return _Write(hyperlinkFormat);
 }

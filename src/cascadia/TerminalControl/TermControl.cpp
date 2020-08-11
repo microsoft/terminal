@@ -1064,6 +1064,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+            const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
             if (_CanSendVTMouseInput())
             {
@@ -1109,6 +1110,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+                if (ctrlEnabled && mode == ::Terminal::SelectionExpansionMode::Cell)
+                {
+                    // Control+Click: if the text selected is a hyperlink, open the link
+                    auto attr = _terminal->GetTextBuffer().GetCellDataAt(terminalPosition)->TextAttr();
+                    if (attr.IsHyperlink())
+                    {
+                        auto uri = _terminal->GetTextBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
+                        ShellExecute(nullptr, L"open", uri.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    }
                 }
                 else if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {

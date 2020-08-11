@@ -121,6 +121,11 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(SHORT id) const noexcept
+{
+    return _buffer->GetHyperlinkUriFromId(id);
+}
+
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 try
 {

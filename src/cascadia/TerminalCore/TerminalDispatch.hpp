@@ -63,6 +63,8 @@ public:
     bool SetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECSET
     bool ResetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECRST
 
+    bool AddHyperlink(const std::wstring uri) override;
+
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 

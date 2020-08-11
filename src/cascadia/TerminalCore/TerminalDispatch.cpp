@@ -371,6 +371,17 @@ bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::Pr
     return _SetResetPrivateModes(params, false);
 }
 
+// Method Description:
+// - Start or end a hyperlink
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - true
+bool TerminalDispatch::AddHyperlink(const std::wstring uri)
+{
+    return _terminalApi.AddHyperlink(uri);
+}
+
 // Routine Description:
 // - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
 //     All params in the rgParams will attempt to be executed, even if one

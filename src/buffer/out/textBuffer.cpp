@@ -34,7 +34,8 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _storage{},
     _unicodeStorage{},
     _renderTarget{ renderTarget },
-    _size{}
+    _size{},
+    _curHyperlinkId{ 1 }
 {
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
@@ -2206,4 +2207,35 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     }
 
     return hr;
+}
+
+// Method Description:
+// - Adds a hyperlink to our hyperlink table
+// Arguments:
+// - The hyperlink URI
+void TextBuffer::AddHyperlinkToMap(std::wstring uri) noexcept
+{
+    _hyperlinkMap.insert(std::pair<SHORT, std::wstring>(_curHyperlinkId, uri));
+    _curHyperlinkId++;
+}
+
+// Method Description:
+// - Retrieves the next hyperlink ID to use - this is needed for setting
+//   the hyperlink ID in text attributes
+// Return Value:
+// - the SHORT hyperlink ID
+SHORT TextBuffer::GetCurHyperlinkId() const noexcept
+{
+    return _curHyperlinkId;
+}
+
+// Method Description:
+// - Retrieves the URI associated with a particular hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The URI
+std::wstring TextBuffer::GetHyperlinkUriFromId(SHORT id) const noexcept
+{
+    return _hyperlinkMap.at(id);
 }

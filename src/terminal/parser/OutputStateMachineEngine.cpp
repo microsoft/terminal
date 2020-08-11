@@ -136,6 +136,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
     {
         return true;
     }
+
     // Stash the last character of the string, if it's a graphical character
     const wchar_t wch = string.back();
     if (wch >= AsciiChars::SPC)
@@ -924,6 +925,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     bool success = false;
     std::wstring title;
     std::wstring setClipboardContent;
+    std::wstring params;
+    std::wstring uri;
     bool queryClipboard = false;
     size_t tableIndex = 0;
     DWORD color = 0;
@@ -950,6 +953,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         // the console uses 0xffffffff as an "invalid color" value
         color = 0xffffffff;
         success = true;
+        break;
+    case OscActionCodes::Hyperlink:
+        success = _ParseHyperlink(string, params, uri);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -992,6 +998,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::ResetCursorColor:
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
+            break;
+        case OscActionCodes::Hyperlink:
+            success = _dispatch->AddHyperlink(uri);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1763,6 +1772,37 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     }
 
     return success;
+}
+
+// Routine Description:
+// - Given a hyperlink string, attempts to parse the URI encoded. Additional parameters
+//   may be provided but we ignore them for now.
+//   If there is a URI, the well formatted string looks like:
+//          "<params>;<URI>"
+//   If there is no URI, we need to close the hyperlink and the string looks like:
+//          ";"
+// Arguments:
+// - string - the string containing the parameters and URI
+// - params - where to store the parameters (when we eventually support them)
+// - uri - where to store the uri
+// Return Value:
+// - True if a URI was successfully parsed or if we are meant to close a hyperlink
+bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
+                                               std::wstring& /*params*/,
+                                               std::wstring& uri) noexcept
+{
+    uri.clear();
+    auto len = string.size();
+    const size_t pos = string.find(';');
+    if (pos != std::wstring_view::npos)
+    {
+        if (len != 1)
+        {
+            uri = string.substr(pos + 1);
+        }
+        return true;
+    }
+    return false;
 }
 
 // Routine Description:

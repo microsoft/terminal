@@ -560,3 +560,34 @@ try
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
+
+// Method Description:
+// - Updates the buffer's current text attributes depending on whether we are
+//   starting/ending a hyperlink
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - true
+bool Terminal::AddHyperlink(std::wstring uri) noexcept
+{
+    auto attr = _buffer->GetCurrentAttributes();
+    if (uri.empty())
+    {
+        // URI is empty, this means we are ending a hyperlink
+        attr.SetBold(false); // for now we manually set the bold/underline text attributes;
+        attr.SetUnderlined(false); // at some point we should just change text rendering directly
+        attr.SetHyperlinkId(0); // based on whether the hyperlink id is non-zero
+        _buffer->SetCurrentAttributes(attr);
+    }
+    else
+    {
+        // URI is non-empty, this means we are starting a hyperlink
+        attr.SetBold(true);
+        attr.SetUnderlined(true);
+        attr.SetHyperlinkId(_buffer->GetCurHyperlinkId());
+        _buffer->SetCurrentAttributes(attr);
+        _buffer->AddHyperlinkToMap(uri);
+    }
+    return true;
+    ;
+}

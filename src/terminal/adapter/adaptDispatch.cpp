@@ -2335,6 +2335,17 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     return success;
 }
 
+// Method Description:
+// - Start or end a hyperlink
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - true
+bool AdaptDispatch::AddHyperlink(const std::wstring uri)
+{
+    return _pConApi->PrivateAddHyperlink(uri);
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates

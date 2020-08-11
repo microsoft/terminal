@@ -241,6 +241,10 @@ public:
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
 
+    void AddHyperlinkToMap(std::wstring uri) noexcept;
+    SHORT GetCurHyperlinkId() const noexcept;
+    std::wstring GetHyperlinkUriFromId(SHORT id) const noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
                        _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
@@ -304,6 +308,9 @@ private:
     ScreenBufferRenderTarget _renderTarget;
 
     bool _ignoreLegacyEquivalentVTAttributes;
+
+    std::map<SHORT, std::wstring> _hyperlinkMap;
+    SHORT _curHyperlinkId;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;
