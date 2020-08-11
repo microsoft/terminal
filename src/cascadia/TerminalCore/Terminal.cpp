@@ -862,7 +862,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
                                    _buffer->GetSize().Height() - _mutableViewport.Height());
 
         // If the new scroll offset is different, then we'll still want to raise a scroll event
-        updatedViewport = oldScrollOffset != _scrollOffset;
+        updatedViewport |= oldScrollOffset != _scrollOffset;
     }
 
     // If the viewport moved, then send a scrolling notification.
