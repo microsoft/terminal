@@ -3,6 +3,54 @@
 
 #pragma once
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    class VTID
+    {
+    public:
+        template<size_t Length>
+        constexpr VTID(const char (&s)[Length]) :
+            _value{ _FromString(s) }
+        {
+        }
+
+        constexpr VTID(const uint64_t value) :
+            _value{ value }
+        {
+        }
+
+        constexpr operator uint64_t() const
+        {
+            return _value;
+        }
+
+        constexpr char operator[](const size_t offset) const
+        {
+            return SubSequence(offset)._value & 0xFF;
+        }
+
+        constexpr VTID SubSequence(const size_t offset) const
+        {
+            return _value >> (CHAR_BIT * offset);
+        }
+
+    private:
+        template<size_t Length>
+        static constexpr uint64_t _FromString(const char (&s)[Length])
+        {
+            static_assert(Length - 1 <= sizeof(_value));
+            uint64_t value = 0;
+            for (auto i = Length - 1; i-- > 0;)
+            {
+                value = (value << CHAR_BIT) + gsl::at(s, i);
+            }
+            return value;
+        }
+
+        uint64_t _value;
+    };
+}
+
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
     enum class EraseType : unsigned int
