@@ -30,10 +30,10 @@ EnvironmentBlockPtr Microsoft::Console::Utils::CreateEnvironmentBlock()
 //   defaults to the current environment.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
-HRESULT Microsoft::Console::Utils::UpdateEnvironmentMapW(EnvironmentVariableMapW& map, std::optional<void*> environmentBlock) noexcept
+HRESULT Microsoft::Console::Utils::UpdateEnvironmentMapW(EnvironmentVariableMapW& map, void* environmentBlock) noexcept
 try
 {
-    wchar_t const* activeEnvironmentBlock{ reinterpret_cast<wchar_t const*>(environmentBlock.value_or(nullptr)) };
+    wchar_t const* activeEnvironmentBlock{ static_cast<wchar_t const*>(environmentBlock) };
 
     wil::unique_environstrings_ptr currentEnvVars;
     if (!activeEnvironmentBlock)

@@ -26,7 +26,7 @@ namespace Microsoft::Console::Utils
 
     using EnvironmentVariableMapW = std::map<std::wstring, std::wstring, WStringCaseInsensitiveCompare>;
 
-    [[nodiscard]] HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map, std::optional<void*> environmentBlock = std::nullopt) noexcept;
+    [[nodiscard]] HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map, void* environmentBlock = nullptr) noexcept;
 
     [[nodiscard]] HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map,
                                                               std::vector<wchar_t>& newEnvVars) noexcept;
