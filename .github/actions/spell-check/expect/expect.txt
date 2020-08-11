@@ -99,7 +99,6 @@ AStomps
 ASYNCWINDOWPOS
 atch
 ATest
-atg
 attr
 ATTRCOLOR
 aumid
@@ -160,7 +159,6 @@ bitsavers
 bitset
 BKCOLOR
 BKGND
-BKMK
 Bksp
 blog
 Blt
@@ -295,7 +293,6 @@ codepage
 codepoint
 codeproject
 COINIT
-colo
 colorizing
 colororacle
 colorref
@@ -352,10 +349,10 @@ conpty
 conptylib
 consecteturadipiscingelit
 conserv
-consoleaccessibility
 consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
+consolegit
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -426,6 +423,7 @@ cstdlib
 cstr
 cstring
 cstyle
+CSV
 CSwitch
 CText
 ctime
@@ -640,7 +638,6 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
-Dst
 DSwap
 DTest
 dtor
@@ -683,7 +680,6 @@ Elems
 elif
 elseif
 emacs
-emptybox
 enabledelayedexpansion
 endian
 endif
@@ -752,7 +748,6 @@ fdw
 fea
 fesb
 FFDE
-FFF
 FFrom
 FGCOLOR
 fgetc
@@ -769,7 +764,6 @@ FILETYPE
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
-Filledbox
 FILTERONPASTE
 finalizer
 FINDCASE
@@ -821,7 +815,6 @@ fsproj
 fstream
 fte
 Ftm
-fullcolor
 fullscreen
 fullwidth
 func
@@ -895,6 +888,7 @@ getwriter
 Gfun
 gfx
 gh
+gitfilters
 github
 gitlab
 gle
@@ -1011,7 +1005,6 @@ hwheel
 hwnd
 HWNDPARENT
 hxx
-hyperlink
 IAccessibility
 IAction
 IApi
@@ -1034,7 +1027,6 @@ ICore
 IData
 IDCANCEL
 IDD
-IDefault
 IDesktop
 IDictionary
 IDISHWND
@@ -1067,6 +1059,8 @@ IInteract
 IInteractivity
 IIo
 IList
+imagemagick
+Imatch
 ime
 Imm
 IMouse
@@ -1083,7 +1077,6 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
-imagemagick
 inkscape
 inl
 INLINEPREFIX
@@ -1384,7 +1377,6 @@ mincore
 mindbogglingly
 mingw
 minkernel
-minmax
 minwin
 minwindef
 Mip
@@ -1532,8 +1524,8 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
-NOTOPMOST
 NOTNULL
+NOTOPMOST
 NOTRACK
 NOTSUPPORTED
 notypeopt
@@ -1545,7 +1537,6 @@ NOYIELD
 NOZORDER
 NPM
 npos
-NRCS
 NSTATUS
 ntapi
 ntcon
@@ -1623,8 +1614,8 @@ OSCBG
 OSCCT
 OSCFG
 OSCRCC
-OSCSCC
 OSCSCB
+OSCSCC
 OSCWT
 OSDEPENDSROOT
 osfhandle
@@ -1722,7 +1713,6 @@ pguid
 pgup
 PHANDLE
 phhook
-phsl
 phwnd
 pid
 pidl
@@ -1752,7 +1742,6 @@ POBJECT
 Podcast
 POINTSLIST
 POLYTEXTW
-popclip
 popd
 POPF
 poppack
@@ -1935,7 +1924,6 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
-remoting
 renderengine
 rendersize
 reparent
@@ -1943,7 +1931,6 @@ reparenting
 replatformed
 Replymessage
 repositorypath
-rerendered
 rescap
 Resequence
 Reserialize
@@ -1989,7 +1976,6 @@ RMENU
 roadmap
 robomac
 roundtrip
-ROWSTOSCROLL
 rparen
 RRF
 RRRGGGBB
@@ -2051,7 +2037,6 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
-SCS
 scursor
 sddl
 sdeleted
@@ -2121,7 +2106,6 @@ Shl
 shlguid
 shlobj
 shlwapi
-shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2194,14 +2178,11 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
-stdarg
 stdcall
-stddef
 stderr
 stdexcept
 stdin
 stdio
-stdlib
 STDMETHODCALLTYPE
 STDMETHODIMP
 stdout
@@ -2295,7 +2276,6 @@ telnetd
 telnetpp
 templated
 terminalcore
-terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
@@ -2351,7 +2331,6 @@ TMult
 tmultiple
 tmux
 todo
-Tofill
 tofrom
 tokenhelpers
 tokenized
@@ -2362,6 +2341,7 @@ Toolset
 tooltip
 TOPDOWNDIB
 TOPLEFT
+toplevel
 TOPRIGHT
 TOpt
 tosign
@@ -2447,7 +2427,6 @@ undef
 Unescape
 unexpand
 Unfocus
-unfocuses
 unhighlighting
 unhosted
 unicode
@@ -2753,33 +2732,26 @@ WWith
 wx
 wxh
 xa
-xab
 xact
 xamarin
 xaml
 Xamlmeta
 xargs
 xaz
-xb
-xbc
 xbf
 xbutton
 XBUTTONDBLCLK
 XBUTTONDOWN
 XBUTTONUP
-xca
 XCast
-xce
 XCENTER
 XColors
 xcopy
 XCount
-xdd
 xdy
 xe
 XEncoding
 xff
-xffff
 XFile
 xlang
 XManifest

@@ -67,7 +67,7 @@ ColorScheme::~ColorScheme()
 // - terminalSettings: the object to apply our settings to.
 // Return Value:
 // - <none>
-void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
+void ColorScheme::ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& terminalSettings) const
 {
     terminalSettings.DefaultForeground(static_cast<COLORREF>(_defaultForeground));
     terminalSettings.DefaultBackground(static_cast<COLORREF>(_defaultBackground));

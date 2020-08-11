@@ -101,6 +101,8 @@ JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
     {
         return EnumMapper::CanConvert(json) || json.isBool();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
@@ -151,6 +153,8 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::Fon
     {
         return BaseEnumMapper::CanConvert(json) || json.isUInt();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
@@ -255,6 +259,11 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
     {
         return json.isString();
     }
+
+    std::string TypeDescription() const
+    {
+        return "x, y";
+    }
 };
 
 // Possible Direction values
@@ -292,5 +301,14 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
         pair_type{ "settingsFile", ValueType::SettingsFile },
         pair_type{ "defaultsFile", ValueType::DefaultsFile },
         pair_type{ "allFiles", ValueType::AllFiles },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "ctrl", ValueType::Control },
+        pair_type{ "alt", ValueType::Menu },
+        pair_type{ "shift", ValueType::Shift },
     };
 };

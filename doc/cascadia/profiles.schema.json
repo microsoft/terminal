@@ -59,6 +59,7 @@
         "toggleAlwaysOnTop",
         "toggleRetroEffect",
         "find",
+        "setColorScheme",
         "setTabColor",
         "openTabColorPicker",
         "renameTab",
@@ -66,6 +67,7 @@
         "wt",
         "closeOtherTabs",
         "closeTabsAfter",
+        "tabSwitcher",
         "unbound"
       ],
       "type": "string"
@@ -112,6 +114,14 @@
           ]
         }
       ]
+    },
+    "AnchorKey": {
+      "enum": [
+        "ctrl",
+        "alt",
+        "shift"
+      ],
+      "type": "string"
     },
     "NewTerminalArgs": {
       "properties": {
@@ -321,6 +331,23 @@
         }
       ]
     },
+    "SetColorSchemeAction": {
+      "description": "Arguments corresponding to a Set Color Scheme Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setColorScheme" },
+            "colorScheme": {
+              "type": "string",
+              "default": "",
+              "description": "the name of the scheme to apply to the active pane"
+            }
+          }
+        }
+      ],
+      "required": [ "name" ]
+    },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
       "allOf": [
@@ -372,6 +399,22 @@
       ],
       "required": [ "index" ]
     },
+    "TabSwitcherAction": {
+      "description": "Arguments corresponding to a Tab Switcher Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "tabSwitcher" },
+            "anchorKey": {
+              "$ref": "#/definitions/AnchorKey",
+              "default": null,
+              "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -388,9 +431,11 @@
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
               { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/SetColorSchemeAction" },
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/TabSwitcherAction" },
               { "type": "null" }
             ]
         },
@@ -754,8 +799,15 @@
         "padding": {
           "default": "8, 8, 8, 8",
           "description": "Sets the padding around the text within the window. Can have three different formats:\n -\"#\" sets the same padding for all sides \n -\"#, #\" sets the same padding for left-right and top-bottom\n -\"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
-          "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
-          "type": "string"
+          "oneOf": [
+            {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
         },
         "scrollbarState": {
           "default": "visible",

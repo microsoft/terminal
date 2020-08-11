@@ -103,6 +103,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            // First thing's first, remove the current content from the UI
+            // tree. This is important, because we might be leaving zoom, and if
+            // a pane is zoomed, then it's currently in the UI tree, and should
+            // be removed before it's re-added in Pane::Restore
+            _tabContent.Children().Clear();
+
+            activeTab->ToggleZoom();
+
+            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
+            _UpdatedSelectedTab(_tabView.SelectedIndex());
+        }
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
@@ -265,10 +285,32 @@ namespace winrt::TerminalApp::implementation
     {
         // TODO GH#6677: When we add support for commandline mode, first set the
         // mode that the command palette should be in, before making it visible.
+        CommandPalette().EnableCommandPaletteMode();
         CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
                                         Visibility::Collapsed :
                                         Visibility::Visible);
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        args.Handled(false);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetColorSchemeArgs>())
+        {
+            if (auto activeTab = _GetFocusedTab())
+            {
+                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                {
+                    auto controlSettings = activeControl.Settings();
+                    if (_settings->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
+                    {
+                        activeControl.UpdateSettings(controlSettings);
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
     }
 
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
@@ -289,11 +331,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (tabColor.has_value())
             {
-                activeTab->SetTabColor(tabColor.value());
+                activeTab->SetRuntimeTabColor(tabColor.value());
             }
             else
             {
-                activeTab->ResetTabColor();
+                activeTab->ResetRuntimeTabColor();
             }
         }
         args.Handled(true);
@@ -373,6 +415,7 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
         }
     }
+
     void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
                                              const TerminalApp::ActionEventArgs& actionArgs)
     {
@@ -394,5 +437,29 @@ namespace winrt::TerminalApp::implementation
 
             actionArgs.Handled(true);
         }
+    }
+
+    void TerminalPage::_HandleToggleTabSwitcher(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
+        {
+            auto anchorKey = realArgs.AnchorKey();
+
+            auto opt = _GetFocusedTabIndex();
+            uint32_t startIdx = opt ? *opt : 0;
+
+            if (anchorKey != VirtualKey::None)
+            {
+                // TODO: GH#7178 - delta should also have the option of being -1, in the case when
+                // a user decides to open the tab switcher going to the prev tab.
+                int delta = 1;
+                startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
+            }
+
+            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
+            CommandPalette().Visibility(Visibility::Visible);
+        }
+        args.Handled(true);
     }
 }

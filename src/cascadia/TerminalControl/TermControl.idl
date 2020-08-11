@@ -48,6 +48,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         void UpdateSettings(Microsoft.Terminal.TerminalControl.IControlSettings newSettings);
 
+        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
+
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
@@ -79,5 +81,8 @@ namespace Microsoft.Terminal.TerminalControl
         void ResetFontSize();
 
         void ToggleRetroEffect();
+
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
     }
 }

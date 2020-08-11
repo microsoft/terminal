@@ -56,7 +56,7 @@ public:
     // by higher layers in the app.
     void DefaultProfile(const GUID defaultProfile) noexcept;
     GUID DefaultProfile() const;
-    std::wstring UnparsedDefaultProfile() const;
+    std::optional<std::wstring> UnparsedDefaultProfile() const;
 
     GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
     GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
