@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
 
-        static std::vector<winrt::TerminalApp::Command> _expandCommand(winrt::com_ptr<Command> expandable,
+        static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         void _createView();

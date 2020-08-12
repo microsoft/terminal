@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
                                                         Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
     {
-        for (auto& command : commands)
+        for (const auto& command : commands)
         {
             // If there's a keybinding that's bound to exactly this command,
             // then get the string for that keychord and display it as a
@@ -82,7 +82,7 @@ namespace winrt::TerminalApp::implementation
 
     static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
     {
-        for (auto& command : commands)
+        for (const auto& command : commands)
         {
             // Set the default IconSource to a BitmapIconSource with a null source
             // (instead of just nullptr) because there's a really weird crash when swapping

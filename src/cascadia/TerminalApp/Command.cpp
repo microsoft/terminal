@@ -293,8 +293,7 @@ namespace winrt::TerminalApp::implementation
         // First, collect up all the commands that need replacing.
         for (const auto& nameAndCmd : commands)
         {
-            winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
-            cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
+            auto cmd{ get_self<implementation::Command>(nameAndCmd.second) };
 
             auto newCommands = _expandCommand(cmd, profiles, warnings);
             if (newCommands.size() > 0)
@@ -363,7 +362,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
-    std::vector<winrt::TerminalApp::Command> Command::_expandCommand(winrt::com_ptr<Command> expandable,
+    std::vector<winrt::TerminalApp::Command> Command::_expandCommand(Command* const expandable,
                                                                      gsl::span<const ::TerminalApp::Profile> profiles,
                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
