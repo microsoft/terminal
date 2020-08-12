@@ -23,7 +23,7 @@ static constexpr std::string_view CommandsKey{ "commands" };
 
 static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 
-static constexpr std::wstring_view ProfileName{ L"${profile.name}" };
+static constexpr std::string_view ProfileName{ "${profile.name}" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -254,9 +254,9 @@ namespace winrt::TerminalApp::implementation
     // - input: the string to JSON escape.
     // Return Value:
     // - the input string escaped properly to be inserted into another json blob.
-    winrt::hstring _escapeForJson(const std::wstring_view input)
+    std::string _escapeForJson(const std::string& input)
     {
-        Json::Value inJson{ winrt::to_string(input) };
+        Json::Value inJson{ input };
         Json::StreamWriterBuilder builder;
         builder.settings_["indentation"] = "";
         std::string out{ Json::writeString(builder, inJson) };
@@ -264,30 +264,9 @@ namespace winrt::TerminalApp::implementation
         {
             // trim off the leading/trailing '"'s
             auto ss{ out.substr(1, out.size() - 2) };
-            return winrt::to_hstring(ss);
+            return ss;
         }
-        return winrt::to_hstring(out);
-    }
-
-    // Function Description:
-    // - A helper to replace any occurences of `keyword` with `replaceWith` in `sourceString`
-    winrt::hstring _replaceKeyword(const winrt::hstring& sourceString,
-                                   const std::wstring_view keyword,
-                                   const std::wstring_view replaceWith)
-    {
-        std::wstring result{ sourceString };
-        size_t index = 0;
-        while (true)
-        {
-            index = result.find(keyword, index);
-            if (index == std::wstring::npos)
-            {
-                break;
-            }
-            result.replace(index, keyword.size(), replaceWith);
-            index += replaceWith.size();
-        }
-        return winrt::hstring{ result };
+        return out;
     }
 
     // Method Description:
@@ -312,7 +291,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<winrt::TerminalApp::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
-        for (auto nameAndCmd : commands)
+        for (const auto& nameAndCmd : commands)
         {
             winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
             cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(nameAndCmd.second));
@@ -351,7 +330,7 @@ namespace winrt::TerminalApp::implementation
 
         // Add all the commands we've parsed to the observable vector we
         // have, so we can access them in XAML.
-        for (auto& nameAndCommand : _subcommands)
+        for (const auto& nameAndCommand : _subcommands)
         {
             auto command = nameAndCommand.second;
             _nestedCommandsView.Append(command);
@@ -406,7 +385,7 @@ namespace winrt::TerminalApp::implementation
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
         // First, get a string for the original Json::Value
-        auto oldJsonString = winrt::to_hstring(expandable->_originalJson.toStyledString());
+        auto oldJsonString = expandable->_originalJson.toStyledString();
 
         if (expandable->_IterateOn == ExpandCommandType::Profiles)
         {
@@ -423,10 +402,10 @@ namespace winrt::TerminalApp::implementation
                 // Replace all the keywords in the original json, and try and parse that
 
                 // - Escape the profile name for JSON appropriately
-                auto escapedProfileName = _escapeForJson(p.GetName());
-                auto newJsonString = winrt::to_string(_replaceKeyword(oldJsonString,
-                                                                      ProfileName,
-                                                                      escapedProfileName));
+                auto escapedProfileName = _escapeForJson(til::u16u8(p.GetName()));
+                auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
+                                                                     ProfileName,
+                                                                     escapedProfileName);
 
                 // - Now, re-parse the modified value.
                 Json::Value newJsonValue;
