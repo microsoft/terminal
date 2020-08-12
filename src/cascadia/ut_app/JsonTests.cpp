@@ -94,10 +94,10 @@ namespace TerminalAppUnitTests
         const auto schemeObject = VerifyParseSucceeded(campbellScheme);
         auto scheme = implementation::ColorScheme::FromJson(schemeObject);
         VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
-        VERIFY_ARE_EQUAL(til::color{ ARGB(0, 0xf2, 0xf2, 0xf2) }, scheme->Foreground());
-        VERIFY_ARE_EQUAL(til::color{ ARGB(0, 0x0c, 0x0c, 0x0c) }, scheme->Background());
-        VERIFY_ARE_EQUAL(til::color{ ARGB(0, 0x13, 0x13, 0x13) }, scheme->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color{ ARGB(0, 0xFF, 0xFF, 0xFF) }, scheme->CursorColor());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 0), scheme->Foreground());
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 0), scheme->Background());
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 0), scheme->SelectionBackground());
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 0), scheme->CursorColor());
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], COLOR_TABLE_SIZE);
@@ -107,7 +107,7 @@ namespace TerminalAppUnitTests
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
             const auto& expected = expectedCampbellTable.at(i);
-            const auto& actual = til::color{ scheme->Table().at(static_cast<uint32_t>(i)) };
+            const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
     }
