@@ -263,7 +263,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
-                             std::wstring& uri) noexcept;
+                             std::wstring& uri) const;
 
         void _ClearLastChar() noexcept;
     };

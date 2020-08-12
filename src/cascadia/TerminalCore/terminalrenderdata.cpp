@@ -121,7 +121,7 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(SHORT id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(USHORT id) const noexcept
 {
     return _buffer->GetHyperlinkUriFromId(id);
 }

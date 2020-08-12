@@ -1789,10 +1789,10 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 // - True if a URI was successfully parsed or if we are meant to close a hyperlink
 bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
                                                std::wstring& /*params*/,
-                                               std::wstring& uri) noexcept
+                                               std::wstring& uri) const
 {
     uri.clear();
-    auto len = string.size();
+    const auto len = string.size();
     const size_t pos = string.find(';');
     if (pos != std::wstring_view::npos)
     {

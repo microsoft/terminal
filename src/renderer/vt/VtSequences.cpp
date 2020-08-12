@@ -4,7 +4,6 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -455,7 +454,6 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetHyperlink(std::wstring uri) noexcept
 {
-    const auto convertedUri = ConvertToA(CP_UTF8, uri);
-    const auto hyperlinkFormat = "\x1b]8;;" + convertedUri + "\x7";
-    return _Write(hyperlinkFormat);
+    const auto hyperlinkFormat = L"\x1b]8;;" + uri + L"\x9c";
+    return _Write(til::u16u8(hyperlinkFormat));
 }

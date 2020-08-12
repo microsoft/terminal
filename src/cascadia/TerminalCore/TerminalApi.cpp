@@ -568,7 +568,7 @@ CATCH_LOG_RETURN_FALSE()
 // - The hyperlink URI
 // Return Value:
 // - true
-bool Terminal::AddHyperlink(std::wstring uri) noexcept
+bool Terminal::AddHyperlink(std::wstring_view uri) noexcept
 {
     auto attr = _buffer->GetCurrentAttributes();
     if (uri.empty())
@@ -584,7 +584,7 @@ bool Terminal::AddHyperlink(std::wstring uri) noexcept
         // URI is non-empty, this means we are starting a hyperlink
         attr.SetBold(true);
         attr.SetUnderlined(true);
-        attr.SetHyperlinkId(_buffer->GetCurHyperlinkId());
+        attr.SetHyperlinkId(_buffer->GetCurrentHyperlinkId());
         _buffer->SetCurrentAttributes(attr);
         _buffer->AddHyperlinkToMap(uri);
     }

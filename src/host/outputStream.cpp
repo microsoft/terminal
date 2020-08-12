@@ -778,7 +778,7 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 // - The hyperlink URI
 // Return Value:
 // - true
-bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring uri) const
+bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri) const
 {
     auto attr = _io.GetActiveOutputBuffer().GetAttributes();
     if (uri.empty())
@@ -794,7 +794,7 @@ bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring uri) const
         // URI is non-empty, this means we are starting a hyperlink
         attr.SetBold(true);
         attr.SetUnderlined(true);
-        attr.SetHyperlinkId(_io.GetActiveOutputBuffer().GetCurHyperlinkId());
+        attr.SetHyperlinkId(_io.GetActiveOutputBuffer().GetCurrentHyperlinkId());
         _io.GetActiveOutputBuffer().SetAttributes(attr);
         _io.GetActiveOutputBuffer().AddHyperlinkToMap(uri);
     }

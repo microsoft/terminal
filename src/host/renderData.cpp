@@ -330,7 +330,7 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(SHORT id) const noexcept
+const std::wstring RenderData::GetHyperlinkUri(USHORT id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetHyperlinkUriFromId(id);

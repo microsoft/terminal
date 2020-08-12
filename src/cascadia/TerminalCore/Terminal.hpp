@@ -112,7 +112,7 @@ public:
 
     bool CopyToClipboard(std::wstring_view content) noexcept override;
 
-    bool AddHyperlink(std::wstring uri) noexcept override;
+    bool AddHyperlink(std::wstring_view uri) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -154,7 +154,7 @@ public:
     bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
-    const std::wstring GetHyperlinkUri(SHORT id) const noexcept override;
+    const std::wstring GetHyperlinkUri(USHORT id) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

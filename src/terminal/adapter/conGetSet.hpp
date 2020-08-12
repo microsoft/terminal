@@ -103,6 +103,6 @@ namespace Microsoft::Console::VirtualTerminal
                                          const COORD destinationOrigin,
                                          const bool standardFillAttrs) = 0;
 
-        virtual bool PrivateAddHyperlink(const std::wstring uri) const = 0;
+        virtual bool PrivateAddHyperlink(const std::wstring_view uri) const = 0;
     };
 }

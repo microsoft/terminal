@@ -137,7 +137,7 @@ TextColor TextAttribute::GetBackground() const noexcept
 // - Retrieves the hyperlink ID of the text
 // Return value:
 // - The hyperlink ID
-SHORT TextAttribute::GetHyperlinkId() const noexcept
+USHORT TextAttribute::GetHyperlinkId() const noexcept
 {
     return _hyperlinkId;
 }
@@ -198,7 +198,7 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
 // - Sets the hyperlink ID of the text
 // Arguments:
 // - id - the id we wish to set
-void TextAttribute::SetHyperlinkId(SHORT id) noexcept
+void TextAttribute::SetHyperlinkId(USHORT id) noexcept
 {
     _hyperlinkId = id;
 }

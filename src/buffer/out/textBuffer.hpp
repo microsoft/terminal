@@ -141,9 +141,9 @@ public:
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
-    void AddHyperlinkToMap(std::wstring uri) noexcept;
-    SHORT GetCurHyperlinkId() const noexcept;
-    std::wstring GetHyperlinkUriFromId(SHORT id) const noexcept;
+    void AddHyperlinkToMap(std::wstring_view uri) noexcept;
+    USHORT GetCurrentHyperlinkId() const noexcept;
+    std::wstring GetHyperlinkUriFromId(USHORT id) const noexcept;
 
     class TextAndColor
     {
@@ -192,8 +192,8 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
-    SHORT _curHyperlinkId;
-    std::map<SHORT, std::wstring> _hyperlinkMap;
+    USHORT _currentHyperlinkId;
+    std::unordered_map<USHORT, std::wstring> _hyperlinkMap;
 
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
 

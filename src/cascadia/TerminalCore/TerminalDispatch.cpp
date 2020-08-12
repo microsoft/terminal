@@ -377,7 +377,7 @@ bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::Pr
 // - The hyperlink URI
 // Return Value:
 // - true
-bool TerminalDispatch::AddHyperlink(const std::wstring uri)
+bool TerminalDispatch::AddHyperlink(const std::wstring_view uri)
 {
     return _terminalApi.AddHyperlink(uri);
 }
