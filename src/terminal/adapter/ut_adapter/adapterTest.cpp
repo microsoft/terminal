@@ -1260,7 +1260,7 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 9, 22, 24, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 9, 21, 22, 24, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1301,6 +1301,12 @@ public:
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetUnderlined(true);
             break;
+        case DispatchTypes::GraphicsOptions::DoublyUnderlined:
+            Log::Comment(L"Testing graphics 'Doubly Underlined'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+            break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
@@ -1334,6 +1340,7 @@ public:
             Log::Comment(L"Testing graphics 'No Underline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_attribute.SetUnderlined(true);
+            _testGetSet->_attribute.SetDoublyUnderlined(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:

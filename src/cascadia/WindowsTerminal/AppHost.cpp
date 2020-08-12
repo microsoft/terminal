@@ -17,6 +17,10 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 AppHost::AppHost() noexcept :
     _app{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
@@ -405,7 +409,11 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    if (control.OnMouseWheel(offsetPoint, delta))
+                    const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
+                    const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
+                    const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
+
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.

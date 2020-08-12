@@ -13,7 +13,7 @@
 
 using namespace TerminalApp;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
@@ -53,6 +53,7 @@ static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImag
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
+static constexpr std::string_view TabColorKey{ "tabColor" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -232,6 +233,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     terminalSettings.AntialiasingMode(_antialiasingMode);
 
+    if (_tabColor)
+    {
+        winrt::Windows::Foundation::IReference<uint32_t> colorRef{ _tabColor.value() };
+        terminalSettings.TabColor(colorRef);
+    }
+
     return terminalSettings;
 }
 
@@ -395,7 +402,11 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _useAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
     JsonUtils::GetValueForKey(json, CloseOnExitKey, _closeOnExitMode);
-    JsonUtils::GetValueForKey(json, PaddingKey, _padding);
+
+    // Padding was never specified as an integer, but it was a common working mistake.
+    // Allow it to be permissive.
+    JsonUtils::GetValueForKey(json, PaddingKey, _padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _scrollbarState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _startingDirectory);
     JsonUtils::GetValueForKey(json, IconKey, _icon);
@@ -405,6 +416,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _backgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _retroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _antialiasingMode);
+
+    JsonUtils::GetValueForKey(json, TabColorKey, _tabColor);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept

@@ -17,7 +17,6 @@
 #include "WslDistroGenerator.h"
 #include "AzureCloudShellGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
@@ -226,9 +225,12 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 void CascadiaSettings::_ResolveDefaultProfile()
 {
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
-    auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
-    auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
-    GlobalSettings().DefaultProfile(defaultProfileGuid);
+    if (unparsedDefaultProfile)
+    {
+        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
+        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, GUID{}) };
+        GlobalSettings().DefaultProfile(defaultProfileGuid);
+    }
 }
 
 // Method Description:
@@ -566,7 +568,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
+    return til::coalesce_value(profileByName, profileByIndex, _globals.DefaultProfile());
 }
 
 // Method Description:
@@ -744,4 +746,27 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
     {
         return nullptr;
     }
+}
+
+// Method Description:
+// - Apply the color scheme (provided by name) to the given IControlSettings.
+//   The settings are modified in-place.
+// - If the name doesn't correspond to any of our schemes, this does nothing.
+// Arguments:
+// - settings: the IControlSettings object to modify
+// - name: the name of the scheme to apply
+// Return Value:
+// - true iff we found a matching scheme for the name schemeName
+bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
+                                        std::wstring_view schemeName)
+{
+    std::wstring name{ schemeName };
+    auto schemeAndName = _globals.GetColorSchemes().find(name);
+    if (schemeAndName != _globals.GetColorSchemes().end())
+    {
+        const auto& scheme = schemeAndName->second;
+        scheme.ApplyScheme(settings);
+        return true;
+    }
+    return false;
 }

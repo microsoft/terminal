@@ -31,14 +31,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         // Create a CoreTextEditingContext for since we are acting like a custom edit control
-        auto manager = Core::CoreTextServicesManager::GetForCurrentView();
+        auto manager = CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
         // InputPane is manually shown inside of TermControl.
-        _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
+        _editContext.InputPaneDisplayPolicy(CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
-        _editContext.InputScope(Core::CoreTextInputScope::Text);
+        _editContext.InputScope(CoreTextInputScope::Text);
 
         _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 

@@ -15,7 +15,6 @@ Author(s):
 
 --*/
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "TerminalSettings.h"
 #include "../../inc/conattrs.hpp"
 
@@ -38,7 +37,7 @@ public:
     ColorScheme(std::wstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor);
     ~ColorScheme();
 
-    void ApplyScheme(winrt::TerminalApp::TerminalSettings terminalSettings) const;
+    void ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& terminalSettings) const;
 
     static ColorScheme FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;

@@ -115,3 +115,10 @@ TIconSource GetColoredIcon(const winrt::hstring& path)
 
     return nullptr;
 }
+
+std::wstring VisualizeControlCodes(std::wstring str) noexcept;
+
+inline std::wstring VisualizeControlCodes(std::wstring_view str) noexcept
+{
+    return VisualizeControlCodes(std::wstring{ str });
+}

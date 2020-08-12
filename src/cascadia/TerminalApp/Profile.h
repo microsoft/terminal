@@ -117,12 +117,13 @@ private:
     std::optional<til::color> _selectionBackground;
     std::optional<til::color> _cursorColor;
     std::optional<std::wstring> _tabTitle;
+    std::optional<til::color> _tabColor;
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
     bool _altGrAliasing;
     uint32_t _cursorHeight;
-    winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
+    winrt::Microsoft::Terminal::TerminalControl::CursorStyle _cursorShape;
 
     std::wstring _commandline;
     std::wstring _fontFace;
@@ -137,13 +138,13 @@ private:
     std::optional<winrt::Windows::UI::Xaml::Media::Stretch> _backgroundImageStretchMode;
     std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
-    std::optional<::winrt::Microsoft::Terminal::Settings::ScrollbarState> _scrollbarState;
+    std::optional<::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState> _scrollbarState;
     CloseOnExitMode _closeOnExitMode;
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;
 
-    winrt::Microsoft::Terminal::Settings::TextAntialiasingMode _antialiasingMode;
+    winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode _antialiasingMode;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

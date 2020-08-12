@@ -16,12 +16,16 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 static constexpr bool _IsMouseMessage(UINT uMsg)
 {
     return uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_LBUTTONDBLCLK ||
            uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP || uMsg == WM_MBUTTONDBLCLK ||
            uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_RBUTTONDBLCLK ||
-           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL;
+           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL;
 }
 
 // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -55,10 +59,29 @@ try
 
     if (terminal)
     {
-        if (_IsMouseMessage(uMsg) && terminal->_CanSendVTMouseInput())
+        if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
+                // GH#6401: Capturing the mouse ensures that we get drag/release events
+                // even if the user moves outside the window.
+                // _SendMouseEvent returns false if the terminal's not in VT mode, so we'll
+                // fall through to release the capture.
+                switch (uMsg)
+                {
+                case WM_LBUTTONDOWN:
+                case WM_MBUTTONDOWN:
+                case WM_RBUTTONDOWN:
+                    SetCapture(hwnd);
+                    break;
+                case WM_LBUTTONUP:
+                case WM_MBUTTONUP:
+                case WM_RBUTTONUP:
+                    ReleaseCapture();
+                    break;
+                }
+
+                // Suppress all mouse events that made it into the terminal.
                 return 0;
             }
         }
@@ -76,6 +99,10 @@ try
             return 0;
         case WM_LBUTTONUP:
             terminal->_singleClickTouchdownPos = std::nullopt;
+            [[fallthrough]];
+        case WM_MBUTTONUP:
+        case WM_RBUTTONUP:
+            ReleaseCapture();
             break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
@@ -605,19 +632,30 @@ bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 try
 {
-    const til::point cursorPosition{
+    til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
     const til::size fontSize{ this->_actualFont.GetSize() };
     short wheelDelta{ 0 };
-    if (uMsg == WM_MOUSEWHEEL)
+    if (uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL)
     {
         wheelDelta = HIWORD(wParam);
+
+        // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
+        POINT coordsToTransform = cursorPosition;
+        ScreenToClient(_hwnd.get(), &coordsToTransform);
+        cursorPosition = coordsToTransform;
     }
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+    const TerminalInput::MouseButtonState state{
+        WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+    };
+
+    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {
