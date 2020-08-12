@@ -135,7 +135,8 @@ namespace
     };
 }
 
-using namespace ::TerminalApp;
+using namespace TerminalApp;
+using namespace winrt::TerminalApp;
 
 // Function Description:
 // - Finds all powershell instances with the traditional layout under a directory.
@@ -299,20 +300,20 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with the PowerShell Core profile, if available.
-std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfiles()
+std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
 {
-    std::vector<TerminalApp::Profile> profiles;
+    std::vector<Profile> profiles;
 
     auto psInstances = _collectPowerShellInstances();
     for (const auto& psI : psInstances)
     {
         const auto name = psI.Name();
         auto profile{ CreateDefaultProfile(name) };
-        profile.SetCommandline(psI.executablePath.wstring());
-        profile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        profile.SetColorScheme({ L"Campbell" });
+        profile.Commandline(psI.executablePath.wstring());
+        profile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        profile.ColorSchemeName({ L"Campbell" });
 
-        profile.SetIconPath(WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON);
+        profile.Icon(WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON);
         profiles.emplace_back(std::move(profile));
     }
 
@@ -322,8 +323,8 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
         // This will turn the anchored default profile into "PowerShell Core Latest for Native Architecture through Store"
         // (or the closest approximation thereof). It may choose a preview instance as the "best" if it is a higher version.
         auto firstProfile = profiles.begin();
-        firstProfile->SetGuid(PowershellCoreGuid);
-        firstProfile->SetName(POWERSHELL_PREFERRED_PROFILE_NAME);
+        firstProfile->Guid(winrt::guid{ PowershellCoreGuid });
+        firstProfile->Name(POWERSHELL_PREFERRED_PROFILE_NAME);
     }
 
     return profiles;

@@ -12,9 +12,10 @@
 #include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
-using namespace winrt::TerminalApp;
+using namespace winrt::TerminalApp::implementation;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view NameKey{ "name" };
@@ -56,76 +57,21 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 
 Profile::Profile() :
-    Profile(std::nullopt)
+    Profile(nullptr)
 {
 }
 
-Profile::Profile(const std::optional<GUID>& guid) :
-    _guid(guid),
-    _name{ L"Default" },
-    _schemeName{ L"Campbell" },
-    _hidden{ false },
-
-    _defaultForeground{},
-    _defaultBackground{},
-    _selectionBackground{},
-    _cursorColor{},
-    _tabTitle{},
-    _suppressApplicationTitle{},
-    _historySize{ DEFAULT_HISTORY_SIZE },
-    _snapOnInput{ true },
-    _altGrAliasing{ true },
-    _cursorShape{ CursorStyle::Bar },
-    _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
-
-    _connectionType{},
-    _commandline{ L"cmd.exe" },
-    _startingDirectory{},
-    _fontFace{ DEFAULT_FONT_FACE },
-    _fontSize{ DEFAULT_FONT_SIZE },
-    /* _fontWeight is initialized below because the structure won't accept a uint16_t directly */
-    _acrylicTransparency{ 0.5 },
-    _useAcrylic{ false },
-    _scrollbarState{},
-    _closeOnExitMode{ CloseOnExitMode::Graceful },
-    _padding{ DEFAULT_PADDING },
-    _icon{},
-    _backgroundImage{},
-    _backgroundImageOpacity{},
-    _backgroundImageStretchMode{},
-    _backgroundImageAlignment{},
-    _retroTerminalEffect{},
-    _antialiasingMode{ TextAntialiasingMode::Grayscale }
+Profile::Profile(IReference<guid> guid) :
+    _Guid(guid)
 {
+    /* FontWeight is initialized here because the structure won't accept a uint16_t directly */
     winrt::Windows::UI::Text::FontWeight weight;
     weight.Weight = DEFAULT_FONT_WEIGHT;
-    _fontWeight = weight;
+    _FontWeight = weight;
 }
 
 Profile::~Profile()
 {
-}
-
-bool Profile::HasGuid() const noexcept
-{
-    return _guid.has_value();
-}
-
-bool Profile::HasSource() const noexcept
-{
-    return _source.has_value();
-}
-
-GUID Profile::GetGuid() const
-{
-    // This can throw if we never had our guid set to a legitimate value.
-    THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
-    return _guid.value();
-}
-
-void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
-{
-    _source = sourceNamespace;
 }
 
 // Method Description:
@@ -135,108 +81,106 @@ void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
+winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
 {
-    TerminalSettings terminalSettings{};
+    winrt::TerminalApp::TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    terminalSettings.HistorySize(_historySize);
-    terminalSettings.SnapOnInput(_snapOnInput);
-    terminalSettings.AltGrAliasing(_altGrAliasing);
-    terminalSettings.CursorHeight(_cursorHeight);
-    terminalSettings.CursorShape(_cursorShape);
+    terminalSettings.HistorySize(_HistorySize);
+    terminalSettings.SnapOnInput(_SnapOnInput);
+    terminalSettings.AltGrAliasing(_AltGrAliasing);
+    terminalSettings.CursorHeight(_CursorHeight);
+    terminalSettings.CursorShape(_CursorShape);
 
     // Fill in the remaining properties from the profile
-    terminalSettings.ProfileName(_name);
-    terminalSettings.UseAcrylic(_useAcrylic);
-    terminalSettings.TintOpacity(_acrylicTransparency);
+    terminalSettings.ProfileName(_Name);
+    terminalSettings.UseAcrylic(_UseAcrylic);
+    terminalSettings.TintOpacity(_AcrylicOpacity);
 
-    terminalSettings.FontFace(_fontFace);
-    terminalSettings.FontSize(_fontSize);
-    terminalSettings.FontWeight(_fontWeight);
-    terminalSettings.Padding(_padding);
+    terminalSettings.FontFace(_FontFace);
+    terminalSettings.FontSize(_FontSize);
+    terminalSettings.FontWeight(_FontWeight);
+    terminalSettings.Padding(_Padding);
 
-    terminalSettings.Commandline(_commandline);
+    terminalSettings.Commandline(_Commandline);
 
-    if (_startingDirectory)
+    if (!_StartingDirectory.empty())
     {
-        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.c_str());
         terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
     // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
     // use the profile name
-    terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
+    terminalSettings.StartingTitle(!_TabTitle.empty() ? _TabTitle : _Name);
 
-    if (_suppressApplicationTitle)
+    if (_SuppressApplicationTitle)
     {
-        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+        terminalSettings.SuppressApplicationTitle(_SuppressApplicationTitle);
     }
 
-    if (_schemeName)
+    if (!_ColorSchemeName.empty())
     {
-        const auto found = schemes.find(_schemeName.value());
+        const auto found = schemes.find(_ColorSchemeName.c_str());
         if (found != schemes.end())
         {
             found->second.ApplyScheme(terminalSettings);
         }
     }
-    if (_defaultForeground)
+    if (_Foreground)
     {
-        terminalSettings.DefaultForeground(_defaultForeground.value());
+        til::color colorRef{ _Foreground.Value() };
+        terminalSettings.DefaultForeground(static_cast<uint32_t>(colorRef));
     }
-    if (_defaultBackground)
+    if (_Background)
     {
-        terminalSettings.DefaultBackground(_defaultBackground.value());
+        til::color colorRef{ _Background.Value() };
+        terminalSettings.DefaultBackground(static_cast<uint32_t>(colorRef));
     }
-    if (_selectionBackground)
+    if (_SelectionBackground)
     {
-        terminalSettings.SelectionBackground(_selectionBackground.value());
+        til::color colorRef{ _SelectionBackground.Value() };
+        terminalSettings.SelectionBackground(static_cast<uint32_t>(colorRef));
     }
-    if (_cursorColor)
+    if (_CursorColor)
     {
-        terminalSettings.CursorColor(_cursorColor.value());
+        til::color colorRef{ _CursorColor.Value() };
+        terminalSettings.CursorColor(static_cast<uint32_t>(colorRef));
     }
 
-    if (_scrollbarState)
-    {
-        terminalSettings.ScrollState(_scrollbarState.value());
-    }
+    terminalSettings.ScrollState(_ScrollState);
 
-    if (HasBackgroundImage())
+    if (!_BackgroundImage.empty())
     {
         terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
-    if (_backgroundImageOpacity)
+    if (_BackgroundImageOpacity)
     {
-        terminalSettings.BackgroundImageOpacity(_backgroundImageOpacity.value());
+        terminalSettings.BackgroundImageOpacity(_BackgroundImageOpacity.Value());
     }
 
-    if (_backgroundImageStretchMode)
+    if (_BackgroundImageStretchMode)
     {
-        terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
+        terminalSettings.BackgroundImageStretchMode(_BackgroundImageStretchMode.Value());
     }
 
-    if (_backgroundImageAlignment)
+    if (_BackgroundImageAlignment.has_value())
     {
-        const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_backgroundImageAlignment.value());
-        const auto imageVerticalAlignment = std::get<VerticalAlignment>(_backgroundImageAlignment.value());
+        const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_BackgroundImageAlignment.value());
+        const auto imageVerticalAlignment = std::get<VerticalAlignment>(_BackgroundImageAlignment.value());
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
     }
 
-    if (_retroTerminalEffect)
-    {
-        terminalSettings.RetroTerminalEffect(_retroTerminalEffect.value());
-    }
+    terminalSettings.RetroTerminalEffect(_RetroTerminalEffect);
 
-    terminalSettings.AntialiasingMode(_antialiasingMode);
+    terminalSettings.AntialiasingMode(_AntialiasingMode);
 
-    if (_tabColor)
+    if (_TabColor)
     {
-        winrt::Windows::Foundation::IReference<uint32_t> colorRef{ _tabColor.value() };
-        terminalSettings.TabColor(colorRef);
+        til::color colorRef{ _TabColor.Value() };
+        terminalSettings.TabColor(static_cast<uint32_t>(colorRef));
     }
 
     return terminalSettings;
@@ -258,19 +202,19 @@ Json::Value Profile::GenerateStub() const
     Json::Value stub;
 
     ///// Profile-specific settings /////
-    if (_guid.has_value())
+    if (_Guid != nullptr)
     {
-        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_Guid.Value()));
     }
 
-    stub[JsonKey(NameKey)] = winrt::to_string(_name);
+    stub[JsonKey(NameKey)] = winrt::to_string(_Name);
 
-    if (_source.has_value())
+    if (!_Source.empty())
     {
-        stub[JsonKey(SourceKey)] = winrt::to_string(_source.value());
+        stub[JsonKey(SourceKey)] = winrt::to_string(_Source);
     }
 
-    stub[JsonKey(HiddenKey)] = _hidden;
+    stub[JsonKey(HiddenKey)] = _Hidden;
 
     return stub;
 }
@@ -281,12 +225,10 @@ Json::Value Profile::GenerateStub() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-Profile Profile::FromJson(const Json::Value& json)
+winrt::com_ptr<Profile> Profile::FromJson(const Json::Value& json)
 {
-    Profile result;
-
-    result.LayerJson(json);
-
+    auto result = winrt::make_self<Profile>();
+    result->LayerJson(json);
     return result;
 }
 
@@ -300,16 +242,16 @@ Profile Profile::FromJson(const Json::Value& json)
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
-    if (!_guid.has_value())
+    if (_Guid == nullptr)
     {
         return false;
     }
 
     // First, check that GUIDs match. This is easy. If they don't match, they
     // should _definitely_ not layer.
-    if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<GUID>>(json, GuidKey) })
+    if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
     {
-        if (otherGuid != _guid) // optional compare takes care of this
+        if (otherGuid.has_value() && otherGuid.value() == _Guid.Value())
         {
             return false;
         }
@@ -328,12 +270,12 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
-    if (_source.has_value())
+    if (!_Source.empty())
     {
         if (otherHadSource)
         {
             // If we have a source and the other has a source, compare them!
-            sourceMatches = otherSource == _source;
+            sourceMatches = *otherSource == _Source;
         }
         else
         {
@@ -341,9 +283,9 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
             // `this` is a dynamic profile with a source, and our _source is one
             // of the legacy DPG namespaces. We're looking to see if the other
             // json object has the same guid, but _no_ "source"
-            if (_source.value() == WslGeneratorNamespace ||
-                _source.value() == AzureGeneratorNamespace ||
-                _source.value() == PowershellCoreGeneratorNamespace)
+            if (_Source == WslGeneratorNamespace ||
+                _Source == AzureGeneratorNamespace ||
+                _Source == PowershellCoreGeneratorNamespace)
             {
                 sourceMatches = true;
             }
@@ -373,162 +315,54 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
-    JsonUtils::GetValueForKey(json, NameKey, _name);
-    JsonUtils::GetValueForKey(json, GuidKey, _guid);
-    JsonUtils::GetValueForKey(json, HiddenKey, _hidden);
+    JsonUtils::GetValueForKey(json, NameKey, _Name);
+    std::optional<GUID> guid;
+    JsonUtils::GetValueForKey(json, GuidKey, guid);
+    _Guid = guid.has_value() ? IReference<winrt::guid>{ guid.value() } : nullptr;
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _selectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _cursorColor);
-    JsonUtils::GetValueForKey(json, ColorSchemeKey, _schemeName);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::GetValueForKey(json, HistorySizeKey, _historySize);
-    JsonUtils::GetValueForKey(json, SnapOnInputKey, _snapOnInput);
-    JsonUtils::GetValueForKey(json, AltGrAliasingKey, _altGrAliasing);
-    JsonUtils::GetValueForKey(json, CursorHeightKey, _cursorHeight);
-    JsonUtils::GetValueForKey(json, CursorShapeKey, _cursorShape);
-    JsonUtils::GetValueForKey(json, TabTitleKey, _tabTitle);
+    JsonUtils::GetValueForKey(json, HistorySizeKey, _HistorySize);
+    JsonUtils::GetValueForKey(json, SnapOnInputKey, _SnapOnInput);
+    JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
+    JsonUtils::GetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::GetValueForKey(json, FontWeightKey, _fontWeight);
-    JsonUtils::GetValueForKey(json, ConnectionTypeKey, _connectionType);
-    JsonUtils::GetValueForKey(json, CommandlineKey, _commandline);
-    JsonUtils::GetValueForKey(json, FontFaceKey, _fontFace);
-    JsonUtils::GetValueForKey(json, FontSizeKey, _fontSize);
-    JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _acrylicTransparency);
-    JsonUtils::GetValueForKey(json, UseAcrylicKey, _useAcrylic);
-    JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
-    JsonUtils::GetValueForKey(json, CloseOnExitKey, _closeOnExitMode);
+    JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::GetValueForKey(json, ConnectionTypeKey, guid);
+    _ConnectionType = guid.has_value() ? IReference<winrt::guid>{ guid.value() } : nullptr;
+    JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
+    JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
+    JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
+    JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
+    JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
+    JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
+    JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
 
-    JsonUtils::GetValueForKey(json, ScrollbarStateKey, _scrollbarState);
-    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _startingDirectory);
-    JsonUtils::GetValueForKey(json, IconKey, _icon);
-    JsonUtils::GetValueForKey(json, BackgroundImageKey, _backgroundImage);
-    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
-    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode);
-    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _backgroundImageAlignment);
-    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _retroTerminalEffect);
-    JsonUtils::GetValueForKey(json, AntialiasingModeKey, _antialiasingMode);
+    JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
+    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+    JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImage);
+    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    JsonUtils::GetValueForKey(json, TabColorKey, _tabColor);
-}
-
-void Profile::SetFontFace(std::wstring fontFace) noexcept
-{
-    _fontFace = std::move(fontFace);
-}
-
-void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
-{
-    _schemeName = std::move(schemeName);
-}
-
-const std::optional<std::wstring>& Profile::GetSchemeName() const noexcept
-{
-    return _schemeName;
-}
-
-void Profile::SetAcrylicOpacity(double opacity) noexcept
-{
-    _acrylicTransparency = opacity;
-}
-
-void Profile::SetCommandline(std::wstring cmdline) noexcept
-{
-    _commandline = std::move(cmdline);
-}
-
-void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
-{
-    _startingDirectory = std::move(startingDirectory);
-}
-
-void Profile::SetName(const std::wstring_view name) noexcept
-{
-    _name = static_cast<std::wstring>(name);
-}
-
-void Profile::SetUseAcrylic(bool useAcrylic) noexcept
-{
-    _useAcrylic = useAcrylic;
-}
-
-void Profile::SetDefaultForeground(til::color defaultForeground) noexcept
-{
-    _defaultForeground = defaultForeground;
-}
-
-void Profile::SetDefaultBackground(til::color defaultBackground) noexcept
-{
-    _defaultBackground = defaultBackground;
-}
-
-void Profile::SetSelectionBackground(til::color selectionBackground) noexcept
-{
-    _selectionBackground = selectionBackground;
-}
-
-void Profile::SetCloseOnExitMode(CloseOnExitMode mode) noexcept
-{
-    _closeOnExitMode = mode;
-}
-
-void Profile::SetConnectionType(GUID connectionType) noexcept
-{
-    _connectionType = connectionType;
-}
-
-bool Profile::HasIcon() const noexcept
-{
-    return _icon.has_value() && !_icon.value().empty();
-}
-
-bool Profile::HasBackgroundImage() const noexcept
-{
-    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
-}
-
-// Method Description
-// - Sets this profile's tab title.
-// Arguments:
-// - tabTitle: the tab title
-void Profile::SetTabTitle(std::wstring tabTitle) noexcept
-{
-    _tabTitle = std::move(tabTitle);
-}
-
-// Method Description
-// - Sets if the application title will be suppressed in this profile.
-// Arguments:
-// - suppressApplicationTitle: boolean
-void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
-{
-    _suppressApplicationTitle = suppressApplicationTitle;
-}
-
-// Method Description:
-// - Sets this profile's icon path.
-// Arguments:
-// - path: the path
-void Profile::SetIconPath(std::wstring_view path)
-{
-    static_assert(!noexcept(_icon.emplace(path)));
-    _icon.emplace(path);
-}
-
-// Method Description:
-// - Resets the std::optional holding the icon file path string.
-//   HasIcon() will return false after the execution of this function.
-void Profile::ResetIconPath()
-{
-    _icon.reset();
+    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 }
 
 // Method Description:
@@ -539,11 +373,11 @@ void Profile::ResetIconPath()
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
 winrt::hstring Profile::GetExpandedIconPath() const
 {
-    if (!HasIcon())
+    if (!_Icon.empty())
     {
         return { L"" };
     }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_icon.value().data()) };
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_Icon.data()) };
     return envExpandedPath;
 }
 
@@ -556,66 +390,12 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 {
     winrt::hstring result{};
 
-    if (HasBackgroundImage())
+    if (!_BackgroundImage.empty())
     {
-        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImage.data());
     }
 
     return result;
-}
-
-// Method Description:
-// - Resets the std::optional holding the background image file path string.
-//   HasBackgroundImage() will return false after the execution of this function.
-void Profile::ResetBackgroundImagePath()
-{
-    _backgroundImage.reset();
-}
-
-// Method Description:
-// - Returns the name of this profile.
-// Arguments:
-// - <none>
-// Return Value:
-// - the name of this profile
-std::wstring_view Profile::GetName() const noexcept
-{
-    return _name;
-}
-
-bool Profile::GetSuppressApplicationTitle() const noexcept
-{
-    return _suppressApplicationTitle;
-}
-
-bool Profile::HasConnectionType() const noexcept
-{
-    return _connectionType.has_value();
-}
-
-GUID Profile::GetConnectionType() const noexcept
-{
-    return HasConnectionType() ?
-               _connectionType.value() :
-               _GUID{};
-}
-
-CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
-{
-    return _closeOnExitMode;
-}
-
-// Method Description:
-// - If a profile is marked hidden, it should not appear in the dropdown list of
-//   profiles. This setting is used to "remove" default and dynamic profiles
-//   from the list of profiles.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff the profile should be hidden from the list of profiles.
-bool Profile::IsHidden() const noexcept
-{
-    return _hidden;
 }
 
 // Method Description:
@@ -655,11 +435,11 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 //   will _not_ change the profile's GUID.
 void Profile::GenerateGuidIfNecessary() noexcept
 {
-    if (!_guid.has_value())
+    if (_Guid == nullptr)
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _guid = Profile::_GenerateGuidForProfile(_name, _source);
+        _Guid = Profile::_GenerateGuidForProfile(_Name, _Source);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -690,18 +470,18 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 // - name: The name to generate a unique GUID from
 // Return Value:
 // - a uuidv5 GUID generated from the given name.
-GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
+winrt::guid Profile::_GenerateGuidForProfile(const hstring& name, const IReference<hstring>& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the namespace guid, instead of using the default GUID.
 
-    const GUID namespaceGuid = source.has_value() ?
-                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :
+    const GUID namespaceGuid = source != nullptr ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.Value()))) :
                                    RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
     // Always use the name to generate the temporary GUID. That way, across
     // reloads, we'll generate the same static GUID.
-    return Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name)));
+    return { Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name))) };
 }
 
 // Function Description:
@@ -712,20 +492,15 @@ GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optio
 //   (given the `name`)
 // Return Value:
 // - The json's `guid`, or a guid synthesized for it.
-GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
+winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 {
     if (const auto guid{ JsonUtils::GetValueForKey<std::optional<GUID>>(json, GuidKey) })
     {
-        return guid.value();
+        return { guid.value() };
     }
 
-    const auto name{ JsonUtils::GetValueForKey<std::wstring>(json, NameKey) };
-    const auto source{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, SourceKey) };
+    const auto name{ JsonUtils::GetValueForKey<hstring>(json, NameKey) };
+    const auto source{ JsonUtils::GetValueForKey<IReference<hstring>>(json, SourceKey) };
 
     return Profile::_GenerateGuidForProfile(name, source);
-}
-
-void Profile::SetRetroTerminalEffect(bool value) noexcept
-{
-    _retroTerminalEffect = value;
 }

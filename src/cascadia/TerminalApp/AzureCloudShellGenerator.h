@@ -29,6 +29,6 @@ namespace TerminalApp
         ~AzureCloudShellGenerator() = default;
         std::wstring_view GetNamespace() override;
 
-        std::vector<TerminalApp::Profile> GenerateProfiles() override;
+        std::vector<winrt::TerminalApp::Profile> GenerateProfiles() override;
     };
 };

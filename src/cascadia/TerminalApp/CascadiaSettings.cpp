@@ -70,15 +70,16 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 // Return Value:
 // - a non-ownership pointer to the profile matching the given guid, or nullptr
 //      if there is no match.
-const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
+const Profile CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 {
+    auto guid = winrt::guid(profileGuid);
     for (auto& profile : _profiles)
     {
         try
         {
-            if (profile.GetGuid() == profileGuid)
+            if (profile.Guid() != nullptr && profile.Guid().Value() == guid)
             {
-                return &profile;
+                return profile;
             }
         }
         CATCH_LOG();
@@ -92,7 +93,7 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
+gsl::span<const winrt::TerminalApp::Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }
@@ -215,7 +216,8 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
     for (auto& profile : _profiles)
     {
-        profile.GenerateGuidIfNecessary();
+        auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+        profileImpl->GenerateGuidIfNecessary();
     }
 }
 
@@ -242,12 +244,12 @@ void CascadiaSettings::_ResolveDefaultProfile()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const auto defaultProfileGuid = GlobalSettings().DefaultProfile();
-    const bool nullDefaultProfile = defaultProfileGuid == GUID{};
+    const winrt::guid defaultProfileGuid = GlobalSettings().DefaultProfile();
+    const bool nullDefaultProfile = defaultProfileGuid == winrt::guid{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
     {
-        if (profile.GetGuid() == defaultProfileGuid)
+        if (profile.Guid() != nullptr && profile.Guid().Value() == defaultProfileGuid)
         {
             defaultProfileNotInProfiles = false;
             break;
@@ -261,7 +263,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(_profiles[0].GetGuid());
+        GlobalSettings().DefaultProfile(_profiles[0].Guid().Value());
     }
 }
 
@@ -283,7 +285,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
     // already in the set, then we need to delete that profile.
     for (size_t i = 0; i < _profiles.size(); i++)
     {
-        if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
+        if (!uniqueGuids.insert(_profiles.at(i).Guid().Value()).second)
         {
             foundDupe = true;
             indicesToDelete.push_back(i);
@@ -322,7 +324,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
         {
             if (profileJson.isObject())
             {
-                auto guid = Profile::GetGuidOrGenerateForJson(profileJson);
+                auto guid = implementation::Profile::GetGuidOrGenerateForJson(profileJson);
                 if (uniqueGuids.insert(guid).second)
                 {
                     guidOrder.push_back(guid);
@@ -347,8 +349,8 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
         const auto guid = guidOrder.at(gIndex);
         for (size_t pIndex = gIndex; pIndex < _profiles.size(); pIndex++)
         {
-            auto profileGuid = _profiles.at(pIndex).GetGuid();
-            if (equals(profileGuid, guid))
+            auto profileGuid = _profiles.at(pIndex).Guid();
+            if (equals(profileGuid.Value(), guid))
             {
                 std::iter_swap(_profiles.begin() + pIndex, _profiles.begin() + gIndex);
                 break;
@@ -373,7 +375,7 @@ void CascadiaSettings::_RemoveHiddenProfiles()
     // idiom](https://en.wikipedia.org/wiki/Erase%E2%80%93remove_idiom)
     _profiles.erase(std::remove_if(_profiles.begin(),
                                    _profiles.end(),
-                                   [](auto&& profile) { return profile.IsHidden(); }),
+                                   [](auto&& profile) { return profile.Hidden(); }),
                     _profiles.end());
 
     // Ensure that we still have some profiles here. If we don't, then throw an
@@ -402,13 +404,13 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     bool foundInvalidScheme = false;
     for (auto& profile : _profiles)
     {
-        auto schemeName = profile.GetSchemeName();
-        if (schemeName.has_value())
+        auto schemeName = profile.ColorSchemeName();
+        if (!schemeName.empty())
         {
-            const auto found = _globals.GetColorSchemes().find(schemeName.value());
+            const auto found = _globals.GetColorSchemes().find(schemeName.c_str());
             if (found == _globals.GetColorSchemes().end())
             {
-                profile.SetColorScheme({ L"Campbell" });
+                profile.ColorSchemeName({ L"Campbell" });
                 foundInvalidScheme = true;
             }
         }
@@ -438,7 +440,7 @@ void CascadiaSettings::_ValidateMediaResources()
 
     for (auto& profile : _profiles)
     {
-        if (profile.HasBackgroundImage())
+        if (!profile.BackgroundImage().empty())
         {
             // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
             // This covers file paths on the machine, app data, URLs, and other resource paths.
@@ -448,12 +450,13 @@ void CascadiaSettings::_ValidateMediaResources()
             }
             catch (...)
             {
-                profile.ResetBackgroundImagePath();
+                // reset background image path
+                profile.BackgroundImage(L"");
                 invalidBackground = true;
             }
         }
 
-        if (profile.HasIcon())
+        if (!profile.Icon().empty())
         {
             try
             {
@@ -461,7 +464,8 @@ void CascadiaSettings::_ValidateMediaResources()
             }
             catch (...)
             {
-                profile.ResetIconPath();
+                // reset icon path
+                profile.Icon(L"");
                 invalidIcon = true;
             }
         }
@@ -528,10 +532,11 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerm
 // - the GUID of the created profile, and a fully initialized TerminalSettings object
 TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 {
-    const Profile* const profile = FindProfile(profileGuid);
+    const auto profile = FindProfile(profileGuid);
     THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
-    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
+    const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+    TerminalSettings result = profileImpl->CreateTerminalSettings(_globals.GetColorSchemes());
 
     // Place our appropriate global settings into the Terminal Settings
     _globals.ApplyToSettings(result);
@@ -602,12 +607,12 @@ try
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
         const auto profileIterator{ std::find_if(_profiles.cbegin(), _profiles.cend(), [&](auto&& profile) {
-            return profile.GetName().compare(name) == 0;
+            return profile.Name() == name;
         }) };
 
         if (profileIterator != _profiles.cend())
         {
-            return profileIterator->GetGuid();
+            return std::optional<GUID>{ profileIterator->Guid().Value() };
         }
     }
 
@@ -639,7 +644,7 @@ std::optional<GUID> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> 
             realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
             const auto& selectedProfile = _profiles.at(realIndex);
-            return selectedProfile.GetGuid();
+            return std::optional<GUID>{ selectedProfile.Guid().Value() };
         }
     }
     return std::nullopt;
@@ -736,13 +741,13 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - a non-owning pointer to the scheme.
 const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
 {
-    auto* profile = FindProfile(profileGuid);
-    if (!profile)
+    auto profile = FindProfile(profileGuid);
+    if (profile == nullptr)
     {
         return nullptr;
     }
-    auto schemeName = profile->GetSchemeName().has_value() ? profile->GetSchemeName().value() : L"\0";
-    auto scheme = _globals.GetColorSchemes().find(schemeName);
+    auto schemeName = !profile.ColorSchemeName().empty() ? profile.ColorSchemeName() : L"\0";
+    auto scheme = _globals.GetColorSchemes().find(schemeName.c_str());
     if (scheme != _globals.GetColorSchemes().end())
     {
         return scheme->second;

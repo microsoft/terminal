@@ -79,7 +79,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasing
 
 // Type Description:
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
-JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::CloseOnExitMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "always", ValueType::Always },
@@ -88,7 +88,7 @@ JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
     };
 
     // Override mapping parser to add boolean parsing
-    CloseOnExitMode FromJson(const Json::Value& json)
+    ::winrt::TerminalApp::CloseOnExitMode FromJson(const Json::Value& json)
     {
         if (json.isBool())
         {

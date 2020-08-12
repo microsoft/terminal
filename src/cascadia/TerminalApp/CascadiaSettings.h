@@ -19,9 +19,9 @@ Author(s):
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
-#include "Profile.h"
 #include "IDynamicProfileGenerator.h"
 
+#include "Profile.h"
 #include "ColorScheme.h"
 
 // fwdecl unittest classes
@@ -69,7 +69,7 @@ public:
 
     GlobalAppSettings& GlobalSettings();
 
-    gsl::span<const Profile> GetProfiles() const noexcept;
+    gsl::span<const winrt::TerminalApp::Profile> GetProfiles() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
@@ -79,7 +79,7 @@ public:
     static std::filesystem::path GetSettingsPath();
     static std::filesystem::path GetDefaultSettingsPath();
 
-    const Profile* FindProfile(GUID profileGuid) const noexcept;
+    const winrt::TerminalApp::Profile FindProfile(GUID profileGuid) const noexcept;
     const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const GUID profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
@@ -88,7 +88,7 @@ public:
 
 private:
     GlobalAppSettings _globals;
-    std::vector<Profile> _profiles;
+    std::vector<winrt::TerminalApp::Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
     std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
@@ -99,7 +99,7 @@ private:
     Json::Value _userDefaultProfileSettings{ Json::Value::null };
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
-    Profile* _FindMatchingProfile(const Json::Value& profileJson);
+    winrt::com_ptr<winrt::TerminalApp::implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     winrt::com_ptr<winrt::TerminalApp::implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
     void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);

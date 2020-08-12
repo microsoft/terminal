@@ -320,12 +320,12 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
     }
 
     const auto& settings = CascadiaSettings::GetCurrentAppSettings();
-    auto paneProfile = settings.FindProfile(_profile.value());
+    auto& paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        auto mode = paneProfile->GetCloseOnExitMode();
-        if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        auto mode = paneProfile.CloseOnExit();
+        if ((mode == winrt::TerminalApp::CloseOnExitMode::Always) ||
+            (mode == winrt::TerminalApp::CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
             _ClosedHandlers(nullptr, nullptr);
         }

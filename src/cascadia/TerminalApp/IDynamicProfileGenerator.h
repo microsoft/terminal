@@ -20,7 +20,7 @@ Author(s):
 --*/
 
 #pragma once
-#include "Profile.h"
+#include "Profile.g.h"
 
 namespace TerminalApp
 {
@@ -32,6 +32,6 @@ class TerminalApp::IDynamicProfileGenerator
 public:
     virtual ~IDynamicProfileGenerator() = 0;
     virtual std::wstring_view GetNamespace() = 0;
-    virtual std::vector<TerminalApp::Profile> GenerateProfiles() = 0;
+    virtual std::vector<winrt::TerminalApp::Profile> GenerateProfiles() = 0;
 };
 inline TerminalApp::IDynamicProfileGenerator::~IDynamicProfileGenerator() {}
