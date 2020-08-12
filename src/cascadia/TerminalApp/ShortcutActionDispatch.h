@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SwitchToTab,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(NextTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(PrevTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SendInput,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SplitPane,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(TogglePaneZoom,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(AdjustFontSize,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);

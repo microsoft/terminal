@@ -81,6 +81,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
+        void SendInput(const winrt::hstring& input);
         void ToggleRetroEffect();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
@@ -221,7 +222,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
-        void _SendInputToConnection(const std::wstring& wstr);
+        void _SendInputToConnection(const winrt::hstring& wstr);
+        void _SendInputToConnection(std::wstring_view wstr);
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);

@@ -889,6 +889,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
         _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
+        _actionDispatch->SendInput({ this, &TerminalPage::_HandleSendInput });
         _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
         _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });

@@ -94,6 +94,11 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitState SplitStyle { get; };

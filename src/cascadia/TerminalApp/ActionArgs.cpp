@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
+#include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
@@ -20,6 +21,8 @@
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "ToggleTabSwitcherArgs.g.h"
+
+#include "Utils.h"
 
 #include <LibraryResources.h>
 
@@ -165,6 +168,16 @@ namespace winrt::TerminalApp::implementation
                                                  _Delta)
                                  };
         }
+    }
+
+    winrt::hstring SendInputArgs::GenerateName() const
+    {
+        // The string will be similar to the following:
+        // * "Send Input: ...input..."
+
+        auto escapedInput = VisualizeControlCodes(_Input);
+        auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+        return winrt::hstring{ name };
     }
 
     winrt::hstring SplitPaneArgs::GenerateName() const

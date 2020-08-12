@@ -27,6 +27,7 @@ static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
+static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
@@ -90,6 +91,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
+        { SendInputKey, ShortcutAction::SendInput },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
         { SetTabColorKey, ShortcutAction::SetTabColor },
@@ -124,6 +126,8 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::MoveFocus, winrt::TerminalApp::implementation::MoveFocusArgs::FromJson },
 
         { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
+
+        { ShortcutAction::SendInput, winrt::TerminalApp::implementation::SendInputArgs::FromJson },
 
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
@@ -284,6 +288,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::Invalid, L"" },

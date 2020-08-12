@@ -89,6 +89,21 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SendInputArgs>())
+        {
+            const auto termControl = _GetActiveControl();
+            termControl.SendInput(realArgs.Input());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const TerminalApp::ActionEventArgs& args)
     {
