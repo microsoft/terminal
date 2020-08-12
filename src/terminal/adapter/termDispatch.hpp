@@ -111,4 +111,6 @@ public:
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
                             const gsl::span<const size_t> /*params*/) noexcept override { return false; }
+
+    bool AddHyperlink(const std::wstring_view /*uri*/) override { return false; }
 };

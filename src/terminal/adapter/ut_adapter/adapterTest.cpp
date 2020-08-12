@@ -706,6 +706,13 @@ public:
         }
     }
 
+    bool PrivateAddHyperlink(const std::wstring_view /*uri*/) const
+    {
+        Log::Comment(L"PrivateAddHyperlink MOCK called...");
+
+        return TRUE;
+    }
+
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
     {
         rect->Top = top;

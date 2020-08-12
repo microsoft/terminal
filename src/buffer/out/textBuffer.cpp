@@ -2213,7 +2213,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 // - Adds a hyperlink to our hyperlink table
 // Arguments:
 // - The hyperlink URI
-void TextBuffer::AddHyperlinkToMap(std::wstring_view uri) noexcept
+void TextBuffer::AddHyperlinkToMap(std::wstring_view uri)
 {
     _hyperlinkMap.emplace(_currentHyperlinkId, uri);
     ++_currentHyperlinkId;
@@ -2235,7 +2235,7 @@ USHORT TextBuffer::GetCurrentHyperlinkId() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const noexcept
+std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const
 {
     return _hyperlinkMap.at(id);
 }

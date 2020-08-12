@@ -2703,7 +2703,7 @@ void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
 // - Adds a hyperlink to our hyperlink table
 // Arguments:
 // - The hyperlink URI
-void SCREEN_INFORMATION::AddHyperlinkToMap(std::wstring_view uri) noexcept
+void SCREEN_INFORMATION::AddHyperlinkToMap(std::wstring_view uri)
 {
     _hyperlinkMap.emplace(_currentHyperlinkId, uri);
     ++_currentHyperlinkId;
@@ -2725,7 +2725,7 @@ USHORT SCREEN_INFORMATION::GetCurrentHyperlinkId() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-std::wstring SCREEN_INFORMATION::GetHyperlinkUriFromId(USHORT id) const noexcept
+std::wstring SCREEN_INFORMATION::GetHyperlinkUriFromId(USHORT id) const
 {
     return _hyperlinkMap.at(id);
 }

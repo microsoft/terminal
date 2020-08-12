@@ -141,9 +141,9 @@ public:
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
-    void AddHyperlinkToMap(std::wstring_view uri) noexcept;
+    void AddHyperlinkToMap(std::wstring_view uri);
     USHORT GetCurrentHyperlinkId() const noexcept;
-    std::wstring GetHyperlinkUriFromId(USHORT id) const noexcept;
+    std::wstring GetHyperlinkUriFromId(USHORT id) const;
 
     class TextAndColor
     {

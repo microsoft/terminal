@@ -241,9 +241,9 @@ public:
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
 
-    void AddHyperlinkToMap(std::wstring_view uri) noexcept;
+    void AddHyperlinkToMap(std::wstring_view uri);
     USHORT GetCurrentHyperlinkId() const noexcept;
-    std::wstring GetHyperlinkUriFromId(USHORT id) const noexcept;
+    std::wstring GetHyperlinkUriFromId(USHORT id) const;
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
