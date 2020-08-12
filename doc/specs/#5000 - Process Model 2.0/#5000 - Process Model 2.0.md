@@ -196,6 +196,41 @@ This means that if we wanted to have a second window process connect to the
 _same_ content process as another window, all it needs is the content process's
 GUID.
 
+Now that we have a WinRT object that the content process hosts, we can have the
+window and content process interact using that interface. The next important
+thing to communicate between these processes is the swapchain. The swapchain
+will need to be created by the content process, but also we need to be able to
+communicate the `HANDLE` to that swapchain out to the window process, so the
+window process can attach that swapchain to the `SwapChainPanel` in the window.
+
+This is a little tricky, because WinRT does not natively expose a `HANDLE` type
+which would allow us to easily pass the `HANDLE` between these processes.
+Instead we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT
+boundary, and cast it back to a `HANDLE` when we want to use it.
+
+We can't just have the content process duplicate the handle to the window
+process directly. If the content process is unelevated, and the window process
+is elevated (in a mixed elevation scenario), then the content process won't have
+permission to `DuplicateHandle` the `HANDLE` to the swapchain into the window's
+process. (more on mixed elevation below).
+
+Instead, the window will always need to be the one responsible for calling
+`DuplicateHandle`. Fortunately, the `DuplicateHandle` function does allow a
+caller to duplicate from another process into your own process.
+
+So when the content process needs to create a new swapchain, it'll raise an
+event that the window process can listen for to indicate that the swapchain
+changed. The window will then query for the content process's PID (which it will
+use to create a handle to the content process), and the window will query the
+current value of the content process's `HANDLE` to the swapchain. The window
+will then duplicate that `HANDLE` into it's own process space. Now that the
+window has a handle to the swapchain, it can use
+[`ISwapChainPanelNative2::SetSwapChainHandle`] to set the SwapChainPanel to use
+the same swapchain.
+
+This will allow the content process to draw to the swapchain, and the window
+process to render that same swapchain.
+
 #### Scenario: Tab Tear-off and Reattach
 
 Because all that's needed to uniquely identify an individual terminal instance
@@ -887,6 +922,18 @@ spec.
 
 [TODO]: # TODO =================================================================
 
+#### Duplicating HANDLEs from content process to elevated window process
+
+We can't just have the content process dupe the handle to the window process. If
+the content process is unelevated, and the window process is elevated (in a
+mixed elevation scenario), then the content process won't have permission to
+`DuplicateHandle` the `HANDLE` to the swapchain into the window's process.
+
+Instead, the window will always need to be the one responsible for calling
+duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
+caller to duplicate from another process into your own process.
+
+
 #### What happens to the content if the monarch dies unexpectedly?
 
 What happens if you only have one window process, the monarch, and it
@@ -1095,3 +1142,4 @@ provided `type`.
 
 [Tab Tearout in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
+[`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
