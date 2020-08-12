@@ -58,13 +58,11 @@ namespace winrt::TerminalApp::implementation
     // - Will recurse into nested commands as well.
     // Arguments:
     // - settings: The settings who's keybindings we should use to look up the key chords from
-    // - commands: The list fo commands to label.
-    // Return Value:
-    // - <none>
+    // - commands: The list of commands to label.
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
                                                         Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
     {
-        for (auto command : commands)
+        for (auto& command : commands)
         {
             // If there's a keybinding that's bound to exactly this command,
             // then get the string for that keychord and display it as a
@@ -84,7 +82,7 @@ namespace winrt::TerminalApp::implementation
 
     static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
     {
-        for (auto command : commands)
+        for (auto& command : commands)
         {
             // Set the default IconSource to a BitmapIconSource with a null source
             // (instead of just nullptr) because there's a really weird crash when swapping

@@ -344,7 +344,10 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 // First stash the search text length, because _close will clear this.
-                auto searchTextLength = _searchBox().Text().size();
+                const auto searchTextLength = _searchBox().Text().size();
+
+                // An action from the root command list has depth=0
+                const auto nestedCommandDepth = _nestedActionStack.Size();
 
                 // Close before we dispatch so that actions that open the command
                 // palette like the Tab Switcher will be able to have the last laugh.
@@ -358,10 +361,9 @@ namespace winrt::TerminalApp::implementation
                     "CommandPaletteDispatchedAction",
                     TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
                     TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
+                    TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-                _close();
             }
         }
     }
