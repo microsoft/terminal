@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-08-10
+last updated: 2020-08-12
 issue id: #5000
 ---
 
@@ -150,8 +150,6 @@ same process as the buffer. Similarly, we want to be able to read data off of
 the connection as quickly as possible, and the best way to do this will be to
 have the connection in the same process as the `Terminal` core.
 
-
-
 #### Technical Details
 
 Much of the above is powered by the magic of WinRT (which is powered by the
@@ -204,6 +202,8 @@ Because all that's needed to uniquely identify an individual terminal instance
 is the GUID of the content process, it becomes fairly trivial to be able to
 "move" a terminal instance from one window to another.
 
+![drop-tab-on-existing-window](drop-tab-on-existing-window.png)
+
 When a drag/drop operation happens, the payload of the event will simply contain
 the structure of the tree of panes, and the GUIDs of the content processes that
 make up the leaf nodes of the tree. The receiving window process will then be
@@ -214,6 +214,19 @@ terminals in that tab.
 The terminal buffer never needs to move from one process to another - it always
 stays in just a single content process. The only thing that changes is the
 window process which is rendering the content process's swapchain.
+
+Similar to dragging a tab from one window to another window, we can also detect
+when the tab was dropped somewhere outside the bounds of a tab strip. When that
+happens, we'll create a new WT window, and use the data package from the
+drag-drop to initialize the structure of the window.
+
+![tear-out-tab](tear-out-tab.png)
+
+For our own sanity, we'll want to ensure that tabs cannot be torn out from a
+"Preview" Windows Terminal window and dropped into a "Release" window. I'm not
+positive that the system will prevent that on our behalf, so I think it's
+important to call out that if this _is_ possible, we should expressely disallow
+it.
 
 #### Scenario: Mixed Elevation
 
@@ -226,6 +239,8 @@ tabs to that window process, as well as the new elevated client. Now, the window
 process is elevated, preventing it from input injection, but still contains all
 the previously existing tabs. The original window process can now be discarded,
 as the new elevated window process will pretend to be the original window.
+
+![mixed-elevation](mixed-elevation.png)
 
 We would probably want to provide some additional configuration options here as
 well:
@@ -325,19 +340,80 @@ Essentially, the probabilistic elective monarchy will work in the following way:
 
 By this mechanism, the processes will be able to communicate with the Monarch,
 who'll be responsible for managing any inter-process communication between
-windows we might need.
+windows we might need. In addition, the monarch might need to track some global
+state that it can use to enable some of the following scenarios. An example of
+such global state might be "which window process was the most recently focused
+one?"
 
+#### Scenario: Open new tabs in most recently used window
+
+A common feature of many browsers is that when a web URL is clicked somewhere,
+the web page is opened as a new tab in the most recently used window of the
+browser. This functionality is often referred to as "glomming", as the new tab
+"gloms" onto the existing window.
+
+Currently, the terminal does not support such a feature - every `wt` invocation
+creates a new window. With the monarch/servant architecture, it'll now be
+possible to enable such a scenario.
+
+As each window is activated, it will call a method on the `Monarch` object
+(hosted by the monarch process) which will indicate that "I am servant N, and
+I've been focused". The monarch will use those method calls to update its own
+internal stack of the most recently used windows.
+
+When tab glomming is enabled, and a new `wt.exe` process is launched, that
+process will _first_ ask the monarch if it should run the commandline in an
+existing window, or create its own window.
+
+![auto-glom-wt-exe](auto-glom-wt-exe.png)
+
+Depending on which window was the last focused, the monarch will dispatch the
+commandline to the appropriate window for them to handle instead. To the user,
+it'll seem as if the tab just opened in the most recent window.
+
+Users should certainly be able to specify if they want new instances to glom
+onto the MRU window or not. You could imagine that currently, we default to the
+hypothetical value `"glomToLastWindow": false`, meaning that each new wt gets
+it's own new window.
 
 #### Scenario: Single Instance Mode
 
-In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is run,
-and it determines that it is not the monarch, it'll ask the monarch if it's in
-single instance mode. If it is, then the servant that's starting up will instead
-pass it's commandline arguments to the monarch process, and let the monarch
-handle them, then exit.
+"Single Instance Mode" is a scenario in which there is only ever one single WT
+window. When Single Instance Mode is active, and the user runs a new `wt.exe`
+commandline, it will always end up running in the existing window, if there is
+one.
+
+In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
+run, and it determines that it is not the monarch, it'll ask the monarch if it's
+in single instance mode. If it is, then the servant that's starting up will
+instead pass it's commandline arguments to the monarch process, and let the
+monarch handle them, then exit. In single instance mode the window will still be
+composed from a combination of a window process and multiple different content
+processes, just the same as it would be outside single instance mode.
 
 So, this will make it seem like new starting a new `wt.exe` will just create a
-new tab in the existing window. If someone does `wt -d .` in explorer,
+new tab in the existing window. There are some tricky scenarios involving single
+instance mode. Consider if If someone does `wt -d .` in explorer. For clarity,
+let's label the existing window WT[1], and the second `wt.exe` process WT[2].
+
+An example of this scenario is given in the following diagram:
+
+![single-instance-mode-cwd](single-instance-mode-cwd.png)
+
+In this scenario, we'd want the new tab to be spawned in the current working
+directory of WT[2], not WT[1]. So when WT[1] is about to run the commands that
+were passed to WT[2], WT[1] will need to:
+
+* First, stash it's own CWD
+* Change to the CWD of WT[2]
+* Run the commands from WT[2]
+* Then return to it's original CWD.
+
+One could imagine that single instance mode is the combination of two properties:
+* The user wants new invocation of `wt` to "glom" onto the most recently used
+  window (the hypothetical `"glomToLastWindow": true` setting)
+* The user wants to prevent tab tear-out, or the ability for a `newWindow`
+  action to work. (hypothetically `"allowTabTearout": false`)
 
 #### Scenario: Run `wt` in the current window
 
@@ -423,6 +499,21 @@ monarch, then the new monarch will register as the global hotkey handler.
 
 Then, the monarch can use it's pre-established channels of communication with
 the other window processes to actually drive the response we're looking for.
+
+**Alternatively**, we could use an entirely other process to be in charge of the
+registration of the global keybinding. This process would be some sort of
+long-running service that's started on boot. When it detects the global hotkey,
+it could attmept to instantiate a `Monarch` object.
+
+  * If it can't make one, then it can simply run a new instance of `wt.exe`,
+    because there's not yet a running Terminal window.
+  * Otherwise, it can communicate to the monarch that the global hotkey was
+    pressed, and the monarch will take care of delegating the activation to the
+    appropriate servant window.
+
+This would mitigate the need to have at least one copy of WT running already,
+and the user could press that keybinding at any time to start the terminal.
+
 
 #### Rough interface design
 
@@ -632,7 +723,18 @@ the new monarch is again.
 There is certain to be a long tail of edge cases we'll discover as a product of
 this change. We'll need to be prepared to see an inevitable decrease in initial
 reliability numbers, and increased bug reports for a time. Additionally, these
-bugs will likely be fairly difficult to track down.
+bugs will likely be fairly difficult to track down. Initially, it may help us to
+track these bugs down if we add additional tracing around each of the
+inter-process calls we might make. Some example situations might include:
+* When a process creates a new content process
+* When a content process is attached by a window
+* When a monarch is elected
+* when a servant receives its new ID from a monarch
+* when either a window or content process _safely_ exits
+
+In any and all of these situations, we'll want to try and be as verbose as
+possible in the logging, to try and make tracking which process had the error
+occur easier.
 
 In the long run, this may end up _increasing_ reliability, as crashes in the
 buffer should no longer cause the _entire_ terminal application to crash.
@@ -676,11 +778,134 @@ initial setup of the monarch/servant relationship.
 
 ## Potential Issues
 
-TODO: These are _very_ expected
 
-Extensions & non-terminal content.
+#### Extensions & non-terminal content.
 
-Mixed elevation & Monarch / Peasant issues
+We've now created a _very_ terminal-specific IPC mechanism for transferring
+_terminal_ state from one thread to another. However, what happens when we start
+to have panes that contain non-terminal content in them? This is a scenario
+that's most often associated with the concept of extensions in the Terminal, but
+perhaps more relevantly could affect the Settings UI.
+
+The Settings UI is something we intend on shipping in the Terminal as a part of
+2.0, in the same timefram much of the above work is expected to be done. We also
+plan on hopefully making the Settings UI appear as its own tab within the
+Terminal. This would be the first example of having non-terminal content
+directly in the application. How would we support tearing out the Settings UI
+tab into it's own window?
+
+Options available here include:
+
+We could prevent tabs with non-terminal content open in them from being dragged
+out entirely. They're stuck in their window until the non-terminal content is
+removed. This seems like it would not be a good long-term solution. Users will
+want to be able to tear their non-terminal content out of the window.
+
+Alternatively, we could pass some well-defined string / JSON blob from the
+source process to the target process, such that the extension could use that
+JSON to recreate whatever state the pane was last in. The extension would be
+able to control this content entirely.
+  - Maybe they want to pass a GUID that the new process will be able to user to
+    `CreateInstance` the singleton for their UI and then dupe their swap chain
+    to the new thread...
+
+We'll need to define a syntax for the tear-out and drag/drop scenarios anyways,
+so we should define that structure in a way that will allow future
+extensibility.
+
+
+Lets examine some sample JSON<sup>[[2]](#footnote-2)</sup>
+
+```json
+{
+  "tabs": [
+    {
+      "runtimeTitle": "foo",
+      "runtimeColor": null,
+      "panes": [
+        {
+          "split": "horizontal",
+          "children": [
+            {
+              "size": 0.30,
+              "contentType": "Microsoft.Terminal.TerminalControl",
+              "payload": {
+                "contentGuid": "{1-1-1-1}"
+              }
+            },
+            {
+              "size": 0.70,
+              "contentType": "Microsoft.Terminal.TerminalControl",
+              "payload": {
+                "contentGuid": "{2-2-2-2}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runtimeTitle": null,
+      "runtimeColor": null,
+      "panes": [
+        {
+          "size": 1.0,
+          "contentType": "Microsoft.Terminal.SettingsPage",
+          "payload": {
+            "currentPage": "globals"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+Here, we've got two tabs that have been serialized.
+* The first has two panes, seperated with a horizontal split. It has also been
+  renamed to "foo".
+  - The first pane takes up 30% of the parent, and contains a `TermControl`. The
+    content process for that control is identified by the content GUID
+    `{1-1-1-1}`
+  - The second pane is also a `TermControl`, takes up 70% of the parent, and is
+    attached to the content process `{2-2-2-2}`
+* The second tab has a single pane, with a SettingsPage. The settings page has
+  also specified in it's `payload` that its current page is the "globals" page.
+
+When we send this serialized state to another window, it can use the content
+GUIDs to initialize new `TermControl`s connected to the appropriate content
+processes. It can also pass the `payload` to a new `SettingsPage`, so the
+settings page can recreate whatever state it was in.
+
+It would be at the discretion of each type of content to specify exactly what
+would go into the `payload`, and how to best deserialize it. In the future, we'd
+also need to consider how the content types should be identified and
+instantiated, but that's a questions that's deferred to a future "extensions"
+spec.
+
+#### Mixed elevation & Monarch / Peasant issues
+
+[TODO]: # TODO =================================================================
+
+#### What happens to the content if the monarch dies unexpectedly?
+
+What happens if you only have one window process, the monarch, and it
+throws an exception for whatever reason? Will the content processes also attempt
+to be servants here? Or perhaps is there another mechanism by which the content
+processes can realize all the windows are gone and start a new window process
+who becomes the instant-monarch for all the still-living and remaining content
+processes?
+
+I suppose we _could_ have a content process try to auto-create a new window for
+itself if it detects that it's window is gone, but it didn't receive a clean
+close. Like, the window process would _need_ to call
+`Content::WindowIsClosing()` to indicate that it's a clean close manually. I'm
+not sure from and end user perspective if all the panes in a window exploding
+out into their own windows is totally a great idea, but it's worth noting as a
+possibility.
+
+This is left unanswered for now - we can certainly experiment with the content
+processes auto-recreating a window for themselves in the future.
 
 ## Implementation Plan
 
@@ -807,25 +1032,15 @@ of each other.
 <a name="footnote-1"><a>[1]: See [Quake mode scenarios] for a longer enumeration
 of possible scenarios.
 
+<a name="footnote-2"><a>[2]: I'm not prescribing that this solution _must_
+involve JSON. In this scenario, I'm using JSON merely as an example
+serialization that we can quickly examine and discuss. If we did use JSON, we'd
+almost certainly want to use a string as the payload type, so we can just pass
+that string into some WinRT method projected by whatever type corresponds to the
+provided `type`.
+
 ## Future considerations
 
-* Yea add these
-
-* Non-terminal content in the Terminal. We've now created a _very_
-  terminal-specific IPC mechanism for transferring _terminal_ state from one
-  thread to another. When we start to plan on having panes that contain
-  non-terminal content in them, they won't be able to move across-process like
-  this. Options available here include:
-  - Passing some well-defined string / JSON blob from the source process to the
-    target process, such that the extension could use that JSON to recreate
-    whatever state the pane was last in. The extension would be able to control
-    this content entirely.
-      - Maybe they want to pass a GUID that the new process will be able to user
-        to `CreateInstance` the singleton for their UI and then dupe their swap
-        chain to the new thread...
-  - Preventing tabs with non-terminal content open in them from being dragged
-    out entirely. They're stuck in their window until the non-terminal content
-    is removed.
 * A previous discussion with someone on the input team brought up the following
   idea: When a tab is being torn out, move all the _other_ tabs to a new window,
   and continue dragging the current window. This should make the drag/drop
