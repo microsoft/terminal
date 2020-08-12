@@ -18,17 +18,18 @@ jobs:
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
 
-- template: MUX-RunHelixTests-Job.yml
+- template: helix-runtests-job.yml
   parameters:
     name: 'RunTestsInHelix'
     dependsOn: BuildJob
-    condition: succeeded()
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest'))) 
     testSuite: 'DevTestSuite'
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
-- template: MUX-ProcessTestResults-Job.yml
+- template: helix-processtestresults-job.yml
   parameters:
     dependsOn:
     - RunTestsInHelix
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest'))) 
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

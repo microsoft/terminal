@@ -28,7 +28,7 @@ echo %TIME%
 powershell -ExecutionPolicy Bypass .\InstallTestAppDependencies.ps1
 echo %TIME%
 
-set testBinaryCandidates=TextBuffer.Unit.Tests.dll TerminalApp.LocalTests.dll Conhost.UIA.Tests.dll
+set testBinaryCandidates=TerminalApp.LocalTests.dll Conhost.UIA.Tests.dll
 set testBinaries=
 for %%B in (%testBinaryCandidates%) do (
     if exist %%B (
