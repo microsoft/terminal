@@ -80,7 +80,7 @@ public:
     static std::filesystem::path GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
-    const winrt::TerminalApp::ColorScheme* GetColorSchemeForProfile(const GUID profileGuid) const;
+    const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const GUID profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
