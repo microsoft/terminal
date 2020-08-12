@@ -22,7 +22,7 @@ jobs:
   parameters:
     name: 'RunTestsInHelix'
     dependsOn: BuildJob
-    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest'))) 
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequesttest'))) 
     testSuite: 'DevTestSuite'
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
@@ -30,6 +30,6 @@ jobs:
   parameters:
     dependsOn:
     - RunTestsInHelix
-    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest'))) 
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequesttest'))) 
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
