@@ -22,7 +22,8 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
-        _switcherStartIdx{ 0 }
+        _switcherStartIdx{ 0 },
+        _anchorKey{ VirtualKey::None }
     {
         InitializeComponent();
 
