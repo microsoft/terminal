@@ -84,7 +84,7 @@ steps:
   inputs:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
-    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}
+    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
 - task: PowerShell@2
