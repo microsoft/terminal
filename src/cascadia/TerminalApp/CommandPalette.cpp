@@ -30,6 +30,12 @@ namespace winrt::TerminalApp::implementation
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
+        // GH#7254 - default initialize a mode
+        _currentMode = CommandPaletteMode::ActionMode;
+        SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+        NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+        ControlName(RS_(L"CommandPaletteControlName"));
+
         if (CommandPaletteShadow())
         {
             // Hook up the shadow on the command palette to the backdrop that
