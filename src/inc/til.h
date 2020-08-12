@@ -17,6 +17,7 @@
 #include "til/u8u16convert.h"
 #include "til/spsc.h"
 #include "til/coalesce.h"
+#include "til/replace.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
