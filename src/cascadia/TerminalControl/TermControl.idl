@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IMouseWheelListener.idl";
+import "IControlSettings.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
@@ -32,11 +33,13 @@ namespace Microsoft.Terminal.TerminalControl
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
-        TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.TerminalControl.IControlSettings settings, UInt32 dpi);
 
-        void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
+        void UpdateSettings(Microsoft.Terminal.TerminalControl.IControlSettings newSettings);
+
+        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
 
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
@@ -68,6 +71,10 @@ namespace Microsoft.Terminal.TerminalControl
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
+        void SendInput(String input);
         void ToggleRetroEffect();
+
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
     }
 }

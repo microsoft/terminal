@@ -18,10 +18,10 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-#include <winrt/Microsoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
 {
     static constexpr std::array<pair_type, 5> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -42,7 +42,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -68,7 +68,7 @@ JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::w
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -101,6 +101,8 @@ JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
     {
         return EnumMapper::CanConvert(json) || json.isBool();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
@@ -151,6 +153,8 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::Fon
     {
         return BaseEnumMapper::CanConvert(json) || json.isUInt();
     }
+
+    using EnumMapper::TypeDescription;
 };
 
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
@@ -231,6 +235,11 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
     {
         return json.isString();
     }
+
+    std::string TypeDescription() const
+    {
+        return "x, y";
+    }
 };
 
 // Possible Direction values
@@ -268,5 +277,14 @@ JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
         pair_type{ "settingsFile", ValueType::SettingsFile },
         pair_type{ "defaultsFile", ValueType::DefaultsFile },
         pair_type{ "allFiles", ValueType::AllFiles },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "ctrl", ValueType::Control },
+        pair_type{ "alt", ValueType::Menu },
+        pair_type{ "shift", ValueType::Shift },
     };
 };

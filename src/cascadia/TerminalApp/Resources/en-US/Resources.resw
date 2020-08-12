@@ -449,8 +449,15 @@
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
   </data>
+  <data name="SendInputCommandKey" xml:space="preserve">
+    <value>Send Input: "{0}"</value>
+    <comment>{0} will be replaced with a string of input as defined by the user</comment>
+  </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
+  </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Toggle pane zoom</value>
   </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
@@ -526,6 +533,13 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Set color scheme to {0}</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
   <data name="SetTabColorCommandKey" xml:space="preserve">
     <value>Set tab color to {0}</value>
     <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
@@ -538,14 +552,34 @@
   </data>
   <data name="RenameTabCommandKey" xml:space="preserve">
     <value>Rename tab to "{0}"</value>
-    <comment>{0} will be replaced with user-defined string</comment>
+    <comment>{0} will be replaced with a user-defined string</comment>
   </data>
   <data name="ResetTabNameCommandKey" xml:space="preserve">
     <value>Reset tab title</value>
   </data>
   <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
     <value>Run commandline "{0}" in this window</value>
-    <comment>{0} will be replaced with user-defined commandline</comment>
+    <comment>{0} will be replaced with a user-defined commandline</comment>
+  </data>
+  <data name="CloseOtherTabsCommandKey" xml:space="preserve">
+    <value>Close tabs other than index {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseTabsAfterCommandKey" xml:space="preserve">
+    <value>Close tabs after index {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Tab Switcher</value>
+  </data>
+  <data name="ToggleTabSwitcherCommandKey" xml:space="preserve">
+    <value>Toggle tab switcher</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Type a tab name...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>No matching tab name</value>
   </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>

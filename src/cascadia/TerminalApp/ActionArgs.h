@@ -13,11 +13,16 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
+#include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "SetColorSchemeArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
 #include "ExecuteCommandlineArgs.g.h"
+#include "CloseOtherTabsArgs.g.h"
+#include "CloseTabsAfterArgs.g.h"
+#include "ToggleTabSwitcherArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -266,6 +271,37 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
+    struct SendInputArgs : public SendInputArgsT<SendInputArgs>
+    {
+        SendInputArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Input, L"");
+
+        static constexpr std::string_view InputKey{ "input" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            if (auto otherAsUs = other.try_as<SendInputArgs>(); otherAsUs)
+            {
+                return otherAsUs->_Input == _Input;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SendInputArgs>();
+            JsonUtils::GetValueForKey(json, InputKey, args->_Input);
+            if (args->_Input.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            return { *args, {} };
+        }
+    };
+
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
@@ -326,6 +362,38 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<OpenSettingsArgs>();
             JsonUtils::GetValueForKey(json, TargetKey, args->_Target);
+            return { *args, {} };
+        }
+    };
+
+    struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
+    {
+        SetColorSchemeArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, SchemeName, L"");
+
+        static constexpr std::string_view NameKey{ "colorScheme" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SetColorSchemeArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SchemeName == _SchemeName;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SetColorSchemeArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
+            if (args->_SchemeName.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
             return { *args, {} };
         }
     };
@@ -421,6 +489,89 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
+    struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
+    {
+        CloseOtherTabsArgs() = default;
+        GETSET_PROPERTY(uint32_t, Index, 0);
+
+        static constexpr std::string_view IndexKey{ "index" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<CloseOtherTabsArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Index == _Index;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CloseOtherTabsArgs>();
+            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
+            return { *args, {} };
+        }
+    };
+
+    struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
+    {
+        CloseTabsAfterArgs() = default;
+        GETSET_PROPERTY(uint32_t, Index, 0);
+
+        static constexpr std::string_view IndexKey{ "index" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<CloseTabsAfterArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Index == _Index;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CloseTabsAfterArgs>();
+            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
+            return { *args, {} };
+        }
+    };
+
+    struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
+    {
+        ToggleTabSwitcherArgs() = default;
+        GETSET_PROPERTY(Windows::System::VirtualKey, AnchorKey, Windows::System::VirtualKey::None);
+
+        static constexpr std::string_view AnchorJsonKey{ "anchorKey" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ToggleTabSwitcherArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_AnchorKey == _AnchorKey;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ToggleTabSwitcherArgs>();
+            JsonUtils::GetValueForKey(json, AnchorJsonKey, args->_AnchorKey);
+            return { *args, {} };
+        }
+    };
 }
 
 namespace winrt::TerminalApp::factory_implementation
