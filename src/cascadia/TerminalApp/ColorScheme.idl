@@ -1,15 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../TerminalSettings.idl";
-
 namespace TerminalApp
 {
     [default_interface] runtimeclass ColorScheme {
         ColorScheme();
         ColorScheme(String name, Windows.UI.Color defaultFg, Windows.UI.Color defaultBg, Windows.UI.Color cursorColor);
 
-        void ApplyScheme(Microsoft.Terminal.TerminalControl.IControlSettings terminalSettings);
+        void ApplyScheme(Microsoft.Terminal.TerminalControl.IControlSettings settings);
 
         String Name { get; };
 

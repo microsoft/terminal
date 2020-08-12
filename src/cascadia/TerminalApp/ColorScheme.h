@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         ColorScheme(hstring name, Windows::UI::Color defaultFg, Windows::UI::Color defaultBg, Windows::UI::Color cursorColor);
         ~ColorScheme();
 
-        void ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& terminalSettings) const;
+        void ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings) const;
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;
