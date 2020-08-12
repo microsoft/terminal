@@ -22,6 +22,7 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
+        _anchorKey{ VirtualKey::None },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
@@ -29,6 +30,8 @@ namespace winrt::TerminalApp::implementation
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+
+        _switchToMode(CommandPaletteMode::ActionMode);
 
         if (CommandPaletteShadow())
         {
@@ -389,23 +392,26 @@ namespace winrt::TerminalApp::implementation
             {
                 _filteredActions.Append(action);
             }
+        }
 
-            switch (_currentMode)
-            {
-            case CommandPaletteMode::TabSwitcherMode:
-            {
-                SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
-                NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-                ControlName(RS_(L"TabSwitcherControlName"));
-                break;
-            }
-            case CommandPaletteMode::ActionMode:
-            default:
-                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-                ControlName(RS_(L"CommandPaletteControlName"));
-                break;
-            }
+        // Leaving this block of code outside the above if-statement
+        // guarantees that the correct text is shown for the mode
+        // whenever _switchToMode is called.
+        switch (_currentMode)
+        {
+        case CommandPaletteMode::TabSwitcherMode:
+        {
+            SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+            NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
+            ControlName(RS_(L"TabSwitcherControlName"));
+            break;
+        }
+        case CommandPaletteMode::ActionMode:
+        default:
+            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            ControlName(RS_(L"CommandPaletteControlName"));
+            break;
         }
     }
 
