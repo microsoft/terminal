@@ -5,14 +5,22 @@ import "../Command.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.Grid
+    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         CommandPalette();
 
+        String NoMatchesText { get; };
+        String SearchBoxText { get; };
+        String ControlName { get; };
+
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
-        void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);
+        void EnableCommandPaletteMode();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
+
+        void EnableTabSwitcherMode(Windows.System.VirtualKey anchorKey, UInt32 startIdx);
+        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }

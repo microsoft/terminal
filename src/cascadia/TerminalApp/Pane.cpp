@@ -12,7 +12,6 @@ using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
@@ -841,21 +840,29 @@ void Pane::_UpdateBorders()
     double top = 0, bottom = 0, left = 0, right = 0;
 
     Thickness newBorders{ 0 };
-    if (WI_IsFlagSet(_borders, Borders::Top))
+    if (_zoomed)
     {
-        top = PaneBorderSize;
+        // When the pane is zoomed, manually show all the borders around the window.
+        top = bottom = right = left = PaneBorderSize;
     }
-    if (WI_IsFlagSet(_borders, Borders::Bottom))
+    else
     {
-        bottom = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Left))
-    {
-        left = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Right))
-    {
-        right = PaneBorderSize;
+        if (WI_IsFlagSet(_borders, Borders::Top))
+        {
+            top = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Bottom))
+        {
+            bottom = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Left))
+        {
+            left = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Right))
+        {
+            right = PaneBorderSize;
+        }
     }
     _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
@@ -1171,6 +1178,76 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _lastActive = false;
 
     return { _firstChild, _secondChild };
+}
+
+// Method Description:
+// - Recursively attempt to "zoom" the given pane. When the pane is zoomed, it
+//   won't be displayed as part of the tab tree, instead it'll take up the full
+//   content of the tab. When we find the given pane, we'll need to remove it
+//   from the UI tree, so that the caller can re-add it. We'll also set some
+//   internal state, so the pane can display all of its borders.
+// Arguments:
+// - zoomedPane: This is the pane which we're attempting to zoom on.
+// Return Value:
+// - <none>
+void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
+{
+    if (_IsLeaf())
+    {
+        _zoomed = (zoomedPane == shared_from_this());
+        _UpdateBorders();
+    }
+    else
+    {
+        if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+        {
+            // When we're zooming the pane, we'll need to remove it from our UI
+            // tree. Easy way: just remove both children. We'll re-attach both
+            // when we un-zoom.
+            _root.Children().Clear();
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild->Maximize(zoomedPane);
+        _secondChild->Maximize(zoomedPane);
+    }
+}
+
+// Method Description:
+// - Recursively attempt to "un-zoom" the given pane. This does the opposite of
+//   Pane::Maximize. When we find the given pane, we should return the pane to our
+//   UI tree. We'll also clear the internal state, so the pane can display its
+//   borders correctly.
+// - The caller should make sure to have removed the zoomed pane from the UI
+//   tree _before_ calling this.
+// Arguments:
+// - zoomedPane: This is the pane which we're attempting to un-zoom.
+// Return Value:
+// - <none>
+void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
+{
+    if (_IsLeaf())
+    {
+        _zoomed = false;
+        _UpdateBorders();
+    }
+    else
+    {
+        if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+        {
+            // When we're un-zooming the pane, we'll need to re-add it to our UI
+            // tree where it originally belonged. easy way: just re-add both.
+            _root.Children().Clear();
+            _root.Children().Append(_firstChild->GetRootElement());
+            _root.Children().Append(_secondChild->GetRootElement());
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild->Restore(zoomedPane);
+        _secondChild->Restore(zoomedPane);
+    }
 }
 
 // Method Description:

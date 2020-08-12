@@ -27,7 +27,9 @@ static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
+static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view FindKey{ "find" };
@@ -35,11 +37,15 @@ static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
+static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
 static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view CloseOtherTabsKey{ "closeOtherTabs" };
+static constexpr std::string_view CloseTabsAfterKey{ "closeTabsAfter" };
+static constexpr std::string_view ToggleTabSwitcherKey{ "tabSwitcher" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -80,11 +86,14 @@ namespace winrt::TerminalApp::implementation
         { ResizePaneKey, ShortcutAction::ResizePane },
         { MoveFocusKey, ShortcutAction::MoveFocus },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
+        { SetColorSchemeKey, ShortcutAction::SetColorScheme },
         { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
+        { SendInputKey, ShortcutAction::SendInput },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
         { UnboundKey, ShortcutAction::Invalid },
@@ -92,6 +101,9 @@ namespace winrt::TerminalApp::implementation
         { RenameTabKey, ShortcutAction::RenameTab },
         { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
+        { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
+        { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
+        { ToggleTabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -115,15 +127,25 @@ namespace winrt::TerminalApp::implementation
 
         { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
 
+        { ShortcutAction::SendInput, winrt::TerminalApp::implementation::SendInputArgs::FromJson },
+
         { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
 
         { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+
+        { ShortcutAction::SetColorScheme, winrt::TerminalApp::implementation::SetColorSchemeArgs::FromJson },
 
         { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
 
         { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
 
         { ShortcutAction::ExecuteCommandline, winrt::TerminalApp::implementation::ExecuteCommandlineArgs::FromJson },
+
+        { ShortcutAction::CloseOtherTabs, winrt::TerminalApp::implementation::CloseOtherTabsArgs::FromJson },
+
+        { ShortcutAction::CloseTabsAfter, winrt::TerminalApp::implementation::CloseTabsAfterArgs::FromJson },
+
+        { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -266,14 +288,19 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::Invalid, L"" },
                 { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
                 { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
                 { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::CloseOtherTabs, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::CloseTabsAfter, L"" }, // Intentionally omitted, must be generated by GenerateName
             };
         }();
 

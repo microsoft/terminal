@@ -94,6 +94,11 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitState SplitStyle { get; };
@@ -104,6 +109,11 @@ namespace TerminalApp
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
         SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    {
+        String SchemeName { get; };
     };
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
@@ -119,5 +129,20 @@ namespace TerminalApp
     [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
     {
         String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        UInt32 Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        UInt32 Index { get; };
+    };
+
+    [default_interface] runtimeclass ToggleTabSwitcherArgs : IActionArgs
+    {
+        Windows.System.VirtualKey AnchorKey { get; };
     };
 }

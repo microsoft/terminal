@@ -189,6 +189,7 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
+    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../TerminalSettings.cpp">
       <DependentUpon>../TerminalSettings.idl</DependentUpon>
     </ClCompile>
@@ -302,12 +303,6 @@
     private=false and CopyLocalSatelliteAssemblies=false, so that we don't
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
-    <Reference Include="Microsoft.Terminal.Settings">
-      <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
