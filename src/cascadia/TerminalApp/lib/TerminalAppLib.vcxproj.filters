@@ -148,7 +148,7 @@
     <Midl Include="../TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="..\ColorScheme.idl">
+    <Midl Include="../ColorScheme.idl">
       <Filter>settings</Filter>
     </Midl>
   </ItemGroup>
