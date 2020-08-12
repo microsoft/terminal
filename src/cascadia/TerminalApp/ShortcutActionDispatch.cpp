@@ -113,6 +113,12 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
+        case ShortcutAction::SendInput:
+        {
+            _SendInputHandlers(*this, *eventArgs);
+            break;
+        }
+
         case ShortcutAction::SplitVertical:
         case ShortcutAction::SplitHorizontal:
         case ShortcutAction::SplitPane:

@@ -59,6 +59,7 @@
     <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../ColorHelper.cpp" />
     <ClCompile Include="../DebugTapConnection.cpp" />
+    <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>

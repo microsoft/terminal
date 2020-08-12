@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
+#include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
 #include "SetColorSchemeArgs.g.h"
@@ -266,6 +267,37 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<AdjustFontSizeArgs>();
             JsonUtils::GetValueForKey(json, AdjustFontSizeDelta, args->_Delta);
+            return { *args, {} };
+        }
+    };
+
+    struct SendInputArgs : public SendInputArgsT<SendInputArgs>
+    {
+        SendInputArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Input, L"");
+
+        static constexpr std::string_view InputKey{ "input" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            if (auto otherAsUs = other.try_as<SendInputArgs>(); otherAsUs)
+            {
+                return otherAsUs->_Input == _Input;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SendInputArgs>();
+            JsonUtils::GetValueForKey(json, InputKey, args->_Input);
+            if (args->_Input.empty())
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
             return { *args, {} };
         }
     };

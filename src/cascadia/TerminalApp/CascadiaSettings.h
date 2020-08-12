@@ -39,7 +39,15 @@ namespace TerminalAppUnitTests
 
 namespace TerminalApp
 {
+    class SettingsTypedDeserializationException;
     class CascadiaSettings;
+};
+
+class TerminalApp::SettingsTypedDeserializationException final : public std::runtime_error
+{
+public:
+    SettingsTypedDeserializationException(const std::string_view description) :
+        runtime_error(description.data()) {}
 };
 
 class TerminalApp::CascadiaSettings final
