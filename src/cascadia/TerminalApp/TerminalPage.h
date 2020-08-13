@@ -16,6 +16,7 @@
 namespace TerminalAppLocalTests
 {
     class TabTests;
+    class SettingsTests;
 };
 
 namespace winrt::TerminalApp::implementation
@@ -135,6 +136,9 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
+                                                                                                                          gsl::span<const ::TerminalApp::Profile> profiles);
+
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
@@ -237,6 +241,7 @@ namespace winrt::TerminalApp::implementation
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;
+        friend class TerminalAppLocalTests::SettingsTests;
     };
 }
 

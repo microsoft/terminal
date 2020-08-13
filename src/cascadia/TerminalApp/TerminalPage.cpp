@@ -2031,6 +2031,28 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Takes a mapping of names->commands and expands them
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
+                                                                                    gsl::span<const ::TerminalApp::Profile> profiles)
+    {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        for (const auto& nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        Command::ExpandCommands(copyOfCommands,
+                                profiles,
+                                warnings);
+
+        return copyOfCommands;
+    }
+    // Method Description:
     // - Repopulates the list of commands in the command palette with the
     //   current commands in the settings. Also updates the keybinding labels to
     //   reflect any matching keybindings.
@@ -2040,12 +2062,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
-        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _settings->GlobalSettings().GetCommands();
-
-        Command::ExpandCommands(copyOfCommands,
-                                _settings->GetProfiles(),
-                                warnings);
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
+                                                                                           _settings->GetProfiles());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());

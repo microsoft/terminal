@@ -5,6 +5,7 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
+#include "../TerminalApp/TerminalPage.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 #include <defaults.h>
@@ -2544,9 +2545,9 @@ namespace TerminalAppLocalTests
         }
 
         Log::Comment(L"Now verify the commands");
-
+        _logCommandNames(commands);
         {
-            auto command = commands.Lookup(L"Split pane, direction: Vertical");
+            auto command = commands.Lookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2594,7 +2595,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.Lookup(L"Split pane, direction: Horizontal");
+            auto command = commands.Lookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2681,14 +2682,14 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.Size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = commands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2706,7 +2707,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"iterable command profile1");
+            auto command = expandedCommands.Lookup(L"iterable command profile1");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2724,7 +2725,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2811,14 +2812,14 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.Size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = commands.Lookup(L"Split pane, profile: profile0");
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2836,7 +2837,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"Split pane, profile: profile1");
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2854,7 +2855,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"Split pane, profile: profile2");
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2944,13 +2945,14 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.Size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = commands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2968,7 +2970,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"iterable command profile1\"");
+            auto command = expandedCommands.Lookup(L"iterable command profile1\"");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2986,7 +2988,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -3064,12 +3066,13 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommandProj = commands.Lookup(L"Connect to ssh...");
+        auto rootCommandProj = expandedCommands.Lookup(L"Connect to ssh...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);
@@ -3171,12 +3174,13 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto grandparentCommandProj = commands.Lookup(L"grandparent");
+        auto grandparentCommandProj = expandedCommands.Lookup(L"grandparent");
         VERIFY_IS_NOT_NULL(grandparentCommandProj);
         auto grandparentActionAndArgs = grandparentCommandProj.Action();
         VERIFY_IS_NULL(grandparentActionAndArgs);
@@ -3290,7 +3294,7 @@ namespace TerminalAppLocalTests
                     "iterateOn": "profiles",
                     "name": "${profile.name}...",
                     "commands": [
-                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "automatic" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
                         { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
                         { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
                     ]
@@ -3309,16 +3313,17 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
 
-        VERIFY_ARE_EQUAL(3u, commands.Size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
             winrt::hstring commandName{ name + L"..." };
-            auto commandProj = commands.Lookup(commandName);
+            auto commandProj = expandedCommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NULL(actionAndArgs);
@@ -3460,12 +3465,13 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommandProj = commands.Lookup(L"New Tab With Profile...");
+        auto rootCommandProj = expandedCommands.Lookup(L"New Tab With Profile...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);
@@ -3551,7 +3557,7 @@ namespace TerminalAppLocalTests
                             "iterateOn": "profiles",
                             "name": "${profile.name}...",
                             "commands": [
-                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "automatic" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
                                 { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
                                 { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
                             ]
@@ -3572,12 +3578,13 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        _logCommandNames(commands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommandProj = commands.Lookup(L"New Pane...");
+        auto rootCommandProj = expandedCommands.Lookup(L"New Pane...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);

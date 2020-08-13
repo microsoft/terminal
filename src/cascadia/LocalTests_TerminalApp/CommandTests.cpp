@@ -279,7 +279,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
         {
-            auto command = commands.Lookup(L"Split pane, direction: vertical");
+            auto command = commands.Lookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -289,7 +289,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            auto command = commands.Lookup(L"Split pane, direction: horizontal");
+            auto command = commands.Lookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
