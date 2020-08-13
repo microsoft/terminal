@@ -46,7 +46,7 @@ namespace TerminalApp
         ToggleCommandPalette,
         CloseOtherTabs,
         CloseTabsAfter,
-        ToggleTabSwitcher
+        TabSearch
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -97,6 +97,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ExecuteCommandline;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseOtherTabs;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseTabsAfter;
-        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleTabSwitcher;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> TabSearch;
     }
 }
