@@ -51,6 +51,60 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    // Function Description:
+    // - Recursively check our commands to see if there's a keybinding for
+    //   exactly their action. If there is, label that command with the text
+    //   corresponding to that key chord.
+    // - Will recurse into nested commands as well.
+    // Arguments:
+    // - settings: The settings who's keybindings we should use to look up the key chords from
+    // - commands: The list of commands to label.
+    static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    {
+        for (const auto& nameAndCmd : commands)
+        {
+            const auto& command = nameAndCmd.Value();
+            // If there's a keybinding that's bound to exactly this command,
+            // then get the string for that keychord and display it as a
+            // part of the command in the UI. Each Command's KeyChordText is
+            // unset by default, so we don't need to worry about clearing it
+            // if there isn't a key associated with it.
+            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+
+            if (keyChord)
+            {
+                command.KeyChordText(KeyChordSerialization::ToString(keyChord));
+            }
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+            }
+        }
+    }
+
+    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    {
+        for (const auto& nameAndCmd : commands)
+        {
+            const auto& command = nameAndCmd.Value();
+            // Set the default IconSource to a BitmapIconSource with a null source
+            // (instead of just nullptr) because there's a really weird crash when swapping
+            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+            // Swapping between nullptr IconSources and non-null IconSources causes a crash
+            // to occur, but swapping between IconSources with a null source and non-null IconSources
+            // work perfectly fine :shrug:.
+            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
+            icon.UriSource(nullptr);
+            command.IconSource(icon);
+
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandIcons(command.NestedCommands());
+            }
+        }
+    }
+
     winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
                                                      bool needRefreshUI)
     {
@@ -64,36 +118,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            // Update the command palette when settings reload
-            auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
-            {
-                auto command = nameAndCommand.second;
-
-                // If there's a keybinding that's bound to exactly this command,
-                // then get the string for that keychord and display it as a
-                // part of the command in the UI. Each Command's KeyChordText is
-                // unset by default, so we don't need to worry about clearing it
-                // if there isn't a key associated with it.
-                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
-                if (keyChord)
-                {
-                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
-                }
-
-                // Set the default IconSource to a BitmapIconSource with a null source
-                // (instead of just nullptr) because there's a really weird crash when swapping
-                // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-                // Swapping between nullptr IconSources and non-null IconSources causes a crash
-                // to occur, but swapping between IconSources with a null source and non-null IconSources
-                // work perfectly fine :shrug:.
-                winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-                icon.UriSource(nullptr);
-                command.IconSource(icon);
-
-                commandsCollection.Append(command);
-            }
-            CommandPalette().SetCommands(commandsCollection);
+            _UpdateCommandsForPalette();
         }
     }
 
@@ -1807,10 +1832,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
-    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
-    //      that are set up in TerminalPage::Create()
+    // - Responds to changes in the TabView's item list by changing the
+    //   tabview's visibility.
+    // - This method is also invoked when tabs are dragged / dropped as part of
+    //   tab reordering and this method hands that case as well in concert with
+    //   TabDragStarting and TabDragCompleted handlers that are set up in
+    //   TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
@@ -1827,6 +1854,10 @@ namespace winrt::TerminalApp::implementation
             {
                 _rearrangeTo = eventArgs.Index();
             }
+        }
+        else
+        {
+            _UpdateCommandsForPalette();
         }
 
         _UpdateTabView();
@@ -2002,6 +2033,54 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Takes a mapping of names->commands and expands them
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
+                                                                                    gsl::span<const ::TerminalApp::Profile> profiles)
+    {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        for (const auto& nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        Command::ExpandCommands(copyOfCommands,
+                                profiles,
+                                warnings);
+
+        return copyOfCommands;
+    }
+    // Method Description:
+    // - Repopulates the list of commands in the command palette with the
+    //   current commands in the settings. Also updates the keybinding labels to
+    //   reflect any matching keybindings.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateCommandsForPalette()
+    {
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
+                                                                                           _settings->GetProfiles());
+
+        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
+        _recursiveUpdateCommandIcons(copyOfCommands.GetView());
+
+        // Update the command palette when settings reload
+        auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        for (const auto& nameAndCommand : copyOfCommands)
+        {
+            commandsCollection.Append(nameAndCommand.Value());
+        }
+
+        CommandPalette().SetCommands(commandsCollection);
     }
 
     // Method Description:

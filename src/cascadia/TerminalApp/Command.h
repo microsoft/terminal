@@ -1,4 +1,4 @@
-﻿/*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -20,17 +20,39 @@ Author(s):
 
 #include "Command.g.h"
 #include "TerminalWarnings.h"
+#include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class CommandTests;
+};
 
 namespace winrt::TerminalApp::implementation
 {
+    enum class ExpandCommandType : uint32_t
+    {
+        None = 0,
+        Profiles
+    };
+
     struct Command : CommandT<Command>
     {
-        Command() = default;
+        Command();
 
-        static winrt::com_ptr<Command> FromJson(const Json::Value& json, std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
-        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+        static winrt::com_ptr<Command> FromJson(const Json::Value& json,
+                                                std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+
+        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
+                                   gsl::span<const ::TerminalApp::Profile> profiles,
+                                   std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+
+        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
+        bool HasNestedCommands();
+        Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
@@ -39,6 +61,18 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
+
+        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+
+    private:
+        Json::Value _originalJson;
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands{ nullptr };
+
+        static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
+                                                                       gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                       std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::CommandTests;
     };
 }
 

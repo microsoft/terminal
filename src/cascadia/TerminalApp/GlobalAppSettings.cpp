@@ -60,6 +60,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
+    _commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
 }
 
 GlobalAppSettings::~GlobalAppSettings()
@@ -230,7 +231,12 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
-const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
+}
+
+winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
 {
     return _commands;
 }

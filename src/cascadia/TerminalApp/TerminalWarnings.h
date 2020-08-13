@@ -30,6 +30,7 @@ namespace TerminalApp
         TooManyKeysForChord = 6,
         MissingRequiredParameter = 7,
         LegacyGlobalsProperty = 8,
+        FailedToParseCommandJson = 9,
         WARNINGS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
     };
 
