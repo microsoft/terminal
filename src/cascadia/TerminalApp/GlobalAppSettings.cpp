@@ -36,6 +36,7 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
+static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -116,6 +117,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
     settings.SoftwareRendering(_SoftwareRendering);
     settings.ForceVTInput(_ForceVTInput);
+    settings.UseTabSwitcher(_UseTabSwitcher);
 }
 
 // Method Description:
@@ -178,6 +180,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
+
+    JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
