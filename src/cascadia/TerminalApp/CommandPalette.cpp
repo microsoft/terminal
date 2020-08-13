@@ -22,7 +22,7 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
-        _anchorKey{ VirtualKey::None },
+        _anchoredMode{ false },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
+                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchoredMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
                     _filteredActionsView().Focus(FocusState::Keyboard);
@@ -83,7 +83,7 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
+            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchoredMode)
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
             }
@@ -125,7 +125,7 @@ namespace winrt::TerminalApp::implementation
         // a really widely used keyboard navigation key.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
             key == VirtualKey::Tab &&
-            _anchorKey != VirtualKey::None)
+            _anchoredMode)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
@@ -198,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_currentMode == CommandPaletteMode::TabSwitcherMode)
         {
-            if (_anchorKey != VirtualKey::None)
+            if (_anchoredMode)
             {
                 auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
                 auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
@@ -829,10 +829,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const bool anchoredMode, const uint32_t startIdx)
     {
         _switcherStartIdx = startIdx;
-        _anchorKey = anchorKey;
+        _anchoredMode = anchoredMode;
         _switchToMode(CommandPaletteMode::TabSwitcherMode);
         _updateFilteredActions();
     }

@@ -84,7 +84,7 @@ namespace winrt::TerminalApp::implementation
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
 
-            CommandPalette().EnableTabSwitcherMode(VirtualKey::Control, startIdx);
+            CommandPalette().EnableTabSwitcherMode(true, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
         }
         else
@@ -105,7 +105,7 @@ namespace winrt::TerminalApp::implementation
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();
 
-            CommandPalette().EnableTabSwitcherMode(VirtualKey::Control, startIdx);
+            CommandPalette().EnableTabSwitcherMode(true, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
         }
         else
@@ -482,12 +482,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
-                                      const TerminalApp::ActionEventArgs& args)
+                                            const TerminalApp::ActionEventArgs& args)
     {
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt ? *opt : 0;
 
-        CommandPalette().EnableTabSwitcherMode(VirtualKey::None, startIdx);
+        CommandPalette().EnableTabSwitcherMode(false, startIdx);
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);

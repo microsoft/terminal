@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
         // Tab Switcher
-        void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey, const uint32_t startIdx);
+        void EnableTabSwitcherMode(const bool anchoredMode, const uint32_t startIdx);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         void _switchToMode(CommandPaletteMode mode);
 
         // Tab Switcher
-        std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
+        bool _anchoredMode;
         void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
         void UpdateTabIndices(const uint32_t startIdx);
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
