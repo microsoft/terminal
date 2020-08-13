@@ -122,7 +122,9 @@ namespace winrt::TerminalApp::implementation
                                              const TerminalApp::ActionEventArgs& args)
     {
         auto activeTab = _GetFocusedTab();
-        if (activeTab)
+
+        // Don't do anything if there's only one pane. It's already zoomed.
+        if (activeTab && activeTab->GetLeafPaneCount() > 1)
         {
             // First thing's first, remove the current content from the UI
             // tree. This is important, because we might be leaving zoom, and if

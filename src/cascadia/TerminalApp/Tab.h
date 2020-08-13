@@ -66,6 +66,8 @@ namespace winrt::TerminalApp::implementation
         void EnterZoom();
         void ExitZoom();
 
+        int GetLeafPaneCount() const noexcept;
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -102,7 +104,6 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
-        int _GetLeafPaneCount() const noexcept;
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         void _UpdateTabHeader();
