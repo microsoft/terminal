@@ -772,14 +772,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
-        if (startIdx != _allTabActions.Size() - 1)
+        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
         {
-            for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-            {
-                auto command = _allTabActions.GetAt(i);
+            auto command = _allTabActions.GetAt(i);
 
-                command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-            }
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
         }
     }
 
