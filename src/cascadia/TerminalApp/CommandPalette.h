@@ -11,7 +11,8 @@ namespace winrt::TerminalApp::implementation
     enum class CommandPaletteMode
     {
         ActionMode = 0,
-        TabSwitcherMode
+        TabSwitcherMode,
+        CommandlineMode
     };
 
     struct CommandPalette : CommandPaletteT<CommandPalette>
@@ -74,6 +75,8 @@ namespace winrt::TerminalApp::implementation
         CommandPaletteMode _currentMode;
         void _switchToMode(CommandPaletteMode mode);
 
+        void _checkActionVsCommandlineMode();
+
         // Tab Switcher
         std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
         void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
@@ -84,7 +87,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
         void _dispatchCommand(const TerminalApp::Command& command);
-
+        void _dispatchCommandline();
         void _dismissPalette();
     };
 }

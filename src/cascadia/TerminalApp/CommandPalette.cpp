@@ -181,9 +181,16 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Dispatch the action of the selected command.
 
-            if (const auto selectedItem = _filteredActionsView().SelectedItem())
+            if (_currentMode == CommandPaletteMode::ActionMode)
             {
-                _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                {
+                    _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                }
+            }
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
+            {
+                _dispatchCommandline();
             }
 
             e.Handled(true);
@@ -319,6 +326,8 @@ namespace winrt::TerminalApp::implementation
             return _allCommands;
         case CommandPaletteMode::TabSwitcherMode:
             return _allTabActions;
+        case CommandPaletteMode::CommandlineMode:
+            return winrt::single_threaded_vector<TerminalApp::Command>();
         default:
             return _allCommands;
         }
@@ -378,6 +387,33 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void CommandPalette::_dispatchCommandline()
+    {
+        const std::wstring input{ _searchBox().Text() };
+        const auto rawCmdline{ input.substr(1) };
+
+        // Trim leading whitespace
+        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        if (firstNonSpace == std::wstring::npos)
+        {
+            return;
+        }
+
+        winrt::hstring cmdline{ rawCmdline.substr(firstNonSpace) };
+
+        // Build the NewTab action from the values we've parsed on the commandline.
+        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(cmdline);
+        executeActionAndArgs->Args(*args);
+
+        if (_dispatch.DoAction(*executeActionAndArgs))
+        {
+            _close();
+        }
+    }
+
     // Method Description:
     // - Helper method for closing the command palette, when the user has _not_
     //   selected an action. Also fires a tracelogging event indicating that the
@@ -408,10 +444,29 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        if (_currentMode != CommandPaletteMode::TabSwitcherMode)
+        {
+            _checkActionVsCommandlineMode();
+        }
+
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
 
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+    }
+
+    void CommandPalette::_checkActionVsCommandlineMode()
+    {
+        _currentMode = CommandPaletteMode::ActionMode;
+
+        auto inputText = _searchBox().Text();
+        if (inputText.size() > 0)
+        {
+            if (inputText[0] == L'>')
+            {
+                _currentMode = CommandPaletteMode::CommandlineMode;
+            }
+        }
     }
 
     Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
@@ -616,6 +671,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateFilteredActions()
     {
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            _filteredActions.Clear();
+            return;
+        }
+
         auto actions = _collectFilteredActions();
 
         // Make _filteredActions look identical to actions, using only Insert and Remove.
