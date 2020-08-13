@@ -35,6 +35,7 @@ namespace Conhost.UIA.Tests
         public const int timeout = Globals.Timeout;
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CheckExperimentalDisableState()
         {
             using (RegistryHelper reg = new RegistryHelper())
@@ -95,6 +96,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CheckRegistryWritebacks()
         {
             using (RegistryHelper reg = new RegistryHelper())
@@ -110,6 +112,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CheckShortcutWritebacks()
         {
             using (RegistryHelper reg = new RegistryHelper())
