@@ -2068,7 +2068,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                                    gsl::span<const winrt::TerminalApp::Profile> profiles,
                                                                                     const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;

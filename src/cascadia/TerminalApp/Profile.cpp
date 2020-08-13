@@ -11,9 +11,12 @@
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "Profile.g.cpp"
+
 using namespace TerminalApp;
 using namespace winrt::TerminalApp::implementation;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
@@ -314,18 +317,24 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
+    std::optional<GUID> guid;
+    std::optional<til::color> color;
+
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
-    std::optional<GUID> guid;
     JsonUtils::GetValueForKey(json, GuidKey, guid);
     _Guid = guid.has_value() ? IReference<winrt::guid>{ guid.value() } : nullptr;
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::GetValueForKey(json, ForegroundKey, color);
+    _Foreground = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
+    JsonUtils::GetValueForKey(json, BackgroundKey, color);
+    _Background = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, color);
+    _SelectionBackground = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
+    JsonUtils::GetValueForKey(json, CursorColorKey, color);
+    _CursorColor = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -362,7 +371,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    JsonUtils::GetValueForKey(json, TabColorKey, color);
+    _TabColor = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
 }
 
 // Method Description:
@@ -503,4 +513,40 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     const auto source{ JsonUtils::GetValueForKey<IReference<hstring>>(json, SourceKey) };
 
     return Profile::_GenerateGuidForProfile(name, source);
+}
+
+HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
+{
+    if (_BackgroundImageAlignment.has_value())
+    {
+        return std::get<HorizontalAlignment>(_BackgroundImageAlignment.value());
+    }
+    return HorizontalAlignment::Center;
+}
+
+void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
+{
+    if (!_BackgroundImageAlignment.has_value())
+    {
+        std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = VerticalAlignment::Center;
+    }
+    std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = value;
+}
+
+VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
+{
+    if (_BackgroundImageAlignment.has_value())
+    {
+        return std::get<VerticalAlignment>(_BackgroundImageAlignment.value());
+    }
+    return VerticalAlignment::Center;
+}
+
+void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
+{
+    if (!_BackgroundImageAlignment.has_value())
+    {
+        std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = HorizontalAlignment::Center;
+    }
+    std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = value;
 }
