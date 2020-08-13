@@ -103,23 +103,23 @@ namespace TerminalAppLocalTests
         }
 
     private:
-        void _logCommandNames(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
+        void _logCommandNames(winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
         {
             if (indentation == 1)
             {
-                Log::Comment(commands.empty() ? L"Commands:\n  <none>" : L"Commands:");
+                Log::Comment((commands.Size() == 0) ? L"Commands:\n  <none>" : L"Commands:");
             }
-            for (auto& nameAndCommand : commands)
+            for (const auto& nameAndCommand : commands)
             {
                 Log::Comment(fmt::format(L"{0:>{1}}* {2}->{3}",
                                          L"",
                                          indentation,
-                                         nameAndCommand.first,
-                                         nameAndCommand.second.Name())
+                                         nameAndCommand.Key(),
+                                         nameAndCommand.Value().Name())
                                  .c_str());
 
                 winrt::com_ptr<implementation::Command> cmdImpl;
-                cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.second));
+                cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.Value()));
                 _logCommandNames(cmdImpl->_subcommands, indentation + 2);
             }
         }
@@ -2467,7 +2467,7 @@ namespace TerminalAppLocalTests
         // * A and D share the same name, so they'll only generate a single action.
         // * F's name is set manually to `null`
         auto commands = settings._globals.GetCommands();
-        VERIFY_ARE_EQUAL(4u, commands.size());
+        VERIFY_ARE_EQUAL(4u, commands.Size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
@@ -2546,7 +2546,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Now verify the commands");
 
         {
-            auto command = commands.at(L"Split pane, direction: Vertical");
+            auto command = commands.Lookup(L"Split pane, direction: Vertical");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2562,7 +2562,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"ctrl+b");
+            auto command = commands.Lookup(L"ctrl+b");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2578,7 +2578,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"ctrl+c");
+            auto command = commands.Lookup(L"ctrl+c");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2594,7 +2594,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"Split pane, direction: Horizontal");
+            auto command = commands.Lookup(L"Split pane, direction: Horizontal");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2661,10 +2661,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         auto& commands = settings._globals.GetCommands();
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto command = commands.at(L"iterable command ${profile.name}");
+            auto command = commands.Lookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2685,10 +2685,10 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.size());
+        VERIFY_ARE_EQUAL(3u, commands.Size());
 
         {
-            auto command = commands.at(L"iterable command profile0");
+            auto command = commands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2706,7 +2706,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"iterable command profile1");
+            auto command = commands.Lookup(L"iterable command profile1");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2724,7 +2724,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"iterable command profile2");
+            auto command = commands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2791,10 +2791,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         auto& commands = settings._globals.GetCommands();
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto command = commands.at(L"Split pane, profile: ${profile.name}");
+            auto command = commands.Lookup(L"Split pane, profile: ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2815,10 +2815,10 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.size());
+        VERIFY_ARE_EQUAL(3u, commands.Size());
 
         {
-            auto command = commands.at(L"Split pane, profile: profile0");
+            auto command = commands.Lookup(L"Split pane, profile: profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2836,7 +2836,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"Split pane, profile: profile1");
+            auto command = commands.Lookup(L"Split pane, profile: profile1");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2854,7 +2854,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"Split pane, profile: profile2");
+            auto command = commands.Lookup(L"Split pane, profile: profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2923,10 +2923,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         auto& commands = settings._globals.GetCommands();
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto command = commands.at(L"iterable command ${profile.name}");
+            auto command = commands.Lookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2947,10 +2947,10 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(3u, commands.size());
+        VERIFY_ARE_EQUAL(3u, commands.Size());
 
         {
-            auto command = commands.at(L"iterable command profile0");
+            auto command = commands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2968,7 +2968,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"iterable command profile1\"");
+            auto command = commands.Lookup(L"iterable command profile1\"");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2986,7 +2986,7 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = commands.at(L"iterable command profile2");
+            auto command = commands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -3067,9 +3067,9 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
-        auto rootCommandProj = commands.at(L"Connect to ssh...");
+        auto rootCommandProj = commands.Lookup(L"Connect to ssh...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);
@@ -3077,11 +3077,11 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<implementation::Command> rootCommandImpl;
         rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
 
-        VERIFY_ARE_EQUAL(2u, rootCommandImpl->_subcommands.size());
+        VERIFY_ARE_EQUAL(2u, rootCommandImpl->_subcommands.Size());
 
         {
             winrt::hstring commandName{ L"first.com" };
-            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -3089,11 +3089,11 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
         }
         {
             winrt::hstring commandName{ L"second.com" };
-            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -3101,7 +3101,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
         }
     }
 
@@ -3174,9 +3174,9 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
-        auto grandparentCommandProj = commands.at(L"grandparent");
+        auto grandparentCommandProj = commands.Lookup(L"grandparent");
         VERIFY_IS_NOT_NULL(grandparentCommandProj);
         auto grandparentActionAndArgs = grandparentCommandProj.Action();
         VERIFY_IS_NULL(grandparentActionAndArgs);
@@ -3184,10 +3184,10 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<implementation::Command> grandparentCommandImpl;
         grandparentCommandImpl.copy_from(winrt::get_self<implementation::Command>(grandparentCommandProj));
 
-        VERIFY_ARE_EQUAL(1u, grandparentCommandImpl->_subcommands.size());
+        VERIFY_ARE_EQUAL(1u, grandparentCommandImpl->_subcommands.Size());
 
         winrt::hstring parentName{ L"parent" };
-        auto parentProj = grandparentCommandImpl->_subcommands.at(parentName);
+        auto parentProj = grandparentCommandImpl->_subcommands.Lookup(parentName);
         VERIFY_IS_NOT_NULL(parentProj);
         auto parentActionAndArgs = parentProj.Action();
         VERIFY_IS_NULL(parentActionAndArgs);
@@ -3195,10 +3195,10 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<implementation::Command> parentImpl;
         parentImpl.copy_from(winrt::get_self<implementation::Command>(parentProj));
 
-        VERIFY_ARE_EQUAL(2u, parentImpl->_subcommands.size());
+        VERIFY_ARE_EQUAL(2u, parentImpl->_subcommands.Size());
         {
             winrt::hstring childName{ L"child1" };
-            auto childProj = parentImpl->_subcommands.at(childName);
+            auto childProj = parentImpl->_subcommands.Lookup(childName);
             VERIFY_IS_NOT_NULL(childProj);
             auto childActionAndArgs = childProj.Action();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3217,11 +3217,11 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
 
-            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.Size());
         }
         {
             winrt::hstring childName{ L"child2" };
-            auto childProj = parentImpl->_subcommands.at(childName);
+            auto childProj = parentImpl->_subcommands.Lookup(childName);
             VERIFY_IS_NOT_NULL(childProj);
             auto childActionAndArgs = childProj.Action();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3240,7 +3240,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
 
-            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.Size());
         }
     }
 
@@ -3313,12 +3313,12 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
 
-        VERIFY_ARE_EQUAL(3u, commands.size());
+        VERIFY_ARE_EQUAL(3u, commands.Size());
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
             winrt::hstring commandName{ name + L"..." };
-            auto commandProj = commands.at(commandName);
+            auto commandProj = commands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NULL(actionAndArgs);
@@ -3326,11 +3326,11 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
             _logCommandNames(commandImpl->_subcommands);
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3350,11 +3350,11 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3374,11 +3374,11 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3398,7 +3398,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
         }
     }
@@ -3463,9 +3463,9 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
-        auto rootCommandProj = commands.at(L"New Tab With Profile...");
+        auto rootCommandProj = commands.Lookup(L"New Tab With Profile...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);
@@ -3473,12 +3473,12 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<implementation::Command> rootCommandImpl;
         rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
 
-        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.size());
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.Size());
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
             winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
-            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -3497,7 +3497,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
         }
     }
     void SettingsTests::TestMixedNestedAndIterableCommand()
@@ -3575,9 +3575,9 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
-        auto rootCommandProj = commands.at(L"New Pane...");
+        auto rootCommandProj = commands.Lookup(L"New Pane...");
         VERIFY_IS_NOT_NULL(rootCommandProj);
         auto rootActionAndArgs = rootCommandProj.Action();
         VERIFY_IS_NULL(rootActionAndArgs);
@@ -3585,12 +3585,12 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<implementation::Command> rootCommandImpl;
         rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
 
-        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.size());
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.Size());
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
             winrt::hstring commandName{ name + L"..." };
-            auto commandProj = rootCommandImpl->_subcommands.at(commandName);
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
             VERIFY_IS_NULL(actionAndArgs);
@@ -3598,12 +3598,12 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
 
             _logCommandNames(commandImpl->_subcommands);
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3623,11 +3623,11 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3647,11 +3647,11 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
-                auto childCommandProj = commandImpl->_subcommands.at(childCommandName);
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommandProj);
                 auto childActionAndArgs = childCommandProj.Action();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
@@ -3671,7 +3671,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.size());
+                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
             }
         }
     }
@@ -3738,7 +3738,7 @@ namespace TerminalAppLocalTests
         // Because the "parent" command didn't have a name, it couldn't be
         // placed into the list of commands. It and it's children are just
         // ignored.
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        VERIFY_ARE_EQUAL(0u, commands.Size());
     }
 
     void SettingsTests::TestUnbindNestedCommand()
@@ -3811,7 +3811,7 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
 
@@ -3820,7 +3820,7 @@ namespace TerminalAppLocalTests
         settings._ValidateSettings();
         _logCommandNames(commands);
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        VERIFY_ARE_EQUAL(0u, commands.Size());
     }
 
     void SettingsTests::TestRebindNestedCommand()
@@ -3894,17 +3894,17 @@ namespace TerminalAppLocalTests
         _logCommandNames(commands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = commands.at(commandName);
+            auto commandProj = commands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
 
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(2u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(2u, commandImpl->_subcommands.Size());
         }
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
@@ -3913,11 +3913,11 @@ namespace TerminalAppLocalTests
         settings._ValidateSettings();
         _logCommandNames(commands);
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = commands.at(commandName);
+            auto commandProj = commands.Lookup(commandName);
 
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
@@ -3929,7 +3929,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.size());
+            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
         }
     }
 

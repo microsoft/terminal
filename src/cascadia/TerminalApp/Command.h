@@ -45,14 +45,14 @@ namespace winrt::TerminalApp::implementation
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
-        static void ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                    gsl::span<const ::TerminalApp::Profile> profiles,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
-        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
 
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> NestedCommands();
+        Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
@@ -66,14 +66,11 @@ namespace winrt::TerminalApp::implementation
 
     private:
         Json::Value _originalJson;
-        std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedCommandsView{ nullptr };
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
-        void _createView();
-
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;
     };

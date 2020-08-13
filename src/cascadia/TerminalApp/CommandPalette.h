@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _currentNestedCommands{ nullptr };
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedActionStack{ nullptr };
 

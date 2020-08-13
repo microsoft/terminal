@@ -50,8 +50,8 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
-    const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
-    std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
+    const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
+    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
 
     // These are implemented manually to handle the string/GUID exchange
     // by higher layers in the app.
@@ -90,7 +90,7 @@ private:
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
-    std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> _commands;
+    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;

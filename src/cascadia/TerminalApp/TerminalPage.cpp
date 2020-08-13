@@ -60,10 +60,11 @@ namespace winrt::TerminalApp::implementation
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
-                                                        Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
+                                                        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
-        for (const auto& command : commands)
+        for (const auto& nameAndCmd : commands)
         {
+            const auto& command = nameAndCmd.Value();
             // If there's a keybinding that's bound to exactly this command,
             // then get the string for that keychord and display it as a
             // part of the command in the UI. Each Command's KeyChordText is
@@ -80,10 +81,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& commands)
+    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
-        for (const auto& command : commands)
+        for (const auto& nameAndCmd : commands)
         {
+            const auto& command = nameAndCmd.Value();
             // Set the default IconSource to a BitmapIconSource with a null source
             // (instead of just nullptr) because there's a really weird crash when swapping
             // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
@@ -2039,22 +2041,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
-        std::unordered_map<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _settings->GlobalSettings().GetCommands();
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _settings->GlobalSettings().GetCommands();
 
         Command::ExpandCommands(copyOfCommands,
                                 _settings->GetProfiles(),
                                 warnings);
 
+        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
+        _recursiveUpdateCommandIcons(copyOfCommands.GetView());
+
         // Update the command palette when settings reload
         auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        for (auto& nameAndCommand : copyOfCommands)
+        for (const auto& nameAndCommand : copyOfCommands)
         {
-            commandsCollection.Append(nameAndCommand.second);
+            commandsCollection.Append(nameAndCommand.Value());
         }
-
-        _recursiveUpdateCommandKeybindingLabels(_settings, commandsCollection);
-
-        _recursiveUpdateCommandIcons(commandsCollection);
 
         CommandPalette().SetCommands(commandsCollection);
     }

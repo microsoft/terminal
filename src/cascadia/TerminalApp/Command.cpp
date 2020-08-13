@@ -29,13 +29,13 @@ namespace winrt::TerminalApp::implementation
 {
     Command::Command()
     {
-        _nestedCommandsView = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _subcommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
         _setAction(nullptr);
     }
 
-    Collections::IVector<winrt::TerminalApp::Command> Command::NestedCommands()
+    Collections::IMapView<winrt::hstring, TerminalApp::Command> Command::NestedCommands()
     {
-        return _nestedCommandsView;
+        return _subcommands.GetView();
     }
 
     // Function Description:
@@ -211,7 +211,7 @@ namespace winrt::TerminalApp::implementation
     // - json: A Json::Value containing an array of serialized commands
     // Return Value:
     // - A vector containing any warnings detected while parsing
-    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                         const Json::Value& json)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
                     if (result)
                     {
                         // Override commands with the same name
-                        commands.insert_or_assign(result->Name(), *result);
+                        commands.Insert(result->Name(), *result);
                     }
                     else
                     {
@@ -236,7 +236,7 @@ namespace winrt::TerminalApp::implementation
                         const auto name = _nameFromJson(value);
                         if (!name.empty())
                         {
-                            commands.erase(name);
+                            commands.Remove(name);
                         }
                     }
                 }
@@ -283,7 +283,7 @@ namespace winrt::TerminalApp::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    void Command::ExpandCommands(std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& commands,
+    void Command::ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                  gsl::span<const ::TerminalApp::Profile> profiles,
                                  std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
@@ -293,12 +293,12 @@ namespace winrt::TerminalApp::implementation
         // First, collect up all the commands that need replacing.
         for (const auto& nameAndCmd : commands)
         {
-            auto cmd{ get_self<implementation::Command>(nameAndCmd.second) };
+            auto cmd{ get_self<implementation::Command>(nameAndCmd.Value()) };
 
             auto newCommands = _expandCommand(cmd, profiles, warnings);
             if (newCommands.size() > 0)
             {
-                commandsToRemove.push_back(nameAndCmd.first);
+                commandsToRemove.push_back(nameAndCmd.Key());
                 commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
             }
         }
@@ -306,37 +306,13 @@ namespace winrt::TerminalApp::implementation
         // Second, remove all the commands that need to be removed.
         for (auto& name : commandsToRemove)
         {
-            commands.erase(name);
+            commands.Remove(name);
         }
 
         // Finally, add all the new commands.
         for (auto& cmd : commandsToAdd)
         {
-            commands.insert_or_assign(cmd.Name(), cmd);
-        }
-    }
-
-    // Method Description:
-    // - Initialize our ObservableVector of NestedCommands, recursively. This
-    //   will build the vector of nested Commands that XAML can access.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void Command::_createView()
-    {
-        _nestedCommandsView.Clear();
-
-        // Add all the commands we've parsed to the observable vector we
-        // have, so we can access them in XAML.
-        for (const auto& nameAndCommand : _subcommands)
-        {
-            auto command = nameAndCommand.second;
-            _nestedCommandsView.Append(command);
-
-            winrt::com_ptr<winrt::TerminalApp::implementation::Command> cmd;
-            cmd.copy_from(winrt::get_self<winrt::TerminalApp::implementation::Command>(command));
-            cmd->_createView();
+            commands.Insert(cmd.Name(), cmd);
         }
     }
 
@@ -368,11 +344,9 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
-        if (!expandable->_subcommands.empty())
+        if (!(expandable->_subcommands.Size() == 0))
         {
             ExpandCommands(expandable->_subcommands, profiles, warnings);
-
-            expandable->_createView();
         }
 
         if (expandable->_IterateOn == ExpandCommandType::None)

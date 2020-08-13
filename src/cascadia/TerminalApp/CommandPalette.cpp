@@ -28,6 +28,7 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
 
@@ -309,7 +310,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::ActionMode:
             if (_nestedActionStack.Size() > 0)
             {
-                return _nestedActionStack.GetAt(_nestedActionStack.Size() - 1).NestedCommands();
+                return _currentNestedCommands;
             }
 
             return _allCommands;
@@ -339,6 +340,12 @@ namespace winrt::TerminalApp::implementation
                 // action. Instead, display a new list of commands for the user
                 // to pick from.
                 _nestedActionStack.Append(command);
+                _currentNestedCommands.Clear();
+                for (const auto& nameAndCommand : command.NestedCommands())
+                {
+                    _currentNestedCommands.Append(nameAndCommand.Value());
+                }
+
                 _updateUIForStackChange();
             }
             else
@@ -751,6 +758,7 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(L"");
 
         _nestedActionStack.Clear();
+        _currentNestedCommands.Clear();
     }
 
     // Method Description:
