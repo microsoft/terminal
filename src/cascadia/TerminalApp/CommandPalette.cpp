@@ -49,18 +49,10 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
                 {
-                    if (_anchorKey != VirtualKey::None)
-                    {
-                        _searchBox().Visibility(Visibility::Collapsed);
-                        _filteredActionsView().Focus(FocusState::Keyboard);
-                    }
-                    else
-                    {
-                        _searchBox().Focus(FocusState::Programmatic);
-                    }
-
+                    _searchBox().Visibility(Visibility::Collapsed);
+                    _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
                 }
@@ -204,27 +196,26 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        auto key = e.OriginalKey();
-
         if (_currentMode == CommandPaletteMode::TabSwitcherMode)
         {
-            if (_anchorKey && key == _anchorKey.value())
+            if (_anchorKey != VirtualKey::None)
             {
-                // Once the user lifts the anchor key, we'll switch to the currently selected tab
-                // then close the tab switcher.
+                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                if (!ctrlDown && !altDown && !shiftDown)
                 {
-                    if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+                    if (const auto selectedItem = _filteredActionsView().SelectedItem())
                     {
-                        const auto actionAndArgs = data.Action();
-                        _dispatch.DoAction(actionAndArgs);
-                        _updateFilteredActions();
-                        _dismissPalette();
+                        if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+                        {
+                            _dispatchCommand(data);
+                        }
                     }
-                }
 
-                e.Handled(true);
+                    e.Handled(true);
+                }
             }
         }
     }
@@ -772,14 +763,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
-        if (startIdx != _allTabActions.Size() - 1)
+        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
         {
-            for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-            {
-                auto command = _allTabActions.GetAt(i);
+            auto command = _allTabActions.GetAt(i);
 
-                command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-            }
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
         }
     }
 
