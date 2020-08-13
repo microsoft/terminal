@@ -15,7 +15,6 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _isInAnsiMode(true),
-    _intermediates{},
     _parameters{},
     _oscString{},
     _cachedSequence{ std::nullopt },
@@ -353,12 +352,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    VTIDBuilder idBuilder;
-    for (wchar_t intermediate : _intermediates)
-    {
-        idBuilder.AddIntermediate(intermediate);
-    }
-    const bool success = _engine->ActionEscDispatch(idBuilder.Finalize(wch));
+    const bool success = _engine->ActionEscDispatch(_identifier.Finalize(wch));
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
@@ -381,12 +375,7 @@ void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Vt52EscDispatch");
 
-    VTIDBuilder idBuilder;
-    for (wchar_t intermediate : _intermediates)
-    {
-        idBuilder.AddIntermediate(intermediate);
-    }
-    const bool success = _engine->ActionVt52EscDispatch(idBuilder.Finalize(wch),
+    const bool success = _engine->ActionVt52EscDispatch(_identifier.Finalize(wch),
                                                         { _parameters.data(), _parameters.size() });
 
     // Trace the result.
@@ -410,12 +399,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    VTIDBuilder idBuilder;
-    for (wchar_t intermediate : _intermediates)
-    {
-        idBuilder.AddIntermediate(intermediate);
-    }
-    const bool success = _engine->ActionCsiDispatch(idBuilder.Finalize(wch),
+    const bool success = _engine->ActionCsiDispatch(_identifier.Finalize(wch),
                                                     { _parameters.data(), _parameters.size() });
 
     // Trace the result.
@@ -434,12 +418,12 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionCollect(const wchar_t wch)
+void StateMachine::_ActionCollect(const wchar_t wch) noexcept
 {
     _trace.TraceOnAction(L"Collect");
 
     // store collect data
-    _intermediates.push_back(wch);
+    _identifier.AddIntermediate(wch);
 }
 
 // Routine Description:
@@ -485,7 +469,7 @@ void StateMachine::_ActionClear()
     _trace.TraceOnAction(L"Clear");
 
     // clear all internal stored state.
-    _intermediates.clear();
+    _identifier.Clear();
 
     _parameters.clear();
 
