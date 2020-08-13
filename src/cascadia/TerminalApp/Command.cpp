@@ -29,15 +29,18 @@ namespace winrt::TerminalApp::implementation
 {
     Command::Command()
     {
-        _subcommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
         _setAction(nullptr);
     }
 
     Collections::IMapView<winrt::hstring, TerminalApp::Command> Command::NestedCommands()
     {
-        return _subcommands.GetView();
+        return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    bool Command::HasNestedCommands()
+    {
+        return _subcommands ? _subcommands.Size() > 0 : false;
+    }
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
     //   * If the "name" property is a string, return that value.
@@ -132,6 +135,8 @@ namespace winrt::TerminalApp::implementation
         // will only be marked iterable on the first pass.
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
+            // Initialize our list of subcommands.
+            result->_subcommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
@@ -344,7 +349,7 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
-        if (!(expandable->_subcommands.Size() == 0))
+        if (expandable->HasNestedCommands())
         {
             ExpandCommands(expandable->_subcommands, profiles, warnings);
         }

@@ -334,7 +334,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (command)
         {
-            if (command.NestedCommands().Size() > 0)
+            if (command.HasNestedCommands())
             {
                 // If this Command had subcommands, then don't dispatch the
                 // action. Instead, display a new list of commands for the user

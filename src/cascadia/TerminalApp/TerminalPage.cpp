@@ -76,8 +76,10 @@ namespace winrt::TerminalApp::implementation
             {
                 command.KeyChordText(KeyChordSerialization::ToString(keyChord));
             }
-
-            _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+            }
         }
     }
 
@@ -96,7 +98,10 @@ namespace winrt::TerminalApp::implementation
             icon.UriSource(nullptr);
             command.IconSource(icon);
 
-            _recursiveUpdateCommandIcons(command.NestedCommands());
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandIcons(command.NestedCommands());
+            }
         }
     }
 

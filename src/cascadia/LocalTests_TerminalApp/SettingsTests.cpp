@@ -121,7 +121,10 @@ namespace TerminalAppLocalTests
 
                 winrt::com_ptr<implementation::Command> cmdImpl;
                 cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.Value()));
-                _logCommandNames(cmdImpl->_subcommands, indentation + 2);
+                if (cmdImpl->HasNestedCommands())
+                {
+                    _logCommandNames(cmdImpl->_subcommands, indentation + 2);
+                }
             }
         }
     };
@@ -3092,7 +3095,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
         }
         {
             winrt::hstring commandName{ L"second.com" };
@@ -3104,7 +3107,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
         }
     }
 
@@ -3221,7 +3224,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
 
-            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(childImpl->HasNestedCommands());
         }
         {
             winrt::hstring childName{ L"child2" };
@@ -3244,7 +3247,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> childImpl;
             childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
 
-            VERIFY_ARE_EQUAL(0u, childImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(childImpl->HasNestedCommands());
         }
     }
 
@@ -3331,6 +3334,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
             _logCommandNames(commandImpl->_subcommands);
             {
@@ -3355,7 +3359,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
@@ -3379,7 +3383,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
@@ -3403,7 +3407,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
         }
     }
@@ -3503,7 +3507,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
         }
     }
     void SettingsTests::TestMixedNestedAndIterableCommand()
@@ -3605,6 +3609,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
 
             _logCommandNames(commandImpl->_subcommands);
@@ -3630,7 +3635,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
@@ -3654,7 +3659,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
@@ -3678,7 +3683,7 @@ namespace TerminalAppLocalTests
                 winrt::com_ptr<implementation::Command> childCommandImpl;
                 childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
 
-                VERIFY_ARE_EQUAL(0u, childCommandImpl->_subcommands.Size());
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
             }
         }
     }
@@ -3911,6 +3916,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
             VERIFY_ARE_EQUAL(2u, commandImpl->_subcommands.Size());
         }
 
@@ -3936,7 +3942,7 @@ namespace TerminalAppLocalTests
             winrt::com_ptr<implementation::Command> commandImpl;
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
-            VERIFY_ARE_EQUAL(0u, commandImpl->_subcommands.Size());
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
         }
     }
 

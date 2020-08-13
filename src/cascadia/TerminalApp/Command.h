@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
-
+        bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
@@ -66,7 +66,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         Json::Value _originalJson;
-        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands;
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands{ nullptr };
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
