@@ -197,14 +197,23 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
-            if (_searchBox().Text().empty())
+            if (_currentMode == CommandPaletteMode::ActionMode)
             {
-                _dismissPalette();
+                // Action Mode: Dismiss the palette if the text is empty,
+                // otherwise clear the search string.
+                if (_searchBox().Text().empty())
+                {
+                    _dismissPalette();
+                }
+                else
+                {
+                    _searchBox().Text(L"");
+                }
             }
-            else
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
             {
-                _searchBox().Text(L"");
+                // CommandlineMode Mode: always exit the palette immediately.
+                _dismissPalette();
             }
 
             e.Handled(true);
@@ -457,15 +466,20 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::_checkActionVsCommandlineMode()
     {
-        _currentMode = CommandPaletteMode::ActionMode;
+        auto newMode = CommandPaletteMode::ActionMode;
 
         auto inputText = _searchBox().Text();
         if (inputText.size() > 0)
         {
             if (inputText[0] == L'>')
             {
-                _currentMode = CommandPaletteMode::CommandlineMode;
+                newMode = CommandPaletteMode::CommandlineMode;
             }
+        }
+
+        if (newMode != _currentMode)
+        {
+            _switchToMode(newMode);
         }
     }
 
@@ -516,6 +530,10 @@ namespace winrt::TerminalApp::implementation
             ControlName(RS_(L"TabSwitcherControlName"));
             break;
         }
+        case CommandPaletteMode::CommandlineMode:
+            NoMatchesText(RS_(L"CmdPalCommandlinePrompt"));
+            ControlName(RS_(L"CommandPaletteControlName"));
+            break;
         case CommandPaletteMode::ActionMode:
         default:
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
