@@ -12,9 +12,6 @@ steps:
   inputs:
     versionSpec: 5.2.0
 
-# - task: VisualStudioTestPlatformInstaller@1
-  # displayName: Ensure VSTest Platform
-
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
@@ -144,7 +141,7 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
-  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), not(eq(variables['Build.Reason'], 'PullRequest')))
+  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), ne(variables['Build.Reason'], 'PullRequest'))
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'

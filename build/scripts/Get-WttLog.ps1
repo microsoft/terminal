@@ -1,8 +1,8 @@
 [CmdLetBinding()]
 Param(
     [Parameter(Mandatory=$true, Position=0)][string]$BuildPlatform,
-	[Parameter(Mandatory=$true, Position=1)][string]$RationalizedPlatform,
-	[Parameter(Mandatory=$true, Position=2)][string]$Configuration
+    [Parameter(Mandatory=$true, Position=1)][string]$RationalizedPlatform,
+    [Parameter(Mandatory=$true, Position=2)][string]$Configuration
 )
 
 
