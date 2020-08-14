@@ -383,11 +383,11 @@ void Profile::LayerJson(const Json::Value& json)
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
 winrt::hstring Profile::GetExpandedIconPath() const
 {
-    if (!_Icon.empty())
+    if (_Icon.empty())
     {
         return { L"" };
     }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_Icon.data()) };
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_Icon.c_str()) };
     return envExpandedPath;
 }
 
@@ -398,14 +398,12 @@ winrt::hstring Profile::GetExpandedIconPath() const
 // - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 {
-    winrt::hstring result{};
-
-    if (!_BackgroundImage.empty())
+    if (_BackgroundImage.empty())
     {
-        result = wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImage.data());
+        return { L"" };
     }
-
-    return result;
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImage.c_str()) };
+    return envExpandedPath;
 }
 
 // Method Description:

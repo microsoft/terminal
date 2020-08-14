@@ -771,13 +771,13 @@ namespace winrt::TerminalApp::implementation
         GUID connectionType{ 0 };
         GUID sessionGuid{ 0 };
 
-        if (profile.ConnectionType())
+        if (profile.ConnectionType() != nullptr)
         {
             connectionType = profile.ConnectionType().Value();
         }
 
-        if (profile.ConnectionType() &&
-            profile.ConnectionType().Value() == winrt::guid{AzureConnectionType} &&
+        if (profile.ConnectionType() != nullptr &&
+            profile.ConnectionType().Value() == winrt::guid{ AzureConnectionType } &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
@@ -2003,7 +2003,7 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings->GetProfiles();
         for (auto& profile : profiles)
         {
-            const GUID profileGuid = GUID(profile.Guid().Value()) ;
+            const GUID profileGuid = GUID(profile.Guid().Value());
 
             try
             {

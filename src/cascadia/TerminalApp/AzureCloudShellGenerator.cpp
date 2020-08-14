@@ -40,7 +40,7 @@ std::vector<Profile> AzureCloudShellGenerator::GenerateProfiles()
         azureCloudShellProfile.ColorSchemeName({ L"Vintage" });
         azureCloudShellProfile.AcrylicOpacity(0.6);
         azureCloudShellProfile.UseAcrylic(true);
-        azureCloudShellProfile.ConnectionType({ AzureConnectionType });
+        azureCloudShellProfile.ConnectionType(winrt::guid(AzureConnectionType));
         profiles.emplace_back(azureCloudShellProfile);
     }
 

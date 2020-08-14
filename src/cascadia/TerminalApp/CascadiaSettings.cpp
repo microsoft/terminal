@@ -93,7 +93,7 @@ const Profile CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-gsl::span<const winrt::TerminalApp::Profile> CascadiaSettings::GetProfiles() const noexcept
+gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }
@@ -244,7 +244,7 @@ void CascadiaSettings::_ResolveDefaultProfile()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const winrt::guid defaultProfileGuid = GlobalSettings().DefaultProfile();
+    const auto defaultProfileGuid = winrt::guid(GlobalSettings().DefaultProfile());
     const bool nullDefaultProfile = defaultProfileGuid == winrt::guid{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
@@ -263,7 +263,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(_profiles[0].Guid().Value());
+        GlobalSettings().DefaultProfile(GUID(_profiles[0].Guid().Value()));
     }
 }
 
@@ -279,7 +279,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     std::vector<size_t> indicesToDelete;
 
-    std::set<GUID> uniqueGuids;
+    std::set<winrt::guid> uniqueGuids;
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
@@ -316,8 +316,8 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 // - <none>
 void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 {
-    std::set<GUID> uniqueGuids;
-    std::deque<GUID> guidOrder;
+    std::set<winrt::guid> uniqueGuids;
+    std::deque<winrt::guid> guidOrder;
 
     auto collectGuids = [&](const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
@@ -338,7 +338,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 
     // Push all the defaultSettings profiles' GUIDS into the set
     collectGuids(_defaultSettings);
-    std::equal_to<GUID> equals;
+    std::equal_to<winrt::guid> equals;
     // Re-order the list of _profiles to match that ordering
     // for (gIndex=0 -> uniqueGuids.size)
     //   pIndex = the pIndex of the profile with guid==guids[gIndex]
@@ -529,7 +529,7 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerm
 // Arguments:
 // - profileGuid: The GUID of a profile to use to create a settings object for.
 // Return Value:
-// - the GUID of the created profile, and a fully initialized TerminalSettings object
+// - a fully initialized TerminalSettings object
 TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 {
     const auto profile = FindProfile(profileGuid);
@@ -607,7 +607,7 @@ try
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
         const auto profileIterator{ std::find_if(_profiles.cbegin(), _profiles.cend(), [&](auto&& profile) {
-            return profile.Name() == name;
+            return profile.Name().c_str() == name;
         }) };
 
         if (profileIterator != _profiles.cend())

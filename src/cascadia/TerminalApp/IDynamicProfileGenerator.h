@@ -20,7 +20,7 @@ Author(s):
 --*/
 
 #pragma once
-#include "Profile.g.h"
+#include "Profile.h"
 
 namespace TerminalApp
 {
