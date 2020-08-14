@@ -763,7 +763,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
     // Return value:
     // - Whether the key was handled.
-    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
@@ -795,7 +795,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (!handled)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+                (void)_TrySendKeyEvent(VK_F7, scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
