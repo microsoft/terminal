@@ -144,7 +144,7 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
-  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), not(eq(variables['Build.Reason'], 'PullRequesttest')))
+  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), not(eq(variables['Build.Reason'], 'PullRequest')))
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'
