@@ -2049,8 +2049,6 @@ namespace winrt::TerminalApp::implementation
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     static bool _compareSchemeNames(const winrt::TerminalApp::ColorScheme& lhs, const winrt::TerminalApp::ColorScheme& rhs)
     {
-        // std::wstring_view leftName{ lhs.Name().c_str(), lhs.Name().size() };
-        // std::wstring_view rightName{ rhs.Name().c_str(), rhs.Name().size() };
         std::wstring leftName{ lhs.Name() };
         std::wstring rightName{ rhs.Name() };
         return leftName.compare(rightName) < 0;

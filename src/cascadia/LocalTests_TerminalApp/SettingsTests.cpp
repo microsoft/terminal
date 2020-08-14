@@ -2685,7 +2685,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2815,7 +2815,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2948,7 +2948,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3069,7 +3069,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3177,7 +3177,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3316,7 +3316,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3469,7 +3469,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3582,7 +3582,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
