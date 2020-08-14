@@ -35,7 +35,8 @@ namespace winrt::TerminalApp::implementation
     enum class ExpandCommandType : uint32_t
     {
         None = 0,
-        Profiles
+        Profiles,
+        ColorSchemes
     };
 
     struct Command : CommandT<Command>
@@ -47,6 +48,7 @@ namespace winrt::TerminalApp::implementation
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                    gsl::span<const ::TerminalApp::Profile> profiles,
+                                   gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
@@ -70,6 +72,7 @@ namespace winrt::TerminalApp::implementation
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                       gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;
