@@ -150,21 +150,21 @@ namespace TerminalAppUnitTests
         const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
         const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
 
-        const auto profile0 = Profile::FromJson(profile0Json);
-        const auto profile1 = Profile::FromJson(profile1Json);
-        const auto profile2 = Profile::FromJson(profile2Json);
-        const auto profile3 = Profile::FromJson(profile3Json);
-        const auto profile4 = Profile::FromJson(profile4Json);
+        const auto profile0 = implementation::Profile::FromJson(profile0Json);
+        const auto profile1 = implementation::Profile::FromJson(profile1Json);
+        const auto profile2 = implementation::Profile::FromJson(profile2Json);
+        const auto profile3 = implementation::Profile::FromJson(profile3Json);
+        const auto profile4 = implementation::Profile::FromJson(profile4Json);
         const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
         const GUID nullGuid{ 0 };
 
-        VERIFY_IS_FALSE(profile0._guid.has_value());
-        VERIFY_IS_FALSE(profile1._guid.has_value());
-        VERIFY_IS_FALSE(profile2._guid.has_value());
-        VERIFY_IS_TRUE(profile3._guid.has_value());
-        VERIFY_IS_TRUE(profile4._guid.has_value());
+        VERIFY_IS_FALSE(profile0->Guid() != nullptr);
+        VERIFY_IS_FALSE(profile1->Guid() != nullptr);
+        VERIFY_IS_FALSE(profile2->Guid() != nullptr);
+        VERIFY_IS_TRUE(profile3->Guid() != nullptr);
+        VERIFY_IS_TRUE(profile4->Guid() != nullptr);
 
-        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
     }
 }
