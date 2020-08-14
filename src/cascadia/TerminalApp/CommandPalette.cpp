@@ -396,6 +396,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Dispatch the current search text as a ExecuteCommandline action.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void CommandPalette::_dispatchCommandline()
     {
         const std::wstring input{ _searchBox().Text() };
@@ -416,6 +422,13 @@ namespace winrt::TerminalApp::implementation
         auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
         args->Commandline(cmdline);
         executeActionAndArgs->Args(*args);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "CommandPaletteDispatchedCommandline",
+            TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         if (_dispatch.DoAction(*executeActionAndArgs))
         {
@@ -909,14 +922,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
-        if (startIdx != _allTabActions.Size() - 1)
+        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
         {
-            for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-            {
-                auto command = _allTabActions.GetAt(i);
+            auto command = _allTabActions.GetAt(i);
 
-                command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-            }
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
         }
     }
 
