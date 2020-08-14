@@ -53,6 +53,16 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_APPICON             ICON                    "..\\..\\..\\res\\terminal.ico"
+IDI_APPICON_HC_B        ICON                    "..\\..\\..\\res\\terminal\\terminal_contrast-black.ico"
+IDI_APPICON_HC_W        ICON                    "..\\..\\..\\res\\terminal\\terminal_contrast-white.ico"
+
+IDI_APPICON_DEV         ICON                    "..\\..\\..\\res\\terminal\\terminal-Dev.ico"
+IDI_APPICON_DEV_HC_B    ICON                    "..\\..\\..\\res\\terminal\\terminal-Dev_contrast-black.ico"
+IDI_APPICON_DEV_HC_W    ICON                    "..\\..\\..\\res\\terminal\\terminal-Dev_contrast-white.ico"
+
+IDI_APPICON_PRE         ICON                    "..\\..\\..\\res\\terminal\\terminal-Pre.ico"
+IDI_APPICON_PRE_HC_B    ICON                    "..\\..\\..\\res\\terminal\\terminal-Pre_contrast-black.ico"
+IDI_APPICON_PRE_HC_W    ICON                    "..\\..\\..\\res\\terminal\\terminal-Pre_contrast-white.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
