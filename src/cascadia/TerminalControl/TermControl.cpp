@@ -771,9 +771,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
             //   This is required as part of GH#6421.
-            // GH#6513 - make sure to set the scancode too, otherwise conpty
-            // will think this is a NUL
-            (void)_TrySendKeyEvent(VK_MENU, LOWORD(MapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC)), modifiers, false);
+            (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
             handled = true;
         }
         else if (vkey == VK_F7 && down)
