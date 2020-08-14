@@ -15,7 +15,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.Controls.IconSource IconSource;
 
-        Boolean HasNestedCommands();
+        Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
     }
 }
