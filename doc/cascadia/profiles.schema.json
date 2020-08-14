@@ -522,6 +522,7 @@
           "default": "default",
           "description": "Defines whether the Terminal will launch as maximized or not.",
           "enum": [
+            "fullscreen",
             "maximized",
             "default"
           ],
