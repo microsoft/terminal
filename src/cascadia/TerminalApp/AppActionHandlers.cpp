@@ -84,16 +84,22 @@ namespace winrt::TerminalApp::implementation
             auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
             auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-            // Choose one of the modifier keys as the anchor key in priority order.
-            // So even if the user decides to use multiple modifiers in the keybinding, we'll only listen to one's KeyUp.
+            // One or more of the modifiers should be pressed when invoking next/prev Tab. In priority order, choose one as the anchor.
+            // If none of the modifier keys were pressed while invoking next/prev Tab, TODO: idk wtf they're thinking so just do classic nT/pT
             auto anchorKey = ctrlDown ? VirtualKey::Control : altDown ? VirtualKey::Menu : shiftDown ? VirtualKey::Shift : VirtualKey::None;
+            if (anchorKey == VirtualKey::None)
+            {
+                _SelectNextTab(true);
+            }
+            else
+            {
+                auto opt = _GetFocusedTabIndex();
+                uint32_t startIdx = opt ? *opt : 0;
+                startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
 
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
-            startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
-
-            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
+                CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
         }
         else
         {
@@ -113,16 +119,22 @@ namespace winrt::TerminalApp::implementation
             auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
             auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-            // Choose one of the modifier keys as the anchor key in priority order.
-            // So even if the user decides to use multiple modifiers in the keybinding, we'll only listen to one's KeyUp.
+            // One or more of the modifiers should be pressed when invoking next/prev Tab. In priority order, choose one as the anchor.
+            // If none of the modifier keys were pressed while invoking next/prev Tab, TODO: idk wtf they're thinking so just do classic nT/pT
             auto anchorKey = ctrlDown ? VirtualKey::Control : altDown ? VirtualKey::Menu : shiftDown ? VirtualKey::Shift : VirtualKey::None;
+            if (anchorKey == VirtualKey::None)
+            {
+                _SelectNextTab(false);
+            }
+            else
+            {
+                auto opt = _GetFocusedTabIndex();
+                uint32_t startIdx = opt ? *opt : 0;
+                startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();
 
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
-            startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();
-
-            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
+                CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
         }
         else
         {

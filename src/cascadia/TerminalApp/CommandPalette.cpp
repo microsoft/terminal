@@ -196,7 +196,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        // TODO: AltKey ups aren't handled like this.
+        // Alt KeyUps are just not going to be detected unfortunately.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
             _anchorKey != VirtualKey::None &&
             e.OriginalKey() == _anchorKey)
