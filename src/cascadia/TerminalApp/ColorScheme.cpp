@@ -143,7 +143,7 @@ void ColorScheme::LayerJson(const Json::Value& json)
 
 winrt::hstring ColorScheme::Name() const noexcept
 {
-    return winrt::hstring(_schemeName);
+    return _schemeName;
 }
 
 winrt::com_array<Color> ColorScheme::Table() const noexcept

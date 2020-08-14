@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
     private:
-        std::wstring _schemeName;
+        hstring _schemeName;
         std::array<til::color, COLOR_TABLE_SIZE> _table;
         til::color _defaultForeground;
         til::color _defaultBackground;
