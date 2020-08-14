@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_CopyFormatting != nullptr)
         {
-            ss << L"copyFormatting: ";
+            ss << L", copyFormatting: ";
             if (_CopyFormatting.Value() == CopyFormat::All)
             {
                 ss << L"all, ";
@@ -100,11 +100,13 @@ namespace winrt::TerminalApp::implementation
                     ss << L"rtf, ";
                 }
             }
+
+            // Chop off the last ","
+            auto result = ss.str();
+            return winrt::hstring{ result.substr(0, result.size() - 2) };
         }
 
-        // Chop off the last ","
-        auto result = ss.str();
-        return winrt::hstring{ result.substr(0, result.size() - 2) };
+        return winrt::hstring{ ss.str() };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const
