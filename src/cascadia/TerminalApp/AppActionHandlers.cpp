@@ -80,11 +80,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings->GlobalSettings().UseTabSwitcher())
         {
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            // Choose one of the modifier keys as the anchor key in priority order.
+            // So even if the user decides to use multiple modifiers in the keybinding, we'll only listen to one's KeyUp.
+            auto anchorKey = ctrlDown ? VirtualKey::Control : altDown ? VirtualKey::Menu : shiftDown ? VirtualKey::Shift : VirtualKey::None;
+
             auto opt = _GetFocusedTabIndex();
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
 
-            CommandPalette().EnableTabSwitcherMode(true, startIdx);
+            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
         }
         else
@@ -101,11 +109,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings->GlobalSettings().UseTabSwitcher())
         {
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            // Choose one of the modifier keys as the anchor key in priority order.
+            // So even if the user decides to use multiple modifiers in the keybinding, we'll only listen to one's KeyUp.
+            auto anchorKey = ctrlDown ? VirtualKey::Control : altDown ? VirtualKey::Menu : shiftDown ? VirtualKey::Shift : VirtualKey::None;
+
             auto opt = _GetFocusedTabIndex();
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();
 
-            CommandPalette().EnableTabSwitcherMode(true, startIdx);
+            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
             CommandPalette().Visibility(Visibility::Visible);
         }
         else
@@ -487,7 +503,7 @@ namespace winrt::TerminalApp::implementation
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt ? *opt : 0;
 
-        CommandPalette().EnableTabSwitcherMode(false, startIdx);
+        CommandPalette().EnableTabSwitcherMode(VirtualKey::None, startIdx);
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);

@@ -20,7 +20,7 @@ namespace TerminalApp
 
         void SetDispatch(ShortcutActionDispatch dispatch);
 
-        void EnableTabSwitcherMode(Boolean anchoredMode, UInt32 startIdx);
+        void EnableTabSwitcherMode(Windows.System.VirtualKey anchorKey, UInt32 startIdx);
         void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }

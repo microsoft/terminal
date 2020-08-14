@@ -22,7 +22,7 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
-        _anchoredMode{ false },
+        _anchorKey{ VirtualKey::None },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchoredMode)
+                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
                     _filteredActionsView().Focus(FocusState::Keyboard);
@@ -83,7 +83,7 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchoredMode)
+            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
             }
@@ -125,7 +125,7 @@ namespace winrt::TerminalApp::implementation
         // a really widely used keyboard navigation key.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
             key == VirtualKey::Tab &&
-            _anchoredMode)
+            _anchorKey != VirtualKey::None)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
@@ -196,27 +196,20 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+        // TODO: AltKey ups aren't handled like this.
+        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
+            _anchorKey != VirtualKey::None &&
+            e.OriginalKey() == _anchorKey)
         {
-            if (_anchoredMode)
+            if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-                if (!ctrlDown && !altDown && !shiftDown)
+                if (const auto data = selectedItem.try_as<TerminalApp::Command>())
                 {
-                    if (const auto selectedItem = _filteredActionsView().SelectedItem())
-                    {
-                        if (const auto data = selectedItem.try_as<TerminalApp::Command>())
-                        {
-                            _dispatchCommand(data);
-                        }
-                    }
-
-                    e.Handled(true);
+                    _dispatchCommand(data);
                 }
             }
+
+            e.Handled(true);
         }
     }
 
@@ -829,10 +822,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const bool anchoredMode, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
     {
         _switcherStartIdx = startIdx;
-        _anchoredMode = anchoredMode;
+        _anchorKey = anchorKey;
         _switchToMode(CommandPaletteMode::TabSwitcherMode);
         _updateFilteredActions();
     }
