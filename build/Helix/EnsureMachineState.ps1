@@ -90,7 +90,7 @@ function UninstallTestApps {
         }
         else
         {
-            Write-Host "Sucessfully removed $packageFullName"
+            Write-Host "Successfully removed $packageFullName"
         }
     }
 }
