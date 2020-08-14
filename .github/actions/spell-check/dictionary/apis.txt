@@ -9,6 +9,7 @@ EXPCMDFLAGS
 EXPCMDSTATE
 fullkbd
 futex
+Hashtable
 href
 IAsync
 IBind
@@ -41,6 +42,7 @@ rfind
 roundf
 RSHIFT
 rx
+serializer
 SIZENS
 spsc
 STDCPP
@@ -48,3 +50,5 @@ syscall
 tmp
 tx
 userenv
+XDocument
+XElement
