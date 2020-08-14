@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         void LayerJson(const Json::Value& json);
 
         hstring Name() const noexcept;
-        com_array<Windows::UI::Color> Table() noexcept;
+        com_array<Windows::UI::Color> Table() const noexcept;
         Windows::UI::Color Foreground() const noexcept;
         Windows::UI::Color Background() const noexcept;
         Windows::UI::Color SelectionBackground() const noexcept;

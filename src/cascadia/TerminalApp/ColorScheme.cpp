@@ -143,16 +143,13 @@ void ColorScheme::LayerJson(const Json::Value& json)
 
 winrt::hstring ColorScheme::Name() const noexcept
 {
-    return { _schemeName.c_str() };
+    return winrt::hstring(_schemeName);
 }
 
-winrt::com_array<Color> ColorScheme::Table() noexcept
+winrt::com_array<Color> ColorScheme::Table() const noexcept
 {
-    winrt::com_array<Color> result = winrt::com_array<Color>(COLOR_TABLE_SIZE);
-    for (uint32_t i = 0; i < _table.size(); i++)
-    {
-        result[i] = _table[i];
-    }
+    winrt::com_array<Color> result{ COLOR_TABLE_SIZE };
+    std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> Color { return c; });
     return result;
 }
 
