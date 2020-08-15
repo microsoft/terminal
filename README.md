@@ -60,6 +60,20 @@ choco upgrade microsoft-windows-terminal
 
 If you have any issues when installing/upgrading the package please go to the [Windows Terminal package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
+#### Via Scoop (unofficial)
+
+[Scoop](https://scoop.sh) users can download and install the latest Terminal release by installing the `windows-terminal` package:
+
+```powershell
+scoop install windows-terminal
+```
+
+To update Windows Terminal using Scoop, run the following:
+
+```powershell
+scoop update windows-terminal
+```
+
 ---
 
 ## Windows Terminal 2.0 Roadmap
