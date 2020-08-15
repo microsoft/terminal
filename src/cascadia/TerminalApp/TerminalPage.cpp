@@ -634,10 +634,10 @@ namespace winrt::TerminalApp::implementation
                                         newTerminalArgs.Profile().empty());
 
         // Lookup the name of the color scheme used by this profile.
-        const auto* scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        const auto scheme = _settings->GetColorSchemeForProfile(profileGuid);
         // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
         // that as the empty string.
-        const auto schemeName = scheme ? scheme->GetName() : L"\0";
+        const auto schemeName = scheme ? scheme.Name() : L"\0";
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider

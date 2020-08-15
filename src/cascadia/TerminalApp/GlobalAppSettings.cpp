@@ -213,7 +213,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - <none>
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
-    std::wstring name{ scheme.GetName() };
+    std::wstring name{ scheme.Name() };
     _colorSchemes[name] = std::move(scheme);
 }
 
