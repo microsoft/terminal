@@ -2341,9 +2341,9 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - The hyperlink URI
 // Return Value:
 // - true
-bool AdaptDispatch::AddHyperlink(const std::wstring_view uri)
+bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    return _pConApi->PrivateAddHyperlink(uri);
+    return _pConApi->PrivateAddHyperlink(uri, params);
 }
 
 // Routine Description:

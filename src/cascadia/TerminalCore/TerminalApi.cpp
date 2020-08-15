@@ -568,26 +568,23 @@ CATCH_LOG_RETURN_FALSE()
 // - The hyperlink URI
 // Return Value:
 // - true
-bool Terminal::AddHyperlink(std::wstring_view uri) noexcept
+bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
 {
     auto attr = _buffer->GetCurrentAttributes();
     if (uri.empty())
     {
         // URI is empty, this means we are ending a hyperlink
-        attr.SetBold(false); // for now we manually set the bold/underline text attributes;
-        attr.SetUnderlined(false); // at some point we should just change text rendering directly
-        attr.SetHyperlinkId(0); // based on whether the hyperlink id is non-zero
+        attr.SetHyperlinkId(0);
         _buffer->SetCurrentAttributes(attr);
     }
     else
     {
         // URI is non-empty, this means we are starting a hyperlink
-        attr.SetBold(true);
-        attr.SetUnderlined(true);
-        attr.SetHyperlinkId(_buffer->GetCurrentHyperlinkId());
+        // Conpty will always send us an id in params for non-empty URIs, parse it out here
+        const auto id = (USHORT)_wcstoui64(params.data(), NULL, 10);
+        attr.SetHyperlinkId(id);
         _buffer->SetCurrentAttributes(attr);
-        _buffer->AddHyperlinkToMap(uri);
+        _buffer->AddHyperlinkToMap(uri, id);
     }
     return true;
-    ;
 }

@@ -1000,7 +1000,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         case OscActionCodes::Hyperlink:
-            success = _dispatch->AddHyperlink(uri);
+            success = _dispatch->AddHyperlink(uri, params);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1775,30 +1775,38 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 }
 
 // Routine Description:
-// - Given a hyperlink string, attempts to parse the URI encoded. Additional parameters
-//   may be provided but we ignore them for now.
+// - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
+//   may be provided.
 //   If there is a URI, the well formatted string looks like:
 //          "<params>;<URI>"
 //   If there is no URI, we need to close the hyperlink and the string looks like:
 //          ";"
 // Arguments:
 // - string - the string containing the parameters and URI
-// - params - where to store the parameters (when we eventually support them)
+// - params - where to store the parameters
 // - uri - where to store the uri
 // Return Value:
 // - True if a URI was successfully parsed or if we are meant to close a hyperlink
 bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
-                                               std::wstring& /*params*/,
+                                               std::wstring& params,
                                                std::wstring& uri) const
 {
+    params.clear();
     uri.clear();
+    const std::wstring idStr = L"id=";
     const auto len = string.size();
-    const size_t pos = string.find(';');
-    if (pos != std::wstring_view::npos)
+    const size_t midpos = string.find(';');
+    if (midpos != std::wstring::npos)
     {
         if (len != 1)
         {
-            uri = string.substr(pos + 1);
+            uri = string.substr(midpos + 1);
+            const auto paramStr = string.substr(0, midpos);
+            const auto idPos = paramStr.find(idStr);
+            if (idPos != std::wstring::npos)
+            {
+                params = paramStr.substr(idPos + idStr.size());
+            }
         }
         return true;
     }

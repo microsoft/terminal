@@ -552,7 +552,45 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
-    // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
+    // First, check the old first row for hyperlink references
+    // If there are any, search the entire buffer for the same reference
+    // If the buffer does not contain the same reference, we can remove that hyperlink from our map
+    // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
+    std::unordered_set<USHORT> refs;
+    const auto firstAttrRow = _storage.at(_firstRow).GetAttrRow();
+    // Get all the hyperlink references in the row we're erasing
+    for (auto it = firstAttrRow.begin(); it != firstAttrRow.end(); ++it)
+    {
+        if (it->IsHyperlink())
+        {
+            refs.emplace(it->GetHyperlinkId());
+        }
+    }
+    if (!refs.empty())
+    {
+        const auto total = TotalRowCount();
+        // Loop through all the rows in the buffer
+        for (size_t i = 1; i != total; ++i)
+        {
+            const auto attrRow = GetRowByOffset(i).GetAttrRow();
+            for (auto it = attrRow.begin(); it != attrRow.end(); ++it)
+            {
+                if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
+                {
+                    refs.erase(it->GetHyperlinkId());
+                    RemoveHyperlinkFromMap(it->GetHyperlinkId());
+                    if (refs.empty())
+                    {
+                        // No more hyperlink references left to search for, terminate early
+                        goto end_outer_loop;
+                    }
+                }
+            }
+        }
+    }
+end_outer_loop:
+
+    // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     auto fillAttributes = _currentAttributes;
     if (inVtMode)
     {
@@ -2210,23 +2248,12 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 }
 
 // Method Description:
-// - Adds a hyperlink to our hyperlink table
+// - Adds or updates a hyperlink in our hyperlink table
 // Arguments:
-// - The hyperlink URI
-void TextBuffer::AddHyperlinkToMap(std::wstring_view uri)
+// - The hyperlink URI, the hyperlink id (could be new or old)
+void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, USHORT id)
 {
-    _hyperlinkMap.emplace(_currentHyperlinkId, uri);
-    ++_currentHyperlinkId;
-}
-
-// Method Description:
-// - Retrieves the next hyperlink ID to use - this is needed for setting
-//   the hyperlink ID in text attributes
-// Return Value:
-// - the SHORT hyperlink ID
-USHORT TextBuffer::GetCurrentHyperlinkId() const noexcept
-{
-    return _currentHyperlinkId;
+    _hyperlinkMap[id] = uri;
 }
 
 // Method Description:
@@ -2238,4 +2265,42 @@ USHORT TextBuffer::GetCurrentHyperlinkId() const noexcept
 std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const
 {
     return _hyperlinkMap.at(id);
+}
+
+// Method description:
+// - Provides the hyperlink ID to be assigned as a text attribute, based on the optional custom id provided
+// Arguments:
+// - The user-defined id
+// Return value:
+// - The internal hyperlink ID
+USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
+{
+    USHORT id;
+    if (params.empty())
+    {
+        // no custom id specified, return our internal count
+        id = _currentHyperlinkId;
+        ++_currentHyperlinkId;
+    }
+    else
+    {
+        // assign _currentHyperlinkId if the custom id does not already exist
+        const auto result = _customIdMap.emplace(params, _currentHyperlinkId);
+        if (result.second)
+        {
+            // the custom id did not already exist
+            ++_currentHyperlinkId;
+        }
+        id = (*(result.first)).second;
+    }
+    return id;
+}
+
+// Method Description:
+// - Removes a hyperlink from the map
+// Arguments:
+// - The ID of the hyperlink to be removed
+void TextBuffer::RemoveHyperlinkFromMap(USHORT id)
+{
+    _hyperlinkMap.erase(id);
 }

@@ -291,12 +291,13 @@ void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
 // - If the clicked text is a hyperlink, open it
 // Arguments:
 // - The position of the clicked text
-void Terminal::OpenHyperlink(const COORD position)
+std::wstring Terminal::GetHyperlink(const COORD position)
 {
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
     if (attr.IsHyperlink())
     {
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
-        ShellExecute(nullptr, L"open", uri.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        return uri;
     }
+    return L"";
 }

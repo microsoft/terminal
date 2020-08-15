@@ -145,11 +145,12 @@ HRESULT Microsoft::Console::Render::Xterm256Engine::_UpdateHyperlinkAttr(const T
     {
         if (textAttributes.IsHyperlink())
         {
-            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(textAttributes.GetHyperlinkId())));
+            USHORT id = textAttributes.GetHyperlinkId();
+            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(id), id));
         }
         else
         {
-            RETURN_IF_FAILED(_SetHyperlink(L""));
+            RETURN_IF_FAILED(_SetHyperlink(L"", 0));
         }
         _lastTextAttributes.SetHyperlinkId(textAttributes.GetHyperlinkId());
     }

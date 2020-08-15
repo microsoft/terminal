@@ -59,8 +59,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _renderTarget{ *this },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo },
-    _ignoreLegacyEquivalentVTAttributes{ false },
-    _currentHyperlinkId{ 1 }
+    _ignoreLegacyEquivalentVTAttributes{ false }
 {
     // Check if VT mode is enabled. Note that this can be true w/o calling
     // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
@@ -2697,35 +2696,4 @@ void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
 void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
 {
     _ignoreLegacyEquivalentVTAttributes = false;
-}
-
-// Method Description:
-// - Adds a hyperlink to our hyperlink table
-// Arguments:
-// - The hyperlink URI
-void SCREEN_INFORMATION::AddHyperlinkToMap(std::wstring_view uri)
-{
-    _hyperlinkMap.emplace(_currentHyperlinkId, uri);
-    ++_currentHyperlinkId;
-}
-
-// Method Description:
-// - Retrieves the next hyperlink ID to use - this is needed for setting
-//   the hyperlink ID in text attributes
-// Return Value:
-// - the SHORT hyperlink ID
-USHORT SCREEN_INFORMATION::GetCurrentHyperlinkId() const noexcept
-{
-    return _currentHyperlinkId;
-}
-
-// Method Description:
-// - Retrieves the URI associated with a particular hyperlink ID
-// Arguments:
-// - The hyperlink ID
-// Return Value:
-// - The URI
-std::wstring SCREEN_INFORMATION::GetHyperlinkUriFromId(USHORT id) const
-{
-    return _hyperlinkMap.at(id);
 }

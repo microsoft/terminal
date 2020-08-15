@@ -112,7 +112,7 @@ public:
 
     bool CopyToClipboard(std::wstring_view content) noexcept override;
 
-    bool AddHyperlink(std::wstring_view uri) noexcept override;
+    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -194,7 +194,7 @@ public:
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
-    void OpenHyperlink(const COORD position);
+    std::wstring GetHyperlink(const COORD position);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion

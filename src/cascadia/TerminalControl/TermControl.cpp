@@ -1131,7 +1131,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (ctrlEnabled && mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     // Control+Click: if the text selected is a hyperlink, open the link
-                    _terminal->OpenHyperlink(terminalPosition);
+                    const auto uri = _terminal->GetHyperlink(terminalPosition);
+                    if (!uri.empty())
+                    {
+                        _HyperlinkHandler(uri);
+                    }
                 }
                 else if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
@@ -2838,6 +2842,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsGlyphVisible(false);
     }
 
+    // Method description:
+    // - Checks if the uri is valid and sends an event if so
+    // Arguments:
+    // - The uri
+    void TermControl::_HyperlinkHandler(std::wstring uri)
+    {
+        auto parsed = winrt::Windows::Foundation::Uri(uri);
+        if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+        {
+            auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
+            _openHyperlinkHandlers(*this, *hyperlinkArgs);
+        }
+    }
+
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
     winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
@@ -2883,5 +2901,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
     // clang-format on
 }

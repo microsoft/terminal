@@ -205,7 +205,8 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
     return a._wAttrLegacy == b._wAttrLegacy &&
            a._foreground == b._foreground &&
            a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs;
+           a._extendedAttrs == b._extendedAttrs &&
+           a._hyperlinkId == b._hyperlinkId;
 }
 
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept

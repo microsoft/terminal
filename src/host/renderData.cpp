@@ -333,7 +333,7 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
 const std::wstring RenderData::GetHyperlinkUri(USHORT id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetHyperlinkUriFromId(id);
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
 }
 
 // Routine Description:

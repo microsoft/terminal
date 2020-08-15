@@ -387,4 +387,5 @@ void TextAttribute::SetStandardErase() noexcept
 {
     _extendedAttrs = ExtendedAttributes::Normal;
     _wAttrLegacy = 0;
+    _hyperlinkId = 0;
 }

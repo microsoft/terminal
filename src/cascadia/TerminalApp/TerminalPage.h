@@ -165,6 +165,8 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
+        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
+
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
 

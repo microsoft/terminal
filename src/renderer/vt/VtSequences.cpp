@@ -463,8 +463,18 @@ using namespace Microsoft::Console::Render;
 // - The hyperlink URI
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetHyperlink(std::wstring uri) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(std::wstring uri, USHORT id) noexcept
 {
-    const auto hyperlinkFormat = L"\x1b]8;;" + uri + L"\x9c";
-    return _Write(til::u16u8(hyperlinkFormat));
+    if (uri.empty())
+    {
+        // Closing OSC8 sequence
+        const auto hyperlinkFormat = (std::wstring)L"\x1b]8;;\x9c";
+        return _Write(til::u16u8(hyperlinkFormat));
+    }
+    else
+    {
+        // Opening OSC8 sequence
+        const auto hyperlinkFormat = til::u16u8(L"\x1b]8;id=%d;" + uri + L"\x9c");
+        return _WriteFormattedString(&hyperlinkFormat, id);
+    }
 }

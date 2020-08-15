@@ -31,6 +31,11 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
+    runtimeclass OpenHyperlinkEventArgs
+    {
+        String Uri { get; };
+    }
+
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
         TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -45,6 +50,7 @@ namespace Microsoft.Terminal.TerminalControl
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
+        event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
