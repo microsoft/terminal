@@ -35,6 +35,8 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -1152,7 +1154,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled, nullptr);
                 }
             }
         }
@@ -1312,7 +1314,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Right clicks and middle clicks should not need to do anything when released.
             if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                CopySelectionToClipboard();
+                CopySelectionToClipboard(false, nullptr);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -2088,9 +2090,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
-                                                                   winrt::hstring(L""),
-                                                                   winrt::hstring(L""));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _clipboardCopyHandlers(*this, *copyArgs);
     }
 
@@ -2154,7 +2154,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool singleLine)
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
+    bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
         {
@@ -2184,16 +2186,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        const auto htmlData = TextBuffer::GenHTML(bufferData,
-                                                  _actualFont.GetUnscaledSize().Y,
-                                                  _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground());
+        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
+                                  TextBuffer::GenHTML(bufferData,
+                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetFaceName(),
+                                                      _settings.DefaultBackground()) :
+                                  "";
 
         // convert to RTF format
-        const auto rtfData = TextBuffer::GenRTF(bufferData,
-                                                _actualFont.GetUnscaledSize().Y,
-                                                _actualFont.GetFaceName(),
-                                                _settings.DefaultBackground());
+        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
+                                 TextBuffer::GenRTF(bufferData,
+                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetFaceName(),
+                                                    _settings.DefaultBackground()) :
+                                 "";
 
         if (!_settings.CopyOnSelect())
         {
@@ -2204,7 +2210,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // send data up for clipboard
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData));
+                                                                   winrt::to_hstring(rtfData),
+                                                                   formats);
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }

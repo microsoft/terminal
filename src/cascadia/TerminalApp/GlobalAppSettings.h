@@ -70,7 +70,7 @@ public:
     GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
-    GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
     GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
     GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
     GETSET_PROPERTY(LaunchPosition, InitialPosition);

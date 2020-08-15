@@ -19,11 +19,20 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
     }
 
+    [flags]
+    enum CopyFormat
+    {
+        HTML = 0x1,
+        RTF = 0x2,
+        All = 0xffffffff
+    };
+
     runtimeclass CopyToClipboardEventArgs
     {
         String Text { get; };
         String Html { get; };
         String Rtf { get; };
+        Windows.Foundation.IReference<CopyFormat> Formats { get; };
     }
 
     runtimeclass PasteFromClipboardEventArgs
@@ -54,7 +63,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
 
-        Boolean CopySelectionToClipboard(Boolean collapseText);
+        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };

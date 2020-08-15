@@ -1676,10 +1676,17 @@ namespace winrt::TerminalApp::implementation
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
+        // The EventArgs.Formats() is an override for the global setting "copyFormatting"
+        //   iff it is set
+        bool useGlobal = copiedData.Formats() == nullptr;
+        auto copyFormats = useGlobal ?
+                               _settings->GlobalSettings().CopyFormatting() :
+                               copiedData.Formats().Value();
+
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        if (_settings->GlobalSettings().CopyFormatting())
+        if (WI_IsFlagSet(copyFormats, CopyFormat::HTML))
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1687,7 +1694,10 @@ namespace winrt::TerminalApp::implementation
             {
                 dataPack.SetHtmlFormat(htmlData);
             }
+        }
 
+        if (WI_IsFlagSet(copyFormats, CopyFormat::RTF))
+        {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();
             if (!rtfData.empty())
@@ -1780,12 +1790,13 @@ namespace winrt::TerminalApp::implementation
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
     // - singleLine: if enabled, copy contents as a single line of text
+    // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine)
+    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(singleLine);
+        return control.CopySelectionToClipboard(singleLine, formats);
     }
 
     // Method Description:

@@ -184,6 +184,30 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
     };
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "none", AllClear },
+        pair_type{ "html", ValueType::HTML },
+        pair_type{ "rtf", ValueType::RTF },
+        pair_type{ "all", AllSet },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+};
+
 // Type Description:
 // - Helper for converting the initial position string into
 //   2 coordinate values. We allow users to only provide one coordinate,
