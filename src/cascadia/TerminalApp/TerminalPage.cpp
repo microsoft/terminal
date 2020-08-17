@@ -119,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            page->CommandPalette().SetBindings(_settings->GetKeybindings());
+            page->CommandPalette().SetKeyBindings(_settings->GetKeybindings());
         }
     }
 

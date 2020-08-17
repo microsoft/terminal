@@ -82,7 +82,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (CommandPalette().Visibility() == Visibility::Visible)
             {
-                CommandPalette()._selectNextItem(true);
+                CommandPalette().SelectNextItem(true);
             }
 
             auto opt = _GetFocusedTabIndex();
@@ -108,7 +108,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (CommandPalette().Visibility() == Visibility::Visible)
             {
-                CommandPalette()._selectNextItem(false);
+                CommandPalette().SelectNextItem(false);
             }
 
             auto opt = _GetFocusedTabIndex();

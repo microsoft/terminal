@@ -102,7 +102,7 @@ namespace winrt::TerminalApp::implementation
     //   list. Otherwise, we're attempting to move to the previous.
     // Return Value:
     // - <none>
-    void CommandPalette::_selectNextItem(const bool moveDown)
+    void CommandPalette::SelectNextItem(const bool moveDown)
     {
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
@@ -131,12 +131,12 @@ namespace winrt::TerminalApp::implementation
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                _selectNextItem(false);
+                SelectNextItem(false);
                 e.Handled(true);
             }
             else
             {
-                _selectNextItem(true);
+                SelectNextItem(true);
                 e.Handled(true);
             }
         }
@@ -154,39 +154,17 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
-        const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
-
-        // Since I'm not sure if I want to open up all key downs to keybindings, I'll limit it to
-        // happen only during TabSwitch mode.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-            auto success = _bindings.TryKeyChord({
-                ctrlDown,
-                altDown,
-                shiftDown,
-                vkey,
-            });
-
-            if (success)
-            {
-                e.Handled(true);
-            }
-        }
 
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
-            _selectNextItem(false);
+            SelectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
             // Action Mode: Move focus to the previous item in the list.
-            _selectNextItem(true);
+            SelectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
@@ -214,10 +192,34 @@ namespace winrt::TerminalApp::implementation
 
             e.Handled(true);
         }
+        else
+        {
+            const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
+
+            // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
+            if (_currentMode == CommandPaletteMode::TabSwitchMode)
+            {
+                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+                auto success = _bindings.TryKeyChord({
+                    ctrlDown,
+                    altDown,
+                    shiftDown,
+                    vkey,
+                });
+
+                if (success)
+                {
+                    e.Handled(true);
+                }
+            }
+        }
     }
 
     // Method Description:
-    // - Implements the Alt KeyUp handler
+    // - Implements the Alt handler
     // Return value:
     // - whether the key was handled
     bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
@@ -268,11 +270,6 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
-    }
-
-    void CommandPalette::SetBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
-    {
-        _bindings = bindings;
     }
 
     // Method Description:
@@ -461,6 +458,11 @@ namespace winrt::TerminalApp::implementation
     Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
+    }
+
+    void CommandPalette::SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    {
+        _bindings = bindings;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<TerminalApp::Command> const& actions)

@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
-        void SetBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
+        void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
 
@@ -30,7 +30,7 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void _selectNextItem(const bool moveDown);
+        void SelectNextItem(const bool moveDown);
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
