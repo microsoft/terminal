@@ -578,7 +578,6 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
                 if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
                 {
                     refs.erase(it->GetHyperlinkId());
-                    RemoveHyperlinkFromMap(it->GetHyperlinkId());
                     if (refs.empty())
                     {
                         // No more hyperlink references left to search for, terminate early
@@ -589,6 +588,11 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
         }
     }
 end_outer_loop:
+    // Now delete obsolete references from our map
+    for (auto it = refs.begin(); it != refs.end(); ++it)
+    {
+        RemoveHyperlinkFromMap(*it);
+    }
 
     // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     auto fillAttributes = _currentAttributes;
@@ -2297,10 +2301,19 @@ USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
 }
 
 // Method Description:
-// - Removes a hyperlink from the map
+// - Removes a hyperlink from the hyperlink map and the associated
+//   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
 void TextBuffer::RemoveHyperlinkFromMap(USHORT id)
 {
     _hyperlinkMap.erase(id);
+    for (auto it = _customIdMap.begin(); it != _customIdMap.end(); ++it)
+    {
+        if (it->second == id)
+        {
+            _customIdMap.erase(it->first);
+            break;
+        }
+    }
 }

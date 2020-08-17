@@ -1795,13 +1795,13 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     uri.clear();
     const std::wstring idStr = L"id=";
     const auto len = string.size();
-    const size_t midpos = string.find(';');
-    if (midpos != std::wstring::npos)
+    const size_t midPos = string.find(';');
+    if (midPos != std::wstring::npos)
     {
         if (len != 1)
         {
-            uri = string.substr(midpos + 1);
-            const auto paramStr = string.substr(0, midpos);
+            uri = string.substr(midPos + 1);
+            const auto paramStr = string.substr(0, midPos);
             const auto idPos = paramStr.find(idStr);
             if (idPos != std::wstring::npos)
             {

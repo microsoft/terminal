@@ -706,7 +706,7 @@ public:
         }
     }
 
-    bool PrivateAddHyperlink(const std::wstring_view /*uri*/) const
+    bool PrivateAddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
     {
         Log::Comment(L"PrivateAddHyperlink MOCK called...");
 
