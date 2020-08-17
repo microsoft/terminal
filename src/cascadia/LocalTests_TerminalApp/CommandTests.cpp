@@ -11,6 +11,7 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -61,25 +62,25 @@ namespace TerminalAppLocalTests
         const auto commands1Json = VerifyParseSucceeded(commands1String);
         const auto commands2Json = VerifyParseSucceeded(commands2String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
             auto warnings = implementation::Command::LayerJson(commands, commands1Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
-        VERIFY_ARE_EQUAL(2u, commands.size());
+        VERIFY_ARE_EQUAL(2u, commands.Size());
 
         {
             auto warnings = implementation::Command::LayerJson(commands, commands2Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
-        VERIFY_ARE_EQUAL(4u, commands.size());
+        VERIFY_ARE_EQUAL(4u, commands.Size());
     }
 
     void CommandTests::LayerCommand()
@@ -95,13 +96,13 @@ namespace TerminalAppLocalTests
         const auto commands2Json = VerifyParseSucceeded(commands2String);
         const auto commands3Json = VerifyParseSucceeded(commands3String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
-            VERIFY_ARE_EQUAL(1u, commands.size());
-            auto command = commands.at(L"action0");
+            VERIFY_ARE_EQUAL(1u, commands.Size());
+            auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.Action().Action());
@@ -111,8 +112,8 @@ namespace TerminalAppLocalTests
         {
             auto warnings = implementation::Command::LayerJson(commands, commands1Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
-            VERIFY_ARE_EQUAL(1u, commands.size());
-            auto command = commands.at(L"action0");
+            VERIFY_ARE_EQUAL(1u, commands.Size());
+            auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::PasteText, command.Action().Action());
@@ -121,8 +122,8 @@ namespace TerminalAppLocalTests
         {
             auto warnings = implementation::Command::LayerJson(commands, commands2Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
-            VERIFY_ARE_EQUAL(1u, commands.size());
-            auto command = commands.at(L"action0");
+            VERIFY_ARE_EQUAL(1u, commands.Size());
+            auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.Action().Action());
@@ -133,7 +134,7 @@ namespace TerminalAppLocalTests
             // This last command should "unbind" the action.
             auto warnings = implementation::Command::LayerJson(commands, commands3Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
-            VERIFY_ARE_EQUAL(0u, commands.size());
+            VERIFY_ARE_EQUAL(0u, commands.Size());
         }
     }
 
@@ -153,14 +154,14 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(5u, commands.size());
+        VERIFY_ARE_EQUAL(5u, commands.Size());
 
         {
-            auto command = commands.at(L"command0");
+            auto command = commands.Lookup(L"command0");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -170,7 +171,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"command1");
+            auto command = commands.Lookup(L"command1");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -180,7 +181,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"command2");
+            auto command = commands.Lookup(L"command2");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -190,7 +191,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"command4");
+            auto command = commands.Lookup(L"command4");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -200,7 +201,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"command5");
+            auto command = commands.Lookup(L"command5");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -217,17 +218,17 @@ namespace TerminalAppLocalTests
         const std::string commands0String{ R"([ { "name": { "key": "DuplicateTabCommandKey"}, "command": "copy" } ])" };
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
             VERIFY_ARE_EQUAL(0u, warnings.size());
-            VERIFY_ARE_EQUAL(1u, commands.size());
+            VERIFY_ARE_EQUAL(1u, commands.Size());
 
             // NOTE: We're relying on DuplicateTabCommandKey being defined as
             // "Duplicate Tab" here. If that string changes in our resources,
             // this test will break.
-            auto command = commands.at(L"Duplicate tab");
+            auto command = commands.Lookup(L"Duplicate tab");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.Action().Action());
@@ -257,18 +258,18 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
 
         // There are only 3 commands here: all of the `"none"`, `"auto"`,
         // `"foo"`, `null`, and <no args> bindings all generate the same action,
         // which will generate just a single name for all of them.
-        VERIFY_ARE_EQUAL(3u, commands.size());
+        VERIFY_ARE_EQUAL(3u, commands.Size());
 
         {
-            auto command = commands.at(L"Split pane");
+            auto command = commands.Lookup(L"Split pane");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -278,7 +279,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"Split pane, direction: vertical");
+            auto command = commands.Lookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -288,7 +289,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            auto command = commands.at(L"Split pane, direction: horizontal");
+            auto command = commands.Lookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
@@ -307,14 +308,14 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        std::unordered_map<winrt::hstring, Command> commands;
-        VERIFY_ARE_EQUAL(0u, commands.size());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(1u, commands.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto command = commands.at(L"Split pane");
+            auto command = commands.Lookup(L"Split pane");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.Action());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());

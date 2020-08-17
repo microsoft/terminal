@@ -372,7 +372,7 @@ namespace TerminalApp::JsonUtils
                     {
                         // attempt to combine AllClear (explicitly) with anything else
                         DeserializationError e{ element };
-                        e.expectedType = TypeDescription();
+                        e.expectedType = BaseEnumMapper::TypeDescription();
                         throw e;
                     }
                     value |= newFlag;

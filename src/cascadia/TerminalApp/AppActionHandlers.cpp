@@ -149,7 +149,9 @@ namespace winrt::TerminalApp::implementation
                                              const TerminalApp::ActionEventArgs& args)
     {
         auto activeTab = _GetFocusedTab();
-        if (activeTab)
+
+        // Don't do anything if there's only one pane. It's already zoomed.
+        if (activeTab && activeTab->GetLeafPaneCount() > 1)
         {
             // First thing's first, remove the current content from the UI
             // tree. This is important, because we might be leaving zoom, and if
@@ -262,7 +264,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine());
+            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }

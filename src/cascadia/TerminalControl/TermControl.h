@@ -27,19 +27,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
+        CopyToClipboardEventArgs(hstring text) :
+            _text(text),
+            _html(),
+            _rtf(),
+            _formats(static_cast<CopyFormat>(0)) {}
+
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
             _text(text),
             _html(html),
-            _rtf(rtf) {}
+            _rtf(rtf),
+            _formats(formats) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
         hstring Rtf() { return _rtf; };
+        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
 
     private:
         hstring _text;
         hstring _html;
         hstring _rtf;
+        Windows::Foundation::IReference<CopyFormat> _formats;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -67,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool collapseText = false);
+        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -91,7 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 

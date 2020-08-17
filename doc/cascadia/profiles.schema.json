@@ -90,6 +90,32 @@
       ],
       "type": "string"
     },
+    "CopyFormat": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "html",
+              "rtf"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "html",
+            "rtf",
+            "all",
+            "none"
+          ]
+        }
+      ]
+    },
     "AnchorKey": {
       "enum": [
         "ctrl",
@@ -163,6 +189,18 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "copyFormatting": {
+              "default": null,
+              "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/CopyFormat"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         }
@@ -468,8 +506,8 @@
         },
         "copyFormatting": {
           "default": true,
-          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
-          "type": "boolean"
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
+          "$ref": "#/definitions/CopyFormat"
         },
         "largePasteWarning": {
           "default": true,

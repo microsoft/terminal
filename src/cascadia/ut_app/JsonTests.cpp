@@ -92,12 +92,12 @@ namespace TerminalAppUnitTests
                                           "}" };
 
         const auto schemeObject = VerifyParseSucceeded(campbellScheme);
-        auto scheme = ColorScheme::FromJson(schemeObject);
-        VERIFY_ARE_EQUAL(L"Campbell", scheme.GetName());
-        VERIFY_ARE_EQUAL(ARGB(0, 0xf2, 0xf2, 0xf2), scheme.GetForeground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0x0c, 0x0c, 0x0c), scheme.GetBackground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0x13, 0x13, 0x13), scheme.GetSelectionBackground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0xFF, 0xFF, 0xFF), scheme.GetCursorColor());
+        auto scheme = implementation::ColorScheme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), scheme->Foreground());
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), scheme->Background());
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), scheme->SelectionBackground());
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), scheme->CursorColor());
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], COLOR_TABLE_SIZE);
@@ -107,7 +107,7 @@ namespace TerminalAppUnitTests
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
             const auto& expected = expectedCampbellTable.at(i);
-            const auto& actual = scheme.GetTable().at(i);
+            const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
     }
