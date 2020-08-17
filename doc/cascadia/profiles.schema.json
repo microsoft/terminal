@@ -68,7 +68,7 @@
         "wt",
         "closeOtherTabs",
         "closeTabsAfter",
-        "tabSwitcher",
+        "tabSearch",
         "unbound"
       ],
       "type": "string"
@@ -422,22 +422,6 @@
       ],
       "required": [ "index" ]
     },
-    "TabSwitcherAction": {
-      "description": "Arguments corresponding to a Tab Switcher Action",
-      "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        {
-          "properties": {
-            "action": { "type": "string", "pattern": "tabSwitcher" },
-            "anchorKey": {
-              "$ref": "#/definitions/AnchorKey",
-              "default": null,
-              "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
-            }
-          }
-        }
-      ]
-    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -459,7 +443,6 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
-              { "$ref": "#/definitions/TabSwitcherAction" },
               { "type": "null" }
             ]
         },
