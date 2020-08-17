@@ -36,7 +36,7 @@ jobs:
     matrix: ${{ parameters.matrix }}
   variables:
     artifactsDir: $(Build.SourcesDirectory)\Artifacts
-    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.51.200127004\build\Binaries\$(buildPlatform)
+    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$(buildPlatform)
     helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
 
       
@@ -127,5 +127,5 @@ jobs:
       command: custom
       projects: build\Helix\RunTestsInHelix.proj
       custom: msbuild
-      arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=WinUI /p:HelixTargetQueues=$(openHelixTargetQueues)'
+      arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=Terminal /p:HelixTargetQueues=$(openHelixTargetQueues)'
 

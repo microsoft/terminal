@@ -6,7 +6,7 @@ parameters:
   rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
-- job: BuildJob
+- job: Build ${{ parameters.platform }} ${{ parameters.configuration }}
   displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
@@ -21,7 +21,7 @@ jobs:
 - template: helix-runtests-job.yml
   parameters:
     name: 'RunTestsInHelix'
-    dependsOn: BuildJob
+    dependsOn: Build ${{ parameters.platform }} ${{ parameters.configuration }}
     condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
     testSuite: 'DevTestSuite'
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
