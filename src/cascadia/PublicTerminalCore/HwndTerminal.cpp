@@ -79,6 +79,8 @@ try
                 case WM_RBUTTONUP:
                     ReleaseCapture();
                     break;
+                default:
+                    break;
                 }
 
                 // Suppress all mouse events that made it into the terminal.
@@ -132,6 +134,8 @@ try
             terminal->_hwnd.release();
             terminal->Teardown();
             return 0;
+        default:
+            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
