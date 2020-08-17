@@ -1619,7 +1619,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
     _trace.TraceOnEvent(L"DcsPassThrough");
     if (_isStringTerminator(wch))
     {
-        // TODO: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
+        // TODO:GH#7316: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
         _EnterGround();
     }
     if (_isC0Code(wch) || _isDcsPassThroughValid(wch))
