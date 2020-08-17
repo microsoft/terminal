@@ -80,6 +80,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings->GlobalSettings().UseTabSwitcher())
         {
+            if (CommandPalette().Visibility() == Visibility::Visible)
+            {
+                CommandPalette()._selectNextItem(true);
+            }
+
             auto opt = _GetFocusedTabIndex();
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
@@ -101,6 +106,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings->GlobalSettings().UseTabSwitcher())
         {
+            if (CommandPalette().Visibility() == Visibility::Visible)
+            {
+                CommandPalette()._selectNextItem(false);
+            }
+
             auto opt = _GetFocusedTabIndex();
             uint32_t startIdx = opt ? *opt : 0;
             startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();

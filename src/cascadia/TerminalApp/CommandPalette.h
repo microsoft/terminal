@@ -22,11 +22,15 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
+        void SetBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
+
         void EnableCommandPaletteMode();
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+
+        void _selectNextItem(const bool moveDown);
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
@@ -65,8 +69,6 @@ namespace winrt::TerminalApp::implementation
 
         void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
 
-        void _selectNextItem(const bool moveDown);
-
         void _updateFilteredActions();
 
         std::vector<winrt::TerminalApp::Command> _collectFilteredActions();
@@ -76,6 +78,8 @@ namespace winrt::TerminalApp::implementation
 
         CommandPaletteMode _currentMode;
         void _switchToMode(CommandPaletteMode mode);
+
+        Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
         bool _anchoredMode;

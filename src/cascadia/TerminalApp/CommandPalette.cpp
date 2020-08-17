@@ -154,6 +154,28 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+        const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
+
+        // Since I'm not sure if I want to open up all key downs to keybindings, I'll limit it to
+        // happen only during TabSwitch mode.
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            auto success = _bindings.TryKeyChord({
+                ctrlDown,
+                altDown,
+                shiftDown,
+                vkey,
+            });
+
+            if (success)
+            {
+                e.Handled(true);
+            }
+        }
 
         if (key == VirtualKey::Up)
         {
@@ -198,7 +220,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt KeyUp handler
     // Return value:
     // - whether the key was handled
-    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
     {
         auto handled = false;
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
@@ -246,6 +268,11 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
+    }
+
+    void CommandPalette::SetBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    {
+        _bindings = bindings;
     }
 
     // Method Description:
