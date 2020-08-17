@@ -74,6 +74,8 @@ To update Windows Terminal using Scoop, run the following:
 scoop update windows-terminal
 ```
 
+If you have any issues when installing/updating the package, please search for or report the same on the [issues page](https://github.com/lukesampson/scoop-extras/issues) of Scoop Extras bucket repository.  
+
 ---
 
 ## Windows Terminal 2.0 Roadmap
