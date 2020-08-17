@@ -20,10 +20,10 @@ namespace winrt::TerminalApp::implementation
 {
     struct KeyChordHash
     {
-        std::size_t operator()(const winrt::Microsoft::Terminal::Settings::KeyChord& key) const
+        std::size_t operator()(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& key) const
         {
             std::hash<int32_t> keyHash;
-            std::hash<winrt::Microsoft::Terminal::Settings::KeyModifiers> modifiersHash;
+            std::hash<winrt::Microsoft::Terminal::TerminalControl::KeyModifiers> modifiersHash;
             std::size_t hashedKey = keyHash(key.Vkey());
             std::size_t hashedMods = modifiersHash(key.Modifiers());
             return hashedKey ^ hashedMods;
@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
     struct KeyChordEquality
     {
-        bool operator()(const winrt::Microsoft::Terminal::Settings::KeyChord& lhs, const winrt::Microsoft::Terminal::Settings::KeyChord& rhs) const
+        bool operator()(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& lhs, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& rhs) const
         {
             return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
         }
@@ -42,15 +42,15 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
+        bool TryKeyChord(winrt::Microsoft::Terminal::TerminalControl::KeyChord const& kc);
 
         void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
-                           winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
-        void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
-        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForAction(TerminalApp::ShortcutAction const& action);
-        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs);
+                           winrt::Microsoft::Terminal::TerminalControl::KeyChord const& chord);
+        void ClearKeyBinding(winrt::Microsoft::Terminal::TerminalControl::KeyChord const& chord);
+        Microsoft::Terminal::TerminalControl::KeyChord GetKeyBindingForAction(TerminalApp::ShortcutAction const& action);
+        Microsoft::Terminal::TerminalControl::KeyChord GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs);
 
-        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
+        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::TerminalControl::KeyModifiers modifiers);
 
         // Defined in AppKeyBindingsSerialization.cpp
         std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(const Json::Value& json);
@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
     private:
-        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        std::unordered_map<winrt::Microsoft::Terminal::TerminalControl::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 

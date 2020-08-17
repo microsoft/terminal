@@ -114,7 +114,7 @@ private:                                                       \
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define OBSERVABLE_GETSET_PROPERTY(type, name, event)                                  \
+#define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
 public:                                                                                \
     type name() { return _##name; };                                                   \
     void name(const type& value)                                                       \
@@ -127,7 +127,7 @@ public:                                                                         
     };                                                                                 \
                                                                                        \
 private:                                                                               \
-    const type _##name;                                                                \
+    const type _##name{ __VA_ARGS__ };                                                 \
     void _set##name(const type& value)                                                 \
     {                                                                                  \
         const_cast<type&>(_##name) = value;                                            \

@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "KeyChordSerialization.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
 static constexpr std::wstring_view SHIFT_KEY{ L"shift" };
@@ -99,7 +99,7 @@ static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
 // - hstr: the string to parse into a keychord.
 // Return Value:
 // - a newly constructed KeyChord
-winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
+KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
 {
     std::wstring wstr{ hstr };
 
@@ -201,7 +201,7 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
         }
     }
 
-    return winrt::Microsoft::Terminal::Settings::KeyChord{ modifiers, vkey };
+    return KeyChord{ modifiers, vkey };
 }
 
 // Function Description:

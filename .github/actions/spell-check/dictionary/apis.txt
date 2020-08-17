@@ -4,6 +4,7 @@ alignof
 bitfield
 bitfields
 CLASSNOTAVAILABLE
+environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
 fullkbd
@@ -23,6 +24,7 @@ IObject
 IStorage
 llabs
 LCID
+lround
 LSHIFT
 NCHITTEST
 NCLBUTTONDBLCLK
@@ -31,6 +33,8 @@ NOAGGREGATION
 NOREDIRECTIONBITMAP
 oaidl
 ocidl
+otms
+OUTLINETEXTMETRICW
 PAGESCROLL
 RETURNCMD
 rfind
@@ -43,3 +47,4 @@ STDCPP
 syscall
 tmp
 tx
+userenv

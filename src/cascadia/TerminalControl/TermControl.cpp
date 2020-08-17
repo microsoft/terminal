@@ -16,6 +16,7 @@
 #include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
+using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Xaml;
@@ -25,7 +26,6 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 // The minimum delay between updates to the scroll bar's values.
@@ -34,6 +34,8 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -56,12 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return initialized;
     }
 
-    TermControl::TermControl() :
-        TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
-    {
-    }
-
-    TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+    TermControl::TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
         _initializedTerminal{ false },
         _settings{ settings },
@@ -88,6 +85,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
+        auto pfnTabColorChanged = std::bind(&TermControl::_TerminalTabColorChanged, this, std::placeholders::_1);
+        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
+
         auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
         _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
@@ -106,8 +106,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
-        auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-        _terminal->SetWriteInputCallback(inputFn);
+        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
+            _SendInputToConnection(wstr);
+        });
 
         _terminal->UpdateSettings(settings);
 
@@ -242,7 +243,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - newSettings: New settings values for the profile in this terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
     {
         _settings = newSettings;
         auto weakThis{ get_weak() };
@@ -298,6 +299,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void TermControl::SendInput(const winrt::hstring& wstr)
+    {
+        _SendInputToConnection(wstr);
+    }
+
     void TermControl::ToggleRetroEffect()
     {
         auto lock = _terminal->LockForWriting();
@@ -738,7 +751,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
         const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
@@ -748,7 +765,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
     // Return value:
     // - Whether the key was handled.
-    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
@@ -756,9 +773,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
             //   This is required as part of GH#6421.
-            // GH#6513 - make sure to set the scancode too, otherwise conpty
-            // will think this is a NUL
-            (void)_TrySendKeyEvent(VK_MENU, LOWORD(MapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC)), modifiers, false);
+            (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
             handled = true;
         }
         else if (vkey == VK_F7 && down)
@@ -780,7 +795,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (!handled)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+                (void)_TrySendKeyEvent(VK_F7, scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
@@ -827,9 +842,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const auto modifiers = _GetPressedModifierKeys();
+        auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        if (e.KeyStatus().IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
         // Alt-Numpad# input will send us a character once the user releases
         // Alt, so we should be ignoring the individual keydowns. The character
@@ -1002,7 +1021,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
+        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     }
 
     // Method Description:
@@ -1134,7 +1154,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled, nullptr);
                 }
             }
         }
@@ -1294,7 +1314,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Right clicks and middle clicks should not need to do anything when released.
             if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                CopySelectionToClipboard();
+                CopySelectionToClipboard(false, nullptr);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1326,10 +1346,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto point = args.GetCurrentPoint(*this);
+        const auto props = point.Properties();
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
         auto result = _DoMouseWheel(point.Position(),
                                     ControlKeyStates{ args.KeyModifiers() },
                                     point.Properties().MouseWheelDelta(),
-                                    point.Properties().IsLeftButtonPressed());
+                                    state);
         if (result)
         {
             args.Handled(true);
@@ -1352,7 +1374,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
                                     const ControlKeyStates modifiers,
                                     const int32_t delta,
-                                    const bool isLeftButtonPressed)
+                                    const TerminalInput::MouseButtonState state)
     {
         if (_CanSendVTMouseInput())
         {
@@ -1364,7 +1386,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return _terminal->SendMouseEvent(_GetTerminalPosition(point),
                                              WM_MOUSEWHEEL,
                                              _GetPressedModifierKeys(),
-                                             ::base::saturated_cast<short>(delta));
+                                             ::base::saturated_cast<short>(delta),
+                                             state);
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -1380,7 +1403,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            _MouseScrollHandler(delta, point, isLeftButtonPressed);
+            _MouseScrollHandler(delta, point, state.isLeftButtonDown);
         }
         return false;
     }
@@ -1394,11 +1417,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - location: the location of the mouse during this event. This location is
     //   relative to the origin of the control
     // - delta: the mouse wheel delta that triggered this event.
+    // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const int32_t delta)
+                                   const int32_t delta,
+                                   const bool leftButtonDown,
+                                   const bool midButtonDown,
+                                   const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        return _DoMouseWheel(location, modifiers, delta, false);
+        TerminalInput::MouseButtonState state{ leftButtonDown, midButtonDown, rightButtonDown };
+        return _DoMouseWheel(location, modifiers, delta, state);
     }
 
     // Method Description:
@@ -1749,12 +1777,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Writes the given sequence as input to the active terminal connection,
+    // - Writes the given sequence as input to the active terminal connection.
+    // - This method has been overloaded to allow zero-copy winrt::param::hstring optimizations.
     // Arguments:
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::_SendInputToConnection(const std::wstring& wstr)
+    void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
+    {
+        _connection.WriteInput(wstr);
+    }
+
+    void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
         _connection.WriteInput(wstr);
     }
@@ -2049,12 +2083,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _titleChangedHandlers(winrt::hstring{ wstr });
     }
+    void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
+    {
+        _TabColorChangedHandlers(*this, nullptr);
+    }
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
-                                                                   winrt::hstring(L""),
-                                                                   winrt::hstring(L""));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _clipboardCopyHandlers(*this, *copyArgs);
     }
 
@@ -2118,7 +2154,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool singleLine)
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
+    bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
         {
@@ -2148,16 +2186,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        const auto htmlData = TextBuffer::GenHTML(bufferData,
-                                                  _actualFont.GetUnscaledSize().Y,
-                                                  _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground());
+        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
+                                  TextBuffer::GenHTML(bufferData,
+                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetFaceName(),
+                                                      _settings.DefaultBackground()) :
+                                  "";
 
         // convert to RTF format
-        const auto rtfData = TextBuffer::GenRTF(bufferData,
-                                                _actualFont.GetUnscaledSize().Y,
-                                                _actualFont.GetFaceName(),
-                                                _settings.DefaultBackground());
+        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
+                                 TextBuffer::GenRTF(bufferData,
+                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetFaceName(),
+                                                    _settings.DefaultBackground()) :
+                                 "";
 
         if (!_settings.CopyOnSelect())
         {
@@ -2168,7 +2210,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // send data up for clipboard
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData));
+                                                                   winrt::to_hstring(rtfData),
+                                                                   formats);
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }
@@ -2317,7 +2360,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                         const int32_t& fontHeight,
                                                                         const winrt::Windows::UI::Text::FontWeight& fontWeight,
                                                                         const winrt::hstring& fontFace,
-                                                                        const Microsoft::Terminal::Settings::ScrollbarState& scrollState,
+                                                                        const ScrollbarState& scrollState,
                                                                         const winrt::hstring& padding,
                                                                         const uint32_t dpi)
     {
@@ -2817,6 +2860,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // It's already loaded if we get here, so just hide it.
         RendererFailedNotice().Visibility(Visibility::Collapsed);
         _renderer->ResetErrorStateAndResume();
+    }
+
+    IControlSettings TermControl::Settings() const
+    {
+        return _settings;
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
+    {
+        auto coreColor = _terminal->GetTabColor();
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

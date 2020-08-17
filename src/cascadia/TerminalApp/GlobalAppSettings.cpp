@@ -10,7 +10,6 @@
 #include "TerminalSettingsSerializationHelpers.h"
 
 using namespace TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
@@ -61,6 +60,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
+    _commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
 }
 
 GlobalAppSettings::~GlobalAppSettings()
@@ -90,9 +90,9 @@ GUID GlobalAppSettings::DefaultProfile() const
     return _defaultProfile;
 }
 
-std::wstring GlobalAppSettings::UnparsedDefaultProfile() const
+std::optional<std::wstring> GlobalAppSettings::UnparsedDefaultProfile() const
 {
-    return _unparsedDefaultProfile.value();
+    return _unparsedDefaultProfile;
 }
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
@@ -213,7 +213,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - <none>
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
-    std::wstring name{ scheme.GetName() };
+    std::wstring name{ scheme.Name() };
     _colorSchemes[name] = std::move(scheme);
 }
 
@@ -231,7 +231,12 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
-const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
+}
+
+winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
 {
     return _commands;
 }

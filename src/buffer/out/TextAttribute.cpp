@@ -246,8 +246,12 @@ bool TextAttribute::IsCrossedOut() const noexcept
 
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Underlined);
+}
+
+bool TextAttribute::IsDoublyUnderlined() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
@@ -292,8 +296,12 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 
 void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Underlined, isUnderlined);
+}
+
+void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
