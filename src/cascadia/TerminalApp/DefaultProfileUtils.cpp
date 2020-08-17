@@ -18,8 +18,8 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 winrt::TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name)
 {
     const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
-                                                                    gsl::as_bytes(gsl::make_span(name))) };
-    winrt::TerminalApp::Profile newProfile{profileGuid};
+                                                                           gsl::as_bytes(gsl::make_span(name))) };
+    winrt::TerminalApp::Profile newProfile{ profileGuid };
     //auto newProfile = winrt::make<winrt::TerminalApp::Profile>();
     newProfile.Guid(profileGuid);
     newProfile.Name(name);
@@ -28,7 +28,7 @@ winrt::TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name)
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));
     iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
 
-    newProfile.Icon(iconPath);
+    newProfile.IconPath(iconPath);
 
     return newProfile;
 }

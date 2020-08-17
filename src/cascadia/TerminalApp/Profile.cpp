@@ -153,7 +153,7 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
 
     terminalSettings.ScrollState(_ScrollState);
 
-    if (!_BackgroundImage.empty())
+    if (!_BackgroundImagePath.empty())
     {
         terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
@@ -363,8 +363,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-    JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImage);
+    JsonUtils::GetValueForKey(json, IconKey, _IconPath);
+    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
@@ -383,11 +383,11 @@ void Profile::LayerJson(const Json::Value& json)
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
 winrt::hstring Profile::GetExpandedIconPath() const
 {
-    if (_Icon.empty())
+    if (_IconPath.empty())
     {
         return { L"" };
     }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_Icon.c_str()) };
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_IconPath.c_str()) };
     return envExpandedPath;
 }
 
@@ -398,11 +398,11 @@ winrt::hstring Profile::GetExpandedIconPath() const
 // - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 {
-    if (_BackgroundImage.empty())
+    if (_BackgroundImagePath.empty())
     {
         return { L"" };
     }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImage.c_str()) };
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
     return envExpandedPath;
 }
 

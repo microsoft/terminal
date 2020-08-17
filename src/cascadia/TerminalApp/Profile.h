@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(Windows::Foundation::IReference<guid>, ConnectionType, nullptr);
         GETSET_PROPERTY(bool, Hidden, false);
 
-        GETSET_PROPERTY(hstring, Icon);
+        GETSET_PROPERTY(hstring, IconPath);
 
         GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         GETSET_PROPERTY(hstring, TabTitle);
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
         GETSET_PROPERTY(hstring, StartingDirectory);
 
-        GETSET_PROPERTY(hstring, BackgroundImage);
+        GETSET_PROPERTY(hstring, BackgroundImagePath);
         GETSET_PROPERTY(Windows::Foundation::IReference<double>, BackgroundImageOpacity);
         GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Xaml::Media::Stretch>, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
 

@@ -497,9 +497,9 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
-        VERIFY_IS_FALSE(settings->_profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings->_profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings->_profiles.at(2).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings->_profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings->_profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings->_profiles.at(2).Guid());
     }
 
     void SettingsTests::LayerGlobalProperties()
@@ -791,12 +791,12 @@ namespace TerminalAppLocalTests
         const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
         const GUID nullGuid{ 0 };
 
-        VERIFY_IS_TRUE(profile0->Guid() == nullptr);
-        VERIFY_IS_TRUE(profile1->Guid() == nullptr);
-        VERIFY_IS_TRUE(profile2->Guid() == nullptr);
-        VERIFY_IS_FALSE(profile3->Guid() == nullptr);
-        VERIFY_IS_FALSE(profile4->Guid() == nullptr);
-        VERIFY_IS_TRUE(profile5->Guid() == nullptr);
+        VERIFY_IS_NULL(profile0->Guid());
+        VERIFY_IS_NULL(profile1->Guid());
+        VERIFY_IS_NULL(profile2->Guid());
+        VERIFY_IS_NOT_NULL(profile3->Guid());
+        VERIFY_IS_NOT_NULL(profile4->Guid());
+        VERIFY_IS_NULL(profile5->Guid());
 
         VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
         VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
@@ -810,12 +810,12 @@ namespace TerminalAppLocalTests
         settings._profiles.emplace_back(profile5);
 
         settings._ValidateProfilesHaveGuid();
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(4).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(5).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(5).Guid());
 
         VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(), nullGuid);
         VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid(), nullGuid);
@@ -853,25 +853,25 @@ namespace TerminalAppLocalTests
         const auto profile0 = implementation::Profile::FromJson(profile0Json);
         const GUID nullGuid{ 0 };
 
-        VERIFY_IS_TRUE(profile0->Guid() == nullptr);
+        VERIFY_IS_NULL(profile0->Guid());
 
         const auto serialized0Profile = profile0->GenerateStub();
         const auto profile1 = implementation::Profile::FromJson(serialized0Profile);
-        VERIFY_IS_TRUE(profile0->Guid() == nullptr);
-        VERIFY_IS_TRUE(profile1->Guid() == nullptr);
+        VERIFY_IS_NULL(profile0->Guid());
+        VERIFY_IS_NULL(profile1->Guid());
 
         CascadiaSettings settings;
         settings._profiles.emplace_back(profile1);
         settings._ValidateProfilesHaveGuid();
 
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
 
         const auto profileImpl = winrt::get_self<implementation::Profile>(settings._profiles.at(0));
         const auto serialized1Profile = profileImpl->GenerateStub();
 
         const auto profile2 = implementation::Profile::FromJson(serialized1Profile);
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(profile2->Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(profile2->Guid());
         VERIFY_ARE_EQUAL(settings._profiles.at(0).Guid(), profile2->Guid());
     }
 
@@ -901,14 +901,14 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(1).Guid());
 
         settings._ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
     }
 
     void SettingsTests::TestReorderWithNullGuids()
@@ -937,8 +937,8 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(DefaultJson, true);
         settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
 
@@ -946,10 +946,10 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(3).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(3).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(2).Name());
@@ -958,10 +958,10 @@ namespace TerminalAppLocalTests
         settings._ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings._profiles.at(2).Name());
@@ -1038,8 +1038,8 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(DefaultJson, true);
         settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
 
@@ -1047,10 +1047,10 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(2).Name());
@@ -1059,10 +1059,10 @@ namespace TerminalAppLocalTests
         settings._ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(2).Name());
@@ -1099,8 +1099,8 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(DefaultJson, true);
         settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
 
@@ -1110,11 +1110,11 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() != nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() != nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(4).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(4).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(2).Name());
@@ -1152,8 +1152,8 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(DefaultJson, true);
         settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
 
@@ -1163,11 +1163,11 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() != nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() != nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(4).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NULL(settings._profiles.at(4).Guid());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(2).Name());
@@ -1196,11 +1196,11 @@ namespace TerminalAppLocalTests
             settings2._ParseJsonString(firstSettingsString, false);
             settings2.LayerJson(settings2._userSettings);
             VERIFY_ARE_EQUAL(5u, settings2._profiles.size());
-            VERIFY_IS_TRUE(settings2._profiles.at(0).Guid() != nullptr);
-            VERIFY_IS_TRUE(settings2._profiles.at(1).Guid() != nullptr);
-            VERIFY_IS_TRUE(settings2._profiles.at(2).Guid() != nullptr);
-            VERIFY_IS_FALSE(settings2._profiles.at(3).Guid() != nullptr);
-            VERIFY_IS_FALSE(settings2._profiles.at(4).Guid() != nullptr);
+            VERIFY_IS_NOT_NULL(settings2._profiles.at(0).Guid());
+            VERIFY_IS_NOT_NULL(settings2._profiles.at(1).Guid());
+            VERIFY_IS_NOT_NULL(settings2._profiles.at(2).Guid());
+            VERIFY_IS_NULL(settings2._profiles.at(3).Guid());
+            VERIFY_IS_NULL(settings2._profiles.at(4).Guid());
             VERIFY_ARE_EQUAL(L"Windows PowerShell", settings2._profiles.at(0).Name());
             VERIFY_ARE_EQUAL(L"Command Prompt", settings2._profiles.at(1).Name());
             VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings2._profiles.at(2).Name());
@@ -1213,11 +1213,11 @@ namespace TerminalAppLocalTests
         settings._ValidateSettings();
 
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(3).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(4).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings._profiles.at(1).Name());
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings._profiles.at(2).Name());
@@ -1616,7 +1616,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(4u, settings._profiles.size());
 
             VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid());
-            VERIFY_IS_FALSE(settings._profiles.at(3).Guid() != nullptr);
+            VERIFY_IS_NULL(settings._profiles.at(3).Guid());
         }
     }
 
@@ -1720,9 +1720,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1).Source());
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2).Source());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() != nullptr);
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() != nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
 
         VERIFY_ARE_EQUAL(guid1, settings._profiles.at(0).Guid());
         VERIFY_ARE_EQUAL(guid1, settings._profiles.at(1).Guid());

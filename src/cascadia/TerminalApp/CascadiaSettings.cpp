@@ -440,7 +440,7 @@ void CascadiaSettings::_ValidateMediaResources()
 
     for (auto& profile : _profiles)
     {
-        if (!profile.BackgroundImage().empty())
+        if (!profile.BackgroundImagePath().empty())
         {
             // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
             // This covers file paths on the machine, app data, URLs, and other resource paths.
@@ -451,12 +451,12 @@ void CascadiaSettings::_ValidateMediaResources()
             catch (...)
             {
                 // reset background image path
-                profile.BackgroundImage(L"");
+                profile.BackgroundImagePath(L"");
                 invalidBackground = true;
             }
         }
 
-        if (!profile.Icon().empty())
+        if (!profile.IconPath().empty())
         {
             try
             {
@@ -465,7 +465,7 @@ void CascadiaSettings::_ValidateMediaResources()
             catch (...)
             {
                 // reset icon path
-                profile.Icon(L"");
+                profile.IconPath(L"");
                 invalidIcon = true;
             }
         }

@@ -155,8 +155,8 @@ namespace TerminalAppUnitTests
         const auto profile2 = implementation::Profile::FromJson(profile2Json);
         const auto profile3 = implementation::Profile::FromJson(profile3Json);
         const auto profile4 = implementation::Profile::FromJson(profile4Json);
-        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
-        const GUID nullGuid{ 0 };
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const winrt::guid nullGuid{};
 
         VERIFY_IS_FALSE(profile0->Guid() != nullptr);
         VERIFY_IS_FALSE(profile1->Guid() != nullptr);
@@ -164,7 +164,7 @@ namespace TerminalAppUnitTests
         VERIFY_IS_TRUE(profile3->Guid() != nullptr);
         VERIFY_IS_TRUE(profile4->Guid() != nullptr);
 
-        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid().Value(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid().Value(), cmdGuid);
     }
 }

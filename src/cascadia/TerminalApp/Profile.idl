@@ -20,7 +20,7 @@ namespace TerminalApp
         Windows.Foundation.IReference<Guid> ConnectionType;
         Boolean Hidden;
 
-        String Icon;
+        String IconPath;
         String GetExpandedIconPath();
 
         CloseOnExitMode CloseOnExit;
@@ -40,7 +40,7 @@ namespace TerminalApp
         String Commandline;
         String StartingDirectory;
 
-        String BackgroundImage;
+        String BackgroundImagePath;
         String GetExpandedBackgroundImagePath();
         Windows.Foundation.IReference<Double> BackgroundImageOpacity;
         Windows.Foundation.IReference<Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode;

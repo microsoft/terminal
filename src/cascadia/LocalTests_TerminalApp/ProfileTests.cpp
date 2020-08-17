@@ -118,13 +118,13 @@ namespace TerminalAppLocalTests
         const auto profile2Json = VerifyParseSucceeded(profile2String);
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
-        VERIFY_IS_FALSE(profile0->Foreground() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Foreground());
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), profile0->Foreground().Value());
 
-        VERIFY_IS_FALSE(profile0->Background() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Background());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0->Background().Value());
 
-        VERIFY_IS_FALSE(profile0->SelectionBackground() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0->SelectionBackground().Value());
 
         VERIFY_ARE_EQUAL(L"profile0", profile0->Name());
@@ -135,13 +135,13 @@ namespace TerminalAppLocalTests
             L"Layering profile1 on top of profile0"));
         profile0->LayerJson(profile1Json);
 
-        VERIFY_IS_FALSE(profile0->Foreground() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Foreground());
         VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), profile0->Foreground().Value());
 
-        VERIFY_IS_FALSE(profile0->Background() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Background());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0->Background().Value());
 
-        VERIFY_IS_FALSE(profile0->Background() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Background());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0->Background().Value());
 
         VERIFY_ARE_EQUAL(L"profile1", profile0->Name());
@@ -153,13 +153,13 @@ namespace TerminalAppLocalTests
             L"Layering profile2 on top of (profile0+profile1)"));
         profile0->LayerJson(profile2Json);
 
-        VERIFY_IS_FALSE(profile0->Foreground() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Foreground());
         VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), profile0->Foreground().Value());
 
-        VERIFY_IS_FALSE(profile0->Background() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->Background());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0->Background().Value());
 
-        VERIFY_IS_FALSE(profile0->SelectionBackground() == nullptr);
+        VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
         VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), profile0->SelectionBackground().Value());
 
         VERIFY_ARE_EQUAL(L"profile2", profile0->Name());
@@ -196,32 +196,32 @@ namespace TerminalAppLocalTests
         const auto profile3Json = VerifyParseSucceeded(profile3String);
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->IconPath().empty());
+        VERIFY_ARE_EQUAL(L"not-null.png", profile0->IconPath());
 
         Log::Comment(NoThrowString().Format(
             L"Verify that layering an object the key set to null will clear the key"));
         profile0->LayerJson(profile1Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->IconPath().empty());
 
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->IconPath().empty());
 
         profile0->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->IconPath().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->IconPath());
 
         Log::Comment(NoThrowString().Format(
             L"Verify that layering an object _without_ the key will not clear the key"));
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->IconPath().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->IconPath());
 
         auto profile1 = implementation::Profile::FromJson(profile1Json);
-        VERIFY_IS_TRUE(profile1->Icon().empty());
+        VERIFY_IS_TRUE(profile1->IconPath().empty());
         profile1->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile1->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile1->Icon());
+        VERIFY_IS_FALSE(profile1->IconPath().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile1->IconPath());
     }
 
     void ProfileTests::LayerProfilesOnArray()

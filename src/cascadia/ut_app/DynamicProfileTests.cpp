@@ -73,7 +73,7 @@ namespace TerminalAppUnitTests
         std::vector<Profile> profiles = gen.GenerateProfiles();
         VERIFY_ARE_EQUAL(1u, profiles.size());
         VERIFY_ARE_EQUAL(L"profile0", profiles.at(0).Name());
-        VERIFY_IS_TRUE(profiles.at(0).Guid() == nullptr);
+        VERIFY_IS_NULL(profiles.at(0).Guid());
     }
 
     void DynamicProfileTests::TestSimpleGenerateMultipleGenerators()
@@ -103,10 +103,10 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(0).Guid());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(1).Guid());
     }
 
     void DynamicProfileTests::TestGenGuidsForProfiles()
@@ -149,32 +149,32 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(0).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(0).Guid());
         VERIFY_IS_TRUE(settings._profiles.at(0).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(1).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(1).Guid());
         VERIFY_IS_TRUE(settings._profiles.at(1).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(2).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(2).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(2).Guid());
         VERIFY_IS_FALSE(settings._profiles.at(2).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(3).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(3).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(3).Guid());
         VERIFY_IS_FALSE(settings._profiles.at(3).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(4).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(4).Guid() == nullptr);
+        VERIFY_IS_NULL(settings._profiles.at(4).Guid());
         VERIFY_IS_FALSE(settings._profiles.at(4).Source().empty());
 
         settings._ValidateProfilesHaveGuid();
 
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(4).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
 
         VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(),
                              settings._profiles.at(1).Guid().Value());
@@ -192,8 +192,8 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::DontLayerUserProfilesOnDynamicProfiles()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string userProfiles{ R"(
         {
@@ -255,11 +255,11 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1).Source());
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2).Source());
 
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(3).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(4).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
 
         VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid().Value());
         VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid().Value());
@@ -270,8 +270,8 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::DoLayerUserProfilesOnDynamicsWhenSourceMatches()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string userProfiles{ R"(
         {
@@ -333,9 +333,9 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1).Source());
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2).Source());
 
-        VERIFY_IS_FALSE(settings._profiles.at(0).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(1).Guid() == nullptr);
-        VERIFY_IS_FALSE(settings._profiles.at(2).Guid() == nullptr);
+        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
 
         VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid().Value());
         VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid().Value());
@@ -451,11 +451,11 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::TestLegacyProfilesMigrate()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        GUID guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
-        GUID guid4 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid4 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
@@ -563,8 +563,8 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::UserProfilesWithInvalidSourcesAreIgnored()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
@@ -622,8 +622,8 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::UserProfilesFromDisabledSourcesDontAppear()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
