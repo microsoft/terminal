@@ -11,7 +11,8 @@ namespace winrt::TerminalApp::implementation
     enum class CommandPaletteMode
     {
         ActionMode = 0,
-        TabSwitcherMode
+        TabSearchMode,
+        TabSwitchMode
     };
 
     struct CommandPalette : CommandPaletteT<CommandPalette>
@@ -28,7 +29,7 @@ namespace winrt::TerminalApp::implementation
         bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
 
         // Tab Switcher
-        void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey, const uint32_t startIdx);
+        void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -71,7 +72,7 @@ namespace winrt::TerminalApp::implementation
         void _switchToMode(CommandPaletteMode mode);
 
         // Tab Switcher
-        winrt::Windows::System::VirtualKey _anchorKey;
+        bool _anchoredMode;
         void GenerateCommandForTab(const uint32_t idx, bool inserted, winrt::TerminalApp::Tab& tab);
         void UpdateTabIndices(const uint32_t startIdx);
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };

@@ -23,7 +23,6 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
-        _anchorKey{ VirtualKey::None },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
@@ -50,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
+                if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
                     _filteredActionsView().Focus(FocusState::Keyboard);
@@ -84,7 +83,7 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
+            if (_currentMode == CommandPaletteMode::TabSwitchMode)
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
             }
@@ -124,9 +123,7 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
-            key == VirtualKey::Tab &&
-            _anchorKey != VirtualKey::None)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && key == VirtualKey::Tab)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
@@ -201,8 +198,7 @@ namespace winrt::TerminalApp::implementation
     bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const bool down)
     {
         auto handled = false;
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
-            _anchorKey != VirtualKey::None)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             if (vkey == VK_MENU && !down)
             {
@@ -216,14 +212,21 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
-            _anchorKey != VirtualKey::None)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             _anchorKeyUpHandler();
             e.Handled(true);
         }
     }
 
+    // Method Description:
+    // - Handles anchor key ups during TabSwitchMode.
+    //   We assume that at least one modifier key should be held down in order to "anchor"
+    //   the ATS UI in place. So, this function is called by key up handlers to check if
+    //   any modifiers are still held down, and if not, dispatch the tab switch action and
+    //   close the ATS.
+    // Return value:
+    // - <none>
     void CommandPalette::_anchorKeyUpHandler()
     {
         auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
@@ -299,7 +302,8 @@ namespace winrt::TerminalApp::implementation
         {
         case CommandPaletteMode::ActionMode:
             return _allCommands;
-        case CommandPaletteMode::TabSwitcherMode:
+        case CommandPaletteMode::TabSearchMode:
+        case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
         default:
             return _allCommands;
@@ -412,7 +416,8 @@ namespace winrt::TerminalApp::implementation
         // whenever _switchToMode is called.
         switch (_currentMode)
         {
-        case CommandPaletteMode::TabSwitcherMode:
+        case CommandPaletteMode::TabSearchMode:
+        case CommandPaletteMode::TabSwitchMode:
         {
             SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
@@ -487,7 +492,7 @@ namespace winrt::TerminalApp::implementation
         {
             // If TabSwitcherMode, just add all as is. We don't want
             // them to be sorted alphabetically.
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+            if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::TabSwitchMode)
             {
                 for (auto action : commandsToFilter)
                 {
@@ -851,11 +856,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx)
     {
         _switcherStartIdx = startIdx;
-        _anchorKey = anchorKey;
-        _switchToMode(CommandPaletteMode::TabSwitcherMode);
+
+        if (searchMode)
+        {
+            _switchToMode(CommandPaletteMode::TabSearchMode);
+        }
+        else
+        {
+            _switchToMode(CommandPaletteMode::TabSwitchMode);
+        }
+
         _updateFilteredActions();
     }
 }
