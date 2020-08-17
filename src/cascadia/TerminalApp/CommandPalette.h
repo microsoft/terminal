@@ -25,6 +25,8 @@ namespace winrt::TerminalApp::implementation
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
+        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+
         // Tab Switcher
         void EnableTabSwitcherMode(const Windows::System::VirtualKey& anchorKey, const uint32_t startIdx);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);
@@ -74,6 +76,7 @@ namespace winrt::TerminalApp::implementation
         void UpdateTabIndices(const uint32_t startIdx);
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
         uint32_t _switcherStartIdx;
+        void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 

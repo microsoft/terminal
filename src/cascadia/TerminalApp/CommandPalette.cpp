@@ -7,6 +7,7 @@
 #include "ActionArgs.h"
 #include "Command.h"
 
+#include <WinUser.h>
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -193,13 +194,43 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Implements the Alt KeyUp handler
+    // Return value:
+    // - whether the key was handled
+    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    {
+        auto handled = false;
+        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
+            _anchorKey != VirtualKey::None)
+        {
+            if (vkey == VK_MENU && !down)
+            {
+                _anchorKeyUpHandler();
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        // Alt KeyUps are just not going to be detected unfortunately.
         if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
-            _anchorKey != VirtualKey::None &&
-            e.OriginalKey() == _anchorKey)
+            _anchorKey != VirtualKey::None)
+        {
+            _anchorKeyUpHandler();
+            e.Handled(true);
+        }
+    }
+
+    void CommandPalette::_anchorKeyUpHandler()
+    {
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+        if (!ctrlDown && !altDown && !shiftDown)
         {
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
@@ -208,8 +239,6 @@ namespace winrt::TerminalApp::implementation
                     _dispatchCommand(data);
                 }
             }
-
-            e.Handled(true);
         }
     }
 

@@ -2,10 +2,11 @@
 // Licensed under the MIT license.
 
 import "../Command.idl";
+import "../IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
         CommandPalette();
 
