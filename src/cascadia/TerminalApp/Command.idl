@@ -14,5 +14,8 @@ namespace TerminalApp
         String KeyChordText;
 
         Windows.UI.Xaml.Controls.IconSource IconSource;
+
+        Boolean HasNestedCommands();
+        Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
     }
 }

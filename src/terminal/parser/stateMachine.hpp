@@ -62,6 +62,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionOscPut(const wchar_t wch);
         void _ActionOscDispatch(const wchar_t wch);
         void _ActionSs3Dispatch(const wchar_t wch);
+        void _ActionDcsPassThrough(const wchar_t wch);
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
@@ -79,6 +80,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterSs3Entry();
         void _EnterSs3Param() noexcept;
         void _EnterVt52Param() noexcept;
+        void _EnterDcsEntry();
+        void _EnterDcsParam() noexcept;
+        void _EnterDcsIgnore() noexcept;
+        void _EnterDcsIntermediate() noexcept;
+        void _EnterDcsPassThrough() noexcept;
+        void _EnterDcsTermination() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -93,6 +100,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
         void _EventVt52Param(const wchar_t wch);
+        void _EventDcsEntry(const wchar_t wch);
+        void _EventDcsIgnore(const wchar_t wch) noexcept;
+        void _EventDcsIntermediate(const wchar_t wch);
+        void _EventDcsParam(const wchar_t wch);
+        void _EventDcsPassThrough(const wchar_t wch);
+        void _EventDcsTermination(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
 
@@ -110,7 +123,13 @@ namespace Microsoft::Console::VirtualTerminal
             OscTermination,
             Ss3Entry,
             Ss3Param,
-            Vt52Param
+            Vt52Param,
+            DcsEntry,
+            DcsIgnore,
+            DcsIntermediate,
+            DcsParam,
+            DcsPassThrough,
+            DcsTermination
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;

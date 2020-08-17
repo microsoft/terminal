@@ -22,13 +22,18 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
+        _anchorKey{ VirtualKey::None },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
+        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
         _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+
+        _switchToMode(CommandPaletteMode::ActionMode);
 
         if (CommandPaletteShadow())
         {
@@ -64,6 +69,7 @@ namespace winrt::TerminalApp::implementation
                 else
                 {
                     _searchBox().Focus(FocusState::Programmatic);
+                    _updateFilteredActions();
                     _filteredActionsView().SelectedIndex(0);
                 }
 
@@ -269,6 +275,29 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - This is called when the user selects a command with subcommands. It
+    //   will update our UI to now display the list of subcommands instead, and
+    //   clear the search text so the user can search from the new list of
+    //   commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateUIForStackChange()
+    {
+        if (_searchBox().Text().empty())
+        {
+            // Manually call _filterTextChanged, because setting the text to the
+            // empty string won't update it for us (as it won't actually change value.)
+            _filterTextChanged(nullptr, nullptr);
+        }
+
+        // Changing the value of the search box will trigger _filterTextChanged,
+        // which will cause us to refresh the list of filterable commands.
+        _searchBox().Text(L"");
+    }
+
+    // Method Description:
     // - Retrieve the list of commands that we should currently be filtering.
     //   * If the user has command with subcommands, this will return that command's subcommands.
     //   * If we're in Tab Switcher mode, return the tab actions.
@@ -282,6 +311,11 @@ namespace winrt::TerminalApp::implementation
         switch (_currentMode)
         {
         case CommandPaletteMode::ActionMode:
+            if (_nestedActionStack.Size() > 0)
+            {
+                return _currentNestedCommands;
+            }
+
             return _allCommands;
         case CommandPaletteMode::TabSwitcherMode:
             return _allTabActions;
@@ -303,20 +337,44 @@ namespace winrt::TerminalApp::implementation
     {
         if (command)
         {
-            // Close before we dispatch so that actions that open the command
-            // palette like the Tab Switcher will be able to have the last laugh.
-            _close();
+            if (command.HasNestedCommands())
+            {
+                // If this Command had subcommands, then don't dispatch the
+                // action. Instead, display a new list of commands for the user
+                // to pick from.
+                _nestedActionStack.Append(command);
+                _currentNestedCommands.Clear();
+                for (const auto& nameAndCommand : command.NestedCommands())
+                {
+                    _currentNestedCommands.Append(nameAndCommand.Value());
+                }
 
-            const auto actionAndArgs = command.Action();
-            _dispatch.DoAction(actionAndArgs);
+                _updateUIForStackChange();
+            }
+            else
+            {
+                // First stash the search text length, because _close will clear this.
+                const auto searchTextLength = _searchBox().Text().size();
 
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "CommandPaletteDispatchedAction",
-                TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
-                TraceLoggingUInt32(_searchBox().Text().size(), "SearchTextLength", "Number of characters in the search string"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                // An action from the root command list has depth=0
+                const auto nestedCommandDepth = _nestedActionStack.Size();
+
+                // Close before we dispatch so that actions that open the command
+                // palette like the Tab Switcher will be able to have the last laugh.
+                _close();
+
+                const auto actionAndArgs = command.Action();
+                _dispatch.DoAction(actionAndArgs);
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CommandPaletteDispatchedAction",
+                    TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                    TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
+                    TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            }
         }
     }
 
@@ -389,23 +447,26 @@ namespace winrt::TerminalApp::implementation
             {
                 _filteredActions.Append(action);
             }
+        }
 
-            switch (_currentMode)
-            {
-            case CommandPaletteMode::TabSwitcherMode:
-            {
-                SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
-                NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-                ControlName(RS_(L"TabSwitcherControlName"));
-                break;
-            }
-            case CommandPaletteMode::ActionMode:
-            default:
-                SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-                NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-                ControlName(RS_(L"CommandPaletteControlName"));
-                break;
-            }
+        // Leaving this block of code outside the above if-statement
+        // guarantees that the correct text is shown for the mode
+        // whenever _switchToMode is called.
+        switch (_currentMode)
+        {
+        case CommandPaletteMode::TabSwitcherMode:
+        {
+            SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+            NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
+            ControlName(RS_(L"TabSwitcherControlName"));
+            break;
+        }
+        case CommandPaletteMode::ActionMode:
+        default:
+            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+            ControlName(RS_(L"CommandPaletteControlName"));
+            break;
         }
     }
 
@@ -701,6 +762,9 @@ namespace winrt::TerminalApp::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
+
+        _nestedActionStack.Clear();
+        _currentNestedCommands.Clear();
     }
 
     // Method Description:
@@ -766,14 +830,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
     {
-        if (startIdx != _allTabActions.Size() - 1)
+        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
         {
-            for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-            {
-                auto command = _allTabActions.GetAt(i);
+            auto command = _allTabActions.GetAt(i);
 
-                command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-            }
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
         }
     }
 
