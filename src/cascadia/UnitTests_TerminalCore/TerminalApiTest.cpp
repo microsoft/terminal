@@ -34,6 +34,8 @@ namespace TerminalCoreUnitTests
         // PrintString() is called with more code units than the buffer width.
         TEST_METHOD(PrintStringOfSurrogatePairs);
         TEST_METHOD(CheckDoubleWidthCursor);
+
+        TEST_METHOD(AddHyperlink);
     };
 };
 
@@ -250,4 +252,36 @@ void TerminalApiTest::CheckDoubleWidthCursor()
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
     term.SetCursorPosition(1, 1);
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
+}
+
+void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
+{
+    // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlink, adapted for the Terminal
+    // Key difference between the two: the terminal gets the VT sequence from conpty, which will always
+    // send a USHORT hyperlink id, meaning two things:
+    //              1. we need to make sure we pass a valid USHORT id in the OSC 8 sequence here
+    //              2. we do not need to have a separate test for custom id hyperlinks for Terminal
+
+    Terminal term;
+    DummyRenderTarget emptyRT;
+    term.Create({ 100, 100 }, 0, emptyRT);
+
+    auto& tbi = *(term._buffer);
+    auto& stateMachine = *(term._stateMachine);
+
+    // Process the opening osc 8 sequence
+    stateMachine.ProcessString(L"\x1b]8;id=1;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetCurrentAttributes().GetHyperlinkId(), 1);
+
+    // Send any other text
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetCurrentAttributes().GetHyperlinkId(), 1);
+
+    // Process the closing osc 8 sequences
+    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }

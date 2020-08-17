@@ -967,9 +967,21 @@ public:
         return true;
     }
 
-    bool AddHyperlink(std::wstring_view /*uri*/, std::wstring_view /*params*/) noexcept override
+    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
     {
-        _hyperlinkMode = true;
+        if (uri.empty())
+        {
+            _hyperlinkMode = false;
+        }
+        else
+        {
+            _hyperlinkMode = true;
+        }
+        _uri = uri;
+        if (!params.empty())
+        {
+            _customId = params;
+        }
         return true;
     }
 
@@ -1021,6 +1033,8 @@ public:
     bool _win32InputMode;
     bool _hyperlinkMode;
     std::wstring _copyContent;
+    std::wstring _uri;
+    std::wstring _customId;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
@@ -2274,8 +2288,29 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        // First we test with no custom id
+        // Process the opening osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;test.url\x9c");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"test.url");
+        VERIFY_IS_TRUE(pDispatch->_customId.empty());
+
+        // Process the closing osc 8 sequences
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Next we test with a custom id
+        // Process the opening osc 8 sequence
+        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"test2.url");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        // Process the closing osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         pDispatch->ClearState();
     }
