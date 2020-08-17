@@ -96,6 +96,8 @@ static constexpr bool _isC1Csi(const wchar_t wch) noexcept
 // - Determines if a character is a C1 DCS (Device Control Strings)
 //   This is a single-character way to start a control sequence, as opposed to "ESC P".
 //
+//   See the comment above _isC1Csi for more information on how this is impacted by codepages.
+//
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -335,7 +337,7 @@ static constexpr bool _isDcsIndicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character should be initiate the end of a DCS sequence.
+// - Determines if a character should initiate the end of a DCS sequence.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -643,7 +645,7 @@ void StateMachine::_ActionDcsPassThrough(const wchar_t wch)
 {
     _trace.TraceOnAction(L"DcsPassThrough");
     _trace.TraceOnExecute(wch);
-    // TODO: actually do something
+    // TODO:GH#7316: Send the DCS passthrough sequence to the engine
 }
 
 // Routine Description:
@@ -1457,7 +1459,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 //   4. Store parameter data
 //   5. Collect Intermediate characters
 //   6. Pass through everything else
-//  DCS sequences are structurally almost the same as CSI sequences, just with a
+//  DCS sequences are structurally almost the same as CSI sequences, just with an
 //      extra data string. It's safe to reuse CSI functions for
 //      determining if a character is a parameter, delimiter, or invalid.
 // Arguments:
