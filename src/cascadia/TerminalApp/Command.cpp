@@ -373,7 +373,7 @@ namespace winrt::TerminalApp::implementation
         // First, get a string for the original Json::Value
         auto oldJsonString = expandable->_originalJson.toStyledString();
 
-        auto reparseJson = [&](const auto& newJsonString) -> bool {
+        auto reParseJson = [&](const auto& newJsonString) -> bool {
             // - Now, re-parse the modified value.
             Json::Value newJsonValue;
             const auto actualDataStart = newJsonString.data();
@@ -414,7 +414,7 @@ namespace winrt::TerminalApp::implementation
                                                                      escapedProfileName);
 
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
-                if (!reparseJson(newJsonString))
+                if (!reParseJson(newJsonString))
                 {
                     break;
                 }
@@ -424,15 +424,10 @@ namespace winrt::TerminalApp::implementation
         {
             for (const auto& s : schemes)
             {
-                // For each profile, create a new command. This command will have:
-                // * the icon path and keychord text of the original command
-                // * the Name will have any instances of "${profile.name}"
-                //   replaced with the profile's name
-                // * for the action, we'll take the original json, replace any
-                //   instances of "${profile.name}" with the profile's name,
-                //   then re-attempt to parse the action and args.
-
-                // Replace all the keywords in the original json, and try and parse that
+                // For each scheme, create a new command. We'll take the
+                // original json, replace any instances of "${scheme.name}" with
+                // the scheme's name, then re-attempt to parse the action and
+                // args.
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedSchemeName = _escapeForJson(til::u16u8(s.Name()));
@@ -441,7 +436,7 @@ namespace winrt::TerminalApp::implementation
                                                                      escapedSchemeName);
 
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
-                if (!reparseJson(newJsonString))
+                if (!reParseJson(newJsonString))
                 {
                     break;
                 }
