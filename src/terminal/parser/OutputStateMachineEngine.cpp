@@ -184,16 +184,14 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    if (wch == L'\\' && intermediates.empty())
-    {
-        // This is presumably the 7-bit string terminator, which is essentially a no-op.
-        return true;
-    }
-
     bool success = false;
 
     switch (id)
     {
+    case EscActionCodes::ST_StringTerminator:
+        // This is the 7-bit string terminator, which is essentially a no-op.
+        success = true;
+        break;
     case EscActionCodes::DECSC_CursorSave:
         success = _dispatch->CursorSaveState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);

@@ -80,6 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
             RI_ReverseLineFeed = VTID("M"),
             SS2_SingleShift = VTID("N"),
             SS3_SingleShift = VTID("O"),
+            ST_StringTerminator = VTID("\\"),
             RIS_ResetToInitialState = VTID("c"),
             LS2_LockingShift = VTID("n"),
             LS3_LockingShift = VTID("o"),
