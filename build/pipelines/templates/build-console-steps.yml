@@ -1,5 +1,6 @@
 parameters:
   additionalBuildArguments: ''
+  testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
 
 steps:
 - checkout: self
@@ -7,22 +8,28 @@ steps:
   clean: true
 
 - task: NuGetToolInstaller@0
-  displayName: Ensure NuGet 4.8.1
+  displayName: 'Use NuGet 5.2.0'
   inputs:
-    versionSpec: 4.8.1
-
-- task: VisualStudioTestPlatformInstaller@1
-  displayName: Ensure VSTest Platform
+    versionSpec: 5.2.0
 
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-  displayName: Restore NuGet packages
+  displayName: Restore NuGet packages for solution
   inputs:
     command: restore
     feedsToUse: config
     configPath: NuGet.config
     restoreSolution: OpenConsole.sln
+    restoreDirectory: '$(Build.SourcesDirectory)\packages'
+    
+- task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+  displayName: Restore NuGet packages for extraneous build actions
+  inputs:
+    command: restore
+    feedsToUse: config
+    configPath: NuGet.config
+    restoreSolution: build/packages.config
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
 - task: VSBuild@1
@@ -66,7 +73,7 @@ steps:
   inputs:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
-    arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+    arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
@@ -74,8 +81,40 @@ steps:
   inputs:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
-    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+
+- task: PowerShell@2
+  displayName: 'Convert Test Logs from WTL to xUnit format'
+  inputs:
+    targetType: filePath
+    filePath: build\Helix\ConvertWttLogToXUnit.ps1
+    arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
+  condition: or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86'))
+
+- task: PublishTestResults@2
+  displayName: 'Upload converted test logs'
+  inputs:
+    testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+    testResultsFiles: '**/onBuildMachineResults.xml' 
+    #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
+    #mergeTestResults: false # Optional
+    #failTaskOnFailedTests: false # Optional
+    testRunTitle: 'On Build Machine Tests' # Optional
+    buildPlatform: $(BuildPlatform) # Optional
+    buildConfiguration: $(BuildConfiguration) # Optional
+    #publishRunAttachments: true # Optional
+
+- task: CopyFiles@2
+  displayName: 'Copy result logs to Artifacts'
+  inputs:
+    Contents: |
+     **/*.wtl
+     **/*onBuildMachineResults.xml
+     ${{ parameters.testLogPath }}
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
 
 - task: CopyFiles@2
   displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
@@ -90,9 +129,22 @@ steps:
     flattenFolders: true
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact (appx) (Non-PR builds only)'
+- task: CopyFiles@2
+  displayName: 'Copy outputs needed for test runs to Artifacts'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
-    ArtifactName: 'appx-$(BuildConfiguration)'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    Contents: |
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.xml
+     **/Microsoft.VCLibs.*.appx
+     **/TestHostApp/*
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
+  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), ne(variables['Build.Reason'], 'PullRequest'))
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish All Build Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'

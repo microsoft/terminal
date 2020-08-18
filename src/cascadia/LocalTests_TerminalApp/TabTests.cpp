@@ -278,6 +278,13 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
+        // Tests run in Helix can't report Skipped until GH#7286 is resolved.
+        // Set ignore flag to make Helix run completely overlook it.
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True")
+        END_TEST_METHOD_PROPERTIES()
+
+        // This test to be corrected as a part of GH#7281
         Log::Comment(L"This test regressed recently - it is temporarily disabled while GH#5169 is investigated");
         Log::Result(WEX::Logging::TestResults::Skipped);
         return;
@@ -377,6 +384,13 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadPane()
     {
+        // Tests run in Helix can't report Skipped until GH#7286 is resolved.
+        // Set ignore flag to make Helix run completely overlook it.
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True")
+        END_TEST_METHOD_PROPERTIES()
+
+        // This test to be corrected as a part of GH#7281
         Log::Comment(L"This test regressed recently - it is temporarily disabled while GH#5169 is investigated");
         Log::Result(WEX::Logging::TestResults::Skipped);
         return;

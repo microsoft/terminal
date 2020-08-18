@@ -136,6 +136,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanAccessTextAreaUiaElement()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
@@ -146,6 +147,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanGetDocumentRangeText()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
@@ -181,6 +183,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanGetTextAtCharacterLevel()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
@@ -224,6 +227,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanGetVisibleRange()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
@@ -333,6 +337,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanCompareTextRangeProviderEndpoints()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
@@ -356,10 +361,15 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanExpandToEnclosingUnitTextRangeProvider()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -391,10 +401,15 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanMoveRange()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -471,10 +486,15 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanMoveEndpointByUnitNearTopBoundary()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -532,10 +552,15 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanMoveEndpointByUnitNearBottomBoundary()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
+                var sbiex = app.GetScreenBufferInfo();
+                sbiex.dwSize.Y = (short)(2 * sbiex.srWindow.Height);
+                app.SetScreenBufferInfo(sbiex);
+
                 AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                 TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                 TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
@@ -592,6 +617,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CanGetBoundingRectangles()
         {
             using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
