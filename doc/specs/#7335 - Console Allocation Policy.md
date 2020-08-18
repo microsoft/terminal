@@ -169,9 +169,9 @@ Are there other allocation policies we need to consider?
 
 ### Links
 
-\[1\]: [Powershell -WindowStyle Hidden still shows a window briefly]
-\[2\]: [PowerShell: Windows Store applications incorrectly assumed to be console applications]
-\[3\]: [UEFI spec 2.6 appendix Q.1]
+1. [Powershell -WindowStyle Hidden still shows a window briefly]
+2. [PowerShell: Windows Store applications incorrectly assumed to be console applications]
+3. [UEFI spec 2.6 appendix Q.1]
 
 [Powershell -WindowStyle Hidden still shows a window briefly]: https://github.com/PowerShell/PowerShell/issues/3028
 [PowerShell: Windows Store applications incorrectly assumed to be console applications]: https://github.com/PowerShell/PowerShell/issues/9970
