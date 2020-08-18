@@ -37,9 +37,11 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
-
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedActionStack{ nullptr };
+
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         Windows::Foundation::Collections::IVector<TerminalApp::Command> _commandsToFilter();
@@ -53,6 +55,8 @@ namespace winrt::TerminalApp::implementation
         void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
                            Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
+        void _updateUIForStackChange();
+
         void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _backdropPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
@@ -61,7 +65,9 @@ namespace winrt::TerminalApp::implementation
         void _selectNextItem(const bool moveDown);
 
         void _updateFilteredActions();
+
         std::vector<winrt::TerminalApp::Command> _collectFilteredActions();
+
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 

@@ -186,6 +186,12 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                  const gsl::span<const wchar_t> intermediates)
 {
+    if (wch == L'\\' && intermediates.empty())
+    {
+        // This is presumably the 7-bit string terminator, which is essentially a no-op.
+        return true;
+    }
+
     bool success = false;
 
     // no intermediates.
