@@ -51,7 +51,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryCreateSettingsType);
         TEST_METHOD(TryCreateConnectionType);
         TEST_METHOD(TryCreateXamlObjects);
-        TEST_METHOD(TryCreateTab);
+        // TEST_METHOD(TryCreateTab);
+
+        TEST_METHOD(TryInitializePage);
 
         TEST_METHOD(CreateSimpleTerminalXamlType);
         TEST_METHOD(CreateTerminalMuxXamlType);
@@ -64,12 +66,23 @@ namespace TerminalAppLocalTests
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
+            // _keepAlive = winrt::single_threaded_vector<winrt::Windows::Foundation::IInspectable>();
+            return true;
+        }
+
+        TEST_METHOD_CLEANUP(MethodCleanup)
+        {
+            Sleep(1000);
+            // _keepAlive.Clear();
             return true;
         }
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      std::shared_ptr<CascadiaSettings> initialSettings);
+
+        // winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Foundation::IInspectable> _keepAlive;
+        // std::vector<winrt::com_ptr<winrt::Windows::Foundation::IInspectable>> _keepAlive;
     };
 
     void TabTests::EnsureTestsActivate()
@@ -152,6 +165,17 @@ namespace TerminalAppLocalTests
         });
 
         VERIFY_SUCCEEDED(result);
+
+        Sleep(1000);
+
+        result = RunOnUIThread([&newTab]() {
+            VERIFY_IS_NOT_NULL(newTab);
+        });
+        VERIFY_SUCCEEDED(result);
+
+        // auto ii = newTab.try_as<winrt::Windows::Foundation::IInspectable>();
+        // _keepAlive.Append(ii);
+        // newTab = nullptr;
     }
 
     void TabTests::CreateSimpleTerminalXamlType()
@@ -272,6 +296,53 @@ namespace TerminalAppLocalTests
             auto tab{ page->_GetStrongTabImpl(0) };
             page->_tabView.SelectedItem(tab->GetTabViewItem());
             page->_UpdatedSelectedTab(0);
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::TryInitializePage()
+    {
+        // This is a very simple test to prove we can create settings and a
+        // TerminalPage and not only create them successfully, but also create a
+        // tab using those settings successfully.
+
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson0);
+        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        VERIFY_IS_NOT_NULL(settings0);
+        settings0->_ParseJsonString(settingsJson0, false);
+        settings0->LayerJson(settings0->_userSettings);
+        settings0->_ValidateSettings();
+
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
+
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
     }
