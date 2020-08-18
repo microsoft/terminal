@@ -58,8 +58,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         [[nodiscard]] constexpr const V& operator[](const K& key) const
         {
-#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
-#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
             return at(key);
         }
 
