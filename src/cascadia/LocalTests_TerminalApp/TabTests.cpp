@@ -51,7 +51,6 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryCreateSettingsType);
         TEST_METHOD(TryCreateConnectionType);
         TEST_METHOD(TryCreateXamlObjects);
-        // TEST_METHOD(TryCreateTab);
 
         TEST_METHOD(TryInitializePage);
 
@@ -66,23 +65,17 @@ namespace TerminalAppLocalTests
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
-            // _keepAlive = winrt::single_threaded_vector<winrt::Windows::Foundation::IInspectable>();
             return true;
         }
 
         TEST_METHOD_CLEANUP(MethodCleanup)
         {
-            Sleep(1000);
-            // _keepAlive.Clear();
             return true;
         }
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      std::shared_ptr<CascadiaSettings> initialSettings);
-
-        // winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Foundation::IInspectable> _keepAlive;
-        // std::vector<winrt::com_ptr<winrt::Windows::Foundation::IInspectable>> _keepAlive;
     };
 
     void TabTests::EnsureTestsActivate()
@@ -137,46 +130,6 @@ namespace TerminalAppLocalTests
 
         VERIFY_SUCCEEDED(result);
     }
-
-    // void TabTests::TryCreateTab()
-    // {
-    //     // If you leave the Tab ptr owned by the RunOnUIThread lambda, it
-    //     // will crash when the test tears down. Not totally clear why, but make
-    //     // sure it's owned outside the lambda
-    //     winrt::com_ptr<winrt::TerminalApp::implementation::Tab> newTab{ nullptr };
-
-    //     auto result = RunOnUIThread([&newTab]() {
-    //         // Try creating all of:
-    //         // 1. one of our pure c++ types (Profile)
-    //         // 2. one of our c++winrt types (TerminalSettings, EchoConnection)
-    //         // 3. one of our types that uses MUX/Xaml (TermControl).
-    //         // 4. one of our types that uses MUX/Xaml in this dll (Tab).
-    //         // Just creating all of them is enough to know that everything is working.
-    //         const auto profileGuid{ Utils::CreateGuid() };
-    //         TerminalSettings settings{};
-    //         VERIFY_IS_NOT_NULL(settings);
-    //         winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
-    //         VERIFY_IS_NOT_NULL(conn);
-    //         winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
-    //         VERIFY_IS_NOT_NULL(term);
-
-    //         newTab = winrt::make_self<winrt::TerminalApp::implementation::Tab>(profileGuid, term);
-    //         VERIFY_IS_NOT_NULL(newTab);
-    //     });
-
-    //     VERIFY_SUCCEEDED(result);
-
-    //     Sleep(1000);
-
-    //     result = RunOnUIThread([&newTab]() {
-    //         VERIFY_IS_NOT_NULL(newTab);
-    //     });
-    //     VERIFY_SUCCEEDED(result);
-
-    //     // auto ii = newTab.try_as<winrt::Windows::Foundation::IInspectable>();
-    //     // _keepAlive.Append(ii);
-    //     // newTab = nullptr;
-    // }
 
     void TabTests::CreateSimpleTerminalXamlType()
     {
