@@ -1670,7 +1670,7 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 // - codingSystem - The coding system that will be selected.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
+bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
     // If we haven't previously saved the initial code page, do so now.
     // This will be used to restore the code page in response to a reset.
@@ -1712,10 +1712,10 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate94Charset(gsetNumber, charset);
 }
@@ -1727,10 +1727,10 @@ bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate96Charset(gsetNumber, charset);
 }

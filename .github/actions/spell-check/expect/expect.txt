@@ -548,6 +548,7 @@ DECSCUSR
 DECSED
 DECSEL
 DECSET
+DECSLPP
 DECSLRM
 DECSMBV
 DECSMKR
@@ -2579,6 +2580,7 @@ vstudio
 vswhere
 vtapp
 VTE
+VTID
 vtio
 vtmode
 vtpipeterm
