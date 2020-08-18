@@ -27,7 +27,7 @@ class StaticMapTests
         VERIFY_ARE_EQUAL(300, intIntMap.at(3));
         VERIFY_ARE_EQUAL(500, intIntMap.at(5));
 
-        int unused{ 0 };
+        int unused{};
         VERIFY_THROWS(unused = intIntMap.at(0), std::runtime_error);
         VERIFY_THROWS(unused = intIntMap.at(7), std::runtime_error);
     }
@@ -44,7 +44,7 @@ class StaticMapTests
         VERIFY_ARE_EQUAL(300, intIntMap.at(3));
         VERIFY_ARE_EQUAL(500, intIntMap.at(5));
 
-        int unused{ 0 };
+        int unused{};
         VERIFY_THROWS(unused = intIntMap.at(0), std::runtime_error);
         VERIFY_THROWS(unused = intIntMap.at(7), std::runtime_error);
     }
@@ -67,8 +67,32 @@ class StaticMapTests
         VERIFY_ARE_EQUAL(400, stringIntMap.at("pears"));
         VERIFY_ARE_EQUAL(200, stringIntMap.at("apples"));
 
-        int unused{ 0 };
+        int unused{};
         VERIFY_THROWS(unused = stringIntMap.at("0_hello"), std::runtime_error);
         VERIFY_THROWS(unused = stringIntMap.at("z_world"), std::runtime_error);
     }
+
+    TEST_METHOD(Find)
+    {
+        til::static_map intIntMap{
+            std::pair{ 5, 500 },
+        };
+
+        VERIFY_ARE_NOT_EQUAL(intIntMap.end(), intIntMap.find(5));
+        VERIFY_ARE_EQUAL(intIntMap.end(), intIntMap.find(7));
+    }
+
+#pragma warning(push)
+#pragma warning(disable : 26446) // Suppress bounds.4 check for subscript operator.
+    TEST_METHOD(Subscript)
+    {
+        til::static_map intIntMap{
+            std::pair{ 5, 500 },
+        };
+
+        VERIFY_ARE_EQUAL(500, intIntMap[5]);
+        int unused{};
+        VERIFY_THROWS(unused = intIntMap[7], std::runtime_error);
+    }
+#pragma warning(pop)
 };

@@ -14,6 +14,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class static_map
     {
     public:
+        using const_iterator = typename std::array<std::pair<K, V>, N>::const_iterator;
+
         template<typename... Args>
         constexpr explicit static_map(const Args&... args) :
             _predicate{},
@@ -24,12 +26,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             std::sort(_array.begin(), _array.end(), compareKeys); // compile-time sorting!
         }
 
-        [[nodiscard]] constexpr const V& at(const K& key) const
+        [[nodiscard]] constexpr const_iterator find(const K& key) const noexcept
         {
             const auto compareKey = [&](const auto& p) { return _predicate(p.first, key); };
             const auto iter{ std::partition_point(_array.begin(), _array.end(), compareKey) };
 
             if (iter == _array.end() || _predicate(key, iter->first))
+            {
+                return _array.end();
+            }
+
+            return iter;
+        }
+
+        [[nodiscard]] constexpr const_iterator end() const noexcept
+        {
+            return _array.end();
+        }
+
+        [[nodiscard]] constexpr const V& at(const K& key) const
+        {
+            const auto iter{ find(key) };
+
+            if (iter == end())
             {
                 throw std::runtime_error("key not found");
             }
@@ -41,7 +60,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-            return (*this)[key];
+            return at(key);
         }
 
     private:
