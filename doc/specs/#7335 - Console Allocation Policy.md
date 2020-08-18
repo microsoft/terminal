@@ -74,7 +74,7 @@ It would look (roughly) like this:
 
 This field will apply consistent behavior across different image subsystems, with differing end user results:
 
-|               | `SUBSYSTEM_GUI`                                                       | `SUBSYSTEM_GUI`               |
+|               | `SUBSYSTEM_CUI` (console)                                             | `SUBSYSTEM_GUI` (windows)     |
 | -             | -                                                                     | -                             |
 | _no entry_    | _default behavior_                                                    | _default behavior_            |
 | `inheritOnly` | No console window unless application was started from console session | _default behavior_            |
