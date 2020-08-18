@@ -378,7 +378,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
     if (match)
     {
-        const auto v = match.value();
+        const auto& v = match.value();
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.

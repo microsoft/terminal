@@ -441,6 +441,9 @@ bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
         success = _dispatch->Designate96Charset(3, charset);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
         break;
+    default:
+        success = false;
+        break;
     }
 
     return success;
@@ -812,8 +815,14 @@ bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wch
                 success = _dispatch->TertiaryDeviceAttributes();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
                 break;
+            default:
+                success = false;
+                break;
             }
         }
+        break;
+    default:
+        success = false;
         break;
     }
 
@@ -1335,6 +1344,9 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const s
         case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;
+            break;
+        default:
+            success = false;
             break;
         }
     }
