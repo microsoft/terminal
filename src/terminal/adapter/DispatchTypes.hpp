@@ -3,6 +3,94 @@
 
 #pragma once
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    class VTID
+    {
+    public:
+        template<size_t Length>
+        constexpr VTID(const char (&s)[Length]) :
+            _value{ _FromString(s) }
+        {
+        }
+
+        constexpr VTID(const uint64_t value) :
+            _value{ value }
+        {
+        }
+
+        constexpr operator uint64_t() const
+        {
+            return _value;
+        }
+
+        constexpr char operator[](const size_t offset) const
+        {
+            return SubSequence(offset)._value & 0xFF;
+        }
+
+        constexpr VTID SubSequence(const size_t offset) const
+        {
+            return _value >> (CHAR_BIT * offset);
+        }
+
+    private:
+        template<size_t Length>
+        static constexpr uint64_t _FromString(const char (&s)[Length])
+        {
+            static_assert(Length - 1 <= sizeof(_value));
+            uint64_t value = 0;
+            for (auto i = Length - 1; i-- > 0;)
+            {
+                value = (value << CHAR_BIT) + gsl::at(s, i);
+            }
+            return value;
+        }
+
+        uint64_t _value;
+    };
+
+    class VTIDBuilder
+    {
+    public:
+        void Clear() noexcept
+        {
+            _idAccumulator = 0;
+            _idShift = 0;
+        }
+
+        void AddIntermediate(const wchar_t intermediateChar) noexcept
+        {
+            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            {
+                // If there is not enough space in the accumulator to add
+                // the intermediate and still have room left for the final,
+                // then we reset the accumulator to zero. This will result
+                // in an id with all zero intermediates, which shouldn't
+                // match anything.
+                _idAccumulator = 0;
+            }
+            else
+            {
+                // Otherwise we shift the intermediate so as to add it to the
+                // accumulator in the next available space, and then increment
+                // the shift by 8 bits in preparation for the next character.
+                _idAccumulator += (static_cast<uint64_t>(intermediateChar) << _idShift);
+                _idShift += CHAR_BIT;
+            }
+        }
+
+        VTID Finalize(const wchar_t finalChar) noexcept
+        {
+            return _idAccumulator + (static_cast<uint64_t>(finalChar) << _idShift);
+        }
+
+    private:
+        uint64_t _idAccumulator = 0;
+        size_t _idShift = 0;
+    };
+}
+
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
     enum class EraseType : unsigned int
@@ -101,16 +189,16 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         W32IM_Win32InputMode = 9001
     };
 
-    namespace CharacterSets
+    enum CharacterSets : uint64_t
     {
-        constexpr auto DecSpecialGraphics = std::make_pair(L'0', L'\0');
-        constexpr auto ASCII = std::make_pair(L'B', L'\0');
-    }
+        DecSpecialGraphics = VTID("0"),
+        ASCII = VTID("B")
+    };
 
-    enum CodingSystem : wchar_t
+    enum CodingSystem : uint64_t
     {
-        ISO2022 = L'@',
-        UTF8 = L'G'
+        ISO2022 = VTID("@"),
+        UTF8 = VTID("G")
     };
 
     enum TabClearType : unsigned short

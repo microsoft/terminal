@@ -7,6 +7,7 @@ ABCDEFGHIJKLMNO
 ABCG
 abf
 abi
+ACCESSTOKEN
 acec
 acf
 acidev
@@ -23,6 +24,7 @@ addressof
 ADDSTRING
 ADDTOOL
 AEnd
+aef
 AFew
 AFill
 AFX
@@ -71,6 +73,7 @@ apps
 APPWINDOW
 appx
 appxbundle
+appxerror
 appxmanifest
 APrep
 apsect
@@ -188,6 +191,7 @@ buffersize
 buflen
 bugfix
 buildtransitive
+BUILDURI
 burriter
 BValue
 byref
@@ -293,6 +297,7 @@ codepage
 codepoint
 codeproject
 COINIT
+COLLECTIONURI
 colorizing
 colororacle
 colorref
@@ -507,6 +512,7 @@ dealloc
 debian
 debolden
 debounce
+debugbreak
 DECALN
 DECANM
 DECAUPSS
@@ -542,6 +548,7 @@ DECSCUSR
 DECSED
 DECSEL
 DECSET
+DECSLPP
 DECSLRM
 DECSMBV
 DECSMKR
@@ -594,6 +601,7 @@ df
 DFactory
 DFMT
 dh
+dhandler
 dialogbox
 diffing
 DINLINE
@@ -616,6 +624,8 @@ dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
+dmp
+dnceng
 DOCTYPE
 docx
 DONTCARE
@@ -638,6 +648,7 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
+dst
 DSwap
 DTest
 dtor
@@ -680,6 +691,7 @@ Elems
 elif
 elseif
 emacs
+EMPTYBOX
 enabledelayedexpansion
 endian
 endif
@@ -703,6 +715,7 @@ errno
 errorlevel
 esa
 ETB
+etcoreapp
 ETW
 ETX
 EUDC
@@ -885,6 +898,7 @@ GETWHEELSCROLLCHARACTERS
 GETWHEELSCROLLCHARS
 GETWHEELSCROLLLINES
 getwriter
+GFEh
 Gfun
 gfx
 gh
@@ -1150,6 +1164,7 @@ iwch
 IWin
 IWindow
 IXaml
+IXMP
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1232,6 +1247,7 @@ linputfile
 Linq
 linux
 listbox
+listproperties
 listptr
 listptrsize
 lk
@@ -1252,6 +1268,7 @@ locstudio
 Loewen
 LOGFONT
 LOGFONTW
+logissue
 Loremipsumdolorsitamet
 lowercased
 loword
@@ -1376,6 +1393,7 @@ mimetype
 mincore
 mindbogglingly
 mingw
+minimizeall
 minkernel
 minwin
 minwindef
@@ -1537,6 +1555,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
+nrcs
 NSTATUS
 ntapi
 ntcon
@@ -1779,6 +1798,7 @@ prect
 prefast
 prefilled
 prefs
+preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
@@ -1924,6 +1944,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+Remoting
 renderengine
 rendersize
 reparent
@@ -1939,6 +1960,7 @@ resheader
 resizable
 resmimetype
 restrictedcapabilities
+restrictederrorinfo
 resw
 resx
 retval
@@ -1979,6 +2001,7 @@ roundtrip
 rparen
 RRF
 RRRGGGBB
+rsas
 rtcore
 RTEXT
 rtf
@@ -1995,6 +2018,7 @@ runformat
 runft
 RUNFULLSCREEN
 runsettings
+runtests
 runtimeclass
 runuia
 runut
@@ -2037,6 +2061,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
+Scs
 scursor
 sddl
 sdeleted
@@ -2142,6 +2167,7 @@ SND
 SOLIDBOX
 Solutiondir
 somefile
+SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
 SPACEBAR
@@ -2215,6 +2241,7 @@ subspan
 substr
 subsystemconsole
 subsystemwindows
+suiteless
 svg
 swapchain
 swapchainpanel
@@ -2266,6 +2293,7 @@ tcommandline
 tcommands
 tcon
 TDP
+TEAMPROJECT
 tearoff
 Teb
 techcommunity
@@ -2280,6 +2308,7 @@ TERMINALSCROLLING
 terminfo
 TEs
 testapp
+testbuildplatform
 testcon
 testd
 testdlls
@@ -2288,11 +2317,15 @@ testlab
 testlist
 testmd
 testmddefinition
+testmode
+testname
+testnameprefix
 TESTNULL
 testpass
 testpasses
 testtestabc
 testtesttesttesttest
+testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2449,6 +2482,7 @@ unpause
 Unregister
 Unregistering
 unte
+untests
 untextured
 untimes
 UPDATEDISPLAY
@@ -2546,6 +2580,7 @@ vstudio
 vswhere
 vtapp
 VTE
+VTID
 vtio
 vtmode
 vtpipeterm
@@ -2682,6 +2717,7 @@ WNull
 workarea
 workaround
 workflow
+workitem
 wostream
 WOutside
 WOWARM
@@ -2770,6 +2806,7 @@ XSubstantial
 xtended
 xterm
 XTest
+xunit
 xutr
 xvalue
 XVIRTUALSCREEN

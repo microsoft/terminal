@@ -12,6 +12,7 @@ namespace TerminalApp
         String NoMatchesText { get; };
         String SearchBoxText { get; };
         String ControlName { get; };
+        String ParentCommandName { get; };
 
         Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
 
