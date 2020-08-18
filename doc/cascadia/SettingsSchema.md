@@ -8,7 +8,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | -------- | --------- | ---- | ------- | ----------- |
 | `alwaysShowTabs` | _Required_ | Boolean | `true` | When set to `true`, tabs are always displayed. When set to `false` and `showTabsInTitlebar` is set to `false`, tabs only appear after typing <kbd>Ctrl</kbd> + <kbd>T</kbd>. |
 | `copyOnSelect` | Optional | Boolean | `false` | When set to `true`, a selection is immediately copied to your clipboard upon creation. When set to `false`, the selection persists and awaits further action. |
-| `copyFormatting` | Optional | Boolean | `false` | When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. |
+| `copyFormatting` | Optional | Boolean, Array | `true` | When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. |
 | `largePasteWarning` | Optional | Boolean | `true` | When set to `true`, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste. |
 | `multiLinePasteWarning` | Optional | Boolean | `true` | When set to `true`, trying to paste text with a _new line_ character will display a warning asking you whether to continue or not with the paste. |
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
@@ -126,7 +126,7 @@ For commands with arguments:
 | `closePane` | Close the active pane. | | | |
 | `closeTab` | Close the current tab. | | | |
 | `closeWindow` | Close the current window and all tabs within it. | | | |
-| `copy` | Copy the selected terminal content to your Windows Clipboard. | `singleLine` | boolean | When `true`, the copied content will be copied as a single line. When `false`, newlines persist from the selected text. |
+| `copy` | Copy the selected terminal content to your Windows Clipboard. | 1. `singleLine`<br>2. `copyFormatting` | 1. boolean<br>2. boolean, array | 1. When `true`, the copied content will be copied as a single line. When `false`, newlines persist from the selected text.<br>2. When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting. |
 | `duplicateTab` | Make a copy and open the current tab. | | | |
 | `find` | Open the search dialog box. | | | |
 | `moveFocus` | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |

@@ -734,7 +734,7 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - profileGuid: the GUID of the profile to find the scheme for.
 // Return Value:
 // - a non-owning pointer to the scheme.
-const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
+const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
 {
     auto* profile = FindProfile(profileGuid);
     if (!profile)
@@ -745,7 +745,7 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
     auto scheme = _globals.GetColorSchemes().find(schemeName);
     if (scheme != _globals.GetColorSchemes().end())
     {
-        return &scheme->second;
+        return scheme->second;
     }
     else
     {

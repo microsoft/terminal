@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine());
+            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }

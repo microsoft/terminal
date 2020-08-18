@@ -95,8 +95,10 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
+        static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 
     public:
         hstring GenerateName() const;
@@ -106,7 +108,8 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SingleLine == _SingleLine;
+                return otherAsUs->_SingleLine == _SingleLine &&
+                       otherAsUs->_CopyFormatting == _CopyFormatting;
             }
             return false;
         };
@@ -115,6 +118,7 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
             JsonUtils::GetValueForKey(json, SingleLineKey, args->_SingleLine);
+            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
             return { *args, {} };
         }
     };
