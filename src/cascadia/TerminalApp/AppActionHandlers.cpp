@@ -97,7 +97,6 @@ namespace winrt::TerminalApp::implementation
             _SelectNextTab(true);
         }
 
-
         args.Handled(true);
     }
 

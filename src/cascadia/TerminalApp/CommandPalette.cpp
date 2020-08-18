@@ -57,6 +57,10 @@ namespace winrt::TerminalApp::implementation
                     _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+
+                    // Do this right after becoming visible so we can quickly catch scenarios where
+                    // modifiers aren't held down (e.g. cmdpal invocation).
+                    _anchorKeyUpHandler();
                 }
                 else
                 {
@@ -249,9 +253,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Handles anchor key ups during TabSwitchMode.
     //   We assume that at least one modifier key should be held down in order to "anchor"
-    //   the ATS UI in place. So, this function is called by key up handlers to check if
-    //   any modifiers are still held down, and if not, dispatch the tab switch action and
-    //   close the ATS.
+    //   the ATS UI in place. So this function is called to check if any modifiers are
+    //   still held down, and if not, dispatch the selected tab action and close the ATS.
     // Return value:
     // - <none>
     void CommandPalette::_anchorKeyUpHandler()
