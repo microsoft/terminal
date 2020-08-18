@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
 
                     // Do this right after becoming visible so we can quickly catch scenarios where
-                    // modifiers aren't held down (e.g. cmdpal invocation).
+                    // modifiers aren't held down (e.g. command palette invocation).
                     _anchorKeyUpHandler();
                 }
                 else
