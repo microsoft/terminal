@@ -124,13 +124,15 @@ EXAMPLE: If Python migrates python.exe to specify an allocation policy of **inhe
 will become double-click runnable from the graphical shell without spawning a console window. _However_, console-based
 python applications will no longer spawn a console window when double-clicked from the graphical shell.
 
-Python could work around this by calling `AllocateConsole` if it can be detected that console I/O is required.
+Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required.
 
 ### Performance, Power, and Efficiency
 
 This should have no impact on performance, power or efficiency.
 
 ## Potential Issues
+
+### Shell Hang
 
 I am **not** proposing a change in how shells determine whether to wait for an application before returning to a prompt.
 This means that a console subsystem application that intends to primarily present a UI but occasionally print text to a
@@ -142,6 +144,17 @@ process, an application that wants to be a "hybrid" CUI/GUI application will be 
 detach from the shell and then terminate its main process.
 
 This is very similar to the forking model seen in many POSIX-compliant operating systems.
+
+### Launching interactively from Explorer
+
+Applications like PowerShell may wish to retain "automatic" console allocation, and **inheritOnly** would be unsuitable
+for them. If PowerShell becomes **inheritOnly**, double-clicking `pwsh.exe` will no longer spawn a console. This would
+be a critical failure of the console subsystem.
+
+At the same time, PowerShell wants `-WindowStyle Hidden` to suppress the console _before it's created_.
+
+PowerShell, and any other shell that wishes to maintain interactive launch from the graphical shell, will need to call
+[`AllocConsole`] if it determines that it wants to launch in interactive mode.
 
 ## Future considerations
 
@@ -176,3 +189,4 @@ Are there other allocation policies we need to consider?
 [Powershell -WindowStyle Hidden still shows a window briefly]: https://github.com/PowerShell/PowerShell/issues/3028
 [PowerShell: Windows Store applications incorrectly assumed to be console applications]: https://github.com/PowerShell/PowerShell/issues/9970
 [UEFI spec 2.6 appendix Q.1]: https://www.uefi.org/sites/default/files/resources/UEFI%20Spec%202_6.pdf
+[`AllocConsole`]: https://docs.microsoft.com/windows/console/allocconsole
