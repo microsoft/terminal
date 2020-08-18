@@ -556,10 +556,16 @@
           "minimum": 1,
           "type": "integer"
         },
+        "startOnUserLogin": {
+          "default": false,
+          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "type": "boolean"
+        },
         "launchMode": {
           "default": "default",
-          "description": "Defines whether the Terminal will launch as maximized or not.",
+          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window.",
           "enum": [
+            "fullscreen",
             "maximized",
             "default"
           ],
