@@ -184,6 +184,12 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
+    if (wch == L'\\' && intermediates.empty())
+    {
+        // This is presumably the 7-bit string terminator, which is essentially a no-op.
+        return true;
+    }
+
     bool success = false;
 
     switch (id)
@@ -1131,6 +1137,9 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const s
         case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;
+            break;
+        default:
+            success = false;
             break;
         }
     }

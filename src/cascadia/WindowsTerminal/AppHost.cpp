@@ -6,8 +6,9 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
-
 #include "resource.h"
+
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -68,11 +69,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnDirectKeyEvent(vkey, down);
+        return _logic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
 }

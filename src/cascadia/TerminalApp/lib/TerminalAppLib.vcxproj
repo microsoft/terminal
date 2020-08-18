@@ -101,7 +101,9 @@
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="../Pane.h" />
-    <ClInclude Include="../ColorScheme.h" />
+    <ClInclude Include="../ColorScheme.h">
+      <DependentUpon>../ColorScheme.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
@@ -175,7 +177,9 @@
       <DependentUpon>../Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Pane.cpp" />
-    <ClCompile Include="../ColorScheme.cpp" />
+    <ClCompile Include="../ColorScheme.cpp">
+      <DependentUpon>../ColorScheme.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../GlobalAppSettings.cpp" />
     <ClCompile Include="../Profile.cpp" />
     <ClCompile Include="../CascadiaSettings.cpp" />
@@ -264,6 +268,7 @@
     <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="../Tab.idl" />
     <Midl Include="../TerminalSettings.idl" />
+    <Midl Include="../ColorScheme.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

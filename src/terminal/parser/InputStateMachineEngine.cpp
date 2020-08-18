@@ -416,6 +416,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
             success = _GetXYPosition(parameters, row, col);
             break;
         }
+        [[fallthrough]];
     case CsiActionCodes::ArrowUp:
     case CsiActionCodes::ArrowDown:
     case CsiActionCodes::ArrowRight:
@@ -461,7 +462,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
                 _lookingForDSR = false;
                 break;
             }
-            __fallthrough;
+            [[fallthrough]];
         case CsiActionCodes::Generic:
         case CsiActionCodes::ArrowUp:
         case CsiActionCodes::ArrowDown:
@@ -1347,6 +1348,8 @@ bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> pa
         [[fallthrough]];
     case 1:
         key.SetVirtualKeyCode(::base::saturated_cast<WORD>(til::at(parameters, 0)));
+        break;
+    default:
         break;
     }
 
