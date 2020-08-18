@@ -7,7 +7,7 @@ issue id: #7335
 
 # Console Allocation Policy
 
-## Abstract (#abstract)
+## Abstract
 
 Due to the design of the console subsystem on Windows as it has existed since Windows 95, every application that is
 stamped with the `IMAGE_SUBSYSTEM_WINDOWS_CUI` subsystem in its PE header will be allocated a console by kernel32.
