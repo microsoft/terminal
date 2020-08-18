@@ -578,16 +578,16 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
                 if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
                 {
                     refs.erase(it->GetHyperlinkId());
-                    if (refs.empty())
-                    {
-                        // No more hyperlink references left to search for, terminate early
-                        goto end_outer_loop;
-                    }
                 }
+            }
+            if (refs.empty())
+            {
+                // No more hyperlink references left to search for, terminate early
+                break;
             }
         }
     }
-end_outer_loop:
+
     // Now delete obsolete references from our map
     for (auto it = refs.begin(); it != refs.end(); ++it)
     {
@@ -2279,7 +2279,7 @@ std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const
 // - The internal hyperlink ID
 USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
 {
-    USHORT id;
+    USHORT id = 0;
     if (params.empty())
     {
         // no custom id specified, return our internal count
