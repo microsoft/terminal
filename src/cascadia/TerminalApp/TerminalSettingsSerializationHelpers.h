@@ -21,7 +21,7 @@ Abstract:
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 
-JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
 {
     static constexpr std::array<pair_type, 5> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -32,7 +32,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
     };
 };
 
-JSON_ENUM_MAPPER(winrt::Windows::UI::Xaml::Media::Stretch)
+JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
 {
     static constexpr std::array<pair_type, 4> mappings = {
         pair_type{ "uniformToFill", ValueType::UniformToFill },
@@ -42,7 +42,7 @@ JSON_ENUM_MAPPER(winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -50,11 +50,11 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>)
+JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
 {
     // reduce repetition
-    using HA = winrt::Windows::UI::Xaml::HorizontalAlignment;
-    using VA = winrt::Windows::UI::Xaml::VerticalAlignment;
+    using HA = ::winrt::Windows::UI::Xaml::HorizontalAlignment;
+    using VA = ::winrt::Windows::UI::Xaml::VerticalAlignment;
     static constexpr std::array<pair_type, 9> mappings = {
         pair_type{ "center", std::make_tuple(HA::Center, VA::Center) },
         pair_type{ "topLeft", std::make_tuple(HA::Left, VA::Top) },
@@ -68,7 +68,7 @@ JSON_ENUM_MAPPER(std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt
     };
 };
 
-JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -79,7 +79,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMo
 
 // Type Description:
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
-JSON_ENUM_MAPPER(winrt::TerminalApp::CloseOnExitMode)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::CloseOnExitMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "always", ValueType::Always },
@@ -88,7 +88,7 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::CloseOnExitMode)
     };
 
     // Override mapping parser to add boolean parsing
-    winrt::TerminalApp::CloseOnExitMode FromJson(const Json::Value& json)
+    ::winrt::TerminalApp::CloseOnExitMode FromJson(const Json::Value& json)
     {
         if (json.isBool())
         {
@@ -109,10 +109,10 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::CloseOnExitMode)
 // value type (unsinged int) and return type (FontWeight struct). JSON_ENUM_MAPPER
 // expects that the value type _is_ the return type.
 template<>
-struct ::TerminalApp::JsonUtils::ConversionTrait<winrt::Windows::UI::Text::FontWeight> :
+struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :
     public ::TerminalApp::JsonUtils::EnumMapper<
         unsigned int,
-        ::TerminalApp::JsonUtils::ConversionTrait<winrt::Windows::UI::Text::FontWeight>>
+        ::TerminalApp::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight>>
 {
     // The original parser used the font weight getters Bold(), Normal(), etc.
     // They were both cumbersome and *not constant expressions*
@@ -143,7 +143,7 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<winrt::Windows::UI::Text::FontW
             value = BaseEnumMapper::FromJson(json);
         }
 
-        winrt::Windows::UI::Text::FontWeight weight{
+        ::winrt::Windows::UI::Text::FontWeight weight{
             static_cast<uint16_t>(std::clamp(value, 100u, 990u))
         };
         return weight;
@@ -157,7 +157,7 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<winrt::Windows::UI::Text::FontW
     using EnumMapper::TypeDescription;
 };
 
-JSON_ENUM_MAPPER(winrt::Windows::UI::Xaml::ElementTheme)
+JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "system", ValueType::Default },
@@ -166,7 +166,7 @@ JSON_ENUM_MAPPER(winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
-JSON_ENUM_MAPPER(winrt::TerminalApp::LaunchMode)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::LaunchMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "default", ValueType::DefaultMode },
@@ -175,7 +175,7 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::LaunchMode)
     };
 };
 
-JSON_ENUM_MAPPER(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "equal", ValueType::Equal },
@@ -192,7 +192,7 @@ JSON_ENUM_MAPPER(::TerminalApp::ExpandCommandType)
     };
 };
 
-JSON_FLAG_MAPPER(winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 {
     JSON_MAPPINGS(5) = {
         pair_type{ "none", AllClear },
@@ -275,7 +275,7 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
 };
 
 // Possible Direction values
-JSON_ENUM_MAPPER(winrt::TerminalApp::Direction)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::Direction)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "left", ValueType::Left },
@@ -286,7 +286,7 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::Direction)
 };
 
 // Possible SplitState values
-JSON_ENUM_MAPPER(winrt::TerminalApp::SplitState)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitState)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "vertical", ValueType::Vertical },
@@ -296,14 +296,14 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::SplitState)
 };
 
 // Possible SplitType values
-JSON_ENUM_MAPPER(winrt::TerminalApp::SplitType)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SplitType)
 {
     JSON_MAPPINGS(1) = {
         pair_type{ "duplicate", ValueType::Duplicate },
     };
 };
 
-JSON_ENUM_MAPPER(winrt::TerminalApp::SettingsTarget)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::SettingsTarget)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "settingsFile", ValueType::SettingsFile },
@@ -312,7 +312,7 @@ JSON_ENUM_MAPPER(winrt::TerminalApp::SettingsTarget)
     };
 };
 
-JSON_ENUM_MAPPER(winrt::Windows::System::VirtualKey)
+JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "ctrl", ValueType::Control },

@@ -19,9 +19,7 @@ winrt::TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name)
 {
     const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
                                                                            gsl::as_bytes(gsl::make_span(name))) };
-    winrt::TerminalApp::Profile newProfile{ profileGuid };
-    //auto newProfile = winrt::make<winrt::TerminalApp::Profile>();
-    newProfile.Guid(profileGuid);
+    auto newProfile = winrt::make<winrt::TerminalApp::implementation::Profile>(profileGuid);
     newProfile.Name(name);
 
     std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };

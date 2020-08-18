@@ -274,7 +274,7 @@ namespace TerminalAppLocalTests
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
+            VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(0).Guid().Value());
         }
         {
             // Case 2: Bad settings
@@ -288,7 +288,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
+            VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(0).Guid().Value());
         }
         {
             // Case 2: Bad settings
@@ -302,7 +302,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
+            VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(0).Guid().Value());
         }
         {
             // Case 4: Good settings, default profile is a string
@@ -314,7 +314,7 @@ namespace TerminalAppLocalTests
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(1).Guid());
+            VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(1).Guid().Value());
         }
     }
 
@@ -381,19 +381,19 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-        Profile profile0 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        Profile profile0 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}")));
         profile0.Name(L"profile0");
-        Profile profile1 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}"));
+        Profile profile1 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}")));
         profile1.Name(L"profile1");
-        Profile profile2 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        Profile profile2 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}")));
         profile2.Name(L"profile2");
-        Profile profile3 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        Profile profile3 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}")));
         profile3.Name(L"profile3");
-        Profile profile4 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}"));
+        Profile profile4 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}")));
         profile4.Name(L"profile4");
-        Profile profile5 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}"));
+        Profile profile5 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}")));
         profile5.Name(L"profile5");
-        Profile profile6 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-7777-49a3-80bd-e8fdd045185c}"));
+        Profile profile6 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-7777-49a3-80bd-e8fdd045185c}")));
         profile6.Name(L"profile6");
 
         {
@@ -474,9 +474,9 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-        Profile profile4 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        Profile profile4 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}")));
         profile4.Name(L"profile4");
-        Profile profile5 = winrt::make<Profile>(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        Profile profile5 = winrt::make<implementation::Profile>(winrt::guid(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}")));
         profile5.Name(L"profile5");
 
         // Case 2: Bad settings
@@ -496,7 +496,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.at(2));
 
         VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
-        VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
+        VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(0).Guid().Value());
         VERIFY_IS_NOT_NULL(settings->_profiles.at(0).Guid());
         VERIFY_IS_NOT_NULL(settings->_profiles.at(1).Guid());
         VERIFY_IS_NOT_NULL(settings->_profiles.at(2).Guid());
@@ -788,8 +788,8 @@ namespace TerminalAppLocalTests
         const auto profile4 = implementation::Profile::FromJson(profile4Json);
         const auto profile5 = implementation::Profile::FromJson(profile5Json);
 
-        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
-        const GUID nullGuid{ 0 };
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const winrt::guid nullGuid = GUID{ 0 };
 
         VERIFY_IS_NULL(profile0->Guid());
         VERIFY_IS_NULL(profile1->Guid());
@@ -798,16 +798,16 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(profile4->Guid());
         VERIFY_IS_NULL(profile5->Guid());
 
-        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid().Value(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid().Value(), cmdGuid);
 
         CascadiaSettings settings;
-        settings._profiles.emplace_back(profile0);
-        settings._profiles.emplace_back(profile1);
-        settings._profiles.emplace_back(profile2);
-        settings._profiles.emplace_back(profile3);
-        settings._profiles.emplace_back(profile4);
-        settings._profiles.emplace_back(profile5);
+        settings._profiles.emplace_back(profile0.as<Profile>());
+        settings._profiles.emplace_back(profile1.as<Profile>());
+        settings._profiles.emplace_back(profile2.as<Profile>());
+        settings._profiles.emplace_back(profile3.as<Profile>());
+        settings._profiles.emplace_back(profile4.as<Profile>());
+        settings._profiles.emplace_back(profile5.as<Profile>());
 
         settings._ValidateProfilesHaveGuid();
         VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
@@ -817,26 +817,26 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
         VERIFY_IS_NOT_NULL(settings._profiles.at(5).Guid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(settings._profiles.at(3).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid().Value(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).Guid().Value(), nullGuid);
+        VERIFY_ARE_EQUAL(settings._profiles.at(3).Guid().Value(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).Guid().Value(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).Guid().Value(), nullGuid);
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid(), cmdGuid);
-        VERIFY_ARE_EQUAL(settings._profiles.at(4).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid().Value(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).Guid().Value(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid().Value(), cmdGuid);
+        VERIFY_ARE_EQUAL(settings._profiles.at(4).Guid().Value(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).Guid().Value(), cmdGuid);
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(), settings._profiles.at(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid(), settings._profiles.at(2).Guid());
-        VERIFY_ARE_EQUAL(settings._profiles.at(2).Guid(), settings._profiles.at(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid(), settings._profiles.at(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).Guid(), settings._profiles.at(2).Guid());
-        VERIFY_ARE_EQUAL(settings._profiles.at(5).Guid(), settings._profiles.at(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(), settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid().Value(), settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_EQUAL(settings._profiles.at(2).Guid().Value(), settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid().Value(), settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).Guid().Value(), settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_EQUAL(settings._profiles.at(5).Guid().Value(), settings._profiles.at(2).Guid().Value());
     }
 
     void SettingsTests::GeneratedGuidRoundtrips()
@@ -861,7 +861,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NULL(profile1->Guid());
 
         CascadiaSettings settings;
-        settings._profiles.emplace_back(profile1);
+        settings._profiles.emplace_back(profile1.as<Profile>());
         settings._ValidateProfilesHaveGuid();
 
         VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
@@ -1591,8 +1591,8 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settings0String);
 
         const auto guid1String = L"{6239a42c-1111-49a3-80bd-e8fdd045185c}";
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(guid1String);
-        const auto guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const winrt::guid guid1 = ::Microsoft::Console::Utils::GuidFromString(guid1String);
+        const winrt::guid guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         {
             CascadiaSettings settings{ false };
@@ -1607,15 +1607,15 @@ namespace TerminalAppLocalTests
 
             Log::Comment(NoThrowString().Format(
                 L"Ensure that cmd and powershell don't get their GUIDs overwritten"));
-            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(0).Guid());
-            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(1).Guid());
+            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(0).Guid().Value());
+            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(1).Guid().Value());
 
             settings.LayerJson(settings._userSettings);
 
             VERIFY_ARE_EQUAL(guid1String, settings._globals._unparsedDefaultProfile);
             VERIFY_ARE_EQUAL(4u, settings._profiles.size());
 
-            VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid());
+            VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid().Value());
             VERIFY_IS_NULL(settings._profiles.at(3).Guid());
         }
     }
@@ -1629,9 +1629,9 @@ namespace TerminalAppLocalTests
         // settings in defaultSettings should apply _on top_ of settings from
         // dynamic profiles.
 
-        GUID guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        GUID guid3 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid3 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
 
         const std::string userProfiles{ R"(
         {
@@ -1664,7 +1664,7 @@ namespace TerminalAppLocalTests
         auto gen0 = std::make_unique<TerminalAppUnitTests::TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid1, guid2]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid1);
+            Profile p0 = winrt::make<implementation::Profile>(guid1);
             p0.Name(L"profile0"); // this is _profiles.at(0)
             p0.HistorySize(1111);
             profiles.push_back(p0);
@@ -1673,8 +1673,8 @@ namespace TerminalAppLocalTests
         auto gen1 = std::make_unique<TerminalAppUnitTests::TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid1, guid2]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid1);
-            Profile p1 = winrt::make<Profile>(guid2);
+            Profile p0 = winrt::make<implementation::Profile>(guid1);
+            Profile p1 = winrt::make<implementation::Profile>(guid2);
             p0.Name(L"profile0"); // this is _profiles.at(1)
             p1.Name(L"profile1"); // this is _profiles.at(2)
             p0.HistorySize(2222);
@@ -1724,9 +1724,9 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
         VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
 
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(0).Guid());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(1).Guid());
-        VERIFY_ARE_EQUAL(guid2, settings._profiles.at(2).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(0).Guid().Value());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(1).Guid().Value());
+        VERIFY_ARE_EQUAL(guid2, settings._profiles.at(2).Guid().Value());
 
         VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1).Name());
@@ -1798,7 +1798,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         const auto profile2Guid = settings._profiles.at(2).Guid();
-        VERIFY_ARE_NOT_EQUAL(GUID{ 0 }, profile2Guid);
+        VERIFY_ARE_NOT_EQUAL(winrt::guid({ 0 }), profile2Guid.Value());
 
         VERIFY_ARE_EQUAL(12u, appKeyBindings->_keyShortcuts.size());
 
@@ -1877,7 +1877,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid.Value(), winrt::guid(guid));
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
@@ -1976,7 +1976,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid.Value(), winrt::guid(guid));
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
@@ -2017,7 +2017,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid.Value(), winrt::guid(guid));
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
@@ -2176,7 +2176,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(2u, settings->_profiles.size());
-        VERIFY_ARE_EQUAL(settings->_globals.DefaultProfile(), settings->_profiles.at(0).Guid());
+        VERIFY_ARE_EQUAL(winrt::guid(settings->_globals.DefaultProfile()), settings->_profiles.at(0).Guid().Value());
         try
         {
             const auto [guid, termSettings] = settings->BuildSettings(nullptr);
@@ -2463,7 +2463,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         const auto profile2Guid = settings._profiles.at(2).Guid();
-        VERIFY_ARE_NOT_EQUAL(GUID{ 0 }, profile2Guid);
+        VERIFY_ARE_NOT_EQUAL(winrt::guid(GUID{ 0 }), profile2Guid.Value());
 
         auto appKeyBindings = settings._globals._keybindings;
         VERIFY_ARE_EQUAL(5u, appKeyBindings->_keyShortcuts.size());

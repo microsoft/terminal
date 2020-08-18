@@ -254,7 +254,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     // should _definitely_ not layer.
     if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
     {
-        if (otherGuid.has_value() && otherGuid.value() == _Guid.Value())
+        if (otherGuid.value() != _Guid.Value())
         {
             return false;
         }

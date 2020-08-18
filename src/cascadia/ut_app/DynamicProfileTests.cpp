@@ -212,7 +212,7 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
             p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
@@ -220,8 +220,8 @@ namespace TerminalAppUnitTests
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
-            Profile p1 = winrt::make<Profile>(guid1);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
             p0.Name(L"profile0"); // this is _profiles.at(1)
             p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
@@ -292,7 +292,7 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
             p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
@@ -300,8 +300,8 @@ namespace TerminalAppUnitTests
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
-            Profile p1 = winrt::make<Profile>(guid1);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
             p0.Name(L"profile0"); // this is _profiles.at(1)
             p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
@@ -492,7 +492,7 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.PowershellCore");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
             p0.Name(L"profile0");
             profiles.push_back(p0);
             return profiles;
@@ -500,8 +500,8 @@ namespace TerminalAppUnitTests
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Wsl");
         gen1->pfnGenerate = [guid2, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid1);
-            Profile p1 = winrt::make<Profile>(guid2);
+            Profile p0 = winrt::make<implementation::Profile>(guid1);
+            Profile p1 = winrt::make<implementation::Profile>(guid2);
             p0.Name(L"profile1");
             p1.Name(L"profile2");
             profiles.push_back(p0);
@@ -511,7 +511,7 @@ namespace TerminalAppUnitTests
         auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Azure");
         gen2->pfnGenerate = [guid3]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid3);
+            Profile p0 = winrt::make<implementation::Profile>(guid3);
             p0.Name(L"profile3");
             profiles.push_back(p0);
             return profiles;
@@ -589,7 +589,7 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
             p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
@@ -597,8 +597,8 @@ namespace TerminalAppUnitTests
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
-            Profile p1 = winrt::make<Profile>(guid1);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
             p0.Name(L"profile0"); // this is _profiles.at(1)
             p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
@@ -649,7 +649,7 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
             p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
@@ -657,8 +657,8 @@ namespace TerminalAppUnitTests
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0 = winrt::make<Profile>(guid0);
-            Profile p1 = winrt::make<Profile>(guid1);
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
             p0.Name(L"profile0"); // this shouldn't be in the profiles at all
             p1.Name(L"profile1"); // this shouldn't be in the profiles at all
             profiles.push_back(p0);
