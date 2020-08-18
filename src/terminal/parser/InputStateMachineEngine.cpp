@@ -408,6 +408,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             // even if we failed to parse a portion of this sequence.
             success = _UpdateSGRMouseButtonState(wch, parameters, buttonState, eventFlags) && success;
             success = success && _WriteMouseEvent(col, row, buttonState, modifierState, eventFlags);
+            break;
         }
         default:
             success = false;
@@ -432,6 +433,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             success = _GetXYPosition(parameters, row, col);
             break;
         }
+        [[fallthrough]];
     case CsiActionCodes::ArrowUp:
     case CsiActionCodes::ArrowDown:
     case CsiActionCodes::ArrowRight:
@@ -477,7 +479,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 _lookingForDSR = false;
                 break;
             }
-            __fallthrough;
+            [[fallthrough]];
         case CsiActionCodes::Generic:
         case CsiActionCodes::ArrowUp:
         case CsiActionCodes::ArrowDown:
@@ -1363,6 +1365,8 @@ bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> pa
         [[fallthrough]];
     case 1:
         key.SetVirtualKeyCode(::base::saturated_cast<WORD>(til::at(parameters, 0)));
+        break;
+    default:
         break;
     }
 

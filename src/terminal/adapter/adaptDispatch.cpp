@@ -1578,6 +1578,9 @@ bool AdaptDispatch::TabClear(const size_t clearType)
     case DispatchTypes::TabClearType::ClearAllColumns:
         success = _ClearAllTabStops();
         break;
+    default:
+        success = false;
+        break;
     }
     return success;
 }
@@ -1694,6 +1697,9 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
         {
             _termOutput.EnableGrTranslation(false);
         }
+        break;
+    default:
+        success = false;
         break;
     }
     return success;

@@ -128,6 +128,8 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
             dst.push_back(tmp);
             state = 0;
             break;
+        default:
+            break;
         }
 
         iter++;
@@ -154,6 +156,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
                 return false;
             }
             iter++; // Skip the padding character and fallthrough to "single trailing padding character" case.
+            [[fallthrough]];
         case 3:
             while (iter < src.cend())
             {
@@ -163,6 +166,9 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
                 }
                 iter++;
             }
+            break;
+        default:
+            break;
         }
     }
     else if (state != 0) // When no padding, we must be in state 0.
