@@ -413,6 +413,7 @@ crt
 CRTLIBS
 csbi
 csbiex
+cscript
 csharp
 CSHORT
 cso
@@ -442,6 +443,7 @@ Ctx
 Ctxt
 ctype
 CUF
+CUI
 cupxy
 curated
 CURRENTFONT
@@ -1331,6 +1333,7 @@ lstrcmp
 LTEXT
 LTLTLTLTL
 ltype
+Lua
 LUID
 lval
 LVB
@@ -1717,6 +1720,8 @@ pdx
 peb
 PEMAGIC
 PENDTASKMSG
+perl
+perlw
 pfa
 PFACENODE
 pfed
@@ -1869,6 +1874,7 @@ PWCHAR
 PWDDMCONSOLECONTEXT
 PWORD
 pwsh
+pwshw
 pwstr
 pwsz
 px
@@ -2010,6 +2016,7 @@ Rtl
 RTLREADING
 RTTI
 ru
+rubyw
 ruleset
 runas
 runasradio
@@ -2438,6 +2445,7 @@ UCHAR
 ucs
 UDKs
 UDM
+uefi
 uer
 uget
 uia

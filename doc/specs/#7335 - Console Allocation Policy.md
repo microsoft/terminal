@@ -36,7 +36,7 @@ for all of their GUI-only authors.
 On the other side, you have mostly-GUI applications that want to print output to a console **if there is one
 connected**.  Sometimes they'll allocate their own (and therefore a new window) to display in, and sometimes they'll
 reattach to the one they could have inherited. VSCode does the latter, and so when you run `code` from CMD, and then
-`exit` CMD, your console window sticks around becuase VSCode is still attached to it. It will never print anything, so
+`exit` CMD, your console window sticks around because VSCode is still attached to it. It will never print anything, so
 you just have a dead console window.
 
 There's a risk in reattaching, though. Given that the shell decides whether to wait based on the subsystem field, GUI
@@ -114,7 +114,7 @@ This should have no impact on reliability.
 
 ### Compatibility
 
-On downlevel verisons of Windows that do not understand (or expect) this manifest field, applications will launch
+On downlevel versions of Windows that do not understand (or expect) this manifest field, applications will launch
 consoles as specified by their image subsystem (described in the [abstract](#abstract) above).
 
 This **will** constitute a breaking change for any application that opts into a change in behavior, but that breaking
