@@ -53,6 +53,8 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view uri,
                        const std::wstring_view params);
 
+void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
+
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);

@@ -113,6 +113,7 @@ public:
     bool CopyToClipboard(std::wstring_view content) noexcept override;
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
+    bool EndHyperlink() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput

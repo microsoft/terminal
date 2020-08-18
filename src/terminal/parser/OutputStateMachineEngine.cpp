@@ -1006,7 +1006,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         case OscActionCodes::Hyperlink:
-            success = _dispatch->AddHyperlink(uri, params);
+            if (uri.empty())
+            {
+                success = _dispatch->EndHyperlink();
+            }
+            else
+            {
+                success = _dispatch->AddHyperlink(uri, params);
+            }
             break;
         default:
             // If no functions to call, overall dispatch was a failure.

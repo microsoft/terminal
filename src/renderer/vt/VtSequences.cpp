@@ -465,16 +465,21 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring& uri, const USHORT& id) noexcept
 {
-    if (uri.empty())
-    {
-        // Closing OSC8 sequence
-        const auto hyperlinkFormat = (std::wstring)L"\x1b]8;;\x9c";
-        return _Write(til::u16u8(hyperlinkFormat));
-    }
-    else
-    {
-        // Opening OSC8 sequence
-        const auto hyperlinkFormat = til::u16u8(L"\x1b]8;id=%d;" + uri + L"\x9c");
-        return _WriteFormattedString(&hyperlinkFormat, id);
-    }
+    // Opening OSC8 sequence
+    // We use the BEL character to terminate because \x9c gets mangled in std::string
+    const std::string fmt{ "\x1b]8;id={};{}\x7" };
+    const std::string uri_str{ til::u16u8(uri) };
+    auto s = fmt::format(fmt, id, uri_str);
+    return _Write(s);
+}
+
+// Method Description:
+// - Formats and writes a sequence to end a hyperlink to the terminal buffer
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndHyperlink() noexcept
+{
+    // Closing OSC8 sequence
+    // We use the BEL character to terminate because \x9c gets mangled in std::string
+    return _Write("\x1b]8;;\x7");
 }

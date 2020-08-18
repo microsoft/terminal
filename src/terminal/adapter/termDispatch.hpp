@@ -113,4 +113,5 @@ public:
                             const gsl::span<const size_t> /*params*/) noexcept override { return false; }
 
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
+    bool EndHyperlink() noexcept override { return false; }
 };

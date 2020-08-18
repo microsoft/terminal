@@ -119,6 +119,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
 
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
+        bool EndHyperlink() override;
 
     private:
         enum class ScrollDirection

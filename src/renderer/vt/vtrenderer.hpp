@@ -196,6 +196,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
         [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
         [[nodiscard]] HRESULT _SetHyperlink(const std::wstring& uri, const USHORT& id) noexcept;
+        [[nodiscard]] HRESULT _EndHyperlink() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 

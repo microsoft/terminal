@@ -783,3 +783,9 @@ bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, con
     DoSrvAddHyperlink(_io.GetActiveOutputBuffer(), uri, params);
     return true;
 }
+
+bool ConhostInternalGetSet::PrivateEndHyperlink() const
+{
+    DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
+    return true;
+}

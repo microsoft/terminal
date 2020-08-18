@@ -1171,19 +1171,20 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
     {
-        if (uri.empty())
-        {
-            _hyperlinkMode = false;
-        }
-        else
-        {
-            _hyperlinkMode = true;
-        }
+        _hyperlinkMode = true;
         _uri = uri;
         if (!params.empty())
         {
             _customId = params;
         }
+        return true;
+    }
+
+    bool EndHyperlink() noexcept override
+    {
+        _hyperlinkMode = false;
+        _uri.clear();
+        _customId.clear();
         return true;
     }
 

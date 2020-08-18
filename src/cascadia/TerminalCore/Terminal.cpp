@@ -418,7 +418,7 @@ std::wstring Terminal::GetHyperlink(const COORD position)
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
         return uri;
     }
-    return L"";
+    return {};
 }
 
 // Method Description:

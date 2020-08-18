@@ -2336,14 +2336,23 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 }
 
 // Method Description:
-// - Start or end a hyperlink
+// - Starts a hyperlink
 // Arguments:
-// - The hyperlink URI
+// - The hyperlink URI, optional additional parameters
 // Return Value:
 // - true
 bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
     return _pConApi->PrivateAddHyperlink(uri, params);
+}
+
+// Method Description:
+// - Ends a hyperlink
+// Return Value:
+// - true
+bool AdaptDispatch::EndHyperlink()
+{
+    return _pConApi->PrivateEndHyperlink();
 }
 
 // Routine Description:

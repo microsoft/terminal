@@ -2853,19 +2853,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The uri
     void TermControl::_HyperlinkHandler(std::wstring uri)
     {
-        try
-        {
-            auto parsed = winrt::Windows::Foundation::Uri(uri);
-            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
-            {
-                auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
-                _openHyperlinkHandlers(*this, *hyperlinkArgs);
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
+        _openHyperlinkHandlers(*this, *hyperlinkArgs);
     }
 
     // Method Description:

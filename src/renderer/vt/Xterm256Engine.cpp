@@ -150,7 +150,7 @@ HRESULT Microsoft::Console::Render::Xterm256Engine::_UpdateHyperlinkAttr(const T
         }
         else
         {
-            RETURN_IF_FAILED(_SetHyperlink(L"", 0));
+            RETURN_IF_FAILED(_EndHyperlink());
         }
         _lastTextAttributes.SetHyperlinkId(textAttributes.GetHyperlinkId());
     }

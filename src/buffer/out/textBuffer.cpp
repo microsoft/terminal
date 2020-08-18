@@ -1228,9 +1228,9 @@ void TextBuffer::_PruneHyperlinks()
     }
 
     // Now delete obsolete references from our map
-    for (auto it = refs.begin(); it != refs.end(); ++it)
+    for (auto hyperlinkReference : refs)
     {
-        RemoveHyperlinkFromMap(*it);
+        RemoveHyperlinkFromMap(hyperlinkReference);
     }
 }
 

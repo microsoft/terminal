@@ -1790,8 +1790,15 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
     {
-        ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-        return;
+        try
+        {
+            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            {
+                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:

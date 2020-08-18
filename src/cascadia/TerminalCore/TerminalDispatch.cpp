@@ -372,14 +372,24 @@ bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::Pr
 }
 
 // Method Description:
-// - Start or end a hyperlink
+// - Start a hyperlink
 // Arguments:
-// - The hyperlink URI
+// - uri - the hyperlink URI
+// - params - the hyperlink id to use
 // Return Value:
 // - true
 bool TerminalDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept
 {
     return _terminalApi.AddHyperlink(uri, params);
+}
+
+// Method Description:
+// - End a hyperlink
+// Return Value:
+// - true
+bool TerminalDispatch::EndHyperlink() noexcept
+{
+    return _terminalApi.EndHyperlink();
 }
 
 // Routine Description:
