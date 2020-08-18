@@ -2440,7 +2440,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 { "keys": "ctrl+a",                   "command": { "action": "splitPane", "split": "vertical" } },
                 {                   "name": "ctrl+b", "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": "ctrl+c", "name": "ctrl+c", "command": { "action": "splitPane", "split": "vertical" } },
@@ -2642,7 +2642,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "iterable command ${profile.name}",
                     "iterateOn": "profiles",
@@ -2773,7 +2773,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "iterateOn": "profiles",
                     "command": { "action": "splitPane", "profile": "${profile.name}" }
@@ -2904,7 +2904,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "iterable command ${profile.name}",
                     "iterateOn": "profiles",
@@ -3041,7 +3041,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "Connect to ssh...",
                     "commands": [
@@ -3144,7 +3144,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "grandparent",
                     "commands": [
@@ -3292,7 +3292,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "iterateOn": "profiles",
                     "name": "${profile.name}...",
@@ -3445,7 +3445,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "New Tab With Profile...",
                     "commands": [
@@ -3553,7 +3553,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "New Pane...",
                     "commands": [
@@ -3716,7 +3716,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "commands": [
                         {
@@ -3779,7 +3779,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": [
@@ -3800,7 +3800,7 @@ namespace TerminalAppLocalTests
         const std::string settings1Json{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": null
@@ -3862,7 +3862,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": [
@@ -3883,7 +3883,7 @@ namespace TerminalAppLocalTests
         const std::string settings1Json{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "command": "newTab"
