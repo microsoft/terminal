@@ -27,7 +27,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
 
             <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
-            <local:CommandKeyChordVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
+            <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -170,12 +172,23 @@ the MIT License. See LICENSE in the project root for license information. -->
             </TextBox>
 
             <TextBlock
-            Padding="16"
-            x:Name="_noMatchesText"
-            FontStyle="Italic"
-            Visibility="Collapsed"
-            Grid.Row="1"
-            Text="{x:Bind NoMatchesText, Mode=OneWay}">
+                Padding="16, 0, 16, 4"
+                x:Name="_parentCommandText"
+                FontStyle="Italic"
+                Visibility="{x:Bind ParentCommandName,
+                             Mode=OneWay,
+                             Converter={StaticResource ParentCommandVisibilityConverter}}"
+                Grid.Row="1"
+                Text="{x:Bind ParentCommandName, Mode=OneWay}">
+            </TextBlock>
+
+            <TextBlock
+                Padding="16"
+                x:Name="_noMatchesText"
+                FontStyle="Italic"
+                Visibility="Collapsed"
+                Grid.Row="1"
+                Text="{x:Bind NoMatchesText, Mode=OneWay}">
             </TextBlock>
 
             <ListView
@@ -235,6 +248,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     FontSize="12"
                                     Text="{x:Bind KeyChordText, Mode=OneWay}" />
                                 </Border>
+
+                                <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
+                                <FontIcon
+                                    FontFamily="Segoe MDL2 Assets"
+                                    Glyph="&#xE70E;"
+                                    HorizontalAlignment="Right"
+                                    Visibility="{x:Bind HasNestedCommands,
+                                                 Mode=OneWay,
+                                                 Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
+                                    Grid.Column="2">
+
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform CenterX="0.5" CenterY="0.5" Angle="90"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
 
                             </Grid>
                         </ListViewItem>
