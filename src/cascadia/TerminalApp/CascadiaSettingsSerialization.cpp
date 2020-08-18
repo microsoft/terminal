@@ -560,7 +560,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 // <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
-    _globals.LayerJson(json);
+    auto globals = winrt::get_self<implementation::GlobalAppSettings>(_globals);
+    globals->LayerJson(json);
 
     if (auto schemes{ json[SchemesKey.data()] })
     {
@@ -728,11 +729,9 @@ winrt::com_ptr<implementation::ColorScheme> CascadiaSettings::_FindMatchingColor
 {
     if (auto schemeName = implementation::ColorScheme::GetNameFromJson(schemeJson))
     {
-        auto& schemes = _globals.GetColorSchemes();
-        auto iterator = schemes.find(*schemeName);
-        if (iterator != schemes.end())
+        if (auto scheme{ _globals.GetColorSchemes().TryLookup(*schemeName) })
         {
-            return winrt::get_self<implementation::ColorScheme>(iterator->second)->get_strong();
+            return winrt::get_self<implementation::ColorScheme>(scheme)->get_strong();
         }
     }
     return nullptr;

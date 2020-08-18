@@ -75,9 +75,9 @@ Profile::Profile(guid guid) :
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
+winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes) const
 {
-    winrt::TerminalApp::TerminalSettings terminalSettings{};
+    auto terminalSettings = winrt::make<TerminalSettings>();
 
     // Fill in the Terminal Setting's CoreSettings from the profile
     terminalSettings.HistorySize(_HistorySize);
@@ -115,10 +115,9 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
 
     if (!_ColorSchemeName.empty())
     {
-        const auto found = schemes.find(_ColorSchemeName.c_str());
-        if (found != schemes.end())
+        if (const auto found{ schemes.TryLookup(_ColorSchemeName) })
         {
-            found->second.ApplyScheme(terminalSettings);
+            found.ApplyScheme(terminalSettings);
         }
     }
     if (_Foreground)

@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
 
-        GETSET_PROPERTY(::TerminalApp::ExpandCommandType, IterateOn, ::TerminalApp::ExpandCommandType::None);
+        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;

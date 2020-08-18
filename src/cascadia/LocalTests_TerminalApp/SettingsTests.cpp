@@ -106,7 +106,7 @@ namespace TerminalAppLocalTests
         }
 
     private:
-        void _logCommandNames(winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
+        void _logCommandNames(winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands, const int indentation = 1)
         {
             if (indentation == 1)
             {
@@ -125,7 +125,7 @@ namespace TerminalAppLocalTests
                 cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.Value()));
                 if (cmdImpl->HasNestedCommands())
                 {
-                    _logCommandNames(cmdImpl->_subcommands, indentation + 2);
+                    _logCommandNames(cmdImpl->_subcommands.GetView(), indentation + 2);
                 }
             }
         }
@@ -522,16 +522,16 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings;
 
         settings.LayerJson(settings0Json);
-        VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
-        VERIFY_ARE_EQUAL(120, settings._globals._InitialCols);
-        VERIFY_ARE_EQUAL(30, settings._globals._InitialRows);
-        VERIFY_ARE_EQUAL(true, settings._globals._ShowTabsInTitlebar);
+        VERIFY_ARE_EQUAL(true, settings._globals.AlwaysShowTabs());
+        VERIFY_ARE_EQUAL(120, settings._globals.InitialCols());
+        VERIFY_ARE_EQUAL(30, settings._globals.InitialRows());
+        VERIFY_ARE_EQUAL(true, settings._globals.ShowTabsInTitlebar());
 
         settings.LayerJson(settings1Json);
-        VERIFY_ARE_EQUAL(true, settings._globals._AlwaysShowTabs);
-        VERIFY_ARE_EQUAL(240, settings._globals._InitialCols);
-        VERIFY_ARE_EQUAL(60, settings._globals._InitialRows);
-        VERIFY_ARE_EQUAL(false, settings._globals._ShowTabsInTitlebar);
+        VERIFY_ARE_EQUAL(true, settings._globals.AlwaysShowTabs());
+        VERIFY_ARE_EQUAL(240, settings._globals.InitialCols());
+        VERIFY_ARE_EQUAL(60, settings._globals.InitialRows());
+        VERIFY_ARE_EQUAL(false, settings._globals.ShowTabsInTitlebar());
     }
 
     void SettingsTests::ValidateProfileOrdering()
@@ -1330,7 +1330,7 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().Size());
 
         VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings._profiles.at(1).ColorSchemeName());
@@ -1342,7 +1342,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings._warnings.at(0));
 
         VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().Size());
 
         VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(1).ColorSchemeName());
@@ -1554,7 +1554,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(settings._userDefaultProfileSettings == Json::Value::null);
             settings.LayerJson(settings._userSettings);
 
-            VERIFY_ARE_EQUAL(guid1String, settings._globals._unparsedDefaultProfile);
+            VERIFY_ARE_EQUAL(guid1String, settings._globals.UnparsedDefaultProfile());
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
 
             VERIFY_ARE_EQUAL(2345, settings._profiles.at(0).HistorySize());
@@ -1612,7 +1612,7 @@ namespace TerminalAppLocalTests
 
             settings.LayerJson(settings._userSettings);
 
-            VERIFY_ARE_EQUAL(guid1String, settings._globals._unparsedDefaultProfile);
+            VERIFY_ARE_EQUAL(guid1String, settings._globals.UnparsedDefaultProfile());
             VERIFY_ARE_EQUAL(4u, settings._profiles.size());
 
             VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid());
@@ -1794,12 +1794,13 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
         settings._ValidateSettings();
 
-        auto appKeyBindings = settings._globals._keybindings;
+        auto appKeyBindingsProj = settings._globals.GetKeybindings();
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         const auto profile2Guid = settings._profiles.at(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
+        const auto appKeyBindings = winrt::get_self<implementation::AppKeyBindings>(appKeyBindingsProj);
         VERIFY_ARE_EQUAL(12u, appKeyBindings->_keyShortcuts.size());
 
         {
@@ -2241,14 +2242,14 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(6u, settings._profiles.size());
-        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().Size());
 
-        auto terminalSettings0 = winrt::get_self<implementation::Profile>(settings._profiles[0])->CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings1 = winrt::get_self<implementation::Profile>(settings._profiles[1])->CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings2 = winrt::get_self<implementation::Profile>(settings._profiles[2])->CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings3 = winrt::get_self<implementation::Profile>(settings._profiles[3])->CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings4 = winrt::get_self<implementation::Profile>(settings._profiles[4])->CreateTerminalSettings(settings._globals._colorSchemes);
-        auto terminalSettings5 = winrt::get_self<implementation::Profile>(settings._profiles[5])->CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings0 = winrt::get_self<implementation::Profile>(settings._profiles[0])->CreateTerminalSettings(settings._globals.GetColorSchemes());
+        auto terminalSettings1 = winrt::get_self<implementation::Profile>(settings._profiles[1])->CreateTerminalSettings(settings._globals.GetColorSchemes());
+        auto terminalSettings2 = winrt::get_self<implementation::Profile>(settings._profiles[2])->CreateTerminalSettings(settings._globals.GetColorSchemes());
+        auto terminalSettings3 = winrt::get_self<implementation::Profile>(settings._profiles[3])->CreateTerminalSettings(settings._globals.GetColorSchemes());
+        auto terminalSettings4 = winrt::get_self<implementation::Profile>(settings._profiles[4])->CreateTerminalSettings(settings._globals.GetColorSchemes());
+        auto terminalSettings5 = winrt::get_self<implementation::Profile>(settings._profiles[5])->CreateTerminalSettings(settings._globals.GetColorSchemes());
 
         VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0.CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1.CursorColor()); // default
@@ -2283,12 +2284,13 @@ namespace TerminalAppLocalTests
         const auto settingsObject = VerifyParseSucceeded(badSettings);
         auto settings = CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+        const auto globalsImpl = winrt::get_self<implementation::GlobalAppSettings>(settings->_globals);
+        VERIFY_ARE_EQUAL(0u, globalsImpl->_keybindings->_keyShortcuts.size());
 
-        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_globals._keybindingsWarnings.at(0));
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+        VERIFY_ARE_EQUAL(3u, globalsImpl->_keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, globalsImpl->_keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, globalsImpl->_keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, globalsImpl->_keybindingsWarnings.at(2));
 
         settings->_ValidateKeybindings();
 
@@ -2325,17 +2327,18 @@ namespace TerminalAppLocalTests
 
         auto settings = CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+        auto globalsImpl = winrt::get_self<implementation::GlobalAppSettings>(settings->_globals);
+        VERIFY_ARE_EQUAL(0u, globalsImpl->_keybindings->_keyShortcuts.size());
 
-        for (const auto& warning : settings->_globals._keybindingsWarnings)
+        for (const auto& warning : globalsImpl->_keybindingsWarnings)
         {
             Log::Comment(NoThrowString().Format(
                 L"warning:%d", warning));
         }
-        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(0));
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
-        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+        VERIFY_ARE_EQUAL(3u, globalsImpl->_keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, globalsImpl->_keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, globalsImpl->_keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, globalsImpl->_keybindingsWarnings.at(2));
 
         settings->_ValidateKeybindings();
 
@@ -2465,7 +2468,7 @@ namespace TerminalAppLocalTests
         const auto profile2Guid = settings._profiles.at(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
-        auto appKeyBindings = settings._globals._keybindings;
+        auto appKeyBindings = winrt::get_self<implementation::AppKeyBindings>(settings._globals.GetKeybindings());
         VERIFY_ARE_EQUAL(5u, appKeyBindings->_keyShortcuts.size());
 
         // A/D, B, C, E will be in the list of commands, for 4 total.
@@ -2665,7 +2668,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
@@ -2686,8 +2689,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -2795,7 +2798,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
@@ -2816,8 +2819,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -2927,7 +2930,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
@@ -2949,8 +2952,8 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -3068,10 +3071,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -3176,10 +3179,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -3315,10 +3318,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
 
@@ -3337,7 +3340,7 @@ namespace TerminalAppLocalTests
 
             VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
-            _logCommandNames(commandImpl->_subcommands);
+            _logCommandNames(commandImpl->_subcommands.GetView());
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
@@ -3468,10 +3471,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -3581,10 +3584,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -3613,7 +3616,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
 
-            _logCommandNames(commandImpl->_subcommands);
+            _logCommandNames(commandImpl->_subcommands.GetView());
             {
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
@@ -3742,7 +3745,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
         _logCommandNames(commands);
 
@@ -3819,7 +3822,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
         _logCommandNames(commands);
 
@@ -3902,7 +3905,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         settings._ValidateSettings();
         _logCommandNames(commands);
 
@@ -3998,7 +4001,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
-        auto& commands = settings._globals.GetCommands();
+        auto commands = settings._globals.GetCommands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
@@ -4019,8 +4022,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
-        _logCommandNames(expandedCommands);
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());

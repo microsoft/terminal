@@ -569,10 +569,10 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        const auto initialPosition{ _settings->GlobalSettings().InitialPosition() };
+        const auto globals{ _settings->GlobalSettings() };
         winrt::Windows::Foundation::Point point{
-            /* X */ gsl::narrow_cast<float>(initialPosition.x.value_or(defaultInitialX)),
-            /* Y */ gsl::narrow_cast<float>(initialPosition.y.value_or(defaultInitialY))
+            /* X */ gsl::narrow_cast<float>(globals.HasInitialPositionX() ? globals.InitialPositionX() : defaultInitialX),
+            /* Y */ gsl::narrow_cast<float>(globals.HasInitialPositionY() ? globals.InitialPositionY() : defaultInitialY)
         };
 
         return point;

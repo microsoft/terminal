@@ -138,7 +138,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateCommandsForPalette();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
                                                                                                                           gsl::span<const winrt::TerminalApp::Profile> profiles,
-                                                                                                                          const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes);
+                                                                                                                          Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);

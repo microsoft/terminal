@@ -11,7 +11,7 @@ Abstract:
 
 #pragma once
 
-namespace TerminalApp
+namespace winrt::TerminalApp
 {
     struct LaunchPosition
     {

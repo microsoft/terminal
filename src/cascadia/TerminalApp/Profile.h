@@ -16,7 +16,7 @@ Author(s):
 #pragma once
 
 #include "Profile.g.h"
-#include "ColorScheme.g.h"
+#include "TerminalSettings.h"
 
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         Profile();
         Profile(guid guid);
 
-        TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes) const;
+        TerminalApp::TerminalSettings CreateTerminalSettings(const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes) const;
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
