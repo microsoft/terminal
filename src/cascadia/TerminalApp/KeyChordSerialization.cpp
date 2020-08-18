@@ -14,11 +14,13 @@ static constexpr int MAX_CHORD_PARTS = 4;
 
 // clang-format off
 static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
+    { L"app"             , VK_APPS },
     { L"backspace"       , VK_BACK },
     { L"tab"             , VK_TAB },
     { L"enter"           , VK_RETURN },
     { L"esc"             , VK_ESCAPE },
     { L"escape"          , VK_ESCAPE },
+    { L"menu"            , VK_APPS },
     { L"space"           , VK_SPACE },
     { L"pgup"            , VK_PRIOR },
     { L"pageup"          , VK_PRIOR },

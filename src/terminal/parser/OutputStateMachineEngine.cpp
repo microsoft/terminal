@@ -186,6 +186,12 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                  const gsl::span<const wchar_t> intermediates)
 {
+    if (wch == L'\\' && intermediates.empty())
+    {
+        // This is presumably the 7-bit string terminator, which is essentially a no-op.
+        return true;
+    }
+
     bool success = false;
 
     // no intermediates.
@@ -434,6 +440,9 @@ bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
     case L'/':
         success = _dispatch->Designate96Charset(3, charset);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+        break;
+    default:
+        success = false;
         break;
     }
 
@@ -806,8 +815,14 @@ bool OutputStateMachineEngine::_IntermediateGreaterThanOrEqualDispatch(const wch
                 success = _dispatch->TertiaryDeviceAttributes();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
                 break;
+            default:
+                success = false;
+                break;
             }
         }
+        break;
+    default:
+        success = false;
         break;
     }
 
@@ -1329,6 +1344,9 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const s
         case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
             statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             success = true;
+            break;
+        default:
+            success = false;
             break;
         }
     }

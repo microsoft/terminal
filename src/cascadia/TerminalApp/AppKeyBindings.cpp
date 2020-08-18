@@ -53,6 +53,11 @@ namespace winrt::TerminalApp::implementation
     // - The bound keychord, if this ActionAndArgs is bound to a key, otherwise nullptr.
     KeyChord AppKeyBindings::GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs)
     {
+        if (actionAndArgs == nullptr)
+        {
+            return { nullptr };
+        }
+
         for (auto& kv : _keyShortcuts)
         {
             const auto action = kv.second.Action();
