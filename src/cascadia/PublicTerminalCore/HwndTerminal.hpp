@@ -12,10 +12,13 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
+// Keep in sync with TerminalTheme.cs
 typedef struct _TerminalTheme
 {
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
+    COLORREF DefaultSelectionBackground;
+    float SelectionBackgroundAlpha;
     DispatchTypes::CursorStyle CursorStyle;
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;

@@ -2354,12 +2354,12 @@ CATCH_RETURN();
 // - color - GDI Color
 // Return Value:
 // - N/A
-void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+void DxEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
-                                        0.5f);
+                                        alpha);
 }
 
 // Routine Description:
