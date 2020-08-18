@@ -66,7 +66,7 @@ It would look (roughly) like this:
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application>
     <windowsSettings>
-      <consoleAllocationPolicy xmlns="http://schemas.microsoft.com/SMI/20XX/WindowsSettings">inheritOnly</activeCodePage>
+      <consoleAllocationPolicy xmlns="http://schemas.microsoft.com/SMI/20XX/WindowsSettings">inheritOnly</consoleAllocationPolicy>
     </windowsSettings>
   </application>
 </assembly>
