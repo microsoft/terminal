@@ -552,47 +552,8 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
-    // First, check the old first row for hyperlink references
-    // If there are any, search the entire buffer for the same reference
-    // If the buffer does not contain the same reference, we can remove that hyperlink from our map
-    // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
-    std::unordered_set<USHORT> refs;
-    const auto firstAttrRow = _storage.at(_firstRow).GetAttrRow();
-    // Get all the hyperlink references in the row we're erasing
-    for (auto it = firstAttrRow.begin(); it != firstAttrRow.end(); ++it)
-    {
-        if (it->IsHyperlink())
-        {
-            refs.emplace(it->GetHyperlinkId());
-        }
-    }
-    if (!refs.empty())
-    {
-        const auto total = TotalRowCount();
-        // Loop through all the rows in the buffer
-        for (size_t i = 1; i != total; ++i)
-        {
-            const auto attrRow = GetRowByOffset(i).GetAttrRow();
-            for (auto it = attrRow.begin(); it != attrRow.end(); ++it)
-            {
-                if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
-                {
-                    refs.erase(it->GetHyperlinkId());
-                }
-            }
-            if (refs.empty())
-            {
-                // No more hyperlink references left to search for, terminate early
-                break;
-            }
-        }
-    }
-
-    // Now delete obsolete references from our map
-    for (auto it = refs.begin(); it != refs.end(); ++it)
-    {
-        RemoveHyperlinkFromMap(*it);
-    }
+    // Prune hyperlinks to delete obsolete references
+    _PruneHyperlinks();
 
     // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     auto fillAttributes = _currentAttributes;
@@ -1226,6 +1187,51 @@ const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::w
     }
 
     return result;
+}
+
+void TextBuffer::_PruneHyperlinks()
+{
+    // First, check the old first row for hyperlink references
+    // If there are any, search the entire buffer for the same reference
+    // If the buffer does not contain the same reference, we can remove that hyperlink from our map
+    // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
+    std::unordered_set<USHORT> refs;
+    const auto firstAttrRow = _storage.at(_firstRow).GetAttrRow();
+    // Get all the hyperlink references in the row we're erasing
+    for (auto it = firstAttrRow.begin(); it != firstAttrRow.end(); ++it)
+    {
+        if (it->IsHyperlink())
+        {
+            refs.emplace(it->GetHyperlinkId());
+        }
+    }
+    if (!refs.empty())
+    {
+        const auto total = TotalRowCount();
+        // Loop through all the rows in the buffer
+        for (size_t i = 1; i != total; ++i)
+        {
+            const auto attrRow = GetRowByOffset(i).GetAttrRow();
+            for (auto it = attrRow.begin(); it != attrRow.end(); ++it)
+            {
+                if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
+                {
+                    refs.erase(it->GetHyperlinkId());
+                }
+            }
+            if (refs.empty())
+            {
+                // No more hyperlink references left to search for, terminate early
+                break;
+            }
+        }
+    }
+
+    // Now delete obsolete references from our map
+    for (auto it = refs.begin(); it != refs.end(); ++it)
+    {
+        RemoveHyperlinkFromMap(*it);
+    }
 }
 
 // Method Description:

@@ -1128,7 +1128,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                if (ctrlEnabled && mode == ::Terminal::SelectionExpansionMode::Cell)
+                if (ctrlEnabled && multiClickMapper == 1)
                 {
                     // Control+Click: if the text selected is a hyperlink, open the link
                     const auto uri = _terminal->GetHyperlink(terminalPosition);
@@ -2853,11 +2853,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The uri
     void TermControl::_HyperlinkHandler(std::wstring uri)
     {
-        auto parsed = winrt::Windows::Foundation::Uri(uri);
-        if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+        try
         {
-            auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
-            _openHyperlinkHandlers(*this, *hyperlinkArgs);
+            auto parsed = winrt::Windows::Foundation::Uri(uri);
+            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            {
+                auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
+                _openHyperlinkHandlers(*this, *hyperlinkArgs);
+            }
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 

@@ -127,6 +127,8 @@ public:
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
+
+    std::wstring GetHyperlink(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -194,7 +196,6 @@ public:
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
-    std::wstring GetHyperlink(const COORD position);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion

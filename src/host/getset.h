@@ -49,6 +49,10 @@ void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
 void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor);
 
+void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
+                       const std::wstring_view uri,
+                       const std::wstring_view params);
+
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);

@@ -225,6 +225,8 @@ private:
     const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
+    void _PruneHyperlinks();
+
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
     friend class UiaTextRangeTests;

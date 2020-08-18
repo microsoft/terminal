@@ -780,20 +780,6 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 // - true
 bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
 {
-    auto attr = _io.GetActiveOutputBuffer().GetAttributes();
-    if (uri.empty())
-    {
-        // URI is empty, this means we are ending a hyperlink
-        attr.SetHyperlinkId(0);
-        _io.GetActiveOutputBuffer().GetTextBuffer().SetCurrentAttributes(attr);
-    }
-    else
-    {
-        // URI is non-empty, this means we are starting a hyperlink
-        USHORT id = _io.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkId(params);
-        attr.SetHyperlinkId(id);
-        _io.GetActiveOutputBuffer().GetTextBuffer().SetCurrentAttributes(attr);
-        _io.GetActiveOutputBuffer().GetTextBuffer().AddHyperlinkToMap(uri, id);
-    }
+    DoSrvAddHyperlink(_io.GetActiveOutputBuffer(), uri, params);
     return true;
 }

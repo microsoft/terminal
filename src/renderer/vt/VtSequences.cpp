@@ -463,7 +463,7 @@ using namespace Microsoft::Console::Render;
 // - The hyperlink URI
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetHyperlink(std::wstring uri, USHORT id) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring& uri, const USHORT& id) noexcept
 {
     if (uri.empty())
     {
