@@ -24,8 +24,8 @@ static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
 static constexpr std::string_view IterateOnSchemesValue{ "schemes" };
 
-static constexpr std::string_view ProfileName{ "${profile.name}" };
-static constexpr std::string_view SchemeName{ "${scheme.name}" };
+static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
+static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -410,7 +410,7 @@ namespace winrt::TerminalApp::implementation
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.GetName()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
-                                                                     ProfileName,
+                                                                     ProfileNameToken,
                                                                      escapedProfileName);
 
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
@@ -432,7 +432,7 @@ namespace winrt::TerminalApp::implementation
                 // - Escape the profile name for JSON appropriately
                 auto escapedSchemeName = _escapeForJson(til::u16u8(s.Name()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
-                                                                     SchemeName,
+                                                                     SchemeNameToken,
                                                                      escapedSchemeName);
 
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.

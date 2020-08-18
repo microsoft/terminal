@@ -343,7 +343,7 @@
         { "command": "resetFontSize", "keys": "ctrl+0" },
 
         {
-            "name": { "key": "SetColorSchemeParentCommandName"},
+            "name": { "key": "SetColorSchemeParentCommandName" },
             "commands": [
                 {
                     "iterateOn": "schemes",
