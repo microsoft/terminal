@@ -78,50 +78,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
                                       const TerminalApp::ActionEventArgs& args)
     {
-        if (_settings->GlobalSettings().UseTabSwitcher())
-        {
-            if (CommandPalette().Visibility() == Visibility::Visible)
-            {
-                CommandPalette().SelectNextItem(true);
-            }
-
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
-            startIdx = (startIdx + _tabs.Size() + 1) % _tabs.Size();
-
-            CommandPalette().EnableTabSwitcherMode(false, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
-        }
-        else
-        {
-            _SelectNextTab(true);
-        }
-
+        _SelectNextTab(true);
         args.Handled(true);
     }
 
     void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
                                       const TerminalApp::ActionEventArgs& args)
     {
-        if (_settings->GlobalSettings().UseTabSwitcher())
-        {
-            if (CommandPalette().Visibility() == Visibility::Visible)
-            {
-                CommandPalette().SelectNextItem(false);
-            }
-
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
-            startIdx = (startIdx + _tabs.Size() - 1) % _tabs.Size();
-
-            CommandPalette().EnableTabSwitcherMode(false, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
-        }
-        else
-        {
-            _SelectNextTab(false);
-        }
-
+        _SelectNextTab(false);
         args.Handled(true);
     }
 

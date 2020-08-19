@@ -1203,7 +1203,21 @@ namespace winrt::TerminalApp::implementation
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            _SelectTab(newTabIndex);
+
+            if (_settings->GlobalSettings().UseTabSwitcher())
+            {
+                if (CommandPalette().Visibility() == Visibility::Visible)
+                {
+                    CommandPalette().SelectNextItem(bMoveRight);
+                }
+
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+            else
+            {
+                _SelectTab(newTabIndex);
+            }
         }
     }
 

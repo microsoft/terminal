@@ -18,7 +18,7 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
-    "useTabSwitcher": false,
+    "useTabSwitcher": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
