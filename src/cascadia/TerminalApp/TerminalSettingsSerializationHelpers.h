@@ -184,6 +184,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
     };
 };
 
+JSON_ENUM_MAPPER(::TerminalApp::ExpandCommandType)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "profiles", ValueType::Profiles },
+        pair_type{ "schemes", ValueType::ColorSchemes },
+    };
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 {
     JSON_MAPPINGS(5) = {

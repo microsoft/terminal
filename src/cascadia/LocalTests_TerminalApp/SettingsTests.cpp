@@ -97,6 +97,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestUnbindNestedCommand);
         TEST_METHOD(TestRebindNestedCommand);
 
+        TEST_METHOD(TestIterableColorSchemeCommands);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2296,53 +2298,49 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::ValidateExecuteCommandlineWarning()
     {
-        Log::Comment(L"This test is affected by GH#6949, so we're just skipping it for now.");
-        Log::Result(WEX::Logging::TestResults::Skipped);
-        return;
+        const std::string badSettings{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": [
+                { "name":null, "command": { "action": "wt" }, "keys": [ "ctrl+a" ] },
+                { "name":null, "command": { "action": "wt", "commandline":"" }, "keys": [ "ctrl+b" ] },
+                { "name":null, "command": { "action": "wt", "commandline":null }, "keys": [ "ctrl+c" ] }
+            ]
+        })" };
 
-        // const std::string badSettings{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile0",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
-        //         },
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
-        //         }
-        //     ],
-        //     "keybindings": [
-        //         { "name":null, "command": { "action": "wt" }, "keys": [ "ctrl+a" ] },
-        //         { "name":null, "command": { "action": "wt", "commandline":"" }, "keys": [ "ctrl+b" ] },
-        //         { "name":null, "command": { "action": "wt", "commandline":null }, "keys": [ "ctrl+c" ] }
-        //     ]
-        // })" };
+        const auto settingsObject = VerifyParseSucceeded(badSettings);
 
-        // const auto settingsObject = VerifyParseSucceeded(badSettings);
+        auto settings = CascadiaSettings::FromJson(settingsObject);
 
-        // auto settings = CascadiaSettings::FromJson(settingsObject);
+        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
 
-        // VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+        for (const auto& warning : settings->_globals._keybindingsWarnings)
+        {
+            Log::Comment(NoThrowString().Format(
+                L"warning:%d", warning));
+        }
+        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
 
-        // for (const auto& warning : settings->_globals._keybindingsWarnings)
-        // {
-        //     Log::Comment(NoThrowString().Format(
-        //         L"warning:%d", warning));
-        // }
-        // VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(0));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+        settings->_ValidateKeybindings();
 
-        // settings->_ValidateKeybindings();
-
-        // VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(1));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
+        VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
     }
 
     void SettingsTests::ValidateLegacyGlobalsWarning()
@@ -2685,7 +2683,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2815,7 +2813,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2948,7 +2946,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3069,7 +3067,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3177,7 +3175,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3316,7 +3314,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3469,7 +3467,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3582,7 +3580,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3943,6 +3941,143 @@ namespace TerminalAppLocalTests
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
             VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+    }
+
+    void SettingsTests::TestIterableColorSchemeCommands()
+    {
+        // For this test, put an iterable command with a given `name`,
+        // containing a ${profile.name} to replace. When we expand it, it should
+        // have created one command for each profile.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "schemes": [
+                { "name": "scheme_0" },
+                { "name": "scheme_1" },
+                { "name": "scheme_2" },
+            ],
+            "bindings": [
+                {
+                    "name": "iterable command ${scheme.name}",
+                    "iterateOn": "schemes",
+                    "command": { "action": "splitPane", "profile": "${scheme.name}" }
+                },
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"iterable command ${scheme.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        // Yes, this test is testing splitPane with profiles named after each
+        // color scheme. These would obviously not work in real life, they're
+        // just easy tests to write.
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_1");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_1", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_2", realArgs.TerminalArgs().Profile());
         }
     }
 

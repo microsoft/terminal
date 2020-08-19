@@ -94,8 +94,11 @@
     <ClInclude Include="../Command.h">
       <DependentUpon>../Command.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="../CommandKeyChordVisibilityConverter.h">
-      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
+    <ClInclude Include="../EmptyStringVisibilityConverter.h">
+      <DependentUpon>../EmptyStringVisibilityConverter.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../HasNestedCommandsVisibilityConverter.h">
+      <DependentUpon>../HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="../Tab.h">
       <DependentUpon>../Tab.idl</DependentUpon>
@@ -170,8 +173,11 @@
     <ClCompile Include="../Command.cpp">
       <DependentUpon>../Command.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="../CommandKeyChordVisibilityConverter.cpp">
-      <DependentUpon>../CommandKeyChordVisibilityConverter.idl</DependentUpon>
+    <ClCompile Include="../EmptyStringVisibilityConverter.cpp">
+      <DependentUpon>../EmptyStringVisibilityConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../HasNestedCommandsVisibilityConverter.cpp">
+      <DependentUpon>../HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Tab.cpp">
       <DependentUpon>../Tab.idl</DependentUpon>
@@ -265,7 +271,8 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../Command.idl" />
-    <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
+    <Midl Include="../EmptyStringVisibilityConverter.idl" />
+    <Midl Include="../HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="../Tab.idl" />
     <Midl Include="../TerminalSettings.idl" />
     <Midl Include="../ColorScheme.idl" />

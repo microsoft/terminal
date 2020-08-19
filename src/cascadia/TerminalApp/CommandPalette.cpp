@@ -387,6 +387,7 @@ namespace winrt::TerminalApp::implementation
                 // action. Instead, display a new list of commands for the user
                 // to pick from.
                 _nestedActionStack.Append(command);
+                ParentCommandName(command.Name());
                 _currentNestedCommands.Clear();
                 for (const auto& nameAndCommand : command.NestedCommands())
                 {
@@ -814,6 +815,8 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(L"");
 
         _nestedActionStack.Clear();
+
+        ParentCommandName(L"");
         _currentNestedCommands.Clear();
     }
 

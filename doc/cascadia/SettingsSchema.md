@@ -159,7 +159,7 @@ For commands with arguments:
 | ---- | ---- |
 | Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
 | Symbols | ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/` |
-| Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus` |
+| Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus`, `app`, `menu` |
 | Action Keys | `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert` |
 | Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 

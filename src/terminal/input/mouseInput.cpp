@@ -29,7 +29,6 @@ static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 // - true iff button is a button message to translate
 static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 {
-    bool isButton = false;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -43,10 +42,10 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        isButton = true;
-        break;
+        return true;
+    default:
+        return false;
     }
-    return isButton;
 }
 
 // Routine Description:
@@ -80,7 +79,6 @@ static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
 // - true iff button is a button down event
 static constexpr bool _isButtonDown(const unsigned int button) noexcept
 {
-    bool isButtonDown = false;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -91,10 +89,10 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        isButtonDown = true;
-        break;
+        return true;
+    default:
+        return false;
     }
-    return isButtonDown;
 }
 
 // Routine Description:
@@ -180,6 +178,10 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    default:
+        xvalue = 0;
+        break;
     }
     if (isHover)
     {
@@ -235,6 +237,10 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    default:
+        xvalue = 0;
+        break;
     }
     if (isHover)
     {
