@@ -2,7 +2,7 @@
 author: Dustin Howett @DHowett <duhowett@microsoft.com>
 created on: 2020-08-16
 last updated: 2020-08-18
-issue id: #7335
+issue id: \#7335
 ---
 
 # Console Allocation Policy
@@ -91,8 +91,8 @@ allocated a new conhost on startup.
 Fusion manifest entries are used to make application-scoped decisions like this all the time, like `longPathAware` and
 `heapType`.
 
-CUI applications that can spawn a UI (or GUI applications that can print to a shell) are commonplace on other platforms,
-because there is no subsystem differentiation.
+CUI applications that can spawn a UI (or GUI applications that can print to a console) are commonplace on other
+platforms because there is no subsystem differentiation.
 
 ## UI/UX Design
 
@@ -106,7 +106,10 @@ This should have no impact on accessibility.
 
 ### Security
 
-This should have no impact on security.
+One reviewer brought up the potential for a malicious actor to spawn an endless stream of headless daemon processes.
+
+This proposal in no way changes the facilities available to malicious people for causing harm: they could have simply
+used `IMAGE_SUBSYSTEM_WINDOWS_GUI` and not presented a UI--an option that has been available to them for 35 years.
 
 ### Reliability
 
@@ -114,15 +117,17 @@ This should have no impact on reliability.
 
 ### Compatibility
 
-On downlevel versions of Windows that do not understand (or expect) this manifest field, applications will launch
+On downlevel versions of Windows that do not understand (or expect) this manifest field, applications will allocate
 consoles as specified by their image subsystem (described in the [abstract](#abstract) above).
 
-This **will** constitute a breaking change for any application that opts into a change in behavior, but that breaking
-change is expected to be managed by the application.
+An existing application opting into **inheritOnly** may constitute a breaking change, but the scope of the breakage is
+restricted to that application and is expected to be managed by the application.
 
-EXAMPLE: If Python migrates python.exe to specify an allocation policy of **inheritOnly**, graphical python applications
-will become double-click runnable from the graphical shell without spawning a console window. _However_, console-based
-python applications will no longer spawn a console window when double-clicked from the graphical shell.
+All behavioral changes are opt-in.
+
+> **EXAMPLE**: If Python updates python.exe to specify an allocation policy of **inheritOnly**, graphical python
+> applications will become double-click runnable from the graphical shell without spawning a console window. _However_,
+> console-based python applications will no longer spawn a console window when double-clicked from the graphical shell.
 
 Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required.
 
