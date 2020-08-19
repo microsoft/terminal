@@ -194,12 +194,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach._state = StateMachine::VTStates::SosPmApcTermination;
             break;
         }
+        }
 
         mach.ProcessCharacter(AsciiChars::ESC);
         if (shouldEscapeOut)
         {
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        }
         }
     }
 

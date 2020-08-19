@@ -1347,7 +1347,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     }
     else if (_isEscape(wch))
     {
-         _EnterOscTermination();
+        _EnterOscTermination();
     }
     else if (_isOscInvalid(wch))
     {
@@ -1691,10 +1691,11 @@ void StateMachine::_EventVariableLengthStringTermination(const wchar_t wch)
         }
         if (_state == VTStates::DcsTermination)
         {
-            // TODO:GH#7316: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.        }
+            // TODO:GH#7316: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
+        }
         if (_state == VTStates::SosPmApcTermination)
         {
-            // We don't support any SOS/PM/APC control string yet. 
+            // We don't support any SOS/PM/APC control string yet.
         }
         _EnterGround();
     }
