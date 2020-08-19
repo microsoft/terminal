@@ -26,6 +26,8 @@
 
 #include <LibraryResources.h>
 
+using namespace winrt::Microsoft::Terminal::TerminalControl;
+
 namespace winrt::TerminalApp::implementation
 {
     winrt::hstring NewTerminalArgs::GenerateName() const
@@ -67,11 +69,47 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CopyTextArgs::GenerateName() const
     {
+        std::wstringstream ss;
+
         if (_SingleLine)
         {
-            return RS_(L"CopyTextAsSingleLineCommandKey");
+            ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
         }
-        return RS_(L"CopyTextCommandKey");
+        else
+        {
+            ss << RS_(L"CopyTextCommandKey").c_str();
+        }
+
+        if (_CopyFormatting != nullptr)
+        {
+            ss << L", copyFormatting: ";
+            if (_CopyFormatting.Value() == CopyFormat::All)
+            {
+                ss << L"all, ";
+            }
+            else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
+            {
+                ss << L"none, ";
+            }
+            else
+            {
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
+                {
+                    ss << L"html, ";
+                }
+
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+                {
+                    ss << L"rtf, ";
+                }
+            }
+
+            // Chop off the last ","
+            auto result = ss.str();
+            return winrt::hstring{ result.substr(0, result.size() - 2) };
+        }
+
+        return winrt::hstring{ ss.str() };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const

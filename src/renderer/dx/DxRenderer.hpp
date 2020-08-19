@@ -114,7 +114,7 @@ namespace Microsoft::Console::Render
 
         float GetScaling() const noexcept;
 
-        void SetSelectionBackground(const COLORREF color) noexcept;
+        void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 

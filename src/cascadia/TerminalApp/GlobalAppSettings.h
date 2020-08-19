@@ -15,9 +15,10 @@ Author(s):
 --*/
 #pragma once
 #include "AppKeyBindings.h"
-#include "ColorScheme.h"
 #include "Command.h"
 #include "SettingsTypes.h"
+
+#include "ColorScheme.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -37,9 +38,9 @@ public:
     GlobalAppSettings();
     ~GlobalAppSettings();
 
-    std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
-    const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
-    void AddColorScheme(ColorScheme scheme);
+    std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& GetColorSchemes() noexcept;
+    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& GetColorSchemes() const noexcept;
+    void AddColorScheme(winrt::TerminalApp::ColorScheme scheme);
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
@@ -69,7 +70,7 @@ public:
     GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
     GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
     GETSET_PROPERTY(bool, CopyOnSelect, false);
-    GETSET_PROPERTY(bool, CopyFormatting, false);
+    GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
     GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
     GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
     GETSET_PROPERTY(LaunchPosition, InitialPosition);
@@ -89,7 +90,7 @@ private:
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
     std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
-    std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
+    std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme> _colorSchemes;
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _commands;
 
     friend class TerminalAppLocalTests::SettingsTests;

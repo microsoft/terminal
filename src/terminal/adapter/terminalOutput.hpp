@@ -26,8 +26,8 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalOutput() noexcept;
 
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
-        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
-        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset);
+        bool Designate94Charset(const size_t gsetNumber, const VTID charset);
+        bool Designate96Charset(const size_t gsetNumber, const VTID charset);
         bool LockingShift(const size_t gsetNumber);
         bool LockingShiftRight(const size_t gsetNumber);
         bool SingleShift(const size_t gsetNumber);
