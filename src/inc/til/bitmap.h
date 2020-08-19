@@ -315,7 +315,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 // Copy any regions that overlap from this map to the new one.
                 // Just iterate our runs...
-                for (const auto run : *this)
+                for (const auto& run : *this)
                 {
                     // intersect them with the new map
                     // so we don't attempt to set bits that fit outside

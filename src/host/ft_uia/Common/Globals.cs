@@ -10,7 +10,7 @@ namespace Conhost.UIA.Tests.Common
 
     public static class Globals
     {
-        public const int Timeout = 500; // in milliseconds
+        public const int Timeout = 50; // in milliseconds
         public const int AppCreateTimeout = 3000; // in milliseconds
 
         // These were pulled via UISpy from system defined window classes.

@@ -98,9 +98,9 @@ public:
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
-    virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
-    virtual bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
-    virtual bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool DesignateCodingSystem(const VTID codingSystem) = 0; // DOCS
+    virtual bool Designate94Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
+    virtual bool Designate96Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
     virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
     virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3

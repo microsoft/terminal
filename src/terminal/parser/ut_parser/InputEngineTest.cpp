@@ -222,7 +222,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     std::wstring GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                           const unsigned short modifiers,
                                           const COORD position,
-                                          const CsiActionCodes direction);
+                                          const VTID direction);
 
     // SGR_PARAMS serves as test input
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
@@ -1089,7 +1089,7 @@ void InputEngineTest::AltBackspaceEnterTest()
 std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                                        const unsigned short modifiers,
                                                        const COORD position,
-                                                       const CsiActionCodes direction)
+                                                       const VTID direction)
 {
     // we first need to convert "button" and "modifiers" into an 8 bit sequence
     unsigned int actionCode = 0;
@@ -1102,7 +1102,11 @@ std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes
     // modifiers represents the middle 4 bits
     actionCode |= modifiers;
 
-    return wil::str_printf_failfast<std::wstring>(L"\x1b[<%d;%d;%d%c", static_cast<int>(actionCode), position.X, position.Y, direction);
+    // mouse sequence identifiers consist of a private parameter prefix and a final character
+    const wchar_t prefixChar = direction[0];
+    const wchar_t finalChar = direction[1];
+
+    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.X, position.Y, finalChar);
 }
 
 void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData)
