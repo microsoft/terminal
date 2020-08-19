@@ -7,7 +7,7 @@ parameters:
 
 jobs:
 - job: ProcessTestResults
-  condition: succeededOrFailed()
+  condition: ${{ parameters.condition }}
   dependsOn: ${{ parameters.dependsOn }}
   pool:
     vmImage: 'windows-2019'
