@@ -460,7 +460,7 @@ namespace winrt::TerminalApp::implementation
                                             const TerminalApp::ActionEventArgs& args)
     {
         auto opt = _GetFocusedTabIndex();
-        uint32_t startIdx = opt ? *opt : 0;
+        uint32_t startIdx = opt.value_or(0);
 
         CommandPalette().EnableTabSwitcherMode(true, startIdx);
         CommandPalette().Visibility(Visibility::Visible);
