@@ -2314,12 +2314,31 @@ USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
 void TextBuffer::RemoveHyperlinkFromMap(USHORT id)
 {
     _hyperlinkMap.erase(id);
-    for (auto it = _customIdMap.begin(); it != _customIdMap.end(); ++it)
+    for (auto customIdPair : _customIdMap)
     {
-        if (it->second == id)
+        if (customIdPair.second == id)
         {
-            _customIdMap.erase(it->first);
+            _customIdMap.erase(customIdPair.first);
             break;
         }
     }
+}
+
+// Method Description:
+// - Obtains the custom ID, if there was one, associated with the
+//   USHORT id of a hyperlink
+// Arguments:
+// - The USHORT id of the hyperlink
+// Return Value:
+// - The custom ID if there was one, empty string otherwise
+std::wstring TextBuffer::GetCustomIdFromId(USHORT id) const
+{
+    for (auto customIdPair : _customIdMap)
+    {
+        if (customIdPair.second == id)
+        {
+            return customIdPair.first;
+        }
+    }
+    return {};
 }

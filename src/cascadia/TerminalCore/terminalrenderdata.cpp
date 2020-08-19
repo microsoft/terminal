@@ -126,6 +126,11 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(USHORT i
     return _buffer->GetHyperlinkUriFromId(id);
 }
 
+const std::wstring Microsoft::Terminal::Core::Terminal::GetCustomId(USHORT id) const noexcept
+{
+    return _buffer->GetCustomIdFromId(id);
+}
+
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 try
 {

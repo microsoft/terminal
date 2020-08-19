@@ -158,6 +158,7 @@ public:
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(USHORT id) const noexcept override;
+    const std::wstring GetCustomId(USHORT id) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

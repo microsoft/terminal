@@ -57,6 +57,7 @@ public:
     const std::wstring GetConsoleTitle() const noexcept override;
 
     const std::wstring GetHyperlinkUri(USHORT id) const noexcept override;
+    const std::wstring GetCustomId(USHORT id) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

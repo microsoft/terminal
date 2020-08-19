@@ -145,6 +145,7 @@ public:
     std::wstring GetHyperlinkUriFromId(USHORT id) const;
     USHORT GetHyperlinkId(std::wstring_view params);
     void RemoveHyperlinkFromMap(USHORT id);
+    std::wstring GetCustomIdFromId(USHORT id) const;
 
     class TextAndColor
     {

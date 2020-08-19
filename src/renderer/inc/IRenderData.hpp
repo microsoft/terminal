@@ -67,6 +67,7 @@ namespace Microsoft::Console::Render
         virtual const std::wstring GetConsoleTitle() const noexcept = 0;
 
         virtual const std::wstring GetHyperlinkUri(USHORT id) const noexcept = 0;
+        virtual const std::wstring GetCustomId(USHORT id) const noexcept = 0;
 
     protected:
         IRenderData() = default;

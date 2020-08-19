@@ -375,7 +375,7 @@ bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::Pr
 // - Start a hyperlink
 // Arguments:
 // - uri - the hyperlink URI
-// - params - the hyperlink id to use
+// - params - the optional custom ID
 // Return Value:
 // - true
 bool TerminalDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept

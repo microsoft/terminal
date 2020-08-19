@@ -394,7 +394,12 @@ public:
 
     const std::wstring GetHyperlinkUri(USHORT /*id*/) const noexcept
     {
-        return std::wstring{};
+        return {};
+    }
+
+    const std::wstring GetCustomId(USHORT /*id*/) const noexcept
+    {
+        return {};
     }
 };
 
