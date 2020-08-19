@@ -1,4 +1,5 @@
 parameters:
+  condition: 'succeededOrFailed()'
   dependsOn: ''
   rerunPassesRequiredToAvoidFailure: 5
   minimumExpectedTestsExecutedCount: 10
