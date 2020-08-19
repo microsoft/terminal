@@ -212,8 +212,26 @@ namespace winrt::TerminalApp::implementation
             }
             else if (_currentMode == CommandPaletteMode::CommandlineMode)
             {
-                // CommandlineMode Mode: always exit the palette immediately.
-                _dismissPalette();
+                const auto currentInput = _getPostPrefixInput();
+                if (currentInput.empty())
+                {
+                    // The user's only input "> " so far. We should just dismiss
+                    // the palette. This is like dismissing the Action mode with
+                    // empty input.
+                    _dismissPalette();
+                }
+                else
+                {
+                    // Clear out the current input. We'll leave a ">" in the
+                    // input (to stay in commandline mode), and a leading space
+                    // (if they currenly had one).
+                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
+                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
+
+                    // This will conveniently move the cursor to the end of the
+                    // text input for us.
+                    _searchBox().Select(_searchBox().Text().size(), 0);
+                }
             }
 
             e.Handled(true);
@@ -398,6 +416,37 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get all the input text in _searchBox that follows the prefix character
+    //   and any whitespace following that prefix character. This can be used in
+    //   commandline mode to get all the useful input that the user input after
+    //   the leading ">" prefix.
+    // - Note that this will behave unexpectedly in Action Mode.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the string of input following the prefix character.
+    std::wstring CommandPalette::_getPostPrefixInput()
+    {
+        const std::wstring input{ _searchBox().Text() };
+        if (input.empty())
+        {
+            return input;
+        }
+
+        const auto rawCmdline{ input.substr(1) };
+
+        // Trim leading whitespace
+        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        if (firstNonSpace == std::wstring::npos)
+        {
+            // All the following characters are whitespace.
+            return L"";
+        }
+
+        return rawCmdline.substr(firstNonSpace);
+    }
+
+    // Method Description:
     // - Dispatch the current search text as a ExecuteCommandline action.
     // Arguments:
     // - <none>
@@ -405,17 +454,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommandline()
     {
-        const std::wstring input{ _searchBox().Text() };
-        const auto rawCmdline{ input.substr(1) };
-
-        // Trim leading whitespace
-        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
-        if (firstNonSpace == std::wstring::npos)
+        const auto input = _getPostPrefixInput();
+        if (input.empty())
         {
             return;
         }
-
-        winrt::hstring cmdline{ rawCmdline.substr(firstNonSpace) };
+        winrt::hstring cmdline{ input };
 
         // Build the NewTab action from the values we've parsed on the commandline.
         auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
@@ -469,7 +513,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_currentMode != CommandPaletteMode::TabSwitcherMode)
         {
-            _checkActionVsCommandlineMode();
+            _evaluatePrefix();
         }
 
         _updateFilteredActions();
@@ -478,7 +522,7 @@ namespace winrt::TerminalApp::implementation
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
-    void CommandPalette::_checkActionVsCommandlineMode()
+    void CommandPalette::_evaluatePrefix()
     {
         auto newMode = CommandPaletteMode::ActionMode;
 

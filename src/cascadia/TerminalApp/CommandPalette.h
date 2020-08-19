@@ -76,7 +76,8 @@ namespace winrt::TerminalApp::implementation
         CommandPaletteMode _currentMode;
         void _switchToMode(CommandPaletteMode mode);
 
-        void _checkActionVsCommandlineMode();
+        void _evaluatePrefix();
+        std::wstring _getPostPrefixInput();
 
         // Tab Switcher
         std::optional<winrt::Windows::System::VirtualKey> _anchorKey;
